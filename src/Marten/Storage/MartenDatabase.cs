@@ -1,19 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using Marten.Events;
-using Marten.Events.Daemon;
-using Marten.Events.Daemon.Progress;
 using Marten.Internal;
-using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
-using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
-using Marten.Services;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
@@ -44,7 +37,7 @@ namespace Marten.Storage
 
         public ISequences Sequences => _sequences.Value;
 
-        public IProviderGraph Providers { get; private set; }
+        public IProviderGraph Providers { get; }
 
         /// <summary>
         ///     Set the minimum sequence number for a Hilo sequence for a specific document type
@@ -72,7 +65,7 @@ namespace Marten.Storage
 
         public async Task<IReadOnlyList<DbObjectName>> DocumentTables()
         {
-            var tables = await this.SchemaTables().ConfigureAwait(false);
+            var tables = await SchemaTables().ConfigureAwait(false);
             return tables.Where(x => x.Name.StartsWith(SchemaConstants.TablePrefix)).ToList();
         }
 
@@ -97,6 +90,12 @@ namespace Marten.Storage
             return await expected.FetchExisting(conn).ConfigureAwait(false);
         }
 
+
+        public override IFeatureSchema[] BuildFeatureSchemas()
+        {
+            return _options.Storage.AllActiveFeatures(this).ToArray();
+        }
+
         public override IFeatureSchema FindFeature(Type featureType)
         {
             return _features.FindFeature(featureType);
@@ -117,12 +116,5 @@ namespace Marten.Storage
                 return sequences;
             });
         }
-
-
-        public override IFeatureSchema[] BuildFeatureSchemas()
-        {
-            return _options.Storage.AllActiveFeatures(this).ToArray();
-        }
-
     }
 }

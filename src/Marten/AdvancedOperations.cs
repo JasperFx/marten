@@ -5,14 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.Progress;
 using Marten.Events.TestSupport;
-using Marten.Internal.Sessions;
-using Marten.Linq.QueryHandlers;
 using Marten.Schema;
-using Marten.Services;
 using Marten.Storage;
-using Weasel.Postgresql;
 
 #nullable enable
 namespace Marten
@@ -97,43 +92,7 @@ namespace Marten
                 ? _store.Tenancy.Default.Database
                 : (await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false)).Database;
 
-            var sql = $@"
-select count(*) from {_store.Events.DatabaseSchemaName}.mt_events;
-select count(*) from {_store.Events.DatabaseSchemaName}.mt_streams;
-select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
-";
-
-
-            await database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
-
-            var statistics = new EventStoreStatistics();
-
-            using var conn = database.CreateConnection();
-
-            await conn.OpenAsync(token).ConfigureAwait(false);
-
-            using var reader = await conn.CreateCommand(sql).ExecuteReaderAsync(token).ConfigureAwait(false);
-
-            if (await reader.ReadAsync(token).ConfigureAwait(false))
-            {
-                statistics.EventCount = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
-            }
-
-            await reader.NextResultAsync(token).ConfigureAwait(false);
-
-            if (await reader.ReadAsync(token).ConfigureAwait(false))
-            {
-                statistics.StreamCount = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
-            }
-
-            await reader.NextResultAsync(token).ConfigureAwait(false);
-
-            if (await reader.ReadAsync(token).ConfigureAwait(false))
-            {
-                statistics.EventSequenceNumber = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
-            }
-
-            return statistics;
+            return await database.FetchEventStoreStatistics(token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -151,15 +110,8 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
             var database = tenantId == null
                 ? _store.Tenancy.Default.Database
                 : (await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(true)).Database;
-            await database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
-            var handler = (IQueryHandler<IReadOnlyList<ShardState>>)new ListQueryHandler<ShardState>(
-                new ProjectionProgressStatement(_store.Events),
-                new ShardStateSelector());
-
-            var session = (QuerySession)_store.QuerySession();
-            await using var _ = session.ConfigureAwait(false);
-            return await session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
+            return await database.AllProjectionProgress(token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -174,22 +126,12 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
         public async Task<long> ProjectionProgressFor(ShardName name, string? tenantId = null,
             CancellationToken token = default)
         {
-            var tenant = tenantId == null ? _store.Tenancy.Default : await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
+            var tenant = tenantId == null
+                ? _store.Tenancy.Default
+                : await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
             var database = tenant.Database;
-            await database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
-            var statement = new ProjectionProgressStatement(_store.Events) { Name = name };
-
-            var handler = new OneResultHandler<ShardState>(statement,
-                new ShardStateSelector(), true, false);
-
-            var session =
-                (QuerySession)_store.QuerySession(new SessionOptions { AllowAnyTenant = true, Tenant = tenant });
-            await using var _ = session.ConfigureAwait(false);
-
-            var progress = await session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
-
-            return progress?.Sequence ?? 0;
+            return await database.ProjectionProgressFor(name, token).ConfigureAwait(false);
         }
 
         /// <summary>

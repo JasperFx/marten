@@ -1,8 +1,10 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Events;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Schema;
