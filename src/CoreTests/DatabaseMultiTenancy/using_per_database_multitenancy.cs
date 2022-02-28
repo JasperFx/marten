@@ -23,11 +23,6 @@ namespace CoreTests.DatabaseMultiTenancy
 
         public async Task InitializeAsync()
         {
-            using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-            await conn.OpenAsync();
-
-
-
             _host = await Host.CreateDefaultBuilder()
                 .ConfigureServices(services =>
                 {
