@@ -9,11 +9,12 @@ namespace Marten.Events.Aggregation
 {
     internal class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>
     {
-        public ValueTask<IReadOnlyList<EventSlice<TDoc, Guid>>> SliceInlineActions(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
+        public ValueTask<IReadOnlyList<EventSlice<TDoc, Guid>>> SliceInlineActions(IQuerySession querySession,
+            IEnumerable<StreamAction> streams)
         {
             return new (streams.Select(s =>
             {
-                var tenant = tenancy.GetTenant(s.TenantId);
+                var tenant = new Tenant(s.TenantId, querySession.Database);
                 return new EventSlice<TDoc, Guid>(s.Id, tenant, s.Events);
             }).ToList());
         }

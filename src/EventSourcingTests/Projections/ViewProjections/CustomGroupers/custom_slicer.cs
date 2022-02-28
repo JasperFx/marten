@@ -18,10 +18,11 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
     {
         public class CustomSlicer: IEventSlicer<UserGroupsAssignment, Guid>
         {
-            public ValueTask<IReadOnlyList<EventSlice<UserGroupsAssignment, Guid>>> SliceInlineActions(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
+            public ValueTask<IReadOnlyList<EventSlice<UserGroupsAssignment, Guid>>> SliceInlineActions(
+                IQuerySession querySession, IEnumerable<StreamAction> streams)
             {
                 var allEvents = streams.SelectMany(x => x.Events).ToList();
-                var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(tenancy.Default);
+                var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(Tenant.ForDatabase(querySession.Database));
                 group.AddEvents<UserRegistered>(@event => @event.UserId, allEvents);
                 group.AddEvents<MultipleUsersAssignedToGroup>(@event => @event.UserIds, allEvents);
 

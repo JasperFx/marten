@@ -75,7 +75,7 @@ namespace Marten.Generated.EventStore
         private readonly Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Aggregation.Invoice, System.Guid> _storage;
         private readonly Marten.Events.Aggregation.AggregateProjection<EventSourcingTests.Aggregation.Invoice> _aggregateProjection;
 
-        public AggregateProjectionInlineHandler1201339788(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Aggregation.Invoice, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Aggregation.Invoice, System.Guid> storage, Marten.Events.Aggregation.AggregateProjection<EventSourcingTests.Aggregation.Invoice> aggregateProjection) : base(store, projection, slicer, tenancy, storage)
+        public AggregateProjectionInlineHandler1201339788(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Aggregation.Invoice, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Aggregation.Invoice, System.Guid> storage, Marten.Events.Aggregation.AggregateProjection<EventSourcingTests.Aggregation.Invoice> aggregateProjection) : base(store, projection, slicer, storage)
         {
             _store = store;
             _projection = projection;

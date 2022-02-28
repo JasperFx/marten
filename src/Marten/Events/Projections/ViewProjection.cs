@@ -34,7 +34,7 @@ namespace Marten.Events.Projections
 
         async ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> IEventSlicer<TDoc, TId>.SliceInlineActions(
             IQuerySession querySession,
-            IEnumerable<StreamAction> streams, ITenancy tenancy)
+            IEnumerable<StreamAction> streams)
         {
             var events = streams.SelectMany(x => x.Events).ToList();
 

@@ -336,10 +336,11 @@ public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment
 {
     public class CustomSlicer: IEventSlicer<UserGroupsAssignment, Guid>
     {
-        public ValueTask<IReadOnlyList<EventSlice<UserGroupsAssignment, Guid>>> SliceInlineActions(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
+        public ValueTask<IReadOnlyList<EventSlice<UserGroupsAssignment, Guid>>> SliceInlineActions(
+            IQuerySession querySession, IEnumerable<StreamAction> streams)
         {
             var allEvents = streams.SelectMany(x => x.Events).ToList();
-            var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(tenancy.Default);
+            var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(Tenant.ForDatabase(querySession.Database));
             group.AddEvents<UserRegistered>(@event => @event.UserId, allEvents);
             group.AddEvents<MultipleUsersAssignedToGroup>(@event => @event.UserIds, allEvents);
 
@@ -373,7 +374,7 @@ public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/CustomGroupers/custom_slicer.cs#L16-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-slicer' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/CustomGroupers/custom_slicer.cs#L16-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-slicer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Event "Fan Out" Rules

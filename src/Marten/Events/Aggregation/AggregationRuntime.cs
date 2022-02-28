@@ -25,7 +25,8 @@ namespace Marten.Events.Aggregation
 
     public abstract class CrossStreamAggregationRuntime<TDoc, TId>: AggregationRuntime<TDoc, TId> where TDoc: notnull where TId: notnull
     {
-        public CrossStreamAggregationRuntime(IDocumentStore store, IAggregateProjection projection, IEventSlicer<TDoc, TId> slicer, ITenancy tenancy, IDocumentStorage<TDoc, TId> storage) : base(store, projection, slicer, tenancy, storage)
+        public CrossStreamAggregationRuntime(IDocumentStore store, IAggregateProjection projection,
+            IEventSlicer<TDoc, TId> slicer, IDocumentStorage<TDoc, TId> storage) : base(store, projection, slicer, storage)
         {
         }
 
@@ -47,14 +48,12 @@ namespace Marten.Events.Aggregation
         public IAggregateProjection Projection { get;}
         public IEventSlicer<TDoc, TId> Slicer { get;}
 
-        public ITenancy Tenancy { get;}
-
-        public AggregationRuntime(IDocumentStore store, IAggregateProjection projection, IEventSlicer<TDoc, TId> slicer, ITenancy tenancy, IDocumentStorage<TDoc, TId> storage)
+        public AggregationRuntime(IDocumentStore store, IAggregateProjection projection, IEventSlicer<TDoc, TId> slicer,
+            IDocumentStorage<TDoc, TId> storage)
         {
             Projection = projection;
             Slicer = slicer;
             Storage = storage;
-            Tenancy = tenancy;
             _store = store;
         }
 
@@ -127,7 +126,7 @@ namespace Marten.Events.Aggregation
                 .Where(x => Projection.AppliesTo(x.Events.Select(x => x.EventType)))
                 .ToArray();
 
-            var slices = await Slicer.SliceInlineActions(operations, filteredStreams, Tenancy).ConfigureAwait(false);
+            var slices = await Slicer.SliceInlineActions(operations, filteredStreams).ConfigureAwait(false);
 
             var martenSession = (DocumentSessionBase)operations;
 
