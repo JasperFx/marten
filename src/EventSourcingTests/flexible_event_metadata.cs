@@ -166,6 +166,23 @@ namespace EventSourcingTests
         }
 
         [Fact]
+        public async Task check_user_defined_metadata_not_exists()
+        {
+            StoreOptions(_ => _.Events.MetadataConfig.HeadersEnabled = true);
+            const string userDefinedMetadataName = "my-custom-metadata";
+
+            var streamId = theSession.Events
+                .StartStream<QuestParty>(started, joined, slayed).Id;
+            await theSession.SaveChangesAsync();
+
+            var events = await theSession.Events.FetchStreamAsync(streamId);
+            foreach (var @event in events)
+            {
+                @event.GetHeader(userDefinedMetadataName).ShouldBeNull();
+            }
+        }
+
+        [Fact]
         public async Task check_flexible_metadata_with_all_enabled()
         {
             StoreOptions(_ => _.Events.MetadataConfig.EnableAll());
