@@ -23,7 +23,7 @@ namespace Marten.AsyncDaemon.Testing
         public HighWaterDetectorTests(ITestOutputHelper output) : base(output)
         {
             theStore.EnsureStorageExists(typeof(IEvent));
-            theDetector = new HighWaterDetector(new AutoOpenSingleQueryRunner(theStore.Tenancy.Default), theStore.Events);
+            theDetector = new HighWaterDetector(new AutoOpenSingleQueryRunner(theStore.Tenancy.Default.Database), theStore.Events);
         }
 
         [Fact]

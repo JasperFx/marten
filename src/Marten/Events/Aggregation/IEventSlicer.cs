@@ -21,9 +21,8 @@ namespace Marten.Events.Aggregation
         /// </summary>
         /// <param name="querySession"></param>
         /// <param name="events"></param>
-        /// <param name="tenancy"></param>
         /// <returns></returns>
         ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> SliceAsyncEvents(IQuerySession querySession,
-            List<IEvent> events, ITenancy tenancy);
+            List<IEvent> events);
     }
 }

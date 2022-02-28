@@ -10,12 +10,15 @@ namespace Marten.Events.Daemon
     internal class TenantedEventRange: EventRangeGroup
     {
         private readonly DocumentStore _store;
+        private readonly IMartenDatabase _daemonDatabase;
         private readonly IProjection _projection;
 
-        public TenantedEventRange(IDocumentStore store, IProjection projection, EventRange range,
+        public TenantedEventRange(IDocumentStore store, IMartenDatabase daemonDatabase, IProjection projection,
+            EventRange range,
             CancellationToken shardCancellation) : base(range, shardCancellation)
         {
             _store = (DocumentStore)store;
+            _daemonDatabase = daemonDatabase;
             _projection = projection;
 
             buildGroups();
@@ -26,7 +29,7 @@ namespace Marten.Events.Daemon
             var byTenant = Range.Events.GroupBy(x => x.TenantId);
             foreach (var group in byTenant)
             {
-                var tenant = _store.Tenancy.GetTenant(@group.Key);
+                var tenant = new Tenant(@group.Key, _daemonDatabase);
 
                 var actions = _store.Events.StreamIdentity switch
                 {

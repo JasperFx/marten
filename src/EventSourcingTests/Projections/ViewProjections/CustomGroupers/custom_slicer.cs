@@ -28,9 +28,10 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
                 return new(group.Slices.ToList());
             }
 
-            public ValueTask<IReadOnlyList<TenantSliceGroup<UserGroupsAssignment, Guid>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events, ITenancy tenancy)
+            public ValueTask<IReadOnlyList<TenantSliceGroup<UserGroupsAssignment, Guid>>> SliceAsyncEvents(
+                IQuerySession querySession, List<IEvent> events)
             {
-                var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(tenancy.Default);
+                var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(Tenant.ForDatabase(querySession.Database));
                 group.AddEvents<UserRegistered>(@event => @event.UserId, events);
                 group.AddEvents<MultipleUsersAssignedToGroup>(@event => @event.UserIds, events);
 

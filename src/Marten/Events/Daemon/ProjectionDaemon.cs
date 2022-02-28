@@ -29,11 +29,12 @@ namespace Marten.Events.Daemon
         private readonly DocumentStore _store;
         private INodeCoordinator? _coordinator;
 
-        public ProjectionDaemon(DocumentStore store, Tenant tenant, IHighWaterDetector detector, ILogger logger)
+        public ProjectionDaemon(DocumentStore store, IMartenDatabase database, IHighWaterDetector detector,
+            ILogger logger)
         {
             _cancellation = new CancellationTokenSource();
             _store = store;
-            Tenant = tenant;
+            Database = database;
             _logger = logger;
 
             Tracker = new ShardStateTracker(logger);
@@ -43,11 +44,11 @@ namespace Marten.Events.Daemon
         }
 
         // Only for testing
-        public ProjectionDaemon(DocumentStore store, ILogger logger) : this(store, store.Tenancy.Default, new HighWaterDetector(new AutoOpenSingleQueryRunner(store.Tenancy.Default), store.Events), logger)
+        public ProjectionDaemon(DocumentStore store, ILogger logger) : this(store, store.Tenancy.Default.Database, new HighWaterDetector(new AutoOpenSingleQueryRunner(store.Tenancy.Default.Database), store.Events), logger)
         {
         }
 
-        public Tenant Tenant { get; }
+        public IMartenDatabase Database { get; }
 
         public Task UseCoordinator(INodeCoordinator coordinator)
         {
@@ -63,14 +64,14 @@ namespace Marten.Events.Daemon
 
         public async Task StartDaemon()
         {
-            await Tenant.Database.EnsureStorageExistsAsync(typeof(IEvent)).ConfigureAwait(false);
+            await Database.EnsureStorageExistsAsync(typeof(IEvent)).ConfigureAwait(false);
             await _highWater.Start().ConfigureAwait(false);
         }
 
         public async Task WaitForNonStaleData(TimeSpan timeout)
         {
             var stopWatch = Stopwatch.StartNew();
-            var statistics = await Tenant.Database.FetchEventStoreStatistics().ConfigureAwait(false);
+            var statistics = await Database.FetchEventStoreStatistics().ConfigureAwait(false);
 
             while (stopWatch.Elapsed < timeout)
             {

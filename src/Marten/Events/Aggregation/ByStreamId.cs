@@ -20,14 +20,14 @@ namespace Marten.Events.Aggregation
 
 
         public async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, Guid>>> SliceAsyncEvents(IQuerySession querySession,
-            List<IEvent> events, ITenancy tenancy)
+            List<IEvent> events)
         {
             var list = new List<TenantSliceGroup<TDoc, Guid>>();
             var byTenant = events.GroupBy(x => x.TenantId);
 
             foreach (var tenantGroup in byTenant)
             {
-                var tenant = await tenancy.GetTenantAsync(tenantGroup.Key).ConfigureAwait(false);
+                var tenant = new Tenant(tenantGroup.Key, querySession.Database);
 
                 var slices = tenantGroup
                     .GroupBy(x => x.StreamId)

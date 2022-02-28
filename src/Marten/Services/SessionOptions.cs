@@ -123,7 +123,7 @@ namespace Marten.Services
         {
             return new SessionOptions
             {
-                Tenant = new Tenant(Tenancy.DefaultTenantId, @database), AllowAnyTenant = true, OwnsConnection = true, OwnsTransactionLifecycle = true
+                Tenant = new Tenant(Tenancy.DefaultTenantId, @database), AllowAnyTenant = true, OwnsConnection = true, OwnsTransactionLifecycle = true, Tracking = DocumentTracking.None
             };
 
         }
