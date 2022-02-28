@@ -39,7 +39,7 @@ namespace Marten.AsyncDaemon.Testing.Bugs
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
             var logger = provider.GetRequiredService<ILogger<IProjectionDaemon>>();
-            using var daemon = documentStore.BuildProjectionDaemon(logger);
+            using var daemon = await documentStore.BuildProjectionDaemonAsync(logger:logger).ConfigureAwait(false);
             await daemon.StartAllShards();
 
             var waiter = daemon.Tracker.WaitForShardState("UserIssueCounter:All", 1000, 1.Hours());

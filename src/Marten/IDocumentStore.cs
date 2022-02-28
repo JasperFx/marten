@@ -209,9 +209,20 @@ namespace Marten
         /// Build a new instance of the asynchronous projection daemon to use interactively
         /// in your own code
         /// </summary>
+        /// <param name="tenantIdOrDatabaseIdentifier">If using multi-tenancy with multiple databases, supplying this will choose the database to target</param>
         /// <param name="logger">Override the logger inside this instance of the async daemon</param>
         /// <returns></returns>
-        IProjectionDaemon BuildProjectionDaemon(ILogger? logger = null);
+        [Obsolete("Please use the asynchronous version of this method instead to avoid potential thread blocking")]
+        IProjectionDaemon BuildProjectionDaemon(string? tenantIdOrDatabaseIdentifier = null, ILogger? logger = null);
+
+        /// <summary>
+        /// Build a new instance of the asynchronous projection daemon to use interactively
+        /// in your own code
+        /// </summary>
+        /// <param name="tenantIdOrDatabaseIdentifier">If using multi-tenancy with multiple databases, supplying this will choose the database to target</param>
+        /// <param name="logger">Override the logger inside this instance of the async daemon</param>
+        /// <returns></returns>
+        ValueTask<IProjectionDaemon> BuildProjectionDaemonAsync(string? tenantIdOrDatabaseIdentifier = null, ILogger? logger = null);
 
 
     }
