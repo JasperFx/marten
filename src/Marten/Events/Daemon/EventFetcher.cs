@@ -17,16 +17,16 @@ namespace Marten.Events.Daemon
     internal class EventFetcher : IDisposable
     {
         private readonly IDocumentStore _store;
-        private readonly Tenant _tenant;
+        private readonly IMartenDatabase _database;
         private readonly ISqlFragment[] _filters;
         private IEventStorage _storage;
         private readonly EventStatement _statement;
         private readonly IQueryHandler<IReadOnlyList<IEvent>> _handler;
 
-        public EventFetcher(IDocumentStore store, Tenant tenant, ISqlFragment[] filters)
+        public EventFetcher(IDocumentStore store, IMartenDatabase database, ISqlFragment[] filters)
         {
             _store = store;
-            _tenant = tenant;
+            _database = database;
             _filters = filters;
 
             using var session = querySession();
@@ -38,7 +38,7 @@ namespace Marten.Events.Daemon
 
         private QuerySession querySession()
         {
-            return (QuerySession)_store.QuerySession(new SessionOptions{Tenant = _tenant, AllowAnyTenant = true});
+            return (QuerySession)_store.QuerySession(SessionOptions.ForDatabase(_database));
         }
 
         private void teardown()

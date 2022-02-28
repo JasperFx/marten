@@ -8,6 +8,7 @@ using Marten.Events;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services.BatchQuerying;
+using Marten.Storage;
 using Marten.Storage.Metadata;
 using Npgsql;
 #nullable enable
@@ -15,6 +16,11 @@ namespace Marten
 {
     public interface IQuerySession: IDisposable, IAsyncDisposable
     {
+        /// <summary>
+        /// The underlying Marten database for this session
+        /// </summary>
+        IMartenDatabase Database { get; }
+
         /// <summary>
         /// Find or load a single document of type T by a string id
         /// </summary>

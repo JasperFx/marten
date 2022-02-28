@@ -39,7 +39,7 @@ namespace Marten.Events.Projections
             var events = streams.SelectMany(x => x.Events).ToList();
 
 
-            var groups = await this.As<IEventSlicer<TDoc, TId>>().SliceAsyncEvents(querySession, events, tenancy).ConfigureAwait(false);
+            var groups = await this.As<IEventSlicer<TDoc, TId>>().SliceAsyncEvents(querySession, events).ConfigureAwait(false);
             return groups.SelectMany(x => x.Slices).ToList();
         }
 
@@ -64,7 +64,7 @@ namespace Marten.Events.Projections
 
         async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> IEventSlicer<TDoc, TId>.SliceAsyncEvents(
             IQuerySession querySession,
-            List<IEvent> events, ITenancy tenancy)
+            List<IEvent> events)
         {
             foreach (var fanOutRule in _beforeGroupingFanoutRules)
             {
@@ -76,7 +76,7 @@ namespace Marten.Events.Projections
                 var byTenant = events.GroupBy(x => x.TenantId);
                 var groupTasks = byTenant.Select(async tGroup =>
                 {
-                    var tenant = await tenancy.GetTenantAsync(tGroup.Key).ConfigureAwait(false);
+                    var tenant = new Tenant(tGroup.Key, querySession.Database);
                     return await groupSingleTenant(tenant, querySession.ForTenant(tGroup.Key), tGroup.ToList()).ConfigureAwait(false);
                 });
 
@@ -89,8 +89,8 @@ namespace Marten.Events.Projections
                 return list;
             }
 
-            // This path is for *NOT* multi-tenanted projections
-            var group = await groupSingleTenant(tenancy.Default, querySession, events).ConfigureAwait(false);
+            // This path is for *NOT* conjoined multi-tenanted projections, but we have to respect per-database tenancy
+            var group = await groupSingleTenant(new Tenant(Tenancy.DefaultTenantId, querySession.Database), querySession, events).ConfigureAwait(false);
 
             return new List<TenantSliceGroup<TDoc, TId>> {group};
         }

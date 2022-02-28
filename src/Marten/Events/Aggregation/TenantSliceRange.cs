@@ -68,7 +68,7 @@ namespace Marten.Events.Aggregation
 
             var session = _store.QuerySession();
             await using var _ = session.ConfigureAwait(false);
-            Groups = await _runtime.Slicer.SliceAsyncEvents(session, Range.Events, _store.Tenancy).ConfigureAwait(false);
+            Groups = await _runtime.Slicer.SliceAsyncEvents(session, Range.Events).ConfigureAwait(false);
         }
     }
 }

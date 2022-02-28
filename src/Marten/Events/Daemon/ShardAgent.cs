@@ -1,12 +1,9 @@
 using System;
-using System.Diagnostics;
-using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Marten.Events.Projections;
-using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
@@ -127,10 +124,7 @@ namespace Marten.Events.Daemon
         {
             _logger.LogInformation("Starting projection agent for '{ShardName}'", _projectionShard.Name);
 
-            _sessionOptions = new SessionOptions
-            {
-                Tenant = daemon.Tenant, AllowAnyTenant = true, Tracking = DocumentTracking.None
-            };
+            _sessionOptions = SessionOptions.ForDatabase(daemon.Database);
 
             var singleFileOptions = new ExecutionDataflowBlockOptions
             {
@@ -146,7 +140,7 @@ namespace Marten.Events.Daemon
             _daemon = daemon;
 
 
-            _fetcher = new EventFetcher(_store, _daemon.Tenant, _projectionShard.EventFilters);
+            _fetcher = new EventFetcher(_store, _daemon.Database, _projectionShard.EventFilters);
             _grouping = new TransformBlock<EventRange, EventRangeGroup>(groupEventRange, singleFileOptions);
 
 
@@ -158,12 +152,11 @@ namespace Marten.Events.Daemon
             // just to keep tracking correct
             _loader.LinkTo(_grouping, e => e.Events != null);
 
-            // TODO -- THIS WILL NOT WORK WITH MULTI-TENANTED DATABASES!!!!
-            var lastCommitted = await _store.Advanced.ProjectionProgressFor(_projectionShard.Name, token:_cancellation).ConfigureAwait(false);
+            var lastCommitted = await daemon.Database.ProjectionProgressFor(_projectionShard.Name, _cancellation).ConfigureAwait(false);
 
             foreach (var storageType in _source.Options.StorageTypes)
             {
-                await daemon.Tenant.Database.EnsureStorageExistsAsync(storageType, _cancellation).ConfigureAwait(false);
+                await daemon.Database.EnsureStorageExistsAsync(storageType, _cancellation).ConfigureAwait(false);
             }
 
             _commandBlock.Post(Command.Started(_tracker.HighWaterMark, lastCommitted));
@@ -273,7 +266,7 @@ namespace Marten.Events.Daemon
                     _logger.LogDebug("Shard '{ShardName}':Starting to group {Range}", Name, range);
                 }
 
-                @group = await _source.GroupEvents(_store, range, _cancellation).ConfigureAwait(false);
+                @group = await _source.GroupEvents(_store, _daemon.Database, range, _cancellation).ConfigureAwait(false);
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
