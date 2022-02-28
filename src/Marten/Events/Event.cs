@@ -187,7 +187,7 @@ namespace Marten.Events
 
         public object? GetHeader(string key)
         {
-            return Headers?[key];
+            return Headers?.TryGetValue(key, out var value) ?? false ? value : null;
         }
 
         public bool IsArchived { get; set; }
