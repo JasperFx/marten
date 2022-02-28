@@ -229,7 +229,7 @@ namespace Marten.Internal.Sessions
                 return tenantSession;
             }
 
-            var tenant = Options.Tenancy.GetTenant(tenantId);
+            var tenant = new Tenant(tenantId, Database);
             tenantSession = new NestedTenantSession(this, tenant);
             _byTenant[tenantId] = tenantSession;
 
