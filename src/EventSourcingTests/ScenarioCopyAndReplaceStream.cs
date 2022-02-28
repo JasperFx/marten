@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Projections;
@@ -57,20 +58,26 @@ namespace EventSourcingTests
                         case MonsterSlayed monster:
                         {
                             // Trolls we remove from our transformed stream
-                            return monster.Name.Equals("Troll") ? new object[] { } : new[] { monster };
+                            if (monster.Name.Equals("Troll")) return Array.Empty<object>();
+
+                            session.Events.ApplyHeader("copied_from_event", x.Id, monster);
+                            return new[] { monster };
                         }
                         case MembersJoined members:
                         {
                             // MembersJoined events we transform into a series of events
-                            return MemberJoined.From(members);
+                            var membersEvents = MemberJoined.From(members).Cast<object>().ToArray();
+                            session.Events.ApplyHeader("copied_from_event", x.Id, events: membersEvents);
+                            return membersEvents;
                         }
                     }
 
+                    session.Events.ApplyHeader("copied_from_event", x.Id, x.Data);
                     return new[] { x.Data };
                 }).Where(x => x != null).ToArray();
 
                 // Add "moved from" header to all events being written to new stream 
-                session.Events.ApplyHeader("moved from", started.Name, transformedEvents);
+                session.Events.ApplyHeader("moved_from_stream", started.Name, transformedEvents);
 
                 var moveTo = $"{started.Name} without Trolls";
                 // Mark the old stream as moved.
@@ -95,7 +102,7 @@ namespace EventSourcingTests
                 var events = session.Events.FetchStream($"{started.Name} without Trolls");
                 foreach (var @event in events)
                 {
-                    @event.GetHeader("moved from").ToString().ShouldBe(started.Name);
+                    @event.GetHeader("moved_from_stream").ToString().ShouldBe(started.Name);
                 }
             }
         }
