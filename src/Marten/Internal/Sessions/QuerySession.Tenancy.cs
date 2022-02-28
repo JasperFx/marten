@@ -1,5 +1,6 @@
 
 using System.Collections.Generic;
+using Marten.Storage;
 
 #nullable enable
 namespace Marten.Internal.Sessions
@@ -17,7 +18,7 @@ namespace Marten.Internal.Sessions
                 return tenantSession;
             }
 
-            var tenant = Options.Tenancy.GetTenant(tenantId);
+            var tenant = new Tenant(tenantId, Database);
             tenantSession = new NestedTenantQuerySession(this, tenant);
             _byTenant[tenantId] = tenantSession;
 

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using NSubstitute;
@@ -35,6 +36,18 @@ namespace DocumentDbTests.SessionMechanics
             options.Connection.ConnectionString.ShouldBe(ConnectionSource.ConnectionString);
             options.Connection.State.ShouldBe(ConnectionState.Closed);
 
+            options.OwnsConnection.ShouldBeTrue();
+            options.OwnsTransactionLifecycle.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void for_database()
+        {
+            var database = Substitute.For<IMartenDatabase>();
+            var options = SessionOptions.ForDatabase(database);
+
+            options.Tenant.Database.ShouldBeTheSameAs(database);
+            options.Tenant.TenantId.ShouldBe(Tenancy.DefaultTenantId);
             options.OwnsConnection.ShouldBeTrue();
             options.OwnsTransactionLifecycle.ShouldBeTrue();
         }

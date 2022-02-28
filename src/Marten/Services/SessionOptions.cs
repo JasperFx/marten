@@ -115,6 +115,20 @@ namespace Marten.Services
         }
 
         /// <summary>
+        /// Create a session for all tenants within the supplied database
+        /// </summary>
+        /// <param name="database"></param>
+        /// <returns></returns>
+        public static SessionOptions ForDatabase(IMartenDatabase @database)
+        {
+            return new SessionOptions
+            {
+                Tenant = new Tenant(Tenancy.DefaultTenantId, @database), AllowAnyTenant = true, OwnsConnection = true, OwnsTransactionLifecycle = true
+            };
+
+        }
+
+        /// <summary>
         /// Default to DocumentTracking.IdentityOnly
         /// </summary>
         public DocumentTracking Tracking { get; set; } = DocumentTracking.IdentityOnly;
