@@ -22,5 +22,20 @@ namespace DocumentDbTests.Metadata
             session.GetHeader("a").ShouldBe(1);
 
         }
+
+        [Fact]
+        public void get_empty_metadata()
+        {
+            // Fixes Issue #2100
+            var session = (DocumentSessionBase)theSession;
+
+            session.GetHeader("a").ShouldBeNull();
+            session.GetHeader("b").ShouldBeNull();
+
+            session.SetHeader("a", 1);
+
+            session.GetHeader("a").ShouldBe(1);
+            session.GetHeader("b").ShouldBeNull();
+        }
     }
 }
