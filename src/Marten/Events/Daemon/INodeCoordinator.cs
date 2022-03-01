@@ -28,6 +28,11 @@ namespace Marten.Events.Daemon
         /// </summary>
         /// <returns></returns>
         Task Stop();
+
+        /// <summary>
+        /// Current daemon being controlled
+        /// </summary>
+        IProjectionDaemon Daemon { get; }
     }
 
 }

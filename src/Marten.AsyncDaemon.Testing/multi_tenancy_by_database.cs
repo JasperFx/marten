@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Aggregation;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Daemon;
@@ -10,9 +11,13 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using Shouldly;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Migrations;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.AsyncDaemon.Testing
 {
@@ -20,19 +25,62 @@ namespace Marten.AsyncDaemon.Testing
 
     public class multi_tenancy_by_database : IAsyncLifetime
     {
+        private readonly ITestOutputHelper _output;
         private IHost _host;
         private IDocumentStore theStore;
 
+        public multi_tenancy_by_database(ITestOutputHelper output)
+        {
+            _output = output;
+            Logger = new TestLogger<IProjection>(output);
+        }
+
+        public TestLogger<IProjection> Logger { get; set; }
+
+        private async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
+        {
+            var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
+
+            var exists = await conn.DatabaseExists(databaseName);
+            if (!exists)
+            {
+                await new DatabaseSpecification().BuildDatabase(conn, databaseName);
+            }
+
+            builder.Database = databaseName;
+
+            using var dbConn = new NpgsqlConnection(builder.ConnectionString);
+            await dbConn.OpenAsync();
+            await dbConn.DropSchema("multi_tenancy_daemon");
+
+            return builder.ConnectionString;
+        }
+
         public async Task InitializeAsync()
         {
+            using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            await conn.OpenAsync();
+
+
+            var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");
+            var tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");
+            var tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant4");
+
+
             _host = await Host.CreateDefaultBuilder()
                 .ConfigureServices(services =>
                 {
+
+
+                    services.AddSingleton<ILogger<IProjection>>(Logger);
+
                     services.AddMarten(opts =>
                     {
+                        opts.DatabaseSchemaName = "multi_tenancy_daemon";
+
                         opts
                             .MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
-                            .WithTenants("tenant1", "tenant2").InDatabaseNamed("database1")
+                            .WithTenants("tenant1").InDatabaseNamed("database1")
                             .WithTenants("tenant3", "tenant4"); // own database
 
 
@@ -91,6 +139,32 @@ namespace Marten.AsyncDaemon.Testing
 
             using var conn = daemon.Database.CreateConnection();
             conn.Database.ShouldBe("database1");
+        }
+
+        [Fact]
+        public async Task run_projections_end_to_end()
+        {
+            var id = Guid.NewGuid();
+
+            using var session1 = theStore.LightweightSession("tenant1");
+            session1.Events.Append(id, new AEvent(), new BEvent(), new BEvent());
+            await session1.SaveChangesAsync();
+
+            using var session3 = theStore.LightweightSession("tenant3");
+            session3.Events.Append(id, new AEvent(), new AEvent(), new BEvent(), new BEvent());
+            await session3.SaveChangesAsync();
+
+            using var session4 = theStore.LightweightSession("tenant4");
+            session4.Events.Append(id, new AEvent(), new BEvent(), new BEvent(), new BEvent());
+            await session4.SaveChangesAsync();
+
+            await (await theStore.Storage.FindOrCreateDatabase("tenant1")).Tracker.WaitForShardState("AllGood:All", 3);
+            await (await theStore.Storage.FindOrCreateDatabase("tenant3")).Tracker.WaitForShardState("AllGood:All", 4);
+            await (await theStore.Storage.FindOrCreateDatabase("tenant4")).Tracker.WaitForShardState("AllGood:All", 4);
+
+            (await session1.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate{Id = id, ACount = 1, BCount = 2});
+            (await session3.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate{Id = id, ACount = 2, BCount = 2});
+            (await session4.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate{Id = id, ACount = 1, BCount = 3});
         }
     }
 
@@ -171,11 +245,6 @@ namespace Marten.AsyncDaemon.Testing
             };
         }
 
-        public Task<MyAggregate> Create(CreateEvent @event, IQuerySession session)
-        {
-            return null;
-        }
-
         public void Apply(AEvent @event, MyAggregate aggregate)
         {
             aggregate.ACount++;
@@ -224,6 +293,41 @@ namespace Marten.AsyncDaemon.Testing
         public string Created { get; set; }
         public string UpdatedBy { get; set; }
         public Guid EventId { get; set; }
+
+        protected bool Equals(MyAggregate other)
+        {
+            return Id.Equals(other.Id) && ACount == other.ACount && BCount == other.BCount && CCount == other.CCount && DCount == other.DCount && ECount == other.ECount;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != this.GetType())
+            {
+                return false;
+            }
+
+            return Equals((MyAggregate)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Id, ACount, BCount, CCount, DCount, ECount);
+        }
+
+        public override string ToString()
+        {
+            return $"{nameof(Id)}: {Id}, {nameof(ACount)}: {ACount}, {nameof(BCount)}: {BCount}, {nameof(CCount)}: {CCount}, {nameof(DCount)}: {DCount}, {nameof(ECount)}: {ECount}";
+        }
     }
 
     public interface ITabulator

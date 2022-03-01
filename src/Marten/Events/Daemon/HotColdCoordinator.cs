@@ -26,7 +26,6 @@ namespace Marten.Events.Daemon
         private NpgsqlConnection _connection;
         private Timer _timer;
         private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
-        private IProjectionDaemon _daemon;
         private readonly IMartenDatabase _database;
 
 
@@ -127,15 +126,17 @@ namespace Marten.Events.Daemon
         {
             _connection = conn;
 
-            return _daemon.StartAllShards();
+            return Daemon.StartAllShards();
         }
 
         public Task Start(IProjectionDaemon daemon, CancellationToken token)
         {
-            _daemon = daemon;
+            Daemon = daemon;
             startPollingForOwnership();
             return Task.CompletedTask;
         }
+
+        public IProjectionDaemon Daemon { get; private set; }
 
         public async Task Stop()
         {
@@ -144,9 +145,9 @@ namespace Marten.Events.Daemon
             if (_connection != null)
             {
                 _connection.SafeDispose();
-                if (_daemon != null)
+                if (Daemon != null)
                 {
-                    await _daemon.StopAll().ConfigureAwait(false);
+                    await Daemon.StopAll().ConfigureAwait(false);
                 }
             }
         }
@@ -188,7 +189,7 @@ namespace Marten.Events.Daemon
             var restarted = await tryToAttainLockAndStartShards().ConfigureAwait(false);
             if (!restarted)
             {
-                await _daemon.StopAll().ConfigureAwait(false);
+                await Daemon.StopAll().ConfigureAwait(false);
                 startPollingForOwnership();
             }
         }
