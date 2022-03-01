@@ -202,7 +202,7 @@ namespace Marten.Events.Daemon
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "Error trying to stop shard '{ShardName}'", agent.ShardName.Identity);
+                    _logger.LogError(e, "Error trying to stop shard '{ShardName}@{DatabaseIdentifier}'", agent.ShardName.Identity, Database.Identifier);
                 }
             }
 
@@ -244,7 +244,7 @@ namespace Marten.Events.Daemon
 
         private async Task RebuildProjection(ProjectionSource source, CancellationToken token)
         {
-            _logger.LogInformation("Starting to rebuild Projection {ProjectionName}", source.ProjectionName);
+            _logger.LogInformation("Starting to rebuild Projection {ProjectionName}@{DatabaseIdentifier}", source.ProjectionName, Database.Identifier);
 
             var running = _agents.Values.Where(x => x.ShardName.ProjectionName == source.ProjectionName).ToArray();
             foreach (var agent in running)
@@ -364,7 +364,7 @@ namespace Marten.Events.Daemon
                         parameters.IncrementAttempts(r.Delay);
                         if (_logger.IsEnabled(LogLevel.Debug))
                         {
-                            _logger.LogDebug("Retrying in {Milliseconds}", r.Delay.TotalMilliseconds);
+                            _logger.LogDebug("Retrying in {Milliseconds} @{DatabaseIdentifier}", r.Delay.TotalMilliseconds, Database.Identifier);
                         }
                         await TryAction(parameters).ConfigureAwait(false);
                         break;
@@ -425,8 +425,8 @@ namespace Marten.Events.Daemon
 
                         await parameters.ApplySkipAsync(skip).ConfigureAwait(false);
 
-                        _logger.LogInformation("Skipping event #{Sequence} ({EventType}) in shard '{ShardName}'",
-                            skip.Event.Sequence, skip.Event.EventType.GetFullName(), parameters.Shard.Name);
+                        _logger.LogInformation("Skipping event #{Sequence} ({EventType}@{DatabaseIdentifier}) in shard '{ShardName}'",
+                            skip.Event.Sequence, skip.Event.EventType.GetFullName(), parameters.Shard.Name, Database.Identifier);
                         await WriteSkippedEvent(skip.Event, parameters.Shard.Name, (ex as ApplyEventException)!).ConfigureAwait(false);
 
                         await TryAction(parameters).ConfigureAwait(false);
@@ -455,8 +455,8 @@ namespace Marten.Events.Daemon
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to write dead letter event {Event} to shard {ShardName}", @event,
-                    shardName);
+                _logger.LogError(e, "Failed to write dead letter event {Event} to shard {ShardName}@{DatabaseIdentifier}", @event,
+                    shardName, Database.Identifier);
             }
         }
 

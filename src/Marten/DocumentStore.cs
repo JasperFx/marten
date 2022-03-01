@@ -218,7 +218,7 @@ namespace Marten
 
         public IProjectionDaemon BuildProjectionDaemon(string? tenantIdOrDatabaseIdentifier = null, ILogger? logger = null)
         {
-            if (!Options.Advanced.DefaultTenantUsageEnabled && tenantIdOrDatabaseIdentifier.IsEmpty())
+            if (!Options.Advanced.DefaultTenantUsageEnabled && (!(Tenancy is DefaultTenancy)) && tenantIdOrDatabaseIdentifier.IsEmpty())
             {
                 throw new DefaultTenantUsageDisabledException();
             }
@@ -244,10 +244,9 @@ namespace Marten
 
             var database = tenantIdOrDatabaseIdentifier.IsEmpty()
                 ? Options.Tenancy.Default.Database
-                : (await Options.Tenancy.GetTenantAsync(tenantIdOrDatabaseIdentifier).ConfigureAwait(false)).Database;
-            var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(database), Events);
+                : await Options.Tenancy.FindOrCreateDatabase(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
 
-            return new ProjectionDaemon(this, database, detector, logger);
+            return database.As<MartenDatabase>().StartProjectionDaemon(this, logger);
         }
 
         /// <summary>

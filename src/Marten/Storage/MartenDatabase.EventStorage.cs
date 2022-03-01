@@ -125,13 +125,24 @@ select last_value from {_options.Events.DatabaseSchemaName}.mt_events_sequence;
             return state?.Sequence ?? 0;
         }
 
-        internal IProjectionDaemon BuildProjectionDaemon(DocumentStore store, ILogger? logger = null)
+        internal IProjectionDaemon StartProjectionDaemon(DocumentStore store, ILogger? logger = null)
         {
             logger ??= new NulloLogger();
 
             var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(this), _options.EventGraph);
 
-            return new ProjectionDaemon(store, this, detector, logger);
+            var daemon = new ProjectionDaemon(store, this, detector, logger);
+
+            Tracker = daemon.Tracker;
+
+            return daemon;
         }
+
+        /// <summary>
+        /// *If* a projection daemon has been started for this database, this
+        /// is the ShardStateTracker for the running daemon. This is useful in testing
+        /// scenarios
+        /// </summary>
+        public ShardStateTracker? Tracker { get; private set; }
     }
 }

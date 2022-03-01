@@ -135,9 +135,9 @@ namespace CoreTests
         [Fact]
         public async Task apply_changes_on_startup()
         {
-            await using var container = Container.For(x =>
+            await using var container = Container.For(services =>
             {
-                x.AddMarten(opts =>
+                services.AddMarten(opts =>
                     {
                         opts.Connection(ConnectionSource.ConnectionString);
                         opts.RegisterDocumentType<User>();

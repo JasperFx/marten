@@ -66,6 +66,13 @@ namespace Marten.Storage
 
         IProviderGraph Providers { get; }
 
+        /// <summary>
+        /// *If* a projection daemon has been started for this database, this
+        /// is the ShardStateTracker for the running daemon. This is useful in testing
+        /// scenarios
+        /// </summary>
+        ShardStateTracker? Tracker { get; }
+
 
         Task<IReadOnlyList<DbObjectName>> DocumentTables();
         Task<IReadOnlyList<DbObjectName>> Functions();

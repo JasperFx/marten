@@ -65,7 +65,7 @@ namespace Marten.AsyncDaemon.Testing
 
             await service.StartAsync(CancellationToken.None);
 
-            service.Agent.ShouldBeNull();
+            service.Coordinators.Any().ShouldBeFalse();
 
             await service.StopAsync(CancellationToken.None);
 
@@ -93,8 +93,8 @@ namespace Marten.AsyncDaemon.Testing
                 .Single();
             await service.StartAsync(CancellationToken.None);
 
-            service.Agent.ShouldNotBeNull();
-            service.Coordinator.ShouldBeOfType<SoloCoordinator>();
+            service.Coordinators.Any().ShouldBeTrue();
+            service.Coordinators.All(x => x is SoloCoordinator).ShouldBeTrue();
 
             await service.StopAsync(CancellationToken.None);
 
@@ -122,8 +122,8 @@ namespace Marten.AsyncDaemon.Testing
                 .Single();
             await service.StartAsync(CancellationToken.None);
 
-            service.Agent.ShouldNotBeNull();
-            service.Coordinator.ShouldBeOfType<HotColdCoordinator>();
+            service.Coordinators.Any().ShouldBeTrue();
+            service.Coordinators.All(x => x is HotColdCoordinator).ShouldBeTrue();
 
             await service.StopAsync(CancellationToken.None);
 

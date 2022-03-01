@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Events.Daemon.Resiliency;
+using Marten.Storage;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -23,6 +25,7 @@ namespace Marten.Events.Daemon
     public class AsyncProjectionHostedService : IHostedService
     {
         private readonly ILogger<AsyncProjectionHostedService> _logger;
+        private readonly List<INodeCoordinator> _coordinators = new List<INodeCoordinator>();
 
         public AsyncProjectionHostedService(IDocumentStore store, ILogger<AsyncProjectionHostedService> logger)
         {
@@ -30,35 +33,32 @@ namespace Marten.Events.Daemon
             _logger = logger;
         }
 
+        public IReadOnlyList<INodeCoordinator> Coordinators => _coordinators;
+
         internal DocumentStore Store { get; }
-
-        internal IProjectionDaemon Agent { get; private set; }
-
-        internal INodeCoordinator Coordinator { get; private set; }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            switch (Store.Options.Projections.AsyncMode)
-            {
-                case DaemonMode.Disabled:
-                    return;
-                case DaemonMode.Solo:
-                    Coordinator = new SoloCoordinator();
-                    break;
-                case DaemonMode.HotCold:
-                    Coordinator = new HotColdCoordinator(Store.Tenancy.Default.Database, (DaemonSettings) Store.Options.Projections, _logger);
-                    break;
-            }
+            if (Store.Options.Projections.AsyncMode == DaemonMode.Disabled) return;
 
-            try
+            var databases = await Store.Tenancy.BuildDatabases().ConfigureAwait(false);
+            foreach (var database in databases.OfType<MartenDatabase>())
             {
-                Agent = await Store.BuildProjectionDaemonAsync(logger:_logger).ConfigureAwait(false);
-                await Coordinator.Start(Agent, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Unable to start the asynchronous projection agent");
-                throw;
+                INodeCoordinator coordinator = Store.Options.Projections.AsyncMode == DaemonMode.Solo
+                    ? new SoloCoordinator()
+                    : new HotColdCoordinator(database, Store.Options.Projections, _logger);
+
+                try
+                {
+                    var agent = database.StartProjectionDaemon(Store, _logger);
+                    await coordinator.Start(agent, cancellationToken).ConfigureAwait(false);
+                    _coordinators.Add(coordinator);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Unable to start the asynchronous projection agent");
+                    throw;
+                }
             }
         }
 
@@ -72,8 +72,10 @@ namespace Marten.Events.Daemon
             try
             {
                 _logger.LogDebug("Stopping the asynchronous projection agent");
-                await Coordinator.Stop().ConfigureAwait(false);
-                await Agent.StopAll().ConfigureAwait(false);
+                foreach (var coordinator in _coordinators)
+                {
+                    await coordinator.Stop().ConfigureAwait(false);
+                }
             }
             catch (Exception e)
             {

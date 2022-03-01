@@ -9,17 +9,17 @@ namespace Marten.Events.Daemon
     /// </summary>
     internal class SoloCoordinator: INodeCoordinator
     {
-        private IProjectionDaemon _agent;
+        public IProjectionDaemon Daemon { get; private set; }
 
         public Task Start(IProjectionDaemon agent, CancellationToken token)
         {
-            _agent = agent;
+            Daemon = agent;
             return agent.StartAllShards();
         }
 
         public Task Stop()
         {
-            return _agent.StopAll();
+            return Daemon.StopAll();
         }
 
         public void Dispose()
