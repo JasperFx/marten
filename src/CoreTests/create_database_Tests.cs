@@ -11,6 +11,7 @@ using Xunit.Sdk;
 
 namespace CoreTests
 {
+    [Collection("multi-tenancy")]
     public class create_database_Tests : IDisposable
     {
         [Fact]
