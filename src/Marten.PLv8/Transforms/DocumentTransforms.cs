@@ -31,7 +31,7 @@ namespace Marten.PLv8.Transforms
         public void All<T>(string transformName)
         {
             var transform = Session.Options.TransformFor(transformName);
-            var storage = _tenant.Database.StorageFor<T>();
+            var storage = Session.Options.Providers.StorageFor<T>().QueryOnly;
 
             var operation = new DocumentTransformOperationFragment(storage, transform);
             var statement = new StatementOperation(storage, operation);

@@ -8,7 +8,6 @@ using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
-using Microsoft.Extensions.Logging;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
@@ -21,26 +20,6 @@ namespace Marten.Storage
     /// </summary>
     public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>, IDocumentCleaner
     {
-        /// <summary>
-        ///     Retrieves or generates the active IDocumentStorage object
-        ///     for the given document type
-        /// </summary>
-        /// <param name="documentType"></param>
-        /// <returns></returns>
-        IDocumentStorage<T> StorageFor<T>() where T : notnull;
-
-
-        /// <summary>
-        ///     Directs Marten to disregard any previous schema checks. Useful
-        ///     if you change the underlying schema without shutting down the document store
-        /// </summary>
-        void ResetSchemaExistenceChecks();
-
-        /// <summary>
-        ///     Rewinds the feature tracking at development time
-        /// </summary>
-        void MarkAllFeaturesAsChecked();
-
         /// <summary>
         ///     Ensures that the IDocumentStorage object for a document type is ready
         ///     and also attempts to update the database schema for any detected changes
