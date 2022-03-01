@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -45,7 +46,7 @@ namespace Marten.Events.Daemon
                     Coordinator = new SoloCoordinator();
                     break;
                 case DaemonMode.HotCold:
-                    Coordinator = new HotColdCoordinator(Store.Tenancy.Default, (DaemonSettings) Store.Options.Projections, _logger);
+                    Coordinator = new HotColdCoordinator(Store.Tenancy.Default.Database, (DaemonSettings) Store.Options.Projections, _logger);
                     break;
             }
 
