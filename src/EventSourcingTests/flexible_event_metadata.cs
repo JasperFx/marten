@@ -169,17 +169,22 @@ namespace EventSourcingTests
         [Fact]
         public async Task check_user_defined_metadata_not_exists()
         {
+            // Fixes Issue #2100
             StoreOptions(_ => _.Events.MetadataConfig.HeadersEnabled = true);
-            const string userDefinedMetadataName = "my-custom-metadata";
+            const string userDefinedMetadata1Name = "my-custom-metadata-1";
+            const string userDefinedMetadata1Value = "my-custom-metadata-1-value";
+            theSession.SetHeader(userDefinedMetadata1Name, userDefinedMetadata1Value);
 
             var streamId = theSession.Events
                 .StartStream<QuestParty>(started, joined, slayed).Id;
             await theSession.SaveChangesAsync();
 
+
+            const string userDefinedMetadata2Name = "my-custom-metadata-2";
             var events = await theSession.Events.FetchStreamAsync(streamId);
             foreach (var @event in events)
             {
-                @event.GetHeader(userDefinedMetadataName).ShouldBeNull();
+                @event.GetHeader(userDefinedMetadata2Name).ShouldBeNull();
             }
         }
 
