@@ -57,12 +57,6 @@ namespace Marten.Storage
             resetSequences();
         }
 
-        public IDocumentStorage<T> StorageFor<T>()
-        {
-            var documentProvider = Providers.StorageFor<T>();
-            return documentProvider.QueryOnly;
-        }
-
         public async Task<IReadOnlyList<DbObjectName>> DocumentTables()
         {
             var tables = await SchemaTables().ConfigureAwait(false);

@@ -45,7 +45,7 @@ namespace DocumentDbTests.Bugs
                 _.Schema.For<Route>();
             });
 
-            theStore.Tenancy.Default.Database.StorageFor<Route>().ShouldNotBeNull();
+            theStore.Options.Providers.StorageFor<Route>().ShouldNotBeNull();
         }
 
         public class RoutesPlannedAfter: ICompiledQuery<Route, IEnumerable<Route>>
