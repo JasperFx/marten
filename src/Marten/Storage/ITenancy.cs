@@ -12,6 +12,8 @@ namespace Marten.Storage
         IDocumentCleaner Cleaner { get; }
 
         ValueTask<Tenant> GetTenantAsync(string tenantId);
+
+        ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier);
     }
 
     public class UnknownTenantIdException: Exception

@@ -117,6 +117,21 @@ namespace Marten.Storage
         {
             return new ValueTask<Tenant>(GetTenant(tenantId));
         }
+
+        public ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
+        {
+            if (_databases.TryFind(tenantIdOrDatabaseIdentifier, out var database))
+            {
+                return new ValueTask<IMartenDatabase>(database);
+            }
+
+            if (_tenants.TryFind(tenantIdOrDatabaseIdentifier, out var tenant))
+            {
+                return new ValueTask<IMartenDatabase>(tenant.Database);
+            }
+
+            throw new UnknownTenantIdException(tenantIdOrDatabaseIdentifier);
+        }
     }
 
     public interface IDatabaseExpression

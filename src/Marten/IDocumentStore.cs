@@ -25,7 +25,13 @@ namespace Marten
         /// <summary>
         ///     Information about the document and event storage
         /// </summary>
+        [Obsolete("While this is still functional for single-database Marten stores, please prefer the Storage property instead. This will be removed in Marten 6.0")]
         IDatabase Schema { get; }
+
+        /// <summary>
+        /// Administration and diagnostic information about the underlying database storage
+        /// </summary>
+        IMartenStorage Storage { get; }
 
         /// <summary>
         ///     Infrequently used operations like document cleaning and the initial store configuration

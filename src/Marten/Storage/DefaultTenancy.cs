@@ -26,6 +26,11 @@ namespace Marten.Storage
             return new ValueTask<Tenant>(GetTenant(tenantId));
         }
 
+        public ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
+        {
+            return new ValueTask<IMartenDatabase>(Default.Database);
+        }
+
         public ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
         {
             return new ValueTask<IReadOnlyList<IDatabase>>(new IDatabase[] { Default.Database });

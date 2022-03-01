@@ -86,6 +86,12 @@ namespace Marten.Storage
             return tenant;
         }
 
+        async ValueTask<IMartenDatabase> ITenancy.FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
+        {
+            var tenant = await GetTenantAsync(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
+            return tenant.Database;
+        }
+
         private Tenant _default;
         private string[] _lastTenantIds;
 

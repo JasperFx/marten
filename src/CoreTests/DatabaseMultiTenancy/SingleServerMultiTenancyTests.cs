@@ -11,15 +11,12 @@ using Xunit;
 
 namespace CoreTests.DatabaseMultiTenancy
 {
-    public class SingleServerMultiTenancyTests : IntegrationContext
+    [Collection("multi-tenancy")]
+    public class SingleServerMultiTenancyTests : IAsyncLifetime
     {
         private SingleServerMultiTenancy theTenancy;
 
-        public SingleServerMultiTenancyTests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
-
-        protected override async Task fixtureSetup()
+        public async Task InitializeAsync()
         {
             await DropDatabaseIfExists("tenant1");
             await DropDatabaseIfExists("tenant2");
@@ -29,6 +26,11 @@ namespace CoreTests.DatabaseMultiTenancy
 
             theTenancy = new SingleServerMultiTenancy(ConnectionSource.ConnectionString, new StoreOptions());
 
+        }
+
+        public Task DisposeAsync()
+        {
+            return Task.CompletedTask;
         }
 
         private async Task DropDatabaseIfExists(string databaseName)
