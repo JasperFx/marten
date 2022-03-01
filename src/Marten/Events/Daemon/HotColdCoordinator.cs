@@ -25,16 +25,16 @@ namespace Marten.Events.Daemon
         private readonly ILogger _logger;
         private NpgsqlConnection _connection;
         private Timer _timer;
-        private readonly Tenant _tenant;
         private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
         private IProjectionDaemon _daemon;
+        private readonly IMartenDatabase _database;
 
 
-        public HotColdCoordinator(Tenant tenant, DaemonSettings settings, ILogger logger)
+        public HotColdCoordinator(IMartenDatabase database, DaemonSettings settings, ILogger logger)
         {
             _settings = settings;
             _logger = logger;
-            _tenant = tenant;
+            _database = database;
         }
 
         private void startPollingForOwnership()
@@ -58,7 +58,7 @@ namespace Marten.Events.Daemon
 
             try
             {
-                conn = _tenant.Database.CreateConnection();
+                conn = _database.CreateConnection();
                 await conn.OpenAsync(_cancellation.Token).ConfigureAwait(false);
 
                 gotLock = (bool) await conn.CreateCommand("SELECT pg_try_advisory_lock(:id);")

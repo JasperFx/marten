@@ -13,6 +13,12 @@ using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using Oakton;
 using Weasel.Core;
+using AEvent = EventSourcingTests.Aggregation.AEvent;
+using BEvent = EventSourcingTests.Aggregation.BEvent;
+using CEvent = EventSourcingTests.Aggregation.CEvent;
+using CreateEvent = EventSourcingTests.Aggregation.CreateEvent;
+using DEvent = EventSourcingTests.Aggregation.DEvent;
+using MyAggregate = EventSourcingTests.Aggregation.MyAggregate;
 
 namespace CommandLineRunner
 {
