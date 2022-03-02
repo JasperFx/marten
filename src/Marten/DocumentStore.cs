@@ -47,6 +47,10 @@ namespace Marten
                 databaseGenerator.CreateDatabases(Tenancy, options.CreateDatabases);
             }
 
+            // Workaround to make database creation lazy so all StoreOptions
+            // customizations can be done first
+            if (Tenancy is DefaultTenancy d) d.Initialize();
+
             Schema = Tenancy.Default?.Database;
 
             Storage.PostProcessConfiguration();
