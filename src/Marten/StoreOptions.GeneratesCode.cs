@@ -37,7 +37,7 @@ namespace Marten
         public bool SourceCodeWritingEnabled { get; set; } = true;
 
         // This would only be set for "additional" document stores
-        internal string StoreName { get; set; }
+        internal string StoreName { get; set; } = "Marten";
 
         /// <summary>
         /// Root folder where generated code should be placed. By default, this is the IHostEnvironment.ContentRootPath

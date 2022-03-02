@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
 using LamarCompiler;
+using Marten.Schema;
 using Marten.Util;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -83,7 +84,7 @@ namespace Marten.Internal
 
             var rules = options.CreateGenerationRules();
 
-
+            rules.GeneratedNamespace = SchemaConstants.MartenGeneratedNamespace + ".Stores";
             rules.GeneratedCodeOutputPath = rules.GeneratedCodeOutputPath.ParentDirectory().AppendPath("Stores");
             this.InitializeSynchronously(rules, Parent, provider);
 
@@ -106,6 +107,8 @@ namespace Marten.Internal
             {
                 options.ReadHostEnvironment(environment);
             }
+
+            options.StoreName = typeof(T).Name;
 
             return options;
         }

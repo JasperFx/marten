@@ -23,7 +23,6 @@ namespace Marten.Storage
 
         private Lazy<SequenceFactory> _sequences;
 
-        // TODO -- need to name the databases some how
         public MartenDatabase(StoreOptions options, IConnectionFactory factory, string identifier)
             : base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, identifier, factory.Create)
         {
