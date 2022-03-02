@@ -20,7 +20,7 @@ public class CoffeeShop: Shop
     public ICollection<Guid> Employees { get; set; } = new List<Guid>();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L796-L806' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_useoptimisticconcurrencyattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L839-L849' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_useoptimisticconcurrencyattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or by using Marten's configuration API to do it programmatically:

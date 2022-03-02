@@ -258,6 +258,49 @@ namespace DocumentDbTests.Concurrency
         }
 
         [Fact]
+        public void update_with_stale_version_standard_sync()
+        {
+            var doc1 = new CoffeeShop();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(doc1);
+                session.SaveChanges();
+            }
+
+            var session1 = theStore.DirtyTrackedSession();
+            var session2 = theStore.DirtyTrackedSession();
+
+            var session1Copy = session1.Load<CoffeeShop>(doc1.Id);
+            var session2Copy = session2.Load<CoffeeShop>(doc1.Id);
+
+            try
+            {
+                session1Copy.Name = "Mozart's";
+                session2Copy.Name = "Dominican Joe's";
+
+                // Should go through just fine
+                session2.SaveChanges();
+
+                var ex = Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
+                {
+                    session1.SaveChanges();
+                });
+
+                ex.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(Shop).FullName} #{doc1.Id}");
+            }
+            finally
+            {
+                session1.Dispose();
+                session2.Dispose();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Dominican Joe's");
+            }
+        }
+
+        [Fact]
         public void can_do_multiple_updates_in_a_row_standard()
         {
             var doc1 = new CoffeeShop();
