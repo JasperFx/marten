@@ -11,6 +11,10 @@ namespace Marten.Exceptions
         {
         }
 
+        public DefaultTenantUsageDisabledException(string message) : base($"Default tenant {Tenancy.DefaultTenantId} usage is disabled. {message}")
+        {
+        }
+
         protected DefaultTenantUsageDisabledException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }

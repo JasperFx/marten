@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using Marten.Internal.Sessions;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
+using Marten.Services;
 using Marten.Storage;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -18,7 +19,7 @@ namespace Marten.PLv8.Transforms
             _store = store;
             _tenant = tenant;
 
-            Session = (DocumentSessionBase)_store.LightweightSession();
+            Session = (DocumentSessionBase)_store.OpenSession(new SessionOptions{Tenant = tenant, Tracking = DocumentTracking.None});
         }
 
         public void Dispose()
