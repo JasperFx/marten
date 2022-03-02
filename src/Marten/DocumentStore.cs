@@ -41,15 +41,16 @@ namespace Marten
             _logger = options.Logger();
             Serializer = options.Serializer();
 
+
+            // Workaround to make database creation lazy so all StoreOptions
+            // customizations can be done first
+            if (Tenancy is DefaultTenancy d) d.Initialize();
+
             if (options.CreateDatabases != null)
             {
                 IDatabaseGenerator databaseGenerator = new DatabaseGenerator();
                 databaseGenerator.CreateDatabases(Tenancy, options.CreateDatabases);
             }
-
-            // Workaround to make database creation lazy so all StoreOptions
-            // customizations can be done first
-            if (Tenancy is DefaultTenancy d) d.Initialize();
 
             Schema = Tenancy.Default?.Database;
 
