@@ -151,6 +151,7 @@ namespace CoreTests
                     }).OptimizeArtifactWorkflow();
                 })
                 .UseEnvironment("Development")
+                .UseApplicationProject(GetType().Assembly)
                 .Start();
 
 
@@ -181,6 +182,7 @@ namespace CoreTests
                     }).OptimizeArtifactWorkflow();
                 })
                 .UseEnvironment("Production")
+                .UseApplicationProject(GetType().Assembly)
                 .Start();
 
 

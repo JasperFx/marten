@@ -84,8 +84,8 @@ namespace Marten.Internal
 
             var rules = options.CreateGenerationRules();
 
-            rules.GeneratedNamespace = SchemaConstants.MartenGeneratedNamespace + ".Stores";
-            rules.GeneratedCodeOutputPath = rules.GeneratedCodeOutputPath.ParentDirectory().AppendPath("Stores");
+            rules.GeneratedCodeOutputPath = rules.GeneratedCodeOutputPath.ParentDirectory();
+            rules.GeneratedNamespace = SchemaConstants.MartenGeneratedNamespace;
             this.InitializeSynchronously(rules, Parent, provider);
 
             return (T)Activator.CreateInstance(_storeType, options);

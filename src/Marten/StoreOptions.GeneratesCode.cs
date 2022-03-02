@@ -65,7 +65,7 @@ namespace Marten
                 SourceCodeWritingEnabled = SourceCodeWritingEnabled
             };
 
-            if (StoreName.IsNotEmpty())
+            if (StoreName.IsNotEmpty() && StoreName != "Marten")
             {
                 rules.GeneratedNamespace += "." + StoreName;
                 rules.GeneratedCodeOutputPath = Path.Combine(rules.GeneratedCodeOutputPath, StoreName);

@@ -68,6 +68,8 @@ namespace Marten
                 path = path.ParentDirectory().ParentDirectory().AppendPath(environment.ApplicationName);
             }
 
+            environment.ContentRootPath = path;
+
             return services;
 
         }
