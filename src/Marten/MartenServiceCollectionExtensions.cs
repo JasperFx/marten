@@ -13,6 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weasel.Core;
+using Weasel.Core.Migrations;
 
 #nullable enable
 namespace Marten
@@ -205,6 +206,9 @@ namespace Marten
             services.AddSingleton<ICodeFileCollection>(s => s.GetRequiredService<StoreOptions>());
             services.AddSingleton<ICodeFileCollection>(s => s.GetRequiredService<StoreOptions>().EventGraph);
 
+            services.AddSingleton<IDatabaseSource>(s =>
+                s.GetRequiredService<IDocumentStore>().As<DocumentStore>().Tenancy);
+
             return new MartenConfigurationExpression(services, null);
         }
 
@@ -265,6 +269,8 @@ namespace Marten
                     return stores;
                 });
             }
+
+            services.AddSingleton<IDatabaseSource>(s => s.GetRequiredService<T>().As<DocumentStore>().Tenancy);
 
             var config = new SecondaryStoreConfig<T>(configure);
             stores.Add(config);

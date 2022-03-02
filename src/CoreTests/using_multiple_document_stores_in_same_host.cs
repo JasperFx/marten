@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Weasel.Core;
+using Weasel.Core.Migrations;
 using Xunit;
 
 namespace CoreTests
@@ -49,6 +50,17 @@ namespace CoreTests
                     opts.DatabaseSchemaName = "second_store";
                 });
             });
+        }
+
+        [Fact]
+        public void has_a_registration_for_IDatabaseSource_for_tenancy()
+        {
+            var store1 = theContainer.GetInstance<IFirstStore>().As<DocumentStore>();
+            var store2 = theContainer.GetInstance<ISecondStore>().As<DocumentStore>();
+            var sources = theContainer.GetAllInstances<IDatabaseSource>();
+
+            sources.ShouldContain(store1.Tenancy);
+            sources.ShouldContain(store2.Tenancy);
         }
 
         [Fact]
