@@ -98,6 +98,12 @@ namespace Marten.Linq.Parsing
                         ? field.RawLocator ?? field.TypedLocator
                         : field.TypedLocator;
 
+                    if (field is DictionaryField)
+                    {
+                        // DictionaryField.RawLocator does not have cast to JSONB so TypedLocator is used
+                        locator = field.TypedLocator;
+                    }
+
                     return $"'{Name}', {locator}";
                 }
             }
