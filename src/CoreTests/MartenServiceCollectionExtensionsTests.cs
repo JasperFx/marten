@@ -14,6 +14,7 @@ using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
+using Weasel.Core.Migrations;
 using Xunit;
 
 namespace CoreTests
@@ -270,9 +271,12 @@ namespace CoreTests
             container.Model.For<IDocumentSession>().Default.Lifetime.ShouldBe(ServiceLifetime.Scoped);
             container.Model.For<IQuerySession>().Default.Lifetime.ShouldBe(ServiceLifetime.Scoped);
 
-            container.GetInstance<IDocumentStore>().ShouldNotBeNull();
+            var store = container.GetInstance<IDocumentStore>();
+            store.ShouldNotBeNull();
             container.GetInstance<IDocumentSession>().ShouldNotBeNull();
             container.GetInstance<IQuerySession>().ShouldNotBeNull();
+
+            container.GetInstance<IDatabaseSource>().ShouldBeTheSameAs(store.As<DocumentStore>().Tenancy);
         }
 
 
