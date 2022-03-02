@@ -433,7 +433,7 @@ namespace Marten.Events.Daemon
 
             Position = batch.Range.SequenceCeiling;
 
-            _tracker.Publish(new ShardState(ShardName, batch.Range.SequenceCeiling));
+            _tracker.Publish(new ShardState(ShardName, batch.Range.SequenceCeiling){Action = ShardAction.Updated});
 
             _commandBlock.Post(Command.Completed(batch.Range));
         }

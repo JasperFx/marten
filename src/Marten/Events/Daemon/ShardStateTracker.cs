@@ -25,7 +25,8 @@ namespace Marten.Events.Daemon
             _block = new ActionBlock<ShardState>(publish, new ExecutionDataflowBlockOptions
             {
                 EnsureOrdered = true,
-                MaxDegreeOfParallelism = 1
+                MaxDegreeOfParallelism = 1,
+
             });
 
             _subscription = Subscribe(this);
@@ -215,6 +216,11 @@ namespace Marten.Events.Daemon
             {
                 if (_observer != null) _tracker._listeners = _tracker._listeners.Remove(_observer);
             }
+        }
+
+        public void MarkAsRestarted(AsyncProjectionShard shard)
+        {
+            _states = _states.Remove(shard.Name.Identity);
         }
     }
 }

@@ -261,8 +261,13 @@ namespace Marten.Events.Daemon
 
             var shards = source.AsyncProjectionShards(_store);
 
+            foreach (var shard in shards)
+            {
+                Tracker.MarkAsRestarted(shard);
+            }
+
             // Teardown the current state
-            var session = _store.OpenSession(new SessionOptions{AllowAnyTenant = true, Tracking = DocumentTracking.None});
+            var session = await _store.OpenSessionAsync(new SessionOptions{AllowAnyTenant = true, Tracking = DocumentTracking.None}, token).ConfigureAwait(false);
             await using (session.ConfigureAwait(false))
             {
                 source.Options.Teardown(session);
@@ -277,25 +282,28 @@ namespace Marten.Events.Daemon
 
             if (token.IsCancellationRequested) return;
 
+            var mark = Tracker.HighWaterMark;
+
 #if NET6_0_OR_GREATER
             // Is the shard count the optimal DoP here?
             await Parallel.ForEachAsync(shards, new ParallelOptions { CancellationToken = token, MaxDegreeOfParallelism = shards.Count },
                 async (shard, cancellationToken) =>
             {
+                Tracker.MarkAsRestarted(shard);
                 await StartShard(shard, cancellationToken).ConfigureAwait(false);
-                await Tracker.WaitForShardState(shard.Name, Tracker.HighWaterMark, 5.Minutes()).ConfigureAwait(false);
+                await Tracker.WaitForShardState(shard.Name, mark, 5.Minutes()).ConfigureAwait(false);
             }).ConfigureAwait(false);
 #else
 
             var waiters = shards.Select(async x =>
             {
+                Tracker.MarkAsRestarted(x);
                 await StartShard(x, token).ConfigureAwait(false);
-                await Tracker.WaitForShardState(x.Name, Tracker.HighWaterMark, 5.Minutes()).ConfigureAwait(false);
+                await Tracker.WaitForShardState(x.Name, mark, 5.Minutes()).ConfigureAwait(false);
             }).ToArray();
 
             await waitForAllShardsToComplete(token, waiters).ConfigureAwait(false);
 #endif
-
             foreach (var shard in shards) await StopShard(shard.Name.Identity).ConfigureAwait(false);
         }
 
