@@ -31,7 +31,11 @@ namespace Marten.Events.TestSupport
         /// </summary>
         public bool DoNotDeleteExistingData { get; set; }
 
-
+        /// <summary>
+        /// Opt into applying this scenario to a specific tenant id in the
+        /// case of using multi-tenancy of any kind
+        /// </summary>
+        public string TenantId { get; set; }
 
         internal Task WaitForNonStaleData()
         {
@@ -72,11 +76,11 @@ namespace Marten.Events.TestSupport
 
             if (_store.Options.Projections.HasAnyAsyncProjections())
             {
-                Daemon = await _store.BuildProjectionDaemonAsync().ConfigureAwait(false);
+                Daemon = await _store.BuildProjectionDaemonAsync(TenantId).ConfigureAwait(false);
                 await Daemon.StartAllShards().ConfigureAwait(false);
             }
 
-            Session = _store.LightweightSession();
+            Session = TenantId.IsNotEmpty() ? _store.LightweightSession(TenantId) : _store.LightweightSession();
 
             try
             {

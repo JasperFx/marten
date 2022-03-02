@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Events.TestSupport;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -21,6 +22,40 @@ namespace Marten.AsyncDaemon.Testing
 
             await theStore.Advanced.EventProjectionScenario(scenario =>
             {
+                var id1 = Guid.NewGuid();
+                var id2 = Guid.NewGuid();
+                var id3 = Guid.NewGuid();
+
+                scenario.Append(Guid.NewGuid(), new CreateUser {UserId = id1, UserName = "Kareem"});
+                scenario.Append(Guid.NewGuid(), new CreateUser {UserId = id2, UserName = "Magic"});
+                scenario.Append(Guid.NewGuid(), new CreateUser {UserId = id3, UserName = "James"});
+
+                scenario.DocumentShouldExist<User>(id1);
+                scenario.DocumentShouldExist<User>(id2);
+                scenario.DocumentShouldExist<User>(id3, user => user.UserName.ShouldBe("James"));
+
+                scenario.Append(Guid.NewGuid(), new DeleteUser {UserId = id2});
+
+                scenario.DocumentShouldExist<User>(id1);
+                scenario.DocumentShouldNotExist<User>(id2);
+                scenario.DocumentShouldExist<User>(id3);
+
+            });
+        }
+        [Fact]
+        public async Task happy_path_test_with_inline_projection_multi_tenanted()
+        {
+            StoreOptions(opts =>
+            {
+                opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Inline);
+                opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+                opts.Schema.For<User>().MultiTenanted();
+            });
+
+            await theStore.Advanced.EventProjectionScenario(scenario =>
+            {
+                scenario.TenantId = "Purple";
+
                 var id1 = Guid.NewGuid();
                 var id2 = Guid.NewGuid();
                 var id3 = Guid.NewGuid();

@@ -12,9 +12,5 @@ namespace Marten.Storage
         /// </summary>
         Conjoined,
 
-        /// <summary>
-        /// Multi-tenanted through separate databases or schemas
-        /// </summary>
-        Separate
     }
 }
