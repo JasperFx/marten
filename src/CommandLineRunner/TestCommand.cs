@@ -41,8 +41,6 @@ namespace CommandLineRunner
 
             }
 
-            return true;
-
 
             var store = host.Services.GetRequiredService<IDocumentStore>();
             await store.Advanced.Clean.DeleteAllDocumentsAsync();
@@ -139,6 +137,8 @@ namespace CommandLineRunner
                 var aggregate = await session.LoadAsync<MyAggregate>(streamId);
                 aggregate.ShouldNotBeNull();
             }
+
+
 
             ConsoleWriter.Write(ConsoleColor.Green, "All Good!");
 

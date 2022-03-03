@@ -46,7 +46,10 @@ namespace Marten.Events.Projections
                     throw new InvalidOperationException("The EventProjection has not created its inner IProjection");
 
                 var projection = (IProjection)Activator.CreateInstance(_generatedType, this);
-                _inlineType.ApplySetterValues(projection);
+                foreach (var setter in _inlineType.Setters)
+                {
+                    setter.SetInitialValue(projection);
+                }
 
                 return projection;
             });

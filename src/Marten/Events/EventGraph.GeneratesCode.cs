@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten.Events.CodeGeneration;
+using Marten.Events.Projections;
 using Marten.Internal.Storage;
 using Marten.Util;
 
@@ -22,6 +23,11 @@ namespace Marten.Events
 
             var projections = Options.Projections.All.OfType<ICodeFile>();
             list.AddRange(projections);
+
+            foreach (var projection in projections.OfType<GeneratedProjection>())
+            {
+                projection.StoreOptions = Options;
+            }
 
             return list;
         }
