@@ -29,7 +29,7 @@ namespace DocumentDbTests.Bugs
                 .UseOptimisticConcurrency(true));
         }
 
-        [PgVersionTargetedFact(MinimumVersion = "13.0")]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void can_do_index_with_full_text_search()
         {
             using (var session = theStore.OpenSession())
