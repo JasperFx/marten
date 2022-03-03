@@ -70,8 +70,8 @@ public class Program
 
                     // Register all event store projections ahead of time
                     opts.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Inline);
-                    opts.Projections.Add(new DayProjection(), ProjectionLifecycle.Async);
-                    opts.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async);
+                    opts.Projections.Add(new DayProjection(), ProjectionLifecycle.Inline);
+                    opts.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Inline);
 
                     opts.Projections.Add(new SimpleAggregate(), ProjectionLifecycle.Inline);
 
