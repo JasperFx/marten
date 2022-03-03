@@ -1,31 +1,45 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten.Events.Daemon;
-using Marten.Linq.SqlGeneration;
 using Marten.Storage;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Projections
 {
-    internal class ProjectionWrapper: ProjectionSource
+    internal class ProjectionWrapper: IProjectionSource
     {
         private readonly IProjection _projection;
 
-        public ProjectionWrapper(IProjection projection, ProjectionLifecycle lifecycle) : base(projection.GetType().FullNameInCode())
+        public ProjectionWrapper(IProjection projection, ProjectionLifecycle lifecycle)
         {
             _projection = projection;
             Lifecycle = lifecycle;
+            ProjectionName = projection.GetType().FullNameInCode();
         }
 
-        public override Type ProjectionType => _projection.GetType();
+        public string ProjectionName { get; set; }
+        public AsyncOptions Options { get; } = new AsyncOptions();
 
-        internal override IProjection Build(DocumentStore store)
+        public IEnumerable<Type> PublishedTypes()
+        {
+            // Really indeterminate
+            yield break;
+        }
+
+        public ProjectionLifecycle Lifecycle { get; set; }
+
+
+        public Type ProjectionType => _projection.GetType();
+
+        IProjection IProjectionSource.Build(DocumentStore store)
         {
             return _projection;
         }
 
-        internal override IReadOnlyList<AsyncProjectionShard> AsyncProjectionShards(DocumentStore store)
+        IReadOnlyList<AsyncProjectionShard> IProjectionSource.AsyncProjectionShards(DocumentStore store)
         {
             return new List<AsyncProjectionShard>
             {
@@ -33,10 +47,10 @@ namespace Marten.Events.Projections
             };
         }
 
-        protected override IEnumerable<Type> publishedTypes()
+        public ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase, EventRange range,
+            CancellationToken cancellationToken)
         {
-            // Really indeterminate
-            yield break;
+            return new ValueTask<EventRangeGroup>(new TenantedEventRange(store, daemonDatabase, _projection, range, cancellationToken));
         }
     }
 }

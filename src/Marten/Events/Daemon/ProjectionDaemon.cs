@@ -233,7 +233,7 @@ namespace Marten.Events.Daemon
                 throw new ArgumentOutOfRangeException(nameof(projectionName),
                     $"No registered projection matches the name '{projectionName}'. Available names are {_store.Options.Projections.AllProjectionNames().Join(", ")}");
 
-            return RebuildProjection(projection, token);
+            return rebuildProjection(projection, token);
         }
 
         public ShardAgent[] CurrentShards()
@@ -242,7 +242,7 @@ namespace Marten.Events.Daemon
         }
 
 
-        private async Task RebuildProjection(ProjectionSource source, CancellationToken token)
+        private async Task rebuildProjection(IProjectionSource source, CancellationToken token)
         {
             _logger.LogInformation("Starting to rebuild Projection {ProjectionName}@{DatabaseIdentifier}", source.ProjectionName, Database.Identifier);
 

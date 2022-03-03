@@ -8,7 +8,7 @@ using Spectre.Console;
 
 namespace Marten.CommandLine.Commands.Projection
 {
-    public class ProjectionWatcher: IObserver<ShardState>
+    internal class ProjectionWatcher: IObserver<ShardState>
     {
         private readonly Cache<string, ProjectionStatus> _shards
             = new();

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
+using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -142,7 +143,7 @@ namespace Marten.CommandLine.Commands.Projection
             Console.WriteLine(shutdownMessage);
 
 
-            var daemon = await store.BuildProjectionDaemonAsync().ConfigureAwait(false);
+            var daemon = (ProjectionDaemon)await store.BuildProjectionDaemonAsync().ConfigureAwait(false);
             daemon.Tracker.Subscribe(new ProjectionWatcher(_completion.Task, shards));
 
             foreach (var shard in shards)

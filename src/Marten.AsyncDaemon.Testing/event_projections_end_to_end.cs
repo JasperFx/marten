@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Baseline.Dates;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events;
@@ -26,7 +27,7 @@ namespace Marten.AsyncDaemon.Testing
         public void uses_event_type_filter()
         {
             var projection = new DistanceProjection();
-            var filter = projection
+            var filter = projection.As<IProjectionSource>()
                 .AsyncProjectionShards(theStore)
                 .First()
                 .EventFilters

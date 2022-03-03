@@ -145,9 +145,9 @@ namespace Marten.Events
 
         IReadOnlyDaemonSettings IReadOnlyEventStoreOptions.Daemon => _store.Options.Projections;
 
-        IReadOnlyList<IProjectionSource> IReadOnlyEventStoreOptions.Projections()
+        IReadOnlyList<IReadOnlyProjectionData> IReadOnlyEventStoreOptions.Projections()
         {
-            return Options.Projections.All.OfType<IProjectionSource>().ToList();
+            return Options.Projections.All.OfType<IReadOnlyProjectionData>().ToList();
         }
 
         public IReadOnlyList<IEventType> AllKnownEventTypes()

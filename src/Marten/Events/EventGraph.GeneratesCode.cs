@@ -5,43 +5,11 @@ using System.Reflection;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten.Events.CodeGeneration;
-using Marten.Events.Projections;
 using Marten.Internal.Storage;
 using Marten.Util;
 
 namespace Marten.Events
 {
-    internal class ProjectionCodeFile: ICodeFile
-    {
-        private readonly IGeneratedProjection _projection;
-        private readonly StoreOptions _options;
-
-        public ProjectionCodeFile(IGeneratedProjection projection, StoreOptions options)
-        {
-            _projection = projection;
-            _options = options;
-        }
-
-        public void AssembleTypes(GeneratedAssembly assembly)
-        {
-            _projection.AssembleTypes(assembly, _options);
-        }
-
-        public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services, string containingNamespace)
-        {
-            var attached = _projection.TryAttachTypes(assembly, _options);
-            return Task.FromResult(attached);
-        }
-
-        public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
-            string containingNamespace)
-        {
-            return _projection.TryAttachTypes(assembly, _options);
-        }
-
-        public string FileName => _projection.GetType().ToSuffixedTypeName("RuntimeSupport");
-    }
-
     public partial class EventGraph : ICodeFileCollection, ICodeFile
     {
         private Type _storageType;
@@ -52,8 +20,7 @@ namespace Marten.Events
         {
             var list = new List<ICodeFile> { this };
 
-            var projections = Options.Projections.All.OfType<IGeneratedProjection>()
-                .Select(x => new ProjectionCodeFile(x, Options));
+            var projections = Options.Projections.All.OfType<ICodeFile>();
             list.AddRange(projections);
 
             return list;
