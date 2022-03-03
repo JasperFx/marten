@@ -74,7 +74,7 @@ namespace Marten.Schema
         private static string GetDataConfig(DocumentMapping mapping, MemberInfo[][] members)
         {
             var dataConfig = members
-                    .Select(m => $"({mapping.FieldFor(m).TypedLocator.Replace("d.", "")})")
+                    .Select(m => $"({mapping.FieldFor(m).RawLocator.Replace("d.", "")})")
                     .Join(" || ' ' || ");
 
             return $"({dataConfig})";
