@@ -133,7 +133,7 @@ namespace Marten.Events.Daemon
                 }
                 catch (Exception e)
                 {
-                    throw new ShardStartException(shard.Name, e);
+                    throw new ShardStartException(shard, e);
                 }
             }, cancellationToken);
 

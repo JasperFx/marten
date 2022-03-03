@@ -1,4 +1,5 @@
 using System;
+using Marten.Storage;
 
 namespace Marten.Events.Daemon
 {
@@ -7,7 +8,7 @@ namespace Marten.Events.Daemon
     /// </summary>
     public class EventFetcherException: Exception
     {
-        public EventFetcherException(ShardName name, Exception innerException) : base($"Failure while trying to load events for projection shard '{name}'", innerException)
+        public EventFetcherException(ShardName name, IMartenDatabase martenDatabase, Exception innerException) : base($"Failure while trying to load events for projection shard '{name}@{martenDatabase.Identifier}'", innerException)
         {
         }
     }

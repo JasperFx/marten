@@ -73,13 +73,13 @@ namespace Marten.Events.Daemon
             {
                 conn?.SafeDispose();
 
-                _logger.LogError(e, "Error trying to attain the async daemon lock");
+                _logger.LogError(e, "Error trying to attain the async daemon lock for database {Database}", _database.Identifier);
                 return false;
             }
 
             if (gotLock)
             {
-                _logger.LogInformation("Attained lock for the async daemon, attempting to start all shards");
+                _logger.LogInformation("Attained lock for the async daemon for database {Database}, attempting to start all shards", _database.Identifier);
 
                 try
                 {
@@ -90,12 +90,12 @@ namespace Marten.Events.Daemon
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failure while trying to start all async projection shards");
+                    _logger.LogError(ex, "Failure while trying to start all async projection shards for database {Database}", _database.Identifier);
                 }
             }
             else
             {
-                _logger.LogDebug("Attempted to attain lock for async projections, but could not take leadership.");
+                _logger.LogDebug("Attempted to attain lock for async projections, but could not take leadership for database {Database}.", _database.Identifier);
             }
 
             if (_timer == null || !_timer.Enabled)

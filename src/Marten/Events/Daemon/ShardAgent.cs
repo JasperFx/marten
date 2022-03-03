@@ -45,6 +45,8 @@ namespace Marten.Events.Daemon
 
             Name = projectionShard.Name;
 
+            ProjectionShardIdentity = projectionShard.Name.Identity;
+
             _store = store;
             _projectionShard = projectionShard;
             _logger = logger;
@@ -55,6 +57,8 @@ namespace Marten.Events.Daemon
             _controller =
                 new ProjectionController(projectionShard.Name, this, projectionShard.Source.Options);
         }
+
+        public string ProjectionShardIdentity { get; private set; }
 
         public ShardName Name { get; }
 
@@ -69,13 +73,13 @@ namespace Marten.Events.Daemon
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    _logger.LogDebug("Loaded events for {Range}", range);
+                    _logger.LogDebug("Loaded events {Range} for {ProjectionShardIdentity}", range, ProjectionShardIdentity);
                 }
             })
             {
                 LogAction = (logger, e) =>
                 {
-                    logger.LogError(e, "Error loading events for {Range}", range);
+                    logger.LogError(e, "Error loading events {Range} for {ProjectionShardIdentity}", range, ProjectionShardIdentity);
                 }
             };
 
@@ -96,7 +100,7 @@ namespace Marten.Events.Daemon
 
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug("Enqueued processing of {Range}", range);
+                _logger.LogDebug("Enqueued processing {Range} for {ProjectionShardIdentity}", range, ProjectionShardIdentity);
             }
 
             _loader.Post(range);
@@ -122,7 +126,12 @@ namespace Marten.Events.Daemon
 
         public async Task<long> Start(ProjectionDaemon daemon)
         {
-            _logger.LogInformation("Starting projection agent for '{ShardName}'", _projectionShard.Name);
+            if (daemon.Database.Identifier != "Marten")
+            {
+                ProjectionShardIdentity = $"{ProjectionShardIdentity}@{daemon.Database.Identifier}";
+            }
+
+            _logger.LogInformation("Starting projection agent for '{ProjectionShardIdentity}'", ProjectionShardIdentity);
 
             _sessionOptions = SessionOptions.ForDatabase(daemon.Database);
 
@@ -163,7 +172,7 @@ namespace Marten.Events.Daemon
 
             _subscription = _tracker.Subscribe(this);
 
-            _logger.LogInformation("Projection agent for '{ShardName}' has started from sequence {LastCommitted} and a high water mark of {HighWaterMark}", _projectionShard.Name, lastCommitted, _tracker.HighWaterMark);
+            _logger.LogInformation("Projection agent for '{ProjectionShardIdentity}' has started from sequence {LastCommitted} and a high water mark of {HighWaterMark}", ProjectionShardIdentity, lastCommitted, _tracker.HighWaterMark);
 
             Status = AgentStatus.Running;
 
@@ -177,7 +186,7 @@ namespace Marten.Events.Daemon
 
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug("Shard '{ShardName}': Starting to process events for {Group}", Name, group);
+                _logger.LogDebug("Shard '{ProjectionShardIdentity}': Starting to process events for {Group}", ProjectionShardIdentity, group);
             }
 
             // This should be done *once* here before going to the TryAction()
@@ -193,7 +202,7 @@ namespace Marten.Events.Daemon
                 @group.Dispose();
             }, _cancellation, (logger, e) =>
             {
-                logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ShardName}'", @group, Name);
+                logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ProjectionShardIdentity}'", @group, ProjectionShardIdentity);
             }, @group:@group).ConfigureAwait(false);
 
             // This has failed, so get out of here.
@@ -206,11 +215,11 @@ namespace Marten.Events.Daemon
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    _logger.LogDebug("Shard '{ShardName}': Successfully processed batch {Group}", Name, @group);
+                    _logger.LogDebug("Shard '{ProjectionShardIdentity}': Successfully processed batch {Group}", ProjectionShardIdentity, @group);
                 }
             }, _cancellation, (logger, e) =>
             {
-                logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ShardName}'", @group, Name);
+                logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ProjectionShardIdentity}'", @group, ProjectionShardIdentity);
             }).ConfigureAwait(false);
         }
 
@@ -263,19 +272,19 @@ namespace Marten.Events.Daemon
             {
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    _logger.LogDebug("Shard '{ShardName}':Starting to group {Range}", Name, range);
+                    _logger.LogDebug("Shard '{ProjectionShardIdentity}':Starting to group {Range}", ProjectionShardIdentity, range);
                 }
 
                 @group = await _source.GroupEvents(_store, _daemon.Database, range, _cancellation).ConfigureAwait(false);
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    _logger.LogDebug("Shard '{ShardName}': successfully grouped {Range}", Name, range);
+                    _logger.LogDebug("Shard '{ProjectionShardIdentity}': successfully grouped {Range}", ProjectionShardIdentity, range);
                 }
 
             }, _cancellation, (logger, e) =>
             {
-                logger.LogError(e, "Error while trying to group event range {EventRange} for projection shard {ShardName}", range, Name);
+                logger.LogError(e, "Error while trying to group event range {EventRange} for projection shard {SProjectionShardIdentity}", range, ProjectionShardIdentity);
             }).ConfigureAwait(false);
 
 
@@ -287,7 +296,7 @@ namespace Marten.Events.Daemon
         {
             _isStopping = true;
 
-            _logger.LogInformation("Stopping projection shard '{ShardName}'", _projectionShard.Name);
+            _logger.LogInformation("Stopping projection shard '{ProjectionShardIdentity}'", ProjectionShardIdentity);
 
             _cancellationSource?.Cancel();
 
@@ -307,7 +316,7 @@ namespace Marten.Events.Daemon
             _loader = null;
             _building = null;
 
-            _logger.LogInformation("Stopped projection shard '{ShardName}'", _projectionShard.Name);
+            _logger.LogInformation("Stopped projection shard '{ProjectionShardIdentity}'", ProjectionShardIdentity);
 
             _tracker.Publish(new ShardState(_projectionShard.Name, Position)
             {
@@ -345,14 +354,14 @@ namespace Marten.Events.Daemon
                     }
                     catch (Exception e)
                     {
-                        throw new ShardStartException(_projectionShard.Name, e);
+                        throw new ShardStartException(this, e);
                     }
                 });
 
                 parameters.LogAction = (l, e) =>
                 {
-                    l.LogError(e, "Error trying to start shard '{ShardName}' after pausing",
-                        _projectionShard.Name);
+                    l.LogError(e, "Error trying to start shard '{ProjectionShardIdentity}' after pausing",
+                        ProjectionShardIdentity);
                 };
 
                 await _daemon.TryAction(parameters).ConfigureAwait(false);
@@ -376,7 +385,7 @@ namespace Marten.Events.Daemon
             {
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    _logger.LogDebug("Projection Shard '{ShardName}' received high water mark at {Sequence}", ShardName, value.Sequence);
+                    _logger.LogDebug("Projection Shard '{ProjectionShardIdentity}' received high water mark at {Sequence}", ProjectionShardIdentity, value.Sequence);
                 }
 
                 _commandBlock.Post(
@@ -409,14 +418,14 @@ namespace Marten.Events.Daemon
                 {
                     await session.ExecuteBatchAsync(batch, _cancellation).ConfigureAwait(false);
 
-                    _logger.LogInformation("Shard '{ShardName}': Executed updates for {Range}", ShardName, batch.Range);
+                    _logger.LogInformation("Shard '{ProjectionShardIdentity}': Executed updates for {Range}", ProjectionShardIdentity, batch.Range);
                 }
                 catch (Exception e)
                 {
                     if (!_cancellation.IsCancellationRequested)
                     {
                         _logger.LogError(e,
-                            "Failure in shard '{ShardName}' trying to execute an update batch for {Range}", ShardName,
+                            "Failure in shard '{ProjectionShardIdentity}' trying to execute an update batch for {Range}", ProjectionShardIdentity,
                             batch.Range);
                         throw;
                     }

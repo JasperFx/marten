@@ -56,7 +56,7 @@ namespace Marten.Events.Daemon
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "Unable to start the asynchronous projection agent");
+                    _logger.LogError(e, "Unable to start the asynchronous projection agent for database {Database}", database.Identifier);
                     throw;
                 }
             }

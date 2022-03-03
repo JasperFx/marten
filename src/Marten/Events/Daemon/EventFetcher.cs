@@ -65,7 +65,7 @@ namespace Marten.Events.Daemon
             }
             catch (Exception e)
             {
-                throw new EventFetcherException(projectionShardName, e);
+                throw new EventFetcherException(projectionShardName, _database, e);
             }
         }
     }
