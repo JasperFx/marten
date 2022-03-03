@@ -14,7 +14,6 @@ using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal;
-using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Storage;
 using Weasel.Postgresql.SqlGeneration;
@@ -22,7 +21,7 @@ using EventTypeFilter = Marten.Events.Daemon.EventTypeFilter;
 
 namespace Marten.Events.Aggregation
 {
-    public partial class AggregateProjection<T>: ProjectionSource, ILiveAggregatorSource<T>, IGeneratedProjection
+    public partial class AggregateProjection<T>: GeneratedProjection, ILiveAggregatorSource<T>
     {
         private readonly Lazy<Type[]> _allEventTypes;
         private readonly ApplyMethodCollection _applyMethods;
@@ -72,7 +71,7 @@ namespace Marten.Events.Aggregation
 
         Type IAggregateProjection.AggregateType => typeof(T);
 
-        public bool TryAttachTypes(Assembly assembly, StoreOptions options)
+        protected override bool tryAttachTypes(Assembly assembly, StoreOptions options)
         {
             _inlineType = assembly.GetExportedTypes().FirstOrDefault(x => x.Name == _inlineAggregationHandlerType);
             _liveType = assembly.GetExportedTypes().FirstOrDefault(x => x.Name == _liveAggregationTypeName);
@@ -80,8 +79,9 @@ namespace Marten.Events.Aggregation
             return _inlineType != null && _liveType != null;
         }
 
-        public void AssembleTypes(GeneratedAssembly assembly, StoreOptions options)
+        protected override void assembleTypes(GeneratedAssembly assembly, StoreOptions options)
         {
+            assembly.Rules.ReferenceTypes(GetType());
             assembly.ReferenceAssembly(GetType().Assembly);
             assembly.ReferenceAssembly(typeof(T).Assembly);
 
@@ -124,13 +124,8 @@ namespace Marten.Events.Aggregation
             return BuildLiveAggregator();
         }
 
-        internal override IProjection Build(DocumentStore store)
+        protected override IProjection buildProjectionObject(DocumentStore store)
         {
-            if (_inlineType == null)
-            {
-                Compile(store.Options);
-            }
-
             return BuildRuntime(store);
         }
 
@@ -147,6 +142,7 @@ namespace Marten.Events.Aggregation
             return aggregator;
         }
 
+        [Obsolete("Try to eliminate this in favor of IProjectionSource.Build()")]
         internal IAggregationRuntime BuildRuntime(DocumentStore store)
         {
             // You have to have the inlineGeneratedType built out to apply
@@ -158,7 +154,7 @@ namespace Marten.Events.Aggregation
             else if (_inlineGeneratedType == null)
             {
                 var rules = store.Options.CreateGenerationRules();
-                AssembleTypes(new GeneratedAssembly(rules), store.Options);
+                assembleTypes(new GeneratedAssembly(rules), store.Options);
             }
 
             var storage = store.Options.Providers.StorageFor<T>().Lightweight;
@@ -213,25 +209,33 @@ namespace Marten.Events.Aggregation
             return writer.ToString();
         }
 
+        [Obsolete("try to delete")]
         internal void Compile(StoreOptions options)
         {
             var rules = options.CreateGenerationRules();
             Compile(options, rules);
         }
 
+        [Obsolete("Try to delete")]
         internal void Compile(StoreOptions options, GenerationRules rules)
         {
-            rules.ReferenceTypes(GetType());
+            // HOKEY, but makes ICodeFile functions work. Temporary, hopefully.
+            StoreOptions = options;
 
-            new ProjectionCodeFile(this, options)
-                .InitializeSynchronously(rules, options.EventGraph, null);
+            this.As<ICodeFile>().InitializeSynchronously(rules, options.EventGraph, null);
 
             // You have to do this for the sake of the Setters
             if (_liveGeneratedType == null)
             {
-                AssembleTypes(new GeneratedAssembly(rules), options);
+                assembleTypes(new GeneratedAssembly(rules), options);
             }
         }
+
+        protected override bool needsSettersGenerated()
+        {
+            return _liveGeneratedType == null || _inlineGeneratedType == null;
+        }
+
 
         protected virtual Type baseTypeForAggregationRuntime()
         {
@@ -406,10 +410,8 @@ namespace Marten.Events.Aggregation
             }
         }
 
-        internal override IReadOnlyList<AsyncProjectionShard> AsyncProjectionShards(DocumentStore store)
+        protected override ISqlFragment[] createEventFilters(DocumentStore store)
         {
-            _runtime = BuildRuntime(store);
-
             var eventTypes = determineEventTypes();
 
             var baseFilters = Array.Empty<ISqlFragment>();
@@ -418,7 +420,7 @@ namespace Marten.Events.Aggregation
                 baseFilters = new ISqlFragment[] {new EventTypeFilter(store.Events, eventTypes)};
             }
 
-            return new List<AsyncProjectionShard> {new(this, baseFilters)};
+            return baseFilters;
         }
 
         protected virtual Type[] determineEventTypes()
@@ -428,8 +430,7 @@ namespace Marten.Events.Aggregation
             return eventTypes;
         }
 
-        internal override ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase,
-            EventRange range,
+        protected override ValueTask<EventRangeGroup> groupEvents(DocumentStore store, IMartenDatabase daemonDatabase, EventRange range,
             CancellationToken cancellationToken)
         {
             _runtime ??= BuildRuntime(store);

@@ -218,7 +218,7 @@ namespace Marten.Events.Daemon
             }
         }
 
-        public void MarkAsRestarted(AsyncProjectionShard shard)
+        internal void MarkAsRestarted(AsyncProjectionShard shard)
         {
             _states = _states.Remove(shard.Name.Identity);
         }

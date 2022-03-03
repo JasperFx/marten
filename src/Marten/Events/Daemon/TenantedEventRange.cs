@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -19,7 +20,7 @@ namespace Marten.Events.Daemon
         {
             _store = (DocumentStore)store;
             _daemonDatabase = daemonDatabase;
-            _projection = projection;
+            _projection = projection ?? throw new ArgumentNullException(nameof(projection));
 
             buildGroups();
         }

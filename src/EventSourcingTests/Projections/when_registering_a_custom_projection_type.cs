@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -14,7 +15,7 @@ namespace EventSourcingTests.Projections
     public class when_registering_a_custom_projection_type: IDisposable
     {
         private readonly DocumentStore _store;
-        private ProjectionSource theProjection;
+        private IProjectionSource theProjection;
 
         public when_registering_a_custom_projection_type()
         {
@@ -29,8 +30,10 @@ namespace EventSourcingTests.Projections
                     });
             });
 
-            _store.Options.Projections.TryFindProjection("NewProjection", out theProjection)
+            _store.Options.Projections.TryFindProjection("NewProjection", out var projection)
                 .ShouldBeTrue();
+
+            theProjection = projection;
         }
 
         [Fact]

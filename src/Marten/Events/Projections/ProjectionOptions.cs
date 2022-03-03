@@ -25,7 +25,7 @@ namespace Marten.Events.Projections
             _options = options;
         }
 
-        internal IList<ProjectionSource> All { get; } = new List<ProjectionSource>();
+        internal IList<IProjectionSource> All { get; } = new List<IProjectionSource>();
 
         internal IList<AsyncProjectionShard> BuildAllShards(DocumentStore store)
         {
@@ -143,7 +143,7 @@ namespace Marten.Events.Projections
         /// <typeparam name="TProjection">Projection type</typeparam>
         /// <param name="lifecycle">Optionally override the ProjectionLifecycle</param>
         /// <returns>The extended storage configuration for document T</returns>
-        public void Add<TProjection>(ProjectionLifecycle? lifecycle = null) where TProjection: ProjectionSource, new()
+        public void Add<TProjection>(ProjectionLifecycle? lifecycle = null) where TProjection: GeneratedProjection, new()
         {
             var projection = new TProjection();
 
@@ -228,7 +228,7 @@ namespace Marten.Events.Projections
 
 
             var messages = All.Concat(_liveAggregateSources.Values)
-                .OfType<ProjectionSource>()
+                .OfType<GeneratedProjection>()
                 .Distinct()
                 .SelectMany(x => x.ValidateConfiguration(_options))
                 .ToArray();
@@ -258,7 +258,7 @@ namespace Marten.Events.Projections
             return _asyncShards.Value.TryGetValue(projectionOrShardName, out shard);
         }
 
-        internal bool TryFindProjection(string projectionName, out ProjectionSource source)
+        internal bool TryFindProjection(string projectionName, out IProjectionSource source)
         {
             source = All.FirstOrDefault(x => x.ProjectionName.EqualsIgnoreCase(projectionName));
             return source != null;

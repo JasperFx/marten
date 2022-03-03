@@ -1,7 +1,6 @@
 using System.Linq;
 using Marten.Events.Archiving;
 using Marten.Events.Projections;
-using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Daemon
@@ -9,21 +8,21 @@ namespace Marten.Events.Daemon
     /// <summary>
     ///     Definition of a single projection shard to be executed asynchronously
     /// </summary>
-    public class AsyncProjectionShard
+    internal class AsyncProjectionShard
     {
-        public AsyncProjectionShard(string shardName, ProjectionSource source, ISqlFragment[] filters)
+        public AsyncProjectionShard(string shardName, IProjectionSource source, ISqlFragment[] filters)
         {
             Name = new ShardName(source.ProjectionName, shardName);
             EventFilters = filters.Concat(new ISqlFragment[] {IsNotArchivedFilter.Instance}).ToArray();
             Source = source;
         }
 
-        public AsyncProjectionShard(ProjectionSource source, ISqlFragment[] filters): this(ShardName.All,
+        public AsyncProjectionShard(IProjectionSource source, ISqlFragment[] filters): this(ShardName.All,
             source, filters)
         {
         }
 
-        public ProjectionSource Source { get; }
+        public IProjectionSource Source { get; }
 
         /// <summary>
         ///     WHERE clause fragments used to filter the events

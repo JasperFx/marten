@@ -32,7 +32,7 @@ namespace Marten.Events.Daemon
         private ProjectionDaemon _daemon;
         private CancellationTokenSource _cancellationSource;
         private ActionBlock<EventRangeGroup> _building;
-        private readonly ProjectionSource _source;
+        private readonly IProjectionSource _source;
         private bool _isStopping = false;
 
         public ShardAgent(DocumentStore store, AsyncProjectionShard projectionShard, ILogger logger, CancellationToken cancellation)

@@ -31,7 +31,7 @@ namespace Marten.Events
         /// <summary>
         /// Configuration for all event store projections
         /// </summary>
-        IReadOnlyList<IProjectionSource> Projections();
+        IReadOnlyList<IReadOnlyProjectionData> Projections();
 
         IReadOnlyList<IEventType> AllKnownEventTypes();
 
