@@ -135,9 +135,17 @@ public interface IEvent
     /// to projected views
     /// </summary>
     bool IsArchived { get; set; }
+
+    /// <summary>
+    /// Marten's name for the aggregate type that will be persisted
+    /// to the streams table. This will only be available when running
+    /// within the Async Daemon
+    /// </summary>
+    public string? AggregateTypeName { get; set; }
+
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Event.cs#L8-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ievent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Event.cs#L8-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ievent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Stream State

@@ -6,7 +6,11 @@ using Marten.Storage;
 #nullable enable
 namespace Marten.Events.Aggregation
 {
-    internal class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>
+    /// <summary>
+    /// Slicer strategy by stream key (string identified streams)
+    /// </summary>
+    /// <typeparam name="TDoc"></typeparam>
+    public class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>
     {
         public ValueTask<IReadOnlyList<EventSlice<TDoc, string>>> SliceInlineActions(IQuerySession querySession,
             IEnumerable<StreamAction> streams)

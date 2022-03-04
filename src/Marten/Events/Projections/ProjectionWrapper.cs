@@ -50,7 +50,7 @@ namespace Marten.Events.Projections
         public ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase, EventRange range,
             CancellationToken cancellationToken)
         {
-            return new ValueTask<EventRangeGroup>(new TenantedEventRange(store, daemonDatabase, _projection, range, cancellationToken));
+            return new ValueTask<EventRangeGroup>(new TenantedEventRangeGroup(store, daemonDatabase, _projection, range, cancellationToken));
         }
     }
 }

@@ -27,6 +27,7 @@ namespace Marten.AsyncDaemon.Testing
         public void uses_event_type_filter_for_base_filter_when_not_using_base_types()
         {
             var projection = new TripAggregationWithCustomName();
+            projection.CompileAndAssertValidity();
             var filter = projection.As<IProjectionSource>()
                 .AsyncProjectionShards(theStore)
                 .First()

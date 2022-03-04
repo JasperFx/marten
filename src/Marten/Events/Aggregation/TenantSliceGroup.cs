@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,7 +18,7 @@ namespace Marten.Events.Aggregation
 {
 
 
-    public interface ITenantSliceGroup<TId>
+    public interface ITenantSliceGroup<TId> : IDisposable
     {
         /// <summary>
         /// Add a single event to a single event slice by id
@@ -59,11 +58,17 @@ namespace Marten.Events.Aggregation
     /// </summary>
     /// <typeparam name="TDoc"></typeparam>
     /// <typeparam name="TId"></typeparam>
-    public class TenantSliceGroup<TDoc, TId> : IDisposable, ITenantSliceGroup<TId>
+    public class TenantSliceGroup<TDoc, TId> : ITenantSliceGroup<TId>
     {
         public Tenant Tenant { get; }
         public LightweightCache<TId, EventSlice<TDoc, TId>> Slices { get; }
-        private TransformBlock<EventSlice<TDoc, TId>, IStorageOperation> _builder;
+        private ActionBlock<EventSlice<TDoc, TId>> _builder;
+
+        private ProjectionDocumentSession _session;
+
+        public TenantSliceGroup(IQuerySession session, string tenantId) : this(new Tenant(tenantId, session.Database))
+        {
+        }
 
         public TenantSliceGroup(Tenant tenant)
         {
@@ -111,33 +116,27 @@ namespace Marten.Events.Aggregation
             Slices[id].AddEvents(events);
         }
 
-        internal async Task Start(IShardAgent shardAgent, ActionBlock<IStorageOperation> queue,
-            AggregationRuntime<TDoc, TId> runtime,
-            IDocumentStore store, EventRangeGroup parent)
+        internal async Task Start(IShardAgent shardAgent, ProjectionUpdateBatch updateBatch,
+            IAggregationRuntime<TDoc, TId> runtime,
+            DocumentStore store, EventRangeGroup parent)
         {
-            _builder = new TransformBlock<EventSlice<TDoc, TId>, IStorageOperation>(async slice =>
-            {
-                if (parent.Cancellation.IsCancellationRequested) return null;
+            _session = new ProjectionDocumentSession(store, Tenant, updateBatch);
 
-                IStorageOperation operation = null;
+            _builder = new ActionBlock<EventSlice<TDoc, TId>>(async slice =>
+            {
+                if (parent.Cancellation.IsCancellationRequested) return;
 
                 await shardAgent.TryAction(async () =>
                 {
-                    using var session = (DocumentSessionBase) store.LightweightSession(slice.Tenant.TenantId);
-
-                    operation = await runtime.DetermineOperation(session, slice, parent.Cancellation, ProjectionLifecycle.Async).ConfigureAwait(false);
+                    await runtime.ApplyChangesAsync(_session, slice, parent.Cancellation, ProjectionLifecycle.Async).ConfigureAwait(false);
                 }, parent.Cancellation, @group:parent, logException: (l, e) =>
                 {
                     l.LogError(e, "Failure trying to build a storage operation to update {DocumentType} with {Id}", typeof(TDoc).FullNameInCode(), slice.Id);
                 }, actionMode:GroupActionMode.Child).ConfigureAwait(false);
-
-                return operation;
             }, new ExecutionDataflowBlockOptions
             {
                 CancellationToken = parent.Cancellation,
             });
-
-            _builder.LinkTo(queue, x => x != null);
 
             await processEventSlices(shardAgent, runtime, store, parent.Cancellation).ConfigureAwait(false);
 
@@ -150,7 +149,7 @@ namespace Marten.Events.Aggregation
             }
         }
 
-        private async Task processEventSlices(IShardAgent shardAgent, AggregationRuntime<TDoc, TId> runtime,
+        private async Task processEventSlices(IShardAgent shardAgent, IAggregationRuntime<TDoc, TId> runtime,
             IDocumentStore store, CancellationToken token)
         {
             var beingFetched = new List<EventSlice<TDoc, TId>>();
@@ -204,6 +203,7 @@ namespace Marten.Events.Aggregation
 
         public void Dispose()
         {
+            _session.Dispose();
         }
 
         internal void ApplyFanOutRules(IReadOnlyList<IFanOutRule> rules)

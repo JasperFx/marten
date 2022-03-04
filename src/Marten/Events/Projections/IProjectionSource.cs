@@ -7,7 +7,7 @@ using Marten.Storage;
 
 namespace Marten.Events.Projections
 {
-    internal interface IProjectionSource : IReadOnlyProjectionData
+    public interface IProjectionSource : IReadOnlyProjectionData
     {
         AsyncOptions Options { get; }
 

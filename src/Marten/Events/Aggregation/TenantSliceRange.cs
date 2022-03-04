@@ -4,15 +4,16 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
+using Marten.Storage;
 
 namespace Marten.Events.Aggregation
 {
     internal class TenantSliceRange<TDoc, TId>: EventRangeGroup
     {
         private readonly DocumentStore _store;
-        private readonly AggregationRuntime<TDoc, TId> _runtime;
+        private readonly IAggregationRuntime<TDoc, TId> _runtime;
 
-        public TenantSliceRange(DocumentStore store, AggregationRuntime<TDoc, TId> runtime, EventRange range,
+        public TenantSliceRange(DocumentStore store, IAggregationRuntime<TDoc, TId> runtime, EventRange range,
             IReadOnlyList<TenantSliceGroup<TDoc, TId>> groups, CancellationToken projectionCancellation) : base(range, projectionCancellation)
         {
             _store = store;
@@ -38,17 +39,16 @@ namespace Marten.Events.Aggregation
             return $"Aggregate for {Range}, {Groups.Count} slices";
         }
 
-        public override async Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch,
-            EventRangeGroup eventRangeGroup)
+        public override async Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch)
         {
 #if NET6_0_OR_GREATER
             await Parallel.ForEachAsync(Groups, CancellationToken.None,
                     async (group, _) =>
-                        await group.Start(shardAgent, batch.Queue, _runtime, _store, this).ConfigureAwait(false))
+                        await group.Start(shardAgent, batch, _runtime, _store, this).ConfigureAwait(false))
                 .ConfigureAwait(false);
 #else
             var eventGroupTasks = Groups
-                .Select(x => x.Start(shardAgent, batch.Queue, _runtime, _store, this))
+                .Select(x => x.Start(shardAgent, batch, _runtime, _store, this))
                 .ToArray();
 
             await Task.WhenAll(eventGroupTasks).ConfigureAwait(false);
@@ -61,14 +61,12 @@ namespace Marten.Events.Aggregation
             }
         }
 
-        public override async ValueTask SkipEventSequence(long eventSequence)
+        public override async ValueTask SkipEventSequence(long eventSequence, IMartenDatabase database)
         {
             reset();
             Range.SkipEventSequence(eventSequence);
 
-            var session = _store.QuerySession();
-            await using var _ = session.ConfigureAwait(false);
-            Groups = await _runtime.Slicer.SliceAsyncEvents(session, Range.Events).ConfigureAwait(false);
+            Groups = await _runtime.GroupEventRange(_store, database, Range, Cancellation).ConfigureAwait(false);
         }
     }
 }

@@ -29,6 +29,11 @@ namespace Marten.Events.Projections
             }
         }
 
+        public EventSlice(TId id, IQuerySession querySession, IEnumerable<IEvent>? events = null): this(id,
+            new Tenant(Tenancy.DefaultTenantId, querySession.Database), events)
+        {
+        }
+
         /// <summary>
         /// Is this action the start of a new stream or appending
         /// to an existing stream?
@@ -75,6 +80,18 @@ namespace Marten.Events.Projections
         /// All the events in this slice
         /// </summary>
         public IReadOnlyList<IEvent> Events() => _events;
+
+        /// <summary>
+        /// Iterate through just the event data
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<object> AllData()
+        {
+            foreach (var @event in _events)
+            {
+                yield return @event.Data;
+            }
+        }
 
         internal void ApplyFanOutRules(IEnumerable<IFanOutRule> rules)
         {

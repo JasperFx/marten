@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Exceptions;
-using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Services;
@@ -15,14 +14,6 @@ using Npgsql;
 #nullable enable
 namespace Marten.Events.Aggregation
 {
-    /// <summary>
-    /// Internal interface for runtime event aggregation
-    /// </summary>
-    public interface IAggregationRuntime : IProjection
-    {
-        ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, EventRange range, CancellationToken cancellationToken);
-    }
-
     public abstract class CrossStreamAggregationRuntime<TDoc, TId>: AggregationRuntime<TDoc, TId> where TDoc: notnull where TId: notnull
     {
         public CrossStreamAggregationRuntime(IDocumentStore store, IAggregateProjection projection,
@@ -41,9 +32,8 @@ namespace Marten.Events.Aggregation
     /// </summary>
     /// <typeparam name="TDoc"></typeparam>
     /// <typeparam name="TId"></typeparam>
-    public abstract class AggregationRuntime<TDoc, TId> : IAggregationRuntime where TDoc : notnull where TId : notnull
+    public abstract class AggregationRuntime<TDoc, TId> : IAggregationRuntime<TDoc, TId> where TDoc : notnull where TId : notnull
     {
-        private readonly IDocumentStore _store;
         public IDocumentStorage<TDoc, TId> Storage { get; }
         public IAggregateProjection Projection { get;}
         public IEventSlicer<TDoc, TId> Slicer { get;}
@@ -54,12 +44,19 @@ namespace Marten.Events.Aggregation
             Projection = projection;
             Slicer = slicer;
             Storage = storage;
-            _store = store;
         }
 
-        public async Task<IStorageOperation?> DetermineOperation(DocumentSessionBase session,
-            EventSlice<TDoc, TId> slice, CancellationToken cancellation, ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
+        public async ValueTask ApplyChangesAsync(DocumentSessionBase session,
+            EventSlice<TDoc, TId> slice, CancellationToken cancellation,
+            ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
         {
+            if (Projection.MatchesAnyDeleteType(slice))
+            {
+                var operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
+                session.QueueOperation(operation);
+                return;
+            }
+
             var aggregate = slice.Aggregate;
 
             if (slice.Aggregate == null && lifecycle == ProjectionLifecycle.Inline)
@@ -94,10 +91,13 @@ namespace Marten.Events.Aggregation
 
             if (aggregate == null)
             {
-                return Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
+                var operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
+                session.QueueOperation(operation);
+
+                return;
             }
 
-            return Storage.Upsert(aggregate, session, slice.Tenant.TenantId);
+            session.QueueOperation(Storage.Upsert(aggregate, session, slice.Tenant.TenantId));
         }
 
         public abstract ValueTask<TDoc> ApplyEvent(IQuerySession session, EventSlice<TDoc, TId> slice,
@@ -134,27 +134,25 @@ namespace Marten.Events.Aggregation
 
             foreach (var slice in slices)
             {
-                IStorageOperation? operation;
-
-                if (Projection.MatchesAnyDeleteType(slice))
-                {
-                    operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
-                }
-                else
-                {
-                    operation = await DetermineOperation(martenSession, slice, cancellation).ConfigureAwait(false);
-                }
-
-                if (operation != null) operations.QueueOperation(operation);
+                await ApplyChangesAsync(martenSession, slice, cancellation).ConfigureAwait(false);
             }
         }
 
-        public async ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, EventRange range, CancellationToken cancellationToken)
+        public async ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase database, EventRange range,
+            CancellationToken cancellationToken)
         {
-            await using var session = store.QuerySession(new SessionOptions{AllowAnyTenant = true});
-            var groups = await Slicer.SliceAsyncEvents(session, range.Events).ConfigureAwait(false);
+            var groups = await GroupEventRange(store, database, range, cancellationToken).ConfigureAwait(false);
 
             return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);
         }
+
+        public async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> GroupEventRange(DocumentStore store,
+            IMartenDatabase database, EventRange range, CancellationToken cancellation)
+        {
+            await using var session = store.OpenSession(SessionOptions.ForDatabase(database));
+            return await Slicer.SliceAsyncEvents(session, range.Events).ConfigureAwait(false);
+        }
+
+
     }
 }

@@ -149,7 +149,7 @@ namespace Marten.Events.Daemon
         {
             if (_agents.TryGetValue(shardName, out var agent))
             {
-                if (agent.IsStopping()) return;
+                if (agent.IsStopping) return;
 
                 var parameters = new ActionParameters(agent, async () =>
                 {
@@ -196,7 +196,7 @@ namespace Marten.Events.Daemon
             {
                 try
                 {
-                    if (agent.IsStopping()) continue;
+                    if (agent.IsStopping) continue;
 
                     await agent.Stop().ConfigureAwait(false);
                 }
@@ -431,7 +431,7 @@ namespace Marten.Events.Daemon
                             return;
                         }
 
-                        await parameters.ApplySkipAsync(skip).ConfigureAwait(false);
+                        await parameters.ApplySkipAsync(skip, Database).ConfigureAwait(false);
 
                         _logger.LogInformation("Skipping event #{Sequence} ({EventType}@{DatabaseIdentifier}) in shard '{ShardName}'",
                             skip.Event.Sequence, skip.Event.EventType.GetFullName(), parameters.Shard.Name, Database.Identifier);
@@ -453,7 +453,7 @@ namespace Marten.Events.Daemon
             {
                 var deadLetterEvent = new DeadLetterEvent(@event, shardName, exception);
                 var session =
-                    _store.OpenSession(new SessionOptions { AllowAnyTenant = true, Tracking = DocumentTracking.None });
+                    _store.OpenSession(SessionOptions.ForDatabase(Database));
 
                 await using (session.ConfigureAwait(false))
                 {

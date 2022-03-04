@@ -1,15 +1,19 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using Marten;
 using Marten.Events.Aggregation;
+using Marten.Events.CodeGeneration;
+using Marten.Events.Daemon;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace EventSourcingTests.Projections
 {
-    public class aggregation_applies_to
+    public class AggregationProjectionTests
     {
         [Theory]
         [InlineData(typeof(AEvent), true)]
@@ -27,6 +31,39 @@ namespace EventSourcingTests.Projections
             aggregate.AppliesTo(new Type[]{eventType})
                 .ShouldBe(shouldApply);
         }
+
+        [Fact]
+        public void adding_filter_for_aggregate_type()
+        {
+            var projection = new SampleAggregate();
+            projection.CompileAndAssertValidity();
+
+            using var store = DocumentStore.For(ConnectionSource.ConnectionString);
+            var filters = projection.BuildFilters(store);
+
+            var filter = filters.OfType<AggregateTypeFilter>().Single();
+            filter.AggregateType.ShouldBe(typeof(MyAggregate));
+        }
+
+        public class OtherAggregate
+        {
+            public Guid Id { get; set; }
+        }
+
+        [Fact]
+        public void adding_filter_for_another_aggregate_type()
+        {
+            var projection = new AggregateProjection<MyAggregate>();
+            projection.ProjectEvent<AEvent>(a => { });
+            projection.FilterIncomingEventsOnStreamType(typeof(OtherAggregate));
+            projection.CompileAndAssertValidity();
+
+            using var store = DocumentStore.For(ConnectionSource.ConnectionString);
+            var filters = projection.BuildFilters(store);
+
+            var filter = filters.OfType<AggregateTypeFilter>().Single();
+            filter.AggregateType.ShouldBe(typeof(OtherAggregate));
+        }
     }
 
     public interface IThing{}
@@ -37,6 +74,8 @@ namespace EventSourcingTests.Projections
         public SampleAggregate()
         {
             DeleteEvent<UserDeleted>();
+
+            FilterIncomingEventsOnStreamType();
         }
 
         public MyAggregate Create(CreateEvent @event)

@@ -16,8 +16,6 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Schema;
 using Marten.Storage;
-using Weasel.Postgresql.SqlGeneration;
-using EventTypeFilter = Marten.Events.Daemon.EventTypeFilter;
 
 namespace Marten.Events.Aggregation
 {
@@ -347,7 +345,7 @@ namespace Marten.Events.Aggregation
             _liveGeneratedType.Setters.AddRange(_shouldDeleteMethods.Setters());
         }
 
-        internal override void AssertValidity()
+        internal override void CompileAndAssertValidity()
         {
             if (_applyMethods.IsEmpty() && _createMethods.IsEmpty())
             {
@@ -364,6 +362,9 @@ namespace Marten.Events.Aggregation
             }
 
             specialAssertValid();
+
+            var eventTypes = determineEventTypes();
+            IncludedEventTypes.Fill(eventTypes);
         }
 
         protected virtual void specialAssertValid()
@@ -410,19 +411,6 @@ namespace Marten.Events.Aggregation
             }
         }
 
-        protected override ISqlFragment[] createEventFilters(DocumentStore store)
-        {
-            var eventTypes = determineEventTypes();
-
-            var baseFilters = Array.Empty<ISqlFragment>();
-            if (!eventTypes.Any(x => x.IsAbstract || x.IsInterface))
-            {
-                baseFilters = new ISqlFragment[] {new EventTypeFilter(store.Events, eventTypes)};
-            }
-
-            return baseFilters;
-        }
-
         protected virtual Type[] determineEventTypes()
         {
             var eventTypes = MethodCollection.AllEventTypes(_applyMethods, _createMethods, _shouldDeleteMethods)
@@ -435,7 +423,20 @@ namespace Marten.Events.Aggregation
         {
             _runtime ??= BuildRuntime(store);
 
-            return _runtime.GroupEvents(store, range, cancellationToken);
+            return _runtime.GroupEvents(store, daemonDatabase, range, cancellationToken);
+        }
+
+
+        /// <summary>
+        /// When used as an asynchronous projection, this opts into
+        /// only taking in events from streams explicitly marked as being
+        /// the aggregate type for this projection. Only use this if you are explicitly
+        /// marking streams with the aggregate type on StartStream()
+        /// </summary>
+        [MartenIgnore]
+        public void FilterIncomingEventsOnStreamType()
+        {
+            StreamType = typeof(T);
         }
     }
 }
