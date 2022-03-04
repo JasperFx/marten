@@ -40,6 +40,10 @@ PM> Install-Package Marten.PLv8
 
 ## The Patching API
 
+::: warning
+If you use `long`/`big int` for document `Id` or any other properties in the document, please ensure to use PLV8 v3.x or above which supports big int for using patch API. If you use a PLV8 version lower than v3.x, patch operation will result in the property value being truncated, effectively corrupting the value. Refer to [Marten issue](https://github.com/JasperFx/marten/issues/1315) for more details.
+:::
+
 Marten's Patching API is a mechanism to update persisted documents without having to first load the document into memory.
 "Patching" can be much more efficient at runtime in some scenarios because you avoid the "deserialize from JSON, edit, serialize
 back to JSON" workflow.
@@ -47,14 +51,14 @@ back to JSON" workflow.
 As of 1.2, Marten supports mechanisms to:
 
 1. Set the value of a persisted field or property
-1. Add a field or property with value
-1. Duplicate a field or property to one or more destinations
-1. Increment a numeric value by some increment (1 by default)
-1. Append an element to a child array, list, or collection at the end
-1. Insert an element into a child array, list, or collection at a given position
-1. Remove an element from a child array, list, or collection
-1. Rename a persisted field or property to a new name for structural document changes
-1. Delete a persisted field or property
+2. Add a field or property with value
+3. Duplicate a field or property to one or more destinations
+4. Increment a numeric value by some increment (1 by default)
+5. Append an element to a child array, list, or collection at the end
+6. Insert an element into a child array, list, or collection at a given position
+7. Remove an element from a child array, list, or collection
+8. Rename a persisted field or property to a new name for structural document changes
+9. Delete a persisted field or property
 
 The patch operation can be configured to either execute against a single document by supplying its id, or with a _Where_ clause expression.
 In all cases, the property or field being updated can be a deep accessor like `Target.Inner.Color`.
