@@ -33,7 +33,7 @@ public void select_a_single_value(IDocumentSession session)
     session.Query<Target>().Single(x => x.Number == 5);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L108-L126' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_select_a_single_value' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L134-L152' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_select_a_single_value' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Filtering Documents
@@ -113,6 +113,39 @@ public void order_by(IDocumentSession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L84-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ordering-in-linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Ordering with dynamic properties
+
+Marten provides helper methods to express ordering using dynamic properties in LINQ queries. This is quite useful for cases where you wouldn't know the properties being used for ordering at build time.
+
+<!-- snippet: sample_ordering-in-linq-using-dynamic-props -->
+<a id='snippet-sample_ordering-in-linq-using-dynamic-props'></a>
+```cs
+public void order_by_dynamic_props(IDocumentSession session)
+{
+    // Sort in ascending order
+    session.Query<Target>().OrderBy("Date");
+
+    // Sort in descending order
+    session.Query<Target>().OrderByDescending("Date");
+
+    // You can use multiple order by's
+    session.Query<Target>().OrderBy("Date").ThenBy("Number");
+    session.Query<Target>().OrderByDescending("Date").ThenBy("Number");
+    session.Query<Target>().OrderBy("Date").ThenByDescending("Number");
+
+    // You can use pass props with sort order text
+    session.Query<Target>().OrderBy("Date ASC");
+    session.Query<Target>().OrderBy("Date asc");
+    session.Query<Target>().OrderBy("Number DESC");
+    session.Query<Target>().OrderBy("Number desc");
+
+    // You can use multiple order by props as params or list
+    session.Query<Target>().OrderBy("Date DESC", "Number");
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L99-L123' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ordering-in-linq-using-dynamic-props' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ## Aggregate Functions
 
 :::
@@ -145,7 +178,7 @@ public async Task sample_aggregation_operations(IQuerySession session)
     var average = await session.Query<Target>().AverageAsync(x => x.Number);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L160-L175' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregation_operations' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L186-L201' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregation_operations' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Partitioning Operators
@@ -164,7 +197,7 @@ public void using_take_and_skip(IDocumentSession session)
     session.Query<Target>().Skip(10).Take(10).OrderBy(x => x.Number).ToArray();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L99-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_take_and_skip' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L125-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_take_and_skip' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 TODO -- link to the paging support

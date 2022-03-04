@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -405,5 +406,129 @@ namespace Marten
         {
             return queryable.As<MartenLinqQueryable<T>>().ToJsonSingleOrDefault(token);
         }
+
+        #region OrderBy
+        /// <summary>
+        /// Order by multiple properties in ascending order i.e. "prop1", "prop2"
+        /// or order by multiple properties with their respective sort order i.e. "prop1", "prop2 ASC|asc", "prop3 DESC|desc"
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="properties"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static IOrderedQueryable<T> OrderBy<T>(this IQueryable<T> queryable, params string[] properties)
+        {
+            if (properties.Length == 0)
+                throw new ArgumentException($"{nameof(properties)} should at least have one property",
+                    nameof(properties));
+
+            // handle the first order by property
+            var orderedQueryable = queryable.OrderBy(properties.First());
+
+            // handle the rest of the properties
+            return properties.Skip(1).Aggregate(orderedQueryable, (current, prop) => current.OrderBy(prop));
+        }
+
+        /// <summary>
+        /// Order by a single property in ascending order
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="property"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static IOrderedQueryable<T> OrderBy<T>(this IQueryable<T> queryable, string property)
+        {
+            var propParts = property.Split(' ').Take(2).ToArray();
+
+            string propertyName;
+            string sortOrder;
+            if (propParts.Length == 2)
+            {
+                propertyName = propParts[0];
+                sortOrder = propParts[1].ToLower();
+            }
+            else
+            {
+                propertyName = propParts[0];
+                sortOrder = "asc";
+            }
+
+            return sortOrder == "desc"
+                ? ApplyOrder<T>(queryable, propertyName, "OrderByDescending")
+                : ApplyOrder<T>(queryable, propertyName, "OrderBy");
+        }
+
+        /// <summary>
+        /// Order by a single property in descending order
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="property"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static IOrderedQueryable<T> OrderByDescending<T>(this IQueryable<T> queryable, string property)
+        {
+            return ApplyOrder<T>(queryable, property, "OrderByDescending");
+        }
+
+        /// <summary>
+        /// Chain another order by using a single property in ascending order
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="property"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static IOrderedQueryable<T> ThenBy<T>(this IOrderedQueryable<T> queryable, string property)
+        {
+            return ApplyOrder<T>(queryable, property, "ThenBy");
+        }
+
+        /// <summary>
+        /// Chain another order by using a single property in descending order
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="property"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static IOrderedQueryable<T> ThenByDescending<T>(this IOrderedQueryable<T> queryable, string property)
+        {
+            return ApplyOrder<T>(queryable, property, "ThenByDescending");
+        }
+
+        private static IOrderedQueryable<T> ApplyOrder<T>(
+            IQueryable<T> queryable,
+            string property,
+            string methodName)
+        {
+            var props = property.Split('.');
+            var type = typeof(T);
+            var arg = Expression.Parameter(type, "x");
+            Expression expr = arg;
+            foreach (var prop in props)
+            {
+                var pi = type.GetProperty(prop);
+
+                if (pi == null)
+                {
+                    throw new ArgumentException($"Order by property {prop} not found in type {typeof(T).FullName}", nameof(property));
+                }
+
+                expr = Expression.Property(expr, pi);
+                type = pi.PropertyType;
+            }
+
+            var delegateType = typeof(Func<,>).MakeGenericType(typeof(T), type);
+            var lambda = Expression.Lambda(delegateType, expr, arg);
+
+            var result = typeof(Queryable).GetMethods().Single(
+                    method => method.Name == methodName
+                              && method.IsGenericMethodDefinition
+                              && method.GetGenericArguments().Length == 2
+                              && method.GetParameters().Length == 2)
+                .MakeGenericMethod(typeof(T), type)
+                .Invoke(null, new object[] {queryable, lambda});
+            return (IOrderedQueryable<T>)result;
+        }
+        #endregion
     }
 }

@@ -96,6 +96,32 @@ namespace Marten.Testing.Examples
 
         #endregion
 
+        #region sample_ordering-in-linq-using-dynamic-props
+        public void order_by_dynamic_props(IDocumentSession session)
+        {
+            // Sort in ascending order
+            session.Query<Target>().OrderBy("Date");
+
+            // Sort in descending order
+            session.Query<Target>().OrderByDescending("Date");
+
+            // You can use multiple order by's
+            session.Query<Target>().OrderBy("Date").ThenBy("Number");
+            session.Query<Target>().OrderByDescending("Date").ThenBy("Number");
+            session.Query<Target>().OrderBy("Date").ThenByDescending("Number");
+
+            // You can use pass props with sort order text
+            session.Query<Target>().OrderBy("Date ASC");
+            session.Query<Target>().OrderBy("Date asc");
+            session.Query<Target>().OrderBy("Number DESC");
+            session.Query<Target>().OrderBy("Number desc");
+
+            // You can use multiple order by props as params or list
+            session.Query<Target>().OrderBy("Date DESC", "Number");
+        }
+
+        #endregion
+
         #region sample_using_take_and_skip
         public void using_take_and_skip(IDocumentSession session)
         {
