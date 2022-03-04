@@ -52,7 +52,15 @@ namespace Marten.Linq.Parsing.Methods
                 ? new CommandParameter(DBNull.Value, NpgsqlDbType.Varchar)
                 : new CommandParameter(parameterValue, NpgsqlDbType.Varchar);
 
-            return new CustomizableWhereFragment($"{locator} {stringOperator} ?", "?", param);
+            // Do not use escape char when using case insensitivity
+            // this way backslash does not have special meaning and works as string literal
+            var escapeChar = string.Empty;
+            if (stringOperator == "ILIKE")
+            {
+                escapeChar = " ESCAPE ''";
+            }
+
+            return new CustomizableWhereFragment($"{locator} {stringOperator} ?{escapeChar}", "?", param);
         }
 
         protected bool AreMethodsEqual(MethodInfo method1, MethodInfo method2)
