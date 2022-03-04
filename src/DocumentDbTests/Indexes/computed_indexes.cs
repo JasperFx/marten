@@ -145,9 +145,6 @@ namespace DocumentDbTests.Indexes
             var index = table.IndexFor("mt_doc_target_idx_user_idflag");
 
             index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_user_idflag ON computed_indexes.mt_doc_target USING btree (CAST(data ->> 'UserId' as uuid), CAST(data ->> 'Flag' as boolean));");
-
-
-
         }
 
         [Fact]
@@ -232,6 +229,55 @@ namespace DocumentDbTests.Indexes
 
                 patch.UpdateSql().ShouldContain( "mt_doc_target_idx_number", Case.Insensitive);
             }
+        }
+
+        [Fact]
+        public async Task create_index_on_collection()
+        {
+            StoreOptions(_ => _.Schema.For<Target>().Index(x => x.StringList));
+
+            using (var session = theStore.LightweightSession())
+            {
+                var item = Target.GenerateRandomData(1).First();
+                item.StringList.Add("item1");
+                item.StringList.Add("item2");
+                session.Store(item);
+                await session.SaveChangesAsync();
+            }
+
+            var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
+            var index = table.IndexFor("mt_doc_target_idx_string_list");
+
+            index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_string_list ON computed_indexes.mt_doc_target USING btree (CAST(data ->> 'StringList' as jsonb));");
+
+        }
+
+        [Fact]
+        public async Task create_multi_index_including_collection()
+        {
+            var columns = new Expression<Func<Target, object>>[]
+            {
+                x => x.UserId,
+                x => x.StringList
+            };
+
+            StoreOptions(_ => _.Schema.For<Target>().Index(columns));
+
+            using (var session = theStore.LightweightSession())
+            {
+                var item = Target.GenerateRandomData(1).First();
+                item.UserId = Guid.NewGuid();
+                item.StringList.Add("item1");
+                item.StringList.Add("item2");
+                session.Store(item);
+                await session.SaveChangesAsync();
+            }
+
+            var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
+            var index = table.IndexFor("mt_doc_target_idx_user_idstring_list");
+
+            index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_user_idstring_list ON computed_indexes.mt_doc_target USING btree (CAST(data ->> 'UserId' as uuid), CAST(data ->> 'StringList' as jsonb));");
+
         }
 
     }

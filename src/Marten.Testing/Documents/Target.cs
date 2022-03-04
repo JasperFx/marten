@@ -98,6 +98,7 @@ namespace Marten.Testing.Documents
         {
             Id = Guid.NewGuid();
             StringDict = new Dictionary<string, string>();
+            StringList = new List<string>();
         }
 
         public Guid Id { get; set; }
@@ -147,6 +148,8 @@ namespace Marten.Testing.Documents
         public IDictionary<string, string> StringDict { get; set; }
 
         public Guid UserId { get; set; }
+
+        public IList<string> StringList { get; set; }
     }
 
     public class Address

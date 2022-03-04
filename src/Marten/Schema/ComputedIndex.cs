@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using LamarCodeGeneration.Util;
 using Marten.Schema.Indexing.Unique;
 using Marten.Storage.Metadata;
 using Marten.Util;
@@ -72,7 +73,9 @@ namespace Marten.Schema
                     casing = Casings.Default;
                 }
 
-                var sql = field.TypedLocator.Replace("d.", "");
+                var sql = field.FieldType.IsEnumerable()
+                    ? field.RawLocator.Replace("d.", "")
+                    : field.TypedLocator.Replace("d.", "");
                 switch (casing)
                 {
                     case Casings.Upper:
