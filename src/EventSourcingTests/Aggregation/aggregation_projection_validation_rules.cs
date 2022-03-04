@@ -119,7 +119,7 @@ namespace EventSourcingTests.Aggregation
         public void happy_path_validation_for_aggregation()
         {
             var projection = new AllGood();
-            projection.AssertValidity();
+            projection.CompileAndAssertValidity();
         }
 
         [Fact]
@@ -137,7 +137,7 @@ namespace EventSourcingTests.Aggregation
         public void find_bad_method_names_that_are_not_ignored()
         {
             var projection = new BadMethodName();
-            var ex = Should.Throw<InvalidProjectionException>(() => projection.AssertValidity());
+            var ex = Should.Throw<InvalidProjectionException>(() => projection.CompileAndAssertValidity());
 
             ex.Message.ShouldContain("Unrecognized method name 'DoStuff'. Either mark with [MartenIgnore] or use one of 'Apply', 'Create', 'ShouldDelete'", StringComparisonOption.NormalizeWhitespaces);
         }
@@ -146,7 +146,7 @@ namespace EventSourcingTests.Aggregation
         public void find_invalid_argument_type()
         {
             var projection = new InvalidArgumentType();
-            var ex = Should.Throw<InvalidProjectionException>(() => projection.AssertValidity());
+            var ex = Should.Throw<InvalidProjectionException>(() => projection.CompileAndAssertValidity());
             ex.InvalidMethods.Single()
                 .Errors
                 .ShouldContain($"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, Marten.Events.IEvent, Marten.Events.IEvent<{typeof(AEvent).FullNameInCode()}>");
@@ -156,7 +156,7 @@ namespace EventSourcingTests.Aggregation
         public void missing_event_altogether()
         {
             var projection = new MissingEventType1();
-            var ex = Should.Throw<InvalidProjectionException>(() => projection.AssertValidity());
+            var ex = Should.Throw<InvalidProjectionException>(() => projection.CompileAndAssertValidity());
             ex.InvalidMethods.Single()
                 .Errors.ShouldContain(MethodSlot.NoEventType);
         }
@@ -165,14 +165,14 @@ namespace EventSourcingTests.Aggregation
         public void marten_can_guess_the_event_based_on_what_is_left()
         {
             var projection = new CanGuessEventType();
-            projection.AssertValidity();
+            projection.CompileAndAssertValidity();
         }
 
         [Fact]
         public void invalid_return_type()
         {
             var projection = new BadReturnType();
-            var ex = Should.Throw<InvalidProjectionException>(() => projection.AssertValidity());
+            var ex = Should.Throw<InvalidProjectionException>(() => projection.CompileAndAssertValidity());
             ex.InvalidMethods.Single()
                 .Errors.ShouldContain(
                     $"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, Marten.Events.IEvent, Marten.Events.IEvent<{typeof(AEvent).FullNameInCode()}>", "Return type 'string' is invalid. The valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.Aggregation.MyAggregate");
@@ -182,7 +182,7 @@ namespace EventSourcingTests.Aggregation
         public void missing_required_parameter()
         {
             var projection = new MissingMandatoryType();
-            var ex = Should.Throw<InvalidProjectionException>(() => projection.AssertValidity());
+            var ex = Should.Throw<InvalidProjectionException>(() => projection.CompileAndAssertValidity());
 
             ex.InvalidMethods.Single()
                 .Errors.ShouldContain($"Aggregate type '{typeof(MyAggregate).FullNameInCode()}' is required as a parameter");

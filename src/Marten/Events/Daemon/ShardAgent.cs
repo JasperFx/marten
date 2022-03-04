@@ -33,7 +33,6 @@ namespace Marten.Events.Daemon
         private CancellationTokenSource _cancellationSource;
         private ActionBlock<EventRangeGroup> _building;
         private readonly IProjectionSource _source;
-        private bool _isStopping = false;
 
         public ShardAgent(DocumentStore store, AsyncProjectionShard projectionShard, ILogger logger, CancellationToken cancellation)
         {
@@ -69,7 +68,7 @@ namespace Marten.Events.Daemon
         {
             var parameters = new ActionParameters(this, async () =>
             {
-                await _fetcher.Load(_projectionShard.Name, range, _cancellation).ConfigureAwait(false);
+                await _fetcher.Load(range, _cancellation).ConfigureAwait(false);
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
@@ -88,8 +87,6 @@ namespace Marten.Events.Daemon
 
             return range;
         }
-
-        private void processCommand(Command command) => command.Apply(_controller);
 
         public AgentStatus Status { get; private set; }
 
@@ -119,10 +116,7 @@ namespace Marten.Events.Daemon
             return _daemon.TryAction(parameters);
         }
 
-        public bool IsStopping()
-        {
-            return _isStopping;
-        }
+        public bool IsStopping { get; private set; } = false;
 
         public async Task<long> Start(ProjectionDaemon daemon)
         {
@@ -135,31 +129,7 @@ namespace Marten.Events.Daemon
 
             _sessionOptions = SessionOptions.ForDatabase(daemon.Database);
 
-            var singleFileOptions = new ExecutionDataflowBlockOptions
-            {
-                EnsureOrdered = true,
-                MaxDegreeOfParallelism = 1,
-                CancellationToken = _cancellation,
-            };
-
-            _commandBlock = new ActionBlock<Command>(processCommand, singleFileOptions);
-            _loader = new TransformBlock<EventRange, EventRange>(loadEvents, singleFileOptions);
-
-            _tracker = daemon.Tracker;
-            _daemon = daemon;
-
-
-            _fetcher = new EventFetcher(_store, _daemon.Database, _projectionShard.EventFilters);
-            _grouping = new TransformBlock<EventRange, EventRangeGroup>(groupEventRange, singleFileOptions);
-
-
-            _building = new ActionBlock<EventRangeGroup>(processRange, singleFileOptions);
-
-            _grouping.LinkTo(_building);
-
-            // The filter is important. You may need to allow an empty page to go through
-            // just to keep tracking correct
-            _loader.LinkTo(_grouping, e => e.Events != null);
+            initializeDataflowBlocks(daemon);
 
             var lastCommitted = await daemon.Database.ProjectionProgressFor(_projectionShard.Name, _cancellation).ConfigureAwait(false);
 
@@ -168,9 +138,13 @@ namespace Marten.Events.Daemon
                 await daemon.Database.EnsureStorageExistsAsync(storageType, _cancellation).ConfigureAwait(false);
             }
 
-            _commandBlock.Post(Command.Started(_tracker.HighWaterMark, lastCommitted));
+            foreach (var publishedType in _source.PublishedTypes())
+            {
+                await daemon.Database.EnsureStorageExistsAsync(publishedType, _cancellation).ConfigureAwait(false);
+            }
 
             _subscription = _tracker.Subscribe(this);
+            _commandBlock.Post(Command.Started(_tracker.HighWaterMark, lastCommitted));
 
             _logger.LogInformation("Projection agent for '{ProjectionShardIdentity}' has started from sequence {LastCommitted} and a high water mark of {HighWaterMark}", ProjectionShardIdentity, lastCommitted, _tracker.HighWaterMark);
 
@@ -178,6 +152,33 @@ namespace Marten.Events.Daemon
 
             Position = lastCommitted;
             return lastCommitted;
+        }
+
+        private void initializeDataflowBlocks(ProjectionDaemon daemon)
+        {
+            var singleFileOptions = new ExecutionDataflowBlockOptions
+            {
+                EnsureOrdered = true,
+                MaxDegreeOfParallelism = 1,
+                CancellationToken = _cancellation,
+            };
+
+            _commandBlock = new ActionBlock<Command>(command => command.Apply(_controller), singleFileOptions);
+            _loader = new TransformBlock<EventRange, EventRange>(loadEvents, singleFileOptions);
+
+            _tracker = daemon.Tracker;
+            _daemon = daemon;
+
+            _fetcher = new EventFetcher(_store, _daemon.Database, _projectionShard.EventFilters);
+            _grouping = new TransformBlock<EventRange, EventRangeGroup>(groupEventRange, singleFileOptions);
+
+            _building = new ActionBlock<EventRangeGroup>(processRange, singleFileOptions);
+
+            _grouping.LinkTo(_building);
+
+            // The filter is important. You may need to allow an empty page to go through
+            // just to keep tracking correct
+            _loader.LinkTo(_grouping, e => e.Events != null);
         }
 
         private async Task processRange(EventRangeGroup group)
@@ -231,7 +232,7 @@ namespace Marten.Events.Daemon
 
             try
             {
-                await @group.ConfigureUpdateBatch(this, batch, @group).ConfigureAwait(false);
+                await @group.ConfigureUpdateBatch(this, batch).ConfigureAwait(false);
 
                 if (group.Cancellation.IsCancellationRequested)
                 {
@@ -294,7 +295,7 @@ namespace Marten.Events.Daemon
 
         public Task Stop(Exception ex = null)
         {
-            _isStopping = true;
+            IsStopping = true;
 
             _logger.LogInformation("Stopping projection shard '{ProjectionShardIdentity}'", ProjectionShardIdentity);
 
@@ -324,7 +325,7 @@ namespace Marten.Events.Daemon
                 Exception = ex
             });
 
-            _isStopping = false;
+            IsStopping = false;
 
             return Task.CompletedTask;
         }

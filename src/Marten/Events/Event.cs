@@ -100,6 +100,14 @@ namespace Marten.Events
         /// to projected views
         /// </summary>
         bool IsArchived { get; set; }
+
+        /// <summary>
+        /// Marten's name for the aggregate type that will be persisted
+        /// to the streams table. This will only be available when running
+        /// within the Async Daemon
+        /// </summary>
+        public string? AggregateTypeName { get; set; }
+
     }
 
     #endregion
@@ -191,6 +199,8 @@ namespace Marten.Events
         }
 
         public bool IsArchived { get; set; }
+
+        public string? AggregateTypeName { get; set; }
 
         protected bool Equals(Event<T> other)
         {

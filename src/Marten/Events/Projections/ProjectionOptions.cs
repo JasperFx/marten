@@ -87,15 +87,30 @@ namespace Marten.Events.Projections
                     $"{nameof(ProjectionLifecycle.Live)} cannot be used for IProjection");
             }
 
-
-            var wrapper = new ProjectionWrapper(projection, lifecycle);
-            if (projectionName.IsNotEmpty())
+            if (projection is ProjectionBase p)
             {
-                wrapper.ProjectionName = projectionName;
+                p.CompileAndAssertValidity();
+                p.Lifecycle = lifecycle;
             }
 
-            asyncConfiguration?.Invoke(wrapper.Options);
-            All.Add(wrapper);
+            if (projection is IProjectionSource source)
+            {
+                asyncConfiguration?.Invoke(source.Options);
+                All.Add(source);
+            }
+            else
+            {
+                var wrapper = new ProjectionWrapper(projection, lifecycle);
+                if (projectionName.IsNotEmpty())
+                {
+                    wrapper.ProjectionName = projectionName;
+                }
+
+                asyncConfiguration?.Invoke(wrapper.Options);
+                All.Add(wrapper);
+            }
+
+
         }
 
         /// <summary>
@@ -110,7 +125,7 @@ namespace Marten.Events.Projections
                 projection.Lifecycle = lifecycle.Value;
             }
 
-            projection.AssertValidity();
+            projection.CompileAndAssertValidity();
             All.Add(projection);
         }
 
@@ -129,7 +144,7 @@ namespace Marten.Events.Projections
             {
                 Lifecycle = lifecycle ?? ProjectionLifecycle.Inline
             };
-            source.AssertValidity();
+            source.CompileAndAssertValidity();
             All.Add(source);
 
             return expression;
@@ -152,7 +167,7 @@ namespace Marten.Events.Projections
                 projection.Lifecycle = lifecycle.Value;
             }
 
-            projection.AssertValidity();
+            projection.CompileAndAssertValidity();
 
             All.Add(projection);
         }
@@ -171,7 +186,7 @@ namespace Marten.Events.Projections
                 projection.Lifecycle = lifecycle.Value;
             }
 
-            projection.AssertValidity();
+            projection.CompileAndAssertValidity();
 
             All.Add(projection);
         }
@@ -189,7 +204,7 @@ namespace Marten.Events.Projections
             }
 
             var source = tryFindProjectionSourceForAggregateType<T>();
-            source.AssertValidity();
+            source.CompileAndAssertValidity();
 
             aggregator = source.As<ILiveAggregatorSource<T>>().Build(_options);
             _liveAggregators = _liveAggregators.AddOrUpdate(typeof(T), aggregator);

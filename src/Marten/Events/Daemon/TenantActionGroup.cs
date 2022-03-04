@@ -18,17 +18,11 @@ namespace Marten.Events.Daemon
             foreach (var action in _actions) action.TenantId = _tenant.TenantId;
         }
 
-        public Task ApplyEvents(ProjectionUpdateBatch batch, IProjection projection, DocumentStore store,
+        public async Task ApplyEvents(ProjectionUpdateBatch batch, IProjection projection, DocumentStore store,
             CancellationToken cancellationToken)
         {
-            return Task.Run(async () =>
-            {
-                var operations = new ProjectionDocumentSession(store, _tenant, batch);
-                await using (operations.ConfigureAwait(false))
-                {
-                    await projection.ApplyAsync(operations, _actions, cancellationToken).ConfigureAwait(false);
-                }
-            }, cancellationToken);
+            await using var operations = new ProjectionDocumentSession(store, _tenant, batch);
+            await projection.ApplyAsync(operations, _actions, cancellationToken).ConfigureAwait(false);
         }
     }
 }

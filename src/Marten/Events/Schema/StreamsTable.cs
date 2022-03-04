@@ -20,7 +20,9 @@ namespace Marten.Events.Schema
 {
     internal class StreamsTable: Table
     {
-        public StreamsTable(EventGraph events) : base(new DbObjectName(events.DatabaseSchemaName, "mt_streams"))
+        public const string TableName = "mt_streams";
+
+        public StreamsTable(EventGraph events) : base(new DbObjectName(events.DatabaseSchemaName, TableName))
         {
             var idColumn = events.StreamIdentity == StreamIdentity.AsGuid
                 ? new StreamTableColumn("id", x => x.Id)

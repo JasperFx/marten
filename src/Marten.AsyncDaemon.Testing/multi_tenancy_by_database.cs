@@ -110,7 +110,7 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         [Fact]
-        public async Task fail_when_trying_to_create_daemon_with_no_tenant_sync()
+        public void fail_when_trying_to_create_daemon_with_no_tenant_sync()
         {
             Should.Throw<DefaultTenantUsageDisabledException>(() =>
             {

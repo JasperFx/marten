@@ -8,13 +8,17 @@ using Marten.Storage;
 
 namespace Marten.Events.Daemon
 {
-    internal class TenantedEventRange: EventRangeGroup
+    /// <summary>
+    /// Used within the async daemon as a buffer for custom projections
+    /// to run events by tenant
+    /// </summary>
+    internal class TenantedEventRangeGroup: EventRangeGroup
     {
         private readonly DocumentStore _store;
         private readonly IMartenDatabase _daemonDatabase;
         private readonly IProjection _projection;
 
-        public TenantedEventRange(IDocumentStore store, IMartenDatabase daemonDatabase, IProjection projection,
+        public TenantedEventRangeGroup(IDocumentStore store, IMartenDatabase daemonDatabase, IProjection projection,
             EventRange range,
             CancellationToken shardCancellation) : base(range, shardCancellation)
         {
@@ -47,7 +51,7 @@ namespace Marten.Events.Daemon
             }
         }
 
-        public override ValueTask SkipEventSequence(long eventSequence)
+        public override ValueTask SkipEventSequence(long eventSequence, IMartenDatabase database)
         {
             Range.SkipEventSequence(eventSequence);
             Groups.Clear();
@@ -72,8 +76,7 @@ namespace Marten.Events.Daemon
             return $"Tenant Group Range for: {Range}";
         }
 
-        public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch,
-            EventRangeGroup eventRangeGroup)
+        public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch)
         {
 #if NET6_0_OR_GREATER
             return Parallel.ForEachAsync(Groups, Cancellation,
@@ -82,7 +85,7 @@ namespace Marten.Events.Daemon
 #else
 
             var tasks = Groups
-                .Select(tenantGroup => tenantGroup.ApplyEvents(batch, _projection, _store, Cancellation)).ToArray();
+                .Select(tenantGroup => Task.Run(() => tenantGroup.ApplyEvents(batch, _projection, _store, Cancellation))).ToArray();
 
             return Task.WhenAll(tasks);
 #endif

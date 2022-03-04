@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +8,6 @@ using LamarCodeGeneration;
 using LamarCompiler;
 using Marten.Events.Daemon;
 using Marten.Storage;
-using Weasel.Postgresql.SqlGeneration;
 
 #nullable enable
 namespace Marten.Events.Projections
@@ -17,13 +15,12 @@ namespace Marten.Events.Projections
     /// <summary>
     /// Base type for projection types that operate by code generation
     /// </summary>
-    public abstract class GeneratedProjection: IProjectionSource, ICodeFile
+    public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, ICodeFile
     {
-        public string ProjectionName { get; protected internal set; }
-
         protected GeneratedProjection(string projectionName)
         {
             ProjectionName = projectionName;
+            Lifecycle = ProjectionLifecycle.Inline;
         }
 
         bool ICodeFile.AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
@@ -37,8 +34,6 @@ namespace Marten.Events.Projections
 
 
         public abstract Type ProjectionType { get;}
-
-        public ProjectionLifecycle Lifecycle { get; set; } = ProjectionLifecycle.Inline;
 
         void ICodeFile.AssembleTypes(GeneratedAssembly assembly)
         {
@@ -91,20 +86,13 @@ namespace Marten.Events.Projections
             StoreOptions = store.Options;
 
             // TODO -- this will have to change when we actually do sharding!!!
-            var filters = createEventFilters(store);
+            var filters = BuildFilters(store);
 
             return new List<AsyncProjectionShard> {new(this, filters)};
         }
 
-        protected abstract ISqlFragment[] createEventFilters(DocumentStore documentStore);
-
 
         public AsyncOptions Options { get; } = new AsyncOptions();
-
-        internal virtual void AssertValidity()
-        {
-            // Nothing
-        }
 
         internal StoreOptions StoreOptions { get; set; }
 

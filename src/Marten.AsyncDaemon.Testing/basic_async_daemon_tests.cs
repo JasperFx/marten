@@ -73,13 +73,13 @@ namespace Marten.AsyncDaemon.Testing
             var range1 = new EventRange(shardName, 0, 10);
 
 
-            await fetcher.Load(shardName, range1, CancellationToken.None);
+            await fetcher.Load(range1, CancellationToken.None);
 
             var range2 = new EventRange(shardName, 10, 20);
-            await fetcher.Load(shardName, range2, CancellationToken.None);
+            await fetcher.Load(range2, CancellationToken.None);
 
             var range3 = new EventRange(shardName, 20, 38);
-            await fetcher.Load(shardName, range3, CancellationToken.None);
+            await fetcher.Load(range3, CancellationToken.None);
 
             range1.Events.Count.ShouldBe(10);
             range2.Events.Count.ShouldBe(10);
@@ -96,7 +96,7 @@ namespace Marten.AsyncDaemon.Testing
 
             var shardName = new ShardName("name");
             var range1 = new EventRange(shardName, 0, NumberOfEvents);
-            await fetcher1.Load(shardName, range1, CancellationToken.None);
+            await fetcher1.Load(range1, CancellationToken.None);
 
             var uniqueTypeCount = range1.Events.Select(x => x.EventType).Distinct()
                 .Count();
@@ -107,7 +107,7 @@ namespace Marten.AsyncDaemon.Testing
             using var fetcher2 = new EventFetcher(theStore, theStore.Tenancy.Default.Database, new ISqlFragment[]{filter});
 
             var range2 = new EventRange(shardName, 0, NumberOfEvents);
-            await fetcher2.Load(shardName, range2, CancellationToken.None);
+            await fetcher2.Load(range2, CancellationToken.None);
             range2.Events
                 .Select(x => x.EventType)
                 .OrderBy(x => x.Name).Distinct()

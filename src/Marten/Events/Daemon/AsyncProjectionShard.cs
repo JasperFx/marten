@@ -8,7 +8,7 @@ namespace Marten.Events.Daemon
     /// <summary>
     ///     Definition of a single projection shard to be executed asynchronously
     /// </summary>
-    internal class AsyncProjectionShard
+    public class AsyncProjectionShard
     {
         public AsyncProjectionShard(string shardName, IProjectionSource source, ISqlFragment[] filters)
         {

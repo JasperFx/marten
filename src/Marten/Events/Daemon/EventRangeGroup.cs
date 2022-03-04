@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Storage;
 
 namespace Marten.Events.Daemon
 {
@@ -54,8 +55,7 @@ namespace Marten.Events.Daemon
 
         public abstract void Dispose();
 
-        public abstract Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch,
-            EventRangeGroup eventRangeGroup);
-        public abstract ValueTask SkipEventSequence(long eventSequence);
+        public abstract Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch);
+        public abstract ValueTask SkipEventSequence(long eventSequence, IMartenDatabase database);
     }
 }

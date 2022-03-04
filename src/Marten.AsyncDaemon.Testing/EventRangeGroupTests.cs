@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
+using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -83,13 +84,12 @@ namespace Marten.AsyncDaemon.Testing
             // nothing
         }
 
-        public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch,
-            EventRangeGroup eventRangeGroup)
+        public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch)
         {
             throw new NotSupportedException();
         }
 
-        public override ValueTask SkipEventSequence(long eventSequence)
+        public override ValueTask SkipEventSequence(long eventSequence, IMartenDatabase database)
         {
             throw new NotSupportedException();
         }

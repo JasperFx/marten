@@ -13,7 +13,6 @@ using Marten.Events.Daemon;
 using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Storage;
-using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Projections
 {
@@ -71,7 +70,7 @@ namespace Marten.Events.Projections
         protected override ValueTask<EventRangeGroup> groupEvents(DocumentStore store, IMartenDatabase daemonDatabase, EventRange range,
             CancellationToken cancellationToken)
         {
-            return new ValueTask<EventRangeGroup>(new TenantedEventRange(store, daemonDatabase, _generatedProjection.Value, range, cancellationToken));
+            return new ValueTask<EventRangeGroup>(new TenantedEventRangeGroup(store, daemonDatabase, _generatedProjection.Value, range, cancellationToken));
         }
 
 
@@ -102,7 +101,7 @@ namespace Marten.Events.Projections
             return _generatedType != null;
         }
 
-        internal override void AssertValidity()
+        internal override void CompileAndAssertValidity()
         {
             if (!_projectMethods.Methods.Any() && !_createMethods.Methods.Any())
             {
@@ -116,6 +115,8 @@ namespace Marten.Events.Projections
             {
                 throw new InvalidProjectionException(this, invalidMethods);
             }
+
+            IncludedEventTypes.Fill(MethodCollection.AllEventTypes(_createMethods, _projectMethods));
         }
 
         [MartenIgnore]
@@ -128,18 +129,6 @@ namespace Marten.Events.Projections
         public void ProjectAsync<TEvent>(Func<TEvent, IDocumentOperations, Task> project)
         {
             _projectMethods.AddLambda(project, typeof(TEvent));
-        }
-
-        protected override ISqlFragment[] createEventFilters(DocumentStore store)
-        {
-            var baseFilters = new ISqlFragment[0];
-            var eventTypes = MethodCollection.AllEventTypes(_createMethods, _projectMethods);
-            if (!eventTypes.Any(x => x.IsAbstract || x.IsInterface))
-            {
-                baseFilters = new ISqlFragment[] { new EventTypeFilter(store.Events, eventTypes) };
-            }
-
-            return baseFilters;
         }
 
         protected override IEnumerable<Type> publishedTypes()

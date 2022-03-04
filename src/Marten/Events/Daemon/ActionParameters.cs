@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon.Resiliency;
+using Marten.Storage;
 using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
@@ -54,11 +55,11 @@ namespace Marten.Events.Daemon
             Cancellation = Group.Cancellation;
         }
 
-        public async Task ApplySkipAsync(SkipEvent skip)
+        public async Task ApplySkipAsync(SkipEvent skip, IMartenDatabase database)
         {
             if (Group != null)
             {
-                await Group.SkipEventSequence(skip.Event.Sequence).ConfigureAwait(false);
+                await Group.SkipEventSequence(skip.Event.Sequence, database).ConfigureAwait(false);
 
                 // You have to reset the CancellationToken for the group
                 Group.Reset();
