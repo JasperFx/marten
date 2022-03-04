@@ -148,7 +148,7 @@ public void order_by_dynamic_props(IDocumentSession session)
 
 ## Aggregate Functions
 
-:::
+::: info
 In many cases the asynchronous versions of these operators are extension methods within Marten itself as these were not present
 in core `IQueryable` at the time Marten's Linq support was developed.
 :::
