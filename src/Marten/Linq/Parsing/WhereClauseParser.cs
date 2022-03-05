@@ -271,7 +271,14 @@ namespace Marten.Linq.Parsing
                 ArrayField field;
                 try
                 {
-                    field = (ArrayField) _parent._statement.Fields.FieldFor(_expression.QueryModel.MainFromClause.FromExpression);
+                    var fetchedField = _parent._statement.Fields.FieldFor(_expression.QueryModel.MainFromClause.FromExpression);
+
+                    if (fetchedField is DuplicatedField duplicatedField)
+                    {
+                        fetchedField = duplicatedField.InnerField;
+                    }
+
+                    field = (ArrayField) fetchedField;
                 }
                 catch (Exception e)
                 {
@@ -313,7 +320,6 @@ namespace Marten.Linq.Parsing
 
                 return new CollectionIsNotEmpty(field);
             }
-
 
             public CountComparisonStatement BuildCountComparisonStatement()
             {
