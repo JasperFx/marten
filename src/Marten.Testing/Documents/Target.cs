@@ -149,7 +149,9 @@ namespace Marten.Testing.Documents
 
         public Guid UserId { get; set; }
 
-        public IList<string> StringList { get; set; }
+        public List<string> StringList { get; set; }
+
+        public Guid[] GuidArray { get; set; }
     }
 
     public class Address
