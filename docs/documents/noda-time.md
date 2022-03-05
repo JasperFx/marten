@@ -56,4 +56,6 @@ var store = DocumentStore.For(_ =>
 
 ::: warning
 By using NodaTime plugin - you're opting out of DateTime type handling. Using DateTime in your Document will end up getting NotSupportedException exception.
+
+If you customize the Marten default serialization using `UseDefaultSerialization(...)`, call `UseNodaTime()` only after `UseDefaultSerialization(...)` to ensure proper configuration of NodaTime serialization.
 :::
