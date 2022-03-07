@@ -109,12 +109,28 @@ namespace Marten.Events.Projections
             _groupers.Add(new SingleStreamGrouper<TId, TEvent>(identityFunc));
         }
 
+        public void Identity<TEvent>(Func<TEvent, IEvent, TId> identityFunc)
+        {
+            if (_customSlicer != null)
+                throw new InvalidOperationException(
+                    "There is already a custom event slicer registered for this projection");
+            _groupers.Add(new SingleStreamGrouperWithIEvent<TId,TEvent>(identityFunc));
+        }
+
         public void Identities<TEvent>(Func<TEvent, IReadOnlyList<TId>> identitiesFunc)
         {
             if (_customSlicer != null)
                 throw new InvalidOperationException(
                     "There is already a custom event slicer registered for this projection");
             _groupers.Add(new MultiStreamGrouper<TId, TEvent>(identitiesFunc));
+        }
+
+        public void Identities<TEvent>(Func<TEvent, IEvent, IReadOnlyList<TId>> identitiesFunc) where TEvent : notnull
+        {
+            if (_customSlicer != null)
+                throw new InvalidOperationException(
+                    "There is already a custom event slicer registered for this projection");
+            _groupers.Add(new MultiStreamGrouperWithIEvent<TId, TEvent>(identitiesFunc));
         }
 
         /// <summary>

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,6 +44,15 @@ namespace Marten.Events.Aggregation
         void AddEvents<TEvent>(Func<TEvent, TId> singleIdSource, IEnumerable<IEvent> events);
 
         /// <summary>
+        /// Add events to streams where each event of type TEvent applies to only
+        /// one stream
+        /// </summary>
+        /// <param name="singleIdSource"></param>
+        /// <param name="events"></param>
+        /// <typeparam name="TEvent"></typeparam>
+        void AddEvents<TEvent>(Func<TEvent, IEvent, TId> singleIdSource, IEnumerable<IEvent> events);
+
+        /// <summary>
         /// Add events to streams where each event of type TEvent may be related to many
         /// different aggregates
         /// </summary>
@@ -52,6 +60,15 @@ namespace Marten.Events.Aggregation
         /// <param name="events"></param>
         /// <typeparam name="TEvent"></typeparam>
         void AddEvents<TEvent>(Func<TEvent, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events);
+
+        /// <summary>
+        /// Add events to streams where each event of type TEvent may be related to many
+        /// different aggregates
+        /// </summary>
+        /// <param name="multipleIdSource"></param>
+        /// <param name="events"></param>
+        /// <typeparam name="TEvent"></typeparam>
+        void AddEvents<TEvent>(Func<TEvent, IEvent, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events);
     }
 
     /// <summary>
@@ -84,7 +101,16 @@ namespace Marten.Events.Aggregation
             var matching = events.Where(x => x.Data is TEvent);
             foreach (var @event in matching)
             {
-                var id = singleIdSource((TEvent) @event.Data);
+                var id = singleIdSource((TEvent)@event.Data);
+                AddEvent(id, @event);
+            }
+        }
+        public void AddEvents<TEvent>(Func<TEvent, IEvent, TId> singleIdSource, IEnumerable<IEvent> events)
+        {
+            var matching = events.Where(x => x.Data is TEvent);
+            foreach (var @event in matching)
+            {
+                var id = singleIdSource((TEvent)@event.Data, @event);
                 AddEvent(id, @event);
             }
         }
@@ -93,6 +119,18 @@ namespace Marten.Events.Aggregation
         {
             var matching = events.Where(x => x.Data is TEvent)
                 .SelectMany(@event => multipleIdSource(@event.Data.As<TEvent>()).Select(id => (id, @event)));
+
+            var groups = matching.GroupBy(x => x.id);
+            foreach (var @group in groups)
+            {
+                AddEvents(@group.Key, @group.Select(x => x.@event));
+            }
+        }
+
+        public void AddEvents<TEvent>(Func<TEvent, IEvent, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events)
+        {
+            var matching = events.Where(x => x.Data is TEvent)
+                .SelectMany(@event => multipleIdSource(@event.Data.As<TEvent>(), @event).Select(id => (id, @event)));
 
             var groups = matching.GroupBy(x => x.id);
             foreach (var @group in groups)
