@@ -11,7 +11,7 @@ namespace Marten.Events.Projections
     /// </summary>
     /// <typeparam name="TId"></typeparam>
     /// <typeparam name="TEvent"></typeparam>
-    internal class SingleStreamGrouper<TId, TEvent>: IGrouper<TId>
+    internal class SingleStreamGrouper<TId, TEvent>: IGrouper<TId> where TEvent : notnull
     {
         private readonly Func<TEvent, TId> _func;
 
@@ -31,18 +31,18 @@ namespace Marten.Events.Projections
     /// </summary>
     /// <typeparam name="TId"></typeparam>
     /// <typeparam name="TEvent"></typeparam>
-    internal class SingleStreamGrouperWithIEvent<TId, TEvent>: IGrouper<TId>
+    internal class SingleStreamGrouperWithIEvent<TId, TEvent>: IGrouper<TId> where TEvent : notnull
     {
-        private readonly Func<TEvent, IEvent, TId> _func;
+        private readonly Func<IEvent<TEvent>, TId> _func;
 
-        public SingleStreamGrouperWithIEvent(Func<TEvent, IEvent, TId> expression)
+        public SingleStreamGrouperWithIEvent(Func<IEvent<TEvent>, TId> expression)
         {
             _func = expression;
         }
 
         public void Apply(IEnumerable<IEvent> events, ITenantSliceGroup<TId> grouping)
         {
-            grouping.AddEvents(_func, events);
+            grouping.AddEventsUsingWrappedEvent(_func, events);
         }
     }
 }

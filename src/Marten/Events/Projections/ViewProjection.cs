@@ -101,15 +101,20 @@ namespace Marten.Events.Projections
                 .Distinct().ToArray();
         }
 
-        public void Identity<TEvent>(Func<TEvent, TId> identityFunc)
+        public void Identity<TEvent>(Func<TEvent, TId> identityFunc) where TEvent : notnull
         {
+            if (typeof(IEvent).IsAssignableFrom(typeof(TEvent)))
+                throw new InvalidOperationException(
+                    $"Use {nameof(EventIdentity)}<{nameof(TEvent)}>() when mapping a event wrapped in {nameof(IEvent<TEvent>)} to this projection.");
+
             if (_customSlicer != null)
                 throw new InvalidOperationException(
                     "There is already a custom event slicer registered for this projection");
+
             _groupers.Add(new SingleStreamGrouper<TId, TEvent>(identityFunc));
         }
 
-        public void Identity<TEvent>(Func<TEvent, IEvent, TId> identityFunc)
+        public void EventIdentity<TEvent>(Func<IEvent<TEvent>, TId> identityFunc) where TEvent : notnull
         {
             if (_customSlicer != null)
                 throw new InvalidOperationException(
@@ -119,13 +124,17 @@ namespace Marten.Events.Projections
 
         public void Identities<TEvent>(Func<TEvent, IReadOnlyList<TId>> identitiesFunc)
         {
+            if (typeof(IEvent).IsAssignableFrom(typeof(TEvent)))
+                throw new InvalidOperationException(
+                    $"Use {nameof(EvenIdentities)}<{nameof(TEvent)}>() when mapping a event wrapped in {nameof(IEvent<TEvent>)} to this projection.");
+
             if (_customSlicer != null)
                 throw new InvalidOperationException(
                     "There is already a custom event slicer registered for this projection");
             _groupers.Add(new MultiStreamGrouper<TId, TEvent>(identitiesFunc));
         }
 
-        public void Identities<TEvent>(Func<TEvent, IEvent, IReadOnlyList<TId>> identitiesFunc) where TEvent : notnull
+        public void EvenIdentities<TEvent>(Func<IEvent<TEvent>, IReadOnlyList<TId>> identitiesFunc) where TEvent : notnull
         {
             if (_customSlicer != null)
                 throw new InvalidOperationException(

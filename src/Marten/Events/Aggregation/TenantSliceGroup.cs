@@ -50,7 +50,7 @@ namespace Marten.Events.Aggregation
         /// <param name="singleIdSource"></param>
         /// <param name="events"></param>
         /// <typeparam name="TEvent"></typeparam>
-        void AddEvents<TEvent>(Func<TEvent, IEvent, TId> singleIdSource, IEnumerable<IEvent> events);
+        void AddEventsUsingWrappedEvent<TEvent>(Func<IEvent<TEvent>, TId> singleIdSource, IEnumerable<IEvent> events);
 
         /// <summary>
         /// Add events to streams where each event of type TEvent may be related to many
@@ -68,7 +68,8 @@ namespace Marten.Events.Aggregation
         /// <param name="multipleIdSource"></param>
         /// <param name="events"></param>
         /// <typeparam name="TEvent"></typeparam>
-        void AddEvents<TEvent>(Func<TEvent, IEvent, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events);
+        void AddEventsUsingWrappedEvent<TEvent>(Func<IEvent<TEvent>, IEnumerable<TId>> multipleIdSource,
+            IEnumerable<IEvent> events);
     }
 
     /// <summary>
@@ -105,12 +106,12 @@ namespace Marten.Events.Aggregation
                 AddEvent(id, @event);
             }
         }
-        public void AddEvents<TEvent>(Func<TEvent, IEvent, TId> singleIdSource, IEnumerable<IEvent> events)
+        public void AddEventsUsingWrappedEvent<TEvent>(Func<IEvent<TEvent>, TId> singleIdSource, IEnumerable<IEvent> events)
         {
-            var matching = events.Where(x => x.Data is TEvent);
+            var matching = events.Where(x => x.Data is TEvent).Cast<IEvent<TEvent>>();
             foreach (var @event in matching)
             {
-                var id = singleIdSource((TEvent)@event.Data, @event);
+                var id = singleIdSource(@event);
                 AddEvent(id, @event);
             }
         }
@@ -127,15 +128,15 @@ namespace Marten.Events.Aggregation
             }
         }
 
-        public void AddEvents<TEvent>(Func<TEvent, IEvent, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events)
+        public void AddEventsUsingWrappedEvent<TEvent>(Func<IEvent<TEvent>, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events)
         {
-            var matching = events.Where(x => x.Data is TEvent)
-                .SelectMany(@event => multipleIdSource(@event.Data.As<TEvent>(), @event).Select(id => (id, @event)));
+            var matching = events.Where(x => x.Data is TEvent).Cast<IEvent<TEvent>>()
+                .SelectMany(@event => multipleIdSource(@event).Select(id => (id, @event)));
 
             var groups = matching.GroupBy(x => x.id);
             foreach (var @group in groups)
             {
-                AddEvents(@group.Key, @group.Select(x => x.@event));
+                AddEvents(@group.Key, @group.Select(x => x.@event).Cast<IEvent>());
             }
         }
 
