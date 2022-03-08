@@ -108,8 +108,8 @@ namespace EventSourcingTests
             state.Id.ShouldBe(theStreamId);
             state.Version.ShouldBe(2);
             state.AggregateType.ShouldBe(typeof(Quest));
-            state.LastTimestamp.ShouldNotBe(DateTime.MinValue);
-            state.Created.ShouldNotBe(DateTime.MinValue);
+            state.LastTimestamp.ShouldNotBe(DateTimeOffset.MinValue);
+            state.Created.ShouldNotBe(DateTimeOffset.MinValue);
         }
 
         [Fact]
@@ -120,8 +120,8 @@ namespace EventSourcingTests
             state.Id.ShouldBe(theStreamId);
             state.Version.ShouldBe(2);
             state.AggregateType.ShouldBe(typeof(Quest));
-            state.LastTimestamp.ShouldNotBe(DateTime.MinValue);
-            state.Created.ShouldNotBe(DateTime.MinValue);
+            state.LastTimestamp.ShouldNotBe(DateTimeOffset.MinValue);
+            state.Created.ShouldNotBe(DateTimeOffset.MinValue);
         }
 
         [Fact]
@@ -138,7 +138,7 @@ namespace EventSourcingTests
             state.Id.ShouldBe(theStreamId);
             state.Version.ShouldBe(2);
             state.AggregateType.ShouldBe(typeof(Quest));
-            state.LastTimestamp.ShouldNotBe(DateTime.MinValue);
+            state.LastTimestamp.ShouldNotBe(DateTimeOffset.MinValue);
         }
 
         [Fact]
