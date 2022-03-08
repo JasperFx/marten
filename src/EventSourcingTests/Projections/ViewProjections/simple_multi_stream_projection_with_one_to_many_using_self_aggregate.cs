@@ -12,7 +12,7 @@ namespace EventSourcingTests.Projections.ViewProjections.SimpleWithOneToMany
     {
         public UserSocialCircleProjection()
         {
-            Identity<UserRegistered>(x => x.UserId);
+            Identity<UserRegistered>();
 
             // Multiple Identity methods can be called for the same event
             // Useful for describing different projection mappings
@@ -21,9 +21,7 @@ namespace EventSourcingTests.Projections.ViewProjections.SimpleWithOneToMany
         }
 
         public void Apply(UserRegistered @event, UserSocialCircle view)
-        {
-            view.Id = @event.UserId;
-        }
+            => view.Id = @event.UserId;
 
         public void Apply(UserFollowsUsers @event, UserSocialCircle view)
         {
