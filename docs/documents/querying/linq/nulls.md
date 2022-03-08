@@ -15,5 +15,5 @@ public void query_by_nullable_type_nulls(IDocumentSession session)
     session.Query<Target>().Where(x => x.Inner == null);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L146-L157' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_by_nullable_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L172-L183' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_by_nullable_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
