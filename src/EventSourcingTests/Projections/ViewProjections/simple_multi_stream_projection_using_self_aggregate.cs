@@ -1,41 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace EventSourcingTests.Projections.ViewProjections.SimpleWithOneToMany
+namespace EventSourcingTests.Projections.ViewProjections
 {
-    #region sample_view-projection-simple-with-one-to-many
-    public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment, Guid>
+    public class UserGroupsAssignmentProjectionUsingSelfAggregate: ViewProjection<UserGroupsAssignment, Guid>
     {
-        public UserGroupsAssignmentProjection()
+        public UserGroupsAssignmentProjectionUsingSelfAggregate()
         {
-            Identity<UserRegistered>(x => x.UserId);
-            Identities<MultipleUsersAssignedToGroup>(x => x.UserIds);
+            // This is just specifying the aggregate document id
+            // per event type. This assumes that each event
+            // applies to only one aggregated view document
+            Identity<UserRegistered>();
+            Identity<SingleUserAssignedToGroup>(x => x.UserId);
         }
 
         public void Apply(UserRegistered @event, UserGroupsAssignment view)
-        {
-            view.Id = @event.UserId;
-        }
+            => view.Id = @event.UserId;
 
-        public void Apply(MultipleUsersAssignedToGroup @event, UserGroupsAssignment view)
-        {
-            view.Groups.Add(@event.GroupId);
-        }
+        public void Apply(SingleUserAssignedToGroup @event, UserGroupsAssignment view)
+            => view.Groups.Add(@event.GroupId);
     }
-
-    #endregion
-
-    public class simple_multi_stream_projection_with_one_to_many: OneOffConfigurationsContext
+    
+    public class simple_multi_stream_projection_using_self_aggregate: IntegrationContext
     {
         [Fact]
         public async Task multi_stream_projections_should_work()
         {
-
             // --------------------------------
             // Create Groups
             // --------------------------------
@@ -81,15 +75,26 @@ namespace EventSourcingTests.Projections.ViewProjections.SimpleWithOneToMany
             // John, Alan   => Regular
             // --------------------------------
 
-            var annaAndMaggieAssignedToAdminUsersGroup = new MultipleUsersAssignedToGroup(adminUsersGroupCreated.GroupId,
-                new List<Guid> {annaRegistered.UserId, maggieRegistered.UserId});
-            theSession.Events.Append(annaAndMaggieAssignedToAdminUsersGroup.GroupId,
-                annaAndMaggieAssignedToAdminUsersGroup);
+            var annaAssignedToAdminUsersGroup = new SingleUserAssignedToGroup(adminUsersGroupCreated.GroupId,
+                annaRegistered.UserId);
 
-            var johnAndAlanAssignedToRegularUsersGroup = new MultipleUsersAssignedToGroup(regularUsersGroupCreated.GroupId,
-                new List<Guid> {johnRegistered.UserId, alanRegistered.UserId});
-            theSession.Events.Append(johnAndAlanAssignedToRegularUsersGroup.GroupId,
-                johnAndAlanAssignedToRegularUsersGroup);
+            var maggieAssignedToAdminUsersGroup = new SingleUserAssignedToGroup(adminUsersGroupCreated.GroupId,
+                maggieRegistered.UserId);
+            theSession.Events.Append(
+                adminUsersGroupCreated.GroupId,
+                annaAssignedToAdminUsersGroup,
+                maggieAssignedToAdminUsersGroup
+            );
+
+            var johnAssignedToRegularUsersGroup = new SingleUserAssignedToGroup(regularUsersGroupCreated.GroupId,
+                johnRegistered.UserId);
+            var alanAssignedToRegularUsersGroup = new SingleUserAssignedToGroup(regularUsersGroupCreated.GroupId,
+                alanRegistered.UserId);
+            theSession.Events.Append(
+                regularUsersGroupCreated.GroupId,
+                johnAssignedToRegularUsersGroup,
+                alanAssignedToRegularUsersGroup
+            );
 
             await theSession.SaveChangesAsync();
 
@@ -121,11 +126,13 @@ namespace EventSourcingTests.Projections.ViewProjections.SimpleWithOneToMany
             alanGroupAssignment.Groups.ShouldHaveTheSameElementsAs(regularUsersGroupCreated.GroupId);
         }
 
-        public simple_multi_stream_projection_with_one_to_many()
+        public simple_multi_stream_projection_using_self_aggregate(DefaultStoreFixture fixture): base(fixture)
         {
             StoreOptions(_ =>
             {
-                _.Projections.Add<UserGroupsAssignmentProjection>(ProjectionLifecycle.Inline);
+                _.DatabaseSchemaName = "simple_multi_stream_projection_using_self_aggregate";
+
+                _.Projections.Add<UserGroupsAssignmentProjectionUsingSelfAggregate>(ProjectionLifecycle.Inline);
             });
         }
     }

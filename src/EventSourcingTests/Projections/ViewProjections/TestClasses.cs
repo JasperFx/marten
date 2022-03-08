@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace EventSourcingTests.Projections.ViewProjections
@@ -136,4 +136,26 @@ namespace EventSourcingTests.Projections.ViewProjections
     }
 
     #endregion
+
+    public class UserFollowsUsers : IUserEvent
+    {
+        public Guid UserId { get; }
+
+        public IReadOnlyList<Guid> FollowingUsers { get; }
+
+        public UserFollowsUsers(Guid userId, IReadOnlyList<Guid> followingUsers)
+        {
+            UserId = userId;
+            FollowingUsers = followingUsers;
+        }
+    }
+
+    public class UserSocialCircle
+    {
+        public Guid Id { get; set; }
+
+        public List<Guid> FollowingUsers { get; set; } = new();
+
+        public List<Guid> FollowedByUsers { get; set; } = new();
+    }
 }

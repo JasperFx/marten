@@ -35,6 +35,12 @@ namespace Marten.Events.Aggregation
         void AddEvents(TId id, IEnumerable<IEvent> events);
 
         /// <summary>
+        /// Add events of type TEvent to streams by their self aggregate id (stream id/key)
+        /// </summary>
+        /// <param name="events"></param>
+        void AddEvents<TEvent>(IEnumerable<IEvent> events);
+
+        /// <summary>
         /// Add events to streams where each event of type TEvent applies to only
         /// one stream
         /// </summary>
@@ -44,15 +50,6 @@ namespace Marten.Events.Aggregation
         void AddEvents<TEvent>(Func<TEvent, TId> singleIdSource, IEnumerable<IEvent> events);
 
         /// <summary>
-        /// Add events to streams where each event of type TEvent applies to only
-        /// one stream
-        /// </summary>
-        /// <param name="singleIdSource"></param>
-        /// <param name="events"></param>
-        /// <typeparam name="TEvent"></typeparam>
-        void AddEventsUsingWrappedEvent<TEvent>(Func<IEvent<TEvent>, TId> singleIdSource, IEnumerable<IEvent> events);
-
-        /// <summary>
         /// Add events to streams where each event of type TEvent may be related to many
         /// different aggregates
         /// </summary>
@@ -60,16 +57,6 @@ namespace Marten.Events.Aggregation
         /// <param name="events"></param>
         /// <typeparam name="TEvent"></typeparam>
         void AddEvents<TEvent>(Func<TEvent, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events);
-
-        /// <summary>
-        /// Add events to streams where each event of type TEvent may be related to many
-        /// different aggregates
-        /// </summary>
-        /// <param name="multipleIdSource"></param>
-        /// <param name="events"></param>
-        /// <typeparam name="TEvent"></typeparam>
-        void AddEventsUsingWrappedEvent<TEvent>(Func<IEvent<TEvent>, IEnumerable<TId>> multipleIdSource,
-            IEnumerable<IEvent> events);
     }
 
     /// <summary>
@@ -106,13 +93,25 @@ namespace Marten.Events.Aggregation
                 AddEvent(id, @event);
             }
         }
-        public void AddEventsUsingWrappedEvent<TEvent>(Func<IEvent<TEvent>, TId> singleIdSource, IEnumerable<IEvent> events)
+
+        public void AddEvents<TEvent>(IEnumerable<IEvent> events)
         {
-            var matching = events.Where(x => x.Data is TEvent).Cast<IEvent<TEvent>>();
+            var matching = events.Where(x => x.Data is TEvent);
             foreach (var @event in matching)
             {
-                var id = singleIdSource(@event);
-                AddEvent(id, @event);
+                if (typeof(TId) == typeof(Guid))
+                {
+                    AddEvent((TId)(object)@event.StreamId, @event);
+                }
+                else if (typeof(TId) == typeof(string))
+                {
+                    AddEvent((TId)(object)@event.StreamKey, @event);
+                }
+                else
+                {
+                    throw new InvalidOperationException(
+                        "Can only map events by stream id/key if the projection id is Guid or String");
+                }
             }
         }
 
@@ -125,18 +124,6 @@ namespace Marten.Events.Aggregation
             foreach (var @group in groups)
             {
                 AddEvents(@group.Key, @group.Select(x => x.@event));
-            }
-        }
-
-        public void AddEventsUsingWrappedEvent<TEvent>(Func<IEvent<TEvent>, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events)
-        {
-            var matching = events.Where(x => x.Data is TEvent).Cast<IEvent<TEvent>>()
-                .SelectMany(@event => multipleIdSource(@event).Select(id => (id, @event)));
-
-            var groups = matching.GroupBy(x => x.id);
-            foreach (var @group in groups)
-            {
-                AddEvents(@group.Key, @group.Select(x => x.@event).Cast<IEvent>());
             }
         }
 

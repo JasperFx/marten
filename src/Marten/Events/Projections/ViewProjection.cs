@@ -101,12 +101,14 @@ namespace Marten.Events.Projections
                 .Distinct().ToArray();
         }
 
+        /// <summary>
+        /// Specify an aggregate document id for event type TEvent
+        /// </summary>
+        /// <typeparam name="TEvent"></typeparam>
+        /// <param name="identityFunc"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public void Identity<TEvent>(Func<TEvent, TId> identityFunc) where TEvent : notnull
         {
-            if (typeof(IEvent).IsAssignableFrom(typeof(TEvent)))
-                throw new InvalidOperationException(
-                    $"Use {nameof(EventIdentity)}<{nameof(TEvent)}>() when mapping a event wrapped in {nameof(IEvent<TEvent>)} to this projection.");
-
             if (_customSlicer != null)
                 throw new InvalidOperationException(
                     "There is already a custom event slicer registered for this projection");
@@ -114,32 +116,31 @@ namespace Marten.Events.Projections
             _groupers.Add(new SingleStreamGrouper<TId, TEvent>(identityFunc));
         }
 
-        public void EventIdentity<TEvent>(Func<IEvent<TEvent>, TId> identityFunc) where TEvent : notnull
+        /// <summary>
+        /// Use the TEvent event's stream key/id as the aggregate document id
+        /// </summary>
+        /// <typeparam name="TEvent"></typeparam>
+        /// <exception cref="InvalidOperationException"></exception>
+        public void Identity<TEvent>() where TEvent : notnull
         {
             if (_customSlicer != null)
                 throw new InvalidOperationException(
                     "There is already a custom event slicer registered for this projection");
-            _groupers.Add(new SingleStreamGrouperWithIEvent<TId,TEvent>(identityFunc));
+            _groupers.Add(new SingleStreamGrouperByEventStreamId<TId,TEvent>());
         }
 
+        /// <summary>
+        /// Specify possibly multiple aggregate document ids for event type TEvent
+        /// </summary>
+        /// <typeparam name="TEvent"></typeparam>
+        /// <param name="identitiesFunc"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public void Identities<TEvent>(Func<TEvent, IReadOnlyList<TId>> identitiesFunc)
         {
-            if (typeof(IEvent).IsAssignableFrom(typeof(TEvent)))
-                throw new InvalidOperationException(
-                    $"Use {nameof(EvenIdentities)}<{nameof(TEvent)}>() when mapping a event wrapped in {nameof(IEvent<TEvent>)} to this projection.");
-
             if (_customSlicer != null)
                 throw new InvalidOperationException(
                     "There is already a custom event slicer registered for this projection");
             _groupers.Add(new MultiStreamGrouper<TId, TEvent>(identitiesFunc));
-        }
-
-        public void EvenIdentities<TEvent>(Func<IEvent<TEvent>, IReadOnlyList<TId>> identitiesFunc) where TEvent : notnull
-        {
-            if (_customSlicer != null)
-                throw new InvalidOperationException(
-                    "There is already a custom event slicer registered for this projection");
-            _groupers.Add(new MultiStreamGrouperWithIEvent<TId, TEvent>(identitiesFunc));
         }
 
         /// <summary>

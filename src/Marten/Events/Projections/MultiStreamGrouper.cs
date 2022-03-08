@@ -23,24 +23,4 @@ namespace Marten.Events.Projections
             grouping.AddEvents(_func, events);
         }
     }
-
-    /// <summary>
-    /// This type of grouper potentially sorts one event into multiple aggregates
-    /// </summary>
-    /// <typeparam name="TId"></typeparam>
-    /// <typeparam name="TEvent"></typeparam>
-    internal class MultiStreamGrouperWithIEvent<TId, TEvent>: IGrouper<TId> where TEvent : notnull
-    {
-        private readonly Func<IEvent<TEvent>, IReadOnlyList<TId>> _func;
-
-        public MultiStreamGrouperWithIEvent(Func<IEvent<TEvent>, IReadOnlyList<TId>> expression)
-        {
-            _func = expression;
-        }
-
-        public void Apply(IEnumerable<IEvent> events, ITenantSliceGroup<TId> grouping)
-        {
-            grouping.AddEventsUsingWrappedEvent(_func, events);
-        }
-    }
 }

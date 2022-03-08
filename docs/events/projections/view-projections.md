@@ -241,7 +241,7 @@ public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/simple_multi_stream_projection_wih_one_to_many.cs#L11-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-with-one-to-many' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/simple_multi_stream_projection_with_one_to_many.cs#L11-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-with-one-to-many' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## View Projection with Custom Grouper
