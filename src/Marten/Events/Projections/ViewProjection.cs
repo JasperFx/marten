@@ -107,12 +107,11 @@ namespace Marten.Events.Projections
         /// <typeparam name="TEvent"></typeparam>
         /// <param name="identityFunc"></param>
         /// <exception cref="InvalidOperationException"></exception>
-        public void Identity<TEvent>(Func<TEvent, TId> identityFunc) where TEvent : notnull
+        public void Identity<TEvent>(Func<TEvent, TId> identityFunc)
         {
             if (_customSlicer != null)
                 throw new InvalidOperationException(
                     "There is already a custom event slicer registered for this projection");
-
             _groupers.Add(new SingleStreamGrouper<TId, TEvent>(identityFunc));
         }
 
@@ -121,7 +120,7 @@ namespace Marten.Events.Projections
         /// </summary>
         /// <typeparam name="TEvent"></typeparam>
         /// <exception cref="InvalidOperationException"></exception>
-        public void Identity<TEvent>() where TEvent : notnull
+        public void Identity<TEvent>()
         {
             if (_customSlicer != null)
                 throw new InvalidOperationException(

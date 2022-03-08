@@ -89,7 +89,7 @@ namespace Marten.Events.Aggregation
             var matching = events.Where(x => x.Data is TEvent);
             foreach (var @event in matching)
             {
-                var id = singleIdSource((TEvent)@event.Data);
+                var id = singleIdSource((TEvent) @event.Data);
                 AddEvent(id, @event);
             }
         }
@@ -97,21 +97,24 @@ namespace Marten.Events.Aggregation
         public void AddEvents<TEvent>(IEnumerable<IEvent> events)
         {
             var matching = events.Where(x => x.Data is TEvent);
-            foreach (var @event in matching)
+            if (typeof(TId) == typeof(Guid))
             {
-                if (typeof(TId) == typeof(Guid))
+                foreach (var @event in matching)
                 {
                     AddEvent((TId)(object)@event.StreamId, @event);
                 }
-                else if (typeof(TId) == typeof(string))
+            }
+            else if (typeof(TId) == typeof(string))
+            {
+                foreach (var @event in matching)
                 {
                     AddEvent((TId)(object)@event.StreamKey, @event);
                 }
-                else
-                {
-                    throw new InvalidOperationException(
-                        "Can only map events by stream id/key if the projection id is Guid or String");
-                }
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    "Can only map events by stream id/key if the projection id is Guid or String");
             }
         }
 
