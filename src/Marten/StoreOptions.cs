@@ -48,7 +48,7 @@ namespace Marten
         ///     Register "initial data loads" that will be applied to the DocumentStore when it is
         ///     bootstrapped
         /// </summary>
-        public readonly IList<IInitialData> InitialData = new List<IInitialData>();
+        internal readonly IList<IInitialData> InitialData = new List<IInitialData>();
 
         /// <summary>
         ///     Add, remove, or reorder global session listeners
@@ -65,6 +65,11 @@ namespace Marten
         /// schema changes from multiple application nodes
         /// </summary>
         public int ApplyChangesLockId { get; set; } = 4004;
+
+        /// <summary>
+        /// Used internally by the MartenActivator
+        /// </summary>
+        internal bool ShouldApplyChangesOnStartup { get; set; } = false;
 
 
         private ImHashMap<Type, IFieldMapping> _childFieldMappings = ImHashMap<Type, IFieldMapping>.Empty;

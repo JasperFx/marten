@@ -32,10 +32,16 @@ namespace Marten
         public ISerializer Serializer => _store.Serializer;
 
         /// <summary>
+        /// Mostly for testing support. Register a new IInitialData object
+        /// that would be called from ResetAllData() later.
+        /// </summary>
+        public IList<IInitialData> InitialDataCollection => _store.Options.InitialData;
+
+        /// <summary>
         ///     Deletes all current document and event data, then (re)applies the configured
         ///     initial data
         /// </summary>
-        public async Task ResetAllData()
+        public async Task ResetAllData(CancellationToken cancellation = default)
         {
             var databases = await _store.Tenancy.BuildDatabases().ConfigureAwait(false);
             foreach (var database in databases.OfType<IMartenDatabase>())
@@ -46,7 +52,7 @@ namespace Marten
 
 
             foreach (var initialData in _store.Options.InitialData)
-                await initialData.Populate(_store).ConfigureAwait(false);
+                await initialData.Populate(_store, cancellation).ConfigureAwait(false);
         }
 
         /// <summary>

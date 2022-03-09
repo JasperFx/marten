@@ -7,6 +7,7 @@ using LamarCodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Internal;
+using Marten.Schema;
 using Marten.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -185,6 +186,8 @@ namespace Marten
                     options.ReadHostEnvironment(environment);
                 }
 
+                options.InitialData.AddRange(s.GetServices<IInitialData>());
+
                 return options;
             });
 
@@ -337,7 +340,62 @@ namespace Marten
             /// <returns></returns>
             public MartenStoreExpression<T> ApplyAllDatabaseChangesOnStartup()
             {
-                Services.Insert(0, new ServiceDescriptor(typeof(IHostedService), typeof(ApplyChangesOnStartup<T>), ServiceLifetime.Singleton));
+                ensureMartenActivatorIsRegistered();
+
+                Services.ConfigureMarten<T>(opts => opts.ShouldApplyChangesOnStartup = true);
+
+                return this;
+            }
+
+            private void ensureMartenActivatorIsRegistered()
+            {
+                if (!Services.Any(
+                        x => x.ServiceType == typeof(IHostedService) && x.ImplementationType == typeof(MartenActivator<T>)))
+                {
+                    Services.Insert(0,
+                        new ServiceDescriptor(typeof(IHostedService), typeof(MartenActivator<T>), ServiceLifetime.Singleton));
+                }
+            }
+
+            /// <summary>
+            /// Adds initial data sets to the Marten store and ensures that they will be
+            /// executed upon IHost initialization
+            /// </summary>
+            /// <param name="data"></param>
+            /// <returns></returns>
+            public MartenStoreExpression<T> InitializeWith(params IInitialData[] data)
+            {
+                ensureMartenActivatorIsRegistered();
+                Services.ConfigureMarten<T>(opts => opts.InitialData.AddRange(data));
+                return this;
+            }
+
+            internal class AddInitialData<TStore, TData>: IConfigureMarten<T> where TData : IInitialData
+            {
+                private readonly TData _data;
+
+                public AddInitialData(TData data)
+                {
+                    _data = data;
+                }
+
+                public void Configure(IServiceProvider services, StoreOptions options)
+                {
+                    options.InitialData.Add(_data);
+                }
+            }
+
+            /// <summary>
+            /// Registers type T as a singleton against IInitialData to be used in IHost activation
+            /// to apply changes or at least actions against the as built IDocumentStore
+            /// </summary>
+            /// <typeparam name="TData">The type that implements IInitialData</typeparam>
+            /// <returns></returns>
+            public MartenStoreExpression<T> InitializeWith<TData>() where TData : class, IInitialData
+            {
+                ensureMartenActivatorIsRegistered();
+                Services.AddSingleton<TData>();
+                Services.AddSingleton<IConfigureMarten<T>, AddInitialData<T, TData>>();
                 return this;
             }
         }
@@ -372,8 +430,21 @@ namespace Marten
             /// <returns></returns>
             public MartenConfigurationExpression ApplyAllDatabaseChangesOnStartup()
             {
-                Services.Insert(0, new ServiceDescriptor(typeof(IHostedService), typeof(ApplyChangesOnStartup), ServiceLifetime.Singleton));
+                ensureMartenActivatorIsRegistered();
+
+                Services.ConfigureMarten(opts => opts.ShouldApplyChangesOnStartup = true);
+
                 return this;
+            }
+
+            private void ensureMartenActivatorIsRegistered()
+            {
+                if (!Services.Any(x =>
+                        x.ServiceType == typeof(IHostedService) && x.ImplementationType == typeof(MartenActivator)))
+                {
+                    Services.Insert(0,
+                        new ServiceDescriptor(typeof(IHostedService), typeof(MartenActivator), ServiceLifetime.Singleton));
+                }
             }
 
 
@@ -443,6 +514,32 @@ namespace Marten
                 var configure = new OptimizedArtifactsWorkflow(typeLoadMode);
                 Services.AddSingleton<IConfigureMarten>(configure);
 
+                return this;
+            }
+
+            /// <summary>
+            /// Adds initial data sets to the Marten store and ensures that they will be
+            /// executed upon IHost initialization
+            /// </summary>
+            /// <param name="data"></param>
+            /// <returns></returns>
+            public MartenConfigurationExpression InitializeWith(params IInitialData[] data)
+            {
+                ensureMartenActivatorIsRegistered();
+                Services.ConfigureMarten(opts => opts.InitialData.AddRange(data));
+                return this;
+            }
+
+            /// <summary>
+            /// Registers type T as a singleton against IInitialData to be used in IHost activation
+            /// to apply changes or at least actions against the as built IDocumentStore
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <returns></returns>
+            public MartenConfigurationExpression InitializeWith<T>() where T : class, IInitialData
+            {
+                ensureMartenActivatorIsRegistered();
+                Services.AddSingleton<IInitialData, T>();
                 return this;
             }
         }
