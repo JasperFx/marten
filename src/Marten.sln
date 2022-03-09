@@ -68,6 +68,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourcingTests", "Event
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiDatabaseCommandLineRunner", "MultiDatabaseCommandLineRunner\MultiDatabaseCommandLineRunner.csproj", "{29691E7B-2F1B-4F58-8B5E-AD58C5732D1F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStoreMigrations", "EventStoreMigrations\EventStoreMigrations.csproj", "{EB30BFF6-86EF-4053-B2BF-4D65CF76C874}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -166,6 +168,10 @@ Global
 		{29691E7B-2F1B-4F58-8B5E-AD58C5732D1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{29691E7B-2F1B-4F58-8B5E-AD58C5732D1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{29691E7B-2F1B-4F58-8B5E-AD58C5732D1F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB30BFF6-86EF-4053-B2BF-4D65CF76C874}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB30BFF6-86EF-4053-B2BF-4D65CF76C874}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB30BFF6-86EF-4053-B2BF-4D65CF76C874}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB30BFF6-86EF-4053-B2BF-4D65CF76C874}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -191,5 +197,6 @@ Global
 		{CE932887-AFB1-46BD-B5B6-4F96B92CB201} = {91D87D73-EC07-4067-8A64-26A2E4F6BC83}
 		{D8C569BD-A2A5-471B-9C00-18F5981FC552} = {91D87D73-EC07-4067-8A64-26A2E4F6BC83}
 		{29691E7B-2F1B-4F58-8B5E-AD58C5732D1F} = {DA7EC300-12F5-4B80-B5DF-B7B71E344E24}
+		{EB30BFF6-86EF-4053-B2BF-4D65CF76C874} = {DA7EC300-12F5-4B80-B5DF-B7B71E344E24}
 	EndGlobalSection
 EndGlobal
