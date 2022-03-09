@@ -66,8 +66,6 @@ namespace Marten
             _identityMapCompiledQueries = new CompiledQueryCollection(DocumentTracking.IdentityOnly, this);
             _dirtyTrackedCompiledQueries = new CompiledQueryCollection(DocumentTracking.DirtyTracking, this);
             _queryOnlyCompiledQueries = new CompiledQueryCollection(DocumentTracking.QueryOnly, this);
-
-            options.InitialData.Each(x => x.Populate(this).GetAwaiter().GetResult());
         }
 
         public ITenancy Tenancy => Options.Tenancy;

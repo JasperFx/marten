@@ -326,6 +326,7 @@ namespace CoreTests
         {
             await using var container = Container.For(x =>
             {
+                x.AddLogging();
                 x.AddMartenStore<IFirstStore>(opts =>
                     {
                         opts.Connection(ConnectionSource.ConnectionString);
@@ -338,7 +339,7 @@ namespace CoreTests
             await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             var instance = container.Model.For<IHostedService>().Instances.First();
-            instance.ImplementationType.ShouldBe(typeof(ApplyChangesOnStartup<IFirstStore>));
+            instance.ImplementationType.ShouldBe(typeof(MartenActivator<IFirstStore>));
             instance.Lifetime.ShouldBe(ServiceLifetime.Singleton);
 
             // Just a smoke test here

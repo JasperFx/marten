@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Schema;
@@ -57,7 +58,7 @@ namespace DocumentDbTests.Bugs
             _initialData = initialData;
         }
 
-        public async Task Populate(IDocumentStore store)
+        public async Task Populate(IDocumentStore store, CancellationToken cancellation)
         {
             using var session = store.LightweightSession();
             // Marten UPSERT will cater for existing records

@@ -1,7 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Baseline.ImTools;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
@@ -9,28 +11,39 @@ using Weasel.Postgresql;
 
 namespace Marten.Services
 {
-    internal class ApplyChangesOnStartup<T>: ApplyChangesOnStartup where T : IDocumentStore
+    internal class MartenActivator<T>: MartenActivator where T : IDocumentStore
     {
-        public ApplyChangesOnStartup(T store) : base(store)
+        public MartenActivator(T store, ILogger<MartenActivator> logger) : base(store, logger)
         {
         }
     }
 
-    internal class ApplyChangesOnStartup : IHostedService, IGlobalLock<NpgsqlConnection>
+    internal class MartenActivator : IHostedService, IGlobalLock<NpgsqlConnection>
     {
+        private readonly ILogger<MartenActivator> _logger;
         public DocumentStore Store { get; }
 
-        public ApplyChangesOnStartup(IDocumentStore store)
+        public MartenActivator(IDocumentStore store, ILogger<MartenActivator> logger)
         {
+            _logger = logger;
             Store = store.As<DocumentStore>();
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            var databases = Store.Tenancy.BuildDatabases().ConfigureAwait(false);
-            foreach (PostgresqlDatabase database in await databases)
+            if (Store.Options.ShouldApplyChangesOnStartup)
             {
-                await database.ApplyAllConfiguredChangesToDatabaseAsync(this, AutoCreate.CreateOrUpdate).ConfigureAwait(false);
+                var databases = Store.Tenancy.BuildDatabases().ConfigureAwait(false);
+                foreach (PostgresqlDatabase database in await databases)
+                {
+                    await database.ApplyAllConfiguredChangesToDatabaseAsync(this, AutoCreate.CreateOrUpdate).ConfigureAwait(false);
+                }
+            }
+
+            foreach (var initialData in Store.Options.InitialData)
+            {
+                _logger.LogInformation("Applying initial data {InitialData}", initialData);
+                await initialData.Populate(Store, cancellationToken).ConfigureAwait(true);
             }
         }
 

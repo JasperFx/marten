@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Schema;
@@ -21,7 +22,7 @@ namespace DocumentDbTests.SessionMechanics
 
         public class Users : IInitialData
         {
-            public Task Populate(IDocumentStore store)
+            public Task Populate(IDocumentStore store, CancellationToken cancellation)
             {
                 var users = new User[]
                 {
@@ -29,7 +30,7 @@ namespace DocumentDbTests.SessionMechanics
                     new User { UserName = "four" },
                 };
 
-                return store.BulkInsertDocumentsAsync(users);
+                return store.BulkInsertDocumentsAsync(users, cancellation: cancellation);
             }
         }
 
@@ -38,9 +39,12 @@ namespace DocumentDbTests.SessionMechanics
         {
             StoreOptions(opts =>
             {
-                opts.InitialData.Add(new Users());
                 opts.Logger(new TestOutputMartenLogger(_output));
             });
+
+            theStore.Advanced.InitialDataCollection.Add(new Users());
+
+            await theStore.Advanced.ResetAllData();
 
             using (var session = theStore.LightweightSession())
             {

@@ -14,7 +14,7 @@ public class InitialData: IInitialData
         _initialData = initialData;
     }
 
-    public async Task Populate(IDocumentStore store)
+    public async Task Populate(IDocumentStore store, CancellationToken cancellation)
     {
         using var session = store.LightweightSession();
         // Marten UPSERT will cater for existing records
@@ -38,7 +38,7 @@ public static class InitialDatasets
     };
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_962_initial_data_populate_causing_null_ref_ex.cs#L50-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_initial-data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_962_initial_data_populate_causing_null_ref_ex.cs#L51-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_initial-data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Add your `IInitialData` implementations as part of the configuration of your document store as follows:
@@ -57,7 +57,7 @@ var store = DocumentStore.For(_ =>
     _.InitialData.Add(new InitialData(InitialDatasets.Users));
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_962_initial_data_populate_causing_null_ref_ex.cs#L17-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-initial-data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_962_initial_data_populate_causing_null_ref_ex.cs#L18-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-initial-data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `IInitialData.Populate(IDocumentStore store)` will be executed for each configured entry as part of the initialization of your document store. They will be executed in the order they were added.
