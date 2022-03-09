@@ -31,6 +31,8 @@ namespace Marten.Events
         {
             var selector = _store.Events.EnsureAsGuidStorage(_session);
 
+            _tenant.Database.EnsureStorageExists(typeof(IEvent));
+
             var statement = new EventStatement(selector)
             {
                 StreamId = streamId, Version = version, Timestamp = timestamp, TenantId = _tenant.TenantId, FromVersion = fromVersion
@@ -41,9 +43,11 @@ namespace Marten.Events
             return _session.ExecuteHandler(handler);
         }
 
-        public Task<IReadOnlyList<IEvent>> FetchStreamAsync(Guid streamId, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0, CancellationToken token = default)
+        public async Task<IReadOnlyList<IEvent>> FetchStreamAsync(Guid streamId, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0, CancellationToken token = default)
         {
             var selector = _store.Events.EnsureAsGuidStorage(_session);
+
+            await _tenant.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
             var statement = new EventStatement(selector)
             {
@@ -52,13 +56,15 @@ namespace Marten.Events
 
             IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
 
-            return _session.ExecuteHandlerAsync(handler, token);
+            return await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
         }
 
         public IReadOnlyList<IEvent> FetchStream(string streamKey, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0)
         {
             var selector = _store.Events.EnsureAsStringStorage(_session);
 
+            _tenant.Database.EnsureStorageExists(typeof(IEvent));
+
             var statement = new EventStatement(selector)
             {
                 StreamKey = streamKey, Version = version, Timestamp = timestamp, TenantId = _tenant.TenantId, FromVersion = fromVersion
@@ -69,9 +75,11 @@ namespace Marten.Events
             return _session.ExecuteHandler(handler);
         }
 
-        public Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0, CancellationToken token = default)
+        public async Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0, CancellationToken token = default)
         {
             var selector = _store.Events.EnsureAsStringStorage(_session);
+
+            await _tenant.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
             var statement = new EventStatement(selector)
             {
@@ -80,7 +88,7 @@ namespace Marten.Events
 
             IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
 
-            return _session.ExecuteHandlerAsync(handler, token);
+            return await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
         }
 
         public T? AggregateStream<T>(Guid streamId, long version = 0, DateTimeOffset? timestamp = null, T? state = null, long fromVersion = 0) where T : class
