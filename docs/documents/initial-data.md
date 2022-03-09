@@ -38,7 +38,7 @@ public static class InitialDatasets
     };
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_962_initial_data_populate_causing_null_ref_ex.cs#L51-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_initial-data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Bugs/Bug_962_initial_data_populate_causing_null_ref_ex.cs#L55-L89' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_initial-data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Add your `IInitialData` implementations as part of the configuration of your document store as follows:
@@ -46,18 +46,22 @@ Add your `IInitialData` implementations as part of the configuration of your doc
 <!-- snippet: sample_configuring-initial-data -->
 <a id='snippet-sample_configuring-initial-data'></a>
 ```cs
-var store = DocumentStore.For(_ =>
-{
-    _.DatabaseSchemaName = "Bug962";
+using var host = await Host.CreateDefaultBuilder()
+    .ConfigureServices(services =>
+    {
+        services.AddMarten(opts =>
+        {
+            opts.DatabaseSchemaName = "Bug962";
 
-    _.Connection(ConnectionSource.ConnectionString);
+            opts.Connection(ConnectionSource.ConnectionString);
+        })
+            // Add as many implementations of IInitialData as you need
+            .InitializeWith(new InitialData(InitialDatasets.Companies), new InitialData(InitialDatasets.Users));
+    }).StartAsync();
 
-    // Add as many implementations of IInitialData as you need
-    _.InitialData.Add(new InitialData(InitialDatasets.Companies));
-    _.InitialData.Add(new InitialData(InitialDatasets.Users));
-});
+var store = host.Services.GetRequiredService<IDocumentStore>();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_962_initial_data_populate_causing_null_ref_ex.cs#L18-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-initial-data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Bugs/Bug_962_initial_data_populate_causing_null_ref_ex.cs#L20-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-initial-data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `IInitialData.Populate(IDocumentStore store)` will be executed for each configured entry as part of the initialization of your document store. They will be executed in the order they were added.

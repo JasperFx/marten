@@ -5,46 +5,50 @@ using Marten;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Xunit;
 
-namespace DocumentDbTests.Bugs
+namespace CoreTests.Bugs
 {
     public class Bug_962_initial_data_populate_causing_null_ref_ex
     {
         [Fact]
-        public void initial_data_should_populate_db()
+        public async Task initial_data_should_populate_db()
         {
             #region sample_configuring-initial-data
-            var store = DocumentStore.For(_ =>
-            {
-                _.DatabaseSchemaName = "Bug962";
 
-                _.Connection(ConnectionSource.ConnectionString);
+            using var host = await Host.CreateDefaultBuilder()
+                .ConfigureServices(services =>
+                {
+                    services.AddMarten(opts =>
+                    {
+                        opts.DatabaseSchemaName = "Bug962";
 
-                // Add as many implementations of IInitialData as you need
-                _.InitialData.Add(new InitialData(InitialDatasets.Companies));
-                _.InitialData.Add(new InitialData(InitialDatasets.Users));
-            });
+                        opts.Connection(ConnectionSource.ConnectionString);
+                    })
+                        // Add as many implementations of IInitialData as you need
+                        .InitializeWith(new InitialData(InitialDatasets.Companies), new InitialData(InitialDatasets.Users));
+                }).StartAsync();
+
+            var store = host.Services.GetRequiredService<IDocumentStore>();
             #endregion
 
-            using (var session = store.QuerySession())
+            await using var session = store.QuerySession();
+            foreach (var initialUser in InitialDatasets.Users)
             {
-                foreach (var initialUser in InitialDatasets.Users)
-                {
-                    var user = session.Load<User>(initialUser.Id);
-                    user.FirstName.ShouldBe(initialUser.FirstName);
-                    user.LastName.ShouldBe(initialUser.LastName);
-                }
-
-                foreach (var initialCompany in InitialDatasets.Companies)
-                {
-                    var company = session.Load<Company>(initialCompany.Id);
-                    company.Name.ShouldBe(initialCompany.Name);
-                }
+                var user = session.Load<User>(initialUser.Id);
+                user.FirstName.ShouldBe(initialUser.FirstName);
+                user.LastName.ShouldBe(initialUser.LastName);
             }
 
-            store.Dispose();
+            foreach (var initialCompany in InitialDatasets.Companies)
+            {
+                var company = session.Load<Company>(initialCompany.Id);
+                company.Name.ShouldBe(initialCompany.Name);
+            }
+
         }
     }
 
