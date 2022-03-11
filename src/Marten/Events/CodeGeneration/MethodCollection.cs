@@ -10,7 +10,7 @@ using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using Marten.Schema;
-using Marten.Util;
+using Marten.Util.FastExpression;
 
 namespace Marten.Events.CodeGeneration
 {
@@ -210,7 +210,7 @@ namespace Marten.Events.CodeGeneration
                 var expression = Expression.Lambda<T>(body, parameters);
 
 
-                var lambda = ExpressionCompiler.Compile<T>(expression);
+                var lambda = expression.CompileFast<T>();
 
                 var eventType = method.GetEventType(aggregateType);
 
