@@ -246,7 +246,7 @@ var store = DocumentStore.For(opts =>
 
 ## Custom Identity Strategies
 
-A custom ID generator strategy should implement [IIdGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/IIdGeneration.cs).
+A custom ID generator strategy should implement [IIdGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/IIdGeneration.cs).
 
 <!-- snippet: sample_custom-id-generation -->
 <a id='snippet-sample_custom-id-generation'></a>
