@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -16,6 +17,7 @@ namespace Marten.Internal.Sessions
         public MartenControlledConnectionTransaction(SessionOptions options)
         {
             _options = options;
+            Connection = _options.Connection;
         }
 
         public int CommandTimeout => _options.Timeout ?? Connection?.CommandTimeout ?? 30;
@@ -51,15 +53,7 @@ namespace Marten.Internal.Sessions
 
         public virtual void BeginTransaction()
         {
-            if (Connection == null)
-            {
-#pragma warning disable CS8602
-                Connection = _options.Tenant.Database.CreateConnection();
-#pragma warning restore CS8602
-                Connection.Open();
-
-            }
-
+            EnsureOpenConnection();
             if (Transaction == null)
             {
                 Transaction = Connection.BeginTransaction(_options.IsolationLevel);
@@ -78,15 +72,7 @@ namespace Marten.Internal.Sessions
 
         public virtual async ValueTask BeginTransactionAsync(CancellationToken token)
         {
-            if (Connection == null)
-            {
-#pragma warning disable CS8602
-                Connection = _options.Tenant.Database.CreateConnection();
-#pragma warning restore CS8602
-                await Connection.OpenAsync(token).ConfigureAwait(false);
-
-            }
-
+            await EnsureOpenConnectionAsync(token).ConfigureAwait(false);
 #if NET5_0_OR_GREATER
             Transaction ??= await Connection
                 .BeginTransactionAsync(_options.IsolationLevel, token).ConfigureAwait(false);
@@ -160,6 +146,34 @@ namespace Marten.Internal.Sessions
         public NpgsqlConnection? Connection { get; protected set; }
         public NpgsqlTransaction? Transaction { get; protected set; }
 
+        protected void EnsureOpenConnection()
+        {
+            if (Connection == null)
+            {
+#pragma warning disable CS8602
+                Connection = _options.Tenant.Database.CreateConnection();
+#pragma warning restore CS8602
+            }
 
+            if (Connection.State == ConnectionState.Closed)
+            {
+                Connection.Open();
+            }
+        }
+
+        protected async Task EnsureOpenConnectionAsync(CancellationToken token)
+        {
+            if (Connection == null)
+            {
+#pragma warning disable CS8602
+                Connection = _options.Tenant.Database.CreateConnection();
+#pragma warning restore CS8602
+            }
+
+            if (Connection.State == ConnectionState.Closed)
+            {
+                await Connection.OpenAsync(token).ConfigureAwait(false);
+            }
+        }
     }
 }
