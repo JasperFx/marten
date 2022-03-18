@@ -115,7 +115,7 @@ public void order_by(IDocumentSession session)
 
 ## Ordering with dynamic properties
 
-Marten provides helper methods to express ordering using dynamic properties in LINQ queries. This is quite useful for cases where you wouldn't know the properties being used for ordering at build time.
+Marten provides helper methods to express ordering using dynamic properties in LINQ queries. This is quite useful for cases where you wouldn't know the properties being used for ordering at build time. This functionality is added in v5.
 
 <!-- snippet: sample_ordering-in-linq-using-dynamic-props -->
 <a id='snippet-sample_ordering-in-linq-using-dynamic-props'></a>
@@ -145,6 +145,18 @@ public void order_by_dynamic_props(IDocumentSession session)
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L99-L123' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ordering-in-linq-using-dynamic-props' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Case-insensitive ordering for strings
+
+If you use `StringComparer.InvariantCultureIgnoreCase` or `StringComparer.OrdinalIgnoreCase` with an `OrderBy` on strings, Marten automatically applies case-insensitive ordering using `lower()` in generated SQL. This functionality is added in v5.
+
+```cs 
+// invariant culture ignore case
+var query = theSession.Query<Target>().OrderBy(x => x.String, StringComparer.InvariantCultureIgnoreCase);
+
+// ordinal ignore case
+var query = theSession.Query<Target>().OrderBy(x => x.String, StringComparer.OrdinalIgnoreCase);
+```
 
 ## Aggregate Functions
 
