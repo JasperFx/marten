@@ -1,9 +1,16 @@
-# Bootstrapping with HostBuilder
+# Bootstrapping in .Net Applications
+
+:::tip
+The exact formula for bootstrapping .Net applications has changed quite a bit from early .Net Core to 
+the latest `WebApplication` model in .Net 6.0 at the time this page was last updated. Regardless, the `IServiceCollection`
+abstraction for registering services in an IoC container has remained stable and everything in this
+page functions against that model.
+:::
 
 As briefly shown in the [getting started](/) page, Marten comes with extension methods
 for the .Net Core standard `IServiceCollection` to quickly add Marten services to any .Net application that is bootstrapped by
 either the [Generic IHostBuilder abstraction](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host) or the [ASP.Net Core IWebHostBuilder](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.hosting.iwebhostbuilder)
-hosting models.
+or the [.Net 6 WebApplication](https://docs.microsoft.com/en-us/aspnet/core/migration/50-to-60?view=aspnetcore-6.0&tabs=visual-studio#new-hosting-model) hosting models.
 
 Jumping right into a basic ASP&#46;NET Core application using the out of the box Web API template, you'd have a class called `Startup` that holds most of the configuration for your application including
 the IoC service registrations for your application in the `Startup.ConfigureServices()` method. To add Marten
@@ -46,7 +53,17 @@ For more information, see:
 * Check [identity map mechanics](/documents/identity) for an explanation of Marten session behavior
 * Check [storing documents and unit of work](/documents/sessions) for session basics
 
-## AddMarten() Options
+At runtime, when your application needs to resolve `IDocumentStore` for the first time, Marten will:
+
+1. Resolve a `StoreOptions` object from the initial `AddMarten()` configuration
+2. Apply all registered `IConfigureMarten` services to alter that `StoreOptions` object
+3. Reads the `IHostEnvironment` for the application if it exists to try to determine the main application assembly and paths for generated code output
+4. Attaches any `IInitialData` services that were registered in the IoC container to the `StoreOptions` object
+5. *Finally*, Marten builds a new `DocumentStore` object using the now configured `StoreOptions` object
+
+This model is comparable to the .Net `IOptions` model.
+
+## Register DocumentStore with AddMarten()
 
 ::: tip INFO
 All the examples in this page are assuming the usage of the default IoC container `Microsoft.Extensions.DependencyInjection`, but Marten can be used with any IoC container or with no IoC container whatsoever.
@@ -168,6 +185,119 @@ public class Startup
 <!-- endSnippet -->
 
 The last option may be best for more complicated Marten configuration just to keep the configuration code cleaner as `Startup` classes can become convoluted.
+
+
+## Composite Configuration with ConfigureMarten()
+
+The `AddMarten()` mechanism introduced in later versions of Marten v3 assumes that you are expressing all of the Marten configuration in one 
+place and "know" what that configuration is upfront. Consider these possibilities where that isn't necessarily possible or desirable:
+
+1. You want to override Marten configuration in integration testing scenarios (I do this quite commonly)
+2. Many users have expressed the desire to keep parts of Marten configuration in potentially separate assemblies or subsystems in such a way that 
+   they could later break up the current service into smaller services
+
+Fear not, Marten V5.0 introduced a new way to add or modify the Marten configuration from `AddMarten()`. Let's assume
+that we're building a system that has a subsystem related to *users* and want to segregate all the 
+service registrations and Marten configuration related to *users* into a single place like this extension
+method:
+
+<!-- snippet: sample_AddUserModule -->
+<a id='snippet-sample_addusermodule'></a>
+```cs
+public static IServiceCollection AddUserModule(this IServiceCollection services)
+{
+    // This applies additional configuration to the main Marten DocumentStore
+    // that is configured elsewhere
+    services.ConfigureMarten(opts =>
+    {
+        opts.RegisterDocumentType<User>();
+    });
+
+    // Other service registrations specific to the User submodule
+    // within the bigger system
+
+    return services;
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L13-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addusermodule' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+And next, let's put that into context with its usage inside your application's bootstrapping:
+
+<!-- snippet: sample_using_configure_marten -->
+<a id='snippet-sample_using_configure_marten'></a>
+```cs
+using var host = await Host.CreateDefaultBuilder()
+    .ConfigureServices(services =>
+    {
+        // The initial Marten configuration
+        services.AddMarten("some connection string");
+
+        // Other core service registrations
+        services.AddLogging();
+
+        // Add the User module
+        services.AddUserModule();
+    }).StartAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L71-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_configure_marten' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The `ConfigureMarten()` method is the interesting part of the code samples above. That is registering a small
+service that implements the `IConfigureMarten` interface into the underlying IoC container:
+
+<!-- snippet: sample_IConfigureMarten -->
+<a id='snippet-sample_iconfiguremarten'></a>
+```cs
+/// <summary>
+/// Mechanism to register additional Marten configuration that is applied after AddMarten()
+/// configuration, but before DocumentStore is initialized
+/// </summary>
+public interface IConfigureMarten
+{
+    void Configure(IServiceProvider services, StoreOptions options);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L607-L618' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+You could alternatively implement a custom `IConfigureMarten` class like so:
+
+<!-- snippet: sample_UserMartenConfiguration -->
+<a id='snippet-sample_usermartenconfiguration'></a>
+```cs
+internal class UserMartenConfiguration: IConfigureMarten
+{
+    public void Configure(IServiceProvider services, StoreOptions options)
+    {
+        options.RegisterDocumentType<User>();
+        // and any other additional Marten configuration
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L52-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usermartenconfiguration' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+and registering it in your IoC container something like this:
+
+<!-- snippet: sample_AddUserModule2 -->
+<a id='snippet-sample_addusermodule2'></a>
+```cs
+public static IServiceCollection AddUserModule2(this IServiceCollection services)
+{
+    // This applies additional configuration to the main Marten DocumentStore
+    // that is configured elsewhere
+    services.AddSingleton<IConfigureMarten, UserMartenConfiguration>();
+
+    // Other service registrations specific to the User submodule
+    // within the bigger system
+
+    return services;
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L35-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addusermodule2' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 
 ## Using Lightweight Sessions
 

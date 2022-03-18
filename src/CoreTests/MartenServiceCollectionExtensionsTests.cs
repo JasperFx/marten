@@ -217,14 +217,14 @@ namespace CoreTests
         {
             IServiceProvider? provider = null;
 
-            using var container = Container.For(x =>
+            using var container = Container.For(services =>
             {
-                x.AddMarten(ConnectionSource.ConnectionString)
+                services.AddMarten(ConnectionSource.ConnectionString)
                     .UseLightweightSessions();
 
-                x.ConfigureMarten(opts => opts.Advanced.HiloSequenceDefaults.MaxLo = 111);
+                services.ConfigureMarten(opts => opts.Advanced.HiloSequenceDefaults.MaxLo = 111);
 
-                x.ConfigureMarten((services, opts) =>
+                services.ConfigureMarten((services, opts) =>
                 {
                     opts.Events.DatabaseSchemaName = "random";
                     provider = services;

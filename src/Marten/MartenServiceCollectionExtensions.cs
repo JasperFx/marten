@@ -604,6 +604,8 @@ namespace Marten
         }
     }
 
+    #region sample_IConfigureMarten
+
     /// <summary>
     /// Mechanism to register additional Marten configuration that is applied after AddMarten()
     /// configuration, but before DocumentStore is initialized
@@ -612,6 +614,8 @@ namespace Marten
     {
         void Configure(IServiceProvider services, StoreOptions options);
     }
+
+    #endregion
 
     internal class LambdaConfigureMarten: IConfigureMarten
     {
