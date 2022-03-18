@@ -51,7 +51,7 @@ namespace DocumentDbTests.Metadata
                 });
             }))
             {
-                store.Storage.MappingFor(typeof(DocThatCouldBeVersioned))
+                store.StorageFeatures.MappingFor(typeof(DocThatCouldBeVersioned))
                     .Metadata.Version.Member.Name.ShouldBe(nameof(DocThatCouldBeVersioned.Revision));
             }
         }

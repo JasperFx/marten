@@ -129,7 +129,7 @@ namespace DocumentDbTests.Writing.Identity.Sequences
                 _.DatabaseSchemaName = "sequences";
             });
 
-            var mapping = store.Storage.MappingFor(typeof(IntDoc));
+            var mapping = store.StorageFeatures.MappingFor(typeof(IntDoc));
             store.Tenancy.Default.Database.Sequences
                 .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(33);
 

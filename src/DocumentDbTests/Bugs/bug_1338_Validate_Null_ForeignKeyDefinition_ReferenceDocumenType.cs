@@ -17,7 +17,7 @@ namespace DocumentDbTests.Bugs
         [Fact]
         public void StorageFeatures_AllActiveFeatures_Should_Not_Throw_With_ExternalForeignKeyDefinitions()
         {
-            theStore.Storage.AllActiveFeatures(theStore.Tenancy.Default.Database).All(x => x != null).ShouldBeTrue();
+            theStore.StorageFeatures.AllActiveFeatures(theStore.Tenancy.Default.Database).All(x => x != null).ShouldBeTrue();
         }
 
         public async Task InitializeAsync()

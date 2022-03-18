@@ -17,7 +17,7 @@ namespace EventSourcingTests.Aggregation
                 _.Projections.AggregatorFor<QuestParty>();
             });
 
-            theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
+            theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
                 .ShouldContain(typeof(QuestParty));
         }
 
@@ -30,7 +30,7 @@ namespace EventSourcingTests.Aggregation
             });
 
             // MyAggregate is the aggregate type for AllGood above
-            theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
+            theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
                 .ShouldContain(typeof(MyAggregate));
         }
 
@@ -43,7 +43,7 @@ namespace EventSourcingTests.Aggregation
                 _.Projections.SelfAggregate<QuestParty>();
             });
 
-            theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
+            theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
                 .ShouldContain(typeof(QuestParty));
         }
 
@@ -55,7 +55,7 @@ namespace EventSourcingTests.Aggregation
                 _.Projections.SelfAggregate<QuestParty>(ProjectionLifecycle.Async);
             });
 
-            theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
+            theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
                 .ShouldContain(typeof(QuestParty));
         }
 

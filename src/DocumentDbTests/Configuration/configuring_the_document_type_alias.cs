@@ -31,7 +31,7 @@ namespace DocumentDbTests.Configuration
             });
             #endregion
 
-            store.Storage.MappingFor(typeof(User)).As<DocumentMapping>().Alias.ShouldBe("folks");
+            store.StorageFeatures.MappingFor(typeof(User)).As<DocumentMapping>().Alias.ShouldBe("folks");
         }
 
         #region sample_using-document-alias-attribute

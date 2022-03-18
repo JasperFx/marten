@@ -422,10 +422,10 @@ namespace DocumentDbTests.MultiTenancy
                 opts.Schema.For<User>().MultiTenanted();
             });
 
-            store.Storage.MappingFor(typeof(User)).TenancyStyle.ShouldBe(TenancyStyle.Conjoined);
+            store.StorageFeatures.MappingFor(typeof(User)).TenancyStyle.ShouldBe(TenancyStyle.Conjoined);
 
             // the "control" to see that the default rules apply otherwise
-            store.Storage.MappingFor(typeof(Target)).TenancyStyle.ShouldBe(TenancyStyle.Single);
+            store.StorageFeatures.MappingFor(typeof(Target)).TenancyStyle.ShouldBe(TenancyStyle.Single);
         }
 
         [Fact]

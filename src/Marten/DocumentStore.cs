@@ -54,7 +54,7 @@ namespace Marten
 
             Schema = Tenancy.Default?.Database;
 
-            Storage.PostProcessConfiguration();
+            StorageFeatures.PostProcessConfiguration();
             Events.AssertValidity(this);
             Options.Projections.AssertValidity(this);
 
@@ -72,7 +72,7 @@ namespace Marten
 
         public EventGraph Events => Options.EventGraph;
 
-        public StorageFeatures Storage => Options.Storage;
+        public StorageFeatures StorageFeatures => Options.Storage;
 
         public ISerializer Serializer { get; }
 

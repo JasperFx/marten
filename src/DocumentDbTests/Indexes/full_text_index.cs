@@ -527,7 +527,7 @@ namespace DocumentDbTests.Indexes
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data);
 
-            theStore.Storage
+            theStore.StorageFeatures
                 .ShouldContainIndexDefinitionFor<Target>(
                     indexName: $"mt_doc_target_idx_fts",
                     dataConfig: DataConfig
@@ -550,7 +550,7 @@ namespace DocumentDbTests.Indexes
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data);
 
-            theStore.Storage
+            theStore.StorageFeatures
                 .ShouldContainIndexDefinitionFor<Target>(
                     indexName: $"mt_doc_target_{RegConfig}_idx_fts",
                     regConfig: RegConfig,
@@ -576,7 +576,7 @@ namespace DocumentDbTests.Indexes
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data);
 
-            theStore.Storage
+            theStore.StorageFeatures
                 .ShouldContainIndexDefinitionFor<Target>(
                     indexName: IndexName,
                     regConfig: RegConfig,
@@ -592,7 +592,7 @@ namespace DocumentDbTests.Indexes
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data);
 
-            theStore.Storage
+            theStore.StorageFeatures
                 .ShouldContainIndexDefinitionFor<Target>(
                     indexName: $"mt_doc_target_idx_fts",
                     dataConfig: $"((data ->> '{nameof(Target.String)}'))"
@@ -607,7 +607,7 @@ namespace DocumentDbTests.Indexes
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data);
 
-            theStore.Storage
+            theStore.StorageFeatures
                 .ShouldContainIndexDefinitionFor<Target>(
                     indexName: $"mt_doc_target_idx_fts",
                     dataConfig: $"((data ->> '{nameof(Target.String)}') || ' ' || (data ->> '{nameof(Target.AnotherString)}'))"
@@ -631,7 +631,7 @@ namespace DocumentDbTests.Indexes
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data);
 
-            theStore.Storage
+            theStore.StorageFeatures
                 .ShouldContainIndexDefinitionFor<Target>(
                     indexName: IndexName,
                     regConfig: RegConfig,
@@ -652,14 +652,14 @@ namespace DocumentDbTests.Indexes
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data);
 
-            theStore.Storage
+            theStore.StorageFeatures
                 .ShouldContainIndexDefinitionFor<Target>(
                     indexName: $"mt_doc_target_{frenchRegConfig}_idx_fts",
                     regConfig: frenchRegConfig,
                     dataConfig: $"((data ->> '{nameof(Target.String)}'))"
                 );
 
-            theStore.Storage
+            theStore.StorageFeatures
                 .ShouldContainIndexDefinitionFor<Target>(
                     indexName: $"mt_doc_target_{italianRegConfig}_idx_fts",
                     regConfig: italianRegConfig,
@@ -674,7 +674,7 @@ namespace DocumentDbTests.Indexes
 
             theStore.BulkInsert(new[] { new Book { Id = Guid.NewGuid(), Author = "test", Information = "test", Title = "test" } });
 
-            theStore.Storage
+            theStore.StorageFeatures
                 .ShouldContainIndexDefinitionFor<Book>(
                     tableName: "full_text_index.mt_doc_book",
                     indexName: $"mt_doc_book_idx_fts",
@@ -690,7 +690,7 @@ namespace DocumentDbTests.Indexes
 
             theStore.BulkInsert(new[] { new UserProfile { Id = Guid.NewGuid(), Information = "test" } });
 
-            theStore.Storage
+            theStore.StorageFeatures
                 .ShouldContainIndexDefinitionFor<UserProfile>(
                     tableName: "full_text_index.mt_doc_userprofile",
                     indexName: $"mt_doc_userprofile_idx_fts",
@@ -706,7 +706,7 @@ namespace DocumentDbTests.Indexes
 
             theStore.BulkInsert(new[] { new UserDetails { Id = Guid.NewGuid(), Details = "test" } });
 
-            theStore.Storage
+            theStore.StorageFeatures
                 .ShouldContainIndexDefinitionFor<UserDetails>(
                     tableName: "full_text_index.mt_doc_userdetails",
                     indexName: "mt_custom_user_details_fts_idx",
@@ -722,7 +722,7 @@ namespace DocumentDbTests.Indexes
 
             theStore.BulkInsert(new[] { new Article { Id = Guid.NewGuid(), Heading = "test", Text = "test" } });
 
-            theStore.Storage
+            theStore.StorageFeatures
                 .ShouldContainIndexDefinitionFor<Article>(
                     tableName: "full_text_index.mt_doc_article",
                     indexName: $"mt_doc_article_idx_fts",
@@ -741,7 +741,7 @@ namespace DocumentDbTests.Indexes
 
             theStore.BulkInsert(new[] { new BlogPost { Id = Guid.NewGuid(), Category = "test", EnglishText = "test", FrenchText = "test", ItalianText = "test" } });
 
-            theStore.Storage
+            theStore.StorageFeatures
                 .ShouldContainIndexDefinitionFor<BlogPost>(
                     tableName: "full_text_index.mt_doc_blogpost",
                     indexName: $"mt_doc_blogpost_idx_fts",
@@ -749,7 +749,7 @@ namespace DocumentDbTests.Indexes
                     dataConfig: $"((data ->> '{nameof(BlogPost.EnglishText)}'))"
                 );
 
-            theStore.Storage
+            theStore.StorageFeatures
                 .ShouldContainIndexDefinitionFor<BlogPost>(
                     tableName: "full_text_index.mt_doc_blogpost",
                     indexName: $"mt_doc_blogpost_{frenchRegConfig}_idx_fts",
@@ -757,7 +757,7 @@ namespace DocumentDbTests.Indexes
                     dataConfig: $"((data ->> '{nameof(BlogPost.FrenchText)}'))"
                 );
 
-            theStore.Storage
+            theStore.StorageFeatures
                 .ShouldContainIndexDefinitionFor<BlogPost>(
                     tableName: "full_text_index.mt_doc_blogpost",
                     indexName: $"mt_doc_blogpost_{italianRegConfig}_idx_fts",

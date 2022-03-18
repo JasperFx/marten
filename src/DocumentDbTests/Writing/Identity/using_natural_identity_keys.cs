@@ -58,7 +58,7 @@ namespace DocumentDbTests.Writing.Identity
                 #endregion
             });
 
-            var mapping = theStore.Storage.MappingFor(typeof(OverriddenIdDoc)).As<DocumentMapping>();
+            var mapping = theStore.StorageFeatures.MappingFor(typeof(OverriddenIdDoc)).As<DocumentMapping>();
             mapping.IdType.ShouldBe(typeof(string));
             mapping.IdMember.Name.ShouldBe(nameof(OverriddenIdDoc.Name));
             mapping.IdStrategy.ShouldBeOfType<StringIdGeneration>();

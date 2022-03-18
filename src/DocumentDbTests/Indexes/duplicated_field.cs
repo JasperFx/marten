@@ -168,7 +168,7 @@ namespace DocumentDbTests.Indexes
                 _.Schema.For<Organization>().Duplicate(x => x.Time2, pgType: "timestamp");
             });
 
-            theStore.Storage.MappingFor(typeof(Organization)).As<DocumentMapping>().DuplicatedFields.Single(x => x.MemberName == "Time2")
+            theStore.StorageFeatures.MappingFor(typeof(Organization)).As<DocumentMapping>().DuplicatedFields.Single(x => x.MemberName == "Time2")
                 .PgType.ShouldBe("timestamp");
         }
 

@@ -33,7 +33,7 @@ namespace DocumentDbTests.Configuration
                 _.Schema.For<User>().PropertySearching(PropertySearching.JSON_Locator_Only);
             });
 
-            theStorage = store.Storage;
+            theStorage = store.StorageFeatures;
         }
 
         [Fact]

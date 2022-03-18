@@ -80,8 +80,8 @@ namespace DocumentDbTests.Writing.Identity.Sequences
                 #endregion
             });
 
-            theStore.Storage.MappingFor(typeof(UserWithGuid)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
-            theStore.Storage.MappingFor(typeof(UserWithGuid2)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
+            theStore.StorageFeatures.MappingFor(typeof(UserWithGuid)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
+            theStore.StorageFeatures.MappingFor(typeof(UserWithGuid2)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
         }
 
         [Fact]

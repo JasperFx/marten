@@ -783,7 +783,7 @@ namespace Marten.PLv8.Testing.Patching
         [Fact]
         public async Task bug_611_duplicate_field_is_updated_by_set_operation()
         {
-            var mapping = theStore.Storage.MappingFor(typeof(Target));
+            var mapping = theStore.StorageFeatures.MappingFor(typeof(Target));
             var field = mapping.DuplicateField("String");
             await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
@@ -805,7 +805,7 @@ namespace Marten.PLv8.Testing.Patching
         [Fact]
         public async Task bug_611_duplicate_field_is_updated_by_set_operation_with_multiple_duplicates_smoke_test()
         {
-            var mapping = theStore.Storage.MappingFor(typeof(Target));
+            var mapping = theStore.StorageFeatures.MappingFor(typeof(Target));
             var field = mapping.DuplicateField("String");
             var field2 = mapping.DuplicateField(nameof(Target.Number));
             await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();

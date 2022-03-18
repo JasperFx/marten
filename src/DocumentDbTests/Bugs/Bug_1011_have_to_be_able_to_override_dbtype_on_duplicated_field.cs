@@ -19,7 +19,7 @@ namespace DocumentDbTests.Bugs
                         dbType: NpgsqlDbType.Timestamp);
                 });
 
-            var field = theStore.Storage.MappingFor(typeof(DocWithDateTimeField))
+            var field = theStore.StorageFeatures.MappingFor(typeof(DocWithDateTimeField))
                 .DuplicatedFields.Single();
 
             field.DbType.ShouldBe(NpgsqlDbType.Timestamp);
@@ -35,7 +35,7 @@ namespace DocumentDbTests.Bugs
                     dbType: NpgsqlDbType.Timestamp);
             });
 
-            var field = theStore.Storage.MappingFor(typeof(DocWithDateTimeField))
+            var field = theStore.StorageFeatures.MappingFor(typeof(DocWithDateTimeField))
                 .DuplicatedFields.Single();
 
             field.DbType.ShouldBe(NpgsqlDbType.Timestamp);

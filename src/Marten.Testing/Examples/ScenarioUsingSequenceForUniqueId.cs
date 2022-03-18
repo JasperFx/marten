@@ -50,7 +50,7 @@ namespace Marten.Testing.Examples
             #endregion
 
             #region sample_scenario-usingsequenceforuniqueid-querymatter
-            var matter = theStore.Storage.FindFeature(typeof(MatterId)).Objects.OfType<Sequence>().Single();
+            var matter = theStore.StorageFeatures.FindFeature(typeof(MatterId)).Objects.OfType<Sequence>().Single();
 
             using var session = theStore.OpenSession();
             // Generate a new, unique identifier

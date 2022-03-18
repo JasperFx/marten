@@ -115,7 +115,7 @@ namespace EventSourcingTests
             theStore.Advanced.Clean.DeleteAllEventData();
 
 
-            theStore.Storage.FindMapping(typeof(MembersDeparted))
+            theStore.StorageFeatures.FindMapping(typeof(MembersDeparted))
                 .TableName.Schema.ShouldBe("query_against_event_documents_tests_events");
 
             theSession.Events.StartStream<Quest>(joined1, departed1);

@@ -66,7 +66,7 @@ namespace CoreTests
             await theSession.SaveChangesAsync();
             theSession.Dispose();
 
-            var tableName = theStore.Storage.MappingFor(typeof(Target)).TableName;
+            var tableName = theStore.StorageFeatures.MappingFor(typeof(Target)).TableName;
 
             (await theStore.Tenancy.Default.Database.DocumentTables()).Contains(tableName)
                 .ShouldBeTrue();
@@ -85,7 +85,7 @@ namespace CoreTests
 
             await theSession.SaveChangesAsync();
 
-            var upsertName = theStore.Storage.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
+            var upsertName = theStore.StorageFeatures.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
 
             (await theStore.Tenancy.Default.Database.Functions()).ShouldContain(upsertName);
 

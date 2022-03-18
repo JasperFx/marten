@@ -71,7 +71,7 @@ namespace DocumentDbTests.Writing.Identity.Sequences
                 #endregion
             });
 
-            theStore.Storage.MappingFor(typeof(UserWithString)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CustomIdGeneration>();
+            theStore.StorageFeatures.MappingFor(typeof(UserWithString)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CustomIdGeneration>();
         }
     }
 }

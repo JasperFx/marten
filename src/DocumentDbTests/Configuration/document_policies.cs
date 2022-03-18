@@ -29,14 +29,14 @@ namespace DocumentDbTests.Configuration
         [Fact]
         public void applies_to_all_document_types_that_are_not_otherwise_configured()
         {
-            theStore.Storage.MappingFor(typeof(Target)).UseOptimisticConcurrency.ShouldBeTrue();
-            theStore.Storage.MappingFor(typeof(Issue)).UseOptimisticConcurrency.ShouldBeTrue();
+            theStore.StorageFeatures.MappingFor(typeof(Target)).UseOptimisticConcurrency.ShouldBeTrue();
+            theStore.StorageFeatures.MappingFor(typeof(Issue)).UseOptimisticConcurrency.ShouldBeTrue();
         }
 
         [Fact]
         public void can_be_overridden_by_explicits()
         {
-            theStore.Storage.MappingFor(typeof(User)).UseOptimisticConcurrency.ShouldBeFalse();
+            theStore.StorageFeatures.MappingFor(typeof(User)).UseOptimisticConcurrency.ShouldBeFalse();
         }
 
         [Fact]
@@ -47,7 +47,7 @@ namespace DocumentDbTests.Configuration
                 _.Policies.ForAllDocuments(x => x.TenancyStyle = TenancyStyle.Single);
             });
 
-            theStore.Storage.MappingFor(typeof(TenantedDoc))
+            theStore.StorageFeatures.MappingFor(typeof(TenantedDoc))
                 .TenancyStyle.ShouldBe(TenancyStyle.Conjoined);
         }
 
@@ -62,7 +62,7 @@ namespace DocumentDbTests.Configuration
                 #endregion
             });
 
-            theStore.Storage.MappingFor(typeof(Target))
+            theStore.StorageFeatures.MappingFor(typeof(Target))
                 .TenancyStyle.ShouldBe(TenancyStyle.Conjoined);
         }
 

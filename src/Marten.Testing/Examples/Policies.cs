@@ -25,7 +25,7 @@ namespace Marten.Testing.Examples
                 storeOptions.Connection("");
             });
 
-            Assert.Equal(TenancyStyle.Conjoined, store.Storage.MappingFor(typeof(MultiTenantType)).TenancyStyle);
+            Assert.Equal(TenancyStyle.Conjoined, store.StorageFeatures.MappingFor(typeof(MultiTenantType)).TenancyStyle);
         }
 
         #region sample_sample-policy-implementation

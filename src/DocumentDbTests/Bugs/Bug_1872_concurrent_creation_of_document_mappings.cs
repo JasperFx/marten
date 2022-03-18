@@ -23,9 +23,9 @@ namespace DocumentDbTests.Bugs
             {
                 tasks.Add(Task.Factory.StartNew(() =>
                 {
-                    store.Storage.Build(typeof(Issue), store.Options);
-                    store.Storage.Build(typeof(User), store.Options);
-                    store.Storage.Build(typeof(Target), store.Options);
+                    store.StorageFeatures.Build(typeof(Issue), store.Options);
+                    store.StorageFeatures.Build(typeof(User), store.Options);
+                    store.StorageFeatures.Build(typeof(Target), store.Options);
                 }));
             }
 

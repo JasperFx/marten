@@ -29,7 +29,7 @@ namespace EventSourcingTests.Projections
             UseProjection<SimpleTransformProjectionUsingMetadata>();
 
             // MyAggregate is the aggregate type for AllGood above
-            theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
+            theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
                 .ShouldContain(typeof(User));
         }
 

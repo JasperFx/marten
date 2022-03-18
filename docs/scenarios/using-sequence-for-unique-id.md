@@ -79,7 +79,7 @@ Now, when creating and persisting such types, we first query the database for a 
 <!-- snippet: sample_scenario-usingsequenceforuniqueid-querymatter -->
 <a id='snippet-sample_scenario-usingsequenceforuniqueid-querymatter'></a>
 ```cs
-var matter = theStore.Storage.FindFeature(typeof(MatterId)).Objects.OfType<Sequence>().Single();
+var matter = theStore.StorageFeatures.FindFeature(typeof(MatterId)).Objects.OfType<Sequence>().Single();
 
 using var session = theStore.OpenSession();
 // Generate a new, unique identifier

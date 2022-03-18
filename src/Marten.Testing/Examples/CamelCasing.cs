@@ -17,7 +17,7 @@ namespace Marten.Testing.Examples
                 storeOptions.Connection("");
             });
 
-            var field = store.Storage.MappingFor(typeof(User))
+            var field = store.StorageFeatures.MappingFor(typeof(User))
                 .FieldFor(nameof(User.FirstName));
 
             Assert.Equal(@"d.data ->> 'firstName'", field.TypedLocator);

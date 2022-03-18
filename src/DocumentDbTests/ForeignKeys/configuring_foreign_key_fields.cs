@@ -13,7 +13,7 @@ namespace DocumentDbTests.ForeignKeys
         [Fact]
         public void should_get_foreign_key_from_attribute()
         {
-            theStore.Storage.MappingFor(typeof(Issue))
+            theStore.StorageFeatures.MappingFor(typeof(Issue))
                 .As<DocumentMapping>()
                 .ForeignKeys
                 .ShouldContain(x => x.ColumnNames[0] == "user_id");
@@ -30,7 +30,7 @@ namespace DocumentDbTests.ForeignKeys
                 _.Schema.For<Issue>().ForeignKey<User>(i => i.OtherUserId);
             });
 
-            store.Storage.MappingFor(typeof(Issue))
+            store.StorageFeatures.MappingFor(typeof(Issue))
                 .As<DocumentMapping>()
                 .ForeignKeys
                 .ShouldContain(x => x.ColumnNames[0] == "other_user_id");
@@ -39,7 +39,7 @@ namespace DocumentDbTests.ForeignKeys
         [Fact]
         public void should_allow_self_reference()
         {
-            theStore.Storage.MappingFor(typeof(Employee))
+            theStore.StorageFeatures.MappingFor(typeof(Employee))
                 .As<DocumentMapping>()
                 .ForeignKeys
                 .ShouldContain(x => x.ColumnNames[0] == "manager_id");
@@ -58,7 +58,7 @@ namespace DocumentDbTests.ForeignKeys
                     .ForeignKey<Foo>(x => x.FooId);
             });
 
-            store.Storage.MappingFor(typeof(FooExtra))
+            store.StorageFeatures.MappingFor(typeof(FooExtra))
                 .As<DocumentMapping>()
                 .ForeignKeys
                 .ShouldContain(x => x.ColumnNames[0] == "foo_id");

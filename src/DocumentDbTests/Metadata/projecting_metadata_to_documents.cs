@@ -27,16 +27,16 @@ namespace DocumentDbTests.Metadata
                     .SoftDeleted();
             });
 
-            theStore.Storage.MappingFor(typeof(DocWithMeta))
+            theStore.StorageFeatures.MappingFor(typeof(DocWithMeta))
                 .Metadata.Version.Member.Name.ShouldBe(nameof(DocWithMeta.Version));
 
-            theStore.Storage.MappingFor(typeof(DocWithMeta))
+            theStore.StorageFeatures.MappingFor(typeof(DocWithMeta))
                 .Metadata.LastModified.Member.Name.ShouldBe(nameof(DocWithMeta.LastModified));
 
-            theStore.Storage.MappingFor(typeof(DocWithMeta))
+            theStore.StorageFeatures.MappingFor(typeof(DocWithMeta))
                 .Metadata.IsSoftDeleted.Member.Name.ShouldBe(nameof(DocWithMeta.Deleted));
 
-            theStore.Storage.MappingFor(typeof(DocWithMeta))
+            theStore.StorageFeatures.MappingFor(typeof(DocWithMeta))
                 .Metadata.SoftDeletedAt.Member.Name.ShouldBe(nameof(DocWithMeta.DeletedAt));
 
         }
@@ -44,10 +44,10 @@ namespace DocumentDbTests.Metadata
         [Fact]
         public void set_the_metadata_projections_via_attributes()
         {
-            theStore.Storage.MappingFor(typeof(DocWithAttributeMeta))
+            theStore.StorageFeatures.MappingFor(typeof(DocWithAttributeMeta))
                 .Metadata.Version.Member.Name.ShouldBe(nameof(DocWithAttributeMeta.Version));
 
-            theStore.Storage.MappingFor(typeof(DocWithAttributeMeta))
+            theStore.StorageFeatures.MappingFor(typeof(DocWithAttributeMeta))
                 .Metadata.LastModified.Member.Name.ShouldBe(nameof(DocWithAttributeMeta.LastModified));
 
         }
