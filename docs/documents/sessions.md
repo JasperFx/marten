@@ -146,6 +146,33 @@ public void demonstrate_eject()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_documents.cs#L11-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_a_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Ejecting all pending changes from a Session
+
+If you want to remove all queued operations such as document changes or event operations in an unit of work, you can use `IDocumentSession.EjectAllPendingChanges()`. Note that calling this method will not impact any existing identity map i.e. all document stores. Here is a sample from one of our tests:
+
+<!-- snippet: sample_ejecting_all_document_changes -->
+<a id='snippet-sample_ejecting_all_document_changes'></a>
+```cs
+[Fact]
+public void will_clear_all_document_changes()
+{
+    theSession.Store(Target.Random());
+    theSession.Insert(Target.Random());
+    theSession.Update(Target.Random());
+
+    theSession.PendingChanges.Operations().Any().ShouldBeTrue();
+
+    theSession.EjectAllPendingChanges();
+
+    theSession.PendingChanges.Operations().Any().ShouldBeFalse();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_all_pending_changes.cs#L16-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_all_document_changes' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+
+
 ## Connection Handling
 
 Marten uses a single connection to the Postgresql database in each `IQuerySession` or `IDocumentSession`.

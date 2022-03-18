@@ -13,6 +13,7 @@ namespace DocumentDbTests.SessionMechanics
         {
         }
 
+        #region sample_ejecting_all_document_changes
         [Fact]
         public void will_clear_all_document_changes()
         {
@@ -26,6 +27,7 @@ namespace DocumentDbTests.SessionMechanics
 
             theSession.PendingChanges.Operations().Any().ShouldBeFalse();
         }
+        #endregion
 
         public class AEvent{}
         public class BEvent{}
