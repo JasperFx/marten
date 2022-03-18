@@ -23,7 +23,13 @@ First, some terminology:
 There are only two basic things to configure the *Async Daemon*:
 
 1. Register the projections that should run asynchronously
-1. Set the `StoreOptions.AsyncMode` to either `Solo` or `HotCold` (more on what these options mean later in this page)
+2. Set the `StoreOptions.AsyncMode` to either `Solo` or `HotCold` (more on what these options mean later in this page)
+
+:::warning
+The asynchronous daemon service registration is **opt in** starting with V5 and requires the chained call
+to `AddAsyncDaemon()` shown below. This was done to alleviate user issues with Marten inside of Azure Functions
+where the runtime was not compatible with the hosted service for the daemon.
+:::
 
 As an example, this configures the daemon to run in the current node with a single active projection:
 
