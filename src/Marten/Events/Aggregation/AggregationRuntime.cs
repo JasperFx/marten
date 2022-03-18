@@ -58,11 +58,13 @@ namespace Marten.Events.Aggregation
             }
 
             var aggregate = slice.Aggregate;
-
             if (slice.Aggregate == null && lifecycle == ProjectionLifecycle.Inline)
             {
                 aggregate = await Storage.LoadAsync(slice.Id, session, cancellation).ConfigureAwait(false);
             }
+
+            // Does the aggregate already exist before the events are applied?
+            var exists = aggregate != null;
 
             foreach (var @event in slice.Events())
             {
@@ -89,10 +91,14 @@ namespace Marten.Events.Aggregation
                 Storage.SetIdentity(aggregate, slice.Id);
             }
 
+            // Delete the aggregate *if* it existed prior to these events
             if (aggregate == null)
             {
-                var operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
-                session.QueueOperation(operation);
+                if (exists)
+                {
+                    var operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
+                    session.QueueOperation(operation);
+                }
 
                 return;
             }
