@@ -170,9 +170,6 @@ public void will_clear_all_document_changes()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_all_pending_changes.cs#L16-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_all_document_changes' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
-
-
 ## Connection Handling
 
 Marten uses a single connection to the Postgresql database in each `IQuerySession` or `IDocumentSession`.
