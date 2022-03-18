@@ -150,7 +150,7 @@ public void order_by_dynamic_props(IDocumentSession session)
 
 If you use `StringComparer.InvariantCultureIgnoreCase` or `StringComparer.OrdinalIgnoreCase` with an `OrderBy` on strings, Marten automatically applies case-insensitive ordering using `lower()` in generated SQL. This functionality is added in v5.
 
-```cs 
+```cs
 // invariant culture ignore case
 var query = theSession.Query<Target>().OrderBy(x => x.String, StringComparer.InvariantCultureIgnoreCase);
 
