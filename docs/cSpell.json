@@ -69,8 +69,8 @@
         "gwid",
         "codegen",
         "NAMEDATALEN",
-        "unigram",
-        "bigram"
+        "unigrams",
+        "bigrams"
     ],
     "ignoreRegExpList": [
         "\\((.*)\\)", // Markdown links
