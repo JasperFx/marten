@@ -72,9 +72,9 @@ var badIssues = await session.Query<Issue>()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/OpeningAQuerySession.cs#L11-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_querysession' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Serializable transaction sessions
+## Async session for serializable transactions
 
-Use `IDocumentStore.OpenSessionAsync()` to Open a new `IDocumentSession` with the supplied options and immediately open the database connection and start the transaction for the session. This is appropriate for Serializable transaction sessions.
+Use `IDocumentStore.OpenSessionAsync()` to Open a new `IDocumentSession` with the supplied options and immediately open the database connection and start the transaction for the session. This is appropriate for Serializable transaction sessions. This is added in v5.
 
 <!-- snippet: sample_opening_session_async -->
 <a id='snippet-sample_opening_session_async'></a>
