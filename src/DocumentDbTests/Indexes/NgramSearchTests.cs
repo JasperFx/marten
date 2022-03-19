@@ -44,10 +44,12 @@ namespace DocumentDbTests.Indexes
 
             await session.SaveChangesAsync();
 
+            #region sample_ngram_search
             var result = await session
                 .Query<User>()
                 .Where(x => x.UserName.NgramSearch(term))
                 .ToListAsync();
+            #endregion
 
             result.ShouldNotBeNull();
             result.ShouldHaveSingleItem();

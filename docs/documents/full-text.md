@@ -310,3 +310,18 @@ var posts = session.Query<BlogPost>()
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L373-L377' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_text_search_with_non_default_regconfig_sample' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Partial text search in a multi-word text (NGram search)
+
+Marten provides the ability to search partial text or words in a string containing multiple words using NGram search. This is quite similiar in functionality to [NGrams in Elastic Search](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-ngram-tokenizer.html). As an example, we can now accurately match `rich com text` within `Communicating Across Contexts (Enriched)`. NGram search uses English by default. NGram search also encompasses and handles unigrams, bigrams and trigrams. This functionality is added in v5.
+
+<!-- snippet: sample_ngram_search -->
+<a id='snippet-sample_ngram_search'></a>
+```cs
+var result = await session
+    .Query<User>()
+    .Where(x => x.UserName.NgramSearch(term))
+    .ToListAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L47-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
