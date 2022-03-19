@@ -14,6 +14,7 @@ types of sessions are:
 |------------|--------------|----------------|------------------|
 |`IDocumentStore.QuerySession()`|Read Only|No|No|
 |`IDocumentStore.OpenSession()`|Read/Write|Yes|No|
+|`IDocumentStore.OpenSessionAsync()`|Read/Write|Yes|No|
 |`IDocumentStore.DirtyTrackedSession()`|Read/Write|Yes|Yes|
 |`IDocumentStore.LightweightSession()`|Read/Write|No|No|
 
@@ -69,6 +70,22 @@ var badIssues = await session.Query<Issue>()
     .ToListAsync();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/OpeningAQuerySession.cs#L11-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_querysession' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Serializable transaction sessions
+
+Use `IDocumentStore.OpenSessionAsync()` to Open a new `IDocumentSession` with the supplied options and immediately open the database connection and start the transaction for the session. This is appropriate for Serializable transaction sessions.
+
+<!-- snippet: sample_opening_session_async -->
+<a id='snippet-sample_opening_session_async'></a>
+```cs
+await using var session = await store.OpenSessionAsync(SessionOptions.ForConnectionString("another connection string"));
+
+var openIssues = await session.Query<Issue>()
+    .Where(x => x.Tags.Contains("open"))
+    .ToListAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/OpeningASessionAsync.cs#L19-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_session_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Identity Map Mechanics
