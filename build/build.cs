@@ -42,10 +42,10 @@ namespace martenbuild
                 File.WriteAllText("src/Marten.Testing/connection.txt", GetEnvironmentVariable("connection")));
 
             Target("install", () =>
-                RunNpm("install"));
+                Run("npm", "install"));
 
             Target("mocha", DependsOn("install"), () =>
-                RunNpm("run test"));
+                Run("npm", "run test"));
 
             Target("compile", DependsOn("clean"), () =>
             {
@@ -118,12 +118,12 @@ namespace martenbuild
 
             Target("docs", DependsOn("install", "install-mdsnippets"), () => {
                 // Run docs site
-                RunNpm("run docs");
+                Run("npm", "run docs");
             });
 
             Target("docs-build", DependsOn("install", "install-mdsnippets"), () => {
                 // Run docs site
-                RunNpm("run docs-build");
+                Run("npm", "run docs-build");
             });
 
             Target("docs-import-v3", DependsOn("docs-build"), () =>
@@ -153,10 +153,10 @@ namespace martenbuild
 
 
             Target("publish-docs-preview", DependsOn("docs-import-v3"), () =>
-                RunNpm("run deploy"));
+                Run("npm", "run deploy"));
 
             Target("publish-docs", DependsOn("docs-import-v3"), () =>
-                RunNpm("run deploy:prod"));
+                Run("npm", "run deploy:prod"));
 
             Target("benchmarks", () =>
                 Run("dotnet", "run --project src/MartenBenchmarks --configuration Release"));
@@ -271,9 +271,6 @@ namespace martenbuild
 
             baseDir.Delete(true);
         }
-
-        private static void RunNpm(string args) =>
-            Run("npm", args, windowsName: "cmd.exe", windowsArgs: $"/c npm {args}");
 
         private static string GetEnvironmentVariable(string variableName)
         {
