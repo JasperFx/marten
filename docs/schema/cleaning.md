@@ -1,7 +1,10 @@
-# Tearing Down Document Storage
+# Cleaning up database
 
-For the purpose of automated testing where you need to carefully control the state of the document storage, Marten supplies the
-`IDocumentCleaner` service to quickly remove persisted document state or even to completely tear down the entire document storage.
+For the purpose of automated testing where you need to carefully control the state of the database, Marten supplies few helper functions.
+
+## Tearing Down Document Storage
+
+Marten supplies the `IDocumentCleaner` service to quickly remove persisted document state or even to completely tear down the entire document storage.
 
 This service is exposed as the `IDocumentStore.Advanced.Clean` property. You can see the usages of the document cleaner below:
 
@@ -31,4 +34,18 @@ public void clean_out_documents(IDocumentStore store)
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentCleanerExamples.cs#L7-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_clean_out_documents' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Reset all data
+
+Use `IDocumentStore.Advanced.ResetAllData()` to deletes all current document, event data and then (re)applies the configured initial data.
+
+<!-- snippet: sample_reset_all_data -->
+<a id='snippet-sample_reset_all_data'></a>
+```cs
+theStore.Advanced.InitialDataCollection.Add(new Users());
+
+await theStore.Advanced.ResetAllData();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/reset_all_data_usage.cs#L45-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_reset_all_data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

@@ -42,9 +42,11 @@ namespace DocumentDbTests.SessionMechanics
                 opts.Logger(new TestOutputMartenLogger(_output));
             });
 
+            #region sample_reset_all_data
             theStore.Advanced.InitialDataCollection.Add(new Users());
 
             await theStore.Advanced.ResetAllData();
+            #endregion
 
             using (var session = theStore.LightweightSession())
             {
