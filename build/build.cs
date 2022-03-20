@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using Npgsql;
 using static System.Globalization.CultureInfo;
 using static Bullseye.Targets;
@@ -20,7 +21,7 @@ namespace martenbuild
         private const string DockerConnectionString =
             "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
 
-        private static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
             _framework = GetFramework();
 
@@ -208,7 +209,7 @@ namespace martenbuild
                 }
             });
 
-            RunTargetsAndExit(args);
+            await RunTargetsAndExitAsync(args);
         }
 
         private static void RunTests(string projectName, string directoryName = "src")
