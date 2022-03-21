@@ -5,18 +5,22 @@ The programming model for projections was completely rewritten for Marten V4
 :::
 
 Marten has a (we hope) strong model for user-defined projections of the raw event data. Projections are used within Marten to create
-read-side views of the raw event data. The basics of the Marten projection model are shown below:
+read-side views of the raw event data. 
 
-![Projection Class Diagram](/images/Projections.png)
 
-Do note that all the various types of aggregated projections all inherit from a common base and have the same core set of conventions.
+## Choosing a Projection Type
 
-## Projection Types
+:::tip
+Do note that all the various types of aggregated projections inherit from a common base type and have the same core set of conventions.
+:::
 
 1. [Aggregate Projections](/events/projections/aggregate-projections) combine either a stream or some other related set of events into a single view.
-1. [View Projections](/events/projections/view-projections) are a specialized form of aggregate projections that allow you to aggregate against arbitrary groupings of events across streams.
-1. [Event Projections](/events/projections/event-projections) are a recipe for building projections that create or delete one or more documents for a single event
-1. If one of the built in projection recipes doesn't fit what you want to do, you can happily build your own [custom projection](/events/projections/custom)
+2. [View Projections](/events/projections/view-projections) are a specialized form of aggregate projections that allow you to aggregate against arbitrary groupings of events across streams.
+3. [Event Projections](/events/projections/event-projections) are a recipe for building projections that create or delete one or more documents for a single event
+4. [Custom Projections](/events/projections/custom-aggregates) are a recipe for building aggregate projections that require more logic than
+   can be accomplished by the other aggregation types. Example usages are soft-deleted aggregate documents that maybe be recreated later or
+   if you only apply events to an aggregate if the aggregate document previously existed.
+5. If one of the built in projection recipes doesn't fit what you want to do, you can happily build your own [custom projection](/events/projections/custom)
 
 ## Projection Lifecycles
 
@@ -121,27 +125,6 @@ public class QuestPartyWithEvents
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/QuestPartyWithEvents.cs#L8-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpartywithevents' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Aggregates Across Multiple Streams
-
-Example coming soon, and check [Jeremy's blog](http://jeremydmiller.com) for a sample soon.
-
-It's possible currently by using either a custom `IProjection` or using the existing aggregation capabilities with a
-custom `IAggregateFinder<T>`, where `T` is the projected view document type.
-
-## Aggregator Lookup
-
-`EventGraph.UseAggregatorLookup(IAggregatorLookup aggregatorLookup)` can be used to register an `IAggregatorLookup` that is used to look up `IAggregator<T>` for aggregations. This allows a generic aggregation strategy to be used, rather than registering aggregators case-by-case through `EventGraphAddAggregator<T>(IAggregator<T> aggregator)`.
-
-A shorthand extension method `EventGraph.UseAggregatorLookup(this EventGraph eventGraph, AggregationLookupStrategy strategy)` can be used to set default aggregation lookup, whereby
-
-* `AggregationLookupStrategy.UsePublicApply` resolves aggregators that use public Apply
-* `AggregationLookupStrategy.UsePrivateApply` resolves aggregators that use private Apply
-* `AggregationLookupStrategy.UsePublicAndPrivateApply` resolves aggregators that use public or private Apply
-
-The aggregation lookup can also be set in the `StoreOptions.Events.UserAggregatorLookup`
-
-// TODO: fix this sample
-<[sample:register-custom-aggregator-lookup]>
 
 ## Live Aggregation via .Net
 

@@ -371,6 +371,8 @@ namespace EventSourcingTests.Aggregation
         }
     }
 
+    #region sample_StartAndStopAggregate
+
     public class StartAndStopAggregate : ISoftDeleted
     {
         // These are Marten controlled
@@ -387,17 +389,34 @@ namespace EventSourcingTests.Aggregation
         }
     }
 
+    #endregion
+
+    #region sample_custom_aggregate_events
+
     public class Start{}
     public class End{}
     public class Restart{}
     public class Increment{}
 
+    #endregion
+
+    #region sample_custom_aggregate_with_start_and_stop
+
     public class StartAndStopProjection: CustomAggregation<StartAndStopAggregate, Guid>
     {
         public StartAndStopProjection()
         {
+            // I'm telling Marten that events are assigned to the aggregate
+            // document by the stream id
             AggregateByStream();
 
+            // This is an optional, but potentially important optimization
+            // for the async daemon so that it sets up an allow list
+            // of the event types that will be run through this projection
+            IncludeType<Start>();
+            IncludeType<End>();
+            IncludeType<Restart>();
+            IncludeType<Increment>();
         }
 
         public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<StartAndStopAggregate, Guid> slice, CancellationToken cancellation,
@@ -448,4 +467,6 @@ namespace EventSourcingTests.Aggregation
             return new ValueTask();
         }
     }
+
+    #endregion
 }

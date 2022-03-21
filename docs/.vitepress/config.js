@@ -134,7 +134,8 @@ module.exports = {
             children: [
               {text: 'Aggregate Projections', link: '/events/projections/aggregate-projections'},
               {text: 'Live Aggregations', link: '/events/projections/live-aggregates'},
-              {text: 'View Projections', link: '/events/projections/view-projections'},
+              {text: 'Cross-Stream Aggregations', link: '/events/projections/view-projections'},
+              {text: 'Custom Aggregations', link: '/events/projections/custom-aggregates'},
               {text: 'Event Projections', link: '/events/projections/event-projections'},
               {text: 'Custom Projections', link: '/events/projections/custom'},
               {text: 'Inline Projections', link: '/events/projections/inline'},
