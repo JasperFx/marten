@@ -10,26 +10,26 @@ As of Marten v0.8, you have much finer grained ability to control the automatic 
 <!-- snippet: sample_AutoCreateSchemaObjects -->
 <a id='snippet-sample_autocreateschemaobjects'></a>
 ```cs
-var store = DocumentStore.For(_ =>
+var store = DocumentStore.For(opts =>
 {
     // Marten will create any new objects that are missing,
     // attempt to update tables if it can, but drop and replace
     // tables that it cannot patch.
-    _.AutoCreateSchemaObjects = AutoCreate.All;
+    opts.AutoCreateSchemaObjects = AutoCreate.All;
 
     // Marten will create any new objects that are missing or
     // attempt to update tables if it can. Will *never* drop
     // any existing objects, so no data loss
-    _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
+    opts.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
 
     // Marten will create missing objects on demand, but
     // will not change any existing schema objects
-    _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;
+    opts.AutoCreateSchemaObjects = AutoCreate.CreateOnly;
 
     // Marten will not create or update any schema objects
     // and throws an exception in the case of a schema object
     // not reflecting the Marten configuration
-    _.AutoCreateSchemaObjects = AutoCreate.None;
+    opts.AutoCreateSchemaObjects = AutoCreate.None;
 });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L39-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>

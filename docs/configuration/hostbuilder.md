@@ -605,3 +605,104 @@ public class Startup
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/EagerInitialization/Startup.cs#L7-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwitheagerinitialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Working with Multiple Marten Databases
+
+:::tip
+This feature is **not** meant for multi-tenancy with separate databases. This is specifically meant for use
+cases where a single system needs to work with two or more semantically different Marten databases.
+:::
+
+:::tip
+The database management tools in Marten.CommandLine are able to work with the separately registered
+document stores along with the default store from `AddMarten()`.
+:::
+
+Marten V5.0 introduces a new feature to register additional Marten databases into a .Net system. `AddMarten()` continues
+to work as it has, but we can now register and resolve additional store services. To utilize the type system and your application's 
+underlying IoC container, the first step is to create a custom *marker* interface for your separate document store like this one below targeting
+a separate "invoicing" database:
+
+<!-- snippet: sample_IInvoicingStore -->
+<a id='snippet-sample_iinvoicingstore'></a>
+```cs
+// These marker interfaces *must* be public
+public interface IInvoicingStore : IDocumentStore
+{
+
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/MultipleDocumentStores.cs#L57-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iinvoicingstore' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+A couple notes on the interface:
+
+1. The custom interface has to be public and implement the `IDocumentStore` interface
+2. Marten is quietly building a dynamic type for your additional store interface internally
+
+And now to bootstrap that separate store in our system:
+
+<!-- snippet: sample_bootstrapping_separate_Store -->
+<a id='snippet-sample_bootstrapping_separate_store'></a>
+```cs
+using var host = Host.CreateDefaultBuilder()
+    .ConfigureServices(services =>
+    {
+        // You can still use AddMarten() for the main document store
+        // of this application
+        services.AddMarten("some connection string");
+
+        services.AddMartenStore<IInvoicingStore>(opts =>
+            {
+                // All the normal options are available here
+                opts.Connection("different connection string");
+
+                // more configuration
+            })
+            // Optionally apply all database schema
+            // changes on startup
+            .ApplyAllDatabaseChangesOnStartup()
+
+            // Run the async daemon for this database
+            .AddAsyncDaemon(DaemonMode.HotCold)
+
+            // Use IInitialData
+            .InitializeWith(new DefaultDataSet())
+
+            // Use the V5 optimized artifact workflow
+            // with the separate store as well
+            .OptimizeArtifactWorkflow();
+    }).StartAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/MultipleDocumentStores.cs#L14-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bootstrapping_separate_store' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+At runtime we can inject an instance of our new `IInvoicingStore` and work with it like any other
+Marten `IDocumentStore` as shown below in an internal `InvoicingService`:
+
+<!-- snippet: sample_InvoicingService -->
+<a id='snippet-sample_invoicingservice'></a>
+```cs
+public class InvoicingService
+{
+    private readonly IInvoicingStore _store;
+
+    // IInvoicingStore can be injected like any other
+    // service in your IoC container
+    public InvoicingService(IInvoicingStore store)
+    {
+        _store = store;
+    }
+
+    public async Task DoSomethingWithInvoices()
+    {
+        // Important to dispose the session when you're done
+        // with it
+        await using var session = _store.LightweightSession();
+
+        // do stuff with the session you just opened
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/MultipleDocumentStores.cs#L67-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoicingservice' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
