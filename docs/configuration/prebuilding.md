@@ -12,18 +12,61 @@ Fear not though, Marten v4 introduced a facility to “generate ahead” the cod
 The code generation for document storage, event handling, event projections, and additional document stores can be done
 with one of three modes as shown below:
 
-snippet: sample_code_generation_modes
+<!-- snippet: sample_code_generation_modes -->
+<a id='snippet-sample_code_generation_modes'></a>
+```cs
+using var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // This is the default. Marten will always generate
+    // code dynamically at runtime
+    opts.GeneratedCodeMode = TypeLoadMode.Dynamic;
+
+    // Marten will only use types that are compiled into
+    // the application assembly ahead of time. This is the
+    // V4 "pre-built" model
+    opts.GeneratedCodeMode = TypeLoadMode.Static;
+
+    // New for V5. More explanation in the docs:)
+    opts.GeneratedCodeMode = TypeLoadMode.Auto;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/CodeGenerationOptions.cs#L16-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_code_generation_modes' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The *Auto* mode is new for Marten V5 to alleviate usability issues for folks who did not find the command line options or pre-registration
 of document types to be practical. Using the `Marten.Testing.Documents.User` document from the Marten testing suite
 as an example, let's start a new document store with the `Auto` mode:
 
-snippet: sample_document_store_for_user_document
+<!-- snippet: sample_document_store_for_user_document -->
+<a id='snippet-sample_document_store_for_user_document'></a>
+```cs
+using var store = DocumentStore.For(opts =>
+{
+    // ConnectionSource is a little helper in the Marten
+    // test suite
+    opts.Connection(ConnectionSource.ConnectionString);
+
+    opts.GeneratedCodeMode = TypeLoadMode.Auto;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/CodeGenerationOptions.cs#L40-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_document_store_for_user_document' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 First note that I didn't do anything to tell Marten about the `User` document. When this code below is executed
 for the **very first time**:
 
-snippet: sample_save_a_single_user
+<!-- snippet: sample_save_a_single_user -->
+<a id='snippet-sample_save_a_single_user'></a>
+```cs
+await using var session = store.LightweightSession();
+var user = new User { UserName = "admin" };
+session.Store(user);
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/CodeGenerationOptions.cs#L53-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_save_a_single_user' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Marten encounters the `User` document type for the first time, and determines that it needs a type called `UserProvider1415907724`
 (the numeric suffix is a repeatable hash of the generated type's full type name) that is a Marten-generated type that "knows" how 
@@ -49,7 +92,20 @@ In some cases you may need to help Marten and .Net itself out to "know" what the
 root directory for the generated code to be written to. In test harnesses or serverless runtimes like AWS Lambda / Azure Functions you
 can override the application assembly and project path with this new Marten helper:
 
-snippet: sample_using_set_application_project
+<!-- snippet: sample_using_set_application_project -->
+<a id='snippet-sample_using_set_application_project'></a>
+```cs
+using var host = Host.CreateDefaultBuilder()
+    .ConfigureServices(services =>
+    {
+        services.AddMarten("some connection string");
+
+        services.SetApplicationProject(typeof(User).Assembly);
+    })
+    .StartAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/CodeGenerationOptions.cs#L66-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_set_application_project' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Generating all Types Upfront
 

@@ -56,6 +56,7 @@ module.exports = {
               {text: 'Json Serialization', link: '/configuration/json'},
               {text: 'Retry Policies', link:'/configuration/retries'},
               {text: 'Pre-Building Generated Types', link: '/configuration/prebuilding'},
+              {text: 'Development versus Production Usage', link: '/configuration/optimized_artifact_workflow'},
               {text: 'Multi-Tenancy with Database per Tenant', link: '/configuration/multitenancy'}
           ]
       },

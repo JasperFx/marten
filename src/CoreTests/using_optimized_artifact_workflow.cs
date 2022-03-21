@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Baseline;
 using Lamar;
 using LamarCodeGeneration;
@@ -32,6 +33,40 @@ namespace CoreTests
             rules.GeneratedNamespace.ShouldBe("Marten.Generated");
             rules.SourceCodeWritingEnabled.ShouldBeTrue();
 
+        }
+
+        public static async Task bootstrapping_example()
+        {
+            #region sample_using_optimized_artifact_workflow
+
+            using var host = await Host.CreateDefaultBuilder()
+                .ConfigureServices(services =>
+                {
+                    services.AddMarten("connection string")
+
+                        // This feature opts into the new
+                        // "Optimized artifact workflow" for Marten >= V5
+                        .OptimizeArtifactWorkflow();
+                }).StartAsync();
+
+            #endregion
+        }
+
+        public static async Task bootstrapping_example_with_static()
+        {
+            #region sample_using_optimized_artifact_workflow_static
+
+            using var host = await Host.CreateDefaultBuilder()
+                .ConfigureServices(services =>
+                {
+                    services.AddMarten("connection string")
+
+                        // This feature opts into the new
+                        // "Optimized artifact workflow" for Marten >= V5
+                        .OptimizeArtifactWorkflow(TypeLoadMode.Static);
+                }).StartAsync();
+
+            #endregion
         }
 
         [Fact]
@@ -78,6 +113,15 @@ namespace CoreTests
 
             rules.GeneratedNamespace.ShouldBe("Marten.Generated");
             rules.SourceCodeWritingEnabled.ShouldBeFalse();
+        }
+
+        public static void default_setup()
+        {
+            #region sample_simplest_possible_setup
+
+            var store = DocumentStore.For("connection string");
+
+            #endregion
         }
 
         [Fact]

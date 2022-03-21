@@ -10,6 +10,7 @@ V5 was a much smaller release for Marten than V4, and should require much less e
 * New facility to [apply all detected database changes on application startup](/schema/migrations.html#apply-all-outstanding-changes-upfront).
 * Ability to [register multiple Marten document stores in one .Net IHost](/configuration/hostbuilder.html#working-with-multiple-marten-databases)
 * The ["pre-built code generation" feature](/configuration/prebuilding) has a new, easier to use option in V5
+* New ["Optimized Artifact Workflow"](/configuration/optimized_artifact_workflow) option
 
 ## Key Changes in 4.0.0
 
