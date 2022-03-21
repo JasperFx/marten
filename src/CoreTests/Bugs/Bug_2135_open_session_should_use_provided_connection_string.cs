@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-using BugXXXX;
+using Bug2135;
 
 using Marten;
 using Marten.Services;
@@ -15,7 +15,7 @@ using Xunit;
 
 namespace CoreTests.Bugs
 {
-    public class Bug_XXXX_open_session_should_use_provided_connection_string: BugIntegrationContext
+    public class Bug_2135_open_session_should_use_provided_connection_string: BugIntegrationContext
     {
         [Fact]
         public async Task should_use_provided_connection_string()
@@ -72,7 +72,7 @@ namespace CoreTests.Bugs
     }
 }
 
-namespace BugXXXX
+namespace Bug2135
 {
     public class TestEntity
     {

@@ -170,6 +170,30 @@ namespace CoreTests
         }
 
         [Fact]
+        public async Task assert_configuration_on_startup()
+        {
+            await using var container = Container.For(services =>
+            {
+                services.AddLogging();
+                services.AddMarten(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.RegisterDocumentType<User>();
+                    })
+                    .AssertDatabaseMatchesConfigurationOnStartup();
+            });
+
+            var store = container.GetInstance<IDocumentStore>();
+            await store.Advanced.Clean.CompletelyRemoveAllAsync();
+
+            var instance = container.Model.For<IHostedService>().Instances.First();
+            instance.ImplementationType.ShouldBe(typeof(MartenActivator));
+            instance.Lifetime.ShouldBe(ServiceLifetime.Singleton);
+
+            await Assert.ThrowsAsync<DatabaseValidationException>(() => container.GetAllInstances<IHostedService>().First().StartAsync(default));
+        }
+
+        [Fact]
         public void use_custom_factory_by_type()
         {
             using var container = Container.For(x =>

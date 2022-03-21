@@ -71,6 +71,10 @@ namespace Marten
         /// </summary>
         internal bool ShouldApplyChangesOnStartup { get; set; } = false;
 
+        /// <summary>
+        /// Used internally by the MartenActivator
+        /// </summary>
+        internal bool ShouldAssertDatabaseMatchesConfigurationOnStartup { get; set; } = false;
 
         private ImHashMap<Type, IFieldMapping> _childFieldMappings = ImHashMap<Type, IFieldMapping>.Empty;
 
