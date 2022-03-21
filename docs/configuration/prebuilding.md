@@ -1,19 +1,67 @@
 # Pre-Building Generated Types
 
-::: tip
-Marten will fall back to generating dynamic types at runtime if the pre-generated type cannot be found
-in the entry assembly of the application. Marten will write warning to the `Console` when this happens if the `TypeLoadMode.LoadFromPreBuiltAssembly` option is configured.
+:::tip
+This feature took a pretty big leap forward with Marten V5 and is much easier to utilize than it was with V4.
 :::
 
-Also see the blog post [Dynamic Code Generation in Marten V4](https://jeremydmiller.com/2021/08/04/dynamic-code-generation-in-marten-v4/).
+Marten >= V4 extensively uses runtime code generation backed by [Roslyn runtime compilation](https://jeremydmiller.com/2018/06/04/compiling-code-at-runtime-with-lamar-part-1/) for dynamic code. 
+This is both much more powerful than [source generators](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/source-generators-overview) in what it allows us to actually do, but can have 
+significant memory usage and “[cold start](https://en.wikipedia.org/wiki/Cold_start_(computing))” problems (seems to depend on exact configurations, so it’s not a given that you’ll have these issues). 
+Fear not though, Marten v4 introduced a facility to “generate ahead” the code to greatly optimize the "cold start" and memory usage in production scenarios.
 
-Marten V4 extensively uses runtime code generation backed by [Roslyn runtime compilation](https://jeremydmiller.com/2018/06/04/compiling-code-at-runtime-with-lamar-part-1/) for dynamic code. This is both much more powerful than [source generators](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/source-generators-overview) in what it allows us to actually do, but can have significant memory usage and “[cold start](https://en.wikipedia.org/wiki/Cold_start_(computing))” problems (seems to depend on exact configurations, so it’s not a given that you’ll have these issues). Fear not though, Marten v4 introduced a facility to “generate ahead” the code to greatly optimize the "cold start" and memory usage in production scenarios.
+The code generation for document storage, event handling, event projections, and additional document stores can be done
+with one of three modes as shown below:
+
+snippet: sample_code_generation_modes
+
+The *Auto* mode is new for Marten V5 to alleviate usability issues for folks who did not find the command line options or pre-registration
+of document types to be practical. Using the `Marten.Testing.Documents.User` document from the Marten testing suite
+as an example, let's start a new document store with the `Auto` mode:
+
+snippet: sample_document_store_for_user_document
+
+First note that I didn't do anything to tell Marten about the `User` document. When this code below is executed
+for the **very first time**:
+
+snippet: sample_save_a_single_user
+
+Marten encounters the `User` document type for the first time, and determines that it needs a type called `UserProvider1415907724`
+(the numeric suffix is a repeatable hash of the generated type's full type name) that is a Marten-generated type that "knows" how 
+to do every possible storage or loading of the `User` document type. Marten will do one of two things next:
+
+1. If the `UserProvider1415907724` type can be found in the main application assembly, Marten will create a new instance of that class and use that from here on out for all `User` operations
+2. If the `UserProvider1415907724` type cannot be found, Marten will generate the necessary C# code at runtime, write that
+   code to a new file called `UserProvider1415907724.cs` at `/Internal/Generated/DocumentStorage` from the file root of your
+   .Net project directory so that the code can be compiled into the application assembly on the next compilation. Finally, Marten
+   will compile the generated code at runtime and use that dynamic assembly to build the actual object for the `User` document
+   type.
+
+The hope is that if a development team uses this approach during its internal testing and debugging, the generated code will just be checked into source control and compiled
+into the actually deployed binaries for the system in production deployments. Of course, if the Marten configuration changes,
+you will need to delete the generated code.
+
+:::tip
+Just like ASP.Net MVC, Marten uses the `IHostEnvironment.ApplicationName` property to determine the main application assembly. If
+that value is missing, Marten falls back to the `Assembly.GetEntryAssembly()` value.
+:::
+
+In some cases you may need to help Marten and .Net itself out to "know" what the application assembly and the correct project
+root directory for the generated code to be written to. In test harnesses or serverless runtimes like AWS Lambda / Azure Functions you
+can override the application assembly and project path with this new Marten helper:
+
+snippet: sample_using_set_application_project
+
+## Generating all Types Upfront
+
+::: tip
+Also see the blog post [Dynamic Code Generation in Marten V4](https://jeremydmiller.com/2021/08/04/dynamic-code-generation-in-marten-v4/).
+:::
+
+To use the Marten command line tooling to generate all the dynamic code upfront:
 
 To enable the optimized cold start, there are a couple steps:
 
-1. Set `StoreOptions.GeneratedCodeMode = TypeLoadMode.LoadFromPreBuiltAssembly` in your `DocumentStore` configuration
 1. Use the [Marten command line extensions for your application](/configuration/cli)
-1. Add the *LamarCodeGeneration.Commands* Nuget to your main entry project. This has the necessary command line functionality to generate and export the dynamic source code.
 1. Register all document types, [compiled query types](/documents/querying/compiled-queries), and [event store projections](/events/projections/) upfront in your `DocumentStore` configuration
 1. In your deployment process, you'll need to generate the Marten code with `dotnet run -- codegen write` before actually compiling the build products that will be deployed to production
 

@@ -80,8 +80,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: UpsertUserOperation1415907724
-    
-    
+
+
     // START: InsertUserOperation1415907724
     public class InsertUserOperation1415907724 : Marten.Internal.Operations.StorageOperation<Marten.Testing.Documents.User, System.Guid>
     {
@@ -149,8 +149,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: InsertUserOperation1415907724
-    
-    
+
+
     // START: UpdateUserOperation1415907724
     public class UpdateUserOperation1415907724 : Marten.Internal.Operations.StorageOperation<Marten.Testing.Documents.User, System.Guid>
     {
@@ -218,8 +218,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: UpdateUserOperation1415907724
-    
-    
+
+
     // START: QueryOnlyUserSelector1415907724
     public class QueryOnlyUserSelector1415907724 : Marten.Internal.CodeGeneration.DocumentSelectorWithOnlySerializer, Marten.Linq.Selectors.ISelector<Marten.Testing.Documents.User>
     {
@@ -254,8 +254,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: QueryOnlyUserSelector1415907724
-    
-    
+
+
     // START: LightweightUserSelector1415907724
     public class LightweightUserSelector1415907724 : Marten.Internal.CodeGeneration.DocumentSelectorWithVersions<Marten.Testing.Documents.User, System.Guid>, Marten.Linq.Selectors.ISelector<Marten.Testing.Documents.User>
     {
@@ -294,8 +294,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: LightweightUserSelector1415907724
-    
-    
+
+
     // START: IdentityMapUserSelector1415907724
     public class IdentityMapUserSelector1415907724 : Marten.Internal.CodeGeneration.DocumentSelectorWithIdentityMap<Marten.Testing.Documents.User, System.Guid>, Marten.Linq.Selectors.ISelector<Marten.Testing.Documents.User>
     {
@@ -338,8 +338,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: IdentityMapUserSelector1415907724
-    
-    
+
+
     // START: DirtyTrackingUserSelector1415907724
     public class DirtyTrackingUserSelector1415907724 : Marten.Internal.CodeGeneration.DocumentSelectorWithDirtyChecking<Marten.Testing.Documents.User, System.Guid>, Marten.Linq.Selectors.ISelector<Marten.Testing.Documents.User>
     {
@@ -384,8 +384,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: DirtyTrackingUserSelector1415907724
-    
-    
+
+
     // START: QueryOnlyUserDocumentStorage1415907724
     public class QueryOnlyUserDocumentStorage1415907724 : Marten.Internal.Storage.QueryOnlyDocumentStorage<Marten.Testing.Documents.User, System.Guid>
     {
@@ -413,7 +413,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Marten.Testing.Documents.User, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -426,7 +426,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Marten.Testing.Documents.User, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -439,7 +439,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Marten.Testing.Documents.User, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -476,8 +476,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: QueryOnlyUserDocumentStorage1415907724
-    
-    
+
+
     // START: LightweightUserDocumentStorage1415907724
     public class LightweightUserDocumentStorage1415907724 : Marten.Internal.Storage.LightweightDocumentStorage<Marten.Testing.Documents.User, System.Guid>
     {
@@ -505,7 +505,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Marten.Testing.Documents.User, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -518,7 +518,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Marten.Testing.Documents.User, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -531,7 +531,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Marten.Testing.Documents.User, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -568,8 +568,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: LightweightUserDocumentStorage1415907724
-    
-    
+
+
     // START: IdentityMapUserDocumentStorage1415907724
     public class IdentityMapUserDocumentStorage1415907724 : Marten.Internal.Storage.IdentityMapDocumentStorage<Marten.Testing.Documents.User, System.Guid>
     {
@@ -597,7 +597,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Marten.Testing.Documents.User, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -610,7 +610,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Marten.Testing.Documents.User, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -623,7 +623,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Marten.Testing.Documents.User, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -660,8 +660,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: IdentityMapUserDocumentStorage1415907724
-    
-    
+
+
     // START: DirtyTrackingUserDocumentStorage1415907724
     public class DirtyTrackingUserDocumentStorage1415907724 : Marten.Internal.Storage.DirtyCheckedDocumentStorage<Marten.Testing.Documents.User, System.Guid>
     {
@@ -689,7 +689,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Marten.Testing.Documents.User, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -702,7 +702,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Marten.Testing.Documents.User, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -715,7 +715,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Marten.Testing.Documents.User, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -752,8 +752,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: DirtyTrackingUserDocumentStorage1415907724
-    
-    
+
+
     // START: UserBulkLoader1415907724
     public class UserBulkLoader1415907724 : Marten.Internal.CodeGeneration.BulkLoader<Marten.Testing.Documents.User, System.Guid>
     {
@@ -826,14 +826,15 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: UserBulkLoader1415907724
-    
-    
+
+
     // START: UserProvider1415907724
     public class UserProvider1415907724 : Marten.Internal.Storage.DocumentProvider<Marten.Testing.Documents.User>
     {
         private readonly Marten.Schema.DocumentMapping _mapping;
 
-        public UserProvider1415907724(Marten.Schema.DocumentMapping mapping) : base(new UserBulkLoader1415907724(new QueryOnlyUserDocumentStorage1415907724(mapping)), new QueryOnlyUserDocumentStorage1415907724(mapping), new LightweightUserDocumentStorage1415907724(mapping), new IdentityMapUserDocumentStorage1415907724(mapping), new DirtyTrackingUserDocumentStorage1415907724(mapping))
+        public UserProvider1415907724(Marten.Schema.DocumentMapping mapping)
+            : base(new UserBulkLoader1415907724(new QueryOnlyUserDocumentStorage1415907724(mapping)), new QueryOnlyUserDocumentStorage1415907724(mapping), new LightweightUserDocumentStorage1415907724(mapping), new IdentityMapUserDocumentStorage1415907724(mapping), new DirtyTrackingUserDocumentStorage1415907724(mapping))
         {
             _mapping = mapping;
         }
@@ -842,7 +843,7 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: UserProvider1415907724
-    
-    
+
+
 }
 
