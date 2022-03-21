@@ -17,8 +17,8 @@ namespace CoreTests.Bugs
                     .Duplicate(c => c.Trim);
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
-            await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         }
 
     }

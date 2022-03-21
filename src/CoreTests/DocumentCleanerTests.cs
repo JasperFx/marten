@@ -208,7 +208,7 @@ namespace CoreTests
                 opts.Events.AddEventType(typeof(MembersJoined));
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
             var allSchemas = theStore.Tenancy.Default.Database.AllSchemaNames();
 

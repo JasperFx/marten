@@ -27,10 +27,10 @@ namespace DocumentDbTests.Bugs
                     .DocumentAlias("alias_name");
             });
 
-            var sql = theStore.Schema.ToDatabaseScript();
+            var sql = theStore.Storage.Database.ToDatabaseScript();
             sql.ShouldContain("ADD CONSTRAINT mt_doc_alias_name_related_id_fkey");
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         }
     }

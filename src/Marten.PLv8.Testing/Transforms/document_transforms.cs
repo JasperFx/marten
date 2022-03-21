@@ -86,7 +86,7 @@ namespace Marten.PLv8.Testing.Transforms
         public async Task use_transform_in_production_mode()
         {
             await theStore.Tenancy.Default.Database.EnsureStorageExistsAsync(typeof(User));
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
             await theStore.TransformAsync(x => x.All<User>("default_username"));
 

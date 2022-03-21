@@ -48,7 +48,7 @@ and then executed against the database (generating & executing the DDL statement
 <!-- snippet: sample_scenario-usingsequenceforuniqueid-storesetup-2 -->
 <a id='snippet-sample_scenario-usingsequenceforuniqueid-storesetup-2'></a>
 ```cs
-await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ScenarioUsingSequenceForUniqueId.cs#L48-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-usingsequenceforuniqueid-storesetup-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

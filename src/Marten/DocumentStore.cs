@@ -52,8 +52,6 @@ namespace Marten
                 databaseGenerator.CreateDatabases(Tenancy, options.CreateDatabases);
             }
 
-            Schema = Tenancy.Default?.Database;
-
             StorageFeatures.PostProcessConfiguration();
             Events.AssertValidity(this);
             Options.Projections.AssertValidity(this);
@@ -84,7 +82,7 @@ namespace Marten
         {
         }
 
-        public IDatabase Schema { get; }
+        public IDatabase Schema => Tenancy.Default?.Database;
         public AdvancedOperations Advanced { get; }
 
         public void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,

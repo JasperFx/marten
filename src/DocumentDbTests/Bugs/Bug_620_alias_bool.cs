@@ -17,7 +17,7 @@ namespace DocumentDbTests.Bugs
             {
                 await store1.EnsureStorageExistsAsync(typeof(DocWithBool));
 
-                await store1.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+                await store1.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
             }
 
             using (var store2 = SeparateStore(_ =>
@@ -25,7 +25,7 @@ namespace DocumentDbTests.Bugs
                 _.Schema.For<DocWithBool>();
             }))
             {
-                await store2.Schema.AssertDatabaseMatchesConfigurationAsync();
+                await store2.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
             }
         }
     }

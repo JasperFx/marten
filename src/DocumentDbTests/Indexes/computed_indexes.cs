@@ -225,7 +225,7 @@ namespace DocumentDbTests.Indexes
                 _.Schema.For<Target>().Index(x => x.Number);
             }))
             {
-                var patch = await store2.Schema.CreateMigrationAsync();
+                var patch = await store2.Storage.Database.CreateMigrationAsync();
 
                 patch.UpdateSql().ShouldContain( "mt_doc_target_idx_number", Case.Insensitive);
             }

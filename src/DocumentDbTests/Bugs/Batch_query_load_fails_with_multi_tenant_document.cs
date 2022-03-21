@@ -24,7 +24,7 @@ namespace DocumentDbTests.Bugs
             });
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
-            await documentStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
+            await documentStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
 
             var testDocument = new User {Id = Guid.NewGuid(), UserName = "Test name"};
 
@@ -52,7 +52,7 @@ namespace DocumentDbTests.Bugs
             });
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
-            await documentStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
+            await documentStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
 
             var testDocument = new User {Id = Guid.NewGuid(), UserName = "Test name"};
 

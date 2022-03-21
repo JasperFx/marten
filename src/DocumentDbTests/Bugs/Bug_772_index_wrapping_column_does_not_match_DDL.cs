@@ -18,8 +18,8 @@ namespace DocumentDbTests.Bugs
                     .Duplicate(c => c.Name);
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
-            await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         }
 
         [Fact] // Control
@@ -34,8 +34,8 @@ namespace DocumentDbTests.Bugs
                       });
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
-            await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         }
 
         [Fact] // Experiment, passed
@@ -53,8 +53,8 @@ namespace DocumentDbTests.Bugs
                     });
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
-            await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         }
 
 

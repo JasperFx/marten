@@ -26,7 +26,7 @@ namespace DocumentDbTests.Bugs
             });
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
-            await documentStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
+            await documentStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
 
             using var secondDocumentStore = SeparateStore(x =>
             {
@@ -36,7 +36,7 @@ namespace DocumentDbTests.Bugs
                     .Index(y => y.LastName, index => index.Casing = ComputedIndex.Casings.Upper);
             });
 
-            await documentStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
+            await documentStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
         }
     }
 }

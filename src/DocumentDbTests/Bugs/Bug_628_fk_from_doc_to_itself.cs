@@ -22,7 +22,7 @@ namespace DocumentDbTests.Bugs
                 _.Schema.For<Category>().ForeignKey<Category>(x => x.ParentId);
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
         }
 
     }

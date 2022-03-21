@@ -45,7 +45,7 @@ namespace CommandLineRunner
             var store = host.Services.GetRequiredService<IDocumentStore>();
             await store.Advanced.Clean.DeleteAllDocumentsAsync();
 
-            await store.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
             var targets = Target.GenerateRandomData(1000).ToArray();
 

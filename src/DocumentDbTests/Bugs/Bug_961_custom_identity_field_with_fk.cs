@@ -28,7 +28,7 @@ namespace DocumentDbTests.Bugs
                 _.Schema.For<Document>().ForeignKey<FkTarget>(a => a.TargetId);
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
         }
 
     }

@@ -30,8 +30,8 @@ namespace DocumentDbTests.Bugs
                 _.Schema.For<User>().AddSubClass<SuperUser>();
             });
 
-            await store2.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
-            await store2.Schema.AssertDatabaseMatchesConfigurationAsync();
+            await store2.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+            await store2.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
 
 
 

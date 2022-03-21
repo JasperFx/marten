@@ -28,8 +28,8 @@ namespace DocumentDbTests.Bugs
             });
             await Should.NotThrowAsync(async () =>
             {
-                await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
-                await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
+                await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+                await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
             });
         }
 
@@ -43,8 +43,8 @@ namespace DocumentDbTests.Bugs
             });
             await Should.NotThrowAsync(async () =>
             {
-                await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
-                await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
+                await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+                await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
             });
         }
 
@@ -58,8 +58,8 @@ namespace DocumentDbTests.Bugs
             });
             await Should.NotThrowAsync(async () =>
             {
-                await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
-                await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
+                await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+                await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
             });
         }
 

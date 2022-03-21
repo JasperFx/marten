@@ -18,18 +18,16 @@ namespace Marten.Testing.Examples
 
             #region sample_WritePatch
 
-            var migration = await store.Schema.CreateMigrationAsync();
             // All migration code is async now!
-            await store.Schema.Migrator.WriteMigrationFile("1.initial.sql", migration);
-            await store.Schema.WriteMigrationFileAsync("1.initial.sql");
+            await store.Storage.Database.WriteMigrationFileAsync("1.initial.sql");
             #endregion
 
             #region sample_ApplyAllConfiguredChangesToDatabase
-            await store.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
             #endregion
 
             #region sample_AssertDatabaseMatchesConfiguration
-            await store.Schema.AssertDatabaseMatchesConfigurationAsync();
+            await store.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
             #endregion
         }
     }

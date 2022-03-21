@@ -13,7 +13,7 @@ namespace EventSourcingTests.Bugs
         {
             StoreOptions(_ => _.Schema.For<User>());
 
-            var patch = await theStore.Schema.CreateMigrationAsync();
+            var patch = await theStore.Storage.Database.CreateMigrationAsync();
 
             patch.UpdateSql().ShouldNotContain("mt_events");
             patch.UpdateSql().ShouldNotContain("mt_streams");

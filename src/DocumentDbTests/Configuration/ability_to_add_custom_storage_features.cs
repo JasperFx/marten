@@ -23,7 +23,7 @@ namespace DocumentDbTests.Configuration
                 _.Storage.Add<FakeStorage>();
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
             (await theStore.Tenancy.Default.Database.SchemaTables()).Any(x => x.Name == "mt_fake_table")
                 .ShouldBeTrue();
         }

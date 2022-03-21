@@ -19,7 +19,7 @@ namespace DocumentDbTests.Bugs
                 _.Schema.For<Bug_1002>();
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
             var store = SeparateStore(_ =>
             {
@@ -28,7 +28,7 @@ namespace DocumentDbTests.Bugs
                     .Duplicate(x => x.Name); // add a new duplicate column
             });
 
-            (await store.Schema.CreateMigrationAsync()).UpdateSql().ShouldNotContain(";;");
+            (await store.Storage.Database.CreateMigrationAsync()).UpdateSql().ShouldNotContain(";;");
         }
 
     }

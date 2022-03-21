@@ -38,7 +38,7 @@ namespace Marten.PLv8.Testing.Transforms
 
             }))
             {
-                store.Schema.WriteScriptsByType(_binAllsql);
+                store.Storage.WriteScriptsByType(_binAllsql);
             }
 
             var file = _binAllsql.AppendPath("transforms.sql");

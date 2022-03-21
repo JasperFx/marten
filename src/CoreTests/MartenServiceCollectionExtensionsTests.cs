@@ -139,12 +139,21 @@ namespace CoreTests
             await using var container = Container.For(services =>
             {
                 services.AddLogging();
+
+                #region sample_using_ApplyAllDatabaseChangesOnStartup
+
+                // The normal Marten configuration
                 services.AddMarten(opts =>
                     {
                         opts.Connection(ConnectionSource.ConnectionString);
                         opts.RegisterDocumentType<User>();
                     })
+
+                    // Direct the application to apply all outstanding
+                    // database changes on application startup
                     .ApplyAllDatabaseChangesOnStartup();
+
+                #endregion
             });
 
             var store = container.GetInstance<IDocumentStore>();
@@ -157,7 +166,7 @@ namespace CoreTests
             // Just a smoke test here
             await container.GetAllInstances<IHostedService>().First().StartAsync(default);
 
-            await store.Schema.AssertDatabaseMatchesConfigurationAsync();
+            await store.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         }
 
         [Fact]

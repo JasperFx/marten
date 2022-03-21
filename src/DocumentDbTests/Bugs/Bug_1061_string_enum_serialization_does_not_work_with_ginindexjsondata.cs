@@ -38,7 +38,7 @@ namespace DocumentDbTests.Bugs
                 });
             });
 
-            await store.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
             using var store2 = SeparateStore(_ =>
             {

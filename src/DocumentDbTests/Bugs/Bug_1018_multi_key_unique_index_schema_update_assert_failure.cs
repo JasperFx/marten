@@ -29,8 +29,8 @@ namespace DocumentDbTests.Bugs
                     .UniqueIndex(UniqueIndexType.DuplicatedField, x => x.Field1, x => x.Field2);
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
-            await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         }
 
     }

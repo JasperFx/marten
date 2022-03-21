@@ -28,7 +28,7 @@ namespace CoreTests
             {
                 await Should.ThrowAsync<PostgresException>(async () =>
                 {
-                    await store1.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+                    await store1.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
                 });
             }
 
@@ -58,8 +58,8 @@ namespace CoreTests
             {
                 await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
-                await store.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
-                await store.Schema.AssertDatabaseMatchesConfigurationAsync();
+                await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+                await store.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
                 Assert.True(dbCreated);
             }
         }

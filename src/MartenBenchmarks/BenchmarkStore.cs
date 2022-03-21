@@ -20,7 +20,7 @@ namespace MartenBenchmarks
             });
 
             Store.Advanced.Clean.CompletelyRemoveAll();
-            Store.Schema.ApplyAllConfiguredChangesToDatabaseAsync().GetAwaiter().GetResult();
+            Store.Storage.ApplyAllConfiguredChangesToDatabaseAsync().GetAwaiter().GetResult();
         }
     }
 }

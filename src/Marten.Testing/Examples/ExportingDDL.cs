@@ -22,15 +22,15 @@ namespace Marten.Testing.Examples
             });
 
             // Export the SQL to a file
-            await store.Schema.WriteCreationScriptToFile("my_database.sql");
+            await store.Storage.WriteCreationScriptToFile("my_database.sql");
 
             // Or instead, write a separate sql script
             // to the named directory
             // for each type of document
-            await store.Schema.WriteScriptsByType("sql");
+            await store.Storage.WriteScriptsByType("sql");
 
             // or just see it
-            var sql = store.Schema.ToDatabaseScript();
+            var sql = store.Storage.ToDatabaseScript();
             Debug.WriteLine(sql);
         }
 

@@ -55,7 +55,8 @@ module.exports = {
               {text: 'Configuring Document Storage with StoreOptions', link: '/configuration/storeoptions'},
               {text: 'Json Serialization', link: '/configuration/json'},
               {text: 'Retry Policies', link:'/configuration/retries'},
-              {text: 'Pre-Building Generated Types', link: '/configuration/prebuilding'}
+              {text: 'Pre-Building Generated Types', link: '/configuration/prebuilding'},
+              {text: 'Multi-Tenancy with Database per Tenant', link: '/configuration/multitenancy'}
           ]
       },
       {

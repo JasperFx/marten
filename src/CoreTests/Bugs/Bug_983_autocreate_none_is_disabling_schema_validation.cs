@@ -27,7 +27,7 @@ namespace CoreTests.Bugs
 
             await Exception<DatabaseValidationException>.ShouldBeThrownByAsync(() =>
             {
-                return theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
+                return theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
             });
         }
 

@@ -345,7 +345,7 @@ namespace CoreTests
             // Just a smoke test here
             await container.GetAllInstances<IHostedService>().First().StartAsync(default);
 
-            await store.Schema.AssertDatabaseMatchesConfigurationAsync();
+            await store.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         }
     }
 

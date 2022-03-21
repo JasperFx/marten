@@ -24,9 +24,9 @@ namespace DocumentDbTests.Bugs
             });
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
-            await documentStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
+            await documentStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
 
-            await documentStore.Schema.AssertDatabaseMatchesConfigurationAsync();
+            await documentStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         }
 
         [Fact]
@@ -40,9 +40,9 @@ namespace DocumentDbTests.Bugs
             });
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
-            await documentStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
+            await documentStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
 
-            await documentStore.Schema.AssertDatabaseMatchesConfigurationAsync();
+            await documentStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         }
 
         [Fact]
@@ -56,9 +56,9 @@ namespace DocumentDbTests.Bugs
             });
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
-            await documentStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
+            await documentStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
 
-            await documentStore.Schema.AssertDatabaseMatchesConfigurationAsync();
+            await documentStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         }
 
         [Fact]
@@ -72,9 +72,9 @@ namespace DocumentDbTests.Bugs
             });
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
-            await documentStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
+            await documentStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
 
-            await documentStore.Schema.AssertDatabaseMatchesConfigurationAsync();
+            await documentStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         }
     }
 }

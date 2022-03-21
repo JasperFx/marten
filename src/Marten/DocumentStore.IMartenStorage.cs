@@ -14,7 +14,7 @@ namespace Marten
             return new MartenDatabase(Options, new ConnectionFactory(string.Empty), "NULLO");
         }
 
-        IMartenStorage IDocumentStore.Storage => this;
+        public IMartenStorage Storage => this;
 
         string[] IMartenStorage.AllSchemaNames()
         {

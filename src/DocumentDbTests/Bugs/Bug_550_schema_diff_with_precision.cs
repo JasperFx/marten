@@ -22,7 +22,7 @@ namespace DocumentDbTests.Bugs
                 _.Schema.For<DocWithPrecision>().Duplicate(x => x.Name, "character varying (100)");
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
             var store = SeparateStore(_ =>
             {
@@ -30,9 +30,9 @@ namespace DocumentDbTests.Bugs
                 _.Schema.For<DocWithPrecision>().Duplicate(x => x.Name, "character varying (100)");
             });
 
-            var feature = store.Schema.BuildFeatureSchemas()
+            var feature = store.Storage.Database.BuildFeatureSchemas()
                 .FirstOrDefault(x => x.StorageType == typeof(DocWithPrecision));
-            var patch = await store.Schema.CreateMigrationAsync(feature);
+            var patch = await store.Storage.Database.CreateMigrationAsync(feature);
             patch.Difference.ShouldBe(SchemaPatchDifference.None);
         }
 

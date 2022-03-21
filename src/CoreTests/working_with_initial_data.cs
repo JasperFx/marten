@@ -129,7 +129,7 @@ namespace CoreTests
 
 
         [Fact]
-        public void initial_data_should_populate_db_with_query_in_populate_method()
+        public async Task initial_data_should_populate_db_with_query_in_populate_method()
         {
             var store = DocumentStore.For(_ =>
             {
@@ -140,7 +140,9 @@ namespace CoreTests
                 _.InitialData.Add(new InitialDataWithQuery(InitialWithQueryDatasets.Aggregates));
             });
 
-            using (var session = store.QuerySession())
+            await store.Advanced.ResetAllData();
+
+            await using (var session = store.QuerySession())
             {
                 foreach (var initialAggregate in InitialWithQueryDatasets.Aggregates)
                 {

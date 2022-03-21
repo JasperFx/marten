@@ -161,7 +161,7 @@ namespace CoreTests.Bugs
                 await conn.CreateCommand(sql).ExecuteNonQueryAsync();
             }
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
             using (var session = theStore.LightweightSession())
             {

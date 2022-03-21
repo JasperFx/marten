@@ -775,10 +775,10 @@ namespace DocumentDbTests.Indexes
             });
 
             // Apply changes
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
             // Look at updates after that
-            var patch = await theStore.Schema.CreateMigrationAsync();
+            var patch = await theStore.Storage.Database.CreateMigrationAsync();
 
             Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patch.UpdateSql());
         }
@@ -793,10 +793,10 @@ namespace DocumentDbTests.Indexes
             });
 
             // Apply changes
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
             // Look at updates after that
-            var patch = await theStore.Schema.CreateMigrationAsync();
+            var patch = await theStore.Storage.Database.CreateMigrationAsync();
 
             Assert.DoesNotContain("drop index full_text_index.mt_doc_company_idx_fts", patch.UpdateSql());
         }
@@ -811,10 +811,10 @@ namespace DocumentDbTests.Indexes
             });
 
             // Apply changes
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
             // Look at updates after that
-            var patch = await theStore.Schema.CreateMigrationAsync();
+            var patch = await theStore.Storage.Database.CreateMigrationAsync();
 
             Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patch.UpdateSql());
         }
@@ -829,7 +829,7 @@ namespace DocumentDbTests.Indexes
             });
 
             // Apply changes
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
             // Change indexed fields
             var store = DocumentStore.For(_ =>
@@ -842,7 +842,7 @@ namespace DocumentDbTests.Indexes
             });
 
             // Look at updates after that
-            var patch = await store.Schema.CreateMigrationAsync();
+            var patch = await store.Storage.Database.CreateMigrationAsync();
 
             Assert.Contains("drop index if exists full_text_index.mt_doc_user_idx_fts", patch.UpdateSql());
         }
@@ -856,7 +856,7 @@ namespace DocumentDbTests.Indexes
                 _.Schema.For<User>().FullTextIndex();
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
             // drop and recreate index with a sql statement not containing `::regconfig`
             await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
@@ -877,7 +877,7 @@ namespace DocumentDbTests.Indexes
 
                 _.Schema.For<User>().FullTextIndex();
             });
-            await Should.NotThrowAsync(async () => await store2.Schema.AssertDatabaseMatchesConfigurationAsync());
+            await Should.NotThrowAsync(async () => await store2.Storage.Database.AssertDatabaseMatchesConfigurationAsync());
         }
     }
 
