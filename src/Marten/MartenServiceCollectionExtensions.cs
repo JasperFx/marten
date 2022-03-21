@@ -437,6 +437,20 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Adds a hosted service to your .Net application that will assert that database matches configuration before the
+            /// rest of the application starts running. Prevents the application from starting if database does not match configuration.
+            /// </summary>
+            /// <returns></returns>
+            public MartenConfigurationExpression AssertDatabaseMatchesConfigurationOnStartup()
+            {
+                ensureMartenActivatorIsRegistered();
+
+                Services.ConfigureMarten(opts => opts.ShouldAssertDatabaseMatchesConfigurationOnStartup = true);
+
+                return this;
+            }
+
             private void ensureMartenActivatorIsRegistered()
             {
                 if (!Services.Any(x =>

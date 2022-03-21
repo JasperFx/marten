@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using Baseline.ImTools;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -37,6 +36,15 @@ namespace Marten.Services
                 foreach (PostgresqlDatabase database in await databases)
                 {
                     await database.ApplyAllConfiguredChangesToDatabaseAsync(this, AutoCreate.CreateOrUpdate).ConfigureAwait(false);
+                }
+            }
+
+            if (Store.Options.ShouldAssertDatabaseMatchesConfigurationOnStartup)
+            {
+                var databases = Store.Tenancy.BuildDatabases().ConfigureAwait(false);
+                foreach (var database in await databases)
+                {
+                    await database.AssertDatabaseMatchesConfigurationAsync().ConfigureAwait(false);
                 }
             }
 
