@@ -166,11 +166,7 @@ module.exports = {
               {
                 text: 'Copy and transform stream',
                 link: '/scenarios/copy-and-transform-stream'
-              },
-              {
-                text: 'Immutable projections as read model',
-                link: '/scenarios/immutable-projections-read-model'
-              },
+              }
             ]
           }
         ]
@@ -203,10 +199,6 @@ module.exports = {
           {
             text: 'Dynamic data',
             link: '/scenarios/dynamic-data'
-          },
-          {
-            text: 'Immutable projections as read model',
-            link: '/scenarios/immutable-projections-read-model'
           },
           {
             text: 'Using sequences for unique identifiers',
