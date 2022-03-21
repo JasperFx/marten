@@ -6,6 +6,8 @@ V5 was a much smaller release for Marten than V4, and should require much less e
 
 * The [async daemon](/events/projections/async-daemon) has to be explicitly added with a chained call to `AddAsyncDaemon(mode)`
 * The [Marten integration with .Net bootstrapping](/configuration) now has the ability to split the Marten configuration for testing overrides or modular configuration
+* `IInitialData` services are executed within IHost bootstrapping. See [Initial Baseline Data](/documents/initial-data).
+* New facility to [apply all detected database changes on application startup](/schema/migrations.html#apply-all-outstanding-changes-upfront).
 
 ## Key Changes in 4.0.0
 

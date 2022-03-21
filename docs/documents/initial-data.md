@@ -1,5 +1,10 @@
 # Initial Baseline Data
 
+:::tip
+As of Marten V5.0, this feature requires you to either use the integration with the .Net `IHost` or use the new
+`IDocumentStore.Advanced.ResetAllData()` method. See [Initial Baseline Data](/documents/initial-data) for more information.
+:::
+
 Marten supports seeding your database with initial data via the `IInitialData` interface. For example:
 
 <!-- snippet: sample_initial-data -->
