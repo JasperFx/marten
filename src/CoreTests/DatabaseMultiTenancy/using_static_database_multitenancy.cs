@@ -47,24 +47,36 @@ namespace CoreTests.DatabaseMultiTenancy
             var tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");
             var tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant4");
 
+            #region sample_using_multi_tenanted_databases
+
             _host = await Host.CreateDefaultBuilder()
                 .ConfigureServices(services =>
                 {
                     services.AddMarten(opts =>
-                    {
-                        opts.MultiTenantedDatabases(x =>
                         {
-                            x.AddMultipleTenantDatabase(db1ConnectionString,"database1").ForTenants("tenant1", "tenant2");
-                            x.AddSingleTenantDatabase(tenant3ConnectionString, "tenant3");
-                            x.AddSingleTenantDatabase(tenant4ConnectionString,"tenant4");
-                        });
+                            // Explicitly map tenant ids to database connection strings
+                            opts.MultiTenantedDatabases(x =>
+                            {
+                                // Map multiple tenant ids to a single named database
+                                x.AddMultipleTenantDatabase(db1ConnectionString,"database1").ForTenants("tenant1", "tenant2");
+
+                                // Map a single tenant id to a database, which uses the tenant id as well for the database identifier
+                                x.AddSingleTenantDatabase(tenant3ConnectionString, "tenant3");
+                                x.AddSingleTenantDatabase(tenant4ConnectionString,"tenant4");
+                            });
 
 
-                        opts.RegisterDocumentType<User>();
-                        opts.RegisterDocumentType<Target>();
+                            opts.RegisterDocumentType<User>();
+                            opts.RegisterDocumentType<Target>();
 
-                    }).ApplyAllDatabaseChangesOnStartup();
+                        })
+
+                        // All detected changes will be applied to all
+                        // the configured tenant databases on startup
+                        .ApplyAllDatabaseChangesOnStartup();
                 }).StartAsync();
+
+                #endregion
 
             theStore = _host.Services.GetRequiredService<IDocumentStore>();
         }
@@ -169,6 +181,32 @@ namespace CoreTests.DatabaseMultiTenancy
             {
                 (await query4.Query<Target>().AnyAsync()).ShouldBeFalse();
             }
+        }
+
+        public static async Task administering_multiple_databases(IDocumentStore store)
+        {
+            #region sample_administering_multiple_databases
+
+            // Apply all detected changes in every known database
+            await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+            // Only apply to the default database if not using multi-tenancy per
+            // database
+            await store.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync();
+
+            // Find a specific database
+            var database = await store.Storage.FindOrCreateDatabase("tenant1");
+
+            // Tear down everything
+            await database.CompletelyRemoveAllAsync();
+
+            // Check out the projection state in just this database
+            var state = await database.FetchEventStoreStatistics();
+
+            // Apply all outstanding database changes in just this database
+            await database.ApplyAllConfiguredChangesToDatabaseAsync();
+
+            #endregion
         }
     }
 }

@@ -11,6 +11,7 @@ V5 was a much smaller release for Marten than V4, and should require much less e
 * Ability to [register multiple Marten document stores in one .Net IHost](/configuration/hostbuilder.html#working-with-multiple-marten-databases)
 * The ["pre-built code generation" feature](/configuration/prebuilding) has a new, easier to use option in V5
 * New ["Optimized Artifact Workflow"](/configuration/optimized_artifact_workflow) option
+* Some administrative or diagnostic methods that were previously on `IDocumentStore.Advanced` migrated to database specific access [as shown here](/configuration/multitenancy.html#administering-multiple-databases).
 
 ## Key Changes in 4.0.0
 

@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten;
+using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Documents;
@@ -10,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Shouldly;
+using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -21,16 +24,69 @@ namespace CoreTests.DatabaseMultiTenancy
         private IHost _host;
         private IDocumentStore theStore;
 
+        #region sample_MySpecialTenancy
+
+        public class MySpecialTenancy: ITenancy
+
+            #endregion
+        {
+            public ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public Tenant GetTenant(string tenantId)
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public Tenant Default { get; }
+            public IDocumentCleaner Cleaner { get; }
+            public ValueTask<Tenant> GetTenantAsync(string tenantId)
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
+            {
+                throw new System.NotImplementedException();
+            }
+        }
+
+        public static void apply_custom_tenancy()
+        {
+            #region sample_apply_custom_tenancy
+
+            var store = DocumentStore.For(opts =>
+            {
+                opts.Connection("connection string");
+
+                // Apply custom tenancy model
+                opts.Tenancy = new MySpecialTenancy();
+            });
+
+            #endregion
+        }
+
         public async Task InitializeAsync()
         {
+            #region sample_using_single_server_multi_tenancy
+
             _host = await Host.CreateDefaultBuilder()
                 .ConfigureServices(services =>
                 {
                     services.AddMarten(opts =>
                     {
                         opts
+                            // You have to specify a connection string for "administration"
+                            // with rights to provision new databases on the fly
                             .MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
+
+                            // You can map multiple tenant ids to a single named database
                             .WithTenants("tenant1", "tenant2").InDatabaseNamed("database1")
+
+                            // Just declaring that there are additional tenant ids that should
+                            // have their own database
                             .WithTenants("tenant3", "tenant4"); // own database
 
 
@@ -39,6 +95,8 @@ namespace CoreTests.DatabaseMultiTenancy
 
                     }).ApplyAllDatabaseChangesOnStartup();
                 }).StartAsync();
+
+                #endregion
 
             theStore = _host.Services.GetRequiredService<IDocumentStore>();
         }
