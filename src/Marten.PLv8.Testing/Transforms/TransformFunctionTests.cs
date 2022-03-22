@@ -24,6 +24,8 @@ namespace Marten.PLv8.Testing.Transforms
         [Fact]
         public void writes_transform_function()
         {
+            var file = _binAllsql.AppendPath("transforms.sql");
+
             using (var store = DocumentStore.For(_ =>
             {
                 _.RegisterDocumentType<User>();
@@ -38,10 +40,9 @@ namespace Marten.PLv8.Testing.Transforms
 
             }))
             {
-                store.Storage.WriteScriptsByType(_binAllsql);
+                store.Storage.WriteCreationScriptToFile(file);
             }
 
-            var file = _binAllsql.AppendPath("transforms.sql");
             var lines = new FileSystem().ReadStringFromFile(file).ReadLines().ToArray();
 
 
