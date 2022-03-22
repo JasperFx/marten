@@ -22,7 +22,7 @@ namespace Marten.PLv8.Testing.Transforms
 
 
         [Fact]
-        public void writes_transform_function()
+        public async void writes_transform_function()
         {
             var file = _binAllsql.AppendPath("transforms.sql");
 
@@ -40,14 +40,13 @@ namespace Marten.PLv8.Testing.Transforms
 
             }))
             {
-                store.Storage.WriteCreationScriptToFile(file);
+                await store.Storage.WriteCreationScriptToFile(file);
             }
 
-            var lines = new FileSystem().ReadStringFromFile(file).ReadLines().ToArray();
-
+            var lines = new FileSystem().ReadStringFromFile(file);
 
             lines.ShouldContain(
-                "CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc JSONB) RETURNS JSONB AS $$");
+                "CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc JSONB) RETURNS JSONB AS $$", Case.Insensitive);
         }
 
 
