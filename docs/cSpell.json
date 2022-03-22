@@ -24,7 +24,9 @@
         "upserted",
         "Netstandard",
         "Guid",
-        "Guids"
+        "Guids",
+	"pluggable",
+        "runtimes"
     ],
     "ignoreWords": [
         "JSONB",
@@ -70,7 +72,8 @@
         "codegen",
         "NAMEDATALEN",
         "unigrams",
-        "bigrams"
+        "bigrams",
+        "Blazor"
     ],
     "ignoreRegExpList": [
         "\\((.*)\\)", // Markdown links
