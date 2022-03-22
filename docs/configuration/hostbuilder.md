@@ -190,8 +190,7 @@ The last option may be best for more complicated Marten configuration just to ke
 The `AddMarten()` mechanism introduced in later versions of Marten v3 assumes that you are expressing all of the Marten configuration in one place and "know" what that configuration is upfront. Consider these possibilities where that isn't necessarily possible or desirable:
 
 1. You want to override Marten configuration in integration testing scenarios (I do this quite commonly)
-2. Many users have expressed the desire to keep parts of Marten configuration in potentially separate assemblies or subsystems in such a way that 
-   they could later break up the current service into smaller services
+2. Many users have expressed the desire to keep parts of Marten configuration in potentially separate assemblies or subsystems in such a way that they could later break up the current service into smaller services
 
 Fear not, Marten V5.0 introduced a new way to add or modify the Marten configuration from `AddMarten()`. Let's assume
 that we're building a system that has a subsystem related to *users* and want to segregate all the service registrations and Marten configuration related to *users* into a single place like this extension
