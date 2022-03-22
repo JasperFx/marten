@@ -55,14 +55,10 @@ using var host = await Host.CreateDefaultBuilder()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/using_optimized_artifact_workflow.cs#L40-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optimized_artifact_workflow' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-When using this option, if `IHostEnvironment.IsDevelopment()` as it would be on 
-a local developer box, Marten is using:
+When using this option, if `IHostEnvironment.IsDevelopment()` as it would be on a local developer box, Marten is using:
 
-* `StoreOptions.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate` to detect and apply
-  database schema migrations as needed
-* `StoreOptions.GeneratedCodeMode = TypeLoadMode.Auto` to generate dynamic code if necessary,
-  or use pre-built types when they exist. This optimizes the development workflow to avoid
-  unnecessary code compilations when the Marten configuration isn't changing
+* `StoreOptions.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate` to detect and apply database schema migrations as needed.
+* `StoreOptions.GeneratedCodeMode = TypeLoadMode.Auto` to generate dynamic code if necessary, or use pre-built types when they exist. This optimizes the development workflow to avoid unnecessary code compilations when the Marten configuration isn't changed.
 
 At production time, that changes to:
 
@@ -95,4 +91,3 @@ using var host = await Host.CreateDefaultBuilder()
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/using_optimized_artifact_workflow.cs#L57-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optimized_artifact_workflow_static' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-

@@ -1,8 +1,7 @@
 # Bootstrapping in .Net Applications
 
 :::tip
-The exact formula for bootstrapping .Net applications has changed quite a bit from early .Net Core to 
-the latest `WebApplication` model in .Net 6.0 at the time this page was last updated. Regardless, the `IServiceCollection`
+The exact formula for bootstrapping .Net applications has changed quite a bit from early .Net Core to the latest `WebApplication` model in .Net 6.0 at the time this page was last updated. Regardless, the `IServiceCollection`
 abstraction for registering services in an IoC container has remained stable and everything in this
 page functions against that model.
 :::
@@ -186,19 +185,16 @@ public class Startup
 
 The last option may be best for more complicated Marten configuration just to keep the configuration code cleaner as `Startup` classes can become convoluted.
 
-
 ## Composite Configuration with ConfigureMarten()
 
-The `AddMarten()` mechanism introduced in later versions of Marten v3 assumes that you are expressing all of the Marten configuration in one 
-place and "know" what that configuration is upfront. Consider these possibilities where that isn't necessarily possible or desirable:
+The `AddMarten()` mechanism introduced in later versions of Marten v3 assumes that you are expressing all of the Marten configuration in one place and "know" what that configuration is upfront. Consider these possibilities where that isn't necessarily possible or desirable:
 
 1. You want to override Marten configuration in integration testing scenarios (I do this quite commonly)
 2. Many users have expressed the desire to keep parts of Marten configuration in potentially separate assemblies or subsystems in such a way that 
    they could later break up the current service into smaller services
 
 Fear not, Marten V5.0 introduced a new way to add or modify the Marten configuration from `AddMarten()`. Let's assume
-that we're building a system that has a subsystem related to *users* and want to segregate all the 
-service registrations and Marten configuration related to *users* into a single place like this extension
+that we're building a system that has a subsystem related to *users* and want to segregate all the service registrations and Marten configuration related to *users* into a single place like this extension
 method:
 
 <!-- snippet: sample_AddUserModule -->
@@ -297,7 +293,6 @@ public static IServiceCollection AddUserModule2(this IServiceCollection services
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L35-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addusermodule2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
 
 ## Using Lightweight Sessions
 
@@ -618,9 +613,7 @@ The database management tools in Marten.CommandLine are able to work with the se
 document stores along with the default store from `AddMarten()`.
 :::
 
-Marten V5.0 introduces a new feature to register additional Marten databases into a .Net system. `AddMarten()` continues
-to work as it has, but we can now register and resolve additional store services. To utilize the type system and your application's 
-underlying IoC container, the first step is to create a custom *marker* interface for your separate document store like this one below targeting
+Marten V5.0 introduces a new feature to register additional Marten databases into a .Net system. `AddMarten()` continues to work as it has, but we can now register and resolve additional store services. To utilize the type system and your application's underlying IoC container, the first step is to create a custom *marker* interface for your separate document store like this one below targeting
 a separate "invoicing" database:
 
 <!-- snippet: sample_IInvoicingStore -->

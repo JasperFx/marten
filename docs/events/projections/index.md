@@ -4,9 +4,7 @@
 The programming model for projections was completely rewritten for Marten V4
 :::
 
-Marten has a (we hope) strong model for user-defined projections of the raw event data. Projections are used within Marten to create
-read-side views of the raw event data. 
-
+Marten has a (we hope) strong model for user-defined projections of the raw event data. Projections are used within Marten to create read-side views of the raw event data.
 
 ## Choosing a Projection Type
 
@@ -124,7 +122,6 @@ public class QuestPartyWithEvents
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/QuestPartyWithEvents.cs#L8-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpartywithevents' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
 
 ## Live Aggregation via .Net
 

@@ -138,7 +138,7 @@ or in Marten <V5.0:
 dotnet run -- marten-apply
 ```
 
-Lastly, Marten V5 adds a new option to have the latest database changes detected and applied on application startup with 
+Lastly, Marten V5 adds a new option to have the latest database changes detected and applied on application startup with
 
 <!-- snippet: sample_using_ApplyAllDatabaseChangesOnStartup -->
 <a id='snippet-sample_using_applyalldatabasechangesonstartup'></a>
@@ -180,7 +180,7 @@ With the [command line tooling](/configuration/cli), it's:
 dotnet run -- db-assert
 ```
 
-or 
+or
 
 ```bash
 dotnet run -- marten-assert

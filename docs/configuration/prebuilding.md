@@ -4,9 +4,9 @@
 This feature took a pretty big leap forward with Marten V5 and is much easier to utilize than it was with V4.
 :::
 
-Marten >= V4 extensively uses runtime code generation backed by [Roslyn runtime compilation](https://jeremydmiller.com/2018/06/04/compiling-code-at-runtime-with-lamar-part-1/) for dynamic code. 
-This is both much more powerful than [source generators](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/source-generators-overview) in what it allows us to actually do, but can have 
-significant memory usage and “[cold start](https://en.wikipedia.org/wiki/Cold_start_(computing))” problems (seems to depend on exact configurations, so it’s not a given that you’ll have these issues). 
+Marten >= V4 extensively uses runtime code generation backed by [Roslyn runtime compilation](https://jeremydmiller.com/2018/06/04/compiling-code-at-runtime-with-lamar-part-1/) for dynamic code.
+This is both much more powerful than [source generators](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/source-generators-overview) in what it allows us to actually do, but can have
+significant memory usage and “[cold start](https://en.wikipedia.org/wiki/Cold_start_(computing))” problems (seems to depend on exact configurations, so it’s not a given that you’ll have these issues).
 Fear not though, Marten v4 introduced a facility to “generate ahead” the code to greatly optimize the "cold start" and memory usage in production scenarios.
 
 The code generation for document storage, event handling, event projections, and additional document stores can be done
@@ -69,7 +69,7 @@ await session.SaveChangesAsync();
 <!-- endSnippet -->
 
 Marten encounters the `User` document type for the first time, and determines that it needs a type called `UserProvider1415907724`
-(the numeric suffix is a repeatable hash of the generated type's full type name) that is a Marten-generated type that "knows" how 
+(the numeric suffix is a repeatable hash of the generated type's full type name) that is a Marten-generated type that "knows" how
 to do every possible storage or loading of the `User` document type. Marten will do one of two things next:
 
 1. If the `UserProvider1415907724` type can be found in the main application assembly, Marten will create a new instance of that class and use that from here on out for all `User` operations

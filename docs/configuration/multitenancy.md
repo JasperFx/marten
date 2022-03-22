@@ -55,13 +55,9 @@ _host = await Host.CreateDefaultBuilder()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_static_database_multitenancy.cs#L50-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_multi_tenanted_databases' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Single Instance Multi-Tenancy
 
-The second out of the box option is to use a separate named database in the same database instance for each individual tenant. In this case, Marten is
-able to provision new tenant databases on the fly when a new tenant id is encountered for the first time. That will obviously depend on the application
-having sufficient permissions for this to work. We think this option may be mostly suitable for development and automated testing rather than production 
-usage.
+The second out of the box option is to use a separate named database in the same database instance for each individual tenant. In this case, Marten is able to provision new tenant databases on the fly when a new tenant id is encountered for the first time. That will obviously depend on the application having sufficient permissions for this to work. We think this option may be mostly suitable for development and automated testing rather than production usage.
 
 This usage is shown below:
 
@@ -179,8 +175,7 @@ var store = DocumentStore.For(opts =>
 
 ## Administering Multiple Databases
 
-We've tried to make Marten support all the existing `IDocumentStore.Advanced` features either across all databases at one time where possible, or 
-exposed a mechanism to access only one database at a time as shown below:
+We've tried to make Marten support all the existing `IDocumentStore.Advanced` features either across all databases at one time where possible, or exposed a mechanism to access only one database at a time as shown below:
 
 <!-- snippet: sample_administering_multiple_databases -->
 <a id='snippet-sample_administering_multiple_databases'></a>

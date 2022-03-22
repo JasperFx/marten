@@ -4,9 +4,7 @@ Once in awhile users are hitting use cases or desired functionality for aggregat
 Marten V5.0 introduces the new `CustomAggregation<T>` base type that will let you define aggregation projections with explicit user code while still taking advantage of some of the parallelization
 optimizations that were built for the previous aggregation types running in the [async daemon](/events/projections/async-daemon);
 
-Alright, let's jump right into an example. Two of the drivers for this feature were for aggregations to document types that were [soft-deleted](/documents/deletes.html#soft-deletes) or aggregations where some events should only apply to 
-the aggregate document if the document already existed. To illustrate this with a contrived example, let's say that we've got these event types:
-
+Alright, let's jump right into an example. Two of the drivers for this feature were for aggregations to document types that were [soft-deleted](/documents/deletes.html#soft-deletes) or aggregations where some events should only apply to the aggregate document if the document already existed. To illustrate this with a contrived example, let's say that we've got these event types:
 
 <!-- snippet: sample_custom_aggregate_events -->
 <a id='snippet-sample_custom_aggregate_events'></a>
