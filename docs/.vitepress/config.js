@@ -19,7 +19,7 @@ module.exports = {
     editLinkText: 'Suggest changes to this page',
 
     nav: [
-      { text: 'v4.x',
+      { text: 'latest',
         items: [
           { text: 'v3.x', link: '/v3/index.html', target:"_blank"}
         ]
