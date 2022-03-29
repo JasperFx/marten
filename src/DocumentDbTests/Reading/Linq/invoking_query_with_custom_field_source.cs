@@ -43,6 +43,20 @@ namespace DocumentDbTests.Reading.Linq
         }
 
         [Fact]
+        public void can_load()
+        {
+            var docs = theSession.Load<MyClass>("SomeId");
+            var docs2 = theSession.Load<MyClassNullable>("SomeId");
+        }
+
+        [Fact]
+        public void can_load_many()
+        {
+            var docs = theSession.LoadMany<MyClass>("SomeId", "SomeOtherId");
+            var docs2 = theSession.LoadMany<MyClassNullable>("SomeId", "SomeOtherId");
+        }
+
+        [Fact]
         public void can_query_by_nullable_custom_id()
         {
             var testValue = new CustomId("test");
