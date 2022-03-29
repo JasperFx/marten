@@ -9,6 +9,7 @@ using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Linq.Filters;
 using Marten.Testing.Harness;
+using Marten.Util;
 using Newtonsoft.Json;
 using Weasel.Postgresql.SqlGeneration;
 using Xunit;
@@ -139,7 +140,7 @@ namespace DocumentDbTests.Reading.Linq
                 Type documentType,
                 MemberInfo[] members, out IField? field)
             {
-                var fieldType = GetRawMemberType(members.Last());
+                var fieldType = members.Last().GetRawMemberType();
 
                 if (fieldType == null)
                 {
@@ -161,16 +162,6 @@ namespace DocumentDbTests.Reading.Linq
 
                 field = null;
                 return false;
-            }
-
-            private static Type? GetRawMemberType(MemberInfo member)
-            {
-                return member switch
-                {
-                    FieldInfo => member.As<FieldInfo>().FieldType,
-                    PropertyInfo => member.As<PropertyInfo>().PropertyType,
-                    _ => null
-                };
             }
         }
 
