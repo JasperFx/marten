@@ -57,6 +57,17 @@ namespace DocumentDbTests.Reading.Linq
         }
 
         [Fact]
+        public void can_query_is_one_of_custom_id_array()
+        {
+            var testValues = new[] { new CustomId("test1"), new CustomId("test2") };
+            var queryPlan = theSession
+                .Query<MyClass>()
+                .Where(x => x.CustomId.IsOneOf(testValues)).Explain();
+
+            WriteQueryPlan(queryPlan);
+        }
+
+        [Fact]
         public void can_query_by_nullable_custom_id()
         {
             var testValue = new CustomId("test");
