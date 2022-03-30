@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Events;
 using Marten.Storage;
 using Marten.Testing.Harness;
@@ -205,6 +206,115 @@ namespace EventSourcingTests
         public multi_tenancy_and_event_capture(ITestOutputHelper output)
         {
             _output = output;
+        }
+
+        public static TheoryData<StreamIdentity, Func<DocumentStore, IDocumentSession>, Action<IDocumentSession>, Action<IDocumentSession>> WillParameterizeTenantId => new()
+        {
+            {
+                StreamIdentity.AsGuid,
+                s => s.OpenSession(),
+                s => { s.Events.StartStream(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); },
+                s => { s.Events.Append(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); }
+            },
+            {
+                StreamIdentity.AsGuid,
+                s => s.OpenSession("Green"),
+                s => { s.Events.StartStream(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); },
+                s => { s.Events.Append(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); }
+            },
+            {
+                StreamIdentity.AsGuid,
+                s => s.OpenSession(),
+                s => { s.Events.StartStream(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); },
+                s => { s.Events.AppendOptimistic(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()).GetAwaiter().GetResult(); }
+            },
+            {
+                StreamIdentity.AsGuid,
+                s => s.OpenSession("Green"),
+                s => { s.Events.StartStream(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); },
+                s => { s.Events.AppendOptimistic(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()).GetAwaiter().GetResult(); }
+            },
+            {
+                StreamIdentity.AsGuid,
+                s => s.OpenSession(),
+                s => { s.Events.StartStream(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); },
+                s => { s.Events.AppendExclusive(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()).GetAwaiter().GetResult(); }
+            },
+            {
+                StreamIdentity.AsGuid,
+                s => s.OpenSession("Green"),
+                s => { s.Events.StartStream(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); },
+                s => { s.Events.AppendExclusive(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()).GetAwaiter().GetResult(); }
+            },
+            {
+                StreamIdentity.AsString,
+                s => s.OpenSession(),
+                s => { s.Events.StartStream("Stream", new MembersJoined()); },
+                s => { s.Events.Append("Stream", new MembersJoined()); }
+            },
+            {
+                StreamIdentity.AsString,
+                s => s.OpenSession("Green"),
+                s => { s.Events.StartStream("Stream", new MembersJoined()); },
+                s => { s.Events.Append("Stream", new MembersJoined()); }
+            },
+            {
+                StreamIdentity.AsString,
+                s => s.OpenSession(),
+                s => { s.Events.StartStream("Stream", new MembersJoined()); },
+                s => { s.Events.AppendOptimistic("Stream", new MembersJoined()).GetAwaiter().GetResult(); }
+            },
+            {
+                StreamIdentity.AsString,
+                s => s.OpenSession("Green"),
+                s => { s.Events.StartStream("Stream", new MembersJoined()); },
+                s => { s.Events.AppendOptimistic("Stream", new MembersJoined()).GetAwaiter().GetResult(); }
+            },
+            {
+                StreamIdentity.AsString,
+                s => s.OpenSession(),
+                s => { s.Events.StartStream("Stream", new MembersJoined()); },
+                s => { s.Events.AppendExclusive("Stream", new MembersJoined()).GetAwaiter().GetResult(); }
+            },
+            {
+                StreamIdentity.AsString,
+                s => s.OpenSession("Green"),
+                s => { s.Events.StartStream("Stream", new MembersJoined()); },
+                s => { s.Events.AppendExclusive("Stream", new MembersJoined()).GetAwaiter().GetResult(); }
+            },
+        };
+
+        [Theory]
+        [MemberData(nameof(WillParameterizeTenantId))]
+        public void will_parameterize_tenant_id_when_checking_stream_version(StreamIdentity streamIdentity, Func<DocumentStore, IDocumentSession> openSession, Action<IDocumentSession> startStream, Action<IDocumentSession> append)
+        {
+            InitStore(TenancyStyle.Conjoined, streamIdentity);
+            theStore.Advanced.Clean.DeleteAllEventData();
+
+            var streamId = Guid.NewGuid();
+            using (var session = openSession(theStore))
+            {
+                startStream(session);
+                session.SaveChanges();
+            }
+
+            using (var session = openSession(theStore))
+            {
+                append(session);
+                session.SaveChanges();
+            }
+
+            using (var session = theStore.OpenSession("Red"))
+            {
+                startStream(session);
+                session.SaveChanges();
+            }
+
+            using (var session = theStore.OpenSession("Red"))
+            {
+                append(session);
+                session.SaveChanges();
+            }
         }
     }
 }
