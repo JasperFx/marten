@@ -46,7 +46,7 @@ namespace Marten.CommandLine.Commands.Projection
 
         private async Task<bool> Rebuild(ProjectionInput input, DocumentStore store)
         {
-            var projections = input.SelectProjections(store);
+            var projections = input.SelectProjectionsForRebuild(store);
 
             if (input.InteractiveFlag)
             {
