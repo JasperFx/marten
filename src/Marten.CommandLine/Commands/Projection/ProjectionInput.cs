@@ -60,12 +60,14 @@ namespace Marten.CommandLine.Commands.Projection
                 .ToList();
         }
 
-        internal IList<IProjectionSource> SelectProjections(DocumentStore store)
+        internal IList<IProjectionSource> SelectProjectionsForRebuild(DocumentStore store)
         {
             var projections = store
                 .Options
                 .Projections
-                .All;
+                .All
+                .Where(p => p.Lifecycle != ProjectionLifecycle.Live)
+                .ToList();
 
             if (ProjectionFlag.IsNotEmpty())
             {
