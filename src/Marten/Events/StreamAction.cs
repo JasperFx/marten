@@ -96,11 +96,6 @@ namespace Marten.Events
                 if (@event.Id == Guid.Empty) @event.Id = CombGuidIdGeneration.NewGuid();
                 @event.StreamId = Id;
                 @event.StreamKey = Key;
-
-                if (ExpectedVersionOnServer.HasValue)
-                {
-                    ExpectedVersionOnServer++;
-                }
             }
 
             return this;
@@ -112,7 +107,7 @@ namespace Marten.Events
         public IReadOnlyList<IEvent> Events => _events;
 
         /// <summary>
-        /// The expected starting version of the stream in the server. This is used
+        /// The expected *starting* version of the stream in the server. This is used
         /// to facilitate optimistic concurrency checks
         /// </summary>
         public long? ExpectedVersionOnServer { get; internal set; }

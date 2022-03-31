@@ -3,11 +3,21 @@ using Shouldly;
 using System;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace EventSourcingTests.Bugs
 {
     public class Bug_2143_append_exclusive_then_append_throws_when_saving_changes : BugIntegrationContext
     {
+        private readonly ITestOutputHelper _output;
+
+        public Bug_2143_append_exclusive_then_append_throws_when_saving_changes(ITestOutputHelper output)
+        {
+            _output = output;
+
+            theSession.Logger = new TestOutputMartenLogger(output);
+        }
+
         [Fact]
         public async Task stream_can_be_saved_when_combining_append_exclusive_and_append()
         {
