@@ -290,6 +290,26 @@ namespace Marten
             return new MartenStoreExpression<T>(services);
         }
 
+        internal static void EnsureMartenActivatorIsRegistered(this IServiceCollection services)
+        {
+            if (!services.Any(
+                    x => x.ServiceType == typeof(IHostedService) && x.ImplementationType == typeof(MartenActivator)))
+            {
+                services.Insert(0,
+                    new ServiceDescriptor(typeof(IHostedService), typeof(MartenActivator), ServiceLifetime.Singleton));
+            }
+        }
+
+        internal static void EnsureMartenActivatorIsRegistered<T>(this IServiceCollection services) where T : IDocumentStore
+        {
+            if (!services.Any(
+                    x => x.ServiceType == typeof(IHostedService) && x.ImplementationType == typeof(MartenActivator<T>)))
+            {
+                services.Insert(0,
+                    new ServiceDescriptor(typeof(IHostedService), typeof(MartenActivator<T>), ServiceLifetime.Singleton));
+            }
+        }
+
         public class MartenStoreExpression<T> where T : IDocumentStore
         {
             public IServiceCollection Services { get; }
@@ -340,22 +360,14 @@ namespace Marten
             /// <returns></returns>
             public MartenStoreExpression<T> ApplyAllDatabaseChangesOnStartup()
             {
-                ensureMartenActivatorIsRegistered();
+                Services.EnsureMartenActivatorIsRegistered<T>();
 
                 Services.ConfigureMarten<T>(opts => opts.ShouldApplyChangesOnStartup = true);
 
                 return this;
             }
 
-            private void ensureMartenActivatorIsRegistered()
-            {
-                if (!Services.Any(
-                        x => x.ServiceType == typeof(IHostedService) && x.ImplementationType == typeof(MartenActivator<T>)))
-                {
-                    Services.Insert(0,
-                        new ServiceDescriptor(typeof(IHostedService), typeof(MartenActivator<T>), ServiceLifetime.Singleton));
-                }
-            }
+
 
             /// <summary>
             /// Adds initial data sets to the Marten store and ensures that they will be
@@ -365,7 +377,7 @@ namespace Marten
             /// <returns></returns>
             public MartenStoreExpression<T> InitializeWith(params IInitialData[] data)
             {
-                ensureMartenActivatorIsRegistered();
+                Services.EnsureMartenActivatorIsRegistered<T>();
                 Services.ConfigureMarten<T>(opts => opts.InitialData.AddRange(data));
                 return this;
             }
@@ -393,7 +405,7 @@ namespace Marten
             /// <returns></returns>
             public MartenStoreExpression<T> InitializeWith<TData>() where TData : class, IInitialData
             {
-                ensureMartenActivatorIsRegistered();
+                Services.EnsureMartenActivatorIsRegistered<T>();
                 Services.AddSingleton<TData>();
                 Services.AddSingleton<IConfigureMarten<T>, AddInitialData<T, TData>>();
                 return this;
@@ -430,7 +442,7 @@ namespace Marten
             /// <returns></returns>
             public MartenConfigurationExpression ApplyAllDatabaseChangesOnStartup()
             {
-                ensureMartenActivatorIsRegistered();
+                Services.EnsureMartenActivatorIsRegistered();
 
                 Services.ConfigureMarten(opts => opts.ShouldApplyChangesOnStartup = true);
 
@@ -444,23 +456,12 @@ namespace Marten
             /// <returns></returns>
             public MartenConfigurationExpression AssertDatabaseMatchesConfigurationOnStartup()
             {
-                ensureMartenActivatorIsRegistered();
+                Services.EnsureMartenActivatorIsRegistered();
 
                 Services.ConfigureMarten(opts => opts.ShouldAssertDatabaseMatchesConfigurationOnStartup = true);
 
                 return this;
             }
-
-            private void ensureMartenActivatorIsRegistered()
-            {
-                if (!Services.Any(x =>
-                        x.ServiceType == typeof(IHostedService) && x.ImplementationType == typeof(MartenActivator)))
-                {
-                    Services.Insert(0,
-                        new ServiceDescriptor(typeof(IHostedService), typeof(MartenActivator), ServiceLifetime.Singleton));
-                }
-            }
-
 
             /// <summary>
             /// Register the Async Daemon hosted service to continuously attempt to update asynchronous event projections
@@ -539,7 +540,7 @@ namespace Marten
             /// <returns></returns>
             public MartenConfigurationExpression InitializeWith(params IInitialData[] data)
             {
-                ensureMartenActivatorIsRegistered();
+                Services.EnsureMartenActivatorIsRegistered();
                 Services.ConfigureMarten(opts => opts.InitialData.AddRange(data));
                 return this;
             }
@@ -552,7 +553,7 @@ namespace Marten
             /// <returns></returns>
             public MartenConfigurationExpression InitializeWith<T>() where T : class, IInitialData
             {
-                ensureMartenActivatorIsRegistered();
+                Services.EnsureMartenActivatorIsRegistered();
                 Services.AddSingleton<IInitialData, T>();
                 return this;
             }
