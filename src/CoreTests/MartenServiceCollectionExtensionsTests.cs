@@ -220,7 +220,7 @@ namespace CoreTests
                     .BuildSessionsWith<SpecialBuilder>(ServiceLifetime.Scoped);
             });
 
-            ShouldHaveAllTheExpectedRegistrations(container);
+            ShouldHaveAllTheExpectedRegistrations(container, ServiceLifetime.Scoped);
 
             container.Model.For<ISessionFactory>()
                 .Default.Lifetime.ShouldBe(ServiceLifetime.Scoped);
@@ -240,6 +240,9 @@ namespace CoreTests
 
             container.Model.For<ISessionFactory>()
                 .Default.ImplementationType.ShouldBe(typeof(LightweightSessionFactory));
+
+            container.Model.For<ISessionFactory>()
+                .Default.Lifetime.ShouldBe(ServiceLifetime.Singleton);
 
             using var session = container.GetInstance<IDocumentSession>();
             session.ShouldBeOfType<LightweightSession>();
@@ -299,11 +302,13 @@ namespace CoreTests
             public bool BuiltSession { get; set; }
         }
 
-        private static void ShouldHaveAllTheExpectedRegistrations(Container container)
+        private static void ShouldHaveAllTheExpectedRegistrations(Container container, ServiceLifetime factoryLifetime = ServiceLifetime.Singleton)
         {
             container.Model.For<IDocumentStore>().Default.Lifetime.ShouldBe(ServiceLifetime.Singleton);
             container.Model.For<IDocumentSession>().Default.Lifetime.ShouldBe(ServiceLifetime.Scoped);
             container.Model.For<IQuerySession>().Default.Lifetime.ShouldBe(ServiceLifetime.Scoped);
+
+            container.Model.For<ISessionFactory>().Default.Lifetime.ShouldBe(factoryLifetime);
 
             var store = container.GetInstance<IDocumentStore>();
             store.ShouldNotBeNull();
