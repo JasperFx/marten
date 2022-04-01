@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 using Bug2135;
 
 using Marten;
 using Marten.Services;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
@@ -17,6 +19,19 @@ namespace CoreTests.Bugs
 {
     public class Bug_2135_open_session_should_use_provided_connection_string: BugIntegrationContext
     {
+        // This covers GH-2145
+        [Fact]
+        public async Task pass_in_current_connection()
+        {
+            var newTargets = Target.GenerateRandomData(5).ToArray();
+
+            await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            await using var session = theStore.OpenSession(SessionOptions.ForConnection(conn));
+
+            session.Store(newTargets);
+            await session.SaveChangesAsync();
+        }
+
         [Fact]
         public async Task should_use_provided_connection_string()
         {

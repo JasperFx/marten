@@ -42,9 +42,16 @@ namespace Marten.Services
                 return transaction;
             }
 
+
+
             if (Transaction != null)
             {
                 return new ExternalTransaction(this);
+            }
+
+            if (Connection != null)
+            {
+                return new MartenControlledConnectionTransaction(this);
             }
 
             if (DotNetTransaction != null)
@@ -255,7 +262,7 @@ namespace Marten.Services
         {
             return new SessionOptions
             {
-                Connection = connection, Timeout = connection.CommandTimeout, OwnsConnection = false
+                Connection = connection, Timeout = connection.CommandTimeout, OwnsConnection = connection.State == ConnectionState.Closed
             };
         }
     }
