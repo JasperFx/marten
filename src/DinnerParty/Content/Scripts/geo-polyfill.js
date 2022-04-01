@@ -1,3 +1,0 @@
-﻿function getCurrentLocation() {
-    NerdDinner.getCurrentLocationByIpAddress();
-}
