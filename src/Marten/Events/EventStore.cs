@@ -178,9 +178,14 @@ namespace Marten.Events
             _store.Events.EnsureAsStringStorage(_session);
             await _session.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
-            var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id and tenant_id = :tenant_id")
-                .With("id", streamKey)
-                .With("tenant_id", _session.TenantId);
+            var cmd = _store.Events.TenancyStyle switch
+            {
+                TenancyStyle.Conjoined => new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id and tenant_id = :tenant_id")
+                    .With("id", streamKey)
+                    .With("tenant_id", _session.TenantId),
+                _ => new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
+                    .With("id", streamKey)
+            };
 
             var version = await readVersionFromExistingStream(streamKey, token, cmd).ConfigureAwait(false);
 
@@ -227,9 +232,14 @@ namespace Marten.Events
             _store.Events.EnsureAsGuidStorage(_session);
             await _session.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
-            var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id and tenant_id = :tenant_id")
-                .With("id", streamId)
-                .With("tenant_id", _session.TenantId);
+            var cmd = _store.Events.TenancyStyle switch
+            {
+                TenancyStyle.Conjoined => new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id and tenant_id = :tenant_id")
+                    .With("id", streamId)
+                    .With("tenant_id", _session.TenantId),
+                _ => new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
+                    .With("id", streamId)
+            };
 
             var version = await readVersionFromExistingStream(streamId, token, cmd).ConfigureAwait(false);
 
@@ -247,9 +257,14 @@ namespace Marten.Events
             _store.Events.EnsureAsStringStorage(_session);
             await _session.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
-            var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id and tenant_id = :tenant_id for update")
-                .With("id", streamKey)
-                .With("tenant_id", _session.TenantId);
+            var cmd = _store.Events.TenancyStyle switch
+            {
+                TenancyStyle.Conjoined => new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id and tenant_id = :tenant_id")
+                    .With("id", streamKey)
+                    .With("tenant_id", _session.TenantId),
+                _ => new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
+                    .With("id", streamKey)
+            };
 
             await _session.BeginTransactionAsync(token).ConfigureAwait(false);
 
@@ -269,9 +284,14 @@ namespace Marten.Events
             _store.Events.EnsureAsGuidStorage(_session);
             await _session.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
-            var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id and tenant_id = :tenant_id for update")
-                .With("id", streamId)
-                .With("tenant_id", _session.TenantId);
+            var cmd = _store.Events.TenancyStyle switch
+            {
+                TenancyStyle.Conjoined => new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id and tenant_id = :tenant_id")
+                    .With("id", streamId)
+                    .With("tenant_id", _session.TenantId),
+                _ => new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
+                    .With("id", streamId)
+            };
 
             await _session.BeginTransactionAsync(token).ConfigureAwait(false);
 
