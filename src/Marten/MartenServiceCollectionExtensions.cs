@@ -310,6 +310,59 @@ namespace Marten
             }
         }
 
+        /// <summary>
+        /// Adds initial data sets to the separate Marten store of type "T" and ensures that they will be
+        /// executed upon IHost initialization
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public static IServiceCollection InitializeMartenWith<T>(this IServiceCollection services, params IInitialData[] data) where T : IDocumentStore
+        {
+            services.EnsureMartenActivatorIsRegistered<T>();
+            services.ConfigureMarten<T>(opts => opts.InitialData.AddRange(data));
+            return services;
+        }
+        /// <summary>
+        /// Registers type T as a singleton against IInitialData to be used in IHost activation
+        /// to apply changes or at least actions against the as built IDocumentStore
+        /// </summary>
+        /// <typeparam name="TData">The type that implements IInitialData</typeparam>
+        /// <returns></returns>
+        public static IServiceCollection InitializeMartenWith<TStore, TData>(this IServiceCollection services) where TData : class, IInitialData where TStore : IDocumentStore
+        {
+            services.EnsureMartenActivatorIsRegistered<TStore>();
+            services.AddSingleton<TData>();
+            services.AddSingleton<IConfigureMarten<TStore>, AddInitialData<TStore, TData>>();
+            return services;
+        }
+
+        /// <summary>
+        /// Adds initial data sets to the Marten store and ensures that they will be
+        /// executed upon IHost initialization
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public static IServiceCollection InitializeMartenWith(this IServiceCollection services, params IInitialData[] data)
+        {
+            services.EnsureMartenActivatorIsRegistered();
+            services.ConfigureMarten(opts => opts.InitialData.AddRange(data));
+            return services;
+        }
+
+        /// <summary>
+        /// Registers type T as a singleton against IInitialData to be used in IHost activation
+        /// to apply changes or at least actions against the as built IDocumentStore
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static IServiceCollection InitializeMartenWith<T>(this IServiceCollection services) where T : class, IInitialData
+        {
+            services.EnsureMartenActivatorIsRegistered();
+            services.AddSingleton<IInitialData, T>();
+            return services;
+        }
+
+
         public class MartenStoreExpression<T> where T : IDocumentStore
         {
             public IServiceCollection Services { get; }
@@ -380,21 +433,6 @@ namespace Marten
                 Services.EnsureMartenActivatorIsRegistered<T>();
                 Services.ConfigureMarten<T>(opts => opts.InitialData.AddRange(data));
                 return this;
-            }
-
-            internal class AddInitialData<TStore, TData>: IConfigureMarten<T> where TData : IInitialData
-            {
-                private readonly TData _data;
-
-                public AddInitialData(TData data)
-                {
-                    _data = data;
-                }
-
-                public void Configure(IServiceProvider services, StoreOptions options)
-                {
-                    options.InitialData.Add(_data);
-                }
             }
 
             /// <summary>
@@ -556,6 +594,21 @@ namespace Marten
                 Services.EnsureMartenActivatorIsRegistered();
                 Services.AddSingleton<IInitialData, T>();
                 return this;
+            }
+        }
+
+        internal class AddInitialData<T, TData>: IConfigureMarten<T> where T : IDocumentStore where TData : IInitialData
+        {
+            private readonly TData _data;
+
+            public AddInitialData(TData data)
+            {
+                _data = data;
+            }
+
+            public void Configure(IServiceProvider services, StoreOptions options)
+            {
+                options.InitialData.Add(_data);
             }
         }
     }

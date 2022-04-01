@@ -64,6 +64,33 @@ namespace CoreTests
         }
 
         [Fact]
+        public async Task runs_all_the_initial_data_sets_on_startup_2()
+        {
+            var data1 = Substitute.For<IInitialData>();
+            var data2 = Substitute.For<IInitialData>();
+            var data3 = Substitute.For<IInitialData>();
+
+            using var host = await MartenHost.For(services =>
+            {
+                services.AddMarten(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+
+                });
+
+                services.InitializeMartenWith(data1, data2, data3);
+
+            });
+
+            var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
+            store.Options.InitialData.ShouldHaveTheSameElementsAs(data1, data2, data3);
+
+            await data1.Received().Populate(store, Arg.Any<CancellationToken>());
+            await data2.Received().Populate(store, Arg.Any<CancellationToken>());
+            await data3.Received().Populate(store, Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
         public async Task use_service_registration_for_initial_data()
         {
             using var host = await MartenHost.For(services =>
@@ -74,6 +101,28 @@ namespace CoreTests
 
                     })
                     .InitializeWith<StubInitialData>();
+            });
+
+            var stub = host.Services.GetServices<IInitialData>().OfType<StubInitialData>().Single();
+            var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
+
+            stub.ReceivedStore.ShouldBe(store);
+        }
+
+
+        [Fact]
+        public async Task use_service_registration_for_initial_data_separate_registration()
+        {
+            using var host = await MartenHost.For(services =>
+            {
+                services.AddMarten(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+
+                });
+
+                services.InitializeMartenWith<StubInitialData>();
+
             });
 
             var stub = host.Services.GetServices<IInitialData>().OfType<StubInitialData>().Single();
@@ -110,6 +159,32 @@ namespace CoreTests
         }
 
         [Fact]
+        public async Task runs_all_the_initial_data_sets_on_startup_on_other_store_separate()
+        {
+            var data1 = Substitute.For<IInitialData>();
+            var data2 = Substitute.For<IInitialData>();
+            var data3 = Substitute.For<IInitialData>();
+
+            using var host = await MartenHost.For(services =>
+            {
+                services.AddMartenStore<IOtherStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+
+                    });
+
+                services.InitializeMartenWith<IOtherStore>(data1, data2, data3);
+            });
+
+            var store = host.Services.GetRequiredService<IOtherStore>().As<DocumentStore>();
+            store.Options.InitialData.ShouldHaveTheSameElementsAs(data1, data2, data3);
+
+            await data1.Received().Populate(store, Arg.Any<CancellationToken>());
+            await data2.Received().Populate(store, Arg.Any<CancellationToken>());
+            await data3.Received().Populate(store, Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
         public async Task use_service_registration_for_initial_data_for_other_store()
         {
             using var host = await MartenHost.For(services =>
@@ -126,6 +201,48 @@ namespace CoreTests
             var stub = store.Options.InitialData.OfType<StubInitialData>().Single();
             stub.ReceivedStore.ShouldBe(store);
         }
+
+
+        [Fact]
+        public async Task use_service_registration_for_initial_data_for_other_store_separate_call()
+        {
+            using var host = await MartenHost.For(services =>
+            {
+                services.AddMartenStore<IOtherStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+
+                    });
+
+                services
+                    .InitializeMartenWith<IOtherStore, StubInitialData>();
+            });
+
+            var store = host.Services.GetRequiredService<IOtherStore>().As<DocumentStore>();
+            var stub = store.Options.InitialData.OfType<StubInitialData>().Single();
+            stub.ReceivedStore.ShouldBe(store);
+        }
+
+
+        [Fact]
+        public async Task use_service_registration_for_initial_data_for_other_store_2()
+        {
+            using var host = await MartenHost.For(services =>
+            {
+                services.AddMartenStore<IOtherStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+
+                    });
+
+                services.InitializeMartenWith<IOtherStore, StubInitialData>();
+            });
+
+            var store = host.Services.GetRequiredService<IOtherStore>().As<DocumentStore>();
+            var stub = store.Options.InitialData.OfType<StubInitialData>().Single();
+            stub.ReceivedStore.ShouldBe(store);
+        }
+
 
 
         [Fact]

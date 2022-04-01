@@ -70,3 +70,62 @@ var store = host.Services.GetRequiredService<IDocumentStore>();
 <!-- endSnippet -->
 
 `IInitialData.Populate(IDocumentStore store)` will be executed for each configured entry as part of the initialization of your document store. They will be executed in the order they were added.
+
+## Applying Initial Data only in Testing
+
+We think it's common that you'll use the `IInitialData` mechanism strictly for test data setup. Let's say that you have
+a set of baseline data for testing that lives in your test project:
+
+<!-- snippet: sample_MyTestingData -->
+<a id='snippet-sample_mytestingdata'></a>
+```cs
+public class MyTestingData: IInitialData
+{
+    public Task Populate(IDocumentStore store, CancellationToken cancellation)
+    {
+        // TODO -- add baseline test data here
+        return Task.CompletedTask;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/InitialDataSamples.cs#L57-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mytestingdata' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Now, you'd like to use your exact application Marten configuration, but only for testing, add the `MyTestingData` initial data
+set to the application's Marten configuration. You can do that as of Marten v5.1 with the `IServiceCollection.InitializeMartenWith()`
+methods as shown in a sample below for a testing project:
+
+<!-- snippet: sample_using_InitializeMartenWith -->
+<a id='snippet-sample_using_initializemartenwith'></a>
+```cs
+// Use the configured host builder for your application
+// by calling the Program.CreateHostBuilder() method from
+// your application
+
+// This would be slightly different using WebApplicationFactory,
+// but the IServiceCollection mechanisms would be the same
+var hostBuilder = Program.CreateHostBuilder(Array.Empty<string>());
+
+// Add initial data to the application's Marten store
+// in the test project
+using var host = await hostBuilder
+    .ConfigureServices(services =>
+    {
+        services.InitializeMartenWith<MyTestingData>();
+
+        // or
+
+        services.InitializeMartenWith(new MyTestingData());
+    }).StartAsync();
+
+// The MyTestingData initial data set would be applied at
+// this point
+var store = host.Services.GetRequiredService<IDocumentStore>();
+
+// And in between tests, maybe do this to wipe out the store, then reapply
+// MyTestingData:
+await store.Advanced.ResetAllData();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/InitialDataSamples.cs#L23-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_initializemartenwith' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
