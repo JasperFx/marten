@@ -13,7 +13,7 @@ using Xunit;
 using Xunit.Abstractions;
 using IsolationLevel = System.Data.IsolationLevel;
 
-namespace DocumentDbTests.SessionMechanics
+namespace CoreTests
 {
     public class ability_to_use_an_existing_connection_and_transaction : IntegrationContext
     {

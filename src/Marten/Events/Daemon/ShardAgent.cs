@@ -410,8 +410,6 @@ namespace Marten.Events.Daemon
 
             if (_cancellation.IsCancellationRequested) return;
 
-
-
             var session = (DocumentSessionBase)_store.OpenSession(_sessionOptions);
             await using (session.ConfigureAwait(false))
             {

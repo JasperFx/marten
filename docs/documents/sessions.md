@@ -217,7 +217,7 @@ public void ConfigureCommandTimeout(IDocumentStore store)
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/SessionOptionsTests.cs#L19-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionOptionsTests.cs#L19-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Unit of Work Mechanics
@@ -274,7 +274,7 @@ public void samples(IDocumentStore store, NpgsqlConnection connection, NpgsqlTra
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ability_to_use_an_existing_connection_and_transaction.cs#L33-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_passing-in-existing-connections-and-transactions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/ability_to_use_an_existing_connection_and_transaction.cs#L33-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_passing-in-existing-connections-and-transactions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Transaction Isolation Level

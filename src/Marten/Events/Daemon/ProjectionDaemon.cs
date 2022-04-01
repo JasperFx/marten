@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Baseline.Dates;
+using Baseline.Reflection;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Progress;
 using Marten.Events.Daemon.Resiliency;
@@ -224,6 +225,12 @@ namespace Marten.Events.Daemon
 
         public Task RebuildProjection<TView>(CancellationToken token)
         {
+            if (typeof(TView).CanBeCastTo(typeof(ProjectionBase)) && typeof(TView).HasDefaultConstructor())
+            {
+                var projection = (ProjectionBase)Activator.CreateInstance(typeof(TView));
+                return RebuildProjection(projection.ProjectionName, token);
+            }
+
             return RebuildProjection(typeof(TView).Name, token);
         }
 

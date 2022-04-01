@@ -213,7 +213,7 @@ namespace EventSourcingTests.Projections
     {
         public User Transform(IEvent<UserCreated> @event)
         {
-            if (@event.StreamId == Guid.Empty && LinqExtensions.IsEmpty(@event.StreamKey))
+            if (@event.StreamId == Guid.Empty && @event.StreamKey.IsEmpty())
             {
                 throw new Exception("StreamKey and StreamId are both missing");
             }
@@ -223,7 +223,7 @@ namespace EventSourcingTests.Projections
 
         public User Transform(IEvent<OtherCreationEvent> @event)
         {
-            if (@event.StreamId == Guid.Empty && LinqExtensions.IsEmpty(@event.StreamKey))
+            if (@event.StreamId == Guid.Empty && @event.StreamKey.IsEmpty())
             {
                 throw new Exception("StreamKey and StreamId are both missing");
             }

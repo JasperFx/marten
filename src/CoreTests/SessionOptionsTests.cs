@@ -12,7 +12,7 @@ using NSubstitute;
 using Shouldly;
 using Xunit;
 
-namespace DocumentDbTests.SessionMechanics
+namespace CoreTests
 {
     public class SessionOptionsTests : OneOffConfigurationsContext
     {
@@ -92,7 +92,20 @@ namespace DocumentDbTests.SessionMechanics
             var options = SessionOptions.ForConnection(connection);
             options.Connection.ShouldBe(connection);
             options.Timeout.Value.ShouldBe(connection.CommandTimeout);
-            options.OwnsConnection.ShouldBeFalse();
+            options.OwnsConnection.ShouldBeTrue(); // if the connection is closed
+            options.OwnsTransactionLifecycle.ShouldBeTrue();
+
+        }
+
+        [Fact]
+        public async Task build_from_open_connection()
+        {
+            using var connection = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            await connection.OpenAsync();
+            var options = SessionOptions.ForConnection(connection);
+            options.Connection.ShouldBe(connection);
+            options.Timeout.Value.ShouldBe(connection.CommandTimeout);
+            options.OwnsConnection.ShouldBeFalse(); // if the connection is closed
             options.OwnsTransactionLifecycle.ShouldBeTrue();
 
         }

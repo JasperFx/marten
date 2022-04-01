@@ -11,6 +11,7 @@ using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
+using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 
@@ -120,7 +121,7 @@ namespace Marten.Events.Aggregation
             IAggregationRuntime<TDoc, TId> runtime,
             DocumentStore store, EventRangeGroup parent)
         {
-            _session = new ProjectionDocumentSession(store, Tenant, updateBatch);
+            _session = new ProjectionDocumentSession(store, updateBatch, new SessionOptions {Tracking = DocumentTracking.None, Tenant = Tenant});
 
             _builder = new ActionBlock<EventSlice<TDoc, TId>>(async slice =>
             {

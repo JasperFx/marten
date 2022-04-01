@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections;
+using Marten.Services;
 using Marten.Storage;
 
 namespace Marten.Events.Daemon
@@ -21,7 +22,7 @@ namespace Marten.Events.Daemon
         public async Task ApplyEvents(ProjectionUpdateBatch batch, IProjection projection, DocumentStore store,
             CancellationToken cancellationToken)
         {
-            await using var operations = new ProjectionDocumentSession(store, _tenant, batch);
+            await using var operations = new ProjectionDocumentSession(store, batch, new SessionOptions {Tracking = DocumentTracking.None, Tenant = _tenant});
             await projection.ApplyAsync(operations, _actions, cancellationToken).ConfigureAwait(false);
         }
     }
