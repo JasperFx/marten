@@ -128,4 +128,3 @@ await store.Advanced.ResetAllData();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/InitialDataSamples.cs#L23-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_initializemartenwith' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
