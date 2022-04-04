@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>10</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Marten.CommandLine\Marten.CommandLine.csproj" />
+      <ProjectReference Include="..\SharedDataLayer\SharedDataLayer.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Include="..\Marten.Testing\Harness\ConnectionSource.cs">
+        <Link>ConnectionSource.cs</Link>
+      </Compile>
+    </ItemGroup>
+
+</Project>
