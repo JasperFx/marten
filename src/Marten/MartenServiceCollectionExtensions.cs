@@ -54,7 +54,7 @@ namespace Marten
             string path = AppContext.BaseDirectory.ToFullPath();
             if (hintPath.IsNotEmpty())
             {
-                path.AppendPath(hintPath).ToFullPath();
+                path = path.AppendPath(hintPath).ToFullPath();
             }
             else
             {
