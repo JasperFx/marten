@@ -21,8 +21,6 @@ namespace DocumentDbTests.CustomFields
         }
 
         public string Value { get; }
-
-        public static implicit operator string(CustomId id) => id.Value;
     }
 
     public class CustomIdField: FieldBase
