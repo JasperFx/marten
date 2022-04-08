@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Mime;
 using System.Reflection;
 using Baseline;
 using LamarCodeGeneration;
@@ -32,7 +33,7 @@ namespace Marten
         /// The main application assembly. By default this is the entry assembly for the application,
         /// but you may need to change this in testing scenarios
         /// </summary>
-        public Assembly ApplicationAssembly { get; set; } = Assembly.GetEntryAssembly();
+        public Assembly ApplicationAssembly { get; set; }
 
         public bool SourceCodeWritingEnabled { get; set; } = true;
 
@@ -42,14 +43,14 @@ namespace Marten
         /// <summary>
         /// Root folder where generated code should be placed. By default, this is the IHostEnvironment.ContentRootPath
         /// </summary>
-        public string GeneratedCodeOutputPath { get; set; } = AppContext.BaseDirectory;
+        public string GeneratedCodeOutputPath { get; set; }
 
         internal void ReadHostEnvironment(IHostEnvironment environment)
         {
-            GeneratedCodeOutputPath = environment.ContentRootPath;
+            GeneratedCodeOutputPath ??= environment.ContentRootPath;
             if (environment.ApplicationName.IsNotEmpty())
             {
-                ApplicationAssembly = Assembly.Load(environment.ApplicationName) ?? Assembly.GetEntryAssembly();
+                ApplicationAssembly ??= Assembly.Load(environment.ApplicationName) ?? Assembly.GetEntryAssembly();
             }
         }
 
@@ -59,9 +60,9 @@ namespace Marten
             {
                 TypeLoadMode = GeneratedCodeMode,
 
-                GeneratedCodeOutputPath = GeneratedCodeOutputPath
+                GeneratedCodeOutputPath = GeneratedCodeOutputPath ?? AppContext.BaseDirectory
                     .AppendPath("Internal", "Generated"),
-                ApplicationAssembly = ApplicationAssembly,
+                ApplicationAssembly = ApplicationAssembly ?? Assembly.GetEntryAssembly(),
                 SourceCodeWritingEnabled = SourceCodeWritingEnabled
             };
 

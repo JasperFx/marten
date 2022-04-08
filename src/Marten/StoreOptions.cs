@@ -2,7 +2,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using Baseline;
 using Baseline.ImTools;
 using Baseline.Reflection;
@@ -19,6 +21,7 @@ using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services.Json;
 using Marten.Storage;
+using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
@@ -431,6 +434,41 @@ namespace Marten
             _childFieldMappings = _childFieldMappings.AddOrUpdate(type, mapping);
 
             return mapping;
+        }
+
+        /// <summary>
+        /// Meant for testing scenarios to "help" .Net understand where the IHostEnvironment for the
+        /// Host. You may have to specify the relative path to the entry project folder from the AppContext.BaseDirectory
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="assembly"></param>
+        /// <param name="hintPath"></param>
+        /// <returns></returns>
+        public void SetApplicationProject(Assembly assembly,
+            string? hintPath = null)
+        {
+            ApplicationAssembly = assembly;
+
+            string path = AppContext.BaseDirectory.ToFullPath();
+            if (hintPath.IsNotEmpty())
+            {
+                path = path.AppendPath(hintPath).ToFullPath();
+            }
+            else
+            {
+                path = path.TrimEnd(Path.DirectorySeparatorChar);
+                while (!path.EndsWith("bin"))
+                {
+                    path = path.ParentDirectory();
+                }
+
+                // Go up once to get to the test project directory, then up again to the "src" level,
+                // then "down" to the application directory
+                path = path.ParentDirectory().ParentDirectory().AppendPath(assembly.GetName().Name);
+            }
+
+            GeneratedCodeOutputPath = path;
+
         }
 
         public class PoliciesExpression
