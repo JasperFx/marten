@@ -68,9 +68,11 @@ namespace CoreTests.Examples
             using var host = Host.CreateDefaultBuilder()
                 .ConfigureServices(services =>
                 {
-                    services.AddMarten("some connection string");
-
-                    services.SetApplicationProject(typeof(User).Assembly);
+                    services.AddMarten(opts =>
+                    {
+                        opts.Connection("some connection string");
+                        opts.SetApplicationProject(typeof(User).Assembly);
+                    });
                 })
                 .StartAsync();
 

@@ -100,6 +100,28 @@ namespace CoreTests
         }
 
         [Fact]
+        public void application_assembly_and_content_directory_from_StoreOptions()
+        {
+
+            using var host = Host.CreateDefaultBuilder(Array.Empty<string>())
+                .ConfigureServices(services =>
+                {
+                    services.AddMarten(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.SetApplicationProject(GetType().Assembly);
+                    });
+
+                }).Build();
+
+            var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
+            store.Options.ApplicationAssembly.ShouldBe(GetType().Assembly);
+            var projectPath = AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory();
+            var expectedGeneratedCodeOutputPath = projectPath.ToFullPath();
+            store.Options.GeneratedCodeOutputPath.ShouldBe(expectedGeneratedCodeOutputPath);
+        }
+
+        [Fact]
         public void no_error_if_IHostEnvironment_does_not_exist()
         {
             using var host = Host.CreateDefaultBuilder()

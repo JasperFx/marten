@@ -98,13 +98,15 @@ can override the application assembly and project path with this new Marten help
 using var host = Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
     {
-        services.AddMarten("some connection string");
-
-        services.SetApplicationProject(typeof(User).Assembly);
+        services.AddMarten(opts =>
+        {
+            opts.Connection("some connection string");
+            opts.SetApplicationProject(typeof(User).Assembly);
+        });
     })
     .StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/CodeGenerationOptions.cs#L66-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_set_application_project' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/CodeGenerationOptions.cs#L66-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_set_application_project' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Generating all Types Upfront
