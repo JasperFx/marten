@@ -27,7 +27,7 @@ namespace DocumentDbTests.CustomFields
         }
 
         [Fact]
-        public void can_query_by_custom_id()
+        public void can_query_equals()
         {
             var testValue = new CustomId("test");
             var queryPlan = theSession
@@ -50,31 +50,20 @@ namespace DocumentDbTests.CustomFields
             var docs = theSession.LoadMany<MyClass>("SomeId", "SomeOtherId");
             var docs2 = theSession.LoadMany<MyClassNullable>("SomeId", "SomeOtherId");
         }
-
+        
         [Fact]
-        public void can_query_is_one_of_custom_id_array()
-        {
-            var testValues = new[] {new CustomId("test1"), new CustomId("test2")};
-            var queryPlan = theSession
-                .Query<MyClass>()
-                .Where(x => x.CustomId.IsOneOf(testValues)).Explain();
-
-            WriteQueryPlan(queryPlan);
-        }
-
-        [Fact]
-        public void can_query_by_nullable_custom_id()
+        public void can_query_nullable_equals()
         {
             var testValue = new CustomId("test");
             var queryPlan = theSession
                 .Query<MyClassNullable>()
-                .Where(x => x.CustomId == testValue || x.CustomId == null).Explain();
+                .Where(x => x.CustomId == testValue).Explain();
 
             WriteQueryPlan(queryPlan);
         }
 
         [Fact]
-        public void can_query_null_custom_id()
+        public void can_query_nullable_is_null()
         {
             var queryPlan = theSession
                 .Query<MyClassNullable>()
@@ -84,12 +73,12 @@ namespace DocumentDbTests.CustomFields
         }
 
         [Fact]
-        public void can_query_by_array_custom_id()
+        public void can_query_is_one_of()
         {
-            var testValue = new CustomId("test");
+            var testValues = new[] { new CustomId("test1"), new CustomId("test2") };
             var queryPlan = theSession
-                .Query<MyClassArray>()
-                .Where(x => x.CustomIds.Length == 0 || x.CustomIds.Contains(testValue)).Explain();
+                .Query<MyClass>()
+                .Where(x => x.CustomId.IsOneOf(testValues)).Explain();
 
             WriteQueryPlan(queryPlan);
         }
@@ -111,12 +100,6 @@ namespace DocumentDbTests.CustomFields
         {
             public string Id { get; set; }
             public CustomId? CustomId { get; set; }
-        }
-
-        public class MyClassArray
-        {
-            public string Id { get; set; }
-            public CustomId[] CustomIds { get; set; }
         }
     }
 }
