@@ -102,8 +102,8 @@ namespace DocumentDbTests.CustomFields
             WriteQueryPlan(queryPlan);
         }
 
-        [Fact]
-        public void can_query_array_all()
+        [Fact(Skip = "All is not supported")]
+        public void can_query_array_all_not()
         {
             var testValue = new CustomId("test");
             var queryPlan = theSession
@@ -113,10 +113,22 @@ namespace DocumentDbTests.CustomFields
             WriteQueryPlan(queryPlan);
         }
 
+
+        [Fact(Skip = "All is not supported")]
+        public void can_query_array_all_equal()
+        {
+            var testValue = new CustomId("test");
+            var queryPlan = theSession
+                .Query<MyClassArray>()
+                .Where(x => x.CustomIds.All(_ => _ == testValue)).Explain();
+
+            WriteQueryPlan(queryPlan);
+        }
+
         [Fact]
         public void can_query_array_is_one_of()
         {
-            var testValues = new[] { new CustomId("test1"), new CustomId("test2") };
+            var testValues = new[] {new CustomId("test1"), new CustomId("test2")};
             var queryPlan = theSession
                 .Query<MyClassArray>()
                 .Where(x => x.CustomIds.IsOneOf(testValues)).Explain();
@@ -128,7 +140,7 @@ namespace DocumentDbTests.CustomFields
         [Fact]
         public void can_query_array_is_superset_of()
         {
-            var testValues = new[] { new CustomId("test1"), new CustomId("test2") };
+            var testValues = new[] {new CustomId("test1"), new CustomId("test2")};
             var queryPlan = theSession
                 .Query<MyClassArray>()
                 .Where(x => x.CustomIds.IsSubsetOf(testValues)).Explain();
@@ -140,7 +152,7 @@ namespace DocumentDbTests.CustomFields
         [Fact]
         public void can_query_array_is_subset_of()
         {
-            var testValues = new[] { new CustomId("test1"), new CustomId("test2") };
+            var testValues = new[] {new CustomId("test1"), new CustomId("test2")};
             var queryPlan = theSession
                 .Query<MyClassArray>()
                 .Where(x => x.CustomIds.IsSubsetOf(testValues)).Explain();
