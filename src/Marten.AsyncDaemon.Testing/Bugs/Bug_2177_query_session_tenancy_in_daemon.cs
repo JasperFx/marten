@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marten.AsyncDaemon.Testing.Bugs
 {
-    public class Bug_query_session_tenancy_in_daemon : BugIntegrationContext
+    public class Bug_2177_query_session_tenancy_in_daemon : BugIntegrationContext
     {
         [Fact]
         public async Task should_have_tenancy_set_correctly()
