@@ -44,7 +44,7 @@ namespace Marten.Internal.Sessions
 
         public virtual void Apply(NpgsqlCommand command)
         {
-            BeginTransaction();
+            EnsureOpenConnection();
 
             command.Connection = Connection;
             command.Transaction = Transaction;
@@ -63,7 +63,7 @@ namespace Marten.Internal.Sessions
         // TODO -- this should be ValueTask
         public virtual async Task ApplyAsync(NpgsqlCommand command, CancellationToken token)
         {
-            await BeginTransactionAsync(token).ConfigureAwait(false);
+            await EnsureOpenConnectionAsync(token).ConfigureAwait(false);
 
             command.Connection = Connection;
             command.Transaction = Transaction;
