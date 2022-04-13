@@ -91,6 +91,8 @@ namespace Marten.Events.Daemon
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failure while trying to start all async projection shards for database {Database}", _database.Identifier);
+
+                    await Stop().ConfigureAwait(false);
                 }
             }
             else
