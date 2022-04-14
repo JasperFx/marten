@@ -121,7 +121,7 @@ namespace Marten.Events.Aggregation
             IAggregationRuntime<TDoc, TId> runtime,
             DocumentStore store, EventRangeGroup parent)
         {
-            _session = new ProjectionDocumentSession(store, updateBatch, new SessionOptions {Tracking = DocumentTracking.None, Tenant = Tenant});
+            _session = new ProjectionDocumentSession(store, updateBatch, new SessionOptions {Tracking = DocumentTracking.None, TenantId = Tenant.TenantId});
 
             _builder = new ActionBlock<EventSlice<TDoc, TId>>(async slice =>
             {
