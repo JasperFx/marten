@@ -11,6 +11,7 @@ using Xunit;
 using Bug2177;
 using LamarCodeGeneration;
 using Marten;
+using Shouldly;
 
 namespace Marten.AsyncDaemon.Testing.Bugs
 {
@@ -19,7 +20,7 @@ namespace Marten.AsyncDaemon.Testing.Bugs
         [Fact]
         public async Task should_have_tenancy_set_correctly()
         {
-            using var documentStore = SeparateStore(options =>
+            StoreOptions(options =>
             {
                 options.Policies.AllDocumentsAreMultiTenanted();
                 options.Events.TenancyStyle = TenancyStyle.Conjoined;
@@ -28,26 +29,39 @@ namespace Marten.AsyncDaemon.Testing.Bugs
 
                 options.Projections.Add<TicketProjection>(ProjectionLifecycle.Async);
                 options.GeneratedCodeMode = TypeLoadMode.Auto;
+
+                options.Schema.For<User>().MultiTenanted();
             });
 
-            using var daemon = await documentStore.BuildProjectionDaemonAsync();
-            await daemon.StartAllShards();
+
 
             var tenantId = Guid.NewGuid().ToString();
             var userId = Guid.NewGuid();
             var ticketId = Guid.NewGuid();
 
-            await using var session = documentStore.OpenSession(tenantId);
+            await using var session = theStore.OpenSession(tenantId);
             session.Insert(new User { Id = userId, FirstName = "Tester", LastName = "McTestFace" });
             await session.SaveChangesAsync();
+
+            await insertUserWithSameIdInOtherTenant(theStore, userId);
 
             session.Events.Append(ticketId, new TicketCreated(ticketId, "Test Projections"), new TicketAssigned(ticketId, userId));
             await session.SaveChangesAsync();
 
+            using var daemon = await theStore.BuildProjectionDaemonAsync();
+            await daemon.StartAllShards();
             await daemon.WaitForNonStaleData(1.Minutes());
 
             var projection = await session.LoadAsync<Ticket>(ticketId);
-            projection?.User.ShouldNotBeNull();
+            projection.User.ShouldNotBeNull();
+            projection.User.FirstName.ShouldBe("Tester");
+        }
+
+        private static async Task insertUserWithSameIdInOtherTenant(DocumentStore documentStore, Guid userId)
+        {
+            await using var defaultSession = documentStore.OpenSession();
+            defaultSession.Store(new User { Id = userId, FirstName = "Somebody", LastName = "Else" });
+            await defaultSession.SaveChangesAsync();
         }
     }
 }

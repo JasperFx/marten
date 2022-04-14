@@ -45,7 +45,7 @@ namespace Marten.Internal.Sessions
             IConnectionLifetime connection)
         {
             _store = store;
-            TenantId = sessionOptions.TenantId;
+            TenantId = sessionOptions.Tenant?.TenantId ?? sessionOptions.TenantId;
             Database = sessionOptions.Tenant?.Database ?? throw new ArgumentNullException(nameof(SessionOptions.Tenant));
 
             SessionOptions = sessionOptions;
