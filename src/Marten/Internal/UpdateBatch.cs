@@ -4,8 +4,10 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Baseline.Exceptions;
 using Marten.Internal.Operations;
+using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Util;
 
@@ -60,6 +62,8 @@ namespace Marten.Internal
 
         public async Task ApplyChangesAsync(IMartenSession session, CancellationToken token)
         {
+            // I know this smells to high heaven, but it works
+            await session.As<DocumentSessionBase>().BeginTransactionAsync(token).ConfigureAwait(false);
             if (_operations.Count < session.Options.UpdateBatchSize)
             {
                 var command = session.BuildCommand(_operations);
