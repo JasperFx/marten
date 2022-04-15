@@ -47,7 +47,7 @@ namespace Marten
 
         internal void ReadHostEnvironment(IHostEnvironment environment)
         {
-            GeneratedCodeOutputPath ??= environment.ContentRootPath;
+            GeneratedCodeOutputPath ??= environment.ContentRootPath.AppendPath("Internal", "Generated");
             if (environment.ApplicationName.IsNotEmpty())
             {
                 ApplicationAssembly ??= Assembly.Load(environment.ApplicationName) ?? Assembly.GetEntryAssembly();
