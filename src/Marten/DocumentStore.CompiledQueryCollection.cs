@@ -10,6 +10,7 @@ using Marten.Exceptions;
 using Marten.Internal.CompiledQueries;
 using Marten.Internal.Sessions;
 using Marten.Linq;
+using Marten.Services;
 
 namespace Marten
 {
@@ -64,10 +65,24 @@ namespace Marten
 
         IReadOnlyList<ICodeFile> ICodeFileCollection.BuildFiles()
         {
-            using var lightweight = (QuerySession)LightweightSession();
-            using var identityMap = (QuerySession)OpenSession();
-            using var dirty = (QuerySession)DirtyTrackedSession();
-            using var readOnly = (QuerySession)QuerySession();
+            using var lightweight =
+                (QuerySession)OpenSession(
+                    new SessionOptions { Tracking = DocumentTracking.None, AllowAnyTenant = true });
+
+            using var identityMap = (QuerySession)OpenSession(
+                new SessionOptions { Tracking = DocumentTracking.IdentityOnly, AllowAnyTenant = true });
+            using var dirty = (QuerySession)OpenSession(
+                new SessionOptions { Tracking = DocumentTracking.DirtyTracking, AllowAnyTenant = true });
+
+
+            var options = new SessionOptions
+            {
+                AllowAnyTenant = true
+            };
+
+            var connection = options.Initialize(this, CommandRunnerMode.ReadOnly);
+
+            using var readOnly = new QuerySession(this, options, connection);
 
             return Options.CompiledQueryTypes.SelectMany(x => new ICodeFile[]
             {
