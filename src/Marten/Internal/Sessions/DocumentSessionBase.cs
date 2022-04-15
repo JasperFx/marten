@@ -4,6 +4,8 @@ using System.Linq;
 using Baseline;
 using Marten.Events;
 using Marten.Internal.Operations;
+using Marten.Internal.Storage;
+using Marten.Metadata;
 using Marten.Services;
 using Marten.Storage;
 
@@ -280,8 +282,7 @@ namespace Marten.Internal.Sessions
                 {
                     foreach (var entity in entities)
                     {
-                        // Put it in the identity map -- if necessary
-                        storage.Store(this, entity);
+                        storeEntity(entity, storage);
 
                         var upsert = storage.Upsert(entity, this, TenantId);
 
@@ -289,6 +290,21 @@ namespace Marten.Internal.Sessions
                     }
                 }
             }
+        }
+
+        private void storeEntity<T>(T entity, IDocumentStorage<T> storage) where T : notnull
+        {
+            if (entity is IVersioned versioned)
+            {
+                if (versioned.Version != Guid.Empty)
+                {
+                    storage.Store(this, entity, versioned.Version);
+                    return;
+                }
+            }
+
+            // Put it in the identity map -- if necessary
+            storage.Store(this, entity);
         }
 
         public void EjectPatchedTypes(IUnitOfWork changes)
