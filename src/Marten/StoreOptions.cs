@@ -467,7 +467,7 @@ namespace Marten
                 path = path.ParentDirectory().ParentDirectory().AppendPath(assembly.GetName().Name);
             }
 
-            GeneratedCodeOutputPath = path;
+            GeneratedCodeOutputPath = path.AppendPath("Internal", "Generated");
 
         }
 

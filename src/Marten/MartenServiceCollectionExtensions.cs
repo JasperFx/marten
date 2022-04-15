@@ -43,6 +43,7 @@ namespace Marten
         /// <param name="assembly"></param>
         /// <param name="hintPath"></param>
         /// <returns></returns>
+        [Obsolete("Yeah, this didn't work so well in some hosting setups. Prefer StoreOptions.SetApplicationProject() instead if necessary")]
         public static IServiceCollection SetApplicationProject(this IServiceCollection services, Assembly assembly,
             string? hintPath = null)
         {

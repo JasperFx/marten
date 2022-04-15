@@ -91,12 +91,12 @@ namespace CoreTests
             var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
             store.Options.ApplicationAssembly.ShouldBe(GetType().Assembly);
             var projectPath = AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory();
-            var expectedGeneratedCodeOutputPath = projectPath.ToFullPath();
+            var expectedGeneratedCodeOutputPath = projectPath.ToFullPath().AppendPath("Internal", "Generated");
             store.Options.GeneratedCodeOutputPath.ShouldBe(expectedGeneratedCodeOutputPath);
 
             var rules = store.Options.CreateGenerationRules();
             rules.ApplicationAssembly.ShouldBe(store.Options.ApplicationAssembly);
-            rules.GeneratedCodeOutputPath.ShouldBe(store.Options.GeneratedCodeOutputPath.AppendPath("Internal", "Generated"));
+            rules.GeneratedCodeOutputPath.ShouldBe(store.Options.GeneratedCodeOutputPath);
         }
 
         [Fact]
@@ -132,7 +132,7 @@ namespace CoreTests
 
             var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
             store.Options.ApplicationAssembly.ShouldBe(Assembly.GetEntryAssembly());
-            store.Options.GeneratedCodeOutputPath.TrimEnd(Path.DirectorySeparatorChar).ShouldBe(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar));
+            store.Options.GeneratedCodeOutputPath.TrimEnd(Path.DirectorySeparatorChar).ShouldBe(AppContext.BaseDirectory.AppendPath("Internal", "Generated").TrimEnd(Path.DirectorySeparatorChar));
 
             var rules = store.Options.CreateGenerationRules();
             rules.ApplicationAssembly.ShouldBe(store.Options.ApplicationAssembly);

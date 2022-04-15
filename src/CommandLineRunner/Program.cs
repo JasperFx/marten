@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Castle.DynamicProxy.Contributors;
 using EventSourcingTests.Aggregation;
 using LamarCodeGeneration;
 using Marten;
