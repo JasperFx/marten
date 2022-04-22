@@ -183,14 +183,12 @@ public class Program
 
                     // This is actually important to register "live" aggregations too for the code generation
                     opts.Projections.SelfAggregate<SelfAggregatingTrip>(ProjectionLifecycle.Live);
-
-                    //opts.SetApplicationProject(typeof(Program).GetType().Assembly);
                 }).AddAsyncDaemon(DaemonMode.Solo);
             });
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L31-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L31-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Okay, after all that, there should be a new command line option called `codegen` for your project. Assuming

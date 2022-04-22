@@ -253,7 +253,7 @@ public interface IConfigureMarten
     void Configure(IServiceProvider services, StoreOptions options);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L675-L686' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L676-L687' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You could alternatively implement a custom `IConfigureMarten` class like so:
