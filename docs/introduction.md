@@ -139,4 +139,4 @@ There is a lot more capabilities than what we're showing here, so head on over t
 
 ## Working with Events
 
-Please check [Event Store quick start](/events/quickstart.md)
+Please check [Event Store quick start](/events/quickstart.md). Apart from the quick start, we also have an [EventStore intro](https://github.com/JasperFx/marten/blob/master/src/samples/EventSourcingIntro) .NET 6 sample project in the GitHub repository for your ready reference.
