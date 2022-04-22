@@ -218,11 +218,11 @@ namespace CoreTests
 
             var store = host.Services.GetRequiredService<IFirstStore>().As<DocumentStore>();
             store.Options.ApplicationAssembly.ShouldBe(GetType().Assembly);
-            store.Options.GeneratedCodeOutputPath.ShouldBe(environment.ContentRootPath.ToFullPath());
+            store.Options.GeneratedCodeOutputPath.ShouldBe(environment.ContentRootPath.ToFullPath().AppendPath("Internal", "Generated"));
 
             var rules = store.Options.CreateGenerationRules();
             rules.ApplicationAssembly.ShouldBe(store.Options.ApplicationAssembly);
-            rules.GeneratedCodeOutputPath.ShouldBe(store.Options.GeneratedCodeOutputPath.AppendPath("Internal", "Generated", "IFirstStore"));
+            rules.GeneratedCodeOutputPath.ShouldBe(store.Options.GeneratedCodeOutputPath.AppendPath("IFirstStore"));
         }
 
         [Fact]
