@@ -14,6 +14,7 @@ namespace Marten.Events.Daemon.HighWater
 
         public HighWaterStatus InterpretStatus(HighWaterStatistics previous)
         {
+            // Postgres sequences start w/ 1 by default. So the initial state is "HighestSequence = 1".
             if (HighestSequence == 1 && CurrentMark == 0) return HighWaterStatus.CaughtUp;
 
             if (CurrentMark == HighestSequence) return HighWaterStatus.CaughtUp;
