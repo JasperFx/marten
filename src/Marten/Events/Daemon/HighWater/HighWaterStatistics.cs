@@ -16,9 +16,11 @@ namespace Marten.Events.Daemon.HighWater
         {
             if (HighestSequence == 1 && CurrentMark == 0) return HighWaterStatus.CaughtUp;
 
+            if (CurrentMark == HighestSequence) return HighWaterStatus.CaughtUp;
+
             if (CurrentMark > previous.CurrentMark)
             {
-                return CurrentMark == HighestSequence ? HighWaterStatus.CaughtUp : HighWaterStatus.Changed;
+                return HighWaterStatus.Changed;
             }
 
             return HighWaterStatus.Stale;
