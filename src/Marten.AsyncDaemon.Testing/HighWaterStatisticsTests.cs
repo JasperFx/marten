@@ -31,6 +31,16 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         [Fact]
+        public void no_change()
+        {
+            var previous = new HighWaterStatistics { CurrentMark = 10L, HighestSequence = 10L };
+            var statistics = new HighWaterStatistics { CurrentMark = 10L, HighestSequence = 10L };
+
+            statistics.InterpretStatus(previous)
+                .ShouldBe(HighWaterStatus.CaughtUp);
+        }
+
+        [Fact]
         public void changed()
         {
             var previous = new HighWaterStatistics {CurrentMark = 11L, HighestSequence = 15L};
