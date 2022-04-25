@@ -130,5 +130,30 @@ namespace Marten.AsyncDaemon.Testing
             logger.Received().LogDebug("Stopping the asynchronous projection agent");
         }
 
+        [Fact]
+        public async Task should_start_when_eagerly_initializing_the_store()
+        {
+            var logger = Substitute.For<ILogger<AsyncProjectionHostedService>>();
+            var container = new Container(x =>
+            {
+                x.AddMarten(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                }).AddAsyncDaemon(DaemonMode.Solo).InitializeStore();
+
+                x.For(typeof(ILogger<>)).Use(typeof(NullLogger<>));
+                x.AddSingleton(typeof(ILogger<AsyncProjectionHostedService>), logger);
+            });
+
+            var service = container
+                .GetAllInstances<IHostedService>()
+                .OfType<AsyncProjectionHostedService>()
+                .Single();
+
+            await service.StartAsync(CancellationToken.None);
+            await service.StopAsync(CancellationToken.None);
+
+            logger.Received().LogDebug("Stopping the asynchronous projection agent");
+        }
     }
 }
