@@ -509,6 +509,11 @@ namespace Marten
             /// <returns></returns>
             public MartenConfigurationExpression AddAsyncDaemon(DaemonMode mode)
             {
+                if(_options != null)
+                {
+                    _options.Projections.AsyncMode = mode;
+                }
+
                 Services.ConfigureMarten(opts => opts.Projections.AsyncMode = mode);
                 Services.AddSingleton<IHostedService, AsyncProjectionHostedService>();
 
