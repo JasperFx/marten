@@ -66,6 +66,22 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         [Fact]
+        public async Task second_run_detect_same_gap_when_stale()
+        {
+            NumberOfStreams = 10;
+            await PublishSingleThreaded();
+
+            var gaps = new long[] { NumberOfEvents - 100 };
+            await deleteEvents(gaps);
+
+            var statistics = await theDetector.Detect(CancellationToken.None);
+            statistics.CurrentMark.ShouldBe(NumberOfEvents - 101);
+
+            statistics = await theDetector.Detect(CancellationToken.None);
+            statistics.CurrentMark.ShouldBe(NumberOfEvents - 101);
+        }
+
+        [Fact]
         public async Task starting_from_first_detection_some_gaps_with_nonzero_buffer()
         {
             NumberOfStreams = 10;

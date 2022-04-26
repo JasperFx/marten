@@ -21,11 +21,11 @@ from   (select
                lead(seq_id)
                over (order by seq_id) as no
         from
-               {graph.DatabaseSchemaName}.mt_events where seq_id > :start) ct
+               {graph.DatabaseSchemaName}.mt_events where seq_id >= :start) ct
 where  no is not null
   and    no - seq_id > 1
 LIMIT 1;
-select max(seq_id) from {graph.DatabaseSchemaName}.mt_events where seq_id > :start;
+select max(seq_id) from {graph.DatabaseSchemaName}.mt_events where seq_id >= :start;
 ".Trim());
 
             _start = _gapDetection.AddNamedParameter("start", 0L);
