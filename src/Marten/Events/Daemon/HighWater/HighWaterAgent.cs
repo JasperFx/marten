@@ -110,7 +110,7 @@ namespace Marten.Events.Daemon.HighWater
 
                         _logger.LogInformation("High Water agent is stale after threshold of {DelayInSeconds} seconds. Skipping gap.", _settings.StaleSequenceThreshold.TotalSeconds);
 
-                        statistics = await _detector.DetectInSafeZone(safeHarborTime, _token).ConfigureAwait(false);
+                        statistics = await _detector.DetectInSafeZone(_token).ConfigureAwait(false);
                         await markProgress(statistics, _settings.FastPollingTime).ConfigureAwait(false);
                         break;
                 }

@@ -13,14 +13,12 @@ namespace Marten.Events.Daemon.HighWater
         private readonly NpgsqlCommand _updateStatus;
         private readonly NpgsqlParameter _newSeq;
         private readonly GapDetector _gapDetector;
-        private readonly SafeSequenceFinder _safeSequenceFinder;
         private readonly HighWaterStatisticsDetector _highWaterStatisticsDetector;
 
         public HighWaterDetector(ISingleQueryRunner runner, EventGraph graph)
         {
             _runner = runner;
             _gapDetector = new GapDetector(graph);
-            _safeSequenceFinder = new SafeSequenceFinder(graph);
             _highWaterStatisticsDetector = new HighWaterStatisticsDetector(graph);
 
             _updateStatus =
@@ -29,13 +27,14 @@ namespace Marten.Events.Daemon.HighWater
 
         }
 
-        public async Task<HighWaterStatistics> DetectInSafeZone(DateTimeOffset safeTimestamp, CancellationToken token)
+        public async Task<HighWaterStatistics> DetectInSafeZone(CancellationToken token)
         {
             var statistics = await loadCurrentStatistics(token).ConfigureAwait(false);
 
-            _safeSequenceFinder.SafeTimestamp = safeTimestamp;
-            _safeSequenceFinder.SafeSequenceId = statistics.SafeStartMark;
-            var safeSequence = await _runner.Query(_safeSequenceFinder, token).ConfigureAwait(false);
+            // Skip gap and find next safe sequence
+            _gapDetector.Start = statistics.SafeStartMark + 1;
+
+            var safeSequence = await _runner.Query(_gapDetector, token).ConfigureAwait(false);
             if (safeSequence.HasValue)
             {
                 statistics.SafeStartMark = safeSequence.Value;

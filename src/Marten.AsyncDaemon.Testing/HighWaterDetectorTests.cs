@@ -98,12 +98,9 @@ namespace Marten.AsyncDaemon.Testing
             statistics.CurrentMark.ShouldBe(NumberOfEvents - 101);
             statistics.HighestSequence.ShouldBe(NumberOfEvents);
 
-            await makeOldWhereSequenceIsLessThanOrEqualTo(NumberOfEvents - 40);
+            var statistics2 = await theDetector.DetectInSafeZone(CancellationToken.None);
 
-            var safeTimestamp = statistics.LastUpdated.Value.Subtract(1.Seconds());
-            var statistics2 = await theDetector.DetectInSafeZone(safeTimestamp, CancellationToken.None);
-
-            statistics2.CurrentMark.ShouldBe(NumberOfEvents - 34);
+            statistics2.CurrentMark.ShouldBe(NumberOfEvents - 96);
         }
 
 
