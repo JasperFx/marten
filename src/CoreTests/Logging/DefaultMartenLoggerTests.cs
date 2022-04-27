@@ -3,12 +3,33 @@ using System.Text;
 using Marten;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using Shouldly;
 using Xunit;
 
 namespace CoreTests.Logging
 {
     public class DefaultMartenLoggerTests
     {
+        [Fact]
+        public void log_success()
+        {
+            var sb = new StringBuilder();
+            var logger = new DefaultMartenLogger(new XunitLogger(sb));
+            var command = new NpgsqlCommand()
+            {
+                CommandText = "select * from users where id = @id and name = @name",
+                Parameters =
+                {
+                    new NpgsqlParameter("id", "{1}"),
+                    new NpgsqlParameter("name", "{2}")
+                }
+            };
+            logger.LogSuccess(command);
+
+            var result = sb.ToString().Trim();
+            result.ShouldBe($"Marten executed in 0 ms, SQL: select * from users where id = @id and name = @name\n  id: {{1}}{Environment.NewLine}  name: {{2}}");
+        }
+
         [Fact]
         public void log_failure_should_not_throw()
         {
