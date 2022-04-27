@@ -101,6 +101,12 @@ namespace Marten.Events.Daemon.HighWater
                             _logger.LogDebug("High Water agent is stale at {CurrentMark}", statistics.CurrentMark);
                         }
 
+                        // Ensure we still wait if timestamp isn't set
+                        if (_current.Timestamp == default)
+                        {
+                            _current.Timestamp = DateTimeOffset.UtcNow;
+                        }
+
                         var safeHarborTime = _current.Timestamp.Add(_settings.StaleSequenceThreshold);
                         if (safeHarborTime > statistics.Timestamp)
                         {
