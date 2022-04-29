@@ -17,7 +17,13 @@ namespace DocumentDbTests.Bugs
         {
             StoreOptions(options =>
             {
-                options.Serializer(new SystemTextJsonSerializer { EnumStorage = EnumStorage.AsString, Casing = Casing.CamelCase });
+                options.Serializer(new SystemTextJsonSerializer
+                {
+                    EnumStorage = EnumStorage.AsString,
+                    Casing = Casing.CamelCase,
+                    // New property to fix bug
+                    WithPropertyNameCaseInsensitive = true
+                });
                 options.Schema.For<TestObject2195>().HiloSettings(new HiloSettings {MaxLo = 10});
             });
 

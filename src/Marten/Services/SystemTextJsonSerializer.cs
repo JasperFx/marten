@@ -19,6 +19,7 @@ namespace Marten.Services
     /// </summary>
     public class SystemTextJsonSerializer: ISerializer
     {
+        private bool _propertyNameCaseInsensitive = false;
         private EnumStorage _enumStorage = EnumStorage.AsInteger;
         private Casing _casing = Casing.Default;
 
@@ -122,6 +123,20 @@ namespace Marten.Services
         }
 
         public ValueCasting ValueCasting { get; } = ValueCasting.Strict;
+
+        public bool WithPropertyNameCaseInsensitive
+        {
+            get => _propertyNameCaseInsensitive;
+            set
+            {
+                _propertyNameCaseInsensitive = value;
+
+                _options.PropertyNameCaseInsensitive = _propertyNameCaseInsensitive;
+                _optionsDeserialize.PropertyNameCaseInsensitive = _propertyNameCaseInsensitive;
+                _clean.PropertyNameCaseInsensitive = _propertyNameCaseInsensitive;
+                _withTypes.PropertyNameCaseInsensitive = _propertyNameCaseInsensitive;
+            }
+        }
 
         /// <inheritdoc />
         public EnumStorage EnumStorage
