@@ -1,3 +1,4 @@
+using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,7 +27,22 @@ namespace Marten.Services
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
             using var reader = await command.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
 
-            return await handler.HandleAsync(reader, cancellation).ConfigureAwait(false);
+            try
+            {
+                return await handler.HandleAsync(reader, cancellation).ConfigureAwait(false);
+            }
+            finally
+            {
+#if NET6_0_OR_GREATER
+                await reader.CloseAsync().ConfigureAwait(false);
+                #else
+#pragma warning disable VSTHRD103
+                reader.Close();
+#pragma warning restore VSTHRD103
+#endif
+
+                await conn.CloseAsync().ConfigureAwait(false);
+            }
         }
 
         public async Task SingleCommit(DbCommand command, CancellationToken cancellation)
