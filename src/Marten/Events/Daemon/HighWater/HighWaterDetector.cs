@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using Weasel.Postgresql;
 
@@ -10,14 +11,16 @@ namespace Marten.Events.Daemon.HighWater
     internal class HighWaterDetector: IHighWaterDetector
     {
         private readonly ISingleQueryRunner _runner;
+        private readonly ILogger _logger;
         private readonly NpgsqlCommand _updateStatus;
         private readonly NpgsqlParameter _newSeq;
         private readonly GapDetector _gapDetector;
         private readonly HighWaterStatisticsDetector _highWaterStatisticsDetector;
 
-        public HighWaterDetector(ISingleQueryRunner runner, EventGraph graph)
+        public HighWaterDetector(ISingleQueryRunner runner, EventGraph graph, ILogger logger)
         {
             _runner = runner;
+            _logger = logger;
             _gapDetector = new GapDetector(graph);
             _highWaterStatisticsDetector = new HighWaterStatisticsDetector(graph);
 
@@ -35,6 +38,7 @@ namespace Marten.Events.Daemon.HighWater
             _gapDetector.Start = statistics.SafeStartMark + 1;
 
             var safeSequence = await _runner.Query(_gapDetector, token).ConfigureAwait(false);
+            _logger.LogInformation("Daemon projection high water detection skipping a gap in event sequence, determined that the 'safe harbor' sequence is at {SafeHarborSequence}", safeSequence);
             if (safeSequence.HasValue)
             {
                 statistics.SafeStartMark = safeSequence.Value;

@@ -129,7 +129,7 @@ select last_value from {_options.Events.DatabaseSchemaName}.mt_events_sequence;
         {
             logger ??= new NulloLogger();
 
-            var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(this), _options.EventGraph);
+            var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(this), _options.EventGraph, logger);
 
             var daemon = new ProjectionDaemon(store, this, detector, logger);
 
