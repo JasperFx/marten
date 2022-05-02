@@ -15,3 +15,14 @@
 .DocSearch {
   --docsearch-primary-color: var(--c-brand) !important;
 }
+
+
+.sidebar > .sidebar-links > .sidebar-link > 
+           .sidebar-links > .sidebar-link > 
+           .sidebar-links > .sidebar-link > 
+           .sidebar-links > .sidebar-link > 
+           .sidebar-links > .sidebar-link >
+           .sidebar-link-item {
+             padding-left: 79px;
+             font-size: 0.8rem;
+           }
