@@ -45,7 +45,7 @@ namespace Marten.Events.Daemon
         }
 
         // Only for testing
-        public ProjectionDaemon(DocumentStore store, ILogger logger) : this(store, store.Tenancy.Default.Database, new HighWaterDetector(new AutoOpenSingleQueryRunner(store.Tenancy.Default.Database), store.Events), logger)
+        public ProjectionDaemon(DocumentStore store, ILogger logger) : this(store, store.Tenancy.Default.Database, new HighWaterDetector(new AutoOpenSingleQueryRunner(store.Tenancy.Default.Database), store.Events, logger), logger)
         {
         }
 

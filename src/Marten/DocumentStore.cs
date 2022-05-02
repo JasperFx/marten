@@ -229,7 +229,7 @@ namespace Marten
             var database = tenantIdOrDatabaseIdentifier.IsEmpty()
                 ? Options.Tenancy.Default.Database
                 : Options.Tenancy.GetTenant(tenantIdOrDatabaseIdentifier).Database;
-            var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(database), Events);
+            var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(database), Events, logger);
 
             return new ProjectionDaemon(this, database, detector, logger);
         }

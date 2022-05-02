@@ -52,7 +52,7 @@ select max(seq_id) from {graph.DatabaseSchemaName}.mt_events where seq_id >= :st
                 return await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
             }
 
-            // use the latest sequence in the event table
+            // use the latest sequence in the event table because there is NO gap
             await reader.NextResultAsync(token).ConfigureAwait(false);
             if (!await reader.ReadAsync(token).ConfigureAwait(false)) return null;
 
