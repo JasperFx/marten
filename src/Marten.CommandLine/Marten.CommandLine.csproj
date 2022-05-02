@@ -34,7 +34,7 @@
         <PackageReference Include="LamarCodeGeneration.Commands" Version="6.1.1" />
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-        <PackageReference Include="Weasel.CommandLine" Version="5.4.0" />
+        <PackageReference Include="Weasel.CommandLine" Version="5.4.1" />
     </ItemGroup>
     <ItemGroup>
       <Folder Include="Commands\Patch" />

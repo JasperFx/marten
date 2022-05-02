@@ -262,7 +262,11 @@ namespace Marten.Events.Daemon
 
             if (token.IsCancellationRequested) return;
 
-            if (Tracker.HighWaterMark == 0) await _highWater.CheckNow().ConfigureAwait(false);
+            // If there's no data, do nothing
+            while (Tracker.HighWaterMark == 0)
+            {
+                return;
+            }
 
             if (token.IsCancellationRequested) return;
 
