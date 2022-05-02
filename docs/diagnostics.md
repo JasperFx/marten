@@ -15,11 +15,23 @@ Marten has a facility for listening and even intercepting document persistence e
 <!-- snippet: sample_IDocumentSessionListener -->
 <a id='snippet-sample_idocumentsessionlistener'></a>
 ```cs
+public interface IChangeListener
+{
+    /// <summary>
+    /// After an IDocumentSession is committed
+    /// </summary>
+    /// <param name="session"></param>
+    /// <param name="commit"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
+}
+
 /// <summary>
 /// Used to listen to and intercept operations within an IDocumentSession.SaveChanges()/SaveChangesAsync()
 /// operation
 /// </summary>
-public interface IDocumentSessionListener
+public interface IDocumentSessionListener : IChangeListener
 {
     /// <summary>
     /// Called just after IDocumentSession.SaveChanges() is called, but before
@@ -45,15 +57,6 @@ public interface IDocumentSessionListener
     void AfterCommit(IDocumentSession session, IChangeSet commit);
 
     /// <summary>
-    /// After an IDocumentSession is committed
-    /// </summary>
-    /// <param name="session"></param>
-    /// <param name="commit"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
-
-    /// <summary>
     /// Called after a document is loaded
     /// </summary>
     void DocumentLoaded(object id, object document);
@@ -65,7 +68,7 @@ public interface IDocumentSessionListener
     void DocumentAddedForStorage(object id, object document);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IDocumentSessionListener.cs#L7-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_idocumentsessionlistener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IDocumentSessionListener.cs#L7-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_idocumentsessionlistener' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can build and inject your own listeners by adding them to the `StoreOptions` object you use to configure a `DocumentStore`:
