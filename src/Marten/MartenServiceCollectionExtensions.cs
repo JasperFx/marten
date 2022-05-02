@@ -536,6 +536,7 @@ namespace Marten
             /// at runtime.
             /// </summary>
             /// <returns></returns>
+            [Obsolete("Please prefer the InitializeWith() approach for applying start up actions to a DocumentStore. This should not be used in combination with the asynchronous projections. WILL BE REMOVED IN MARTEN V6.")]
             public IDocumentStore InitializeStore()
             {
                 if (_options == null)
@@ -611,65 +612,6 @@ namespace Marten
             {
                 options.InitialData.Add(_data);
             }
-        }
-    }
-
-    /// <summary>
-    /// Pluggable strategy for customizing how IDocumentSession / IQuerySession
-    /// objects are created within an application.
-    /// </summary>
-    public interface ISessionFactory
-    {
-        /// <summary>
-        /// Build new instances of IQuerySession on demand
-        /// </summary>
-        /// <returns></returns>
-        IQuerySession QuerySession();
-
-        /// <summary>
-        /// Build new instances of IDocumentSession on demand
-        /// </summary>
-        /// <returns></returns>
-        IDocumentSession OpenSession();
-    }
-
-    internal class DefaultSessionFactory: ISessionFactory
-    {
-        private readonly IDocumentStore _store;
-
-        public DefaultSessionFactory(IDocumentStore store)
-        {
-            _store = store;
-        }
-
-        public IQuerySession QuerySession()
-        {
-            return _store.QuerySession();
-        }
-
-        public IDocumentSession OpenSession()
-        {
-            return _store.OpenSession();
-        }
-    }
-
-    internal class LightweightSessionFactory: ISessionFactory
-    {
-        private readonly IDocumentStore _store;
-
-        public LightweightSessionFactory(IDocumentStore store)
-        {
-            _store = store;
-        }
-
-        public IQuerySession QuerySession()
-        {
-            return _store.QuerySession();
-        }
-
-        public IDocumentSession OpenSession()
-        {
-            return _store.LightweightSession();
         }
     }
 
