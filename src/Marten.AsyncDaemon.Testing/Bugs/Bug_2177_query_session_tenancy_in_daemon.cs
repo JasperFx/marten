@@ -68,6 +68,9 @@ namespace Marten.AsyncDaemon.Testing.Bugs
 
 namespace Bug2177
 {
+
+    public record TicketDeleted(Guid TicketId);
+
     public record TicketCreated(Guid TicketId, string Name);
 
     public record TicketAssigned(Guid TicketId, Guid UserId);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
@@ -47,7 +48,7 @@ namespace Marten.Events.Daemon.Progress
 
         public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
         {
-            if (reader.RecordsAffected != 1)
+            if (reader.RecordsAffected == 0) // There's some weird quirks of the combined statements where this could be erroneously 2
             {
                 throw new ProgressionProgressOutOfOrderException(Range.ShardName);
             }
