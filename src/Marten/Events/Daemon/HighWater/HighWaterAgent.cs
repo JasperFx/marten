@@ -101,12 +101,8 @@ namespace Marten.Events.Daemon.HighWater
                             _logger.LogDebug("High Water agent is stale at {CurrentMark}", statistics.CurrentMark);
                         }
 
-                        // Ensure we still wait if timestamp isn't set
-                        if (_current.Timestamp == default)
-                        {
-                            _current.Timestamp = DateTimeOffset.UtcNow;
-                        }
-
+                        // This gives the high water detection a chance to allow the gaps to fill in
+                        // before skipping to the safe harbor time
                         var safeHarborTime = _current.Timestamp.Add(_settings.StaleSequenceThreshold);
                         if (safeHarborTime > statistics.Timestamp)
                         {
@@ -114,7 +110,7 @@ namespace Marten.Events.Daemon.HighWater
                             continue;
                         }
 
-                        _logger.LogInformation("High Water agent is stale after threshold of {DelayInSeconds} seconds. Skipping gap.", _settings.StaleSequenceThreshold.TotalSeconds);
+                        _logger.LogInformation("High Water agent is stale after threshold of {DelayInSeconds} seconds, skipping gap", _settings.StaleSequenceThreshold.TotalSeconds);
 
                         statistics = await _detector.DetectInSafeZone(_token).ConfigureAwait(false);
                         await markProgress(statistics, _settings.FastPollingTime).ConfigureAwait(false);
@@ -138,8 +134,10 @@ namespace Marten.Events.Daemon.HighWater
             {
                 _logger.LogDebug("High Water mark detected at {CurrentMark}", statistics.CurrentMark);
             }
+
             _current = statistics;
             _tracker.MarkHighWater(statistics.CurrentMark);
+
             await Task.Delay(delayTime, _token).ConfigureAwait(false);
         }
 

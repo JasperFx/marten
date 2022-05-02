@@ -10,7 +10,7 @@ namespace Marten.Events.Daemon.HighWater
         public bool HasChanged => CurrentMark > LastMark;
         public DateTimeOffset? LastUpdated { get; set; }
         public long SafeStartMark { get; set; }
-        public DateTimeOffset Timestamp { get; set; }
+        public DateTimeOffset Timestamp { get; set; } = default;
 
         public HighWaterStatus InterpretStatus(HighWaterStatistics previous)
         {
