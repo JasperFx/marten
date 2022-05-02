@@ -15,14 +15,14 @@ namespace Marten.AsyncDaemon.Testing
 {
     public class GapDetectorTest: DaemonContext
     {
-        private readonly GapDetector _gapDetector;
+        private readonly GapDetector theGapDetector;
         private readonly ISingleQueryRunner _runner;
 
         public GapDetectorTest(ITestOutputHelper output) : base(output)
         {
             theStore.EnsureStorageExists(typeof(IEvent));
 
-            _gapDetector = new GapDetector(theStore.Events);
+            theGapDetector = new GapDetector(theStore.Events);
             _runner = new AutoOpenSingleQueryRunner(theStore.Tenancy.Default.Database);
         }
 
@@ -33,7 +33,7 @@ namespace Marten.AsyncDaemon.Testing
             await PublishSingleThreaded();
             await deleteEvents(NumberOfEvents - 100, NumberOfEvents - 50);
 
-            var current = await _runner.Query(_gapDetector, CancellationToken.None).ConfigureAwait(false);
+            var current = await _runner.Query(theGapDetector, CancellationToken.None).ConfigureAwait(false);
 
             current.ShouldBe(NumberOfEvents - 101);
         }
@@ -44,10 +44,10 @@ namespace Marten.AsyncDaemon.Testing
             NumberOfStreams = 10;
             await PublishSingleThreaded();
             await deleteEvents(NumberOfEvents - 100, NumberOfEvents - 50);
-            var current = await _runner.Query(_gapDetector, CancellationToken.None).ConfigureAwait(false);
-            _gapDetector.Start = current.Value;
+            var current = await _runner.Query(theGapDetector, CancellationToken.None).ConfigureAwait(false);
+            theGapDetector.Start = current.Value;
 
-            current = await _runner.Query(_gapDetector, CancellationToken.None).ConfigureAwait(false);
+            current = await _runner.Query(theGapDetector, CancellationToken.None).ConfigureAwait(false);
 
             current.ShouldBe(NumberOfEvents - 101);
         }
@@ -58,7 +58,7 @@ namespace Marten.AsyncDaemon.Testing
             NumberOfStreams = 10;
             await PublishSingleThreaded();
 
-            var current = await _runner.Query(_gapDetector, CancellationToken.None).ConfigureAwait(false);
+            var current = await _runner.Query(theGapDetector, CancellationToken.None).ConfigureAwait(false);
 
             current.ShouldBe(NumberOfEvents);
         }
@@ -68,9 +68,9 @@ namespace Marten.AsyncDaemon.Testing
         {
             NumberOfStreams = 10;
             await PublishSingleThreaded();
-            _gapDetector.Start = NumberOfEvents;
+            theGapDetector.Start = NumberOfEvents;
 
-            var current = await _runner.Query(_gapDetector, CancellationToken.None).ConfigureAwait(false);
+            var current = await _runner.Query(theGapDetector, CancellationToken.None).ConfigureAwait(false);
 
             current.ShouldBe(NumberOfEvents);
         }
