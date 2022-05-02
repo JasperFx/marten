@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Baseline.Dates;
+using Bug2177;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -25,6 +26,8 @@ namespace Marten.AsyncDaemon.Testing.Bugs
                 options.Projections.Add<TicketProjection>(ProjectionLifecycle.Async);
             });
 
+            await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+
             using var daemon = await theStore.BuildProjectionDaemonAsync();
             await daemon.StartAllShards();
 
@@ -42,21 +45,12 @@ namespace Marten.AsyncDaemon.Testing.Bugs
 
             session.Events.Append(ticketId, new TicketDeleted(ticketId));
             await session.SaveChangesAsync();
-            await daemon.WaitForNonStaleData(5.Seconds());
+            await daemon.WaitForNonStaleData(30.Seconds());
 
             var ticket = await session.LoadAsync<Ticket>(ticketId);
             ticket.ShouldBeNull();
         }
 
-        public record TicketCreated(Guid TicketId, string Name);
-
-        public record TicketDeleted(Guid TicketId);
-
-        public class Ticket
-        {
-            public Guid Id { get; set; }
-            public string Name { get; set; }
-        }
 
         public class TicketProjection: AggregateProjection<Ticket>
         {
