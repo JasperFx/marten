@@ -169,7 +169,7 @@ public void query_against_number_list_with_count_method()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_against_child_collections_integrated_Tests.cs#L544-L562' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_number_list_with_count_method' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### IsOneOf
+## IsOneOf
 
 `IsOneOf()` extension can be used to query for documents having
 a field or property matching one of many supplied values:

@@ -36,7 +36,7 @@ public void simple_include_for_a_single_document()
 
 The first parameter of the `Include()` method takes an expression that specifies the document properties on which the join will be done (`AssigneeId` in this case). The second parameter is the expression that will assign the fetched related document to a previously declared variable (`included` in our case). By default, Marten will use an inner join. This means that any `Issue` with no corresponding `User` (or no `AssigneeId`), will not be fetched. If you wish to override this behavior, you can add as a third parameter the enum `JoinType.LeftOuter`.
 
-### Join Many Documents
+## Join Many Documents
 
 If you wish to fetch a list of related documents, you can declare a `List<User>` variable and pass it as the second parameter. The `Include()` method should be appended with `ToList()` or `ToArray()`.
 
@@ -114,7 +114,7 @@ public void multiple_includes()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_include.cs#L706-L736' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multiple_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### Asynchronous Support
+## Asynchronous Support
 
 Marten supports Include within an asynchronous context. The query will be run asynchronously when you append your query with the corresponding Async method, like:
 
