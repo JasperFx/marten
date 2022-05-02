@@ -399,7 +399,7 @@ namespace Marten.Events.Daemon
         public ProjectionUpdateBatch StartNewBatch(EventRangeGroup group)
         {
             var session = _store.OpenSession(_sessionOptions);
-            return new ProjectionUpdateBatch(_store.Events, (DocumentSessionBase) session, group.Range, group.Cancellation);
+            return new ProjectionUpdateBatch(_store.Events, _store.Options.Projections, (DocumentSessionBase) session, group.Range, group.Cancellation);
         }
 
         public async Task ExecuteBatch(ProjectionUpdateBatch batch)

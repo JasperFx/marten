@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Baseline;
+using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
@@ -21,6 +22,7 @@ namespace Marten.Events.Daemon
     public class ProjectionUpdateBatch : IUpdateBatch, IDisposable, ISessionWorkTracker
     {
         public EventRange Range { get; }
+        private readonly DaemonSettings _settings;
         private DocumentSessionBase _session;
         private readonly CancellationToken _token;
         private readonly IList<Page> _pages = new List<Page>();
@@ -28,9 +30,11 @@ namespace Marten.Events.Daemon
 
         private readonly List<Type> _documentTypes = new List<Type>();
 
-        internal ProjectionUpdateBatch(EventGraph events, DocumentSessionBase session, EventRange range, CancellationToken token)
+        internal ProjectionUpdateBatch(EventGraph events, DaemonSettings settings,
+            DocumentSessionBase session, EventRange range, CancellationToken token)
         {
             Range = range;
+            _settings = settings;
             _session = session;
             _token = token;
             Queue = new ActionBlock<IStorageOperation>(processOperation,
@@ -104,12 +108,22 @@ namespace Marten.Events.Daemon
                     throw new AggregateException(exceptions);
                 }
             }
+
+            if (_settings.AsyncListeners.Any())
+            {
+                var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
+                foreach (var listener in _settings.AsyncListeners)
+                {
+                    await listener.AfterCommitAsync((IDocumentSession)session, unitOfWorkData, _token).ConfigureAwait(false);
+                }
+            }
         }
 
         public class Page
         {
             private IMartenSession _session;
             public int Count { get; private set; }
+            public IEnumerable<IStorageOperation> Operations => _operations;
 
             private readonly NpgsqlCommand _command = new NpgsqlCommand();
             private readonly CommandBuilder _builder;

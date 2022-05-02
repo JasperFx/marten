@@ -5,11 +5,24 @@ using Marten.Services;
 namespace Marten
 {
     #region sample_IDocumentSessionListener
+
+    public interface IChangeListener
+    {
+        /// <summary>
+        /// After an IDocumentSession is committed
+        /// </summary>
+        /// <param name="session"></param>
+        /// <param name="commit"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
+    }
+
     /// <summary>
     /// Used to listen to and intercept operations within an IDocumentSession.SaveChanges()/SaveChangesAsync()
     /// operation
     /// </summary>
-    public interface IDocumentSessionListener
+    public interface IDocumentSessionListener : IChangeListener
     {
         /// <summary>
         /// Called just after IDocumentSession.SaveChanges() is called, but before
@@ -33,15 +46,6 @@ namespace Marten
         /// <param name="session"></param>
         /// <param name="commit"></param>
         void AfterCommit(IDocumentSession session, IChangeSet commit);
-
-        /// <summary>
-        /// After an IDocumentSession is committed
-        /// </summary>
-        /// <param name="session"></param>
-        /// <param name="commit"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
 
         /// <summary>
         /// Called after a document is loaded

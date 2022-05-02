@@ -75,6 +75,11 @@ namespace Marten.Events.Daemon
         }
 
         /// <summary>
+        /// Register session listeners that will ONLY be applied within the asynchronous daemon updates.
+        /// </summary>
+        public readonly IList<IChangeListener> AsyncListeners = new List<IChangeListener>();
+
+        /// <summary>
         /// If the projection daemon detects a "stale" event sequence that is probably cause
         /// by sequence numbers being reserved, but never committed, this is the threshold to say
         /// "just look for the highest contiguous sequence number newer than X amount of time" to trigger
