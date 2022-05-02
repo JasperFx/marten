@@ -315,6 +315,17 @@ You can also use other options of `NonPublicMembersStorage`:
   4. Use default constructor.
 - `All` - Use both properties with non-public setters and non-public constructors.
 
+When using `System.Text.Json` the only support for private properties is to mark the field using [\[JsonInclude\]](https://docs.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonincludeattribute?view=net-6.0) attribute.
+
+Alternatively if you want immutability you can mark the setter as `init` like so:
+
+```cs
+public class User
+{
+    public int Id { get; init; }
+}
+```
+
 ## Serialization with System.Text.Json
 
 ::: tip

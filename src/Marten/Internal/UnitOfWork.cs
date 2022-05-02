@@ -20,6 +20,11 @@ namespace Marten.Internal
             _parent = parent;
         }
 
+        internal UnitOfWork(IEnumerable<IStorageOperation> operations)
+        {
+            _operations.AddRange(operations);
+        }
+
         public void Reset()
         {
             _operations.Clear();
@@ -81,9 +86,6 @@ namespace Marten.Internal
 
             return true;
         }
-
-
-
 
 
         IEnumerable<IDeletion> IUnitOfWork.Deletions()
@@ -196,8 +198,7 @@ namespace Marten.Internal
 
         public IChangeSet Clone()
         {
-            var clone = new UnitOfWork(null);
-            clone._operations.AddRange(_operations);
+            var clone = new UnitOfWork(_operations);
             clone.Streams.AddRange(Streams);
 
             return clone;

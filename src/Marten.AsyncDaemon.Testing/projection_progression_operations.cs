@@ -5,6 +5,7 @@ using Marten.Events.Daemon;
 using Marten.Events.Daemon.Progress;
 using Marten.Exceptions;
 using Marten.Testing;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -53,6 +54,32 @@ namespace Marten.AsyncDaemon.Testing
                 new UpdateProjectionProgress(theStore.Events, new EventRange(new ShardName("three"), 12, 50));
 
             theSession.QueueOperation(updateProjectionProgress);
+            await theSession.SaveChangesAsync();
+
+            var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("three"));
+            progress.ShouldBe(50);
+        }
+
+        [Fact]
+        public async Task Bug_2201_update_successfully_but_have_deletion_next()
+        {
+            var target = Target.Random();
+            theSession.Store(target);
+            await theSession.SaveChangesAsync();
+
+            var insertProjectionProgress = new InsertProjectionProgress(theStore.Events,
+                new EventRange( new ShardName("three"), 12));
+
+
+            theSession.QueueOperation(insertProjectionProgress);
+
+            await theSession.SaveChangesAsync();
+
+            var updateProjectionProgress =
+                new UpdateProjectionProgress(theStore.Events, new EventRange(new ShardName("three"), 12, 50));
+
+            theSession.QueueOperation(updateProjectionProgress);
+            theSession.Delete(target);
             await theSession.SaveChangesAsync();
 
             var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("three"));

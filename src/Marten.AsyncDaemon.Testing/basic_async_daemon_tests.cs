@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,6 +7,7 @@ using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Linq.SqlGeneration;
+using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Postgresql.SqlGeneration;
@@ -40,6 +42,41 @@ namespace Marten.AsyncDaemon.Testing
             await daemon2.Tracker.WaitForHighWaterMark(NumberOfEvents);
 
             await daemon2.StartAllShards();
+        }
+
+        public class FakeListener: IChangeListener
+        {
+            public IList<IChangeSet> Changes = new List<IChangeSet>();
+
+            public Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
+            {
+                session.ShouldNotBeNull();
+                Changes.Add(commit);
+                return Task.CompletedTask;
+            }
+        }
+
+        [Fact]
+        public async Task can_listen_for_commits_in_daemon()
+        {
+            var listener = new FakeListener();
+            StoreOptions(x =>
+            {
+                x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
+                x.Projections.AsyncListeners.Add(listener);
+            });
+
+            using var daemon = await StartDaemon();
+            await daemon.StartAllShards();
+
+            NumberOfStreams = 10;
+            await PublishSingleThreaded();
+
+            await daemon.Tracker.WaitForShardState("Trip:All", NumberOfEvents);
+
+            await daemon.StopAll();
+
+            listener.Changes.Any().ShouldBeTrue();
         }
 
         [Fact]

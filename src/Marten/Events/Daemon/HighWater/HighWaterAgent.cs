@@ -96,10 +96,7 @@ namespace Marten.Events.Daemon.HighWater
                         break;
 
                     case HighWaterStatus.Stale:
-                        if (_logger.IsEnabled(LogLevel.Debug))
-                        {
-                            _logger.LogDebug("High Water agent is stale at {CurrentMark}", statistics.CurrentMark);
-                        }
+                        _logger.LogInformation("High Water agent is stale at {CurrentMark}", statistics.CurrentMark);
 
                         // This gives the high water detection a chance to allow the gaps to fill in
                         // before skipping to the safe harbor time
@@ -109,8 +106,9 @@ namespace Marten.Events.Daemon.HighWater
                             await Task.Delay(_settings.SlowPollingTime, _token).ConfigureAwait(false);
                             continue;
                         }
+                        
+                        _logger.LogInformation("High Water agent is stale after threshold of {DelayInSeconds} seconds, skipping gap to events marked after {SafeHarborTime}", _settings.StaleSequenceThreshold.TotalSeconds, safeHarborTime);
 
-                        _logger.LogInformation("High Water agent is stale after threshold of {DelayInSeconds} seconds, skipping gap", _settings.StaleSequenceThreshold.TotalSeconds);
 
                         statistics = await _detector.DetectInSafeZone(_token).ConfigureAwait(false);
                         await markProgress(statistics, _settings.FastPollingTime).ConfigureAwait(false);

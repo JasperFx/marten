@@ -45,7 +45,7 @@ namespace Marten.Events.Daemon
         }
 
         // Only for testing
-        public ProjectionDaemon(DocumentStore store, ILogger logger) : this(store, store.Tenancy.Default.Database, new HighWaterDetector(new AutoOpenSingleQueryRunner(store.Tenancy.Default.Database), store.Events), logger)
+        public ProjectionDaemon(DocumentStore store, ILogger logger) : this(store, store.Tenancy.Default.Database, new HighWaterDetector(new AutoOpenSingleQueryRunner(store.Tenancy.Default.Database), store.Events, logger), logger)
         {
         }
 
@@ -262,7 +262,11 @@ namespace Marten.Events.Daemon
 
             if (token.IsCancellationRequested) return;
 
-            if (Tracker.HighWaterMark == 0) await _highWater.CheckNow().ConfigureAwait(false);
+            // If there's no data, do nothing
+            while (Tracker.HighWaterMark == 0)
+            {
+                return;
+            }
 
             if (token.IsCancellationRequested) return;
 
