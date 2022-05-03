@@ -7,6 +7,10 @@ on:
   # run it during pull request
   pull_request_target:
   workflow_dispatch:
+    inputs:
+      publish_docs:
+        description: 'Publish docs'
+        type: boolean
 
 env:
   config: Release
@@ -41,20 +45,21 @@ jobs:
 
       - name: Build & Deploy docs preview
         run: ./build.sh --no-color publish-docs-preview
+        if: ${{ github.event.inputs.publish_docs == 'false' }}
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
       - name: Build & Deploy docs
         run: ./build.sh --no-color publish-docs
-        if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
+        if: ${{ github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event.inputs.publish_docs == 'true') }}
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
       - name: Generate Algolia DocSearch index
         uses: darrenjennings/algolia-docsearch-action@master
-        if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
+        if: ${{ github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event.inputs.publish_docs == 'true') }}
         with:
           algolia_application_id: ${{ secrets.ALGOLIA_APPLICATION_ID }}
           algolia_api_key: ${{ secrets.ALGOLIA_API_KEY }}
