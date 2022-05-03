@@ -11,5 +11,5 @@ features:
     details: A robust and full-fledged document database to boost your developer productivity.
   - title: ⚡️ Event Store
     details: Build event-sourced style systems with ease to store events and streams. Use projections to create read-side views.
-footer: MIT Licensed | Copyright © .NET Foundation, Jeremy D. Miller, Babu Annamalai, Oskar Dudycz, Joona-Pekka Kokko and contributors.
+footer: MIT Licensed | Copyright © Jeremy D. Miller, Babu Annamalai, Oskar Dudycz, Joona-Pekka Kokko and contributors.
 ---
