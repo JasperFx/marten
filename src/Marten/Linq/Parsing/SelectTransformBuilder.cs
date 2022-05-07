@@ -104,7 +104,7 @@ namespace Marten.Linq.Parsing
                         locator = field.TypedLocator;
                     }
 
-                    if (field.FieldType.IsClass)
+                    if (field.FieldType.IsClass && field.FieldType != typeof(string) && field.FieldType != typeof(decimal))
                     {
                         // If the field is a class, we need to cast it to JSONB otherwise it will be serialized to plain string and fail to deserialize later on
                         locator = field.JSONBLocator;
