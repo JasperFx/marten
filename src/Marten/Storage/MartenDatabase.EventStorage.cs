@@ -9,7 +9,7 @@ using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
 using Weasel.Postgresql;
-
+#nullable enable
 namespace Marten.Storage
 {
     public partial class MartenDatabase

@@ -12,7 +12,7 @@ using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql.Tables;
-
+#nullable enable
 namespace Marten.Storage
 {
     /// <summary>

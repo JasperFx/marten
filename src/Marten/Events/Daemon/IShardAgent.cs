@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-
+#nullable enable
 namespace Marten.Events.Daemon
 {
     /// <summary>
@@ -13,7 +13,7 @@ namespace Marten.Events.Daemon
     {
         void StartRange(EventRange range);
 
-        Task TryAction(Func<Task> action, CancellationToken token, Action<ILogger, Exception> logException = null, EventRangeGroup group = null, GroupActionMode actionMode = GroupActionMode.Parent);
+        Task TryAction(Func<Task> action, CancellationToken token, Action<ILogger, Exception>? logException = null, EventRangeGroup? group = null, GroupActionMode actionMode = GroupActionMode.Parent);
 
     }
 }

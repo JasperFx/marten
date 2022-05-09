@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Marten.Schema;
-
+#nullable enable
 namespace Marten.Storage
 {
     public class CompositeDocumentCleaner: IDocumentCleaner
