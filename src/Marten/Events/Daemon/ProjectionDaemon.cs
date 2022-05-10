@@ -227,7 +227,7 @@ namespace Marten.Events.Daemon
         {
             if (typeof(TView).CanBeCastTo(typeof(ProjectionBase)) && typeof(TView).HasDefaultConstructor())
             {
-                var projection = (ProjectionBase)Activator.CreateInstance(typeof(TView));
+                var projection = (ProjectionBase)Activator.CreateInstance(typeof(TView))!;
                 return RebuildProjection(projection.ProjectionName, token);
             }
 
