@@ -62,6 +62,8 @@ namespace Marten.Events.Daemon
                 filter.Apply(builder);
             }
 
+            builder.Append(" order by d.seq_id");
+
             _command = builder.Compile();
             _aggregateIndex = _storage.SelectFields().Length;
         }
