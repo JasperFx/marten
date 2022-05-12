@@ -30,13 +30,14 @@ namespace EventSourcingTests.Examples
                 // Start a brand new stream and commit the new events as
                 // part of a transaction
                 session.Events.StartStream<Quest>(questId, started, joined1);
-                await session.SaveChangesAsync();
 
                 // Append more events to the same stream
                 var joined2 = new MembersJoined(3, "Buckland", "Merry", "Pippen");
                 var joined3 = new MembersJoined(10, "Bree", "Aragorn");
                 var arrived = new ArrivedAtLocation { Day = 15, Location = "Rivendell" };
                 session.Events.Append(questId, joined2, joined3, arrived);
+
+                // Save the pending changes to db
                 await session.SaveChangesAsync();
             }
             #endregion
@@ -51,6 +52,7 @@ namespace EventSourcingTests.Examples
                 // Start a brand new stream and commit the new events as
                 // part of a transaction
                 session.Events.StartStream(typeof(Quest), questId, started, joined1);
+                await session.SaveChangesAsync();
             }
             #endregion
 
@@ -64,6 +66,7 @@ namespace EventSourcingTests.Examples
                 // part of a transaction
                 // no stream type will be stored in database
                 session.Events.StartStream(questId, started, joined1);
+                await session.SaveChangesAsync();
             }
             #endregion
 

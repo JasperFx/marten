@@ -141,6 +141,39 @@ public class MembersEscaped
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/QuestTypes.cs#L12-L144' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+<!-- snippet: sample_event-store-quickstart -->
+<a id='snippet-sample_event-store-quickstart'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    _.Connection(ConnectionSource.ConnectionString);
+    _.Projections.SelfAggregate<QuestParty>();
+});
+
+var questId = Guid.NewGuid();
+
+using (var session = store.OpenSession())
+{
+    var started = new QuestStarted { Name = "Destroy the One Ring" };
+    var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
+
+    // Start a brand new stream and commit the new events as
+    // part of a transaction
+    session.Events.StartStream<Quest>(questId, started, joined1);
+
+    // Append more events to the same stream
+    var joined2 = new MembersJoined(3, "Buckland", "Merry", "Pippen");
+    var joined3 = new MembersJoined(10, "Bree", "Aragorn");
+    var arrived = new ArrivedAtLocation { Day = 15, Location = "Rivendell" };
+    session.Events.Append(questId, joined2, joined3, arrived);
+
+    // Save the pending changes to db
+    await session.SaveChangesAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L16-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-quickstart' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 In addition to generic `StartStream<T>`, `IEventStore` has a non-generic `StartStream` overload that let you pass explicit type.
 
 <!-- snippet: sample_event-store-start-stream-with-explicit-type -->
@@ -154,9 +187,10 @@ using (var session = store.OpenSession())
     // Start a brand new stream and commit the new events as
     // part of a transaction
     session.Events.StartStream(typeof(Quest), questId, started, joined1);
+    await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L45-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-start-stream-with-explicit-type' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L46-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-start-stream-with-explicit-type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, we would at some point like to see the current state of the quest party
@@ -210,5 +244,5 @@ using (var session = store.OpenSession())
         .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L81-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L84-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
