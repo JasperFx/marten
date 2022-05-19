@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Marten.Events.Archiving;
+using Marten.Events.Daemon;
 using Marten.Events.Schema;
 using Marten.Storage;
 using Weasel.Core;
@@ -20,7 +21,7 @@ namespace Marten.Events
 
         IEnumerable<Type> IFeatureSchema.DependentTypes()
         {
-            yield break;
+            yield return typeof(DeadLetterEvent);
         }
 
         ISchemaObject[] IFeatureSchema.Objects

@@ -7,6 +7,7 @@ using Baseline;
 using Baseline.ImTools;
 using LamarCodeGeneration;
 using Marten.Events;
+using Marten.Events.Daemon;
 using Marten.Exceptions;
 using Marten.Schema;
 using Weasel.Core.Migrations;
@@ -247,6 +248,11 @@ namespace Marten.Storage
         internal IEnumerable<IFeatureSchema> AllActiveFeatures(IMartenDatabase database)
         {
             yield return SystemFunctions;
+
+            if (_options.Events.As<EventGraph>().IsActive(_options))
+            {
+                MappingFor(typeof(DeadLetterEvent)).DatabaseSchemaName = _options.Events.DatabaseSchemaName;
+            }
 
             var mappings = _documentMappings.Value
                 .Enumerate().Select(x => x.Value)

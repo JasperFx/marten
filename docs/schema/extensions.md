@@ -179,5 +179,5 @@ var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequ
     OwnerColumn = "seq_id"
 };
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/EventGraph.FeatureSchema.cs#L33-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-sequence' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/EventGraph.FeatureSchema.cs#L34-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-sequence' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
