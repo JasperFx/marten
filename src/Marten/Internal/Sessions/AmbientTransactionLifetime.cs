@@ -72,14 +72,27 @@ namespace Marten.Internal.Sessions
 
         public void BeginTransaction()
         {
+            EnsureConnected();
+        }
+
+        public void EnsureConnected()
+        {
             if (Connection == null)
             {
+                if (Connection == null)
+                {
 #pragma warning disable CS8602
-                Connection = _options.Tenant.Database.CreateConnection();
+                    Connection = _options.Tenant.Database.CreateConnection();
 #pragma warning restore CS8602
-                Connection.Open();
-                Connection.EnlistTransaction(_options.DotNetTransaction);
+                    Connection.Open();
+                    Connection.EnlistTransaction(_options.DotNetTransaction);
+                }
             }
+        }
+
+        public ValueTask EnsureConnectedAsync(CancellationToken token)
+        {
+            return BeginTransactionAsync(token);
         }
 
         public async ValueTask BeginTransactionAsync(CancellationToken token)

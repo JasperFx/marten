@@ -8,10 +8,8 @@ using Marten.Exceptions;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Services;
-using Marten.Storage;
 using Marten.Util;
 using Npgsql;
-using Weasel.Core;
 
 #nullable enable
 
@@ -28,8 +26,6 @@ namespace Marten.Internal.Sessions
 
             MartenExceptionTransformer.WrapAndThrow(cmd, e);
         }
-
-
 
         public int Execute(NpgsqlCommand cmd)
         {
@@ -187,6 +183,9 @@ namespace Marten.Internal.Sessions
         Task RollbackAsync(CancellationToken token);
 
         NpgsqlConnection? Connection { get; }
+
+        void EnsureConnected();
+        ValueTask EnsureConnectedAsync(CancellationToken token);
         void BeginTransaction();
         ValueTask BeginTransactionAsync(CancellationToken token);
 

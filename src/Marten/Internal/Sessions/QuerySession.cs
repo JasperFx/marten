@@ -79,7 +79,7 @@ namespace Marten.Internal.Sessions
         {
             get
             {
-                _connection.BeginTransaction();
+                _connection.EnsureConnected();
                 return _connection.Connection;
             }
         }
