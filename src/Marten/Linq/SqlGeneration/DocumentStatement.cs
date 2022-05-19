@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Baseline;
 using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
+using Microsoft.CodeAnalysis.FlowAnalysis;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration
@@ -105,7 +107,9 @@ namespace Marten.Linq.SqlGeneration
                 ExportName = ExportName,
                 SingleValue = SingleValue,
                 CanBeMultiples = CanBeMultiples,
-                ReturnDefaultWhenEmpty = ReturnDefaultWhenEmpty
+                ReturnDefaultWhenEmpty = ReturnDefaultWhenEmpty,
+                Limit = Limit,
+                Offset = Offset
 
             };
 
@@ -113,7 +117,6 @@ namespace Marten.Linq.SqlGeneration
             SelectClause = includeIdentitySelectorStatement;
 
             clone.Where = new InTempTableWhereFragment(includeIdentitySelectorStatement.ExportName, "id");
-            Limit = Offset = 0;
 
             return clone;
         }
