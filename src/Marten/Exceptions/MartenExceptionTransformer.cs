@@ -20,6 +20,7 @@ namespace Marten.Exceptions
         {
             _transforms.AddTransform<EventStreamUnexpectedMaxEventIdExceptionTransform>();
             _transforms.AddTransform<MartenCommandNotSupportedExceptionTransform>();
+            _transforms.AddTransform<UtcDateTimeUsageExceptionTransform>();
 
             _transforms.IfExceptionIs<PostgresException>()
                 .If(e => e.SqlState == PostgresErrorCodes.SerializationFailure)
