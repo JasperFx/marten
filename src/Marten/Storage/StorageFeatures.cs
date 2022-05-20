@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -10,12 +11,14 @@ using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Exceptions;
 using Marten.Schema;
+using Weasel.Core;
 using Weasel.Core.Migrations;
+using Weasel.Postgresql;
 
 #nullable enable
 namespace Marten.Storage
 {
-    public class StorageFeatures
+    public class StorageFeatures : IFeatureSchema
     {
         private readonly StoreOptions _options;
 
@@ -103,6 +106,29 @@ namespace Marten.Storage
                 FindMapping(documentType);
             }
         }
+
+        /// <summary>
+        /// Additional Postgresql tables, functions, or sequences to be managed by this DocumentStore
+        /// </summary>
+        public IList<ISchemaObject> ExtendedSchemaObjects { get; } = new List<ISchemaObject>();
+
+        void IFeatureSchema.WritePermissions(Migrator rules, TextWriter writer)
+        {
+            // Nothing
+        }
+
+        IEnumerable<Type> IFeatureSchema.DependentTypes()
+        {
+            yield break;
+        }
+
+        ISchemaObject[] IFeatureSchema.Objects => ExtendedSchemaObjects.ToArray();
+
+        string IFeatureSchema.Identifier => "Extended";
+
+        Migrator IFeatureSchema.Migrator => _options.Advanced.Migrator;
+
+        Type IFeatureSchema.StorageType => typeof(StoreOptions);
 
         /// <summary>
         /// Register custom storage features
@@ -259,6 +285,11 @@ namespace Marten.Storage
                 .OrderBy(x => x.DocumentType.Name)
                 .TopologicalSort(m => m.ReferencedTypes()
                     .Select(MappingFor));
+
+            if (ExtendedSchemaObjects.Any())
+            {
+                yield return this;
+            }
 
             foreach (var mapping in mappings)
             {

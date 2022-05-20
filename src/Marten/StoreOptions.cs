@@ -21,7 +21,6 @@ using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services.Json;
 using Marten.Storage;
-using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
@@ -674,5 +673,7 @@ namespace Marten
         ///     Option to enable or disable usage of default tenant when using multi-tenanted documents
         /// </summary>
         public bool DefaultTenantUsageEnabled { get; set; } = true;
+
+
     }
 }
