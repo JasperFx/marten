@@ -49,15 +49,17 @@ namespace Marten.Services
                 return new ExternalTransaction(this);
             }
 
-            if (Connection != null)
-            {
-                return new MartenControlledConnectionTransaction(this);
-            }
 
             if (DotNetTransaction != null)
             {
                 return new AmbientTransactionLifetime(this);
             }
+
+            if (Connection != null)
+            {
+                return new MartenControlledConnectionTransaction(this);
+            }
+
 
             throw new NotSupportedException("Invalid combination of SessionOptions");
         }
