@@ -184,5 +184,14 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <exception cref="InvalidOperationException"></exception>
         void UndoDeleteWhere<T>(Expression<Func<T, bool>> expression) where T : notnull;
+
+
+        /// <summary>
+        /// Registers a SQL command to be executed with the underlying unit of work as part of the batched command.
+        /// Use "?" placeholders to denote parameter values
+        /// </summary>
+        /// <param name="sql"></param>
+        /// <param name="parameterValues"></param>
+        void QueueSqlCommand(string sql, params object[] parameterValues);
     }
 }

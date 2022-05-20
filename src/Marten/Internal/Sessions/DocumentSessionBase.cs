@@ -158,6 +158,12 @@ namespace Marten.Internal.Sessions
             });
         }
 
+        public void QueueSqlCommand(string sql, params object[] parameterValues)
+        {
+            var operation = new ExecuteSqlStorageOperation(sql, parameterValues);
+            QueueOperation(operation);
+        }
+
         public IUnitOfWork PendingChanges => _workTracker;
 
         public void StoreObjects(IEnumerable<object> documents)
