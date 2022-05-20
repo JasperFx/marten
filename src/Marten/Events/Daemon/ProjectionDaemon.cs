@@ -95,7 +95,7 @@ namespace Marten.Events.Daemon
             }
 
             var shards = _store.Options.Projections.AllShards();
-            foreach (var shard in shards) await StartShard(shard, CancellationToken.None).ConfigureAwait(false);
+            foreach (var shard in shards) await StartShard(shard, ShardExecutionMode.Continuous, CancellationToken.None).ConfigureAwait(false);
         }
 
         public async Task StartShard(string shardName, CancellationToken token)
@@ -108,10 +108,11 @@ namespace Marten.Events.Daemon
             // Latch it so it doesn't double start
             if (_agents.ContainsKey(shardName)) return;
 
-            if (_store.Options.Projections.TryFindAsyncShard(shardName, out var shard)) await StartShard(shard, token).ConfigureAwait(false);
+            if (_store.Options.Projections.TryFindAsyncShard(shardName, out var shard)) await StartShard(shard, ShardExecutionMode.Continuous, token).ConfigureAwait(false);
         }
 
-        public async Task StartShard(AsyncProjectionShard shard, CancellationToken cancellationToken)
+        public async Task StartShard(AsyncProjectionShard shard, ShardExecutionMode mode,
+            CancellationToken cancellationToken)
         {
             if (!_highWater.IsRunning)
             {
@@ -126,7 +127,7 @@ namespace Marten.Events.Daemon
                 try
                 {
                     var agent = new ShardAgent(_store, shard, _logger, cancellationToken);
-                    var position = await agent.Start(this).ConfigureAwait(false);
+                    var position = await agent.Start(this, mode).ConfigureAwait(false);
 
                     Tracker.Publish(new ShardState(shard.Name, position) {Action = ShardAction.Started});
 
@@ -212,6 +213,7 @@ namespace Marten.Events.Daemon
             // Need to restart this so that the daemon could
             // be restarted later
             _cancellation = new CancellationTokenSource();
+            _highWater.ResetCancellation(_cancellation.Token);
         }
 
         public void Dispose()
@@ -262,8 +264,13 @@ namespace Marten.Events.Daemon
 
             if (token.IsCancellationRequested) return;
 
+            if (!_highWater.IsRunning)
+            {
+                await _highWater.CheckNow().ConfigureAwait(false);
+            }
+
             // If there's no data, do nothing
-            while (Tracker.HighWaterMark == 0)
+            if (Tracker.HighWaterMark == 0)
             {
                 return;
             }
@@ -301,7 +308,7 @@ namespace Marten.Events.Daemon
                 async (shard, cancellationToken) =>
             {
                 Tracker.MarkAsRestarted(shard);
-                await StartShard(shard, cancellationToken).ConfigureAwait(false);
+                await StartShard(shard, ShardExecutionMode.Rebuild, cancellationToken).ConfigureAwait(false);
                 await Tracker.WaitForShardState(shard.Name, mark, 5.Minutes()).ConfigureAwait(false);
             }).ConfigureAwait(false);
 #else
@@ -309,7 +316,7 @@ namespace Marten.Events.Daemon
             var waiters = shards.Select(async x =>
             {
                 Tracker.MarkAsRestarted(x);
-                await StartShard(x, token).ConfigureAwait(false);
+                await StartShard(x, ShardExecutionMode.Rebuild, token).ConfigureAwait(false);
                 await Tracker.WaitForShardState(x.Name, mark, 5.Minutes()).ConfigureAwait(false);
             }).ToArray();
 

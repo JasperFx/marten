@@ -80,6 +80,34 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         [Fact]
+        public async Task listeners_are_not_active_in_rebuilds()
+        {
+            var listener = new FakeListener();
+            StoreOptions(x =>
+            {
+                x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
+                x.Projections.AsyncListeners.Add(listener);
+            });
+
+            using var daemon = await StartDaemon();
+            await daemon.StartAllShards();
+
+            NumberOfStreams = 10;
+            await PublishSingleThreaded();
+
+            await daemon.Tracker.WaitForShardState("Trip:All", NumberOfEvents);
+
+            await daemon.StopAll();
+
+            listener.Changes.Clear(); // clear state before doing this again
+
+            await daemon.RebuildProjection<TripAggregationWithCustomName>(CancellationToken.None);
+
+            listener.Changes.Any().ShouldBeFalse();
+
+        }
+
+        [Fact]
         public async Task start_and_stop_a_projection()
         {
             StoreOptions(x => x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async));

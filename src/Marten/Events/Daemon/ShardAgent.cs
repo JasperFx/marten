@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
 {
-
     /// <summary>
     /// Responsible for running a single async projection shard at runtime. Equivalent to V3 ProjectionTrack
     /// </summary>
@@ -122,8 +121,10 @@ namespace Marten.Events.Daemon
 
         public bool IsStopping { get; private set; } = false;
 
-        public async Task<long> Start(ProjectionDaemon daemon)
+        public async Task<long> Start(ProjectionDaemon daemon, ShardExecutionMode mode)
         {
+            Mode = mode;
+
             if (daemon.Database.Identifier != "Marten")
             {
                 ProjectionShardIdentity = $"{ProjectionShardIdentity}@{daemon.Database.Identifier}";
@@ -157,6 +158,8 @@ namespace Marten.Events.Daemon
             Position = lastCommitted;
             return lastCommitted;
         }
+
+        public ShardExecutionMode Mode { get; set; } = ShardExecutionMode.Continuous;
 
         [MemberNotNull(nameof(_commandBlock), nameof(_loader), nameof(_tracker), nameof(_daemon), nameof(_fetcher), nameof(_grouping), nameof(_building))]
         private void initializeDataflowBlocks(ProjectionDaemon daemon)
@@ -356,7 +359,7 @@ namespace Marten.Events.Daemon
                 {
                     try
                     {
-                        await Start(_daemon!).ConfigureAwait(false);
+                        await Start(_daemon!, ShardExecutionMode.Continuous).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -404,7 +407,7 @@ namespace Marten.Events.Daemon
         public ProjectionUpdateBatch StartNewBatch(EventRangeGroup group)
         {
             var session = _store.OpenSession(_sessionOptions!);
-            return new ProjectionUpdateBatch(_store.Events, _store.Options.Projections, (DocumentSessionBase) session, group.Range, group.Cancellation);
+            return new ProjectionUpdateBatch(_store.Events, _store.Options.Projections, (DocumentSessionBase) session, @group.Range, @group.Cancellation, Mode);
         }
 
         public async Task ExecuteBatch(ProjectionUpdateBatch batch)

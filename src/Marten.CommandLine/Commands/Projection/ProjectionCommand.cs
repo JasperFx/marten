@@ -148,7 +148,7 @@ namespace Marten.CommandLine.Commands.Projection
 
             foreach (var shard in shards)
             {
-                await daemon.StartShard(shard, _cancellation.Token).ConfigureAwait(false);
+                await daemon.StartShard(shard, ShardExecutionMode.Continuous, _cancellation.Token).ConfigureAwait(false);
             }
 
 

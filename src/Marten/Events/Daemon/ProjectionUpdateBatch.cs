@@ -25,18 +25,20 @@ namespace Marten.Events.Daemon
         private readonly DaemonSettings _settings;
         private DocumentSessionBase _session;
         private readonly CancellationToken _token;
+        private readonly ShardExecutionMode _mode;
         private readonly IList<Page> _pages = new List<Page>();
         private Page _current;
 
         private readonly List<Type> _documentTypes = new List<Type>();
 
         internal ProjectionUpdateBatch(EventGraph events, DaemonSettings settings,
-            DocumentSessionBase session, EventRange range, CancellationToken token)
+            DocumentSessionBase session, EventRange range, CancellationToken token, ShardExecutionMode mode)
         {
             Range = range;
             _settings = settings;
             _session = session;
             _token = token;
+            _mode = mode;
             Queue = new ActionBlock<IStorageOperation>(processOperation,
                 new ExecutionDataflowBlockOptions {MaxDegreeOfParallelism = 1, EnsureOrdered = true, CancellationToken = token});
 
@@ -109,7 +111,7 @@ namespace Marten.Events.Daemon
                 }
             }
 
-            if (_settings.AsyncListeners.Any())
+            if (_mode == ShardExecutionMode.Continuous && _settings.AsyncListeners.Any())
             {
                 var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
                 foreach (var listener in _settings.AsyncListeners)

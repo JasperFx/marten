@@ -14,7 +14,7 @@ namespace Marten.Events.Daemon.HighWater
         private readonly ShardStateTracker _tracker;
         private readonly ILogger _logger;
         private readonly DaemonSettings _settings;
-        private readonly CancellationToken _token;
+        private CancellationToken _token;
         private readonly Timer _timer;
         private Task<Task> _loop;
 
@@ -106,7 +106,7 @@ namespace Marten.Events.Daemon.HighWater
                             await Task.Delay(_settings.SlowPollingTime, _token).ConfigureAwait(false);
                             continue;
                         }
-                        
+
                         _logger.LogInformation("High Water agent is stale after threshold of {DelayInSeconds} seconds, skipping gap to events marked after {SafeHarborTime}", _settings.StaleSequenceThreshold.TotalSeconds, safeHarborTime);
 
 
@@ -190,6 +190,11 @@ namespace Marten.Events.Daemon.HighWater
             }
 
             return Task.CompletedTask;
+        }
+
+        internal void ResetCancellation(CancellationToken cancellation)
+        {
+            _token = cancellation;
         }
     }
 }
