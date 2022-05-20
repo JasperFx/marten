@@ -128,7 +128,7 @@ namespace Marten.Storage
 
         Migrator IFeatureSchema.Migrator => _options.Advanced.Migrator;
 
-        Type IFeatureSchema.StorageType => typeof(StoreOptions);
+        Type IFeatureSchema.StorageType => typeof(StorageFeatures);
 
         /// <summary>
         /// Register custom storage features
@@ -240,6 +240,8 @@ namespace Marten.Storage
             {
                 return _options.EventGraph;
             }
+
+            if (featureType == typeof(StorageFeatures)) return this;
 
             return MappingFor(featureType).Schema;
         }
