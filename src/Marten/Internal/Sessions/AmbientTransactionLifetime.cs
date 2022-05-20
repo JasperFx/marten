@@ -1,3 +1,4 @@
+using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
@@ -14,7 +15,20 @@ namespace Marten.Internal.Sessions
         public AmbientTransactionLifetime(SessionOptions options)
         {
             _options = options;
+
+            Connection = options.Connection;
+
+            if (options.Connection != null && options.Connection.State != ConnectionState.Closed)
+            {
+                OwnsConnection = false;
+            }
+            else
+            {
+                OwnsConnection = true;
+            }
         }
+
+        public bool OwnsConnection { get; }
 
         public NpgsqlConnection? Connection { get; private set; }
 
@@ -33,8 +47,11 @@ namespace Marten.Internal.Sessions
 
         public void Dispose()
         {
-            Connection?.Close();
-            Connection?.Dispose();
+            if (OwnsConnection)
+            {
+                Connection?.Close();
+                Connection?.Dispose();
+            }
         }
 
         public void Apply(NpgsqlCommand command)
@@ -79,14 +96,11 @@ namespace Marten.Internal.Sessions
         {
             if (Connection == null)
             {
-                if (Connection == null)
-                {
-#pragma warning disable CS8602
-                    Connection = _options.Tenant.Database.CreateConnection();
-#pragma warning restore CS8602
-                    Connection.Open();
-                    Connection.EnlistTransaction(_options.DotNetTransaction);
-                }
+    #pragma warning disable CS8602
+                Connection = _options.Tenant.Database.CreateConnection();
+    #pragma warning restore CS8602
+                Connection.Open();
+                Connection.EnlistTransaction(_options.DotNetTransaction);
             }
         }
 
