@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using Marten.Events.Projections;
 
-namespace Marten.Events.Projections
+namespace Marten.Events.Aggregation
 {
     internal class FanOutOperator<TSource, TTarget> : IFanOutRule
     {
@@ -19,17 +19,7 @@ namespace Marten.Events.Projections
 
         public void Apply(List<IEvent> events)
         {
-            var matches = events.OfType<Event<TSource>>().ToArray();
-            var starting = 0;
-            foreach (var source in matches)
-            {
-                var index = events.IndexOf(source, starting);
-                var range = _fanOutFunc(source.Data).Select(x => source.WithData(x)).ToArray();
-
-                events.InsertRange(index + 1, range);
-
-                starting = index + range.Length;
-            }
+            events.FanOut(_fanOutFunc);
         }
     }
 }
