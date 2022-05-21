@@ -6,7 +6,6 @@ using Baseline;
 using Baseline.Dates;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events;
-using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Testing;
 using Marten.Testing.Harness;
