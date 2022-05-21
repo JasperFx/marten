@@ -31,6 +31,13 @@ namespace Marten.Linq.Parsing
             return base.VisitMember(node);
         }
 
+        protected override Expression VisitBinary(BinaryExpression node)
+        {
+            throw new ArgumentOutOfRangeException(nameof(node),
+                $"Unsupported operator '{node.NodeType}' in a field member expression");
+        }
+
+
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
             if (node.Method.Name == "Count" && node.Method.ReturnType == typeof(int))
