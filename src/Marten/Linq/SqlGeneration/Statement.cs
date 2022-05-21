@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Linq.Fields;
 using Marten.Linq.Parsing;
@@ -95,8 +97,17 @@ namespace Marten.Linq.SqlGeneration
 
         protected void writeOrderByFragment(CommandBuilder sql, Ordering clause, bool caseInsensitive)
         {
-            var field = Fields.FieldFor(clause.Expression);
-            var locator = field.ToOrderExpression(clause.Expression);
+
+            string locator;
+            try
+            {
+                var field = Fields.FieldFor(clause.Expression);
+                locator = field.ToOrderExpression(clause.Expression);
+            }
+            catch (Exception e)
+            {
+                throw new BadLinqExpressionException($"Invalid OrderBy() expression '{clause.Expression}'", e);
+            }
 
             if (caseInsensitive)
             {
