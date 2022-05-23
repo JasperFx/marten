@@ -138,15 +138,7 @@ namespace Marten.Events.Daemon
 
             var lastCommitted = await daemon.Database.ProjectionProgressFor(_projectionShard.Name, _cancellation).ConfigureAwait(false);
 
-            foreach (var storageType in _source.Options.StorageTypes)
-            {
-                await daemon.Database.EnsureStorageExistsAsync(storageType, _cancellation).ConfigureAwait(false);
-            }
-
-            foreach (var publishedType in _source.PublishedTypes())
-            {
-                await daemon.Database.EnsureStorageExistsAsync(publishedType, _cancellation).ConfigureAwait(false);
-            }
+            await ensureStorageExists(daemon).ConfigureAwait(false);
 
             _subscription = _tracker.Subscribe(this);
             _commandBlock?.Post(Command.Started(_tracker.HighWaterMark, lastCommitted));
@@ -157,6 +149,19 @@ namespace Marten.Events.Daemon
 
             Position = lastCommitted;
             return lastCommitted;
+        }
+
+        private async Task ensureStorageExists(ProjectionDaemon daemon)
+        {
+            foreach (var storageType in _source.Options.StorageTypes)
+            {
+                await daemon.Database.EnsureStorageExistsAsync(storageType, _cancellation).ConfigureAwait(false);
+            }
+
+            foreach (var publishedType in _source.PublishedTypes())
+            {
+                await daemon.Database.EnsureStorageExistsAsync(publishedType, _cancellation).ConfigureAwait(false);
+            }
         }
 
         public ShardExecutionMode Mode { get; set; } = ShardExecutionMode.Continuous;

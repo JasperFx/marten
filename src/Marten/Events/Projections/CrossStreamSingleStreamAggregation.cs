@@ -13,7 +13,7 @@ namespace Marten.Events.Projections
     {
         private TenancyStyle _tenancyStyle;
 
-        protected CrossStreamSingleStreamAggregation()
+        protected CrossStreamSingleStreamAggregation() : base(AggregationScope.MultiStream)
         {
             Lifecycle = ProjectionLifecycle.Async;
         }
@@ -39,7 +39,6 @@ namespace Marten.Events.Projections
                     $"Id type mismatch. The projection identity type is {typeof(TId).NameInCode()}, but the aggregate document {typeof(TId).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
             }
         }
-
 
         private async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> groupByConjoinedTenancy(IQuerySession querySession, List<IEvent> events)
         {

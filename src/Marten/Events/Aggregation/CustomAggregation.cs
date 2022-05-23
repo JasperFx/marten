@@ -87,6 +87,8 @@ namespace Marten.Events.Aggregation
             CancellationToken cancellation,
             ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline);
 
+        public IAggregateVersioning Versioning { get; set; }
+
         /// <summary>
         /// Override to give Marten "hints" about whether the aggregate is all new based on the incoming
         /// event slice. The default implementation is always false.

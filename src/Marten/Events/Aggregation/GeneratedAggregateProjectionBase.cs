@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -29,8 +30,9 @@ namespace Marten.Events.Aggregation
         private IAggregationRuntime _runtime;
         private Type _inlineType;
         private Type _liveType;
+        private readonly AggregateVersioning<T> _versioning;
 
-        protected GeneratedAggregateProjectionBase() : base(typeof(T).NameInCode())
+        protected GeneratedAggregateProjectionBase(AggregationScope scope) : base(typeof(T).NameInCode())
         {
             _createMethods = new CreateMethodCollection(GetType(), typeof(T));
             _applyMethods = new ApplyMethodCollection(GetType(), typeof(T));
@@ -47,6 +49,25 @@ namespace Marten.Events.Aggregation
 
             _inlineAggregationHandlerType = GetType().ToSuffixedTypeName("InlineHandler");
             _liveAggregationTypeName = GetType().ToSuffixedTypeName("LiveAggregation");
+            _versioning = new AggregateVersioning<T>(scope);
+        }
+
+        /// <summary>
+        /// Designate or override the aggregate version member for this aggregate type
+        /// </summary>
+        /// <param name="expression"></param>
+        public void VersionIdentity(Expression<Func<T, int>> expression)
+        {
+            _versioning.Override(expression);
+        }
+
+        /// <summary>
+        /// Designate or override the aggregate version member for this aggregate type
+        /// </summary>
+        /// <param name="expression"></param>
+        public void VersionIdentity(Expression<Func<T, long>> expression)
+        {
+            _versioning.Override(expression);
         }
 
         internal IList<Type> DeleteEvents { get; } = new List<Type>();

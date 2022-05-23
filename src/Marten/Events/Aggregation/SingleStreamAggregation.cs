@@ -14,6 +14,10 @@ namespace Marten.Events.Aggregation
     /// <typeparam name="T"></typeparam>
     public class SingleStreamAggregation<T>: GeneratedAggregateProjectionBase<T>
     {
+        public SingleStreamAggregation() : base(AggregationScope.SingleStream)
+        {
+        }
+
         protected sealed override object buildEventSlicer(StoreOptions documentMapping)
         {
             Type slicerType = null;
