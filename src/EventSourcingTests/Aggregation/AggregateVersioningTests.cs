@@ -1,5 +1,6 @@
 using System;
 using Baseline;
+using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.CodeGeneration;
 using Marten.Schema;
@@ -42,6 +43,34 @@ public class AggregateVersioningTests
         var versioning = new AggregateVersioning<AggregateWithMultipleCandidates>(AggregationScope.SingleStream);
         versioning.Override(x => x.LongVersion);
         versioning.VersionMember.Name.ShouldBe(nameof(AggregateWithMultipleCandidates.LongVersion));
+    }
+
+    public const long StreamVersion = 5;
+    public const long SequenceVersion = 100;
+
+    [Theory]
+    [InlineData(typeof(ConventionalVersionedAggregate), AggregationScope.SingleStream, StreamVersion)]
+    [InlineData(typeof(ConventionalVersionedAggregate2), AggregationScope.SingleStream, StreamVersion)]
+    [InlineData(typeof(ConventionalVersionedAggregate3), AggregationScope.SingleStream, StreamVersion)]
+    [InlineData(typeof(ConventionalVersionedAggregate4), AggregationScope.SingleStream, StreamVersion)]
+    [InlineData(typeof(ConventionalVersionedAggregate6), AggregationScope.SingleStream, StreamVersion)]
+
+    [InlineData(typeof(ConventionalVersionedAggregate), AggregationScope.MultiStream, SequenceVersion)]
+    [InlineData(typeof(ConventionalVersionedAggregate2), AggregationScope.MultiStream, SequenceVersion)]
+    [InlineData(typeof(ConventionalVersionedAggregate3), AggregationScope.MultiStream, SequenceVersion)]
+    [InlineData(typeof(ConventionalVersionedAggregate4), AggregationScope.MultiStream, SequenceVersion)]
+    [InlineData(typeof(ConventionalVersionedAggregate6), AggregationScope.MultiStream, SequenceVersion)]
+    public void set_version_single_stream_on_internal(Type aggregateType, AggregationScope scope, long expected)
+    {
+        var e = new Event<EventA>(new EventA()) { Sequence = SequenceVersion, Version = StreamVersion };
+
+        var versioning =
+            typeof(AggregateVersioning<>).CloseAndBuildAs<IAggregateVersioning>(
+                scope, aggregateType);
+        var aggregate = Activator.CreateInstance(aggregateType);
+        versioning.TrySetVersion(aggregate, e);
+
+
     }
 }
 
