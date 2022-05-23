@@ -12,11 +12,11 @@ namespace Marten.Generated.EventStore
     // START: AggregateProjectionLiveAggregation1433489248
     public class AggregateProjectionLiveAggregation1433489248 : Marten.Events.Aggregation.AsyncLiveAggregatorBase<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate>
     {
-        private readonly Marten.Events.Aggregation.AggregateProjection<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> _aggregateProjection;
+        private readonly Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> _singleStreamAggregation;
 
-        public AggregateProjectionLiveAggregation1433489248(Marten.Events.Aggregation.AggregateProjection<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> aggregateProjection)
+        public AggregateProjectionLiveAggregation1433489248(Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> singleStreamAggregation)
         {
-            _aggregateProjection = aggregateProjection;
+            _singleStreamAggregation = singleStreamAggregation;
         }
 
 
@@ -75,16 +75,16 @@ namespace Marten.Generated.EventStore
         private readonly Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid> _slicer;
         private readonly Marten.Storage.ITenancy _tenancy;
         private readonly Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid> _storage;
-        private readonly Marten.Events.Aggregation.AggregateProjection<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> _aggregateProjection;
+        private readonly Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> _singleStreamAggregation;
 
-        public AggregateProjectionInlineHandler1433489248(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid> storage, Marten.Events.Aggregation.AggregateProjection<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> aggregateProjection) : base(store, projection, slicer, storage)
+        public AggregateProjectionInlineHandler1433489248(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid> storage, Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> singleStreamAggregation) : base(store, projection, slicer, storage)
         {
             _store = store;
             _projection = projection;
             _slicer = slicer;
             _tenancy = tenancy;
             _storage = storage;
-            _aggregateProjection = aggregateProjection;
+            _singleStreamAggregation = singleStreamAggregation;
         }
 
 

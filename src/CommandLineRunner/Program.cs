@@ -107,7 +107,7 @@ namespace CommandLineRunner
         public bool Active { get; set; }
     }
 
-    public class SimpleAggregate: AggregateProjection<MyAggregate>
+    public class SimpleAggregate: SingleStreamAggregation<MyAggregate>
     {
         public SimpleAggregate()
         {

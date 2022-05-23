@@ -52,7 +52,7 @@ namespace Marten.AsyncDaemon.Testing.Bugs
         }
 
 
-        public class TicketProjection: AggregateProjection<Ticket>
+        public class TicketProjection: SingleStreamAggregation<Ticket>
         {
             public TicketProjection()
             {

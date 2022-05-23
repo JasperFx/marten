@@ -121,7 +121,7 @@ namespace Marten.AsyncDaemon.Testing
 
     #region sample_showing_fanout_rules
 
-    public class DayProjection: ViewProjection<Day, int>
+    public class DayProjection: MultiStreamAggregation<Day, int>
     {
         public DayProjection()
         {

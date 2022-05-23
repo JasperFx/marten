@@ -9,11 +9,11 @@ using Marten.Storage;
 
 namespace Marten.Events.Projections
 {
-    public abstract class CrossStreamAggregateProjection<TDoc, TId>: AggregateProjection<TDoc>, IEventSlicer<TDoc, TId>
+    public abstract class CrossStreamSingleStreamAggregation<TDoc, TId>: GeneratedAggregateProjectionBase<TDoc>, IEventSlicer<TDoc, TId>
     {
         private TenancyStyle _tenancyStyle;
 
-        protected CrossStreamAggregateProjection()
+        protected CrossStreamSingleStreamAggregation()
         {
             Lifecycle = ProjectionLifecycle.Async;
         }
@@ -82,6 +82,11 @@ namespace Marten.Events.Projections
             _tenancyStyle = options.Storage.MappingFor(typeof(TDoc)).TenancyStyle;
 
             return this;
+        }
+
+        protected override Type baseTypeForAggregationRuntime()
+        {
+            return typeof(AggregationRuntime<,>).MakeGenericType(typeof(TDoc), _aggregateMapping.IdType);
         }
     }
 }

@@ -34,7 +34,7 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         //Aggregation 2
-        public class CarAggregation: AggregateProjection<CarView>
+        public class CarAggregation: SingleStreamAggregation<CarView>
         {
             public void Apply(CarView view, CarNamed ev)
             {
@@ -62,7 +62,7 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         //Aggregation 2
-        public class TruckAggregation: AggregateProjection<TruckView>
+        public class TruckAggregation: SingleStreamAggregation<TruckView>
         {
             public void Apply(TruckView view, TruckNamed ev)
             {

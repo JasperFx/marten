@@ -27,7 +27,7 @@ namespace Marten.AsyncDaemon.Testing
         public void uses_event_type_filter_for_base_filter_when_not_using_base_types()
         {
             var projection = new TripAggregationWithCustomName();
-            projection.CompileAndAssertValidity();
+            projection.AssembleAndAssertValidity();
             var filter = projection.As<IProjectionSource>()
                 .AsyncProjectionShards(theStore)
                 .First()
@@ -303,7 +303,7 @@ namespace Marten.AsyncDaemon.Testing
         }
 
 
-        public class ContactProjectionNullReturn: AggregateProjection<Contact>
+        public class ContactProjectionNullReturn: SingleStreamAggregation<Contact>
         {
             public ContactProjectionNullReturn()
             {
@@ -367,7 +367,7 @@ namespace Marten.AsyncDaemon.Testing
         }
 
 
-        public class InterfaceCreationProjection: AggregateProjection<Foo>
+        public class InterfaceCreationProjection: SingleStreamAggregation<Foo>
         {
             public InterfaceCreationProjection()
             {
@@ -415,7 +415,7 @@ namespace Marten.AsyncDaemon.Testing
         }
 
 
-        public class AbstractCreationProjection: AggregateProjection<Foo>
+        public class AbstractCreationProjection: SingleStreamAggregation<Foo>
         {
             public AbstractCreationProjection()
             {

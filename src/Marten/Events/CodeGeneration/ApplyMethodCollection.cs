@@ -25,7 +25,7 @@ namespace Marten.Events.CodeGeneration
         public ApplyMethodCollection(Type projectionType, Type aggregateType): base(MethodName, projectionType,
             aggregateType)
         {
-            LambdaName = nameof(AggregateProjection<string>.ProjectEvent);
+            LambdaName = nameof(SingleStreamAggregation<string>.ProjectEvent);
             _validArgumentTypes.Add(typeof(IQuerySession));
             _validArgumentTypes.Add(aggregateType);
 

@@ -68,7 +68,7 @@ namespace Marten.AsyncDaemon.Testing.Bugs
         public int Count { get; set; }
     }
 
-    public class UserIssueCounterProjection : ViewProjection<UserIssueCounter, Guid>
+    public class UserIssueCounterProjection : MultiStreamAggregation<UserIssueCounter, Guid>
     {
         private static int _attempts;
 

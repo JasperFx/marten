@@ -12,14 +12,14 @@ namespace EventSourcingTests.Aggregation
 {
     public class AggregationContext : IntegrationContext
     {
-        protected AggregateProjection<MyAggregate> _projection;
+        protected SingleStreamAggregation<MyAggregate> _projection;
 
         public AggregationContext(DefaultStoreFixture fixture) : base(fixture)
         {
             theStore.Advanced.Clean.DeleteDocumentsByType(typeof(MyAggregate));
         }
 
-        public void UsingDefinition<T>() where T : AggregateProjection<MyAggregate>, new()
+        public void UsingDefinition<T>() where T : SingleStreamAggregation<MyAggregate>, new()
         {
             _projection = new T();
 
@@ -28,9 +28,9 @@ namespace EventSourcingTests.Aggregation
             _projection.Compile(theStore.Options, rules);
         }
 
-        public void UsingDefinition(Action<AggregateProjection<MyAggregate>> configure)
+        public void UsingDefinition(Action<SingleStreamAggregation<MyAggregate>> configure)
         {
-            _projection = new AggregateProjection<MyAggregate>();
+            _projection = new SingleStreamAggregation<MyAggregate>();
             configure(_projection);
 
 

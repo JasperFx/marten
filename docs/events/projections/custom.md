@@ -171,9 +171,9 @@ public class LapFinished : LapEvent
 
 }
 
-public class LapViewProjection: ViewProjection<Lap, Guid>
+public class LapMultiStreamAggregation: MultiStreamAggregation<Lap, Guid>
 {
-    public LapViewProjection()
+    public LapMultiStreamAggregation()
     {
         // This tells the projection how to "split" the events
         // and identify the document. It should be able to use
@@ -285,7 +285,7 @@ public class ReaderUnsubscribed : SubscriptionEvent
     }
 }
 
-public class NewsletterSubscriptionProjection : ViewProjection<NewsletterSubscription, Guid>
+public class NewsletterSubscriptionProjection : MultiStreamAggregation<NewsletterSubscription, Guid>
 {
     public NewsletterSubscriptionProjection()
     {

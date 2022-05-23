@@ -80,7 +80,7 @@ namespace Marten.AsyncDaemon.Testing.Bugs
 // projection
     public record Document([property: Identity] string DocumentId, string Owner, string Content);
 
-    public class DocumentProjection: AggregateProjection<Document>
+    public class DocumentProjection: SingleStreamAggregation<Document>
     {
         public DocumentProjection()
         {

@@ -168,7 +168,7 @@ namespace Marten.AsyncDaemon.Testing
         }
     }
 
-        public class AllSync: AggregateProjection<MyAggregate>
+        public class AllSync: SingleStreamAggregation<MyAggregate>
     {
         public AllSync()
         {
@@ -221,7 +221,7 @@ namespace Marten.AsyncDaemon.Testing
         }
     }
 
-    public class AllGood: AggregateProjection<MyAggregate>
+    public class AllGood: SingleStreamAggregation<MyAggregate>
     {
         public AllGood()
         {

@@ -179,7 +179,7 @@ namespace EventSourcingTests.Projections
             var projection = new EmptyProjection();
             Should.Throw<InvalidProjectionException>(() =>
             {
-                projection.CompileAndAssertValidity();
+                projection.AssembleAndAssertValidity();
             });
         }
     }
