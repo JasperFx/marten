@@ -55,6 +55,12 @@ namespace EventSourcingTests.Aggregation
 
     public class MyAggregate
     {
+
+
+        // This will be the aggregate version
+        public int Version { get; set; }
+
+
         public Guid Id { get; set; }
 
         public int ACount { get; set; }

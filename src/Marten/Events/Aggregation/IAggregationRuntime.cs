@@ -17,6 +17,8 @@ namespace Marten.Events.Aggregation
     {
         ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase database, EventRange range,
             CancellationToken cancellationToken);
+
+        IAggregateVersioning Versioning { get; set; }
     }
 
     public interface IAggregationRuntime<TDoc, TId>: IAggregationRuntime where TDoc : notnull where TId : notnull
@@ -27,8 +29,6 @@ namespace Marten.Events.Aggregation
 
         bool IsNew(EventSlice<TDoc, TId> slice);
         IDocumentStorage<TDoc, TId> Storage { get; }
-
-        IEventSlicer<TDoc, TId> Slicer { get; }
 
         [Obsolete]
         ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> GroupEventRange(DocumentStore store,

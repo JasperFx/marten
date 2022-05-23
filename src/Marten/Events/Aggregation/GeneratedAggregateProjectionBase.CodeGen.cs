@@ -116,7 +116,9 @@ namespace Marten.Events.Aggregation
                 prop.SetValue(aggregator, setter.InitialValue);
             }
 
-            return aggregator;
+            _versioning.Inner = aggregator;
+
+            return _versioning;
         }
 
         internal IAggregationRuntime BuildRuntime(DocumentStore store)
@@ -144,6 +146,8 @@ namespace Marten.Events.Aggregation
                 var prop = _inlineType.GetProperty(setter.PropName);
                 prop.SetValue(inline, setter.InitialValue);
             }
+
+            inline.Versioning = _versioning;
 
             return inline;
         }

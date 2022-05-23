@@ -25,7 +25,7 @@ namespace Marten.Events.Projections
 
         internal IEventSlicer<TDoc, TId> Slicer => _customSlicer ?? _defaultSlicer;
 
-        protected MultiStreamAggregation()
+        protected MultiStreamAggregation() : base(AggregationScope.MultiStream)
         {
             Lifecycle = ProjectionLifecycle.Async;
         }

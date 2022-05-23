@@ -95,6 +95,8 @@ namespace Marten.AsyncDaemon.Testing
                     .SelectMany(x => x.Movements)
                     .Where(x => x.Direction == Direction.East)
                     .Sum(x => x.Distance));
+
+                day.Version.ShouldBeGreaterThan(0);
             }
         }
 
@@ -103,6 +105,8 @@ namespace Marten.AsyncDaemon.Testing
 
     public class Day
     {
+        public long Version { get; set; }
+
         public int Id { get; set; }
 
         // how many trips started on this day?

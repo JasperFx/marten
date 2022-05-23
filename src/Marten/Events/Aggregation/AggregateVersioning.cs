@@ -1,11 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Baseline.Reflection;
 using FastExpressionCompiler;
 using Marten.Events.CodeGeneration;
+using Marten.Events.Projections;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Util;
@@ -36,7 +40,12 @@ namespace Marten.Events.Aggregation
         long GetVersion(object aggregate);
     }
 
-    internal class AggregateVersioning<T> : IAggregateVersioning
+    public interface IAggregateVersioning<T>
+    {
+        void TrySetVersion(T aggregate, IEvent lastEvent);
+    }
+
+    internal class AggregateVersioning<T> : IAggregateVersioning, IAggregateVersioning<T>, ILiveAggregator<T>
     {
         private readonly AggregationScope _scope;
         private readonly Lazy<Action<T, IEvent>> _setValue;
@@ -125,11 +134,13 @@ namespace Marten.Events.Aggregation
 
         public void TrySetVersion(T aggregate, IEvent lastEvent)
         {
+            if (aggregate == null || lastEvent == null) return;
             _setValue.Value(aggregate, lastEvent);
         }
 
         void IAggregateVersioning.TrySetVersion(object aggregate, IEvent lastEvent)
         {
+            if (aggregate == null || lastEvent == null) return;
             TrySetVersion((T)aggregate, lastEvent);
         }
 
@@ -143,6 +154,22 @@ namespace Marten.Events.Aggregation
         long IAggregateVersioning.GetVersion(object aggregate)
         {
             return GetVersion((T)aggregate);
+        }
+
+        public ILiveAggregator<T> Inner { get; set; }
+
+        public T Build(IReadOnlyList<IEvent> events, IQuerySession session, T? snapshot)
+        {
+            var aggregate = Inner.Build(events, session, snapshot);
+            TrySetVersion(aggregate, events.LastOrDefault());
+            return aggregate;
+        }
+
+        public async ValueTask<T> BuildAsync(IReadOnlyList<IEvent> events, IQuerySession session, T? snapshot, CancellationToken cancellation)
+        {
+            var aggregate = await Inner.BuildAsync(events, session, snapshot, cancellation).ConfigureAwait(false);
+            TrySetVersion(aggregate, events.LastOrDefault());
+            return aggregate;
         }
     }
 }
