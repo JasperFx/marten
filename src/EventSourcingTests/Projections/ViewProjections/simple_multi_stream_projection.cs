@@ -9,7 +9,7 @@ using Xunit;
 namespace EventSourcingTests.Projections.ViewProjections
 {
     #region sample_view-projection-simple
-    public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment, Guid>
+    public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAssignment, Guid>
     {
         public UserGroupsAssignmentProjection()
         {
@@ -30,7 +30,7 @@ namespace EventSourcingTests.Projections.ViewProjections
     #endregion
 
     #region sample_view-projection-simple-2
-    public class UserGroupsAssignmentProjection2: ViewProjection<UserGroupsAssignment, Guid>
+    public class UserGroupsAssignmentProjection2: MultiStreamAggregation<UserGroupsAssignment, Guid>
     {
         public UserGroupsAssignmentProjection2()
         {

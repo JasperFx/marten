@@ -13,11 +13,11 @@ namespace Marten.Generated.EventStore
     // START: AggregateProjectionLiveAggregation973344970
     public class AggregateProjectionLiveAggregation973344970 : Marten.Events.Aggregation.SyncLiveAggregatorBase<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity>
     {
-        private readonly Marten.Events.Aggregation.AggregateProjection<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity> _aggregateProjection;
+        private readonly Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity> _singleStreamAggregation;
 
-        public AggregateProjectionLiveAggregation973344970(Marten.Events.Aggregation.AggregateProjection<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity> aggregateProjection)
+        public AggregateProjectionLiveAggregation973344970(Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity> singleStreamAggregation)
         {
-            _aggregateProjection = aggregateProjection;
+            _singleStreamAggregation = singleStreamAggregation;
         }
 
 
@@ -74,16 +74,16 @@ namespace Marten.Generated.EventStore
         private readonly Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity, System.Guid> _slicer;
         private readonly Marten.Storage.ITenancy _tenancy;
         private readonly Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity, System.Guid> _storage;
-        private readonly Marten.Events.Aggregation.AggregateProjection<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity> _aggregateProjection;
+        private readonly Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity> _singleStreamAggregation;
 
-        public AggregateProjectionInlineHandler973344970(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity, System.Guid> storage, Marten.Events.Aggregation.AggregateProjection<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity> aggregateProjection) : base(store, projection, slicer, storage)
+        public AggregateProjectionInlineHandler973344970(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity, System.Guid> storage, Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity> singleStreamAggregation) : base(store, projection, slicer, storage)
         {
             _store = store;
             _projection = projection;
             _slicer = slicer;
             _tenancy = tenancy;
             _storage = storage;
-            _aggregateProjection = aggregateProjection;
+            _singleStreamAggregation = singleStreamAggregation;
         }
 
 

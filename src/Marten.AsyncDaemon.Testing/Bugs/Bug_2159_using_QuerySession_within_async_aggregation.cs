@@ -41,7 +41,7 @@ namespace Marten.AsyncDaemon.Testing.Bugs
         }
     }
 
-    public class UserAggregate: AggregateProjection<MyAggregate>
+    public class UserAggregate: SingleStreamAggregation<MyAggregate>
     {
         public UserAggregate()
         {

@@ -1,73 +1,52 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Model;
 using LamarCompiler;
 using Marten.Events.CodeGeneration;
-using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal;
-using Marten.Schema;
 using Marten.Storage;
 
 namespace Marten.Events.Aggregation
 {
-    public partial class AggregateProjection<T>: GeneratedProjection, ILiveAggregatorSource<T>
+    public abstract partial class GeneratedAggregateProjectionBase<T>
     {
-        private readonly Lazy<Type[]> _allEventTypes;
-        private readonly ApplyMethodCollection _applyMethods;
-
-        private readonly CreateMethodCollection _createMethods;
-        private readonly string _inlineAggregationHandlerType;
-        private readonly string _liveAggregationTypeName;
-        private readonly ShouldDeleteMethodCollection _shouldDeleteMethods;
-        private IDocumentMapping _aggregateMapping;
-        private GeneratedType _inlineGeneratedType;
-        private bool _isAsync;
-        private GeneratedType _liveGeneratedType;
-        private IAggregationRuntime _runtime;
-        private Type _inlineType;
-        private Type _liveType;
-
-        public AggregateProjection(): base(typeof(T).NameInCode())
+        internal string SourceCode()
         {
-            _createMethods = new CreateMethodCollection(GetType(), typeof(T));
-            _applyMethods = new ApplyMethodCollection(GetType(), typeof(T));
-            _shouldDeleteMethods = new ShouldDeleteMethodCollection(GetType(), typeof(T));
+            var writer = new StringWriter();
+            writer.WriteLine(_liveGeneratedType.SourceCode);
+            writer.WriteLine();
 
-            ProjectionName = typeof(T).Name;
+            writer.WriteLine(_inlineGeneratedType.SourceCode);
+            writer.WriteLine();
 
-            Options.DeleteViewTypeOnTeardown<T>();
+            return writer.ToString();
+        }
 
-            _allEventTypes = new Lazy<Type[]>(() =>
+        internal void Compile(StoreOptions options)
+        {
+            var rules = options.CreateGenerationRules();
+            Compile(options, rules);
+        }
+
+        internal void Compile(StoreOptions options, GenerationRules rules)
+        {
+            // HOKEY, but makes ICodeFile functions work. Temporary, hopefully.
+            StoreOptions = options;
+
+            this.As<ICodeFile>().InitializeSynchronously(rules, options.EventGraph, null);
+
+            // You have to do this for the sake of the Setters
+            if (_liveGeneratedType == null)
             {
-                return _createMethods.Methods.Concat(_applyMethods.Methods).Concat(_shouldDeleteMethods.Methods)
-                    .Select(x => x.EventType).Concat(DeleteEvents).Concat(TransformedEvents).Distinct().ToArray();
-            });
-
-
-            _inlineAggregationHandlerType = GetType().ToSuffixedTypeName("InlineHandler");
-            _liveAggregationTypeName = GetType().ToSuffixedTypeName("LiveAggregation");
+                assembleTypes(new GeneratedAssembly(rules), options);
+            }
         }
-
-        public override Type ProjectionType => GetType();
-
-        public bool AppliesTo(IEnumerable<Type> eventTypes)
-        {
-            return eventTypes
-                .Intersect(AllEventTypes).Any() || eventTypes.Any(type => AllEventTypes.Any(type.CanBeCastTo));
-        }
-
-        public Type[] AllEventTypes => _allEventTypes.Value;
-
-        Type IAggregateProjection.AggregateType => typeof(T);
 
         protected override bool tryAttachTypes(Assembly assembly, StoreOptions options)
         {
@@ -140,7 +119,6 @@ namespace Marten.Events.Aggregation
             return aggregator;
         }
 
-        [Obsolete("Try to eliminate this in favor of IProjectionSource.Build()")]
         internal IAggregationRuntime BuildRuntime(DocumentStore store)
         {
             // You have to have the inlineGeneratedType built out to apply
@@ -161,10 +139,6 @@ namespace Marten.Events.Aggregation
             var inline = (IAggregationRuntime)Activator.CreateInstance(_inlineType, store, this, slicer,
                 storage, this);
 
-            /*
- {Void .ctor(Marten.IDocumentStore, Marten.Events.Aggregation.IAggregateProjection, Marten.Events.Aggregation.IEventSlicer`2[Marten.AsyncDaemon.Testing.Day,System.Int32], Marten.Storage.ITenancy, Marten.Internal.Storage.IDocumentStorage`2[Marten.AsyncDaemon.Testing.Day,System.Int32], Marten.AsyncDaemon.Testing.DayProjection)}
-             */
-
             foreach (var setter in _inlineGeneratedType.Setters)
             {
                 var prop = _inlineType.GetProperty(setter.PropName);
@@ -174,70 +148,9 @@ namespace Marten.Events.Aggregation
             return inline;
         }
 
-        protected virtual object buildEventSlicer(StoreOptions documentMapping)
-        {
-            Type slicerType = null;
-            if (_aggregateMapping.IdType == typeof(Guid))
-            {
-                slicerType = typeof(ByStreamId<>).MakeGenericType(_aggregateMapping.DocumentType);
-            }
-            else if (_aggregateMapping.IdType != typeof(string))
-            {
-                throw new ArgumentOutOfRangeException(
-                    $"{_aggregateMapping.IdType.FullNameInCode()} is not a supported stream id type for aggregate {_aggregateMapping.DocumentType.FullNameInCode()}");
-            }
-            else
-            {
-                slicerType = typeof(ByStreamKey<>).MakeGenericType(_aggregateMapping.DocumentType);
-            }
-
-            return Activator.CreateInstance(slicerType);
-        }
-
-
-        internal string SourceCode()
-        {
-            var writer = new StringWriter();
-            writer.WriteLine(_liveGeneratedType.SourceCode);
-            writer.WriteLine();
-
-            writer.WriteLine(_inlineGeneratedType.SourceCode);
-            writer.WriteLine();
-
-            return writer.ToString();
-        }
-
-        [Obsolete("try to delete")]
-        internal void Compile(StoreOptions options)
-        {
-            var rules = options.CreateGenerationRules();
-            Compile(options, rules);
-        }
-
-        [Obsolete("Try to delete")]
-        internal void Compile(StoreOptions options, GenerationRules rules)
-        {
-            // HOKEY, but makes ICodeFile functions work. Temporary, hopefully.
-            StoreOptions = options;
-
-            this.As<ICodeFile>().InitializeSynchronously(rules, options.EventGraph, null);
-
-            // You have to do this for the sake of the Setters
-            if (_liveGeneratedType == null)
-            {
-                assembleTypes(new GeneratedAssembly(rules), options);
-            }
-        }
-
         protected override bool needsSettersGenerated()
         {
             return _liveGeneratedType == null || _inlineGeneratedType == null;
-        }
-
-
-        protected virtual Type baseTypeForAggregationRuntime()
-        {
-            return typeof(AggregationRuntime<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
         }
 
         private void buildInlineAggregationType(GeneratedAssembly assembly)
@@ -323,7 +236,6 @@ namespace Marten.Events.Aggregation
 
             buildMethod.Frames.Add(new DeclareAggregateFrame(typeof(T)));
 
-
             var callCreateAggregateFrame = new CallCreateAggregateFrame(_createMethods);
 
             // This is the existing snapshot passed into the LiveAggregator
@@ -345,98 +257,7 @@ namespace Marten.Events.Aggregation
             _liveGeneratedType.Setters.AddRange(_shouldDeleteMethods.Setters());
         }
 
-        internal override void CompileAndAssertValidity()
-        {
-            if (_applyMethods.IsEmpty() && _createMethods.IsEmpty())
-            {
-                throw new InvalidProjectionException(
-                    $"AggregateProjection for {typeof(T).FullNameInCode()} has no valid create or apply operations");
-            }
-
-            var invalidMethods =
-                MethodCollection.FindInvalidMethods(GetType(), _applyMethods, _createMethods, _shouldDeleteMethods);
-
-            if (invalidMethods.Any())
-            {
-                throw new InvalidProjectionException(this, invalidMethods);
-            }
-
-            specialAssertValid();
-
-            var eventTypes = determineEventTypes();
-            IncludedEventTypes.Fill(eventTypes);
-        }
-
-        protected virtual void specialAssertValid()
-        {
-        }
-
-        internal override IEnumerable<string> ValidateConfiguration(StoreOptions options)
-        {
-            var mapping = options.Storage.FindMapping(typeof(T)).Root.As<DocumentMapping>();
-            foreach (var p in validateDocumentIdentity(options, mapping)) yield return p;
-
-            if (options.Events.TenancyStyle != mapping.TenancyStyle)
-            {
-                yield return
-                    $"Tenancy storage style mismatch between the events ({options.Events.TenancyStyle}) and the aggregate type {typeof(T).FullNameInCode()} ({mapping.TenancyStyle})";
-            }
-
-            if (mapping.DeleteStyle == DeleteStyle.SoftDelete)
-            {
-                yield return
-                    $"AggregateProjection cannot support aggregates that are soft-deleted";
-            }
-
-        }
-
-        protected virtual IEnumerable<string> validateDocumentIdentity(StoreOptions options, DocumentMapping mapping)
-        {
-            if (options.Events.StreamIdentity == StreamIdentity.AsGuid)
-            {
-                if (mapping.IdType != typeof(Guid))
-                {
-                    yield return
-                        $"Id type mismatch. The stream identity type is System.Guid, but the aggregate document {typeof(T).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
-                }
-            }
-
-            if (options.Events.StreamIdentity == StreamIdentity.AsString)
-            {
-                if (mapping.IdType != typeof(string))
-                {
-                    yield return
-                        $"Id type mismatch. The stream identity type is string, but the aggregate document {typeof(T).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
-                }
-            }
-        }
-
-        protected virtual Type[] determineEventTypes()
-        {
-            var eventTypes = MethodCollection.AllEventTypes(_applyMethods, _createMethods, _shouldDeleteMethods)
-                .Concat(DeleteEvents).Concat(TransformedEvents).Distinct().ToArray();
-            return eventTypes;
-        }
-
-        protected override ValueTask<EventRangeGroup> groupEvents(DocumentStore store, IMartenDatabase daemonDatabase, EventRange range,
-            CancellationToken cancellationToken)
-        {
-            _runtime ??= BuildRuntime(store);
-
-            return _runtime.GroupEvents(store, daemonDatabase, range, cancellationToken);
-        }
 
 
-        /// <summary>
-        /// When used as an asynchronous projection, this opts into
-        /// only taking in events from streams explicitly marked as being
-        /// the aggregate type for this projection. Only use this if you are explicitly
-        /// marking streams with the aggregate type on StartStream()
-        /// </summary>
-        [MartenIgnore]
-        public void FilterIncomingEventsOnStreamType()
-        {
-            StreamType = typeof(T);
-        }
     }
 }

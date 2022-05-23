@@ -59,7 +59,7 @@ namespace EventSourcingTests.Bugs
 
     }
 
-    public class FooProjection: ViewProjection<FooAuditLog, Guid>
+    public class FooProjection: MultiStreamAggregation<FooAuditLog, Guid>
     {
         public FooProjection()
         {
@@ -86,7 +86,7 @@ namespace EventSourcingTests.Bugs
 
     public record RecordLogUpdated(Guid Id): IRecordLogEvent;
 
-    public class RecordProjection: ViewProjection<RecordAuditLog, Guid>
+    public class RecordProjection: MultiStreamAggregation<RecordAuditLog, Guid>
     {
         public RecordProjection()
         {

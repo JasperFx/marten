@@ -89,7 +89,7 @@ namespace Bug2177
         public User User { get; set; }
     }
 
-    public class TicketProjection: AggregateProjection<Ticket>
+    public class TicketProjection: SingleStreamAggregation<Ticket>
     {
         public TicketProjection()
         {

@@ -45,7 +45,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
     }
 
     // projection with documentsession
-    public class UserFeatureTogglesProjection: ViewProjection<UserFeatureToggles, Guid>
+    public class UserFeatureTogglesProjection: MultiStreamAggregation<UserFeatureToggles, Guid>
     {
         public UserFeatureTogglesProjection()
         {

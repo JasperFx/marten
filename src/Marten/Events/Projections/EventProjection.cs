@@ -101,7 +101,7 @@ namespace Marten.Events.Projections
             return _generatedType != null;
         }
 
-        internal override void CompileAndAssertValidity()
+        internal override void AssembleAndAssertValidity()
         {
             if (!_projectMethods.Methods.Any() && !_createMethods.Methods.Any())
             {

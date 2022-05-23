@@ -55,7 +55,7 @@ document that directly mutates itself through method conventions or by sub-class
 <!-- snippet: sample_TripProjection_aggregate -->
 <a id='snippet-sample_tripprojection_aggregate'></a>
 ```cs
-public class TripProjection: AggregateProjection<Trip>
+public class TripProjection: SingleStreamAggregation<Trip>
 {
     public TripProjection()
     {
@@ -180,7 +180,7 @@ Or finally, you can use a method named `Create()` on a projection type as shown 
 <!-- snippet: sample_TripProjection_aggregate -->
 <a id='snippet-sample_tripprojection_aggregate'></a>
 ```cs
-public class TripProjection: AggregateProjection<Trip>
+public class TripProjection: SingleStreamAggregation<Trip>
 {
     public TripProjection()
     {
@@ -227,7 +227,7 @@ To make changes to an existing aggregate, you can either use inline Lambda funct
 <!-- snippet: sample_using_ProjectEvent_in_aggregate_projection -->
 <a id='snippet-sample_using_projectevent_in_aggregate_projection'></a>
 ```cs
-public class TripProjection: AggregateProjection<Trip>
+public class TripProjection: SingleStreamAggregation<Trip>
 {
     public TripProjection()
     {
@@ -258,7 +258,7 @@ I'm not personally that wild about using lots of inline Lambdas like the example
 <!-- snippet: sample_TripProjection_aggregate -->
 <a id='snippet-sample_tripprojection_aggregate'></a>
 ```cs
-public class TripProjection: AggregateProjection<Trip>
+public class TripProjection: SingleStreamAggregation<Trip>
 {
     public TripProjection()
     {
@@ -315,7 +315,7 @@ aggregate projection type:
 <!-- snippet: sample_deleting_aggregate_by_event_type -->
 <a id='snippet-sample_deleting_aggregate_by_event_type'></a>
 ```cs
-public class TripAggregation: AggregateProjection<Trip>
+public class TripAggregation: SingleStreamAggregation<Trip>
 {
     public TripAggregation()
     {
@@ -334,7 +334,7 @@ and maybe even other document state in your Marten database, you can use more ov
 <!-- snippet: sample_deleting_aggregate_by_event_type_and_func -->
 <a id='snippet-sample_deleting_aggregate_by_event_type_and_func'></a>
 ```cs
-public class TripAggregation: AggregateProjection<Trip>
+public class TripAggregation: SingleStreamAggregation<Trip>
 {
     public TripAggregation()
     {
@@ -367,7 +367,7 @@ Another option is to use a method convention with a method named `ShouldDelete()
 <!-- snippet: sample_deleting_aggregate_by_event_type_and_func_with_convention -->
 <a id='snippet-sample_deleting_aggregate_by_event_type_and_func_with_convention'></a>
 ```cs
-public class TripAggregation: AggregateProjection<Trip>
+public class TripAggregation: SingleStreamAggregation<Trip>
 {
     // The current Trip aggregate would be deleted if
     // the Breakdown event is "critical"

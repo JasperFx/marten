@@ -99,7 +99,7 @@ public class cross_stream_aggregation: DaemonContext
     }
 }
 
-public class CrossStreamDayProjection: CrossStreamAggregateProjection<Day, int>
+public class CrossStreamDayProjection: CrossStreamSingleStreamAggregation<Day, int>
 {
     public CrossStreamDayProjection()
     {

@@ -30,7 +30,7 @@ namespace Marten.Events.Aggregation
 #pragma warning restore VSTHRD002
         }
 
-        internal override void CompileAndAssertValidity()
+        internal override void AssembleAndAssertValidity()
         {
             if (Slicer == null)
             {

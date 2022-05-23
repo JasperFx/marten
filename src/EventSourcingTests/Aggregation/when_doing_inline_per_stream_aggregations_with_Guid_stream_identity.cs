@@ -220,7 +220,7 @@ namespace EventSourcingTests.Aggregation
 
         }
 
-        public class SometimesDeletes: AggregateProjection<MyAggregate>
+        public class SometimesDeletes: SingleStreamAggregation<MyAggregate>
         {
             public void Apply(AEvent @event, MyAggregate aggregate)
             {

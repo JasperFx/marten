@@ -47,7 +47,7 @@ namespace EventSourcingTests.Aggregation
         {
             Exception<InvalidProjectionException>.ShouldBeThrownBy(() =>
             {
-                new MyCustomAggregateWithNoSlicer().CompileAndAssertValidity();
+                new MyCustomAggregateWithNoSlicer().AssembleAndAssertValidity();
             });
         }
 
@@ -59,7 +59,7 @@ namespace EventSourcingTests.Aggregation
 
             Exception<InvalidProjectionException>.ShouldBeThrownBy(() =>
             {
-                new MyCustomAggregateWithNoSlicer().CompileAndAssertValidity();
+                new MyCustomAggregateWithNoSlicer().AssembleAndAssertValidity();
             });
         }
 

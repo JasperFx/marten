@@ -116,7 +116,7 @@ namespace Marten.AsyncDaemon.Testing
         public Guid UserId { get; }
     }
 
-    public class UserIssueProjection: ViewProjection<UserIssues, Guid>
+    public class UserIssueProjection: MultiStreamAggregation<UserIssues, Guid>
     {
         public UserIssueProjection()
         {

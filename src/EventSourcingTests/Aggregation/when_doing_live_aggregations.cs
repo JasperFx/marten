@@ -211,7 +211,7 @@ namespace EventSourcingTests.Aggregation
         public Guid UserId { get; set; }
     }
 
-    public class UsingMetadata : AggregateProjection<MyAggregate>
+    public class UsingMetadata : SingleStreamAggregation<MyAggregate>
     {
         public MyAggregate Create(CreateEvent create, IEvent e)
         {
@@ -232,7 +232,7 @@ namespace EventSourcingTests.Aggregation
         }
     }
 
-    public class AsyncEverything: AggregateProjection<MyAggregate>
+    public class AsyncEverything: SingleStreamAggregation<MyAggregate>
     {
         public async Task<MyAggregate> Create(UserStarted @event, IQuerySession session, CancellationToken cancellation)
         {
@@ -257,7 +257,7 @@ namespace EventSourcingTests.Aggregation
 
     }
 
-    public class AsyncCreateSyncApply: AggregateProjection<MyAggregate>
+    public class AsyncCreateSyncApply: SingleStreamAggregation<MyAggregate>
     {
         public async Task<MyAggregate> Create(UserStarted @event, IQuerySession session, CancellationToken cancellation)
         {
@@ -290,7 +290,7 @@ namespace EventSourcingTests.Aggregation
 
     }
 
-    public class SyncCreateAsyncApply: AggregateProjection<MyAggregate>
+    public class SyncCreateAsyncApply: SingleStreamAggregation<MyAggregate>
     {
         public MyAggregate Create(CreateEvent @event)
         {
@@ -331,7 +331,7 @@ namespace EventSourcingTests.Aggregation
     }
 
 
-    public class AllSync: AggregateProjection<MyAggregate>
+    public class AllSync: SingleStreamAggregation<MyAggregate>
     {
         public AllSync()
         {

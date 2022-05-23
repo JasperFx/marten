@@ -9,7 +9,7 @@ using Xunit;
 namespace EventSourcingTests.Projections.ViewProjections.SimpleWithOneToMany
 {
     #region sample_view-projection-simple-with-one-to-many
-    public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment, Guid>
+    public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAssignment, Guid>
     {
         public UserGroupsAssignmentProjection()
         {

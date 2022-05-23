@@ -84,7 +84,7 @@ namespace Marten.Events.Projections
             StreamType = streamType;
         }
 
-        internal virtual void CompileAndAssertValidity()
+        internal virtual void AssembleAndAssertValidity()
         {
             // Nothing
         }

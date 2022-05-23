@@ -87,7 +87,7 @@ namespace EventSourcingTests.Aggregation
             }).ShouldNotBeNull();
         }
 
-        public class EmptyProjection: AggregateProjection<GuidIdentifiedAggregate>
+        public class EmptyProjection: SingleStreamAggregation<GuidIdentifiedAggregate>
         {
 
         }
@@ -119,7 +119,7 @@ namespace EventSourcingTests.Aggregation
         public void happy_path_validation_for_aggregation()
         {
             var projection = new AllGood();
-            projection.CompileAndAssertValidity();
+            projection.AssembleAndAssertValidity();
         }
 
         [Fact]
@@ -137,7 +137,7 @@ namespace EventSourcingTests.Aggregation
         public void find_bad_method_names_that_are_not_ignored()
         {
             var projection = new BadMethodName();
-            var ex = Should.Throw<InvalidProjectionException>(() => projection.CompileAndAssertValidity());
+            var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
 
             ex.Message.ShouldContain("Unrecognized method name 'DoStuff'. Either mark with [MartenIgnore] or use one of 'Apply', 'Create', 'ShouldDelete'", StringComparisonOption.NormalizeWhitespaces);
         }
@@ -146,7 +146,7 @@ namespace EventSourcingTests.Aggregation
         public void find_invalid_argument_type()
         {
             var projection = new InvalidArgumentType();
-            var ex = Should.Throw<InvalidProjectionException>(() => projection.CompileAndAssertValidity());
+            var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
             ex.InvalidMethods.Single()
                 .Errors
                 .ShouldContain($"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, Marten.Events.IEvent, Marten.Events.IEvent<{typeof(AEvent).FullNameInCode()}>");
@@ -156,7 +156,7 @@ namespace EventSourcingTests.Aggregation
         public void missing_event_altogether()
         {
             var projection = new MissingEventType1();
-            var ex = Should.Throw<InvalidProjectionException>(() => projection.CompileAndAssertValidity());
+            var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
             ex.InvalidMethods.Single()
                 .Errors.ShouldContain(MethodSlot.NoEventType);
         }
@@ -165,14 +165,14 @@ namespace EventSourcingTests.Aggregation
         public void marten_can_guess_the_event_based_on_what_is_left()
         {
             var projection = new CanGuessEventType();
-            projection.CompileAndAssertValidity();
+            projection.AssembleAndAssertValidity();
         }
 
         [Fact]
         public void invalid_return_type()
         {
             var projection = new BadReturnType();
-            var ex = Should.Throw<InvalidProjectionException>(() => projection.CompileAndAssertValidity());
+            var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
             ex.InvalidMethods.Single()
                 .Errors.ShouldContain(
                     $"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, Marten.Events.IEvent, Marten.Events.IEvent<{typeof(AEvent).FullNameInCode()}>", "Return type 'string' is invalid. The valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.Aggregation.MyAggregate");
@@ -182,14 +182,14 @@ namespace EventSourcingTests.Aggregation
         public void missing_required_parameter()
         {
             var projection = new MissingMandatoryType();
-            var ex = Should.Throw<InvalidProjectionException>(() => projection.CompileAndAssertValidity());
+            var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
 
             ex.InvalidMethods.Single()
                 .Errors.ShouldContain($"Aggregate type '{typeof(MyAggregate).FullNameInCode()}' is required as a parameter");
         }
     }
 
-    public class MissingMandatoryType: AggregateProjection<MyAggregate>
+    public class MissingMandatoryType: SingleStreamAggregation<MyAggregate>
     {
         public void Apply(AEvent @event)
         {
@@ -197,7 +197,7 @@ namespace EventSourcingTests.Aggregation
         }
     }
 
-    public class BadReturnType: AggregateProjection<MyAggregate>
+    public class BadReturnType: SingleStreamAggregation<MyAggregate>
     {
         public string Apply(AEvent @event, MyAggregate aggregate, IDocumentOperations operations)
         {
@@ -205,7 +205,7 @@ namespace EventSourcingTests.Aggregation
         }
     }
 
-    public class MissingEventType1: AggregateProjection<MyAggregate>
+    public class MissingEventType1: SingleStreamAggregation<MyAggregate>
     {
         public void Apply(MyAggregate aggregate, IDocumentOperations operations)
         {
@@ -213,7 +213,7 @@ namespace EventSourcingTests.Aggregation
         }
     }
 
-    public class CanGuessEventType: AggregateProjection<MyAggregate>
+    public class CanGuessEventType: SingleStreamAggregation<MyAggregate>
     {
         public void Apply(AEvent a, MyAggregate aggregate, IQuerySession session)
         {
@@ -221,7 +221,7 @@ namespace EventSourcingTests.Aggregation
         }
     }
 
-    public class InvalidArgumentType: AggregateProjection<MyAggregate>
+    public class InvalidArgumentType: SingleStreamAggregation<MyAggregate>
     {
         public void Apply(AEvent @event, MyAggregate aggregate, IDocumentOperations operations)
         {
@@ -229,7 +229,7 @@ namespace EventSourcingTests.Aggregation
         }
     }
 
-    public class BadMethodName: AggregateProjection<MyAggregate>
+    public class BadMethodName: SingleStreamAggregation<MyAggregate>
     {
         public void DoStuff(AEvent @event, MyAggregate aggregate)
         {
@@ -248,7 +248,7 @@ namespace EventSourcingTests.Aggregation
         }
     }
 
-    public class AllGood: AggregateProjection<MyAggregate>
+    public class AllGood: SingleStreamAggregation<MyAggregate>
     {
         public AllGood()
         {
