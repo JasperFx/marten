@@ -17,7 +17,7 @@ namespace Marten.Events
     internal class QueryEventStore: IQueryEventStore
     {
         private readonly QuerySession _session;
-        private readonly Tenant _tenant;
+        protected readonly Tenant _tenant;
         private readonly DocumentStore _store;
 
         public QueryEventStore(QuerySession session, DocumentStore store, Tenant tenant)
