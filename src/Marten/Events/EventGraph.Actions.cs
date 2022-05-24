@@ -74,6 +74,34 @@ namespace Marten.Events
             return stream;
         }
 
+        internal StreamAction StartEmptyStream(DocumentSessionBase session, Guid id, params object[] events)
+        {
+            EnsureAsGuidStorage(session);
+
+            if (id == Guid.Empty)
+                throw new ArgumentOutOfRangeException(nameof(id), "Cannot use an empty Guid as the stream id");
+
+
+            var stream = new StreamAction(id, StreamActionType.Start);
+            session.WorkTracker.Streams.Add(stream);
+
+            return stream;
+        }
+
+        internal StreamAction StartEmptyStream(DocumentSessionBase session, string key, params object[] events)
+        {
+            EnsureAsStringStorage(session);
+
+            if (key.IsEmpty())
+                throw new ArgumentOutOfRangeException(nameof(key), "Cannot use an empty or null string as the stream key");
+
+
+            var stream = new StreamAction(key, StreamActionType.Start);
+            session.WorkTracker.Streams.Add(stream);
+
+            return stream;
+        }
+
         internal StreamAction StartStream(DocumentSessionBase session, string streamKey, params object[] events)
         {
             EnsureAsStringStorage(session);

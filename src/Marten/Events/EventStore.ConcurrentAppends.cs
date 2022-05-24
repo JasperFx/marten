@@ -14,21 +14,7 @@ namespace Marten.Events
     {
         private async Task<long> readVersionFromExistingStream(Guid streamId, bool forUpdate, CancellationToken token)
         {
-            var cmd = _store.Events.TenancyStyle switch
-            {
-                TenancyStyle.Conjoined => new NpgsqlCommand(
-                        $"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id and tenant_id = :tenant_id")
-                    .With("id", streamId)
-                    .With("tenant_id", _session.TenantId),
-                _ => new NpgsqlCommand(
-                        $"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
-                    .With("id", streamId)
-            };
-
-            if (forUpdate)
-            {
-                cmd.CommandText += " for update";
-            }
+            var cmd = BuildCommandForReadingVersionForStream(streamId, forUpdate);
 
             long version = 0;
             try
@@ -57,24 +43,31 @@ namespace Marten.Events
             return version;
         }
 
-        private async Task<long> readVersionFromExistingStream(string streamKey, bool forUpdate,
-            CancellationToken token)
+        public NpgsqlCommand BuildCommandForReadingVersionForStream(Guid streamId, bool forUpdate)
         {
             var cmd = _store.Events.TenancyStyle switch
             {
                 TenancyStyle.Conjoined => new NpgsqlCommand(
                         $"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id and tenant_id = :tenant_id")
-                    .With("id", streamKey)
+                    .With("id", streamId)
                     .With("tenant_id", _session.TenantId),
                 _ => new NpgsqlCommand(
                         $"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
-                    .With("id", streamKey)
+                    .With("id", streamId)
             };
 
             if (forUpdate)
             {
                 cmd.CommandText += " for update";
             }
+
+            return cmd;
+        }
+
+        private async Task<long> readVersionFromExistingStream(string streamKey, bool forUpdate,
+            CancellationToken token)
+        {
+            var cmd = BuildCommandForReadingVersionForStream(streamKey, forUpdate);
 
             long version = 0;
             try
@@ -101,6 +94,27 @@ namespace Marten.Events
             }
 
             return version;
+        }
+
+        public NpgsqlCommand BuildCommandForReadingVersionForStream(string streamKey, bool forUpdate)
+        {
+            var cmd = _store.Events.TenancyStyle switch
+            {
+                TenancyStyle.Conjoined => new NpgsqlCommand(
+                        $"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id and tenant_id = :tenant_id")
+                    .With("id", streamKey)
+                    .With("tenant_id", _session.TenantId),
+                _ => new NpgsqlCommand(
+                        $"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
+                    .With("id", streamKey)
+            };
+
+            if (forUpdate)
+            {
+                cmd.CommandText += " for update";
+            }
+
+            return cmd;
         }
 
 

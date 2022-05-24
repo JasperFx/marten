@@ -18,5 +18,7 @@ namespace Marten.Events.Aggregation
 
         Type[] AllEventTypes { get; }
         bool AppliesTo(IEnumerable<Type> eventTypes);
+
+        ProjectionLifecycle Lifecycle { get; }
     }
 }

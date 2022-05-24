@@ -32,6 +32,12 @@ namespace Marten.Events.Projections
             return All.SelectMany(x => x.AsyncProjectionShards(store)).ToList();
         }
 
+        internal bool DoesPersistAggregate(Type aggregateType)
+        {
+            return All.OfType<IAggregateProjection>().Any(x =>
+                x.AggregateType == aggregateType && x.Lifecycle != ProjectionLifecycle.Live);
+        }
+
         internal bool HasAnyAsyncProjections()
         {
             return All.Any(x => x.Lifecycle == ProjectionLifecycle.Async);

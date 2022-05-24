@@ -68,19 +68,19 @@ namespace Marten.Events
 
         private readonly List<IEvent> _events = new();
 
-        private StreamAction(Guid stream, StreamActionType actionType)
+        internal StreamAction(Guid stream, StreamActionType actionType)
         {
             Id = stream;
             ActionType = actionType;
         }
 
-        private StreamAction(string stream, StreamActionType actionType)
+        internal StreamAction(string stream, StreamActionType actionType)
         {
             Key = stream;
             ActionType = actionType;
         }
 
-        private StreamAction(Guid id, string key, StreamActionType actionType)
+        protected StreamAction(Guid id, string key, StreamActionType actionType)
         {
             Id = id;
             Key = key;
@@ -97,6 +97,16 @@ namespace Marten.Events
                 @event.StreamId = Id;
                 @event.StreamKey = Key;
             }
+
+            return this;
+        }
+
+        internal StreamAction AddEvent(IEvent @event)
+        {
+            @event.StreamId = Id;
+            @event.StreamKey = Key;
+
+            _events.Add(@event);
 
             return this;
         }
