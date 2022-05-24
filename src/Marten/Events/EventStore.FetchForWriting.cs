@@ -53,28 +53,32 @@ namespace Marten.Events
             return plan.FetchForWriting(_session, key, false, cancellation);
         }
 
-        public async Task<IEventStream<T>> FetchForWriting<T>(Guid id, long initialVersion,
+        public Task<IEventStream<T>> FetchForWriting<T>(Guid id, long initialVersion,
             CancellationToken cancellation = default) where T : class
         {
-            throw new NotImplementedException();
+            var plan = determineFetchPlan<T, Guid>();
+            return plan.FetchForWriting(_session, id, initialVersion, cancellation);
         }
 
-        public async Task<IEventStream<T>> FetchForWriting<T>(string key, long initialVersion,
+        public Task<IEventStream<T>> FetchForWriting<T>(string key, long initialVersion,
             CancellationToken cancellation = default) where T : class
         {
-            throw new NotImplementedException();
+            var plan = determineFetchPlan<T, string>();
+            return plan.FetchForWriting(_session, key, initialVersion, cancellation);
         }
 
-        public async Task<IEventStream<T>> FetchForExclusiveWriting<T>(Guid id,
+        public Task<IEventStream<T>> FetchForExclusiveWriting<T>(Guid id,
             CancellationToken cancellation = default) where T : class
         {
-            throw new NotImplementedException();
+            var plan = determineFetchPlan<T, Guid>();
+            return plan.FetchForWriting(_session, id, true, cancellation);
         }
 
-        public async Task<IEventStream<T>> FetchForExclusiveWriting<T>(string key,
+        public Task<IEventStream<T>> FetchForExclusiveWriting<T>(string key,
             CancellationToken cancellation = default) where T : class
         {
-            throw new NotImplementedException();
+            var plan = determineFetchPlan<T, string>();
+            return plan.FetchForWriting(_session, key, true, cancellation);
         }
 
         async Task<IEventStorage> IEventIdentityStrategy<Guid>.EnsureAggregateStorageExists<T>(

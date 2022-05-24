@@ -6,7 +6,7 @@ using Marten.Linq;
 
 namespace Marten.Events
 {
-    public static class EventStoreExtensions
+    public static class AggregateToExtensions
     {
         /// <summary>
         /// Aggregate the events in this query to the type T

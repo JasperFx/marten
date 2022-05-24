@@ -18,6 +18,8 @@ namespace Marten.Events
 
         public Guid Id { get; }
         public string Key { get; }
+
+        IReadOnlyList<IEvent> Events { get; }
     }
 
     internal class EventStream<T>: IEventStream<T>
@@ -79,6 +81,8 @@ namespace Marten.Events
         }
 
         public CancellationToken Cancellation { get; }
+
+        public IReadOnlyList<IEvent> Events => _stream.Events;
     }
 
 
