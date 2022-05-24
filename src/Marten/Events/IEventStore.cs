@@ -191,25 +191,25 @@ namespace Marten.Events
 
         /// <summary>
         /// Fetch projected aggregate T by id and expected, current version of the aggregate. Will fail immediately
-        /// with ConcurrencyInjection if the initialVersion is stale. Builds in optimistic concurrency for later
+        /// with ConcurrencyInjection if the expectedVersion is stale. Builds in optimistic concurrency for later
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="initialVersion"></param>
+        /// <param name="expectedVersion"></param>
         /// <param name="cancellation"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IEventStream<T>> FetchForWriting<T>(Guid id, long initialVersion, CancellationToken cancellation = default) where T : class;
+        Task<IEventStream<T>> FetchForWriting<T>(Guid id, long expectedVersion, CancellationToken cancellation = default) where T : class;
 
         /// <summary>
         /// Fetch projected aggregate T by id and expected, current version of the aggregate. Will fail immediately
-        /// with ConcurrencyInjection if the initialVersion is stale. Builds in optimistic concurrency for later
+        /// with ConcurrencyInjection if the expectedVersion is stale. Builds in optimistic concurrency for later
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="initialVersion"></param>
+        /// <param name="expectedVersion"></param>
         /// <param name="cancellation"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IEventStream<T>> FetchForWriting<T>(string key, long initialVersion, CancellationToken cancellation = default) where T : class;
+        Task<IEventStream<T>> FetchForWriting<T>(string key, long expectedVersion, CancellationToken cancellation = default) where T : class;
 
 
         /// <summary>
@@ -217,52 +217,52 @@ namespace Marten.Events
         /// This automatically persists the entire session
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="initialVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
         /// <param name="writing"></param>
         /// <param name="cancellation"></param>
         ///
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task WriteToAggregate<T>(Guid id, int initialVersion, Action<IEventStream<T>> writing, CancellationToken cancellation = default) where T : class;
+        Task WriteToAggregate<T>(Guid id, int expectedVersion, Action<IEventStream<T>> writing, CancellationToken cancellation = default) where T : class;
 
         /// <summary>
         /// Conditionally write to an event stream for the current version of the aggregate of type T
         /// This automatically persists the entire session
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="initialVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
         /// <param name="writing"></param>
         /// <param name="cancellation"></param>
         ///
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task WriteToAggregate<T>(Guid id, int initialVersion, Func<IEventStream<T>, Task> writing, CancellationToken cancellation = default) where T : class;
+        Task WriteToAggregate<T>(Guid id, int expectedVersion, Func<IEventStream<T>, Task> writing, CancellationToken cancellation = default) where T : class;
 
         /// <summary>
         /// Conditionally write to an event stream for the current version of the aggregate of type T
         /// This automatically persists the entire session
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="initialVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
         /// <param name="writing"></param>
         /// <param name="cancellation"></param>
         ///
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task WriteToAggregate<T>(string id, int initialVersion, Action<IEventStream<T>> writing, CancellationToken cancellation = default) where T : class;
+        Task WriteToAggregate<T>(string id, int expectedVersion, Action<IEventStream<T>> writing, CancellationToken cancellation = default) where T : class;
 
         /// <summary>
         /// Conditionally write to an event stream for the current version of the aggregate of type T
         /// This automatically persists the entire session
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="initialVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
         /// <param name="writing"></param>
         /// <param name="cancellation"></param>
         ///
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task WriteToAggregate<T>(string id, int initialVersion, Func<IEventStream<T>, Task> writing, CancellationToken cancellation = default) where T : class;
+        Task WriteToAggregate<T>(string id, int expectedVersion, Func<IEventStream<T>, Task> writing, CancellationToken cancellation = default) where T : class;
 
 
 
@@ -289,7 +289,7 @@ namespace Marten.Events
         /// to attain a lock on the stream in time
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="initialVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
         /// <param name="writing"></param>
         /// <param name="cancellation"></param>
         ///
@@ -302,7 +302,7 @@ namespace Marten.Events
         /// to attain a lock on the stream in time
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="initialVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
         /// <param name="writing"></param>
         /// <param name="cancellation"></param>
         ///
@@ -315,7 +315,7 @@ namespace Marten.Events
         /// to attain a lock on the stream in time
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="initialVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
         /// <param name="writing"></param>
         /// <param name="cancellation"></param>
         ///
@@ -328,7 +328,7 @@ namespace Marten.Events
         /// to attain a lock on the stream in time
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="initialVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
         /// <param name="writing"></param>
         /// <param name="cancellation"></param>
         ///
