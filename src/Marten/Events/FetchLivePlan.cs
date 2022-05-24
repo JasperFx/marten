@@ -28,6 +28,11 @@ namespace Marten.Events
         {
             var selector = await _identityStrategy.EnsureAggregateStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
 
+            if (forUpdate)
+            {
+                await session.BeginTransactionAsync(cancellation).ConfigureAwait(false);
+            }
+
             var command = _identityStrategy.BuildCommandForReadingVersionForStream(id, forUpdate);
             var builder = new CommandBuilder(command);
             builder.Append(";");

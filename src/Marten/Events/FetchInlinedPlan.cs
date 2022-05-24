@@ -25,6 +25,12 @@ namespace Marten.Events
         public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate, CancellationToken cancellation = default)
         {
             await _identityStrategy.EnsureAggregateStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
+            await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
+
+            if (forUpdate)
+            {
+                await session.BeginTransactionAsync(cancellation).ConfigureAwait(false);
+            }
 
             var command = _identityStrategy.BuildCommandForReadingVersionForStream(id, forUpdate);
             var builder = new CommandBuilder(command);
@@ -64,6 +70,7 @@ namespace Marten.Events
         public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, long expectedStartingVersion, CancellationToken cancellation = default)
         {
             await _identityStrategy.EnsureAggregateStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
+            await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
 
             var command = _identityStrategy.BuildCommandForReadingVersionForStream(id, false);
             var builder = new CommandBuilder(command);
