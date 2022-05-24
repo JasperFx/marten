@@ -9,7 +9,7 @@ using Marten.Events.Projections;
 namespace EventSourcingTests.Examples.TeleHealth;
 
 #if NET6_0_OR_GREATER
-public class BoardViewProjection: CrossStreamSingleStreamAggregation<BoardView, Guid>
+public class BoardViewProjection: ExperimentalMultiStreamAggregation<BoardView, Guid>
 {
     protected override ValueTask GroupEvents(IEventGrouping<Guid> grouping, IQuerySession session, List<IEvent> events)
     {

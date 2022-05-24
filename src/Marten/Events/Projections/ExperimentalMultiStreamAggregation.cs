@@ -9,11 +9,17 @@ using Marten.Storage;
 
 namespace Marten.Events.Projections
 {
-    public abstract class CrossStreamSingleStreamAggregation<TDoc, TId>: GeneratedAggregateProjectionBase<TDoc>, IEventSlicer<TDoc, TId>
+    /// <summary>
+    /// Experimental option for doing multi-stream aggregations using more explicit code
+    /// for slicing
+    /// </summary>
+    /// <typeparam name="TDoc"></typeparam>
+    /// <typeparam name="TId"></typeparam>
+    public abstract class ExperimentalMultiStreamAggregation<TDoc, TId>: GeneratedAggregateProjectionBase<TDoc>, IEventSlicer<TDoc, TId>
     {
         private TenancyStyle _tenancyStyle;
 
-        protected CrossStreamSingleStreamAggregation() : base(AggregationScope.MultiStream)
+        protected ExperimentalMultiStreamAggregation() : base(AggregationScope.MultiStream)
         {
             Lifecycle = ProjectionLifecycle.Async;
         }
