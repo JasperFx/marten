@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Operations;
+using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
@@ -52,6 +53,10 @@ namespace Marten.Events
                     }
                     else
                     {
+                        if (state.IsArchived)
+                        {
+                            throw new InvalidStreamOperationException($"Attempted to append event to archived stream with Id '{state.Id}'.");
+                        }
                         stream.PrepareEvents(state.Version, this, sequences, session);
                         session.QueueOperation(storage.UpdateStreamVersion(stream));
                     }
