@@ -86,7 +86,10 @@ namespace Marten.Services
                     ? new ReadOnlyMartenControlledConnectionTransaction(this)
                     : new MartenControlledConnectionTransaction(this);
 
-                await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
+                if (IsolationLevel == IsolationLevel.Serializable)
+                {
+                    await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
+                }
 
                 return transaction;
             }
