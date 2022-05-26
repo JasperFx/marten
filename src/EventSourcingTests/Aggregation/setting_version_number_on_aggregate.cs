@@ -1,9 +1,11 @@
+using System;
 using System.Threading.Tasks;
 using Baseline.Dates;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
+using Marten.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -52,6 +54,8 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
         var aggregate = await theSession.LoadAsync<MyAggregate>(stream.Id);
         aggregate.Version.ShouldBe(3);
     }
+
+
 
     public class SampleSingleStream : SingleStreamAggregation<MyAggregate>
     {
@@ -112,13 +116,34 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
         }
     }
 
-    /*
- On live aggregation of one stream
- On inline aggregation of one stream
- On inline aggregation through MultiStreamAggregation (uses farthest sequence encountered)
- On async aggregation of one stream
- On async aggregation through MultiStreamAggregation (uses farthest sequence encountered)
-     */
+    [Fact]
+    public async Task set_version_on_aggregate_with_explicit_Version_attribute()
+    {
+        StoreOptions(opts => opts.Projections.SelfAggregate<MyAggregateWithDifferentVersionProperty>(ProjectionLifecycle.Inline));
+
+        var stream = theSession.Events.StartStream(new AEvent(), new AEvent(), new AEvent());
+        await theSession.SaveChangesAsync();
+
+
+        var aggregate = await theSession.LoadAsync<MyAggregateWithDifferentVersionProperty>(stream.Id);
+        aggregate.SpecialVersion.ShouldBe(3);
+    }
+
+    public class MyAggregateWithDifferentVersionProperty
+    {
+        [Version]
+        public int SpecialVersion { get; set; }
+
+
+        public Guid Id { get; set; }
+
+        public int ACount { get; set; }
+
+
+        public void Apply(AEvent evt) => ACount++;
+    }
+
+
 }
 
 

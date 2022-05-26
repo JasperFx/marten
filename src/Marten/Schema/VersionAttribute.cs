@@ -18,8 +18,10 @@ namespace Marten.Schema
             var memberType = member.GetMemberType();
             if (memberType != typeof(Guid) && memberType != typeof(Guid?))
             {
+                if (memberType == typeof(int) || memberType == typeof(long)) return;
+
                 throw new ArgumentOutOfRangeException(nameof(member),
-                    $"The [Version] attribute is only valid on properties or fields of type Guid/Guid?");
+                    $"The [Version] attribute is only valid on properties or fields of type Guid/Guid for optimistic concurrency, or int/long for projected aggregate version");
             }
 
             mapping.UseOptimisticConcurrency = true;
