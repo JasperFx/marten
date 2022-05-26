@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
+using Marten.Exceptions;
 using Marten.Util;
 
 namespace Marten.Events.CodeGeneration
@@ -100,7 +101,7 @@ namespace Marten.Events.CodeGeneration
                             $"Projection for {AggregateType.FullName} should either have the Create Method or Constructor for event of type {SpecificEvent.VariableType.FullNameInCode()}, or {AggregateType.FullName} should have a Default Constructor.";
 
                         writer.Write(
-                            $"if({Aggregate.Usage} == default) throw new ArgumentException(\"{errorMessage}\");");
+                            $"if({Aggregate.Usage} == default) throw new {typeof(InvalidProjectionException).FullNameInCode()}(\"{errorMessage}\");");
                     }
                 }
 
