@@ -11,6 +11,7 @@ using Marten.Events.Projections;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Oakton;
 using Spectre.Console;
 
@@ -24,9 +25,28 @@ namespace Marten.CommandLine.Commands.Projection
 
         public override async Task<bool> Execute(ProjectionInput input)
         {
-            input.HostBuilder.ConfigureLogging(x => x.ClearProviders());
+            bool disabledConsole = false;
+            try
+            {
+                // HACK. Do something in Oakton to deal with this somehow
+                if (input.HostBuilder.GetType().Name != "PreBuiltHostBuilder")
+                {
+                    input.HostBuilder.ConfigureLogging(x => x.ClearProviders());
+                    disabledConsole = true;
+                }
+            }
+            catch (Exception)
+            {
+                AnsiConsole.Markup("[gray]Cannot disable console logging, you may have to do that explicitly[/]");
+            }
 
             using var host = input.BuildHost();
+
+            if (!disabledConsole)
+            {
+                tryDisableConsoleLogging(host);
+            }
+
             var store = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
 
             if (input.ListFlag)
@@ -42,6 +62,17 @@ namespace Marten.CommandLine.Commands.Projection
             }
 
             return await RunContinuously(input, store).ConfigureAwait(false);
+        }
+
+        private static void tryDisableConsoleLogging(IHost host)
+        {
+            var options = host.Services.GetService<LoggerFilterOptions>() ??
+                          host.Services.GetService<IOptionsMonitor<LoggerFilterOptions>>()?.CurrentValue;
+
+            if (options != null)
+            {
+                options.MinLevel = LogLevel.Error;
+            }
         }
 
         private async Task<bool> Rebuild(ProjectionInput input, DocumentStore store)

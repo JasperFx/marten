@@ -74,6 +74,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{7996
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourcingIntro", "samples\EventSourcingIntro\EventSourcingIntro.csproj", "{41FC568A-72A2-46A3-A2DA-4C85E4512090}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimalAPI", "samples\MinimalAPI\MinimalAPI.csproj", "{7B710A53-373B-4A7D-B49E-53C15E6A8CA8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -180,6 +182,10 @@ Global
 		{41FC568A-72A2-46A3-A2DA-4C85E4512090}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{41FC568A-72A2-46A3-A2DA-4C85E4512090}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{41FC568A-72A2-46A3-A2DA-4C85E4512090}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B710A53-373B-4A7D-B49E-53C15E6A8CA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B710A53-373B-4A7D-B49E-53C15E6A8CA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B710A53-373B-4A7D-B49E-53C15E6A8CA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B710A53-373B-4A7D-B49E-53C15E6A8CA8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -210,5 +216,6 @@ Global
 		{BA27DA3D-74CA-4891-ADCE-889FA0C2D123} = {79961196-DB50-4AD3-B749-D231799BCF2E}
 		{41FC568A-72A2-46A3-A2DA-4C85E4512090} = {79961196-DB50-4AD3-B749-D231799BCF2E}
 		{3688AF80-FB24-4C3C-95FD-A2AB4680CD67} = {91D87D73-EC07-4067-8A64-26A2E4F6BC83}
+		{7B710A53-373B-4A7D-B49E-53C15E6A8CA8} = {79961196-DB50-4AD3-B749-D231799BCF2E}
 	EndGlobalSection
 EndGlobal
