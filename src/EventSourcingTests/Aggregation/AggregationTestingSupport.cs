@@ -2,6 +2,7 @@ using System;
 using Baseline;
 using Marten.Events;
 using Marten.Events.Projections;
+using Marten.Schema;
 using Marten.Storage;
 using NSubstitute;
 
@@ -73,6 +74,7 @@ namespace EventSourcingTests.Aggregation
         public string UpdatedBy { get; set; }
         public Guid EventId { get; set; }
     }
+
 
     public interface ITabulator
     {
