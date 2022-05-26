@@ -87,6 +87,11 @@ namespace Marten.Events.Daemon
             throw new TimeoutException(message);
         }
 
+        public Task PauseHighWaterAgent()
+        {
+            return _highWater.Stop();
+        }
+
         public async Task StartAllShards()
         {
             if (!_highWater.IsRunning)
@@ -114,7 +119,7 @@ namespace Marten.Events.Daemon
         public async Task StartShard(AsyncProjectionShard shard, ShardExecutionMode mode,
             CancellationToken cancellationToken)
         {
-            if (!_highWater.IsRunning)
+            if (!_highWater.IsRunning && mode == ShardExecutionMode.Continuous)
             {
                 await StartDaemon().ConfigureAwait(false);
             }

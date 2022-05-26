@@ -50,7 +50,6 @@ namespace Marten.Events.Daemon.HighWater
 
         public bool IsRunning { get; private set; }
 
-
         private async Task DetectChanges()
         {
             try

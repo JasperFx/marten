@@ -19,6 +19,7 @@ builder.Services.AddMarten(opts =>
 {
     opts.Connection(ConnectionSource.ConnectionString);
     opts.RegisterDocumentType<User>();
+    opts.DatabaseSchemaName = "cli";
 
     // Register all event store projections ahead of time
     opts.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
