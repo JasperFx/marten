@@ -113,6 +113,10 @@ namespace Marten.Events
                     }
                     else
                     {
+                        if (state.IsArchived)
+                        {
+                            throw new InvalidStreamOperationException($"Attempted to append event to archived stream with Id '{state.Id}'.");
+                        }
                         stream.PrepareEvents(state.Version, this, sequences, session);
                         session.QueueOperation(storage.UpdateStreamVersion(stream));
                     }

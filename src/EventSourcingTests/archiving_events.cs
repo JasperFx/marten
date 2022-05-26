@@ -5,6 +5,7 @@ using EventSourcingTests.Aggregation;
 using Marten;
 using Marten.Events;
 using Marten.Events.Archiving;
+using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
@@ -237,5 +238,44 @@ namespace EventSourcingTests
             events.All(x => x.Tracker != aEvent2.Tracker).ShouldBeTrue();
         }
 
+        [Fact]
+        public async Task prevent_append_operation_for_archived_stream_on_sync_commit()
+        {
+            await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+
+            var streamId = Guid.NewGuid();
+            theSession.Events.Append(streamId, new AEvent());
+            await theSession.SaveChangesAsync();
+
+            theSession.Events.ArchiveStream(streamId);
+            await theSession.SaveChangesAsync();
+
+            theSession.Events.Append(streamId, new BEvent());
+            var thrownException = Should.Throw<InvalidStreamOperationException>( () =>
+            {
+                theSession.SaveChanges();
+            });
+            thrownException.Message.ShouldBe($"Attempted to append event to archived stream with Id '{streamId}'.");
+        }
+
+        [Fact]
+        public async Task prevent_append_operation_for_archived_stream_on_async_commit()
+        {
+            await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+
+            var streamId = Guid.NewGuid();
+            theSession.Events.Append(streamId, new AEvent());
+            await theSession.SaveChangesAsync();
+
+            theSession.Events.ArchiveStream(streamId);
+            await theSession.SaveChangesAsync();
+
+            theSession.Events.Append(streamId, new BEvent());
+            var thrownException = Should.Throw<InvalidStreamOperationException>( async () =>
+            {
+                await theSession.SaveChangesAsync();
+            });
+            thrownException.Message.ShouldBe($"Attempted to append event to archived stream with Id '{streamId}'.");
+        }
     }
 }
