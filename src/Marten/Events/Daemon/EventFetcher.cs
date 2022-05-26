@@ -116,8 +116,6 @@ namespace Marten.Events.Daemon
             {
                 throw new EventFetcherException(range.ShardName, _database, e);
             }
-
-            Debug.WriteLine("here");
         }
     }
 }

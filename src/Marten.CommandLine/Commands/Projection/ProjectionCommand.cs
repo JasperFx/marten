@@ -25,27 +25,7 @@ namespace Marten.CommandLine.Commands.Projection
 
         public override async Task<bool> Execute(ProjectionInput input)
         {
-            bool disabledConsole = false;
-            try
-            {
-                // HACK. Do something in Oakton to deal with this somehow
-                if (input.HostBuilder.GetType().Name != "PreBuiltHostBuilder")
-                {
-                    input.HostBuilder.ConfigureLogging(x => x.ClearProviders());
-                    disabledConsole = true;
-                }
-            }
-            catch (Exception)
-            {
-                AnsiConsole.Markup("[gray]Cannot disable console logging, you may have to do that explicitly[/]");
-            }
-
             using var host = input.BuildHost();
-
-            if (!disabledConsole)
-            {
-                tryDisableConsoleLogging(host);
-            }
 
             var store = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
 
@@ -55,24 +35,12 @@ namespace Marten.CommandLine.Commands.Projection
                 return true;
             }
 
-
             if (input.RebuildFlag)
             {
                 return await Rebuild(input, store).ConfigureAwait(false);
             }
 
             return await RunContinuously(input, store).ConfigureAwait(false);
-        }
-
-        private static void tryDisableConsoleLogging(IHost host)
-        {
-            var options = host.Services.GetService<LoggerFilterOptions>() ??
-                          host.Services.GetService<IOptionsMonitor<LoggerFilterOptions>>()?.CurrentValue;
-
-            if (options != null)
-            {
-                options.MinLevel = LogLevel.Error;
-            }
         }
 
         private async Task<bool> Rebuild(ProjectionInput input, DocumentStore store)
@@ -101,10 +69,19 @@ namespace Marten.CommandLine.Commands.Projection
                 return true;
             }
 
-            var daemon = await store.BuildProjectionDaemonAsync().ConfigureAwait(false);
+            using var daemon = await store.BuildProjectionDaemonAsync().ConfigureAwait(false);
             await daemon.StartDaemon().ConfigureAwait(false);
 
             var highWater = daemon.Tracker.HighWaterMark;
+            if (highWater == 0)
+            {
+                AnsiConsole.Markup("[bold]The event storage is empty, aborting.[/]");
+                return true;
+            }
+
+            // Just messes up the rebuild to have this going after the initial check
+            await daemon.PauseHighWaterAgent().ConfigureAwait(false);
+
             var watcher = new RebuildWatcher(highWater, _completion.Task);
             using var unsubscribe = daemon.Tracker.Subscribe(watcher);
 #if NET6_0_OR_GREATER
@@ -121,10 +98,11 @@ namespace Marten.CommandLine.Commands.Projection
             await Task.WhenAll(tasks).ConfigureAwait(false);
 #endif
 
+            await daemon.StopAll().ConfigureAwait(false);
 
             _completion.SetResult(true);
 
-            Console.WriteLine("Projection Rebuild complete!");
+            AnsiConsole.Markup("[green]Projection Rebuild complete![/]");
 
             return true;
 
