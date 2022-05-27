@@ -18,6 +18,39 @@ namespace Marten.Events
         StreamAction Append(Guid stream, long expectedVersion, IEnumerable<object> events);
 
         /// <summary>
+        /// Creates a new event stream based on a user-supplied Guid, and returns the stream to write events to
+        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="aggregate">Initial aggregate value, does not apply any events</param>
+        /// <param name="id">Guid identifier of this stream</param>
+        /// <param name="cancellation"></param>
+        /// <returns></returns>
+        IEventStream<T> StartStream<T>(T aggregate, Guid id, CancellationToken cancellation = default) where T : class;
+
+        /// <summary>
+        /// Creates a new event stream based on a user-supplied StreamKey, and returns the stream to write events to
+        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="aggregate">Initial aggregate value, does not apply any events</param>
+        /// <param name="streamKey">String identifier of this stream</param>
+        /// <param name="cancellation"></param>
+        /// <returns></returns>
+        IEventStream<T> StartStream<T>(T aggregate, string streamKey, CancellationToken cancellation = default) where T : class;
+
+
+        /// <summary>
+        /// Creates a new event stream, assigns a new Guid id, and returns the stream to write events to
+        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="aggregate">Initial aggregate value, does not apply any events</param>
+        /// <param name="cancellation"></param>
+        /// <returns></returns>
+        IEventStream<T> StartStream<T>(T aggregate, CancellationToken cancellation) where T : class;
+
+        /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
         /// </summary>
         /// <typeparam name="TAggregate"></typeparam>
@@ -120,8 +153,6 @@ namespace Marten.Events
         /// </summary>
         /// <param name="streamKey"></param>
         void ArchiveStream(string streamKey);
-
-
 
         /// <summary>
         /// Fetch the projected aggregate T by id with built in optimistic concurrency checks

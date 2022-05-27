@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Marten.Schema.Identity;
 
 #nullable enable
@@ -105,5 +106,27 @@ namespace Marten.Events
             return StartStream(CombGuidIdGeneration.NewGuid(), events);
         }
 
+        public IEventStream<T> StartStream<T>(T aggregate, Guid id, CancellationToken cancellation) where T : class
+        {
+            var action = _store.Events.StartEmptyStream(_session, id);
+            action.AggregateType = typeof(T);
+            action.ExpectedVersionOnServer = 0;
+
+            return new EventStream<T>(_store.Events, id, aggregate, cancellation, action);
+        }
+
+        public IEventStream<T> StartStream<T>(T aggregate, string streamKey, CancellationToken cancellation) where T : class
+        {
+            var action = _store.Events.StartEmptyStream(_session, streamKey);
+            action.AggregateType = typeof(T);
+            action.ExpectedVersionOnServer = 0;
+
+            return new EventStream<T>(_store.Events, streamKey, aggregate, cancellation, action);
+        }
+
+        public IEventStream<T> StartStream<T>(T aggregate, CancellationToken cancellation) where T : class
+        {
+            return StartStream(aggregate, CombGuidIdGeneration.NewGuid(), cancellation);
+        }
     }
 }
