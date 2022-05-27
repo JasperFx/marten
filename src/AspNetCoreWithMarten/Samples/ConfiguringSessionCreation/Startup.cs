@@ -63,7 +63,7 @@ namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation
                     // while in development
                     if (Hosting.IsDevelopment())
                     {
-                        opts.AutoCreateSchemaObjects = AutoCreate.All;
+                        opts.AutoCreateSchemaObjects = Weasel.Core.AutoCreate.All;
                     }
                 })
 

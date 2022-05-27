@@ -31,7 +31,7 @@ namespace AspNetCoreWithMarten.Samples.ByNestedClosure
                 // while in development
                 if (Hosting.IsDevelopment())
                 {
-                    opts.AutoCreateSchemaObjects = AutoCreate.All;
+                    opts.AutoCreateSchemaObjects = Weasel.Core.AutoCreate.All;
                 }
             });
         }

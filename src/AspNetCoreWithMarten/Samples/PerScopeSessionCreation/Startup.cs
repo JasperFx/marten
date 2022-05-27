@@ -112,7 +112,7 @@ namespace AspNetCoreWithMarten.Samples.PerScopeSessionCreation
                 // while in development
                 if (Hosting.IsDevelopment())
                 {
-                    opts.AutoCreateSchemaObjects = AutoCreate.All;
+                    opts.AutoCreateSchemaObjects = Weasel.Core.AutoCreate.All;
                 }
             })
             // Chained helper to replace the CustomSessionFactory
