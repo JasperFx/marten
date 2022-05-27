@@ -38,7 +38,7 @@ namespace AspNetCoreWithMarten.Samples.ByStoreOptions
             // while in development
             if (Hosting.IsDevelopment())
             {
-                options.AutoCreateSchemaObjects = AutoCreate.All;
+                options.AutoCreateSchemaObjects = Weasel.Core.AutoCreate.All;
             }
 
             return options;
