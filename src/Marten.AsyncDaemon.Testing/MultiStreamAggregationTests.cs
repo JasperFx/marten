@@ -1,5 +1,6 @@
-#if NET6_0_OR_GREATER
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
@@ -28,16 +29,14 @@ public class MultiStreamAggregationTests: OneOffConfigurationsContext
         await session.SaveChangesAsync();
 
         var projection = await session.LoadAsync<Projection>(commonId);
-
-        Assert.NotNull(projection);
-        Assert.Equal("1234", projection.Events);
+        var eventSequenceList = new List<long> { 1, 2, 3, 4 };
+        projection.ShouldNotBeNull();
+        projection.EventSequenceList.ShouldHaveTheSameElementsAs(eventSequenceList);
 
         await daemon.RebuildProjection<Projector>(CancellationToken.None);
-
         projection = await session.LoadAsync<Projection>(commonId);
-
-        Assert.NotNull(projection);
-        Assert.Equal("1234", projection.Events);
+        projection.ShouldNotBeNull();
+        projection.EventSequenceList.ShouldHaveTheSameElementsAs(eventSequenceList);
     }
 
     public interface ICommonId
@@ -53,7 +52,7 @@ public class MultiStreamAggregationTests: OneOffConfigurationsContext
     public class Projection
     {
         public Guid Id { get; set; }
-        public string Events { get; set; } = "";
+        public IList<long> EventSequenceList { get; set; } = new List<long>();
     }
 
     public class Projector: MultiStreamAggregation<Projection, Guid>
@@ -63,8 +62,6 @@ public class MultiStreamAggregationTests: OneOffConfigurationsContext
             Identity<ICommonId>(x => x.Id);
         }
 
-        public void Apply(Projection p, IEvent<Happened> e) => p.Events += e.Sequence;
+        public void Apply(Projection p, IEvent<Happened> e) => p.EventSequenceList.Add(e.Sequence);
     }
 }
-
-#endif
