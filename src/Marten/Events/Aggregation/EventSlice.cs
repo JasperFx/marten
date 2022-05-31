@@ -122,7 +122,7 @@ namespace Marten.Events.Projections
 
         private void reorderEvents()
         {
-            var events = _events.Distinct().OrderBy(x => x.Version).ToArray();
+            var events = _events.Distinct().OrderBy(x => x.Sequence).ToArray();
             _events.Clear();
             _events.AddRange(events);
         }
