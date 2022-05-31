@@ -60,7 +60,9 @@ namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation
                     opts.Connection(connectionString);
 
                     // Use the more permissive schema auto create behavior
-                    // while in development
+                    // while in development  -- or append .OptimizeArtifactWorkflow()
+                    // to the .AddMarten() call above and remove this check
+                    // See https://martendb.io/configuration/optimized_artifact_workflow.html
                     if (Hosting.IsDevelopment())
                     {
                         opts.AutoCreateSchemaObjects = Weasel.Core.AutoCreate.All;
