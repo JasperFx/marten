@@ -15,12 +15,10 @@ namespace AspNetCoreWithMarten.Samples.dotnet6.ByNestedClosure
         {
             var builder = WebApplication.CreateBuilder(args);
             // Add services to the container.
+            // See https://martendb.io/configuration/optimized_artifact_workflow.html about the OptimizeArtifactWorkflow() call.
             builder.Services.AddMarten(o => {
                 o.Connection(builder.Configuration.GetConnectionString("Marten"));
-                if (builder.Environment.IsDevelopment())  {
-                    o.AutoCreateSchemaObjects = Weasel.Core.AutoCreate.All;
-                }
-            });
+            }).OptimizeArtifactWorkflow();
             builder.Services.AddControllers();
             var app = builder.Build();
 
