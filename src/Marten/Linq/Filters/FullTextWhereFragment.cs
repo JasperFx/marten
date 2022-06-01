@@ -16,7 +16,7 @@ namespace Marten.Linq.Filters
         private readonly FullTextSearchFunction _searchFunction;
         private readonly string _searchTerm;
 
-        private string Sql => $"to_tsvector(:argRegConfig::regconfig, {_dataConfig}) @@ {_searchFunction}(:argRegConfig::regconfig, :argSearchTerm)";
+        private string Sql => $"to_tsvector('{_regConfig}'::regconfig, {_dataConfig}) @@ {_searchFunction}('{_regConfig}'::regconfig, '{_searchTerm}')";
 
         public FullTextWhereFragment(DocumentMapping mapping, FullTextSearchFunction searchFunction, string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
@@ -29,9 +29,7 @@ namespace Marten.Linq.Filters
 
         public void Apply(CommandBuilder builder)
         {
-            builder.AddNamedParameter("argRegConfig", _regConfig);
-            builder.AddNamedParameter("argSearchTerm", _searchTerm);
-
+            // don't use parameters for to_tsvector as it ruins the performance with the query plan in PG
             builder.Append(Sql);
         }
 
