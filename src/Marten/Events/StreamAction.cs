@@ -313,8 +313,7 @@ namespace Marten.Events
 
         internal static StreamAction ForTombstone()
         {
-            var streamId = Guid.NewGuid();
-            return new StreamAction(streamId, streamId.ToString(), StreamActionType.Append)
+            return new StreamAction(EstablishTombstoneStream.StreamId, EstablishTombstoneStream.StreamKey, StreamActionType.Append)
             {
 
             };
