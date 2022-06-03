@@ -6,7 +6,7 @@ namespace Marten.Exceptions
     /// <summary>
     /// Wraps the Postgres command exceptions. Unifies exception handling and brings additonal information.
     /// </summary>
-    public class MartenCommandException: Exception
+    public class MartenCommandException: MartenException
     {
         public const string MaybeLockedRowsMessage = "Postgresql timed out while trying to read data. This may be caused by trying to read locked rows";
 

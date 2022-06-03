@@ -6,7 +6,7 @@ namespace Marten.Exceptions
     [Serializable]
 #endif
 
-    public class InvalidDocumentException: Exception
+    public class InvalidDocumentException: MartenException
     {
         public InvalidDocumentException(string message) : base(message)
         {

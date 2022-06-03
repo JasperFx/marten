@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 
 namespace Marten.Exceptions
 {
-    public class RollbackException: Exception
+    public class RollbackException: MartenException
     {
         public RollbackException(Exception innerException) : base("Failed while trying to rollback an exception", innerException)
         {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Marten.Exceptions;
 using Marten.Schema;
 using Weasel.Core.Migrations;
 
@@ -49,7 +50,7 @@ namespace Marten.Storage
 
     #endregion
 
-    public class UnknownTenantIdException: Exception
+    public class UnknownTenantIdException: MartenException
     {
         public UnknownTenantIdException(string tenantId) : base($"Unknown tenant id '{tenantId}'")
         {
