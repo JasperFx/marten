@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 
 namespace Marten.Exceptions
 {
-    public class ExistingStreamIdCollisionException: Exception
+    public class ExistingStreamIdCollisionException: MartenException
     {
         public object Id { get; }
 

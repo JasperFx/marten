@@ -6,7 +6,7 @@ namespace Marten.Exceptions
     [Serializable]
 #endif
 
-    public class BadLinqExpressionException: Exception
+    public class BadLinqExpressionException: MartenException
     {
         public BadLinqExpressionException(string message, Exception innerException) : base(message, innerException)
         {

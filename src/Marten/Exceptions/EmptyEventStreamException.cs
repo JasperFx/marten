@@ -3,7 +3,7 @@ using Baseline;
 
 namespace Marten.Exceptions
 {
-    public class EmptyEventStreamException : Exception
+    public class EmptyEventStreamException : MartenException
     {
         public static readonly string MessageTemplate =
             "A new event stream ('{0}') cannot be started without any events";

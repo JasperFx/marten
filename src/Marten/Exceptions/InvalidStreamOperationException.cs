@@ -2,7 +2,7 @@ using System;
 
 namespace Marten.Exceptions
 {
-    public class InvalidStreamOperationException: Exception
+    public class InvalidStreamOperationException: MartenException
     {
         public InvalidStreamOperationException(string message):
             base(message)

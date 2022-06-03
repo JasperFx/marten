@@ -2,7 +2,7 @@ using System;
 
 namespace Marten.Exceptions
 {
-    public class NonExistentStreamException: Exception
+    public class NonExistentStreamException: MartenException
     {
         public object Id { get; }
 

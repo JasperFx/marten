@@ -12,7 +12,7 @@ namespace Marten.Exceptions
     /// <summary>
     /// Thrown when any configuration rules for an active projection are violated and the projection is invalid
     /// </summary>
-    public class InvalidProjectionException : Exception
+    public class InvalidProjectionException : MartenException
     {
         public InvalidProjectionException(string message) : base(message)
         {

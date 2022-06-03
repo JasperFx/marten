@@ -3,7 +3,7 @@ using Baseline.Exceptions;
 #nullable enable
 namespace Marten.Exceptions
 {
-    public class InvalidUtcDateTimeUsageException : Exception
+    public class InvalidUtcDateTimeUsageException : MartenException
     {
         public InvalidUtcDateTimeUsageException(Exception inner) : base("DateTime with Kind=UTC is no longer supported by Npgsql. Consider switching to DateTimeOffset or NodaTime wherever possible, or see https://www.npgsql.org/efcore/release-notes/6.0.html.", inner)
         {

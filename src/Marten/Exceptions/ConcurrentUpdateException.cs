@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 
 namespace Marten.Exceptions
 {
-    public class ConcurrentUpdateException: Exception
+    public class ConcurrentUpdateException: MartenException
     {
         public ConcurrentUpdateException(Exception innerException) : base("Write collision detected while commiting the transaction.", innerException)
         {

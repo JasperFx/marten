@@ -5,7 +5,7 @@ using LamarCodeGeneration;
 
 namespace Marten.Exceptions
 {
-    public class InvalidCompiledQueryException: Exception
+    public class InvalidCompiledQueryException: MartenException
     {
         public static readonly string CompiledQueryTypeCannotBeAsyncMessage = "Invalid compiled query type `{0}`. Compiled queries cannot use asynchronous query selectors like 'CountAsync()'. Please use the synchronous equivalent like 'Count()' instead. You will still be able to query asynchronously through IQuerySession.QueryAsync().";
 

@@ -2,7 +2,7 @@ using System;
 
 namespace Marten.Exceptions
 {
-    public class AmbiguousDocumentTypeAliasesException: Exception
+    public class AmbiguousDocumentTypeAliasesException: MartenException
     {
         public AmbiguousDocumentTypeAliasesException(string message) : base(message)
         {

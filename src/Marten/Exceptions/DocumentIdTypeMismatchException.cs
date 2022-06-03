@@ -5,7 +5,7 @@ using Marten.Internal.Storage;
 
 namespace Marten.Exceptions
 {
-    public class DocumentIdTypeMismatchException : Exception
+    public class DocumentIdTypeMismatchException : MartenException
     {
         public DocumentIdTypeMismatchException(IDocumentStorage storage, Type actualIdType) : base($"Id/Document type mismatch. The id type for the included document type {storage.SourceType.FullNameInCode()} is {storage.IdType.FullNameInCode()}, but {actualIdType.NameInCode()} was used.")
         {

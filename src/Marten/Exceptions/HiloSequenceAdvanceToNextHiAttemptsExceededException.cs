@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 
 namespace Marten.Exceptions
 {
-    public class HiloSequenceAdvanceToNextHiAttemptsExceededException : Exception
+    public class HiloSequenceAdvanceToNextHiAttemptsExceededException : MartenException
     {
         private const string message = "Advance to next hilo sequence retry limit exceeded. Unable to secure next hi sequence";
         public HiloSequenceAdvanceToNextHiAttemptsExceededException() : base(message)
