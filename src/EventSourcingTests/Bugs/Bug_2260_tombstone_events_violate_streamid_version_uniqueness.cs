@@ -12,20 +12,23 @@ using static EventSourcingTests.appending_events_workflow_specs;
 
 namespace EventSourcingTests.Bugs
 {
-    public class Bug_2260_tombstone_events_violate_streamid_version_uniqueness : BugIntegrationContext
+    public class Bug_2260_tombstone_events_violate_streamid_version_uniqueness : IntegrationContext
     {
         private readonly ITestOutputHelper _output;
 
-        public Bug_2260_tombstone_events_violate_streamid_version_uniqueness(ITestOutputHelper output)
+        public Bug_2260_tombstone_events_violate_streamid_version_uniqueness(ITestOutputHelper output, DefaultStoreFixture fixture) : base(fixture)
         {
             _output = output;
-
-            theSession.Logger = new TestOutputMartenLogger(output);
         }
 
-        [Fact]
-        public async Task subsequent_tombstone_events_increment_tombstone_stream_version()
+        [Theory]
+        [InlineData(StreamIdentity.AsGuid)]
+        [InlineData(StreamIdentity.AsString)]
+        public async Task subsequent_tombstone_events_increment_tombstone_stream_version(StreamIdentity identity)
         {
+            UseStreamIdentity(identity);
+
+
             if (theStore.Events.StreamIdentity == StreamIdentity.AsGuid)
             {
                 theSession.Events.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent());
@@ -37,42 +40,32 @@ namespace EventSourcingTests.Bugs
 
             theSession.QueueOperation(new FailingOperation());
 
+            theSession.Logger = new TestOutputMartenLogger(_output);
+
             await Should.ThrowAsync<DivideByZeroException>(async () =>
             {
                 await theSession.SaveChangesAsync();
             });
+
+            using var session = theStore.LightweightSession();
 
             // Append more events that will fail, to ensure they get tombstone events appended to the event stream
             if (theStore.Events.StreamIdentity == StreamIdentity.AsGuid)
             {
-                theSession.Events.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent());
+                session.Events.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent());
             }
             else
             {
-                theSession.Events.Append(Guid.NewGuid().ToString(), new AEvent(), new BEvent(), new CEvent());
+                session.Events.Append(Guid.NewGuid().ToString(), new AEvent(), new BEvent(), new CEvent());
             }
 
-            theSession.QueueOperation(new FailingOperation());
+            session.QueueOperation(new FailingOperation());
 
             await Should.ThrowAsync<DivideByZeroException>(async () =>
             {
-                await theSession.SaveChangesAsync();
+                await session.SaveChangesAsync();
             });
 
-            if (theStore.Events.StreamIdentity == StreamIdentity.AsGuid)
-            {
-                (await theSession.Events.FetchStreamStateAsync(EstablishTombstoneStream.StreamId)).ShouldNotBeNull();
-
-                var events = await theSession.Events.FetchStreamAsync(EstablishTombstoneStream.StreamId);
-                events.Count().ShouldBe(6);
-            }
-            else
-            {
-                (await theSession.Events.FetchStreamStateAsync(EstablishTombstoneStream.StreamKey)).ShouldNotBeNull();
-
-                var events = await theSession.Events.FetchStreamAsync(EstablishTombstoneStream.StreamKey);
-                events.Count().ShouldBe(6);
-            }
         }
     }
 }
