@@ -33,6 +33,7 @@ namespace Marten.Linq.Includes
             _clonedEnd.SingleValue = _innerEnd.SingleValue;
 
             Inner = original;
+            Inner.Limit = 0; // Watch this!
 
             Statement current = this;
             foreach (var include in includes)
