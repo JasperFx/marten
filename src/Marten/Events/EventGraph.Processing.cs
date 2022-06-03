@@ -152,7 +152,7 @@ namespace Marten.Events
                     .Select(x => new Event<Tombstone>(tombstone)
                     {
                         Sequence = x.Sequence,
-                        Version = x.Version,
+                        Version = x.Sequence, // this is important to avoid clashes on the id/version constraint
                         TenantId = x.TenantId,
                         StreamId = EstablishTombstoneStream.StreamId,
                         StreamKey = EstablishTombstoneStream.StreamKey,
