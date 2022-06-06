@@ -30,7 +30,7 @@ namespace Marten.Linq.Filters
         private string SanitizeSearchTerm(string searchTerm)
         {
             // edge case that will cause a sql exception with a single quote we need to handle also
-            return searchTerm == "'" ? "" : searchTerm?.Replace("'", "''");
+            return searchTerm == "'" ? "" : searchTerm?.Replace("'", "''").Replace(@"\", @"\\");
         }
 
         public void Apply(CommandBuilder builder)
