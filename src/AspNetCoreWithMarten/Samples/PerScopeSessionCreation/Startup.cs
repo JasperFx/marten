@@ -107,16 +107,11 @@ namespace AspNetCoreWithMarten.Samples.PerScopeSessionCreation
             services.AddMarten(opts =>
             {
                 opts.Connection(connectionString);
-
-                // Use the more permissive schema auto create behavior
-                // while in development -- or append .OptimizeArtifactWorkflow()
-                // to the .AddMarten() call above and remove this check
-                // See https://martendb.io/configuration/optimized_artifact_workflow.html
-                if (Hosting.IsDevelopment())
-                {
-                    opts.AutoCreateSchemaObjects = Weasel.Core.AutoCreate.All;
-                }
             })
+            // Using the "Optimized artifact workflow" for Marten >= V5
+            // sets up your Marten configuration based on your environment
+            // See https://martendb.io/configuration/optimized_artifact_workflow.html
+            .OptimizeArtifactWorkflow()
             // Chained helper to replace the CustomSessionFactory
             .BuildSessionsWith<ScopedSessionFactory>(ServiceLifetime.Scoped);
         }

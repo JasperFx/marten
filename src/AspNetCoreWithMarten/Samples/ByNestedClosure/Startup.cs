@@ -26,14 +26,11 @@ namespace AspNetCoreWithMarten.Samples.ByNestedClosure
             services.AddMarten(opts =>
             {
                 opts.Connection(connectionString);
-
-                // Use the more permissive schema auto create behavior
-                // while in development
-                if (Hosting.IsDevelopment())
-                {
-                    opts.AutoCreateSchemaObjects = Weasel.Core.AutoCreate.All;
-                }
-            });
+            })
+            // Using the "Optimized artifact workflow" for Marten >= V5
+            // sets up your Marten configuration based on your environment
+            // See https://martendb.io/configuration/optimized_artifact_workflow.html
+            .OptimizeArtifactWorkflow();
         }
 
         // And other methods we don't care about here...
