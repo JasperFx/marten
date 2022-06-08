@@ -23,7 +23,11 @@ namespace AspNetCoreWithMarten.Samples.ByStoreOptions
         {
             var options = BuildStoreOptions();
 
-            services.AddMarten(options);
+            services.AddMarten(options)
+            // Using the "Optimized artifact workflow" for Marten >= V5
+            // sets up your Marten configuration based on your environment
+            // See https://martendb.io/configuration/optimized_artifact_workflow.html
+            .OptimizeArtifactWorkflow();
         }
 
         private StoreOptions BuildStoreOptions()
@@ -33,16 +37,6 @@ namespace AspNetCoreWithMarten.Samples.ByStoreOptions
             // Or lastly, build a StoreOptions object yourself
             var options = new StoreOptions();
             options.Connection(connectionString);
-
-            // Use the more permissive schema auto create behavior
-            // while in development -- or append .OptimizeArtifactWorkflow()
-            // to the .AddMarten() call above in ConfigureServices() and remove this check
-            // See https://martendb.io/configuration/optimized_artifact_workflow.html
-            if (Hosting.IsDevelopment())
-            {
-                options.AutoCreateSchemaObjects = Weasel.Core.AutoCreate.All;
-            }
-
             return options;
         }
 
