@@ -48,6 +48,39 @@ namespace DocumentDbTests.Deleting
             }
         }
 
+        [Theory]
+        [SessionTypes]
+        public void delete_multiple_types_of_documents_with_delete_objects(DocumentTracking tracking)
+        {
+            DocumentTracking = tracking;
+
+            // Store a mix of different document types
+            var user1 = new User { FirstName = "Jamie", LastName = "Vaughan" };
+            var issue1 = new Issue { Title = "Running low on coffee" };
+            var company1 = new Company { Name = "ECorp" };
+
+            theSession.StoreObjects(new object[] { user1, issue1, company1 });
+
+            theSession.SaveChanges();
+
+            // Delete a mix of documents types
+            using (var session = theStore.OpenSession())
+            {
+                session.DeleteObjects(new object[] { user1, company1 });
+
+                session.SaveChanges();
+            }
+
+            using (var session = theStore.QuerySession())
+            {
+                // Assert the deleted documents no longer exist
+                session.Load<User>(user1.Id).ShouldBeNull();
+                session.Load<Company>(company1.Id).ShouldBeNull();
+
+                session.Load<Issue>(issue1.Id).Title.ShouldBe("Running low on coffee");
+            }
+        }
+
         public deleting_multiple_documents(DefaultStoreFixture fixture) : base(fixture)
         {
         }

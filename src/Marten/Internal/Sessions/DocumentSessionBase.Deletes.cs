@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
+using Baseline;
 using Marten.Exceptions;
 using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;
@@ -83,5 +86,19 @@ namespace Marten.Internal.Sessions
             _workTracker.Add(deletion);
         }
 
+        public void DeleteObjects(IEnumerable<object> documents)
+        {
+            assertNotDisposed();
+
+            var documentsGroupedByType = documents
+                .Where(x => x != null)
+                .GroupBy(x => x.GetType());
+
+            foreach (var group in documentsGroupedByType)
+            {
+                var handler = typeof(DeleteHandler<>).CloseAndBuildAs<IObjectHandler>(group.Key);
+                handler.Execute(this, group);
+            }
+        }
     }
 }
