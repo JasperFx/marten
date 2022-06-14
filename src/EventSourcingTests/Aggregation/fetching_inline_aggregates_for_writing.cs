@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Exceptions;
+using Marten.Storage;
 using Marten.Testing.Harness;
 using Xunit;
 using Shouldly;
@@ -59,6 +60,34 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     }
 
     [Fact]
+    public async Task fetch_existing_stream_for_writing_Guid_identifier_multi_tenanted()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Projections.SelfAggregate<SimpleAggregate>(ProjectionLifecycle.Inline).MultiTenanted();
+        });
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        stream.Aggregate.ShouldNotBeNull();
+        stream.CurrentVersion.ShouldBe(6);
+
+        var document = stream.Aggregate;
+
+        document.Id.ShouldBe(streamId);
+
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(3);
+        document.CCount.ShouldBe(2);
+    }
+
+    [Fact]
     public async Task fetch_new_stream_for_writing_string_identifier()
     {
         StoreOptions(opts =>
@@ -92,6 +121,36 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         {
             opts.Projections.SelfAggregate<SimpleAggregateAsString>(ProjectionLifecycle.Inline);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
+        });
+
+
+        var streamId = Guid.NewGuid().ToString();
+
+        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
+        stream.Aggregate.ShouldNotBeNull();
+        stream.CurrentVersion.ShouldBe(6);
+
+        var document = stream.Aggregate;
+
+        document.Id.ShouldBe(streamId);
+
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(3);
+        document.CCount.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task fetch_existing_stream_for_writing_string_identifier_multi_tenanted()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.SelfAggregate<SimpleAggregateAsString>(ProjectionLifecycle.Inline).MultiTenanted();
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
         });
 
 

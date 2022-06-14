@@ -44,7 +44,7 @@ namespace Marten.Linq.QueryHandlers
 
             sql.AppendParameter(_id);
 
-            storage.AddTenancyFilter(sql);
+            storage.AddTenancyFilter(sql, session.TenantId);
         }
 
 

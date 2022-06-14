@@ -50,7 +50,7 @@ namespace Marten.Linq.QueryHandlers
 
             sql.Append(")");
 
-            storage.AddTenancyFilter(sql);
+            storage.AddTenancyFilter(sql, session.TenantId);
         }
 
         public IReadOnlyList<T> Handle(DbDataReader reader, IMartenSession session)
