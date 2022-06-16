@@ -54,6 +54,12 @@ namespace Marten
         void DeleteWhere<T>(Expression<Func<T, bool>> expression) where T : notnull;
 
         /// <summary>
+        /// Delete an enumerable of potentially mixed documents
+        /// </summary>
+        /// <param name="documents"></param>
+        void DeleteObjects(IEnumerable<object> documents);
+
+        /// <summary>
         /// Explicitly marks multiple documents as needing to be inserted or updated upon the next call to SaveChanges()
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -77,7 +83,7 @@ namespace Marten
         void Store<T>(T entity, Guid version) where T : notnull;
 
         /// <summary>
-        /// DocumentStore an enumerable of potentially mixed documents
+        /// Store an enumerable of potentially mixed documents
         /// </summary>
         /// <param name="documents"></param>
         void StoreObjects(IEnumerable<object> documents);

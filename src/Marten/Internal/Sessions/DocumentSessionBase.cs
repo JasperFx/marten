@@ -153,8 +153,8 @@ namespace Marten.Internal.Sessions
 
             documents.Where(x => x != null).GroupBy(x => x.GetType()).Each(group =>
             {
-                var handler = typeof(InsertHandler<>).CloseAndBuildAs<IHandler>(group.Key);
-                handler.Store(this, group);
+                var handler = typeof(InsertHandler<>).CloseAndBuildAs<IObjectHandler>(group.Key);
+                handler.Execute(this, group);
             });
         }
 
@@ -177,8 +177,8 @@ namespace Marten.Internal.Sessions
             foreach (var group in documentsGroupedByType)
             {
                 // Build the right handler for the group type
-                var handler = typeof(Handler<>).CloseAndBuildAs<IHandler>(group.Key);
-                handler.Store(this, group);
+                var handler = typeof(StoreHandler<>).CloseAndBuildAs<IObjectHandler>(group.Key);
+                handler.Execute(this, group);
             }
         }
 
@@ -319,25 +319,36 @@ namespace Marten.Internal.Sessions
             foreach (var type in patchedTypes) EjectAllOfType(type);
         }
 
-        internal interface IHandler
+        internal interface IObjectHandler
         {
-            void Store(IDocumentSession session, IEnumerable<object> objects);
+            void Execute(IDocumentSession session, IEnumerable<object> objects);
         }
 
-        internal class Handler<T>: IHandler where T : notnull
+        internal class StoreHandler<T>: IObjectHandler where T : notnull
         {
-            public void Store(IDocumentSession session, IEnumerable<object> objects)
+            public void Execute(IDocumentSession session, IEnumerable<object> objects)
             {
                 // Delegate to the Store<T>() method
                 session.Store(objects.OfType<T>().ToArray());
             }
         }
 
-        internal class InsertHandler<T>: IHandler where T : notnull
+        internal class InsertHandler<T>: IObjectHandler where T : notnull
         {
-            public void Store(IDocumentSession session, IEnumerable<object> objects)
+            public void Execute(IDocumentSession session, IEnumerable<object> objects)
             {
                 session.Insert(objects.OfType<T>().ToArray());
+            }
+        }
+
+        internal class DeleteHandler<T>: IObjectHandler where T : notnull
+        {
+            public void Execute(IDocumentSession session, IEnumerable<object> objects)
+            {
+                foreach (var document in objects.OfType<T>())
+                {
+                    session.Delete(document);
+                }
             }
         }
     }
