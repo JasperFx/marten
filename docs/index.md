@@ -1,8 +1,30 @@
 ---
-home: true
-heroImage: /logo.png
-actionText: Get Started
-actionLink: /introduction
+layout: home
+sidebar: false
+
+title: Marten
+titleTemplate: .NET Transactional Document DB and Event Store on PostgreSQL
+
+hero:
+  name: Marten
+  text: .NET Transactional Document DB and Event Store on PostgreSQL
+  tagline: Pragmatic library to boost your developer productivity!
+  image:
+    src: /logo.png
+    alt: alt text
+  actions:
+    - theme: brand
+      text: Get Started
+      link: /introduction
+    - theme: alt
+      text: Configuration
+      link: /configuration/
+    - theme: alt
+      text: Document DB
+      link: /documents/
+    - theme: alt
+      text: Event Store
+      link: /events/
 
 features:
   - title: 💪 PostgreSQL
