@@ -1,28 +1,10 @@
-.nav-bar .logo {
-  height: 30px;
-  margin-right: 2px;
-}
-
 :root {
-  --c-brand: #ac8464;
-  --c-brand-light: #b38c6c;
+  --vp-c-brand: #ac8464;
+  --vp-c-brand-light: #b38c6c;
+  --vp-c-brand-dark: #ac8464;
+  --vp-home-hero-name-color: var(--vp-c-brand); 
+  --vp-button-brand-bg: var(--vp-c-brand);
+  --vp-button-brand-border: #c9b8a9;
+  --vp-button-brand-hover-border: var(--vp-button-brand-border);
+  --vp-button-brand-hover-bg: var(--vp-c-brand-light);
 }
-
-.custom-block.tip {
-  border-color: var(--c-brand-light);
-}
-
-.DocSearch {
-  --docsearch-primary-color: var(--c-brand) !important;
-}
-
-
-.sidebar > .sidebar-links > .sidebar-link > 
-           .sidebar-links > .sidebar-link > 
-           .sidebar-links > .sidebar-link > 
-           .sidebar-links > .sidebar-link > 
-           .sidebar-links > .sidebar-link >
-           .sidebar-link-item {
-             padding-left: 79px;
-             font-size: 0.8rem;
-           }
