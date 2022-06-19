@@ -24,7 +24,7 @@ module.exports = {
     nav: [
       { text: 'latest',
         items: [
-          { text: 'v3.x', link: '/v3/index.html', target:"_blank"}
+          { text: 'v3.x', link: '/v3/', target:"_blank"}
         ]
       },
       { text: 'Intro', link: '/introduction' },
