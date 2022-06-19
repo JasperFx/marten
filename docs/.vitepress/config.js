@@ -59,12 +59,15 @@ module.exports = {
       '/': [
         {
           text: 'Introduction',
+          collapsible: true,
           items: [
             {text: 'What is Marten?', link: '/introduction'}
           ]
         },
         {
           text:'Configuration',  
+          collapsible: true,
+          collapsed: true,
           items: [
               {text: 'Integration and Configuration', link: '/configuration/'},
               {text: 'Bootstrap with HostBuilder', link: '/configuration/hostbuilder'},
@@ -76,69 +79,60 @@ module.exports = {
               {text: 'Pre-Building Generated Types', link: '/configuration/prebuilding'},
               {text: 'Development versus Production Usage', link: '/configuration/optimized_artifact_workflow'},
               {text: 'Multi-Tenancy with Database per Tenant', link: '/configuration/multitenancy'},
-              {text: 'Environment Checks', link: '/configuration/environment-checks'}
+              {text: 'Environment Checks', link: '/configuration/environment-checks'},
           ]
         },
         {
           text: 'Document Database',
+          collapsible: true,
+          collapsed: true,
           items: [
             {text: 'Marten as Document DB', link: '/documents/'},
-            {text: 'Identity', link: '/documents/identity'},
-            {text: 'Storage', link: '/documents/storage'},
-            {text: 'Metadata', link: '/documents/metadata'},
-            {text: 'Sessions', link: '/documents/sessions'},
-            {text: 'Storing', link: '/documents/storing'},
-            {text: 'Deleting', link: '/documents/deletes'},
-            {
-              text: 'Querying',
-              link: '/documents/querying/',
-              items: [
-                  {text: 'Load Documents by Id', link: '/documents/querying/byid'},
-                  {text: 'Querying with Linq', link: '/documents/querying/linq/', items: [
-                          {text: 'Supported Linq Operators', link: '/documents/querying/linq/operators'},
-                          {text: 'Querying within Child Collections', link: '/documents/querying/linq/child-collections'},
-                          {text: 'Including Related Documents', link: '/documents/querying/linq/include'},
-                          {text: 'Querying to IAsyncEnumerable', link: '/documents/querying/linq/async-enumerable'},
-                          {text: 'Extending Marten\'s Linq Support', link: '/documents/querying/linq/extending'},
-                          {text: 'Searching on String Fields', link: '/documents/querying/linq/strings'},
-                          {text: 'Projection Operators', link: '/documents/querying/linq/projections'},
-                          {text: 'Paging', link: '/documents/querying/linq/paging'},
-                          {text: 'Mixing Raw SQL with Linq', link: '/documents/querying/linq/sql'},
-                          {text: 'Searching with Boolean Flags', link: '/documents/querying/linq/booleans'},
-                          {text: 'Searching for NULL Values', link: '/documents/querying/linq/nulls'},
-                      ]},
-                  {text: 'Querying with Postgres SQL', link: '/documents/querying/sql'},
-                  {text: 'Querying for Raw JSON', link: '/documents/querying/query-json'},
-                  {text: 'Compiled Queries', link: '/documents/querying/compiled-queries'},
-                  {text: 'Batched Queries', link: '/documents/querying/batched-queries'}
-
-
-              ]
-            },
-            {
-              text: 'Indexing',
-              link: '/documents/indexing/',
-              items: [
-                  {text: 'Calculated Indexes', link: '/documents/indexing/computed-indexes'},
-                  {text: 'Duplicated Fields', link: '/documents/indexing/duplicated-fields'},
-                  {text: 'Unique Indexes', link: '/documents/indexing/unique'},
-                  {text: 'Foreign Keys', link: '/documents/indexing/foreign-keys'},
-                  {text: 'GIN or GiST Indexes', link: '/documents/indexing/gin-gist-indexes'},
-                  {text: 'Metadata Indexes', link: '/documents/indexing/metadata-indexes'}
-              ]
-            },
-            {text:'Document Type Hierarchies', link: '/documents/hierarchies'},
-            {text:'Multi-Tenanted Documents', link: '/documents/multi-tenancy'},
+            {text: 'Document Identity', link: '/documents/identity'},
+            {text: 'Database Storage', link: '/documents/storage'},
+            {text: 'Marten Metadata', link: '/documents/metadata'},
+            {text: 'Opening Sessions', link: '/documents/sessions'},
+            {text: 'Storing Documents', link: '/documents/storing'},
+            {text: 'Deleting Documents', link: '/documents/deletes'},
+            {text: 'Querying Documents', link: '/documents/querying/'},
+            {text: 'Loading Documents by Id', link: '/documents/querying/byid'},
+            {text: 'Querying Documents with Linq', link: '/documents/querying/linq/'},
+            {text: 'Supported Linq Operators', link: '/documents/querying/linq/operators'},
+            {text: 'Querying within Child Collections', link: '/documents/querying/linq/child-collections'},
+            {text: 'Querying including Related Documents', link: '/documents/querying/linq/include'},
+            {text: 'Querying to IAsyncEnumerable', link: '/documents/querying/linq/async-enumerable'},
+            {text: 'Extending Marten\'s Linq Support', link: '/documents/querying/linq/extending'},
+            {text: 'Searching on String Fields', link: '/documents/querying/linq/strings'},
+            {text: 'Projection Operators', link: '/documents/querying/linq/projections'},
+            {text: 'Paging', link: '/documents/querying/linq/paging'},
+            {text: 'Mixing Raw SQL with Linq', link: '/documents/querying/linq/sql'},
+            {text: 'Searching with Boolean Flags', link: '/documents/querying/linq/booleans'},
+            {text: 'Searching for NULL Values', link: '/documents/querying/linq/nulls'},
+            {text: 'Querying with Postgres SQL', link: '/documents/querying/sql'},
+            {text: 'Querying for Raw JSON', link: '/documents/querying/query-json'},
+            {text: 'Compiled Queries', link: '/documents/querying/compiled-queries'},
+            {text: 'Batched Queries', link: '/documents/querying/batched-queries'},
+            {text: 'Indexing Documents', link: '/documents/indexing/'},
+            {text: 'Calculated Indexes', link: '/documents/indexing/computed-indexes'},
+            {text: 'Duplicated Fields', link: '/documents/indexing/duplicated-fields'},
+            {text: 'Unique Indexes', link: '/documents/indexing/unique'},
+            {text: 'Foreign Keys', link: '/documents/indexing/foreign-keys'},
+            {text: 'GIN or GiST Indexes', link: '/documents/indexing/gin-gist-indexes'},
+            {text: 'Metadata Indexes', link: '/documents/indexing/metadata-indexes'},
+            {text: 'Document Type Hierarchies', link: '/documents/hierarchies'},
+            {text: 'Multi-Tenanted Documents', link: '/documents/multi-tenancy'},
             {text: 'Initial Baseline Data', link: '/documents/initial-data'},
             {text: 'Optimistic Concurrency', link: '/documents/concurrency'},
             {text: 'Full Text Searching', link: '/documents/full-text'},
             {text: 'Noda Time Support', link: '/documents/noda-time'},
             {text: 'PLv8 Support', link: '/documents/plv8'},
-            {text: 'AspNetCore Support', link: '/documents/aspnetcore'}
+            {text: 'AspNetCore Support', link: '/documents/aspnetcore'},
           ]
         },
         {
           text: 'Event Store',
+          collapsible: true,
+          collapsed: true,
           items: [
             {text: 'Marten as Event Store', link: '/events/'},
             {text: 'Quick Start', link: '/events/quickstart'},
@@ -147,55 +141,41 @@ module.exports = {
             {text: 'Querying Events', link: '/events/querying'},
             {text: 'Metadata', link: '/events/metadata'},
             {text: 'Archiving Streams', link: '/events/archiving'},
-            {
-              text: 'Projections',
-              link: '/events/projections/',
-              items: [
-                {text: 'Aggregate Projections', link: '/events/projections/aggregate-projections'},
-                {text: 'Live Aggregations', link: '/events/projections/live-aggregates'},
-                {text: 'Cross-Stream Aggregations', link: '/events/projections/view-projections'},
-                {text: 'Custom Aggregations', link: '/events/projections/custom-aggregates'},
-                {text: 'Event Projections', link: '/events/projections/event-projections'},
-                {text: 'Custom Projections', link: '/events/projections/custom'},
-                {text: 'Inline Projections', link: '/events/projections/inline'},
-                {text: 'Asynchronous Projections',link: '/events/projections/async-daemon'},
-                {text: 'Rebuilding Projections', link: '/events/projections/rebuilding'}
-              ]
-            },
-
+            {text: 'Projections', link: '/events/projections/'},
+            {text: 'Aggregate Projections', link: '/events/projections/aggregate-projections'},
+            {text: 'Live Aggregations', link: '/events/projections/live-aggregates'},
+            {text: 'Cross-Stream Aggregations', link: '/events/projections/view-projections'},
+            {text: 'Custom Aggregations', link: '/events/projections/custom-aggregates'},
+            {text: 'Event Projections', link: '/events/projections/event-projections'},
+            {text: 'Custom Projections', link: '/events/projections/custom'},
+            {text: 'Inline Projections', link: '/events/projections/inline'},
+            {text: 'Asynchronous Projections',link: '/events/projections/async-daemon'},
+            {text: 'Rebuilding Projections', link: '/events/projections/rebuilding'},
             {
               text: 'Event Versioning',
               link: '/events/versioning'
             },
-
-
-
             {
               text: 'Multitenancy',
               link: '/events/multitenancy'
             },
             {
-              text: 'Advanced',
-              items: [
-                {
-                  text: 'Aggregates, events and repositories',
-                  link: '/scenarios/aggregates-events-repositories'
-                },
-                {
-                  text: 'Copy and transform stream',
-                  link: '/scenarios/copy-and-transform-stream'
-                }
-              ]
-            }
+              text: 'Aggregates, events and repositories',
+              link: '/scenarios/aggregates-events-repositories'
+            },
           ]
         },
         { text: 'Diagnostics', 
+          collapsible: true,
+          collapsed: true,
           items: [
             {text: 'Diagnostics and Instrumentation', link: '/diagnostics'},
           ]
         },
         {
           text: 'Schema',
+          collapsible: true,
+          collapsed: true,
           items: [
             {text: 'Database Management', link: '/schema/'},
             {text: 'How Documents are Stored', link: '/schema/storage'},
@@ -205,13 +185,17 @@ module.exports = {
             {text: 'Tearing Down Document Storage', link: '/schema/cleaning'},
           ]
         },
-        {text: 'Troubleshoot', 
+        { text: 'Troubleshoot', 
+          collapsible: true,
+          collapsed: true,
           items: [
             {text: 'FAQ & Troubleshooting', link: '/troubleshoot/'}
           ]
         },
         {
           text: 'Scenarios',
+          collapsible: true,
+          collapsed: true,
           items: [
             {
               text: 'Aggregates, events and repositories',
@@ -233,6 +217,8 @@ module.exports = {
         },
         {
           text: 'Postgres for SQL Server users',
+          collapsible: true,
+          collapsed: true,
           items: [
             {
               text: 'Naming conventions',
@@ -252,25 +238,23 @@ module.exports = {
             },
             {
               text: 'Casing',
-              link: '/postgres/casing/',
-              items: [
-                {
-                  text: 'Unique values',
-                  link: '/postgres/casing/unique-values'
-                },
-                {
-                  text: 'Case insensitive data',
-                  link: '/postgres/casing/case-insensitive-data'
-                },
-                {
-                  text: 'Queries',
-                  link: '/postgres/casing/queries'
-                },
-                {
-                  text: 'Using duplicate fields',
-                  link: '/postgres/casing/using-duplicate-fields'
-                },
-              ]
+              link: '/postgres/casing'
+            },
+            {
+              text: 'Unique values',
+              link: '/postgres/casing/unique-values'
+            },
+            {
+              text: 'Case insensitive data',
+              link: '/postgres/casing/case-insensitive-data'
+            },
+            {
+              text: 'Queries',
+              link: '/postgres/casing/queries'
+            },
+            {
+              text: 'Using duplicate fields',
+              link: '/postgres/casing/using-duplicate-fields'
             },
             {
               text: 'Slow queries',
@@ -292,20 +276,18 @@ module.exports = {
               text: 'Working with dates',
               link: '/postgres/dates'
             },
-            {
-              text: 'Backup and restore',
-              link: '/postgres/backup-restore/',
-              items: [
-                {
-                  text: 'Local',
-                  link: '/postgres/backup-restore/local'
-                },
-                {
-                  text: 'Remote',
-                  link: '/postgres/backup-restore/remote'
-                }
-              ]
-            }
+            // {
+            //   text: 'Backup and restore',
+            //   link: '/postgres/backup-restore/'
+            // },
+            // {
+            //   text: 'Local',
+            //   link: '/postgres/backup-restore/local'
+            // },
+            // {
+            //   text: 'Remote',
+            //   link: '/postgres/backup-restore/remote'
+            // },
           ]
         }
       ]
