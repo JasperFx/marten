@@ -189,7 +189,7 @@ module.exports = {
           collapsible: true,
           collapsed: true,
           items: [
-            {text: 'FAQ & Troubleshooting', link: '/troubleshoot/'}
+            {text: 'FAQ & Troubleshooting', link: '/troubleshoot'}
           ]
         },
         {
