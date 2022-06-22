@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -15,7 +15,7 @@ namespace Marten.Events
         /// <param name="state"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static T AggregateTo<T>(this IMartenQueryable<IEvent> queryable, T state = null) where T : class
+        public static T AggregateTo<T>(this IQueryable<IEvent> queryable, T state = null) where T : class
         {
             var events = queryable.ToList();
             if (!events.Any())
@@ -26,7 +26,7 @@ namespace Marten.Events
             var session = queryable.As<MartenLinqQueryable<IEvent>>().Session;
             var aggregator = session.Options.Projections.AggregatorFor<T>();
 
-            var aggregate = aggregator.Build(queryable.ToList(), (IQuerySession)session, state);
+            var aggregate = aggregator.Build(queryable.ToList(), session, state);
 
             return aggregate;
         }
@@ -39,7 +39,7 @@ namespace Marten.Events
         /// <param name="token"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static async Task<T> AggregateToAsync<T>(this IMartenQueryable<IEvent> queryable, T state = null,
+        public static async Task<T> AggregateToAsync<T>(this IQueryable<IEvent> queryable, T state = null,
                                                         CancellationToken token = new ()) where T : class
         {
             var events = await queryable.ToListAsync(token).ConfigureAwait(false);
@@ -51,7 +51,7 @@ namespace Marten.Events
             var session = queryable.As<MartenLinqQueryable<IEvent>>().Session;
             var aggregator = session.Options.Projections.AggregatorFor<T>();
 
-            var aggregate = await aggregator.BuildAsync(events, (IQuerySession)session, state, token).ConfigureAwait(false);
+            var aggregate = await aggregator.BuildAsync(events, session, state, token).ConfigureAwait(false);
 
             return aggregate;
         }
