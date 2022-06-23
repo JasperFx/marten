@@ -15,7 +15,7 @@ namespace Marten.Events
         /// <param name="state"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static T AggregateTo<T>(this IQueryable<IEvent> queryable, T state = null) where T : class
+        public static T AggregateTo<T>(this IMartenQueryable<IEvent> queryable, T state = null) where T : class
         {
             var events = queryable.ToList();
             if (!events.Any())
@@ -39,8 +39,8 @@ namespace Marten.Events
         /// <param name="token"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static async Task<T> AggregateToAsync<T>(this IQueryable<IEvent> queryable, T state = null,
-                                                        CancellationToken token = new ()) where T : class
+        public static async Task<T> AggregateToAsync<T>(this IMartenQueryable<IEvent> queryable, T state = null,
+                                                        CancellationToken token = new()) where T : class
         {
             var events = await queryable.ToListAsync(token).ConfigureAwait(false);
             if (!events.Any())
@@ -54,6 +54,32 @@ namespace Marten.Events
             var aggregate = await aggregator.BuildAsync(events, session, state, token).ConfigureAwait(false);
 
             return aggregate;
+        }
+
+        /// <summary>
+        /// Aggregate the events in this query to the type T
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="state"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static T AggregateTo<T>(this IQueryable<IEvent> queryable, T state = null) where T : class
+        {
+            return AggregateTo(queryable.As<IMartenQueryable<IEvent>>(), state);
+        }
+
+        /// <summary>
+        /// Aggregate the events in this query to the type T
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="state"></param>
+        /// <param name="token"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static async Task<T> AggregateToAsync<T>(this IQueryable<IEvent> queryable, T state = null,
+            CancellationToken token = new()) where T : class
+        {
+            return await AggregateToAsync(queryable.As<IMartenQueryable<IEvent>>(), state, token).ConfigureAwait(false);
         }
 
     }
