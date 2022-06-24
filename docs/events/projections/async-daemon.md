@@ -305,10 +305,10 @@ public static async Task UseAsyncDaemon(IDocumentStore store, CancellationToken 
     await daemon.StartAllShards();
 
     // or instead, rebuild a single projection
-    await daemon.RebuildProjection("a projection name", cancellation);
+    await daemon.RebuildProjection("a projection name", 5.Minutes(), cancellation);
 
     // or a single projection by its type
-    await daemon.RebuildProjection<TripAggregationWithCustomName>(cancellation);
+    await daemon.RebuildProjection<TripAggregationWithCustomName>(5.Minutes(), cancellation);
 
     // Be careful with this. Wait until the async daemon has completely
     // caught up with the currently known high water mark
