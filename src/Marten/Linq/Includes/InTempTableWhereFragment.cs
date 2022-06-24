@@ -9,11 +9,13 @@ namespace Marten.Linq.Includes
     {
         private readonly string _tempTableName;
         private readonly string _tempTableColumn;
+        private readonly IPagedStatement _paging;
 
-        public InTempTableWhereFragment(string tempTableName, string tempTableColumn)
+        public InTempTableWhereFragment(string tempTableName, string tempTableColumn, IPagedStatement paging)
         {
             _tempTableName = tempTableName;
             _tempTableColumn = tempTableColumn;
+            _paging = paging;
         }
 
         public void Apply(CommandBuilder builder)
@@ -22,6 +24,19 @@ namespace Marten.Linq.Includes
             builder.Append(_tempTableColumn);
             builder.Append(" from ");
             builder.Append(_tempTableName);
+
+            if (_paging.Offset > 0)
+            {
+                builder.Append($" OFFSET ");
+                builder.Append(_paging.Offset);
+            }
+
+            if (_paging.Limit > 0)
+            {
+                builder.Append($" LIMIT ");
+                builder.Append(_paging.Limit);
+            }
+
             builder.Append(")");
         }
 

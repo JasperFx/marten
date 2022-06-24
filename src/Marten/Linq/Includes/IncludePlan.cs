@@ -50,9 +50,9 @@ namespace Marten.Linq.Includes
         public string IdAlias { get; private set; }
         public string TempTableSelector { get; private set; }
 
-        public Statement BuildStatement(string tempTableName)
+        public Statement BuildStatement(string tempTableName, IPagedStatement paging)
         {
-            return new IncludedDocumentStatement(_storage, this, tempTableName);
+            return new IncludedDocumentStatement(_storage, this, tempTableName, paging);
         }
 
         public IIncludeReader BuildReader(IMartenSession session)
@@ -64,9 +64,9 @@ namespace Marten.Linq.Includes
         public class IncludedDocumentStatement : SelectorStatement
         {
             public IncludedDocumentStatement(IDocumentStorage<T> storage, IncludePlan<T> includePlan,
-                string tempTableName) : base(storage, storage.Fields)
+                string tempTableName, IPagedStatement paging) : base(storage, storage.Fields)
             {
-                var initial = new InTempTableWhereFragment(tempTableName, includePlan.IdAlias);
+                var initial = new InTempTableWhereFragment(tempTableName, includePlan.IdAlias, paging);
                 Where = storage.FilterDocuments(null, initial);
             }
 
