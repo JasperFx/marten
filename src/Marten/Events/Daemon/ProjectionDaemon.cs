@@ -232,22 +232,32 @@ namespace Marten.Events.Daemon
 
         public Task RebuildProjection<TView>(CancellationToken token)
         {
+            return RebuildProjection<TView>(5.Minutes(), token);
+        }
+
+        public Task RebuildProjection<TView>(TimeSpan shardTimeout, CancellationToken token)
+        {
             if (typeof(TView).CanBeCastTo(typeof(ProjectionBase)) && typeof(TView).HasDefaultConstructor())
             {
                 var projection = (ProjectionBase)Activator.CreateInstance(typeof(TView))!;
                 return RebuildProjection(projection.ProjectionName, token);
             }
 
-            return RebuildProjection(typeof(TView).Name, token);
+            return RebuildProjection(typeof(TView).Name, shardTimeout, token);
         }
 
         public Task RebuildProjection(string projectionName, CancellationToken token)
+        {
+            return RebuildProjection(projectionName, 5.Minutes(), token);
+        }
+
+        public Task RebuildProjection(string projectionName, TimeSpan shardTimeout, CancellationToken token)
         {
             if (!_store.Options.Projections.TryFindProjection(projectionName, out var projection))
                 throw new ArgumentOutOfRangeException(nameof(projectionName),
                     $"No registered projection matches the name '{projectionName}'. Available names are {_store.Options.Projections.AllProjectionNames().Join(", ")}");
 
-            return rebuildProjection(projection, token);
+            return rebuildProjection(projection, shardTimeout, token);
         }
 
         public ShardAgent[] CurrentShards()
@@ -256,7 +266,7 @@ namespace Marten.Events.Daemon
         }
 
 
-        private async Task rebuildProjection(IProjectionSource source, CancellationToken token)
+        private async Task rebuildProjection(IProjectionSource source, TimeSpan shardTimeout, CancellationToken token)
         {
             _logger.LogInformation("Starting to rebuild Projection {ProjectionName}@{DatabaseIdentifier}", source.ProjectionName, Database.Identifier);
 
@@ -314,7 +324,7 @@ namespace Marten.Events.Daemon
             {
                 Tracker.MarkAsRestarted(shard);
                 await StartShard(shard, ShardExecutionMode.Rebuild, cancellationToken).ConfigureAwait(false);
-                await Tracker.WaitForShardState(shard.Name, mark, 5.Minutes()).ConfigureAwait(false);
+                await Tracker.WaitForShardState(shard.Name, mark, shardTimeout).ConfigureAwait(false);
             }).ConfigureAwait(false);
 #else
 
@@ -322,7 +332,7 @@ namespace Marten.Events.Daemon
             {
                 Tracker.MarkAsRestarted(x);
                 await StartShard(x, ShardExecutionMode.Rebuild, token).ConfigureAwait(false);
-                await Tracker.WaitForShardState(x.Name, mark, 5.Minutes()).ConfigureAwait(false);
+                await Tracker.WaitForShardState(x.Name, mark, shardTimeout).ConfigureAwait(false);
             }).ToArray();
 
             await waitForAllShardsToComplete(token, waiters).ConfigureAwait(false);
