@@ -116,7 +116,8 @@ namespace Marten.Linq.SqlGeneration
             // Select the Ids only
             SelectClause = includeIdentitySelectorStatement;
 
-            clone.Where = new InTempTableWhereFragment(includeIdentitySelectorStatement.ExportName, "id");
+            // Don't do any paging here, or it'll break the Statistics
+            clone.Where = new InTempTableWhereFragment(includeIdentitySelectorStatement.ExportName, "id", PagedStatement.Empty);
 
             return clone;
         }

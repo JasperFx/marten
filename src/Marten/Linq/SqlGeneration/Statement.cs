@@ -13,10 +13,36 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration
 {
+    public interface IPagedStatement
+    {
+        int Offset { get; set; }
+        int Limit { get; set; }
+    }
+
+    public class PagedStatement : IPagedStatement
+    {
+        public static readonly PagedStatement Empty = new PagedStatement(0, 0);
+
+        private PagedStatement(int offset, int limit)
+        {
+            Offset = offset;
+            Limit = limit;
+        }
+
+        public PagedStatement(Statement statement)
+        {
+            Offset = statement.Offset;
+            Limit = statement.Limit;
+        }
+
+        public int Offset { get; set; }
+        public int Limit { get; set; }
+    }
+
     /// <summary>
     /// Internal model used to generate SQL within Linq queries
     /// </summary>
-    public abstract class Statement
+    public abstract class Statement: IPagedStatement
     {
         private Statement _next;
 

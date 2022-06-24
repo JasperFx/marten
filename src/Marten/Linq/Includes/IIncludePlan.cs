@@ -14,7 +14,7 @@ namespace Marten.Linq.Includes
         int Index { set; }
         string LeftJoinExpression { get; }
         string ExpressionName { get; }
-        Statement BuildStatement(string tempTableName);
+        Statement BuildStatement(string tempTableName, IPagedStatement paging);
 
         Type DocumentType { get; }
     }
