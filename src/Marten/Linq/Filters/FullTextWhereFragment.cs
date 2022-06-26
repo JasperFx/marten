@@ -16,7 +16,8 @@ namespace Marten.Linq.Filters
         private readonly FullTextSearchFunction _searchFunction;
         private readonly string _searchTerm;
 
-        private string Sql => $"to_tsvector('{_regConfig}'::regconfig, {_dataConfig}) @@ {_searchFunction}('{_regConfig}'::regconfig, '{SanitizeSearchTerm(_searchTerm)}')";
+        // don't parameterize full-text search config as it ruins the performance with the query plan in PG
+        private string Sql => $"to_tsvector('{_regConfig}'::regconfig, {_dataConfig}) @@ {_searchFunction}('{_regConfig}'::regconfig, :argSearchTerm)";
 
         public FullTextWhereFragment(DocumentMapping mapping, FullTextSearchFunction searchFunction, string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
@@ -27,15 +28,9 @@ namespace Marten.Linq.Filters
             _searchTerm = searchTerm;
         }
 
-        private string SanitizeSearchTerm(string searchTerm)
-        {
-            // edge case that will cause a sql exception with a single quote we need to handle also
-            return searchTerm == "'" ? "" : searchTerm?.Replace("'", "''").Replace(@"\", @"\\");
-        }
-
         public void Apply(CommandBuilder builder)
         {
-            // don't use parameters for to_tsvector as it ruins the performance with the query plan in PG
+            builder.AddNamedParameter("argSearchTerm", _searchTerm);
             builder.Append(Sql);
         }
 
