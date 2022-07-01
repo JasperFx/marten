@@ -40,7 +40,7 @@ namespace Marten.Linq.Fields
 
 
             LocatorForIncludedDocumentId =
-                $"unnest(CAST(ARRAY(SELECT jsonb_array_elements_text(CAST({rawLocator} as jsonb))) as {innerPgType}[]))";
+                $"CAST(ARRAY(SELECT jsonb_array_elements_text(CAST({rawLocator} as jsonb))) as {innerPgType}[])";
 
             if (PgType.EqualsIgnoreCase("JSONB"))
             {

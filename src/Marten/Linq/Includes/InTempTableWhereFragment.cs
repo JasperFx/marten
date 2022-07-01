@@ -10,19 +10,21 @@ namespace Marten.Linq.Includes
         private readonly string _tempTableName;
         private readonly string _tempTableColumn;
         private readonly IPagedStatement _paging;
+        private readonly bool _isIdCollection;
 
-        public InTempTableWhereFragment(string tempTableName, string tempTableColumn, IPagedStatement paging)
+        public InTempTableWhereFragment(string tempTableName, string tempTableColumn, IPagedStatement paging, bool isIdCollection)
         {
             _tempTableName = tempTableName;
             _tempTableColumn = tempTableColumn;
             _paging = paging;
+            _isIdCollection = isIdCollection;
         }
 
         public void Apply(CommandBuilder builder)
         {
             builder.Append("id in (select ");
-            builder.Append(_tempTableColumn);
-            builder.Append(" from ");
+            builder.Append(_isIdCollection ? $"unnest({_tempTableColumn})" : _tempTableColumn);
+            builder.Append($" from (select {_tempTableColumn} from ");
             builder.Append(_tempTableName);
 
             if (_paging.Offset > 0)
@@ -37,6 +39,7 @@ namespace Marten.Linq.Includes
                 builder.Append(_paging.Limit);
             }
 
+            builder.Append($") as {_tempTableName}");
             builder.Append(")");
         }
 

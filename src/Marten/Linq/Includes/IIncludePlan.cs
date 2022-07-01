@@ -10,9 +10,8 @@ namespace Marten.Linq.Includes
 
         string IdAlias { get; }
         string TempTableSelector { get; }
-        bool RequiresLateralJoin();
+        bool IsIdCollection();
         int Index { set; }
-        string LeftJoinExpression { get; }
         string ExpressionName { get; }
         Statement BuildStatement(string tempTableName, IPagedStatement paging);
 

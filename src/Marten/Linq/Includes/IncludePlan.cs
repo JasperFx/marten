@@ -31,14 +31,11 @@ namespace Marten.Linq.Includes
             {
                 IdAlias = "id" + (value + 1);
                 ExpressionName = "include"+ (value + 1);
-
-                TempTableSelector = RequiresLateralJoin()
-                    ? $"{ExpressionName}.{IdAlias}"
-                    : $"{ConnectingField.LocatorForIncludedDocumentId} as {IdAlias}";
+                TempTableSelector = $"{ConnectingField.LocatorForIncludedDocumentId} as {IdAlias}";
             }
         }
 
-        public bool RequiresLateralJoin()
+        public bool IsIdCollection()
         {
             return ConnectingField is ArrayField;
         }
@@ -66,7 +63,7 @@ namespace Marten.Linq.Includes
             public IncludedDocumentStatement(IDocumentStorage<T> storage, IncludePlan<T> includePlan,
                 string tempTableName, IPagedStatement paging) : base(storage, storage.Fields)
             {
-                var initial = new InTempTableWhereFragment(tempTableName, includePlan.IdAlias, paging);
+                var initial = new InTempTableWhereFragment(tempTableName, includePlan.IdAlias, paging, includePlan.IsIdCollection());
                 Where = storage.FilterDocuments(null, initial);
             }
 
