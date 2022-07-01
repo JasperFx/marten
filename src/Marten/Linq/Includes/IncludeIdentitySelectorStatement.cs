@@ -95,7 +95,6 @@ namespace Marten.Linq.Includes
             sql.Append(" from ");
             sql.Append(FromObject);
             sql.Append(" as d ");
-            sql.Append(_includes.Where(x => x.RequiresLateralJoin()).Select(x => x.LeftJoinExpression).Join(" "));
         }
 
         public string[] SelectFields()
