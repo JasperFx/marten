@@ -32,7 +32,7 @@ namespace Marten.Events
             var sequences = session.ExecuteHandler(fetcher);
 
 
-            foreach (var stream in session.WorkTracker.Streams)
+            foreach (var stream in session.WorkTracker.Streams.Where(x => x.Events.Any()))
             {
                 stream.TenantId ??= session.TenantId;
 
@@ -92,7 +92,7 @@ namespace Marten.Events
 
             var storage = session.EventStorage();
 
-            foreach (var stream in session.WorkTracker.Streams)
+            foreach (var stream in session.WorkTracker.Streams.Where(x => x.Events.Any()))
             {
                 stream.TenantId ??= session.TenantId;
 
