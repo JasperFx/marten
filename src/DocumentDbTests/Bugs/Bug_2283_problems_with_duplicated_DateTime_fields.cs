@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Marten;
 using Marten.Exceptions;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -15,7 +16,11 @@ namespace DocumentDbTests.Bugs
         [Fact]
         public async Task can_query_on_duplicated_datetime_field()
         {
-            StoreOptions(opts => opts.Schema.For<MyModel>().Duplicate(x => x.Date));
+            StoreOptions(opts =>
+            {
+                opts.Schema.For<MyModel>().Duplicate(x => x.Date);
+                opts.UseDefaultSerialization();
+            });
             var model1 = new MyModel { UserId = Guid.NewGuid(), Date = DateTime.Now };
 
             theSession.Store(model1);
