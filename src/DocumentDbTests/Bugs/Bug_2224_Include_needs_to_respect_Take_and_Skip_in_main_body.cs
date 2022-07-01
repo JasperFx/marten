@@ -85,35 +85,35 @@ namespace DocumentDbTests.Bugs
             list.Count.ShouldBe(1);
         }
 
-        // [Fact] -- JDM to come back to this
-        // public async Task Bug_2258_get_all_related_documents()
-        // {
-        //     var tenant1 = new Tenant2();
-        //     var tenant2 = new Tenant2();
-        //     var tenant3 = new Tenant2();
-        //
-        //     theSession.Store(tenant1, tenant2, tenant3);
-        //
-        //     await theSession.SaveChangesAsync();
-        //
-        //     var user1 = new User2 { TenantIds = new List<Guid> { tenant1.Id, tenant2.Id, tenant3.Id } };
-        //     theSession.Store(user1);
-        //     await theSession.SaveChangesAsync();
-        //
-        //     theSession.Logger = new TestOutputMartenLogger(_output);
-        //
-        //     var tenants = new Dictionary<Guid, Tenant2>();
-        //     var user = await theSession
-        //         .Query<User2>()
-        //         .Include(x => x.TenantIds, tenants)
-        //         .SingleOrDefaultAsync(x => x.Id == user1.Id);
-        //
-        //     user.Id.ShouldBe(user1.Id);
-        //     tenants.Count.ShouldBe(3);
-        //     tenants.ContainsKey(tenant1.Id).ShouldBeTrue();
-        //     tenants.ContainsKey(tenant2.Id).ShouldBeTrue();
-        //     tenants.ContainsKey(tenant3.Id).ShouldBeTrue();
-        // }
+        [Fact]
+        public async Task Bug_2258_get_all_related_documents()
+        {
+            var tenant1 = new Tenant2();
+            var tenant2 = new Tenant2();
+            var tenant3 = new Tenant2();
+
+            theSession.Store(tenant1, tenant2, tenant3);
+
+            await theSession.SaveChangesAsync();
+
+            var user1 = new User2 { TenantIds = new List<Guid> { tenant1.Id, tenant2.Id, tenant3.Id } };
+            theSession.Store(user1);
+            await theSession.SaveChangesAsync();
+
+            theSession.Logger = new TestOutputMartenLogger(_output);
+
+            var tenants = new Dictionary<Guid, Tenant2>();
+            var user = await theSession
+                .Query<User2>()
+                .Include(x => x.TenantIds, tenants)
+                .SingleOrDefaultAsync(x => x.Id == user1.Id);
+
+            user.Id.ShouldBe(user1.Id);
+            tenants.Count.ShouldBe(3);
+            tenants.ContainsKey(tenant1.Id).ShouldBeTrue();
+            tenants.ContainsKey(tenant2.Id).ShouldBeTrue();
+            tenants.ContainsKey(tenant3.Id).ShouldBeTrue();
+        }
 
         [Fact]
         public async Task include_with_pagination()
