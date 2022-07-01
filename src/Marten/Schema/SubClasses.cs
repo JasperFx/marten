@@ -68,7 +68,7 @@ namespace Marten.Schema
 
             var types = new AssemblyTypes(assembly);
             var allSubclassTypes = types.ClosedTypes.Concretes
-                .Where(x => x.CanBeCastTo(baseType));
+                .Where(x => x.CanBeCastTo(baseType) && x != baseType);
 
             foreach (var subclassType in allSubclassTypes)
             {
