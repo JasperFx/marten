@@ -359,6 +359,31 @@ namespace DocumentDbTests.MultiTenancy
         }
 
         [Fact]
+        public void query_within_all_tenants_with_compound_where()
+        {
+            theStore.Advanced.Clean.DeleteAllDocuments();
+
+            var reds = Target.GenerateRandomData(50).ToArray();
+            var greens = Target.GenerateRandomData(75).ToArray();
+            var blues = Target.GenerateRandomData(25).ToArray();
+
+            theStore.BulkInsert("Red", reds);
+            theStore.BulkInsert("Green", greens);
+            theStore.BulkInsert("Blue", blues);
+
+            var expected = reds.Concat(greens).Concat(blues)
+                .Where(x => x.Flag && x.String != null).Select(x => x.Id).OrderBy(x => x).ToArray();
+
+            using (var query = theStore.QuerySession())
+            {
+                var actual = query.Query<Target>().Where(x => x.AnyTenant() && x.Flag && x.String != null)
+                    .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
+
+                actual.ShouldHaveTheSameElementsAs(expected);
+            }
+        }
+
+        [Fact]
         public async Task query_within_selected_tenants()
         {
             await theStore.Advanced.Clean.DeleteAllDocumentsAsync();

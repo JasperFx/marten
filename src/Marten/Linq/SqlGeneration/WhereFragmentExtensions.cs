@@ -11,7 +11,23 @@ namespace Marten.Linq.SqlGeneration
     {
         public static bool SpecifiesTenant(this ISqlFragment fragment)
         {
-            return fragment.Flatten().OfType<ITenantWhereFragment>().Any();
+            if (fragment is ITenantWhereFragment)
+            {
+                return true;
+            }
+
+            if (fragment is CompoundWhereFragment cwf)
+            {
+                foreach (var child in cwf.Children)
+                {
+                    if (SpecifiesTenant(child))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         public static bool SpecifiesEventArchivalStatus(this ISqlFragment query)
