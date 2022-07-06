@@ -69,7 +69,7 @@ namespace Marten.Services
             Mode = mode;
             Tenant ??= TenantId != Tenancy.DefaultTenantId ? await store.Tenancy.GetTenantAsync(TenantId).ConfigureAwait(false) : store.Tenancy.Default;
 
-            if (!store.Options.Advanced.DefaultTenantUsageEnabled &&
+            if (!AllowAnyTenant && !store.Options.Advanced.DefaultTenantUsageEnabled &&
                 Tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
             {
                 throw new DefaultTenantUsageDisabledException();

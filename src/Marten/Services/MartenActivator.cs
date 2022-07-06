@@ -51,7 +51,7 @@ namespace Marten.Services
             foreach (var initialData in Store.Options.InitialData)
             {
                 _logger.LogInformation("Applying initial data {InitialData}", initialData);
-                await initialData.Populate(Store, cancellationToken).ConfigureAwait(true);
+                await initialData.Populate(Store, cancellationToken).ConfigureAwait(false);
             }
         }
 

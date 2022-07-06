@@ -301,7 +301,7 @@ namespace Marten.Storage
             public async Task BulkInsertAsync(int batchSize, NpgsqlConnection conn, BulkInsertion parent, BulkInsertMode mode,
                 CancellationToken cancellation)
             {
-                await parent._tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(true);
+                await parent._tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
                 await parent.bulkInsertDocumentsAsync(_documents, batchSize, conn, mode, cancellation).ConfigureAwait(false);
             }
         }

@@ -97,5 +97,7 @@ namespace Marten.Events.Daemon
         Task WaitForNonStaleData(TimeSpan timeout);
 
         Task PauseHighWaterAgent();
+
+        long HighWaterMark();
     }
 }

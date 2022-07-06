@@ -53,7 +53,9 @@ namespace CommandLineRunner
                     {
                         opts.AutoCreateSchemaObjects = AutoCreate.All;
                         opts.DatabaseSchemaName = "cli";
-                        opts.Connection(ConnectionSource.ConnectionString);
+
+                        opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
+                            .WithTenants("tenant1", "tenant2", "tenant3");
 
                         // This is important, setting this option tells Marten to
                         // *try* to use pre-generated code at runtime

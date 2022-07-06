@@ -11,4 +11,8 @@
       <ProjectReference Include="..\Marten\Marten.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Lamar" Version="8.0.1" />
+      <PackageReference Include="Spectre.Console" Version="0.44.0" />
+    </ItemGroup>
 </Project>

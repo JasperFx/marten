@@ -52,6 +52,8 @@ namespace Marten.Events.Daemon.HighWater
 
         private async Task DetectChanges()
         {
+            if (!IsRunning) return;
+
             try
             {
                 _current = await _detector.Detect(_token).ConfigureAwait(false);
@@ -70,6 +72,8 @@ namespace Marten.Events.Daemon.HighWater
 
             while (!_token.IsCancellationRequested)
             {
+                if (!IsRunning) break;
+
                 HighWaterStatistics statistics = null;
                 try
                 {
@@ -120,6 +124,8 @@ namespace Marten.Events.Daemon.HighWater
 
         private async Task markProgress(HighWaterStatistics statistics, TimeSpan delayTime)
         {
+            if (!IsRunning) return;
+
             // don't bother sending updates if the current position is 0
             if (statistics.CurrentMark == 0 || statistics.CurrentMark == _tracker.HighWaterMark)
             {
@@ -170,6 +176,7 @@ namespace Marten.Events.Daemon.HighWater
 
         public async Task CheckNow()
         {
+            if (!IsRunning) return;
             var statistics = await _detector.Detect(_token).ConfigureAwait(false);
             _tracker.MarkHighWater(statistics.CurrentMark);
         }

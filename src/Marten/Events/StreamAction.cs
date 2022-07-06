@@ -64,8 +64,6 @@ namespace Marten.Events
         /// </summary>
         public string? TenantId { get; internal set; }
 
-
-
         private readonly List<IEvent> _events = new();
 
         internal StreamAction(Guid stream, StreamActionType actionType)

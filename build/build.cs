@@ -75,6 +75,11 @@ namespace martenbuild
             Target("test-core", DependsOn("compile-core-tests"), () =>
                 RunTests("CoreTests"));
 
+            Target("test-cli", () =>
+            {
+                Run("dotnet", $"test --configuration {_configuration} src/Marten.CommandLine.Tests/Marten.CommandLine.Tests.csproj");
+            });
+
             Target("compile-document-db-tests", DependsOn("clean"), () =>
                 Run("dotnet", $"build src/DocumentDbTests/DocumentDbTests.csproj --framework {_framework} --configuration {configuration}"));
 
@@ -109,7 +114,7 @@ namespace martenbuild
 
 
             // JDM -- I removed test-codegen temporarily during V5 work
-            Target("test", DependsOn("test-base-lib", "test-document-db", "test-event-sourcing"));
+            Target("test", DependsOn("test-base-lib", "test-document-db", "test-event-sourcing", "test-cli"));
 
             Target("test-extension-libs", DependsOn("test-noda-time", "test-plv8", "test-aspnetcore"));
 
