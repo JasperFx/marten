@@ -137,6 +137,26 @@ namespace CoreTests
         }
 
         [Fact]
+        public async Task can_resolve_all_stores()
+        {
+            using var host = await Host.CreateDefaultBuilder()
+                .ConfigureServices(services =>
+                {
+                    services.AddMarten(ConnectionSource.ConnectionString);
+
+                    services.AddMartenStore<IFirstStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.DatabaseSchemaName = "first_store";
+                    });
+                }).StartAsync();
+
+            var stores = host.AllDocumentStores();
+            stores.Count.ShouldBe(2);
+            stores.OfType<IFirstStore>().Count().ShouldBe(1);
+        }
+
+        [Fact]
         public void using_optimized_mode_in_development()
         {
             using var host = new HostBuilder()

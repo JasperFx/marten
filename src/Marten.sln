@@ -76,6 +76,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourcingIntro", "sampl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimalAPI", "samples\MinimalAPI\MinimalAPI.csproj", "{7B710A53-373B-4A7D-B49E-53C15E6A8CA8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.CommandLine.Tests", "Marten.CommandLine.Tests\Marten.CommandLine.Tests.csproj", "{0962E83F-482B-4316-A8AB-3B714EEEC3AA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -186,6 +188,10 @@ Global
 		{7B710A53-373B-4A7D-B49E-53C15E6A8CA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B710A53-373B-4A7D-B49E-53C15E6A8CA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7B710A53-373B-4A7D-B49E-53C15E6A8CA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0962E83F-482B-4316-A8AB-3B714EEEC3AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0962E83F-482B-4316-A8AB-3B714EEEC3AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0962E83F-482B-4316-A8AB-3B714EEEC3AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0962E83F-482B-4316-A8AB-3B714EEEC3AA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -217,5 +223,6 @@ Global
 		{41FC568A-72A2-46A3-A2DA-4C85E4512090} = {79961196-DB50-4AD3-B749-D231799BCF2E}
 		{3688AF80-FB24-4C3C-95FD-A2AB4680CD67} = {91D87D73-EC07-4067-8A64-26A2E4F6BC83}
 		{7B710A53-373B-4A7D-B49E-53C15E6A8CA8} = {79961196-DB50-4AD3-B749-D231799BCF2E}
+		{0962E83F-482B-4316-A8AB-3B714EEEC3AA} = {DA7EC300-12F5-4B80-B5DF-B7B71E344E24}
 	EndGlobalSection
 EndGlobal

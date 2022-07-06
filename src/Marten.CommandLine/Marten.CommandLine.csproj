@@ -37,8 +37,5 @@
         <PackageReference Include="Oakton" Version="4.5.1" />
         <PackageReference Include="Weasel.CommandLine" Version="5.5.0" />
     </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Commands\Patch" />
-    </ItemGroup>
     <Import Project="../../Analysis.Build.props" />
 </Project>

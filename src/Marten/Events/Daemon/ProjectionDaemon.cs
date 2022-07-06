@@ -92,6 +92,11 @@ namespace Marten.Events.Daemon
             return _highWater.Stop();
         }
 
+        public long HighWaterMark()
+        {
+            return Tracker.HighWaterMark;
+        }
+
         public async Task StartAllShards()
         {
             if (!_highWater.IsRunning)
@@ -300,18 +305,7 @@ namespace Marten.Events.Daemon
             }
 
             // Teardown the current state
-            var session = await _store.OpenSessionAsync(new SessionOptions{AllowAnyTenant = true, Tracking = DocumentTracking.None}, token).ConfigureAwait(false);
-            await using (session.ConfigureAwait(false))
-            {
-                source.Options.Teardown(session);
-
-                foreach (var shard in shards)
-                {
-                    session.QueueOperation(new DeleteProjectionProgress(_store.Events, shard.Name.Identity));
-                }
-
-                await session.SaveChangesAsync(token).ConfigureAwait(false);
-            }
+            await teardownExistingProjectionProgress(source, token, shards).ConfigureAwait(false);
 
             if (token.IsCancellationRequested) return;
 
@@ -338,6 +332,26 @@ namespace Marten.Events.Daemon
             await waitForAllShardsToComplete(token, waiters).ConfigureAwait(false);
 #endif
             foreach (var shard in shards) await StopShard(shard.Name.Identity).ConfigureAwait(false);
+        }
+
+        private async Task teardownExistingProjectionProgress(IProjectionSource source, CancellationToken token,
+            IReadOnlyList<AsyncProjectionShard> shards)
+        {
+            var sessionOptions = SessionOptions.ForDatabase(Database);
+            sessionOptions.AllowAnyTenant = true;
+            sessionOptions.Tracking = DocumentTracking.None;
+            var session = await _store.OpenSessionAsync(sessionOptions, token).ConfigureAwait(false);
+            await using (session.ConfigureAwait(false))
+            {
+                source.Options.Teardown(session);
+
+                foreach (var shard in shards)
+                {
+                    session.QueueOperation(new DeleteProjectionProgress(_store.Events, shard.Name.Identity));
+                }
+
+                await session.SaveChangesAsync(token).ConfigureAwait(false);
+            }
         }
 
         private static async Task waitForAllShardsToComplete(CancellationToken token, Task[] waiters)

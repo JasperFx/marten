@@ -169,11 +169,14 @@ namespace Marten.Events.Aggregation
 
             await shardAgent.TryAction(async () =>
             {
-                using (var session = (IMartenSession) store.LightweightSession(Tenant.TenantId))
+                var options = new SessionOptions
                 {
-                    aggregates = await runtime.Storage
-                        .LoadManyAsync(ids, session, token).ConfigureAwait(false);
-                }
+                    Tenant = Tenant, Tracking = DocumentTracking.None, AllowAnyTenant = true
+                };
+
+                using var session = (IMartenSession) store.OpenSession(options);
+                aggregates = await runtime.Storage
+                    .LoadManyAsync(ids, session, token).ConfigureAwait(false);
             }, token).ConfigureAwait(false);
 
             if (token.IsCancellationRequested || aggregates == null) return;
