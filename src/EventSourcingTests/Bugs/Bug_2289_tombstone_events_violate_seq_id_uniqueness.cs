@@ -2,7 +2,6 @@ using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
 using System.Linq;
-using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,7 +17,7 @@ namespace EventSourcingTests.Bugs
         }
 
         [Fact]
-        public async Task ensure_tombstone_event_has_sequence_set()
+        public void ensure_tombstone_event_has_sequence_set()
         {
             var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
