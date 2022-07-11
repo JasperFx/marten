@@ -262,20 +262,7 @@ namespace Marten.Events
 
             var i = currentVersion;
 
-            if (currentVersion != 0)
-            {
-                // Guard logic for optimistic concurrency
-                if (ExpectedVersionOnServer.HasValue)
-                {
-                    if (currentVersion != ExpectedVersionOnServer.Value)
-                    {
-                        throw new EventStreamUnexpectedMaxEventIdException((object?) Key ?? Id, AggregateType, ExpectedVersionOnServer.Value, currentVersion);
-                    }
-                }
-
-                ExpectedVersionOnServer = currentVersion;
-            }
-
+            // Augment the events before checking expected versions, this allows the sequence/etc to properly be set on the resulting tombstone events
             foreach (var @event in _events)
             {
                 @event.Version = ++i;
@@ -288,6 +275,20 @@ namespace Marten.Events
                 @event.Timestamp = timestamp;
 
                 ProcessMetadata(@event, graph, session);
+            }
+
+            if (currentVersion != 0)
+            {
+                // Guard logic for optimistic concurrency
+                if (ExpectedVersionOnServer.HasValue)
+                {
+                    if (currentVersion != ExpectedVersionOnServer.Value)
+                    {
+                        throw new EventStreamUnexpectedMaxEventIdException((object?) Key ?? Id, AggregateType, ExpectedVersionOnServer.Value, currentVersion);
+                    }
+                }
+
+                ExpectedVersionOnServer = currentVersion;
             }
 
             Version = Events.Last().Version;
