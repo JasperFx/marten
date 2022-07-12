@@ -50,6 +50,8 @@ namespace Marten.Events.Aggregation
             _inlineAggregationHandlerType = GetType().ToSuffixedTypeName("InlineHandler");
             _liveAggregationTypeName = GetType().ToSuffixedTypeName("LiveAggregation");
             _versioning = new AggregateVersioning<T>(scope);
+
+            RegisterPublishedType(typeof(T));
         }
 
         /// <summary>
@@ -90,9 +92,6 @@ namespace Marten.Events.Aggregation
             StreamType = typeof(T);
         }
 
-
-        public override Type ProjectionType => GetType();
-
         public bool AppliesTo(IEnumerable<Type> eventTypes)
         {
             return eventTypes
@@ -109,11 +108,6 @@ namespace Marten.Events.Aggregation
         public bool MatchesAnyDeleteType(StreamAction action)
         {
             return action.Events.Select(x => x.EventType).Intersect(DeleteEvents).Any();
-        }
-
-        protected sealed override IEnumerable<Type> publishedTypes()
-        {
-            yield return typeof(T);
         }
 
         protected sealed override ValueTask<EventRangeGroup> groupEvents(DocumentStore store, IMartenDatabase daemonDatabase, EventRange range,

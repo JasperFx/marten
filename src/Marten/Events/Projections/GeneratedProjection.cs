@@ -33,7 +33,7 @@ namespace Marten.Events.Projections
 
 
 
-        public abstract Type ProjectionType { get;}
+        public Type ProjectionType => GetType();
 
         void ICodeFile.AssembleTypes(GeneratedAssembly assembly)
         {
@@ -119,12 +119,5 @@ namespace Marten.Events.Projections
             EventRange range,
             CancellationToken cancellationToken);
 
-
-        IEnumerable<Type> IProjectionSource.PublishedTypes()
-        {
-            return publishedTypes();
-        }
-
-        protected abstract IEnumerable<Type> publishedTypes();
     }
 }

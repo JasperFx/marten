@@ -29,7 +29,7 @@ namespace Marten.Events.Projections
         private GeneratedType _inlineType;
         private bool _isAsync;
 
-        private Lazy<IProjection> _generatedProjection;
+        private readonly Lazy<IProjection> _generatedProjection;
 
         public EventProjection(): base("Projections")
         {
@@ -54,13 +54,10 @@ namespace Marten.Events.Projections
             });
         }
 
-        public override Type ProjectionType => GetType();
         protected override IProjection buildProjectionObject(DocumentStore store)
         {
             return _generatedProjection.Value;
         }
-
-
 
         protected override bool needsSettersGenerated()
         {
@@ -117,6 +114,19 @@ namespace Marten.Events.Projections
             }
 
             IncludedEventTypes.Fill(MethodCollection.AllEventTypes(_createMethods, _projectMethods));
+
+            foreach (var method in _createMethods.Methods)
+            {
+                var docType = method.ReturnType;
+                if (docType.Closes(typeof(Task<>)))
+                {
+                    RegisterPublishedType(docType.GetGenericArguments().Single());
+                }
+                else
+                {
+                    RegisterPublishedType(docType);
+                }
+            }
         }
 
         [MartenIgnore]
@@ -129,22 +139,6 @@ namespace Marten.Events.Projections
         public void ProjectAsync<TEvent>(Func<TEvent, IDocumentOperations, Task> project)
         {
             _projectMethods.AddLambda(project, typeof(TEvent));
-        }
-
-        protected override IEnumerable<Type> publishedTypes()
-        {
-            foreach (var method in _createMethods.Methods)
-            {
-                var docType = method.ReturnType;
-                if (docType.Closes(typeof(Task<>)))
-                {
-                    yield return docType.GetGenericArguments().Single();
-                }
-                else
-                {
-                    yield return docType;
-                }
-            }
         }
 
         /// <summary>
