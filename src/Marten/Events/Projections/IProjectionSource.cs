@@ -26,4 +26,5 @@ namespace Marten.Events.Projections
 
         IProjection Build(DocumentStore store);
     }
+
 }

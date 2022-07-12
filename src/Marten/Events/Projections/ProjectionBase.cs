@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Events.Daemon;
+using Marten.Storage;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Projections
@@ -88,5 +91,21 @@ namespace Marten.Events.Projections
         {
             // Nothing
         }
+
+        public virtual Task TeardownExistingDataBeforeRebuild(IDocumentStore store, IMartenDatabase database,
+            CancellationToken cancellation) => Task.CompletedTask;
+
+        private readonly List<Type> _publishedTypes = new List<Type>();
+
+        /// <summary>
+        /// Just recording which document types are published by this projection
+        /// </summary>
+        /// <param name="publishedType"></param>
+        protected void RegisterPublishedType(Type publishedType)
+        {
+            _publishedTypes.Add(publishedType);
+        }
+
+        public IEnumerable<Type> PublishedTypes() => _publishedTypes;
     }
 }
