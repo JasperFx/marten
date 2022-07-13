@@ -292,6 +292,7 @@ namespace Marten.Events.Daemon
             // If there's no data, do nothing
             if (Tracker.HighWaterMark == 0)
             {
+                _logger.LogInformation("Aborting projection rebuild because the high water mark is 0 (no event data)");
                 return;
             }
 

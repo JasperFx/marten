@@ -176,7 +176,6 @@ namespace Marten.Events.Daemon.HighWater
 
         public async Task CheckNow()
         {
-            if (!IsRunning) return;
             var statistics = await _detector.Detect(_token).ConfigureAwait(false);
             _tracker.MarkHighWater(statistics.CurrentMark);
         }
