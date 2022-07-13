@@ -15,7 +15,7 @@ namespace Marten.Events.Daemon
 
         public ShardStatusWatcher(ShardStateTracker tracker, ShardState expected, TimeSpan timeout)
         {
-            _condition = x => x.Equals(expected);
+            _condition = x => x.ShardName == expected.ShardName && x.Sequence >= expected.Sequence;
             _completion = new TaskCompletionSource<ShardState>();
 
 

@@ -90,7 +90,10 @@ namespace Marten.Events.Daemon
         {
             if (_states.TryFind(expected.ShardName, out var state))
             {
-                if (state.Equals(expected)) return Task.FromResult(state);
+                if (state.Equals(expected) || state.Sequence >= expected.Sequence)
+                {
+                    return Task.FromResult(state);
+                }
             }
 
             timeout ??= 1.Minutes();
