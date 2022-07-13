@@ -5,11 +5,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
 using Marten.Storage;
+using Weasel.Core;
 using Weasel.Postgresql.SqlGeneration;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Events.Projections
 {
-    public abstract class ProjectionBase
+    public abstract class ProjectionBase : IProjectionSourceTeardown, IProjectionSchemaSource
     {
         private readonly IList<ISqlFragment> _filters = new List<ISqlFragment>();
 
@@ -92,8 +94,34 @@ namespace Marten.Events.Projections
             // Nothing
         }
 
-        public virtual Task TeardownExistingDataBeforeRebuild(IDocumentStore store, IMartenDatabase database,
-            CancellationToken cancellation) => Task.CompletedTask;
+
+
+        /// <summary>
+        /// Direct Marten to delete data published by this projection as the first
+        /// step to rebuilding the projection data. The default is false.
+        /// </summary>
+        public bool TeardownDataOnRebuild { get; set; } = false;
+
+        async Task IProjectionSourceTeardown.TeardownExistingData(IDocumentStore store, IMartenDatabase database, CancellationToken cancellation)
+        {
+            if (!TeardownDataOnRebuild) return;
+
+            foreach (var publishedType in _publishedTypes)
+            {
+                await database.DeleteDocumentsByTypeAsync(publishedType).ConfigureAwait(false);
+            }
+
+            using var conn = database.CreateConnection();
+            await conn.OpenAsync(cancellation).ConfigureAwait(false);
+
+            foreach (var table in SchemaObjects.OfType<Table>())
+            {
+                await conn.RunSql($"delete from {table.Identifier}").ConfigureAwait(false);
+            }
+
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+
 
         private readonly List<Type> _publishedTypes = new List<Type>();
 
@@ -107,5 +135,17 @@ namespace Marten.Events.Projections
         }
 
         public IEnumerable<Type> PublishedTypes() => _publishedTypes;
+
+        IReadOnlyList<ISchemaObject> IProjectionSchemaSource.SchemaObjects()
+        {
+            return SchemaObjects.ToList();
+        }
+
+        /// <summary>
+        /// Use to register additional or custom schema objects like database tables that
+        /// will be used by this projection. Originally meant to support projecting to flat
+        /// tables
+        /// </summary>
+        public IList<ISchemaObject> SchemaObjects { get; } = new List<ISchemaObject>();
     }
 }
