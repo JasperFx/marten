@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +33,23 @@ namespace Marten.Internal.Operations
 
             for (var i = 0; i < parameters.Length; i++)
             {
-                parameters[i].Value = _parameterValues[i];
+                if (_parameterValues[i] == null)
+                {
+                    parameters[i].Value = DBNull.Value;
+                }
+                else
+                {
+                    var dbType = PostgresqlProvider.Instance.TryGetDbType(_parameterValues[i].GetType());
+                    if (dbType != null)
+                    {
+                        parameters[i].NpgsqlDbType = dbType.Value;
+                    }
+
+                    parameters[i].Value = _parameterValues[i];
+                }
+
+
+
             }
         }
 

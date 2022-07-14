@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace EventSourcingTests.Projections.ViewProjections
+namespace EventSourcingTests.Projections.MultiStreamProjections
 {
     #region sample_view-projection-test-classes
 

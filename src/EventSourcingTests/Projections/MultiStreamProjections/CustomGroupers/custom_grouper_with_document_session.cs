@@ -10,7 +10,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
+namespace EventSourcingTests.Projections.MultiStreamProjections.CustomGroupers
 {
     #region sample_view-projection-custom-grouper-with-querysession
     public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>

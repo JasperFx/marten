@@ -15,7 +15,7 @@ namespace Marten.Events.Projections
 {
     public abstract partial class EventProjection
     {
-                protected override void assembleTypes(GeneratedAssembly assembly, StoreOptions options)
+        protected override void assembleTypes(GeneratedAssembly assembly, StoreOptions options)
         {
             assembly.Rules.Assemblies.Add(GetType().Assembly);
             assembly.Rules.Assemblies.AddRange(_projectMethods.ReferencedAssemblies());

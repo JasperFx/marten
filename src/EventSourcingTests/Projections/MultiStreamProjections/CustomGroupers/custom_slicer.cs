@@ -1,59 +1,64 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Marten;
+using Marten.Events;
+using Marten.Events.Aggregation;
 using Marten.Events.Projections;
+using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
-using Weasel.Postgresql;
 using Xunit;
 
-namespace EventSourcingTests.Projections.ViewProjections
+namespace EventSourcingTests.Projections.MultiStreamProjections.CustomGroupers
 {
-    #region sample_view-projection-simple
+    #region sample_view-projection-custom-slicer
     public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAssignment, Guid>
     {
+        public class CustomSlicer: IEventSlicer<UserGroupsAssignment, Guid>
+        {
+            public ValueTask<IReadOnlyList<EventSlice<UserGroupsAssignment, Guid>>> SliceInlineActions(
+                IQuerySession querySession, IEnumerable<StreamAction> streams)
+            {
+                var allEvents = streams.SelectMany(x => x.Events).ToList();
+                var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(Tenant.ForDatabase(querySession.Database));
+                group.AddEvents<UserRegistered>(@event => @event.UserId, allEvents);
+                group.AddEvents<MultipleUsersAssignedToGroup>(@event => @event.UserIds, allEvents);
+
+                return new(group.Slices.ToList());
+            }
+
+            public ValueTask<IReadOnlyList<TenantSliceGroup<UserGroupsAssignment, Guid>>> SliceAsyncEvents(
+                IQuerySession querySession, List<IEvent> events)
+            {
+                var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(Tenant.ForDatabase(querySession.Database));
+                group.AddEvents<UserRegistered>(@event => @event.UserId, events);
+                group.AddEvents<MultipleUsersAssignedToGroup>(@event => @event.UserIds, events);
+
+                return new(new List<TenantSliceGroup<UserGroupsAssignment, Guid>>{group});
+            }
+        }
+
         public UserGroupsAssignmentProjection()
         {
-            // This is just specifying the aggregate document id
-            // per event type. This assumes that each event
-            // applies to only one aggregated view document
-            Identity<UserRegistered>(x => x.UserId);
-            Identity<SingleUserAssignedToGroup>(x => x.UserId);
+            CustomGrouping(new CustomSlicer());
         }
 
         public void Apply(UserRegistered @event, UserGroupsAssignment view)
-            => view.Id = @event.UserId;
-
-        public void Apply(SingleUserAssignedToGroup @event, UserGroupsAssignment view)
-            => view.Groups.Add(@event.GroupId);
-    }
-
-    #endregion
-
-    #region sample_view-projection-simple-2
-    public class UserGroupsAssignmentProjection2: MultiStreamAggregation<UserGroupsAssignment, Guid>
-    {
-        public UserGroupsAssignmentProjection2()
         {
-            // This is just specifying the aggregate document id
-            // per event type. This assumes that each event
-            // applies to only one aggregated view document
-
-            // The easiest possible way to do this is to use
-            // a common interface or base type, and specify
-            // the identity rule on that common type
-            Identity<IUserEvent>(x => x.UserId);
+            view.Id = @event.UserId;
         }
 
-        public void Apply(UserRegistered @event, UserGroupsAssignment view)
-            => view.Id = @event.UserId;
-
-        public void Apply(SingleUserAssignedToGroup @event, UserGroupsAssignment view)
-            => view.Groups.Add(@event.GroupId);
+        public void Apply(MultipleUsersAssignedToGroup @event, UserGroupsAssignment view)
+        {
+            view.Groups.Add(@event.GroupId);
+        }
     }
 
     #endregion
 
-    public class simple_multi_stream_projection: IntegrationContext
+    public class custom_slicer: OneOffConfigurationsContext
     {
         [Fact]
         public async Task multi_stream_projections_should_work()
@@ -103,26 +108,15 @@ namespace EventSourcingTests.Projections.ViewProjections
             // John, Alan   => Regular
             // --------------------------------
 
-            var annaAssignedToAdminUsersGroup = new SingleUserAssignedToGroup(adminUsersGroupCreated.GroupId,
-                annaRegistered.UserId);
+            var annaAndMaggieAssignedToAdminUsersGroup = new MultipleUsersAssignedToGroup(adminUsersGroupCreated.GroupId,
+                new List<Guid> {annaRegistered.UserId, maggieRegistered.UserId});
+            theSession.Events.Append(annaAndMaggieAssignedToAdminUsersGroup.GroupId,
+                annaAndMaggieAssignedToAdminUsersGroup);
 
-            var maggieAssignedToAdminUsersGroup = new SingleUserAssignedToGroup(adminUsersGroupCreated.GroupId,
-                maggieRegistered.UserId);
-            theSession.Events.Append(
-                adminUsersGroupCreated.GroupId,
-                annaAssignedToAdminUsersGroup,
-                maggieAssignedToAdminUsersGroup
-            );
-
-            var johnAssignedToRegularUsersGroup = new SingleUserAssignedToGroup(regularUsersGroupCreated.GroupId,
-                johnRegistered.UserId);
-            var alanAssignedToRegularUsersGroup = new SingleUserAssignedToGroup(regularUsersGroupCreated.GroupId,
-                alanRegistered.UserId);
-            theSession.Events.Append(
-                regularUsersGroupCreated.GroupId,
-                johnAssignedToRegularUsersGroup,
-                alanAssignedToRegularUsersGroup
-            );
+            var johnAndAlanAssignedToRegularUsersGroup = new MultipleUsersAssignedToGroup(regularUsersGroupCreated.GroupId,
+                new List<Guid> {johnRegistered.UserId, alanRegistered.UserId});
+            theSession.Events.Append(johnAndAlanAssignedToRegularUsersGroup.GroupId,
+                johnAndAlanAssignedToRegularUsersGroup);
 
             await theSession.SaveChangesAsync();
 
@@ -154,12 +148,10 @@ namespace EventSourcingTests.Projections.ViewProjections
             alanGroupAssignment.Groups.ShouldHaveTheSameElementsAs(regularUsersGroupCreated.GroupId);
         }
 
-        public simple_multi_stream_projection(DefaultStoreFixture fixture): base(fixture)
+        public custom_slicer()
         {
             StoreOptions(_ =>
             {
-                _.DatabaseSchemaName = "simple_multi_stream_projection";
-
                 _.Projections.Add<UserGroupsAssignmentProjection>(ProjectionLifecycle.Inline);
             });
         }
