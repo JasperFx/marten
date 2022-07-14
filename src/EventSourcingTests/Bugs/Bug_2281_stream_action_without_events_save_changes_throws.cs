@@ -48,6 +48,38 @@ namespace EventSourcingTests.Bugs
             }
         }
 
+        [Fact]
+        public async Task should_be_able_to_save_changes_when_no_stream_action_has_any_events()
+        {
+            using var documentStore = SeparateStore(x =>
+            {
+                x.Projections.SelfAggregate<TestEntity>(ProjectionLifecycle.Inline);
+            });
+
+            var entityOneId = await CreateEntityForTest(documentStore, "Entity one", 2);
+            var entityTwoId = await CreateEntityForTest(documentStore, "Entity two", 2);
+
+            await using (var session = documentStore.OpenSession())
+            {
+                var entityOneStream = await session.Events.FetchForWriting<TestEntity>(entityOneId);
+                var entityTwoStream = await session.Events.FetchForWriting<TestEntity>(entityTwoId);
+
+                ChangeStatusIfZero(entityOneStream);
+                ChangeStatusIfZero(entityTwoStream);
+
+                await session.SaveChangesAsync();
+            }
+
+            await using (var session = documentStore.OpenSession())
+            {
+                var entityOne = session.Load<TestEntity>(entityOneId);
+                entityOne.Status.ShouldBe(2);
+
+                var entityTwo = session.Load<TestEntity>(entityTwoId);
+                entityTwo.Status.ShouldBe(2);
+            }
+        }
+
         private static async Task<Guid> CreateEntityForTest(IDocumentStore documentStore, string name, int status)
         {
             await using var session = documentStore.OpenSession();
