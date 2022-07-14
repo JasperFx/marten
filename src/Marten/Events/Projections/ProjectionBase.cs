@@ -53,9 +53,9 @@ namespace Marten.Events.Projections
         /// </summary>
         public IList<ISchemaObject> SchemaObjects { get; } = new List<ISchemaObject>();
 
-        IReadOnlyList<ISchemaObject> IProjectionSchemaSource.SchemaObjects()
+        IEnumerable<ISchemaObject> IProjectionSchemaSource.CreateSchemaObjects(EventGraph events)
         {
-            return SchemaObjects.ToList();
+            return SchemaObjects;
         }
 
         internal ISqlFragment[] BuildFilters(DocumentStore store)
