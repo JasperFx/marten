@@ -61,7 +61,7 @@
         <PackageReference Include="Remotion.Linq" Version="2.2.0" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" Version="6.0.0" />
         <PackageReference Include="System.Text.Json" Version="6.0.0" />
-        <PackageReference Include="Weasel.Postgresql" Version="5.5.1" />
+        <PackageReference Include="Weasel.Postgresql" Version="5.7.0" />
     </ItemGroup>
 
     <!--SourceLink specific settings-->

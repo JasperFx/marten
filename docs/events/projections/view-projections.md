@@ -151,7 +151,7 @@ public class UserGroupsAssignment
     public List<Guid> Groups { get; set; } = new();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/TestClasses.cs#L6-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-test-classes' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/TestClasses.cs#L6-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-test-classes' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Simple Event to Single View Projection
@@ -179,7 +179,7 @@ public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAs
         => view.Groups.Add(@event.GroupId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/simple_multi_stream_projection.cs#L11-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/simple_multi_stream_projection.cs#L10-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that the primary difference between this and `AggregateProjection<T>` is the calls to `Identity<TEvent>()` to specify how the events are grouped
@@ -210,7 +210,7 @@ public class UserGroupsAssignmentProjection2: MultiStreamAggregation<UserGroupsA
         => view.Groups.Add(@event.GroupId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/simple_multi_stream_projection.cs#L32-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/simple_multi_stream_projection.cs#L31-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Simple Example of Events Updating Multiple Views
@@ -241,7 +241,7 @@ public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAs
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/simple_multi_stream_projection_wih_one_to_many.cs#L11-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-with-one-to-many' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/simple_multi_stream_projection_wih_one_to_many.cs#L13-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-with-one-to-many' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## View Projection with Custom Grouper
@@ -316,7 +316,7 @@ public class UserFeatureTogglesProjection: MultiStreamAggregation<UserFeatureTog
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/CustomGroupers/custom_grouper_with_document_session.cs#L15-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-grouper-with-querysession' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_grouper_with_document_session.cs#L15-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-grouper-with-querysession' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## View Projection with Custom Slicer
@@ -374,7 +374,7 @@ public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAs
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/CustomGroupers/custom_slicer.cs#L16-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-slicer' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_slicer.cs#L16-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-slicer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Event "Fan Out" Rules

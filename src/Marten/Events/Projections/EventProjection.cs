@@ -1,17 +1,19 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Storage;
+using Weasel.Core;
 
 namespace Marten.Events.Projections
 {
     /// <summary>
     ///     This is the "do anything" projection type
     /// </summary>
-    public abstract partial class EventProjection: GeneratedProjection
+    public abstract partial class EventProjection: GeneratedProjection, IProjectionSchemaSource
     {
         private readonly CreateMethodCollection _createMethods;
 
@@ -44,6 +46,19 @@ namespace Marten.Events.Projections
                 return projection;
             });
         }
+
+        /// <summary>
+        ///     Use to register additional or custom schema objects like database tables that
+        ///     will be used by this projection. Originally meant to support projecting to flat
+        ///     tables
+        /// </summary>
+        public IList<ISchemaObject> SchemaObjects { get; } = new List<ISchemaObject>();
+
+        IEnumerable<ISchemaObject> IProjectionSchemaSource.CreateSchemaObjects(EventGraph events)
+        {
+            return SchemaObjects;
+        }
+
 
         protected override bool needsSettersGenerated()
         {

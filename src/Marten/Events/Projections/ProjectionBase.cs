@@ -7,7 +7,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Projections
 {
-    public abstract class ProjectionBase: IProjectionSchemaSource
+    public abstract class ProjectionBase
     {
         private readonly IList<ISqlFragment> _filters = new List<ISqlFragment>();
 
@@ -46,17 +46,6 @@ namespace Marten.Events.Projections
         /// </summary>
         public bool TeardownDataOnRebuild { get; set; } = false;
 
-        /// <summary>
-        ///     Use to register additional or custom schema objects like database tables that
-        ///     will be used by this projection. Originally meant to support projecting to flat
-        ///     tables
-        /// </summary>
-        public IList<ISchemaObject> SchemaObjects { get; } = new List<ISchemaObject>();
-
-        IEnumerable<ISchemaObject> IProjectionSchemaSource.CreateSchemaObjects(EventGraph events)
-        {
-            return SchemaObjects;
-        }
 
         internal ISqlFragment[] BuildFilters(DocumentStore store)
         {
