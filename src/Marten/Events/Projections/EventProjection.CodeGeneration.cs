@@ -47,7 +47,7 @@ namespace Marten.Events.Projections
             if (!_projectMethods.Methods.Any() && !_createMethods.Methods.Any())
             {
                 throw new InvalidProjectionException(
-                    $"EventProjection {GetType().FullNameInCode()} has no valid projection operations");
+                    $"EventProjection {GetType().FullNameInCode()} has no valid projection operations. Either use the Lambda registrations, or expose methods named '{ProjectMethodCollection.MethodName}', '{CreateMethodCollection.MethodName}', or '{CreateMethodCollection.TransformMethodName}'");
             }
 
             var invalidMethods = MethodCollection.FindInvalidMethods(GetType(), _projectMethods, _createMethods);

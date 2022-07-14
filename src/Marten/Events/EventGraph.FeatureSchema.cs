@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Marten.Events.Archiving;
 using Marten.Events.Daemon;
+using Marten.Events.Projections;
 using Marten.Events.Schema;
 using Marten.Storage;
 using Weasel.Core;
@@ -28,28 +30,39 @@ namespace Marten.Events
         {
             get
             {
-                var eventsTable = new EventsTable(this);
-                var streamsTable = new StreamsTable(this);
+                return createAllSchemaObjects().ToArray();
+            }
+        }
 
-                #region sample_using-sequence
-                var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequence"))
+        private IEnumerable<ISchemaObject> createAllSchemaObjects()
+        {
+            yield return new StreamsTable(this);
+            var eventsTable = new EventsTable(this);
+            yield return eventsTable;
+
+            #region sample_using-sequence
+            var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequence"))
+            {
+                Owner = eventsTable.Identifier,
+                OwnerColumn = "seq_id"
+            };
+            #endregion
+
+            yield return sequence;
+
+            yield return new EventProgressionTable(DatabaseSchemaName);
+
+            yield return new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint");
+            yield return Function.ForRemoval(new DbObjectName(DatabaseSchemaName, "mt_append_event"));
+            yield return new ArchiveStreamFunction(this);
+
+            foreach (var schemaSource in Options.Projections.All.OfType<IProjectionSchemaSource>())
+            {
+                var objects = schemaSource.CreateSchemaObjects(this);
+                foreach (var schemaObject in objects)
                 {
-                    Owner = eventsTable.Identifier,
-                    OwnerColumn = "seq_id"
-                };
-                #endregion
-
-
-                return new ISchemaObject[]
-                {
-                    streamsTable,
-                    eventsTable,
-                    new EventProgressionTable(DatabaseSchemaName),
-                    sequence,
-                    new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"),
-                    Function.ForRemoval(new DbObjectName(DatabaseSchemaName, "mt_append_event")),
-                    new ArchiveStreamFunction(this)
-                };
+                    yield return schemaObject;
+                }
             }
         }
 

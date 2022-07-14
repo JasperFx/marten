@@ -34,7 +34,7 @@ namespace Marten.Events.Projections
     /// </summary>
     public interface IProjectionSchemaSource
     {
-        IReadOnlyList<ISchemaObject> SchemaObjects();
+        IEnumerable<ISchemaObject> CreateSchemaObjects(EventGraph events);
     }
 
 }
