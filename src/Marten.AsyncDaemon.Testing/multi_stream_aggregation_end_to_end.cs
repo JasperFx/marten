@@ -12,9 +12,9 @@ using Xunit.Abstractions;
 
 namespace Marten.AsyncDaemon.Testing
 {
-    public class view_projection_end_to_end : DaemonContext
+    public class multi_stream_aggregation_end_to_end : DaemonContext
     {
-        public view_projection_end_to_end(ITestOutputHelper output) : base(output)
+        public multi_stream_aggregation_end_to_end(ITestOutputHelper output) : base(output)
         {
         }
 

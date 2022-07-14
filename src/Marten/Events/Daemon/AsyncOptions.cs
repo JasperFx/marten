@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Weasel.Core;
 
 namespace Marten.Events.Daemon
 {
@@ -42,6 +43,26 @@ namespace Marten.Events.Daemon
         {
             _actions.Add(x => x.QueueOperation(new TruncateTable(type)));
             StorageTypes.Add(type);
+        }
+
+        /// <summary>
+        /// Add an explicit teardown rule to wipe data in the named table
+        /// when this projection shard is rebuilt
+        /// </summary>
+        /// <param name="name"></param>
+        public void DeleteDataInTableOnTeardown(DbObjectName name)
+        {
+            DeleteDataInTableOnTeardown(name.QualifiedName);
+        }
+
+        /// <summary>
+        /// Add an explicit teardown rule to wipe data in the named table
+        /// when this projection shard is rebuilt
+        /// </summary>
+        /// <param name="name"></param>
+        public void DeleteDataInTableOnTeardown(string tableIdentifier)
+        {
+            _actions.Add(x => x.QueueSqlCommand($"delete from {tableIdentifier};"));
         }
 
         private readonly IList<Action<IDocumentOperations>> _actions = new List<Action<IDocumentOperations>>();

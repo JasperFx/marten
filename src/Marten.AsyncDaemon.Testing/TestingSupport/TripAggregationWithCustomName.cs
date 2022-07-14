@@ -36,6 +36,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         public TripAggregationWithCustomName()
         {
             ProjectionName = "Trip";
+            TeardownDataOnRebuild = true;
         }
     }
 
