@@ -29,17 +29,6 @@ namespace Marten.Events.Projections
     }
 
     /// <summary>
-    /// Expose functionality on a projection source or IProjection to
-    /// optionally delete existing projected data as the first step in
-    /// rebuilding projections
-    /// </summary>
-    public interface IProjectionSourceTeardown
-    {
-        Task TeardownExistingData(IDocumentStore store, IMartenDatabase database,
-            CancellationToken cancellation);
-    }
-
-    /// <summary>
     /// Optional interface to expose additional schema objects to be
     /// built as part of the event store
     /// </summary>

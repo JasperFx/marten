@@ -10,18 +10,17 @@ namespace Marten.CommandLine.Commands.Projection
     {
         private readonly LightweightCache<string, StoreDaemonStatus> _stores = new(name => new StoreDaemonStatus(name));
         private readonly BatchingBlock<DaemonStatusMessage> _batching;
-        private readonly ActionBlock<DaemonStatusMessage[]> _updates;
         private readonly Table _table;
         private LiveDisplayContext _context;
 
         public DaemonStatusGrid()
         {
-            _updates = new ActionBlock<DaemonStatusMessage[]>(UpdateBatch, new ExecutionDataflowBlockOptions
+            var updates = new ActionBlock<DaemonStatusMessage[]>(UpdateBatch, new ExecutionDataflowBlockOptions
             {
                 EnsureOrdered = true,
                 MaxDegreeOfParallelism = 1
             });
-            _batching = new(100, _updates);
+            _batching = new(100, updates);
 
             _table = new Table();
 
@@ -30,7 +29,9 @@ namespace Marten.CommandLine.Commands.Projection
 
             var completion = new TaskCompletionSource();
 
+#pragma warning disable VSTHRD110
             AnsiConsole.Live(_table).StartAsync(ctx =>
+#pragma warning restore VSTHRD110
             {
                 _context = ctx;
 

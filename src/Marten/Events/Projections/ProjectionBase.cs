@@ -1,29 +1,62 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Marten.Events.Daemon;
-using Marten.Storage;
 using Weasel.Core;
 using Weasel.Postgresql.SqlGeneration;
-using Weasel.Postgresql.Tables;
 
 namespace Marten.Events.Projections
 {
-    public abstract class ProjectionBase : IProjectionSourceTeardown, IProjectionSchemaSource
+    public abstract class ProjectionBase: IProjectionSchemaSource
     {
         private readonly IList<ISqlFragment> _filters = new List<ISqlFragment>();
 
+        private readonly List<Type> _publishedTypes = new();
+
         /// <summary>
-        /// Descriptive name for this projection in the async daemon. The default is the type name of the projection
+        ///     Descriptive name for this projection in the async daemon. The default is the type name of the projection
         /// </summary>
         public string ProjectionName { get; set; }
 
         /// <summary>
-        /// The projection lifecycle that governs when this projection is executed
+        ///     The projection lifecycle that governs when this projection is executed
         /// </summary>
         public ProjectionLifecycle Lifecycle { get; set; } = ProjectionLifecycle.Async;
+
+        /// <summary>
+        ///     Optimize this projection within the Async Daemon by
+        ///     limiting the event types processed through this projection
+        ///     to include type "T". This is inclusive.
+        ///     If this list is empty, the async daemon will fetch every possible
+        ///     type of event at runtime
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public IList<Type> IncludedEventTypes { get; } = new List<Type>();
+
+        /// <summary>
+        ///     Limit the events processed by this projection to only streams
+        ///     marked with this stream type
+        /// </summary>
+        internal Type StreamType { get; set; }
+
+
+        /// <summary>
+        ///     Direct Marten to delete data published by this projection as the first
+        ///     step to rebuilding the projection data. The default is false.
+        /// </summary>
+        public bool TeardownDataOnRebuild { get; set; } = false;
+
+        /// <summary>
+        ///     Use to register additional or custom schema objects like database tables that
+        ///     will be used by this projection. Originally meant to support projecting to flat
+        ///     tables
+        /// </summary>
+        public IList<ISchemaObject> SchemaObjects { get; } = new List<ISchemaObject>();
+
+        IReadOnlyList<ISchemaObject> IProjectionSchemaSource.SchemaObjects()
+        {
+            return SchemaObjects.ToList();
+        }
 
         internal ISqlFragment[] BuildFilters(DocumentStore store)
         {
@@ -42,28 +75,13 @@ namespace Marten.Events.Projections
                 yield return new AggregateTypeFilter(StreamType, store.Options.EventGraph);
             }
 
-            foreach (var filter in _filters)
-            {
-                yield return filter;
-            }
-
+            foreach (var filter in _filters) yield return filter;
         }
 
         /// <summary>
-        /// Optimize this projection within the Async Daemon by
-        /// limiting the event types processed through this projection
-        /// to include type "T". This is inclusive.
-        ///
-        /// If this list is empty, the async daemon will fetch every possible
-        /// type of event at runtime
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        public IList<Type> IncludedEventTypes { get; } = new List<Type>();
-
-        /// <summary>
-        /// Short hand syntax to tell Marten that this projection takes in the event type T
-        /// This is not mandatory, but can be used to optimize the asynchronous projections
-        /// to create an "allow list" in the IncludedEventTypes collection
+        ///     Short hand syntax to tell Marten that this projection takes in the event type T
+        ///     This is not mandatory, but can be used to optimize the asynchronous projections
+        ///     to create an "allow list" in the IncludedEventTypes collection
         /// </summary>
         /// <typeparam name="T"></typeparam>
         public void IncludeType<T>()
@@ -72,16 +90,9 @@ namespace Marten.Events.Projections
         }
 
         /// <summary>
-        /// Limit the events processed by this projection to only streams
-        /// marked with this stream type
-        /// </summary>
-        internal Type StreamType { get; set; }
-
-        /// <summary>
-        /// Limit the events processed by this projection to only streams
-        /// marked with the given streamType.
-        ///
-        /// ONLY APPLIED TO ASYNCHRONOUS PROJECTIONS
+        ///     Limit the events processed by this projection to only streams
+        ///     marked with the given streamType.
+        ///     ONLY APPLIED TO ASYNCHRONOUS PROJECTIONS
         /// </summary>
         /// <param name="streamType"></param>
         public void FilterIncomingEventsOnStreamType(Type streamType)
@@ -94,39 +105,8 @@ namespace Marten.Events.Projections
             // Nothing
         }
 
-
-
         /// <summary>
-        /// Direct Marten to delete data published by this projection as the first
-        /// step to rebuilding the projection data. The default is false.
-        /// </summary>
-        public bool TeardownDataOnRebuild { get; set; } = false;
-
-        async Task IProjectionSourceTeardown.TeardownExistingData(IDocumentStore store, IMartenDatabase database, CancellationToken cancellation)
-        {
-            if (!TeardownDataOnRebuild) return;
-
-            foreach (var publishedType in _publishedTypes)
-            {
-                await database.DeleteDocumentsByTypeAsync(publishedType).ConfigureAwait(false);
-            }
-
-            using var conn = database.CreateConnection();
-            await conn.OpenAsync(cancellation).ConfigureAwait(false);
-
-            foreach (var table in SchemaObjects.OfType<Table>())
-            {
-                await conn.RunSql($"delete from {table.Identifier}").ConfigureAwait(false);
-            }
-
-            await conn.CloseAsync().ConfigureAwait(false);
-        }
-
-
-        private readonly List<Type> _publishedTypes = new List<Type>();
-
-        /// <summary>
-        /// Just recording which document types are published by this projection
+        ///     Just recording which document types are published by this projection
         /// </summary>
         /// <param name="publishedType"></param>
         protected void RegisterPublishedType(Type publishedType)
@@ -134,18 +114,9 @@ namespace Marten.Events.Projections
             _publishedTypes.Add(publishedType);
         }
 
-        public IEnumerable<Type> PublishedTypes() => _publishedTypes;
-
-        IReadOnlyList<ISchemaObject> IProjectionSchemaSource.SchemaObjects()
+        public IEnumerable<Type> PublishedTypes()
         {
-            return SchemaObjects.ToList();
+            return _publishedTypes;
         }
-
-        /// <summary>
-        /// Use to register additional or custom schema objects like database tables that
-        /// will be used by this projection. Originally meant to support projecting to flat
-        /// tables
-        /// </summary>
-        public IList<ISchemaObject> SchemaObjects { get; } = new List<ISchemaObject>();
     }
 }

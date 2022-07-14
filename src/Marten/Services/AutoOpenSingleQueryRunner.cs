@@ -33,15 +33,7 @@ namespace Marten.Services
             }
             finally
             {
-#if NET6_0_OR_GREATER
                 await reader.CloseAsync().ConfigureAwait(false);
-                #else
-#pragma warning disable VSTHRD103
-                reader.Close();
-#pragma warning restore VSTHRD103
-#endif
-
-                await conn.CloseAsync().ConfigureAwait(false);
             }
         }
 
