@@ -6,33 +6,35 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace EventSourcingTests.Projections.MultiStreamProjections
+namespace EventSourcingTests.Projections.MultiStreamProjections.Samples
 {
-    namespace EventSourcingTests.Projections.MultiStreamProjections.Samples
+    #region sample_view-projection-simple-with-one-to-many
+
+    public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAssignment, Guid>
     {
-         #region sample_view-projection-simple-with-one-to-many
-
-        public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAssignment, Guid>
+        public UserGroupsAssignmentProjection()
         {
-            public UserGroupsAssignmentProjection()
-            {
-                Identity<UserRegistered>(x => x.UserId);
-                Identities<MultipleUsersAssignedToGroup>(x => x.UserIds);
-            }
-
-            public void Apply(UserRegistered @event, UserGroupsAssignment view)
-            {
-                view.Id = @event.UserId;
-            }
-
-            public void Apply(MultipleUsersAssignedToGroup @event, UserGroupsAssignment view)
-            {
-                view.Groups.Add(@event.GroupId);
-            }
+            Identity<UserRegistered>(x => x.UserId);
+            Identities<MultipleUsersAssignedToGroup>(x => x.UserIds);
         }
 
-        #endregion
+        public void Apply(UserRegistered @event, UserGroupsAssignment view)
+        {
+            view.Id = @event.UserId;
+        }
+
+        public void Apply(MultipleUsersAssignedToGroup @event, UserGroupsAssignment view)
+        {
+            view.Groups.Add(@event.GroupId);
+        }
     }
+
+    #endregion
+}
+
+namespace EventSourcingTests.Projections.MultiStreamProjections
+{
+
 
     public class simple_multi_stream_projection_with_one_to_many: OneOffConfigurationsContext
     {
@@ -129,7 +131,7 @@ namespace EventSourcingTests.Projections.MultiStreamProjections
         {
             StoreOptions(_ =>
             {
-                _.Projections.Add<UserGroupsAssignmentProjection>(ProjectionLifecycle.Inline);
+                _.Projections.Add<EventSourcingTests.Projections.MultiStreamProjections.Samples.UserGroupsAssignmentProjection>(ProjectionLifecycle.Inline);
             });
         }
     }
