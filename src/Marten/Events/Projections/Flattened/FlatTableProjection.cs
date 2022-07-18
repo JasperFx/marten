@@ -147,6 +147,8 @@ namespace Marten.Events.Projections.Flattened
                     Table.MoveToSchema(events.DatabaseSchemaName);
                     break;
             }
+
+            Options.DeleteDataInTableOnTeardown(Table.Identifier);
         }
     }
 }
