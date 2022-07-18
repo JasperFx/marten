@@ -41,7 +41,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end : One
 
         table.PrimaryKeyColumns.Single().ShouldBe("name");
         table.Columns.Select(x => x.Name).OrderBy(x => x)
-            .ShouldHaveTheSameElementsAs("a", "b", "c", "d", "name", "revision", "status");
+            .ShouldHaveTheSameElementsAs("a", "b", "c", "d", "guid", "name", "revision", "status", "time");
     }
 
     public class Data
@@ -52,6 +52,8 @@ public class flat_table_projection_with_event_member_identifier_end_to_end : One
         public int D { get; set; }
         public string Status { get; set; }
         public int Version { get; set; }
+        public Guid Guid { get; set; }
+        public DateTimeOffset Time { get; set; }
     }
 
     private async Task<Data> readData(DbDataReader reader)
@@ -63,7 +65,9 @@ public class flat_table_projection_with_event_member_identifier_end_to_end : One
             C = await reader.GetFieldValueAsync<int>(3),
             D = await reader.GetFieldValueAsync<int>(4),
             Status = await reader.GetFieldValueAsync<string>(5),
-            Version = await reader.GetFieldValueAsync<int>(6)
+            Version = await reader.GetFieldValueAsync<int>(6),
+            Guid = await reader.GetFieldValueAsync<Guid>(7),
+            Time = await reader.GetFieldValueAsync<DateTimeOffset>(8)
         };
     }
 
@@ -107,13 +111,15 @@ public class flat_table_projection_with_event_member_identifier_end_to_end : One
     public async Task set_values_on_existing_row()
     {
         var streamId = Guid.NewGuid().ToString();
-        theSession.Events.Append(streamId, new ValuesSet { A = 1, B = 2, C = 3, D = 4, Name = "blue"});
+        var guid = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        theSession.Events.Append(streamId, new ValuesSet { A = 1, B = 2, C = 3, D = 4, Name = "blue", Guid = guid, Time = now});
 
         await theSession.SaveChangesAsync();
 
         var valuesSet = new ValuesSet
         {
-            A = 3, B = 4, C = 5, D = 6, Name = "blue"
+            A = 3, B = 4, C = 5, D = 6, Name = "blue", Guid = guid, Time = now
         };
 
         theSession.Events.Append(streamId, valuesSet);
@@ -126,6 +132,9 @@ public class flat_table_projection_with_event_member_identifier_end_to_end : One
         data.B.ShouldBe(valuesSet.B);
         data.C.ShouldBe(valuesSet.C);
         data.D.ShouldBe(valuesSet.D);
+
+        data.Guid.ShouldBe(guid);
+        data.Time.ShouldBeEqualWithDbPrecision(now);
 
         data.Status.ShouldBe("new");
         data.Version.ShouldBe(1);
@@ -188,8 +197,11 @@ public class flat_table_projection_with_event_member_identifier_end_to_end : One
     [Fact]
     public async Task delete_a_row()
     {
+        var guid = Guid.NewGuid();
+        var time = DateTimeOffset.UtcNow;
+
         var streamId = Guid.NewGuid().ToString();
-        theSession.Events.Append(streamId, new ValuesSet { A = 10, B = 10, C = 10, D = 10, Name = "purple"});
+        theSession.Events.Append(streamId, new ValuesSet { A = 10, B = 10, C = 10, D = 10, Name = "purple", Guid = guid, Time = time});
 
         await theSession.SaveChangesAsync();
 

@@ -118,6 +118,9 @@ public class WriteTableWithEventMemberIdentityProjection: FlatTableProjection
 
             cmd.SetValue("status", "new");
             cmd.SetValue("revision", 1);
+
+            cmd.Map(x => x.Guid);
+            cmd.Map(x => x.Time);
         }, x => x.Name);
 
         Project<ValuesAdded>(cmd =>
