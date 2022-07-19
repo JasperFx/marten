@@ -14,7 +14,7 @@ using Xunit;
 
 namespace EventSourcingTests.Bugs
 {
-    public class Bug_session_in_grouper : OneOffConfigurationsContext
+    public class Bug_2296_tenant_session_in_grouper : OneOffConfigurationsContext
     {
         [Fact]
         public async Task CanQueryTenantedStreamsInAsyncProjectionGrouper()
@@ -36,11 +36,8 @@ namespace EventSourcingTests.Bugs
             var streamKey = CombGuidIdGeneration.NewGuid().ToString();
             tenantedSession.Events.StartStream(streamKey,
                 new CountEvent {Tag = "Foo"},
-                new CountEvent {Tag = "Foo"},
                 new CountEvent {Tag = "Bar"},
                 new CountEvent {Tag = "Bar"},
-                new CountEvent {Tag = "Bar"},
-                new CountEvent {Tag = "Baz"},
                 new CountEvent {Tag = "Baz"},
                 new CountEvent {Tag = "Baz"},
                 new CountEvent {Tag = "Baz"});
@@ -50,9 +47,9 @@ namespace EventSourcingTests.Bugs
 
             var counts1 = await tenantedSession.Query<CountsByTag>().ToListAsync();
 
-            Assert.Equal(2, counts1.First(c => c.Tag == "Foo").Count);
-            Assert.Equal(3, counts1.First(c => c.Tag == "Bar").Count);
-            Assert.Equal(4, counts1.First(c => c.Tag == "Baz").Count);
+            Assert.Equal(1, counts1.First(c => c.Tag == "Foo").Count);
+            Assert.Equal(2, counts1.First(c => c.Tag == "Bar").Count);
+            Assert.Equal(3, counts1.First(c => c.Tag == "Baz").Count);
 
             tenantedSession.Events.Append(streamKey, new ResetEvent());
             await tenantedSession.SaveChangesAsync();
