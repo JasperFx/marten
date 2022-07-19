@@ -1,6 +1,5 @@
 using System;
 using Baseline;
-using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
 using Marten.Storage;
 #nullable enable
@@ -10,16 +9,12 @@ namespace Marten.Internal.Sessions
     {
         private readonly DocumentSessionBase _parent;
 
-        internal NestedTenantSession(DocumentSessionBase parent, Tenant tenant) : base((DocumentStore) parent.DocumentStore, parent.SessionOptions, parent._connection, parent._workTracker)
+        internal NestedTenantSession(DocumentSessionBase parent, Tenant tenant) : base((DocumentStore) parent.DocumentStore, parent.SessionOptions, parent._connection, parent._workTracker, tenant)
         {
             Listeners.AddRange(parent.Listeners);
             _parent = parent;
             Versions = parent.Versions;
             ItemMap = parent.ItemMap;
-
-            TenantId = tenant.TenantId;
-            Database = tenant.Database;
-
         }
 
         public IDocumentSession Parent => _parent;

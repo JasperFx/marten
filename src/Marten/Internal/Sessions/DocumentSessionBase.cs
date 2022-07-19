@@ -25,7 +25,7 @@ namespace Marten.Internal.Sessions
         }
 
         internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IConnectionLifetime connection,
-            ISessionWorkTracker workTracker): base(store, sessionOptions, connection)
+            ISessionWorkTracker workTracker, Tenant? tenant = default): base(store, sessionOptions, connection, tenant)
         {
             Concurrency = sessionOptions.ConcurrencyChecks;
             _workTracker = workTracker;
