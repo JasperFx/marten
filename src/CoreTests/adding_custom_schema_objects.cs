@@ -125,7 +125,7 @@ $f$  language sql immutable;
             {
                 opts.RegisterDocumentType<Target>();
 
-                // Create a user defined function to act as a ternary operator similar to SQL Server
+                // Create a sequence to generate unique ids for documents
                 var sequence = new Sequence("banana_seq");
 
                 opts.Storage.ExtendedSchemaObjects.Add(sequence);
