@@ -10,6 +10,7 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
+using Weasel.Postgresql.Functions;
 using Weasel.Postgresql.Tables;
 using Xunit;
 
@@ -60,6 +61,83 @@ namespace CoreTests
 
             var tableNames = await conn.ExistingTables(schemas: new[] { "adding_custom_schema_objects" });
             tableNames.Any(x => x.Name == "names").ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task enable_an_extension()
+        {
+            StoreOptions(opts =>
+            {
+                opts.RegisterDocumentType<Target>();
+
+                // Unaccent is an extension ships with postgresql
+                // and removes accents (diacritic signs) from strings
+                var extension = new Extension("unaccent");
+
+                opts.Storage.ExtendedSchemaObjects.Add(extension);
+            });
+
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+            var session = theStore.OpenSession();
+
+            var result = await session.QueryAsync<bool>("select unaccent('Æ') = 'AE';");
+
+            result.First().ShouldBe(true);
+        }
+
+        [Fact]
+        public async Task create_a_function()
+        {
+            StoreOptions(opts =>
+            {
+                opts.RegisterDocumentType<Target>();
+
+                // Create a user defined function to act as a ternary operator similar to SQL Server
+                var function = new Function(new DbObjectName("public", "iif"), @"
+create or replace function iif(
+    condition boolean,       -- if condition
+    true_result anyelement,  -- then
+    false_result anyelement  -- else
+) returns anyelement as $f$
+  select case when condition then true_result else false_result end
+$f$  language sql immutable;
+");
+
+                opts.Storage.ExtendedSchemaObjects.Add(function);
+            });
+
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+            var session = theStore.OpenSession();
+
+            var match = await session.QueryAsync<string>("select iif(1 = 1, 'value matches'::text, 'no match'::text);");
+            var noMatch = await session.QueryAsync<string>("select iif(1 = 2, 'value matches'::text, 'no match'::text);");
+
+            match.First().ShouldBe("value matches");
+            noMatch.First().ShouldBe("no match");
+        }
+        [Fact]
+        public async Task create_a_sequence()
+        {
+            StoreOptions(opts =>
+            {
+                opts.RegisterDocumentType<Target>();
+
+                // Create a user defined function to act as a ternary operator similar to SQL Server
+                var function = new Sequence("banana_seq");
+
+                opts.Storage.ExtendedSchemaObjects.Add(function);
+            });
+
+            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+            var session = theStore.OpenSession();
+
+            var value = await session.QueryAsync<int>("select nextval('banana_seq')");
+            var valueAgain = await session.QueryAsync<int>("select nextval('banana_seq')");
+
+            valueAgain.First().ShouldBe(value.First() + 1);
         }
     }
 }
