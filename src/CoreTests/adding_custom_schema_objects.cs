@@ -117,6 +117,7 @@ $f$  language sql immutable;
             match.First().ShouldBe("value matches");
             noMatch.First().ShouldBe("no match");
         }
+
         [Fact]
         public async Task create_a_sequence()
         {
@@ -125,9 +126,9 @@ $f$  language sql immutable;
                 opts.RegisterDocumentType<Target>();
 
                 // Create a user defined function to act as a ternary operator similar to SQL Server
-                var function = new Sequence("banana_seq");
+                var sequence = new Sequence("banana_seq");
 
-                opts.Storage.ExtendedSchemaObjects.Add(function);
+                opts.Storage.ExtendedSchemaObjects.Add(sequence);
             });
 
             await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
