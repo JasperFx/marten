@@ -146,7 +146,7 @@ namespace Marten.Events
                 var operations = new List<IStorageOperation>();
                 var storage = session.EventStorage();
 
-                operations.Add(_establishTombstone.Value);
+                operations.Add(new EstablishTombstoneStream(this, session.TenantId));
                 var tombstones = session.WorkTracker.Streams
                     .SelectMany(x => x.Events)
                     .Select(x => new Event<Tombstone>(tombstone)

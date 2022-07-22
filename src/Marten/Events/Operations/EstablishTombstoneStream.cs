@@ -22,21 +22,23 @@ namespace Marten.Events.Operations
 
     internal class EstablishTombstoneStream : IStorageOperation
     {
+        private readonly string _sessionTenantId;
         public static readonly string StreamKey = "mt_tombstone";
         public static readonly Guid StreamId = Guid.NewGuid();
 
         private string _sql;
         private readonly Action<NpgsqlParameter> _configureParameter;
 
-        public EstablishTombstoneStream(EventGraph events)
+        public EstablishTombstoneStream(EventGraph events, string sessionTenantId)
         {
+            _sessionTenantId = sessionTenantId;
             var pkFields = events.TenancyStyle == TenancyStyle.Conjoined
                 ? "id, tenant_id"
                 : "id";
 
             _sql = $@"
 insert into {events.DatabaseSchemaName}.mt_streams (id, tenant_id, version)
-values (?, '*DEFAULT*', 0)
+values (?, ?, 0)
 ON CONFLICT ({pkFields})
 DO NOTHING
 ";
@@ -64,6 +66,7 @@ DO NOTHING
         {
             var parameters = builder.AppendWithParameters(_sql);
             _configureParameter(parameters[0]);
+            parameters[1].Value = _sessionTenantId;
         }
 
         public Type DocumentType => typeof(IEvent);
