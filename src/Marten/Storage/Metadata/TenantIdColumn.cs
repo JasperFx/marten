@@ -55,7 +55,7 @@ namespace Marten.Storage.Metadata
 
         public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index)
         {
-            method.SetParameterFromMember<IEvent>(index, x => x.TenantId);
+            method.SetParameterFromMember<StreamAction>(index, x => x.TenantId);
         }
 
         void IStreamTableColumn.GenerateAppendCode(GeneratedMethod method, int index)

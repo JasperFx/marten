@@ -27,6 +27,8 @@ namespace Marten.Events
             else
             {
                 eventStream = StreamAction.Append(stream, wrapped);
+                eventStream.TenantId = session.TenantId;
+
                 session.WorkTracker.Streams.Add(eventStream);
             }
 
@@ -54,6 +56,7 @@ namespace Marten.Events
             else
             {
                 eventStream = StreamAction.Append(stream, wrapped);
+                eventStream.TenantId = session.TenantId;
                 session.WorkTracker.Streams.Add(eventStream);
             }
 
@@ -69,6 +72,7 @@ namespace Marten.Events
 
 
             var stream = StreamAction.Start(this, id, events);
+            stream.TenantId = session.TenantId;
             session.WorkTracker.Streams.Add(stream);
 
             return stream;
@@ -82,7 +86,11 @@ namespace Marten.Events
                 throw new ArgumentOutOfRangeException(nameof(id), "Cannot use an empty Guid as the stream id");
 
 
-            var stream = new StreamAction(id, StreamActionType.Start);
+            var stream = new StreamAction(id, StreamActionType.Start)
+            {
+                TenantId = session.TenantId
+            };
+
             session.WorkTracker.Streams.Add(stream);
 
             return stream;
@@ -96,7 +104,11 @@ namespace Marten.Events
                 throw new ArgumentOutOfRangeException(nameof(key), "Cannot use an empty or null string as the stream key");
 
 
-            var stream = new StreamAction(key, StreamActionType.Start);
+            var stream = new StreamAction(key, StreamActionType.Start)
+            {
+                TenantId = session.TenantId
+            };
+
             session.WorkTracker.Streams.Add(stream);
 
             return stream;
@@ -111,6 +123,7 @@ namespace Marten.Events
 
 
             var stream = StreamAction.Start(this, streamKey, events);
+            stream.TenantId = session.TenantId;
 
             session.WorkTracker.Streams.Add(stream);
 
