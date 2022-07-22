@@ -4,6 +4,7 @@ using System.Linq;
 using Marten.Events.Operations;
 using Marten.Exceptions;
 using Marten.Internal;
+using Marten.Internal.Sessions;
 using Marten.Schema.Identity;
 using Marten.Storage;
 #nullable enable
@@ -310,11 +311,11 @@ namespace Marten.Events
             };
         }
 
-        internal static StreamAction ForTombstone()
+        internal static StreamAction ForTombstone(DocumentSessionBase documentSessionBase)
         {
             return new StreamAction(EstablishTombstoneStream.StreamId, EstablishTombstoneStream.StreamKey, StreamActionType.Append)
             {
-
+                TenantId = documentSessionBase.TenantId
             };
         }
 
@@ -350,6 +351,21 @@ namespace Marten.Events
             var action = events[0].Version == 1 ? StreamActionType.Start : StreamActionType.Append;
             return new StreamAction(streamKey, action)
                 .AddEvents(events);
+        }
+
+        internal IEnumerable<Event<Tombstone>> ToTombstoneEvents(EventMapping mapping, Tombstone tombstone)
+        {
+            return Events.Select(x => new Event<Tombstone>(tombstone)
+            {
+                Sequence = x.Sequence,
+                Version = x.Sequence, // this is important to avoid clashes on the id/version constraint
+                TenantId = TenantId,
+                StreamId = EstablishTombstoneStream.StreamId,
+                StreamKey = EstablishTombstoneStream.StreamKey,
+                Id = CombGuidIdGeneration.NewGuid(),
+                EventTypeName = mapping.EventTypeName,
+                DotNetTypeName = mapping.DotNetTypeName
+            });
         }
     }
 }

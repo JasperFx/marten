@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using Marten.Events;
 using Marten.Internal.Operations;
 
 #nullable enable
@@ -199,5 +200,7 @@ namespace Marten
         /// <param name="sql"></param>
         /// <param name="parameterValues"></param>
         void QueueSqlCommand(string sql, params object[] parameterValues);
+
+        new IEventStore Events { get; }
     }
 }

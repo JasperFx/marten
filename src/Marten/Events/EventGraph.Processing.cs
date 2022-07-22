@@ -138,7 +138,7 @@ namespace Marten.Events
         {
             if (session.WorkTracker.Streams.Any())
             {
-                var stream = StreamAction.ForTombstone();
+                var stream = StreamAction.ForTombstone(session);
 
                 var tombstone = new Tombstone();
                 var mapping = EventMappingFor<Tombstone>();
@@ -148,7 +148,7 @@ namespace Marten.Events
 
                 operations.Add(new EstablishTombstoneStream(this, session.TenantId));
                 var tombstones = session.WorkTracker.Streams
-                    .SelectMany(x => x.Events)
+                    .SelectMany(x => x.ToTombstoneEvents(mapping, tombstone))
                     .Select(x => new Event<Tombstone>(tombstone)
                     {
                         Sequence = x.Sequence,
