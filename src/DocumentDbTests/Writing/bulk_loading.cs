@@ -1,6 +1,8 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 using Marten;
+using Marten.Exceptions;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -459,6 +461,115 @@ namespace DocumentDbTests.Writing
             }
         }
 
+        [Fact]
+        public void load_enlist_transaction()
+        {
+            var data = Target.GenerateRandomData(100).ToArray();
+
+            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                theStore.BulkInsertEnlistTransaction(data, Transaction.Current);
+                scope.Complete();
+            }           
+
+            using var session = theStore.QuerySession();
+            session.Query<Target>().Count().ShouldBe(data.Length);
+        }
+
+        [Fact]
+        public void load_enlist_transaction_no_commit()
+        {
+            var data = Target.GenerateRandomData(100).ToArray();
+
+            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                theStore.BulkInsertEnlistTransaction(data, Transaction.Current);                
+            }
+
+            using var session = theStore.QuerySession();
+            Should.Throw<MartenCommandException>(() => session.Query<Target>().Count());
+        }
+
+        [Fact]
+        public async Task load_enlist_transaction_async()
+        {
+            var data = Target.GenerateRandomData(100).ToArray();
+
+            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                await theStore.BulkInsertEnlistTransactionAsync(data, Transaction.Current);
+                scope.Complete();
+            }
+
+            using var session = theStore.QuerySession();
+            session.Query<Target>().Count().ShouldBe(data.Length);
+        }
+
+        [Fact]
+        public async Task load_enlist_transaction_async_no_commit()
+        {
+            var data = Target.GenerateRandomData(100).ToArray();
+
+            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                await theStore.BulkInsertEnlistTransactionAsync(data, Transaction.Current);
+            }
+
+            using var session = theStore.QuerySession();
+            Should.Throw<MartenCommandException>(() => session.Query<Target>().Count());
+        }
+
+        [Fact]
+        public void can_bulk_insert_mixed_list_of_objects_enlist_transaction()
+        {
+            var user1 = new User();
+            var user2 = new User();
+            var issue1 = new Issue();
+            var issue2 = new Issue();
+            var company1 = new Company();
+            var company2 = new Company();
+
+            var documents = new object[] { user1, user2, issue1, issue2, company1, company2 };
+
+            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                theStore.BulkInsertEnlistTransaction(documents, Transaction.Current);
+                scope.Complete();
+            }
+
+            using (var querying = theStore.QuerySession())
+            {
+                querying.Query<User>().Count().ShouldBe(2);
+                querying.Query<Issue>().Count().ShouldBe(2);
+                querying.Query<Company>().Count().ShouldBe(2);
+            }
+        }
+
+        [Fact]
+        public async Task can_bulk_insert_mixed_list_of_objects_enlist_transaction_async()
+        {
+            var user1 = new User();
+            var user2 = new User();
+            var issue1 = new Issue();
+            var issue2 = new Issue();
+            var company1 = new Company();
+            var company2 = new Company();
+
+            var documents = new object[] { user1, user2, issue1, issue2, company1, company2 };
+
+            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                await theStore.BulkInsertEnlistTransactionAsync(documents, Transaction.Current);
+                scope.Complete();
+            }
+
+            using (var querying = theStore.QuerySession())
+            {
+                querying.Query<User>().Count().ShouldBe(2);
+                querying.Query<Issue>().Count().ShouldBe(2);
+                querying.Query<Company>().Count().ShouldBe(2);
+            }
+        }
 
         public Task InitializeAsync()
         {
