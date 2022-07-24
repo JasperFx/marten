@@ -8,6 +8,7 @@ using Weasel.Postgresql;
 using Marten.Schema.BulkLoading;
 using Marten.Util;
 using Npgsql;
+using System.Transactions;
 
 namespace Marten.Storage
 {
@@ -56,6 +57,26 @@ namespace Marten.Storage
             }
         }
 
+        public void BulkInsertEnlistTransaction<T>(IReadOnlyCollection<T> documents,
+            Transaction transaction,
+            BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+            int batchSize = 1000)
+        {
+            if (typeof(T) == typeof(object))
+            {
+                BulkInsertDocumentsEnlistTransaction(documents.OfType<object>(), transaction, mode);
+            }
+            else
+            {
+                _tenant.Database.EnsureStorageExists(typeof(T));
+
+                using var conn = _tenant.Database.CreateConnection();
+                conn.Open();
+                conn.EnlistTransaction(transaction);
+                bulkInsertDocuments(documents, batchSize, conn, mode);
+            }
+        }
+
         public async Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode, int batchSize, CancellationToken cancellation)
         {
             if (typeof(T) == typeof(object))
@@ -91,16 +112,28 @@ namespace Marten.Storage
             }
         }
 
-
+        public async Task BulkInsertEnlistTransactionAsync<T>(IReadOnlyCollection<T> documents, Transaction transaction,
+            BulkInsertMode mode, int batchSize, CancellationToken cancellation)
+        {
+            if (typeof(T) == typeof(object))
+            {
+                await BulkInsertDocumentsEnlistTransactionAsync(documents.OfType<object>(), transaction, mode, batchSize,
+                                                                cancellation).ConfigureAwait(false);
+            }
+            else
+            {
+                await _tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
+                using var conn = _tenant.Database.CreateConnection();
+                await conn.OpenAsync(cancellation).ConfigureAwait(false);
+                conn.EnlistTransaction(transaction);
+                await bulkInsertDocumentsAsync(documents, batchSize, conn, mode, cancellation).ConfigureAwait(false);
+            }
+        }
 
         public void BulkInsertDocuments(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000)
         {
-            var groups =
-                documents.Where(x => x != null)
-                    .GroupBy(x => x.GetType())
-                    .Select(group => typeof(BulkInserter<>).CloseAndBuildAs<IBulkInserter>(group, group.Key))
-                    .ToArray();
+            var groups = bulkInserters(documents);
 
             using var conn = _tenant.Database.CreateConnection();
 
@@ -120,13 +153,45 @@ namespace Marten.Storage
             }
         }
 
+        public void BulkInsertDocumentsEnlistTransaction(IEnumerable<object> documents,
+            Transaction transaction,
+            BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+            int batchSize = 1000)
+        {
+            var groups = bulkInserters(documents);
+            var types = documentTypes(documents);
+
+            // this needs to be done before open connection
+            foreach (var type in types)
+                _tenant.Database.EnsureStorageExists(type);
+
+            using var conn = _tenant.Database.CreateConnection();
+            conn.Open();
+            conn.EnlistTransaction(transaction);
+
+            foreach (var group in groups)
+                @group.BulkInsert(batchSize, conn, this, mode);
+        }
+
+        private static Type[] documentTypes(IEnumerable<object> documents)
+        {
+            return documents.Where(x => x != null)
+                            .GroupBy(x => x.GetType())
+                            .Select(x => x.Key)
+                            .ToArray();
+        }
+
+        private static IBulkInserter[] bulkInserters(IEnumerable<object> documents)
+        {
+            return documents.Where(x => x != null)
+                .GroupBy(x => x.GetType())
+                .Select(group => typeof(BulkInserter<>).CloseAndBuildAs<IBulkInserter>(group, group.Key))
+                .ToArray();
+        }        
+
         public async Task BulkInsertDocumentsAsync(IEnumerable<object> documents, BulkInsertMode mode, int batchSize, CancellationToken cancellation)
         {
-            var groups =
-                documents.Where(x => x != null)
-                    .GroupBy(x => x.GetType())
-                    .Select(group => typeof(BulkInserter<>).CloseAndBuildAs<IBulkInserter>(group, group.Key))
-                    .ToArray();
+            var groups = bulkInserters(documents);
 
             using var conn = _tenant.Database.CreateConnection();
 
@@ -150,6 +215,26 @@ namespace Marten.Storage
             {
                 await tx.RollbackAsync(cancellation).ConfigureAwait(false);
                 throw;
+            }
+        }
+
+        public async Task BulkInsertDocumentsEnlistTransactionAsync(IEnumerable<object> documents, Transaction transaction,
+            BulkInsertMode mode, int batchSize, CancellationToken cancellation)
+        {
+            var groups = bulkInserters(documents);
+            var types = documentTypes(documents);
+
+            // this needs to be done before open connection
+            foreach (var type in types)
+                await _tenant.Database.EnsureStorageExistsAsync(type).ConfigureAwait(false);
+
+            using var conn = _tenant.Database.CreateConnection();
+            await conn.OpenAsync(cancellation).ConfigureAwait(false);
+            conn.EnlistTransaction(transaction);
+
+            foreach (var group in groups)
+            {
+                await @group.BulkInsertAsync(batchSize, conn, this, mode, cancellation).ConfigureAwait(false);
             }
         }
 
@@ -248,8 +333,6 @@ namespace Marten.Storage
                     .ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
             }
         }
-
-
 
         private void loadDocuments<T>(IEnumerable<T> documents, IBulkLoader<T> loader, BulkInsertMode mode,
             NpgsqlConnection conn)

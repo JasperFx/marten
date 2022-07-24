@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Transactions;
 using Baseline;
-using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
@@ -17,6 +15,7 @@ using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Weasel.Core.Migrations;
+using IsolationLevel = System.Data.IsolationLevel;
 
 #nullable enable
 namespace Marten
@@ -92,6 +91,14 @@ namespace Marten
             bulkInsertion.BulkInsert(documents, mode, batchSize);
         }
 
+        public void BulkInsertEnlistTransaction<T>(IReadOnlyCollection<T> documents,
+            Transaction transaction, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+            int batchSize = 1000)
+        {
+            var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
+            bulkInsertion.BulkInsertEnlistTransaction(documents, transaction, mode, batchSize);
+        }
+
         public void BulkInsertDocuments(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000)
         {
@@ -105,7 +112,7 @@ namespace Marten
         {
             var bulkInsertion = new BulkInsertion(Tenancy.GetTenant(tenantId), Options);
             bulkInsertion.BulkInsert(documents, mode, batchSize);
-        }
+        } 
 
         public void BulkInsertDocuments(string tenantId, IEnumerable<object> documents,
             BulkInsertMode mode = BulkInsertMode.InsertsOnly,
@@ -121,6 +128,15 @@ namespace Marten
         {
             var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
             return bulkInsertion.BulkInsertAsync(documents, mode, batchSize, cancellation);
+        }
+
+        public Task BulkInsertEnlistTransactionAsync<T>(IReadOnlyCollection<T> documents,
+            Transaction transaction,
+            BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+            int batchSize = 1000, CancellationToken cancellation = default)
+        {
+            var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
+            return bulkInsertion.BulkInsertEnlistTransactionAsync(documents, transaction, mode, batchSize, cancellation);
         }
 
         public async Task BulkInsertAsync<T>(string tenantId, IReadOnlyCollection<T> documents,
