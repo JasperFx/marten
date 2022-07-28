@@ -31,11 +31,13 @@ namespace CoreTests
 
             await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
+            #region sample_QueueSqlCommand
             theSession.QueueSqlCommand("insert into names (name) values ('Jeremy')");
             theSession.QueueSqlCommand("insert into names (name) values ('Babu')");
             theSession.Store(Target.Random());
             theSession.QueueSqlCommand("insert into names (name) values ('Oskar')");
             theSession.Store(Target.Random());
+            #endregion
 
             await theSession.SaveChangesAsync();
 
