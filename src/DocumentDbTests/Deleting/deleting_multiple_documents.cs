@@ -54,6 +54,7 @@ namespace DocumentDbTests.Deleting
         {
             DocumentTracking = tracking;
 
+            #region sample_DeleteObjects
             // Store a mix of different document types
             var user1 = new User { FirstName = "Jamie", LastName = "Vaughan" };
             var issue1 = new Issue { Title = "Running low on coffee" };
@@ -70,6 +71,7 @@ namespace DocumentDbTests.Deleting
 
                 session.SaveChanges();
             }
+            #endregion
 
             using (var session = theStore.QuerySession())
             {

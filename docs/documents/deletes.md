@@ -65,6 +65,33 @@ A couple things to note:
 1. The bulk delete command runs in the same batched sql command and transaction as any other document updates or deletes
    in the session
 
+## Delete by mixed document types
+
+Documents of mixed or varying types can be deleted using `IDocumentSession.DeleteObjects(IEnumerable<object> documents)` method.
+
+<!-- snippet: sample_DeleteObjects -->
+<a id='snippet-sample_deleteobjects'></a>
+```cs
+// Store a mix of different document types
+var user1 = new User { FirstName = "Jamie", LastName = "Vaughan" };
+var issue1 = new Issue { Title = "Running low on coffee" };
+var company1 = new Company { Name = "ECorp" };
+
+theSession.StoreObjects(new object[] { user1, issue1, company1 });
+
+theSession.SaveChanges();
+
+// Delete a mix of documents types
+using (var session = theStore.OpenSession())
+{
+    session.DeleteObjects(new object[] { user1, company1 });
+
+    session.SaveChanges();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/deleting_multiple_documents.cs#L57-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deleteobjects' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ## Soft Deletes
 
 You can opt into using "soft deletes" for certain document types. Using this option means that documents are
