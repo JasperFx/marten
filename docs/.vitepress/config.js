@@ -119,6 +119,7 @@ module.exports = {
             {text: 'Foreign Keys', link: '/documents/indexing/foreign-keys'},
             {text: 'GIN or GiST Indexes', link: '/documents/indexing/gin-gist-indexes'},
             {text: 'Metadata Indexes', link: '/documents/indexing/metadata-indexes'},
+            {text: 'Ignore Indexes', link: '/documents/indexing/ignore-indexes'},
             {text: 'Document Type Hierarchies', link: '/documents/hierarchies'},
             {text: 'Multi-Tenanted Documents', link: '/documents/multi-tenancy'},
             {text: 'Initial Baseline Data', link: '/documents/initial-data'},

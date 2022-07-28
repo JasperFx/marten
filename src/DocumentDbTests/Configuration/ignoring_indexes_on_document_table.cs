@@ -24,11 +24,13 @@ namespace DocumentDbTests.Configuration
         [Fact]
         public void ignore_index_through_configuration()
         {
+            #region sample_IgnoreIndex
             var store = DocumentStore.For(opts =>
             {
                 opts.Connection(ConnectionSource.ConnectionString);
                 opts.Schema.For<User>().IgnoreIndex("foo");
             });
+            #endregion
 
             var mapping = store.Options.Storage.MappingFor(typeof(User));
             new DocumentTable(mapping).IgnoredIndexes.Single().ShouldBe("foo");
