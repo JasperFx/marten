@@ -1,6 +1,6 @@
 # Ignore Indexes
 
-Any custom index on a Marten defined document table added outside of Marten can potentically cause issues with Marten schema migration detection and delta computation. Marten provides a mechanism to ignore those indexes using `IgnoreIndex(string indexName)`.
+Any custom index on a Marten defined document table added outside of Marten can potentially cause issues with Marten schema migration detection and delta computation. Marten provides a mechanism to ignore those indexes using `IgnoreIndex(string indexName)`.
 
 <!-- snippet: sample_IgnoreIndex -->
 <a id='snippet-sample_ignoreindex'></a>
