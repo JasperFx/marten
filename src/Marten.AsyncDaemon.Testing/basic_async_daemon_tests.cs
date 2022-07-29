@@ -44,6 +44,7 @@ namespace Marten.AsyncDaemon.Testing
             await daemon2.StartAllShards();
         }
 
+        #region sample_AsyncDaemonListener
         public class FakeListener: IChangeListener
         {
             public IList<IChangeSet> Changes = new List<IChangeSet>();
@@ -55,16 +56,19 @@ namespace Marten.AsyncDaemon.Testing
                 return Task.CompletedTask;
             }
         }
+        #endregion
 
         [Fact]
         public async Task can_listen_for_commits_in_daemon()
         {
+            #region sample_AsyncListeners
             var listener = new FakeListener();
             StoreOptions(x =>
             {
                 x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
                 x.Projections.AsyncListeners.Add(listener);
             });
+            #endregion
 
             using var daemon = await StartDaemon();
             await daemon.StartAllShards();

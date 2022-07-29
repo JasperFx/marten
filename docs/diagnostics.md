@@ -158,6 +158,50 @@ public class SimpleSessionListener: DocumentSessionListenerBase
 As of Marten 1.4, you can also register `IDocumentSessionListener` objects scoped to a particular session with the
 `DocumentStore.OpenSession(SessionOptions)` signature.
 
+As of Marten v5, seperate listeners will need to be registered for Document Store and Async Daemon. Adding listeners for Async Daemon are covered in the next section.
+
+## Listening for Async Daemon Events
+
+Use `AsyncListeners` to register session listeners that will ONLY be applied within the asynchronous daemon updates.
+
+::: tip INFO
+Listeners will never get activated during projection rebuilds to safe guard against any side effects.
+:::
+
+A sample listener:
+<!-- snippet: sample_AsyncDaemonListener -->
+<a id='snippet-sample_asyncdaemonlistener'></a>
+```cs
+public class FakeListener: IChangeListener
+{
+    public IList<IChangeSet> Changes = new List<IChangeSet>();
+
+    public Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
+    {
+        session.ShouldNotBeNull();
+        Changes.Add(commit);
+        return Task.CompletedTask;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/basic_async_daemon_tests.cs#L47-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asyncdaemonlistener' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Wiring a Async Daemon listener:
+<!-- snippet: sample_AsyncListeners -->
+<a id='snippet-sample_asynclisteners'></a>
+```cs
+var listener = new FakeListener();
+StoreOptions(x =>
+{
+    x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
+    x.Projections.AsyncListeners.Add(listener);
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/basic_async_daemon_tests.cs#L64-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asynclisteners' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
 ## Custom Logging
 
 Marten v0.8 comes with a new mechanism to plug in custom logging to the `IDocumentStore`, `IQuerySession`, and `IDocumentSession` activity:
