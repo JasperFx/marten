@@ -201,7 +201,6 @@ StoreOptions(x =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/basic_async_daemon_tests.cs#L64-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asynclisteners' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Custom Logging
 
 Marten v0.8 comes with a new mechanism to plug in custom logging to the `IDocumentStore`, `IQuerySession`, and `IDocumentSession` activity:
