@@ -158,7 +158,7 @@ public class SimpleSessionListener: DocumentSessionListenerBase
 As of Marten 1.4, you can also register `IDocumentSessionListener` objects scoped to a particular session with the
 `DocumentStore.OpenSession(SessionOptions)` signature.
 
-As of Marten v5, seperate listeners will need to be registered for Document Store and Async Daemon. Adding listeners for Async Daemon are covered in the next section.
+As of Marten v5, separate listeners will need to be registered for Document Store and Async Daemon. Adding listeners for Async Daemon are covered in the next section.
 
 ## Listening for Async Daemon Events
 
