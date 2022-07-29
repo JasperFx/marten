@@ -43,6 +43,7 @@ namespace CoreTests
         {
             // The schema is dropped when this method is called, so existing
             // tables would be dropped first
+            #region sample_CustomSchemaTable
             StoreOptions(opts =>
             {
                 opts.RegisterDocumentType<Target>();
@@ -54,6 +55,7 @@ namespace CoreTests
             });
 
             await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+            #endregion
 
 
             using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
@@ -66,6 +68,7 @@ namespace CoreTests
         [Fact]
         public async Task enable_an_extension()
         {
+            #region sample_CustomSchemaExtension
             StoreOptions(opts =>
             {
                 opts.RegisterDocumentType<Target>();
@@ -78,6 +81,7 @@ namespace CoreTests
             });
 
             await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+            #endregion
 
             var session = theStore.OpenSession();
 
@@ -89,6 +93,7 @@ namespace CoreTests
         [Fact]
         public async Task create_a_function()
         {
+            #region sample_CustomSchemaFunction
             StoreOptions(opts =>
             {
                 opts.RegisterDocumentType<Target>();
@@ -108,6 +113,7 @@ $f$  language sql immutable;
             });
 
             await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+            #endregion
 
             var session = theStore.OpenSession();
 
@@ -121,6 +127,7 @@ $f$  language sql immutable;
         [Fact]
         public async Task create_a_sequence()
         {
+            #region sample_CustomSchemaSequence
             StoreOptions(opts =>
             {
                 opts.RegisterDocumentType<Target>();
@@ -132,6 +139,7 @@ $f$  language sql immutable;
             });
 
             await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+            #endregion
 
             var session = theStore.OpenSession();
 

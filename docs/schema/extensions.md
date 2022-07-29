@@ -1,12 +1,8 @@
 # Schema Feature Extensions
 
-New in Marten 2.4.0 is the ability to add additional features with custom database schema objects that simply plug into Marten's
-[schema management facilities)[/schema/migrations). The key abstraction is the `IFeatureSchema` interface from the Weasel.Core library.
+New in Marten 5.4.0 is the ability to add additional features with custom database schema objects that simply plug into Marten's [schema management facilities)[/schema/migrations). The key abstraction is the `IFeatureSchema` interface from the [Weasel.Core](https://www.nuget.org/packages/Weasel.Core/) library.
 
-TODO -- should link to Weasel. And document Weasel I suppose. Ugh.
-
-Not to worry though, Marten comes with a base class that makes it a bit simpler to build out new features. Here's a very simple
-example that defines a custom table with one column:
+Not to worry though, Marten comes with a base class that makes it a bit simpler to build out new features. Here's a very simple example that defines a custom table with one column:
 
 <!-- snippet: sample_creating-a-fake-schema-feature -->
 <a id='snippet-sample_creating-a-fake-schema-feature'></a>
@@ -53,131 +49,101 @@ var store = DocumentStore.For(_ =>
 
 Do note that when you use the `Add<T>()` syntax, Marten will pass along the current `StoreOptions` to the constructor function if there is a constructor with that signature. Otherwise, it uses the no-arg constructor.
 
-While you *can* directly implement the `ISchemaObject` interface for something Marten doesn't already support, it's probably far easier to just configure one of the existing implementations shown in the following sections.
-
-* `Table`
-* `Function`
-* `Sequence`
+While you *can* directly implement the `ISchemaObject` interface for something Marten doesn't already support. Marten provides an even easier extensibility mechanism to add custom database objects such as Postgres tables, functions and sequences using `StorageFeatures.ExtendedSchemaObjects` using [Weasel](https://github.com/JasperFx/weasel).
 
 ## Table
 
-Postgresql tables can be modeled with the `Table` class as shown in this example from the event store inside of Marten:
+Postgresql tables can be modeled with the `Table` class from `Weasel.Postgresql.Tables` as shown in this example below:
 
-<!-- snippet: sample_EventsTable -->
-<a id='snippet-sample_eventstable'></a>
+<!-- snippet: sample_CustomSchemaTable -->
+<a id='snippet-sample_customschematable'></a>
 ```cs
-internal class EventsTable: Table
+StoreOptions(opts =>
 {
-    public EventsTable(EventGraph events): base(new DbObjectName(events.DatabaseSchemaName, "mt_events"))
-    {
-        AddColumn(new EventTableColumn("seq_id", x => x.Sequence)).AsPrimaryKey();
-        AddColumn(new EventTableColumn("id", x => x.Id)).NotNull();
-        AddColumn(new StreamIdColumn(events));
+    opts.RegisterDocumentType<Target>();
 
-        AddColumn(new EventTableColumn("version", x => x.Version)).NotNull();
-        AddColumn<EventJsonDataColumn>();
-        AddColumn<EventTypeColumn>();
-        AddColumn(new EventTableColumn("timestamp", x => x.Timestamp))
-            .NotNull().DefaultValueByString("(now())");
+    var table = new Table("adding_custom_schema_objects.names");
+    table.AddColumn<string>("name").AsPrimaryKey();
 
-        AddColumn<TenantIdColumn>();
+    opts.Storage.ExtendedSchemaObjects.Add(table);
+});
 
-        AddColumn<DotNetTypeColumn>().AllowNulls();
-
-        AddIfActive(events.Metadata.CorrelationId);
-        AddIfActive(events.Metadata.CausationId);
-        AddIfActive(events.Metadata.Headers);
-
-        if (events.TenancyStyle == TenancyStyle.Conjoined)
-        {
-            ForeignKeys.Add(new ForeignKey("fkey_mt_events_stream_id_tenant_id")
-            {
-                ColumnNames = new string[]{"stream_id", TenantIdColumn.Name},
-                LinkedNames = new string[]{"id", TenantIdColumn.Name},
-                LinkedTable = new DbObjectName(events.DatabaseSchemaName, "mt_streams")
-            });
-
-            Indexes.Add(new IndexDefinition("pk_mt_events_stream_and_version")
-            {
-                IsUnique = true,
-                Columns = new string[]{"stream_id", TenantIdColumn.Name, "version"}
-            });
-        }
-        else
-        {
-            ForeignKeys.Add(new ForeignKey("fkey_mt_events_stream_id")
-            {
-                ColumnNames = new string[]{"stream_id"},
-                LinkedNames = new string[]{"id"},
-                LinkedTable = new DbObjectName(events.DatabaseSchemaName, "mt_streams"),
-                OnDelete = CascadeAction.Cascade
-            });
-
-            Indexes.Add(new IndexDefinition("pk_mt_events_stream_and_version")
-            {
-                IsUnique = true,
-                Columns = new string[]{"stream_id", "version"}
-            });
-        }
-
-        Indexes.Add(new IndexDefinition("pk_mt_events_id_unique")
-        {
-            Columns = new string[]{"id"},
-            IsUnique = true
-        });
-
-        AddColumn<IsArchivedColumn>();
-    }
-
-    internal IList<IEventTableColumn> SelectColumns()
-    {
-        var columns = new List<IEventTableColumn>();
-        columns.AddRange(Columns.OfType<IEventTableColumn>());
-
-        var data = columns.OfType<EventJsonDataColumn>().Single();
-        var typeName = columns.OfType<EventTypeColumn>().Single();
-        var dotNetTypeName = columns.OfType<DotNetTypeColumn>().Single();
-
-        columns.Remove(data);
-        columns.Insert(0, data);
-        columns.Remove(typeName);
-        columns.Insert(1, typeName);
-        columns.Remove(dotNetTypeName);
-        columns.Insert(2, dotNetTypeName);
-
-        return columns;
-    }
-
-    private void AddIfActive(MetadataColumn column)
-    {
-        if (column.Enabled)
-        {
-            AddColumn(column);
-        }
-    }
-}
+await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Schema/EventsTable.cs#L13-L107' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_eventstable' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L46-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschematable' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Function
 
-Postgresql functions can be managed by creating a subclass of the `Function` base class as shown below from the big "append event" function in the event store:
+Postgresql functions can be managed by creating a function using `Weasel.Postgresql.Functions.Function` as below:
 
-// TODO: Add sample
+<!-- snippet: sample_CustomSchemaFunction -->
+<a id='snippet-sample_customschemafunction'></a>
+```cs
+StoreOptions(opts =>
+{
+    opts.RegisterDocumentType<Target>();
+
+    // Create a user defined function to act as a ternary operator similar to SQL Server
+    var function = new Function(new DbObjectName("public", "iif"), @"
+create or replace function iif(
+condition boolean,       -- if condition
+true_result anyelement,  -- then
+false_result anyelement  -- else
+) returns anyelement as $f$
+select case when condition then true_result else false_result end
+$f$  language sql immutable;
+");
+
+    opts.Storage.ExtendedSchemaObjects.Add(function);
+});
+
+await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L96-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemafunction' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Sequence
 
-[Postgresql sequences](https://www.postgresql.org/docs/10/static/sql-createsequence.html) can be managed with this usage:
+[Postgresql sequences](https://www.postgresql.org/docs/10/static/sql-createsequence.html) can be created using `Weasel.Postgresql.Sequence` as below:
 
-<!-- snippet: sample_using-sequence -->
-<a id='snippet-sample_using-sequence'></a>
+<!-- snippet: sample_CustomSchemaSequence -->
+<a id='snippet-sample_customschemasequence'></a>
 ```cs
-var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequence"))
+StoreOptions(opts =>
 {
-    Owner = eventsTable.Identifier,
-    OwnerColumn = "seq_id"
-};
+    opts.RegisterDocumentType<Target>();
+
+    // Create a sequence to generate unique ids for documents
+    var sequence = new Sequence("banana_seq");
+
+    opts.Storage.ExtendedSchemaObjects.Add(sequence);
+});
+
+await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/EventGraph.FeatureSchema.cs#L43-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-sequence' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L130-L142' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemasequence' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Extension
+
+Postgresql extensions can be enabled using `Weasel.Postgresql.Extension` as below:
+
+<!-- snippet: sample_CustomSchemaExtension -->
+<a id='snippet-sample_customschemaextension'></a>
+```cs
+StoreOptions(opts =>
+{
+    opts.RegisterDocumentType<Target>();
+
+    // Unaccent is an extension ships with postgresql
+    // and removes accents (diacritic signs) from strings
+    var extension = new Extension("unaccent");
+
+    opts.Storage.ExtendedSchemaObjects.Add(extension);
+});
+
+await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L71-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemaextension' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
