@@ -162,15 +162,10 @@ Then to insert that code to the documentation, add `<[sample:name-of-sample]>`.
 
 ## License
 
-Copyright © .NET Foundation, Jeremy D. Miller, Babu Annamalai, Oskar Dudycz, Joona-Pekka Kokko and contributors.
+Copyright © Jeremy D. Miller, Babu Annamalai, Oskar Dudycz, Joona-Pekka Kokko and contributors.
 
 Marten is provided as-is under the MIT license. For more information see [LICENSE](LICENSE).
 
 ## Code of Conduct
 
 This project has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community.
-For more information see the [.NET Foundation Code of Conduct](http://www.dotnetfoundation.org/code-of-conduct).
-
-## .NET Foundation
-
-This project is supported by the [.NET Foundation](http://www.dotnetfoundation.org) .

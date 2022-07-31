@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Marten.Events.Aggregation;
 using Marten.Storage;
 #nullable enable
 namespace Marten.Events.Projections
@@ -15,7 +17,7 @@ namespace Marten.Events.Projections
     /// </summary>
     /// <typeparam name="TDoc"></typeparam>
     /// <typeparam name="TId"></typeparam>
-    public class EventSlice<TDoc, TId>: IEventSlice
+    public class EventSlice<TDoc, TId>: IEventSlice, IComparer<IEvent>
     {
         private readonly List<IEvent> _events = new List<IEvent>();
 
@@ -56,6 +58,11 @@ namespace Marten.Events.Projections
         /// </summary>
         public TDoc? Aggregate { get; set; }
 
+        int IComparer<IEvent>.Compare(IEvent x, IEvent y)
+        {
+            return x.Sequence.CompareTo(y.Sequence);
+        }
+
         /// <summary>
         /// Add a single event to this slice
         /// </summary>
@@ -79,7 +86,10 @@ namespace Marten.Events.Projections
         /// <summary>
         /// All the events in this slice
         /// </summary>
-        public IReadOnlyList<IEvent> Events() => _events;
+        public IReadOnlyList<IEvent> Events()
+        {
+            return _events;
+        }
 
         /// <summary>
         /// Iterate through just the event data
@@ -93,17 +103,28 @@ namespace Marten.Events.Projections
             }
         }
 
+        internal void FanOut<TSource, TChild>(Func<TSource, IEnumerable<TChild>> fanOutFunc)
+        {
+            reorderEvents();
+            _events.FanOut(fanOutFunc);
+        }
+
         internal void ApplyFanOutRules(IEnumerable<IFanOutRule> rules)
         {
             // Need to do this first before applying the fanout rules
-            var events = _events.Distinct().OrderBy(x => x.Version).ToArray();
-            _events.Clear();
-            _events.AddRange(events);
+            reorderEvents();
 
             foreach (var rule in rules)
             {
                 rule.Apply(_events);
             }
+        }
+
+        private void reorderEvents()
+        {
+            var events = _events.Distinct().OrderBy(x => x.Sequence).ToArray();
+            _events.Clear();
+            _events.AddRange(events);
         }
     }
 }

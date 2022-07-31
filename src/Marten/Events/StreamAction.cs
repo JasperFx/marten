@@ -4,6 +4,7 @@ using System.Linq;
 using Marten.Events.Operations;
 using Marten.Exceptions;
 using Marten.Internal;
+using Marten.Internal.Sessions;
 using Marten.Schema.Identity;
 using Marten.Storage;
 #nullable enable
@@ -64,23 +65,21 @@ namespace Marten.Events
         /// </summary>
         public string? TenantId { get; internal set; }
 
-
-
         private readonly List<IEvent> _events = new();
 
-        private StreamAction(Guid stream, StreamActionType actionType)
+        internal StreamAction(Guid stream, StreamActionType actionType)
         {
             Id = stream;
             ActionType = actionType;
         }
 
-        private StreamAction(string stream, StreamActionType actionType)
+        internal StreamAction(string stream, StreamActionType actionType)
         {
             Key = stream;
             ActionType = actionType;
         }
 
-        private StreamAction(Guid id, string key, StreamActionType actionType)
+        protected StreamAction(Guid id, string key, StreamActionType actionType)
         {
             Id = id;
             Key = key;
@@ -97,6 +96,16 @@ namespace Marten.Events
                 @event.StreamId = Id;
                 @event.StreamKey = Key;
             }
+
+            return this;
+        }
+
+        internal StreamAction AddEvent(IEvent @event)
+        {
+            @event.StreamId = Id;
+            @event.StreamKey = Key;
+
+            _events.Add(@event);
 
             return this;
         }
@@ -254,20 +263,7 @@ namespace Marten.Events
 
             var i = currentVersion;
 
-            if (currentVersion != 0)
-            {
-                // Guard logic for optimistic concurrency
-                if (ExpectedVersionOnServer.HasValue)
-                {
-                    if (currentVersion != ExpectedVersionOnServer.Value)
-                    {
-                        throw new EventStreamUnexpectedMaxEventIdException((object?) Key ?? Id, AggregateType, ExpectedVersionOnServer.Value, currentVersion);
-                    }
-                }
-
-                ExpectedVersionOnServer = currentVersion;
-            }
-
+            // Augment the events before checking expected versions, this allows the sequence/etc to properly be set on the resulting tombstone events
             foreach (var @event in _events)
             {
                 @event.Version = ++i;
@@ -280,6 +276,20 @@ namespace Marten.Events
                 @event.Timestamp = timestamp;
 
                 ProcessMetadata(@event, graph, session);
+            }
+
+            if (currentVersion != 0)
+            {
+                // Guard logic for optimistic concurrency
+                if (ExpectedVersionOnServer.HasValue)
+                {
+                    if (currentVersion != ExpectedVersionOnServer.Value)
+                    {
+                        throw new EventStreamUnexpectedMaxEventIdException((object?) Key ?? Id, AggregateType, ExpectedVersionOnServer.Value, currentVersion);
+                    }
+                }
+
+                ExpectedVersionOnServer = currentVersion;
             }
 
             Version = Events.Last().Version;
@@ -301,11 +311,11 @@ namespace Marten.Events
             };
         }
 
-        internal static StreamAction ForTombstone()
+        internal static StreamAction ForTombstone(DocumentSessionBase documentSessionBase)
         {
             return new StreamAction(EstablishTombstoneStream.StreamId, EstablishTombstoneStream.StreamKey, StreamActionType.Append)
             {
-
+                TenantId = documentSessionBase.TenantId
             };
         }
 
@@ -341,6 +351,21 @@ namespace Marten.Events
             var action = events[0].Version == 1 ? StreamActionType.Start : StreamActionType.Append;
             return new StreamAction(streamKey, action)
                 .AddEvents(events);
+        }
+
+        internal IEnumerable<Event<Tombstone>> ToTombstoneEvents(EventMapping mapping, Tombstone tombstone)
+        {
+            return Events.Select(x => new Event<Tombstone>(tombstone)
+            {
+                Sequence = x.Sequence,
+                Version = x.Sequence, // this is important to avoid clashes on the id/version constraint
+                TenantId = TenantId,
+                StreamId = EstablishTombstoneStream.StreamId,
+                StreamKey = EstablishTombstoneStream.StreamKey,
+                Id = CombGuidIdGeneration.NewGuid(),
+                EventTypeName = mapping.EventTypeName,
+                DotNetTypeName = mapping.DotNetTypeName
+            });
         }
     }
 }

@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 
 namespace Marten.Exceptions
 {
-    public class ConcurrencyException: Exception
+    public class ConcurrencyException: MartenException
     {
         public string DocType { get; set; }
         public object Id { get; set; }

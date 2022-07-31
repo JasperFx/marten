@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using Marten.Events;
 using Marten.Internal.Operations;
 
 #nullable enable
@@ -54,6 +55,12 @@ namespace Marten
         void DeleteWhere<T>(Expression<Func<T, bool>> expression) where T : notnull;
 
         /// <summary>
+        /// Delete an enumerable of potentially mixed documents
+        /// </summary>
+        /// <param name="documents"></param>
+        void DeleteObjects(IEnumerable<object> documents);
+
+        /// <summary>
         /// Explicitly marks multiple documents as needing to be inserted or updated upon the next call to SaveChanges()
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -77,7 +84,7 @@ namespace Marten
         void Store<T>(T entity, Guid version) where T : notnull;
 
         /// <summary>
-        /// DocumentStore an enumerable of potentially mixed documents
+        /// Store an enumerable of potentially mixed documents
         /// </summary>
         /// <param name="documents"></param>
         void StoreObjects(IEnumerable<object> documents);
@@ -184,5 +191,16 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <exception cref="InvalidOperationException"></exception>
         void UndoDeleteWhere<T>(Expression<Func<T, bool>> expression) where T : notnull;
+
+
+        /// <summary>
+        /// Registers a SQL command to be executed with the underlying unit of work as part of the batched command.
+        /// Use "?" placeholders to denote parameter values
+        /// </summary>
+        /// <param name="sql"></param>
+        /// <param name="parameterValues"></param>
+        void QueueSqlCommand(string sql, params object[] parameterValues);
+
+        new IEventStore Events { get; }
     }
 }

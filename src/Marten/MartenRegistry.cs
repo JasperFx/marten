@@ -111,6 +111,18 @@ namespace Marten
             }
 
             /// <summary>
+            /// Direct the schema migration detection to ignore the presence of the
+            /// named index on the document storage table
+            /// </summary>
+            /// <param name="indexName"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> IgnoreIndex(string indexName)
+            {
+                _builder.Alter = m => m.IgnoreIndex(indexName);
+                return this;
+            }
+
+            /// <summary>
             ///     Specify the property searching mechanism for this document type. The default is
             ///     JSON_Locator_Only
             /// </summary>

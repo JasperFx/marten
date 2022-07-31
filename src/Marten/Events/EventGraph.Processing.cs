@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Operations;
+using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
@@ -31,7 +32,7 @@ namespace Marten.Events
             var sequences = session.ExecuteHandler(fetcher);
 
 
-            foreach (var stream in session.WorkTracker.Streams)
+            foreach (var stream in session.WorkTracker.Streams.Where(x => x.Events.Any()))
             {
                 stream.TenantId ??= session.TenantId;
 
@@ -52,6 +53,10 @@ namespace Marten.Events
                     }
                     else
                     {
+                        if (state.IsArchived)
+                        {
+                            throw new InvalidStreamOperationException($"Attempted to append event to archived stream with Id '{state.Id}'.");
+                        }
                         stream.PrepareEvents(state.Version, this, sequences, session);
                         session.QueueOperation(storage.UpdateStreamVersion(stream));
                     }
@@ -87,7 +92,7 @@ namespace Marten.Events
 
             var storage = session.EventStorage();
 
-            foreach (var stream in session.WorkTracker.Streams)
+            foreach (var stream in session.WorkTracker.Streams.Where(x => x.Events.Any()))
             {
                 stream.TenantId ??= session.TenantId;
 
@@ -108,6 +113,10 @@ namespace Marten.Events
                     }
                     else
                     {
+                        if (state.IsArchived)
+                        {
+                            throw new InvalidStreamOperationException($"Attempted to append event to archived stream with Id '{state.Id}'.");
+                        }
                         stream.PrepareEvents(state.Version, this, sequences, session);
                         session.QueueOperation(storage.UpdateStreamVersion(stream));
                     }
@@ -129,7 +138,7 @@ namespace Marten.Events
         {
             if (session.WorkTracker.Streams.Any())
             {
-                var stream = StreamAction.ForTombstone();
+                var stream = StreamAction.ForTombstone(session);
 
                 var tombstone = new Tombstone();
                 var mapping = EventMappingFor<Tombstone>();
@@ -137,13 +146,13 @@ namespace Marten.Events
                 var operations = new List<IStorageOperation>();
                 var storage = session.EventStorage();
 
-                operations.Add(_establishTombstone.Value);
+                operations.Add(new EstablishTombstoneStream(this, session.TenantId));
                 var tombstones = session.WorkTracker.Streams
-                    .SelectMany(x => x.Events)
+                    .SelectMany(x => x.ToTombstoneEvents(mapping, tombstone))
                     .Select(x => new Event<Tombstone>(tombstone)
                     {
                         Sequence = x.Sequence,
-                        Version = x.Version,
+                        Version = x.Sequence, // this is important to avoid clashes on the id/version constraint
                         TenantId = x.TenantId,
                         StreamId = EstablishTombstoneStream.StreamId,
                         StreamKey = EstablishTombstoneStream.StreamKey,

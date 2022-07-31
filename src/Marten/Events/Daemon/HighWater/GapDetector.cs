@@ -21,11 +21,11 @@ from   (select
                lead(seq_id)
                over (order by seq_id) as no
         from
-               {graph.DatabaseSchemaName}.mt_events where seq_id > :start) ct
+               {graph.DatabaseSchemaName}.mt_events where seq_id >= :start) ct
 where  no is not null
   and    no - seq_id > 1
 LIMIT 1;
-select max(seq_id) from {graph.DatabaseSchemaName}.mt_events where seq_id > :start;
+select max(seq_id) from {graph.DatabaseSchemaName}.mt_events where seq_id >= :start;
 ".Trim());
 
             _start = _gapDetection.AddNamedParameter("start", 0L);
@@ -52,7 +52,7 @@ select max(seq_id) from {graph.DatabaseSchemaName}.mt_events where seq_id > :sta
                 return await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
             }
 
-            // use the latest sequence in the event table
+            // use the latest sequence in the event table because there is NO gap
             await reader.NextResultAsync(token).ConfigureAwait(false);
             if (!await reader.ReadAsync(token).ConfigureAwait(false)) return null;
 

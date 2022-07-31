@@ -20,6 +20,11 @@ namespace Marten.Internal
             _parent = parent;
         }
 
+        internal UnitOfWork(IEnumerable<IStorageOperation> operations)
+        {
+            _operations.AddRange(operations);
+        }
+
         public void Reset()
         {
             _operations.Clear();
@@ -81,9 +86,6 @@ namespace Marten.Internal
 
             return true;
         }
-
-
-
 
 
         IEnumerable<IDeletion> IUnitOfWork.Deletions()
@@ -196,8 +198,7 @@ namespace Marten.Internal
 
         public IChangeSet Clone()
         {
-            var clone = new UnitOfWork(null);
-            clone._operations.AddRange(_operations);
+            var clone = new UnitOfWork(_operations);
             clone.Streams.AddRange(Streams);
 
             return clone;
@@ -267,7 +268,7 @@ namespace Marten.Internal
                 {
                     // Arbitrary order if one is a delete but the other is not, because this will force the sorting
                     // to try and compare these documents against others and fall in to the below checks.
-                    return yIsDelete ? -1 : 0;
+                    return yIsDelete ? 1 : -1;
                 }
 
                 if (xIsDelete)
@@ -348,7 +349,7 @@ namespace Marten.Internal
 
         public bool HasOutstandingWork()
         {
-            return _operations.Any() || Streams.Any() || _eventOperations.Any();
+            return _operations.Any() || Streams.Any(x => x.Events.Count > 0) || _eventOperations.Any();
         }
 
         public void EjectAll()

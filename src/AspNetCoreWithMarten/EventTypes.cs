@@ -38,7 +38,7 @@ namespace AspNetCoreWithMarten
         public bool IsEvent4Applied {get; set;}
     }
 
-    public class View1Projection : AggregateProjection<View1>
+    public class View1Projection : SingleStreamAggregation<View1>
     {
         public void Apply(View1 v, Event1 e){
             v.IsEvent1Applied = true;
@@ -47,7 +47,7 @@ namespace AspNetCoreWithMarten
             v.IsEvent2Applied = true;
         }
     }
-    public class View2Projection : AggregateProjection<View2>
+    public class View2Projection : SingleStreamAggregation<View2>
     {
 
         public void Apply(View2 v, Event3 e){

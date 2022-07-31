@@ -14,6 +14,7 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
+using Marten.Schema.Arguments;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing;
@@ -152,7 +153,7 @@ namespace EventSourcingTests
             await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
             await @case.Store.EnsureStorageExistsAsync(typeof(IEvent));
 
-            var operation = new EstablishTombstoneStream(@case.Store.Events);
+            var operation = new EstablishTombstoneStream(@case.Store.Events, Tenancy.DefaultTenantId);
             using var session = @case.Store.LightweightSession();
 
             var batch = new UpdateBatch(new []{operation});
@@ -176,7 +177,7 @@ namespace EventSourcingTests
             await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
             await @case.Store.EnsureStorageExistsAsync(typeof(IEvent));
 
-            var operation = new EstablishTombstoneStream(@case.Store.Events);
+            var operation = new EstablishTombstoneStream(@case.Store.Events, Tenancy.DefaultTenantId);
             using var session = @case.Store.LightweightSession();
 
             var batch = new UpdateBatch(new []{operation});

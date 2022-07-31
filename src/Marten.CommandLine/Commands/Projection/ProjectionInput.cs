@@ -24,8 +24,14 @@ namespace Marten.CommandLine.Commands.Projection
         [Description("If specified, only run or rebuild the named projection")]
         public string ProjectionFlag { get; set; }
 
+        [Description("If specified, only execute against the named Marten store. Does not apply with only one store")]
+        public string StoreFlag { get; set; }
+
         [Description("If specified, just list the registered projections")]
         public bool ListFlag { get; set; }
+
+        [Description("If specified, only execute against the named Marten database within the specified store(s). Does not apply with only one store")]
+        public string DatabaseFlag { get; set; }
 
         internal IList<AsyncProjectionShard> BuildShards(DocumentStore store)
         {

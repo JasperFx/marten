@@ -89,6 +89,7 @@ namespace Marten.Events.Aggregation
             if (aggregate != null)
             {
                 Storage.SetIdentity(aggregate, slice.Id);
+                Versioning.TrySetVersion(aggregate, slice.Events().LastOrDefault());
             }
 
             // Delete the aggregate *if* it existed prior to these events
@@ -105,6 +106,8 @@ namespace Marten.Events.Aggregation
 
             session.QueueOperation(Storage.Upsert(aggregate, session, slice.Tenant.TenantId));
         }
+
+        public IAggregateVersioning Versioning { get; set; }
 
         public abstract ValueTask<TDoc> ApplyEvent(IQuerySession session, EventSlice<TDoc, TId> slice,
             IEvent evt, TDoc? aggregate,

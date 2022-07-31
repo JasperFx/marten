@@ -151,7 +151,7 @@ public class UserGroupsAssignment
     public List<Guid> Groups { get; set; } = new();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/TestClasses.cs#L6-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-test-classes' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/TestClasses.cs#L6-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-test-classes' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Simple Event to Single View Projection
@@ -161,7 +161,7 @@ Here's a simple example of creating an aggregated view by user id:
 <!-- snippet: sample_view-projection-simple -->
 <a id='snippet-sample_view-projection-simple'></a>
 ```cs
-public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment, Guid>
+public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAssignment, Guid>
 {
     public UserGroupsAssignmentProjection()
     {
@@ -179,7 +179,7 @@ public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment
         => view.Groups.Add(@event.GroupId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/simple_multi_stream_projection.cs#L11-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/simple_multi_stream_projection.cs#L10-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that the primary difference between this and `AggregateProjection<T>` is the calls to `Identity<TEvent>()` to specify how the events are grouped
@@ -189,7 +189,7 @@ we care about and use this:
 <!-- snippet: sample_view-projection-simple-2 -->
 <a id='snippet-sample_view-projection-simple-2'></a>
 ```cs
-public class UserGroupsAssignmentProjection2: ViewProjection<UserGroupsAssignment, Guid>
+public class UserGroupsAssignmentProjection2: MultiStreamAggregation<UserGroupsAssignment, Guid>
 {
     public UserGroupsAssignmentProjection2()
     {
@@ -210,7 +210,7 @@ public class UserGroupsAssignmentProjection2: ViewProjection<UserGroupsAssignmen
         => view.Groups.Add(@event.GroupId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/simple_multi_stream_projection.cs#L32-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/simple_multi_stream_projection.cs#L31-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Simple Example of Events Updating Multiple Views
@@ -222,7 +222,7 @@ shown below:
 <!-- snippet: sample_view-projection-simple-with-one-to-many -->
 <a id='snippet-sample_view-projection-simple-with-one-to-many'></a>
 ```cs
-public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment, Guid>
+public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAssignment, Guid>
 {
     public UserGroupsAssignmentProjection()
     {
@@ -241,7 +241,7 @@ public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/simple_multi_stream_projection_wih_one_to_many.cs#L11-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-with-one-to-many' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/simple_multi_stream_projection_wih_one_to_many.cs#L11-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-with-one-to-many' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## View Projection with Custom Grouper
@@ -290,7 +290,7 @@ public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>
 }
 
 // projection with documentsession
-public class UserFeatureTogglesProjection: ViewProjection<UserFeatureToggles, Guid>
+public class UserFeatureTogglesProjection: MultiStreamAggregation<UserFeatureToggles, Guid>
 {
     public UserFeatureTogglesProjection()
     {
@@ -316,7 +316,7 @@ public class UserFeatureTogglesProjection: ViewProjection<UserFeatureToggles, Gu
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/CustomGroupers/custom_grouper_with_document_session.cs#L15-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-grouper-with-querysession' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_grouper_with_document_session.cs#L15-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-grouper-with-querysession' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## View Projection with Custom Slicer
@@ -332,7 +332,7 @@ own `IEventSlicer` that can split and assign events to any number of aggregated 
 <!-- snippet: sample_view-projection-custom-slicer -->
 <a id='snippet-sample_view-projection-custom-slicer'></a>
 ```cs
-public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment, Guid>
+public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAssignment, Guid>
 {
     public class CustomSlicer: IEventSlicer<UserGroupsAssignment, Guid>
     {
@@ -374,7 +374,7 @@ public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/ViewProjections/CustomGroupers/custom_slicer.cs#L16-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-slicer' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_slicer.cs#L16-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-slicer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Event "Fan Out" Rules
@@ -395,7 +395,7 @@ In a sample `ViewProjection`, we do a "fan out" of the `Travel.Movements` member
 <!-- snippet: sample_showing_fanout_rules -->
 <a id='snippet-sample_showing_fanout_rules'></a>
 ```cs
-public class DayProjection: ViewProjection<Day, int>
+public class DayProjection: MultiStreamAggregation<Day, int>
 {
     public DayProjection()
     {
@@ -437,5 +437,5 @@ public class DayProjection: ViewProjection<Day, int>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/ViewProjectionTests.cs#L123-L167' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/ViewProjectionTests.cs#L126-L170' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

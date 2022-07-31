@@ -30,7 +30,7 @@ namespace Marten.Events.Aggregation
 #pragma warning restore VSTHRD002
         }
 
-        internal override void CompileAndAssertValidity()
+        internal override void AssembleAndAssertValidity()
         {
             if (Slicer == null)
             {
@@ -86,6 +86,8 @@ namespace Marten.Events.Aggregation
         public abstract ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<TDoc, TId> slice,
             CancellationToken cancellation,
             ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline);
+
+        public IAggregateVersioning Versioning { get; set; }
 
         /// <summary>
         /// Override to give Marten "hints" about whether the aggregate is all new based on the incoming

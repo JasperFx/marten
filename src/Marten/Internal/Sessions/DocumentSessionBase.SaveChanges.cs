@@ -29,7 +29,16 @@ namespace Marten.Internal.Sessions
 
             BeginTransaction();
 
-            Options.EventGraph.ProcessEvents(this);
+            try
+            {
+                Options.EventGraph.ProcessEvents(this);
+            }
+            catch (Exception)
+            {
+                tryApplyTombstoneBatch();
+                throw;
+            }
+
             _workTracker.Sort(Options);
 
             if (Options.AutoCreateSchemaObjects != AutoCreate.None)
@@ -74,7 +83,16 @@ namespace Marten.Internal.Sessions
 
             await BeginTransactionAsync(token).ConfigureAwait(false);
 
-            await Options.EventGraph.ProcessEventsAsync(this, token).ConfigureAwait(false);
+            try
+            {
+                await Options.EventGraph.ProcessEventsAsync(this, token).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                await tryApplyTombstoneEvents(token).ConfigureAwait(false);
+
+                throw;
+            }
             _workTracker.Sort(Options);
 
             if (Options.AutoCreateSchemaObjects != AutoCreate.None)
@@ -132,20 +150,25 @@ namespace Marten.Internal.Sessions
                     Logger.LogFailure(new NpgsqlCommand(), e);
                 }
 
-                if (Options.EventGraph.TryCreateTombstoneBatch(this, out var tombstoneBatch))
-                {
-                    try
-                    {
-                        tombstoneBatch.ApplyChanges(this);
-                        _retryPolicy.Execute(_connection.Commit);
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.LogFailure(new NpgsqlCommand(), e);
-                    }
-                }
+                tryApplyTombstoneBatch();
 
                 throw;
+            }
+        }
+
+        private void tryApplyTombstoneBatch()
+        {
+            if (Options.EventGraph.TryCreateTombstoneBatch(this, out var tombstoneBatch))
+            {
+                try
+                {
+                    tombstoneBatch.ApplyChanges(this);
+                    _retryPolicy.Execute(_connection.Commit);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogFailure(new NpgsqlCommand(), e);
+                }
             }
         }
 
@@ -176,20 +199,25 @@ namespace Marten.Internal.Sessions
                     Logger.LogFailure(new NpgsqlCommand(), e);
                 }
 
-                if (Options.EventGraph.TryCreateTombstoneBatch(this, out var tombstoneBatch))
-                {
-                    try
-                    {
-                        await tombstoneBatch.ApplyChangesAsync(this, token).ConfigureAwait(false);
-                        await _retryPolicy.ExecuteAsync(() => _connection.CommitAsync(token), token).ConfigureAwait(false);
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.LogFailure(new NpgsqlCommand(), e);
-                    }
-                }
+                await tryApplyTombstoneEvents(token).ConfigureAwait(false);
 
                 throw;
+            }
+        }
+
+        private async Task tryApplyTombstoneEvents(CancellationToken token)
+        {
+            if (Options.EventGraph.TryCreateTombstoneBatch(this, out var tombstoneBatch))
+            {
+                try
+                {
+                    await tombstoneBatch.ApplyChangesAsync(this, token).ConfigureAwait(false);
+                    await _retryPolicy.ExecuteAsync(() => _connection.CommitAsync(token), token).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogFailure(new NpgsqlCommand(), e);
+                }
             }
         }
     }

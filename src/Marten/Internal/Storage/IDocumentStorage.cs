@@ -128,12 +128,12 @@ namespace Marten.Internal.Storage
 
     internal static class DocumentStoreExtensions
     {
-        public static void AddTenancyFilter(this IDocumentStorage storage, CommandBuilder sql)
+        public static void AddTenancyFilter(this IDocumentStorage storage, CommandBuilder sql, string tenantId)
         {
             if (storage.TenancyStyle == TenancyStyle.Conjoined)
             {
                 sql.Append($" and {CurrentTenantFilter.Filter}");
-                sql.AddNamedParameter(TenantIdArgument.ArgName, "");
+                sql.AddNamedParameter(TenantIdArgument.ArgName, tenantId);
             }
         }
 

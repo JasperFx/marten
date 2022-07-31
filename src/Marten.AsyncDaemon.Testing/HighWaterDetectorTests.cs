@@ -8,6 +8,7 @@ using Marten.Events.Daemon.HighWater;
 using Weasel.Postgresql;
 using Marten.Services;
 using Marten.Testing;
+using Microsoft.Extensions.Logging.Abstractions;
 using NpgsqlTypes;
 using Shouldly;
 using Xunit;
@@ -23,7 +24,7 @@ namespace Marten.AsyncDaemon.Testing
         public HighWaterDetectorTests(ITestOutputHelper output) : base(output)
         {
             theStore.EnsureStorageExists(typeof(IEvent));
-            theDetector = new HighWaterDetector(new AutoOpenSingleQueryRunner(theStore.Tenancy.Default.Database), theStore.Events);
+            theDetector = new HighWaterDetector(new AutoOpenSingleQueryRunner(theStore.Tenancy.Default.Database), theStore.Events, NullLogger.Instance);
         }
 
         [Fact]
@@ -66,6 +67,22 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         [Fact]
+        public async Task second_run_detect_same_gap_when_stale()
+        {
+            NumberOfStreams = 10;
+            await PublishSingleThreaded();
+
+            var gaps = new long[] { NumberOfEvents - 100 };
+            await deleteEvents(gaps);
+
+            var statistics = await theDetector.Detect(CancellationToken.None);
+            statistics.CurrentMark.ShouldBe(NumberOfEvents - 101);
+
+            statistics = await theDetector.Detect(CancellationToken.None);
+            statistics.CurrentMark.ShouldBe(NumberOfEvents - 101);
+        }
+
+        [Fact]
         public async Task starting_from_first_detection_some_gaps_with_nonzero_buffer()
         {
             NumberOfStreams = 10;
@@ -82,12 +99,9 @@ namespace Marten.AsyncDaemon.Testing
             statistics.CurrentMark.ShouldBe(NumberOfEvents - 101);
             statistics.HighestSequence.ShouldBe(NumberOfEvents);
 
-            await makeOldWhereSequenceIsLessThanOrEqualTo(NumberOfEvents - 40);
+            var statistics2 = await theDetector.DetectInSafeZone(CancellationToken.None);
 
-            var safeTimestamp = statistics.LastUpdated.Value.Subtract(1.Seconds());
-            var statistics2 = await theDetector.DetectInSafeZone(safeTimestamp, CancellationToken.None);
-
-            statistics2.CurrentMark.ShouldBe(NumberOfEvents - 34);
+            statistics2.CurrentMark.ShouldBe(NumberOfEvents - 96);
         }
 
 

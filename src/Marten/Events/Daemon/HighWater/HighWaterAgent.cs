@@ -14,7 +14,7 @@ namespace Marten.Events.Daemon.HighWater
         private readonly ShardStateTracker _tracker;
         private readonly ILogger _logger;
         private readonly DaemonSettings _settings;
-        private readonly CancellationToken _token;
+        private CancellationToken _token;
         private readonly Timer _timer;
         private Task<Task> _loop;
 
@@ -50,9 +50,10 @@ namespace Marten.Events.Daemon.HighWater
 
         public bool IsRunning { get; private set; }
 
-
         private async Task DetectChanges()
         {
+            if (!IsRunning) return;
+
             try
             {
                 _current = await _detector.Detect(_token).ConfigureAwait(false);
@@ -71,6 +72,8 @@ namespace Marten.Events.Daemon.HighWater
 
             while (!_token.IsCancellationRequested)
             {
+                if (!IsRunning) break;
+
                 HighWaterStatistics statistics = null;
                 try
                 {
@@ -96,14 +99,21 @@ namespace Marten.Events.Daemon.HighWater
                         break;
 
                     case HighWaterStatus.Stale:
+                        _logger.LogInformation("High Water agent is stale at {CurrentMark}", statistics.CurrentMark);
+
+                        // This gives the high water detection a chance to allow the gaps to fill in
+                        // before skipping to the safe harbor time
                         var safeHarborTime = _current.Timestamp.Add(_settings.StaleSequenceThreshold);
-                        var delayTime = safeHarborTime.Subtract(statistics.Timestamp);
-                        if (delayTime.TotalSeconds > 0)
+                        if (safeHarborTime > statistics.Timestamp)
                         {
-                            await Task.Delay(delayTime, _token).ConfigureAwait(false);
+                            await Task.Delay(_settings.SlowPollingTime, _token).ConfigureAwait(false);
+                            continue;
                         }
 
-                        statistics = await _detector.DetectInSafeZone(safeHarborTime, _token).ConfigureAwait(false);
+                        _logger.LogInformation("High Water agent is stale after threshold of {DelayInSeconds} seconds, skipping gap to events marked after {SafeHarborTime}", _settings.StaleSequenceThreshold.TotalSeconds, safeHarborTime);
+
+
+                        statistics = await _detector.DetectInSafeZone(_token).ConfigureAwait(false);
                         await markProgress(statistics, _settings.FastPollingTime).ConfigureAwait(false);
                         break;
                 }
@@ -114,6 +124,8 @@ namespace Marten.Events.Daemon.HighWater
 
         private async Task markProgress(HighWaterStatistics statistics, TimeSpan delayTime)
         {
+            if (!IsRunning) return;
+
             // don't bother sending updates if the current position is 0
             if (statistics.CurrentMark == 0 || statistics.CurrentMark == _tracker.HighWaterMark)
             {
@@ -125,8 +137,10 @@ namespace Marten.Events.Daemon.HighWater
             {
                 _logger.LogDebug("High Water mark detected at {CurrentMark}", statistics.CurrentMark);
             }
+
             _current = statistics;
             _tracker.MarkHighWater(statistics.CurrentMark);
+
             await Task.Delay(delayTime, _token).ConfigureAwait(false);
         }
 
@@ -181,6 +195,11 @@ namespace Marten.Events.Daemon.HighWater
             }
 
             return Task.CompletedTask;
+        }
+
+        internal void ResetCancellation(CancellationToken cancellation)
+        {
+            _token = cancellation;
         }
     }
 }

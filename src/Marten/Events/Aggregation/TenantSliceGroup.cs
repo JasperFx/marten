@@ -9,49 +9,14 @@ using LamarCodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Internal;
-using Marten.Internal.Operations;
-using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Aggregation
 {
-
-
-    public interface ITenantSliceGroup<TId> : IDisposable
+    public interface ITenantSliceGroup<TId> : IEventGrouping<TId>, IDisposable
     {
-        /// <summary>
-        /// Add a single event to a single event slice by id
-        /// </summary>
-        /// <param name="id">The aggregate id</param>
-        /// <param name="event"></param>
-        void AddEvent(TId id, IEvent @event);
-
-        /// <summary>
-        /// Add many events to a single event slice by aggregate id
-        /// </summary>
-        /// <param name="id">The aggregate id</param>
-        /// <param name="events"></param>
-        void AddEvents(TId id, IEnumerable<IEvent> events);
-
-        /// <summary>
-        /// Add events to streams where each event of type TEvent applies to only
-        /// one stream
-        /// </summary>
-        /// <param name="singleIdSource"></param>
-        /// <param name="events"></param>
-        /// <typeparam name="TEvent"></typeparam>
-        void AddEvents<TEvent>(Func<TEvent, TId> singleIdSource, IEnumerable<IEvent> events);
-
-        /// <summary>
-        /// Add events to streams where each event of type TEvent may be related to many
-        /// different aggregates
-        /// </summary>
-        /// <param name="multipleIdSource"></param>
-        /// <param name="events"></param>
-        /// <typeparam name="TEvent"></typeparam>
-        void AddEvents<TEvent>(Func<TEvent, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events);
     }
 
     /// <summary>
@@ -92,6 +57,30 @@ namespace Marten.Events.Aggregation
             {
                 var id = singleIdSource((TEvent) @event.Data);
                 AddEvent(id, @event);
+            }
+        }
+
+        /// <summary>
+        /// Add events to the grouping based on the outer IEvent<TEvent> envelope type
+        /// </summary>
+        /// <param name="singleIdSource"></param>
+        /// <param name="events"></param>
+        /// <typeparam name="TEvent"></typeparam>
+        public void AddEventsWithMetadata<TEvent>(Func<IEvent<TEvent>, TId> singleIdSource, IEnumerable<IEvent> events)
+        {
+            var matching = events.OfType<IEvent<TEvent>>();
+            foreach (var @event in matching)
+            {
+                var id = singleIdSource(@event);
+                AddEvent(id, @event);
+            }
+        }
+
+        public void FanOutOnEach<TSource, TChild>(Func<TSource, IEnumerable<TChild>> fanOutFunc)
+        {
+            foreach (var slice in Slices)
+            {
+                slice.FanOut(fanOutFunc);
             }
         }
 
@@ -180,11 +169,14 @@ namespace Marten.Events.Aggregation
 
             await shardAgent.TryAction(async () =>
             {
-                using (var session = (IMartenSession) store.LightweightSession(Tenant.TenantId))
+                var options = new SessionOptions
                 {
-                    aggregates = await runtime.Storage
-                        .LoadManyAsync(ids, session, token).ConfigureAwait(false);
-                }
+                    Tenant = Tenant, Tracking = DocumentTracking.None, AllowAnyTenant = true
+                };
+
+                using var session = (IMartenSession) store.OpenSession(options);
+                aggregates = await runtime.Storage
+                    .LoadManyAsync(ids, session, token).ConfigureAwait(false);
             }, token).ConfigureAwait(false);
 
             if (token.IsCancellationRequested || aggregates == null) return;

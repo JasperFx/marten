@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 
 namespace Marten.Exceptions
 {
-    public sealed class DocumentAlreadyExistsException: Exception
+    public sealed class DocumentAlreadyExistsException: MartenException
     {
         public Type DocType { get; }
         public object Id { get; }

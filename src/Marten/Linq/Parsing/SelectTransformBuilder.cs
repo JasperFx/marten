@@ -10,10 +10,10 @@ using Remotion.Linq.Parsing;
 
 namespace Marten.Linq.Parsing
 {
-    internal class SelectTransformBuilder : RelinqExpressionVisitor
+    internal class SelectTransformBuilder: RelinqExpressionVisitor
     {
-        private TargetObject _target;
         private SelectedField _currentField;
+        private TargetObject _target;
 
         public SelectTransformBuilder(Expression clause, IFieldMapping fields, ISerializer serializer)
         {
@@ -102,6 +102,12 @@ namespace Marten.Linq.Parsing
                     {
                         // DictionaryField.RawLocator does not have cast to JSONB so TypedLocator is used
                         locator = field.TypedLocator;
+                    }
+
+                    if (field.FieldType.IsClass && field.FieldType != typeof(string) && field.FieldType != typeof(decimal))
+                    {
+                        // If the field is a class, we need to cast it to JSONB otherwise it will be serialized to plain string and fail to deserialize later on
+                        locator = field.JSONBLocator;
                     }
 
                     return $"'{Name}', {locator}";

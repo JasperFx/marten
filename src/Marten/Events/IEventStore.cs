@@ -6,219 +6,6 @@ using System.Threading.Tasks;
 
 namespace Marten.Events
 {
-    public interface IEventOperations
-    {
-        /// <summary>
-        /// Append one or more events in order to an existing stream
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="events"></param>
-        StreamAction Append(Guid stream, IEnumerable<object> events);
-
-        /// <summary>
-        /// Append one or more events in order to an existing stream
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="events"></param>
-        StreamAction Append(Guid stream, params object[] events);
-
-        /// <summary>
-        /// Append one or more events in order to an existing stream
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="events"></param>
-        StreamAction Append(string stream, IEnumerable<object> events);
-
-        /// <summary>
-        /// Append one or more events in order to an existing stream
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="events"></param>
-        StreamAction Append(string stream, params object[] events);
-
-        /// <summary>
-        /// Append one or more events in order to an existing stream and verify that maximum event id for the stream
-        /// matches supplied expected version or transaction is aborted.
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="expectedVersion">Expected maximum event version after append</param>
-        /// <param name="events"></param>
-        StreamAction Append(Guid stream, long expectedVersion, params object[] events);
-
-        /// <summary>
-        /// Append one or more events in order to an existing stream and verify that maximum event id for the stream
-        /// matches supplied expected version or transaction is aborted.
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="expectedVersion">Expected maximum event version after append</param>
-        /// <param name="events"></param>
-        StreamAction Append(string stream, long expectedVersion, IEnumerable<object> events);
-
-        /// <summary>
-        /// Append one or more events in order to an existing stream and verify that maximum event id for the stream
-        /// matches supplied expected version or transaction is aborted.
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="expectedVersion">Expected maximum event version after append</param>
-        /// <param name="events"></param>
-        StreamAction Append(string stream, long expectedVersion, params object[] events);
-
-        /// <summary>
-        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
-        /// </summary>
-        /// <typeparam name="TAggregate"></typeparam>
-        /// <param name="id"></param>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream<TAggregate>(Guid id, params object[] events) where TAggregate : class;
-
-        /// <summary>
-        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
-        /// </summary>
-        /// <param name="aggregateType"></param>
-        /// <param name="id"></param>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream(Type aggregateType, Guid id, IEnumerable<object> events);
-
-        /// <summary>
-        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
-        /// </summary>
-        /// <param name="aggregateType"></param>
-        /// <param name="id"></param>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream(Type aggregateType, Guid id, params object[] events);
-
-        /// <summary>
-        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
-        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
-        /// </summary>
-        /// <typeparam name="TAggregate"></typeparam>
-        /// <param name="streamKey">String identifier of this stream</param>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream<TAggregate>(string streamKey, IEnumerable<object> events) where TAggregate : class;
-
-        /// <summary>
-        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
-        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
-        /// </summary>
-        /// <typeparam name="TAggregate"></typeparam>
-        /// <param name="streamKey">String identifier of this stream</param>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class;
-
-        /// <summary>
-        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
-        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
-        /// </summary>
-        /// <param name="aggregateType"></param>
-        /// <param name="streamKey">String identifier of this stream</param>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream(Type aggregateType, string streamKey, IEnumerable<object> events);
-
-        /// <summary>
-        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
-        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
-        /// </summary>
-        /// <param name="aggregateType"></param>
-        /// <param name="streamKey">String identifier of this stream</param>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream(Type aggregateType, string streamKey, params object[] events);
-
-        /// <summary>
-        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream(Guid id, IEnumerable<object> events);
-
-        /// <summary>
-        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream(Guid id, params object[] events);
-
-        /// <summary>
-        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
-        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
-        /// </summary>
-        /// <param name="streamKey"></param>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream(string streamKey, IEnumerable<object> events);
-
-        /// <summary>
-        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
-        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
-        /// </summary>
-        /// <param name="streamKey"></param>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream(string streamKey, params object[] events);
-
-        /// <summary>
-        /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
-        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
-        /// </summary>
-        /// <typeparam name="TAggregate"></typeparam>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream<TAggregate>(IEnumerable<object> events) where TAggregate : class;
-
-        /// <summary>
-        /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
-        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
-        /// </summary>
-        /// <typeparam name="TAggregate"></typeparam>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream<TAggregate>(params object[] events) where TAggregate : class;
-
-        /// <summary>
-        /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
-        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
-        /// </summary>
-        /// <typeparam name="TAggregate"></typeparam>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream(Type aggregateType, IEnumerable<object> events);
-
-        /// <summary>
-        /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
-        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
-        /// </summary>
-        /// <typeparam name="TAggregate"></typeparam>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream(Type aggregateType, params object[] events);
-
-        /// <summary>
-        /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
-        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
-        /// </summary>
-        /// <typeparam name="TAggregate"></typeparam>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream(IEnumerable<object> events);
-
-        /// <summary>
-        /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
-        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
-        /// </summary>
-        /// <typeparam name="TAggregate"></typeparam>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream(params object[] events);
-    }
-
     public interface IEventStore: IEventOperations, IQueryEventStore
     {
         /// <summary>
@@ -333,5 +120,221 @@ namespace Marten.Events
         /// </summary>
         /// <param name="streamKey"></param>
         void ArchiveStream(string streamKey);
+
+
+
+        /// <summary>
+        /// Fetch the projected aggregate T by id with built in optimistic concurrency checks
+        /// starting at the point the aggregate was fetched.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="cancellation"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task<IEventStream<T>> FetchForWriting<T>(Guid id, CancellationToken cancellation = default) where T : class;
+
+        /// <summary>
+        /// Conditionally write to an event stream for the current version of the aggregate of type T
+        /// This automatically persists the entire session
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="writing"></param>
+        /// <param name="cancellation"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task WriteToAggregate<T>(Guid id, Action<IEventStream<T>> writing, CancellationToken cancellation = default) where T : class;
+
+        /// <summary>
+        /// Conditionally write to an event stream for the current version of the aggregate of type T
+        /// This automatically persists the entire session
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="writing"></param>
+        /// <param name="cancellation"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task WriteToAggregate<T>(Guid id, Func<IEventStream<T>, Task> writing, CancellationToken cancellation = default) where T : class;
+
+        /// <summary>
+        /// Conditionally write to an event stream for the current version of the aggregate of type T
+        /// This automatically persists the entire session
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="writing"></param>
+        /// <param name="cancellation"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task WriteToAggregate<T>(string id, Action<IEventStream<T>> writing, CancellationToken cancellation = default) where T : class;
+
+        /// <summary>
+        /// Conditionally write to an event stream for the current version of the aggregate of type T
+        /// This automatically persists the entire session
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="writing"></param>
+        /// <param name="cancellation"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task WriteToAggregate<T>(string id, Func<IEventStream<T>, Task> writing, CancellationToken cancellation = default) where T : class;
+
+
+
+        /// <summary>
+        /// Fetch the projected aggregate T by id with built in optimistic concurrency checks
+        /// starting at the point the aggregate was fetched.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="cancellation"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task<IEventStream<T>> FetchForWriting<T>(string key, CancellationToken cancellation = default) where T : class;
+
+        /// <summary>
+        /// Fetch projected aggregate T by id and expected, current version of the aggregate. Will fail immediately
+        /// with ConcurrencyInjection if the expectedVersion is stale. Builds in optimistic concurrency for later
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="expectedVersion"></param>
+        /// <param name="cancellation"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task<IEventStream<T>> FetchForWriting<T>(Guid id, long expectedVersion, CancellationToken cancellation = default) where T : class;
+
+        /// <summary>
+        /// Fetch projected aggregate T by id and expected, current version of the aggregate. Will fail immediately
+        /// with ConcurrencyInjection if the expectedVersion is stale. Builds in optimistic concurrency for later
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="expectedVersion"></param>
+        /// <param name="cancellation"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task<IEventStream<T>> FetchForWriting<T>(string key, long expectedVersion, CancellationToken cancellation = default) where T : class;
+
+
+        /// <summary>
+        /// Conditionally write to an event stream for the current version of the aggregate of type T
+        /// This automatically persists the entire session
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="writing"></param>
+        /// <param name="cancellation"></param>
+        ///
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task WriteToAggregate<T>(Guid id, int expectedVersion, Action<IEventStream<T>> writing, CancellationToken cancellation = default) where T : class;
+
+        /// <summary>
+        /// Conditionally write to an event stream for the current version of the aggregate of type T
+        /// This automatically persists the entire session
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="writing"></param>
+        /// <param name="cancellation"></param>
+        ///
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task WriteToAggregate<T>(Guid id, int expectedVersion, Func<IEventStream<T>, Task> writing, CancellationToken cancellation = default) where T : class;
+
+        /// <summary>
+        /// Conditionally write to an event stream for the current version of the aggregate of type T
+        /// This automatically persists the entire session
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="writing"></param>
+        /// <param name="cancellation"></param>
+        ///
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task WriteToAggregate<T>(string id, int expectedVersion, Action<IEventStream<T>> writing, CancellationToken cancellation = default) where T : class;
+
+        /// <summary>
+        /// Conditionally write to an event stream for the current version of the aggregate of type T
+        /// This automatically persists the entire session
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="writing"></param>
+        /// <param name="cancellation"></param>
+        ///
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task WriteToAggregate<T>(string id, int expectedVersion, Func<IEventStream<T>, Task> writing, CancellationToken cancellation = default) where T : class;
+
+
+
+        /// <summary>
+        /// Fetch projected aggregate T by id for exclusive writing
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="cancellation"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task<IEventStream<T>> FetchForExclusiveWriting<T>(Guid id, CancellationToken cancellation = default) where T : class;
+
+        /// <summary>
+        /// Fetch projected aggregate T by id for exclusive writing
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="cancellation"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task<IEventStream<T>> FetchForExclusiveWriting<T>(string key, CancellationToken cancellation = default) where T : class;
+
+        /// <summary>
+        /// Write exclusively to the stream for aggregate of type T. This can time out if it is unable
+        /// to attain a lock on the stream in time
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="writing"></param>
+        /// <param name="cancellation"></param>
+        ///
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task WriteExclusivelyToAggregate<T>(Guid id, Action<IEventStream<T>> writing, CancellationToken cancellation = default) where T : class;
+
+        /// <summary>
+        /// Write exclusively to the stream for aggregate of type T. This can time out if it is unable
+        /// to attain a lock on the stream in time
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="writing"></param>
+        /// <param name="cancellation"></param>
+        ///
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task WriteExclusivelyToAggregate<T>(string id, Action<IEventStream<T>> writing, CancellationToken cancellation = default) where T : class;
+
+        /// <summary>
+        /// Write exclusively to the stream for aggregate of type T. This can time out if it is unable
+        /// to attain a lock on the stream in time
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="writing"></param>
+        /// <param name="cancellation"></param>
+        ///
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task WriteExclusivelyToAggregate<T>(Guid id, Func<IEventStream<T>, Task> writing, CancellationToken cancellation = default) where T : class;
+
+        /// <summary>
+        /// Write exclusively to the stream for aggregate of type T. This can time out if it is unable
+        /// to attain a lock on the stream in time
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="expectedVersion">The starting version of the aggregate for optimistic concurrency checks</param>
+        /// <param name="writing"></param>
+        /// <param name="cancellation"></param>
+        ///
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task WriteExclusivelyToAggregate<T>(string id, Func<IEventStream<T>, Task> writing, CancellationToken cancellation = default) where T : class;
+
     }
 }

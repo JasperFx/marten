@@ -92,5 +92,15 @@ namespace Marten.Internal.Sessions
         {
             return new ValueTask();
         }
+
+        public void EnsureConnected()
+        {
+            // Nothing
+        }
+
+        public ValueTask EnsureConnectedAsync(CancellationToken token)
+        {
+            return new ValueTask();
+        }
     }
 }

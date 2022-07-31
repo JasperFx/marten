@@ -53,7 +53,7 @@ namespace Marten.Linq.SqlGeneration
                 builder.Append("NOT(");
             }
 
-            builder.Append("ctid in (select ctid from ");
+            builder.Append("d.ctid in (select ctid from ");
             builder.Append(this._tableName);
             builder.Append(")");
 

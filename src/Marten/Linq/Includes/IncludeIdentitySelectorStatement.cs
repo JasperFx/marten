@@ -24,6 +24,8 @@ namespace Marten.Linq.Includes
         {
             ExportName = session.NextTempTableName();
 
+            OriginalPaging = new PagedStatement(original);
+
             _includes = includes;
 
             _innerEnd = (SelectorStatement)original.Current();
@@ -33,11 +35,13 @@ namespace Marten.Linq.Includes
             _clonedEnd.SingleValue = _innerEnd.SingleValue;
 
             Inner = original;
+            Inner.Limit = 0; // Watch this!
+            Inner.Offset = 0;
 
             Statement current = this;
             foreach (var include in includes)
             {
-                var includeStatement = include.BuildStatement(ExportName);
+                var includeStatement = include.BuildStatement(ExportName, OriginalPaging);
 
                 current.InsertAfter(includeStatement);
                 current = includeStatement;
@@ -45,6 +49,8 @@ namespace Marten.Linq.Includes
 
             current.InsertAfter(_clonedEnd);
         }
+
+        public IPagedStatement OriginalPaging { get; }
 
 
 
@@ -89,7 +95,6 @@ namespace Marten.Linq.Includes
             sql.Append(" from ");
             sql.Append(FromObject);
             sql.Append(" as d ");
-            sql.Append(_includes.Where(x => x.RequiresLateralJoin()).Select(x => x.LeftJoinExpression).Join(" "));
         }
 
         public string[] SelectFields()

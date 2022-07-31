@@ -27,7 +27,7 @@ namespace Marten.AsyncDaemon.Testing
         public void uses_event_type_filter()
         {
             var projection = new DistanceProjection();
-            projection.CompileAndAssertValidity();
+            projection.AssembleAndAssertValidity();
             var filter = projection.As<IProjectionSource>()
                 .AsyncProjectionShards(theStore)
                 .First()

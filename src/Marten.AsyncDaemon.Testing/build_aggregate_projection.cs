@@ -27,7 +27,7 @@ namespace Marten.AsyncDaemon.Testing
         public void uses_event_type_filter_for_base_filter_when_not_using_base_types()
         {
             var projection = new TripAggregationWithCustomName();
-            projection.CompileAndAssertValidity();
+            projection.AssembleAndAssertValidity();
             var filter = projection.As<IProjectionSource>()
                 .AsyncProjectionShards(theStore)
                 .First()
@@ -118,6 +118,35 @@ namespace Marten.AsyncDaemon.Testing
             await agent.RebuildProjection("Trip", CancellationToken.None);
             Logger.LogDebug("Done rebuilding Trip:All");
             await CheckAllExpectedAggregatesAgainstActuals();
+        }
+
+        [Fact]
+        public async Task rebuild_the_projection_clears_state()
+        {
+            NumberOfStreams = 1;
+
+            Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
+
+            StoreOptions(x => x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async), true);
+
+            var agent = await StartDaemon();
+
+            await PublishSingleThreaded();
+
+            var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 30.Seconds());
+
+            await waiter;
+
+            // This should be gone after a rebuild
+            var trip = new Trip();
+            theSession.Store(trip);
+            await theSession.SaveChangesAsync();
+
+            await agent.RebuildProjection("Trip", CancellationToken.None);
+
+            using var query = theStore.QuerySession();
+            // Demonstrates that the Trip documents were deleted first
+            (await query.LoadAsync<Trip>(trip.Id)).ShouldBeNull();
         }
 
         [Fact]
@@ -303,7 +332,7 @@ namespace Marten.AsyncDaemon.Testing
         }
 
 
-        public class ContactProjectionNullReturn: AggregateProjection<Contact>
+        public class ContactProjectionNullReturn: SingleStreamAggregation<Contact>
         {
             public ContactProjectionNullReturn()
             {
@@ -367,7 +396,7 @@ namespace Marten.AsyncDaemon.Testing
         }
 
 
-        public class InterfaceCreationProjection: AggregateProjection<Foo>
+        public class InterfaceCreationProjection: SingleStreamAggregation<Foo>
         {
             public InterfaceCreationProjection()
             {
@@ -415,7 +444,7 @@ namespace Marten.AsyncDaemon.Testing
         }
 
 
-        public class AbstractCreationProjection: AggregateProjection<Foo>
+        public class AbstractCreationProjection: SingleStreamAggregation<Foo>
         {
             public AbstractCreationProjection()
             {

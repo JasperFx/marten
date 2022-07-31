@@ -26,7 +26,6 @@ namespace Marten.Events
 
         private readonly Cache<string, EventMapping> _byEventName = new();
 
-        private readonly Lazy<EstablishTombstoneStream> _establishTombstone;
         private readonly Cache<Type, EventMapping> _events = new();
 
         private readonly Lazy<IProjection[]> _inlineProjections;
@@ -55,9 +54,7 @@ namespace Marten.Events
 
             _inlineProjections = new Lazy<IProjection[]>(() => options.Projections.BuildInlineProjections(_store));
 
-            _establishTombstone = new Lazy<EstablishTombstoneStream>(() => new EstablishTombstoneStream(this));
-
-            _aggregateTypeByName = new Cache<string, Type>(name => findAggregateType(name));
+            _aggregateTypeByName = new Cache<string, Type>(findAggregateType);
         }
 
         internal NpgsqlDbType StreamIdDbType { get; private set; }

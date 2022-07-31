@@ -15,11 +15,23 @@ Marten has a facility for listening and even intercepting document persistence e
 <!-- snippet: sample_IDocumentSessionListener -->
 <a id='snippet-sample_idocumentsessionlistener'></a>
 ```cs
+public interface IChangeListener
+{
+    /// <summary>
+    /// After an IDocumentSession is committed
+    /// </summary>
+    /// <param name="session"></param>
+    /// <param name="commit"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
+}
+
 /// <summary>
 /// Used to listen to and intercept operations within an IDocumentSession.SaveChanges()/SaveChangesAsync()
 /// operation
 /// </summary>
-public interface IDocumentSessionListener
+public interface IDocumentSessionListener : IChangeListener
 {
     /// <summary>
     /// Called just after IDocumentSession.SaveChanges() is called, but before
@@ -45,15 +57,6 @@ public interface IDocumentSessionListener
     void AfterCommit(IDocumentSession session, IChangeSet commit);
 
     /// <summary>
-    /// After an IDocumentSession is committed
-    /// </summary>
-    /// <param name="session"></param>
-    /// <param name="commit"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
-
-    /// <summary>
     /// Called after a document is loaded
     /// </summary>
     void DocumentLoaded(object id, object document);
@@ -65,7 +68,7 @@ public interface IDocumentSessionListener
     void DocumentAddedForStorage(object id, object document);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IDocumentSessionListener.cs#L7-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_idocumentsessionlistener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IDocumentSessionListener.cs#L7-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_idocumentsessionlistener' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can build and inject your own listeners by adding them to the `StoreOptions` object you use to configure a `DocumentStore`:
@@ -154,6 +157,49 @@ public class SimpleSessionListener: DocumentSessionListenerBase
 
 As of Marten 1.4, you can also register `IDocumentSessionListener` objects scoped to a particular session with the
 `DocumentStore.OpenSession(SessionOptions)` signature.
+
+As of Marten v5, separate listeners will need to be registered for Document Store and Async Daemon. Adding listeners for Async Daemon are covered in the next section.
+
+## Listening for Async Daemon Events
+
+Use `AsyncListeners` to register session listeners that will ONLY be applied within the asynchronous daemon updates.
+
+::: tip INFO
+Listeners will never get activated during projection rebuilds to safe guard against any side effects.
+:::
+
+A sample listener:
+<!-- snippet: sample_AsyncDaemonListener -->
+<a id='snippet-sample_asyncdaemonlistener'></a>
+```cs
+public class FakeListener: IChangeListener
+{
+    public IList<IChangeSet> Changes = new List<IChangeSet>();
+
+    public Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
+    {
+        session.ShouldNotBeNull();
+        Changes.Add(commit);
+        return Task.CompletedTask;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/basic_async_daemon_tests.cs#L47-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asyncdaemonlistener' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Wiring a Async Daemon listener:
+<!-- snippet: sample_AsyncListeners -->
+<a id='snippet-sample_asynclisteners'></a>
+```cs
+var listener = new FakeListener();
+StoreOptions(x =>
+{
+    x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
+    x.Projections.AsyncListeners.Add(listener);
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/basic_async_daemon_tests.cs#L64-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asynclisteners' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Custom Logging
 
@@ -359,7 +405,7 @@ The `IMartenLogger` can be swapped out on any `IQuerySession` or `IDocumentSessi
 // session to pipe Marten logging to the xUnit.Net output
 theSession.Logger = new TestOutputMartenLogger(_output);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L226-L232' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_logger_per_session' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L227-L233' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_logger_per_session' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Previewing the PostgreSQL Query Plan

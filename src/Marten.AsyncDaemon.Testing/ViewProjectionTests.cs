@@ -6,7 +6,6 @@ using Baseline;
 using Baseline.Dates;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events;
-using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Testing;
 using Marten.Testing.Harness;
@@ -96,6 +95,8 @@ namespace Marten.AsyncDaemon.Testing
                     .SelectMany(x => x.Movements)
                     .Where(x => x.Direction == Direction.East)
                     .Sum(x => x.Distance));
+
+                day.Version.ShouldBeGreaterThan(0);
             }
         }
 
@@ -104,6 +105,8 @@ namespace Marten.AsyncDaemon.Testing
 
     public class Day
     {
+        public long Version { get; set; }
+
         public int Id { get; set; }
 
         // how many trips started on this day?
@@ -122,7 +125,7 @@ namespace Marten.AsyncDaemon.Testing
 
     #region sample_showing_fanout_rules
 
-    public class DayProjection: ViewProjection<Day, int>
+    public class DayProjection: MultiStreamAggregation<Day, int>
     {
         public DayProjection()
         {

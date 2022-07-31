@@ -16,7 +16,7 @@ namespace Marten.Internal.Sessions
 
         public override void Apply(NpgsqlCommand command)
         {
-            EnsureOpenConnection();
+            EnsureConnected();
 
             command.Connection = Connection;
             command.Transaction = Transaction;
@@ -25,7 +25,7 @@ namespace Marten.Internal.Sessions
 
         public override async Task ApplyAsync(NpgsqlCommand command, CancellationToken token)
         {
-            await EnsureOpenConnectionAsync(token).ConfigureAwait(false);
+            await EnsureConnectedAsync(token).ConfigureAwait(false);
 
             command.Connection = Connection;
             command.Transaction = Transaction;

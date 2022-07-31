@@ -5,6 +5,7 @@ using Npgsql;
 
 namespace Marten.Exceptions
 {
+    // TODO -- mo0ve this to Baseline. Too generic to be here.
     internal static class MartenExceptionTransformer
     {
         private static readonly ExceptionTransforms _transforms = new ExceptionTransforms();
@@ -20,6 +21,8 @@ namespace Marten.Exceptions
         {
             _transforms.AddTransform<EventStreamUnexpectedMaxEventIdExceptionTransform>();
             _transforms.AddTransform<MartenCommandNotSupportedExceptionTransform>();
+            _transforms.AddTransform<UtcDateTimeUsageExceptionTransform>();
+            _transforms.AddTransform<DateTimeUsageExceptionTransform>();
 
             _transforms.IfExceptionIs<PostgresException>()
                 .If(e => e.SqlState == PostgresErrorCodes.SerializationFailure)

@@ -44,7 +44,7 @@ namespace Marten.Internal.Sessions
 
         public virtual void Apply(NpgsqlCommand command)
         {
-            EnsureOpenConnection();
+            EnsureConnected();
 
             command.Connection = Connection;
             command.Transaction = Transaction;
@@ -53,7 +53,7 @@ namespace Marten.Internal.Sessions
 
         public virtual void BeginTransaction()
         {
-            EnsureOpenConnection();
+            EnsureConnected();
             if (Transaction == null)
             {
                 Transaction = Connection.BeginTransaction(_options.IsolationLevel);
@@ -63,7 +63,7 @@ namespace Marten.Internal.Sessions
         // TODO -- this should be ValueTask
         public virtual async Task ApplyAsync(NpgsqlCommand command, CancellationToken token)
         {
-            await EnsureOpenConnectionAsync(token).ConfigureAwait(false);
+            await EnsureConnectedAsync(token).ConfigureAwait(false);
 
             command.Connection = Connection;
             command.Transaction = Transaction;
@@ -72,7 +72,7 @@ namespace Marten.Internal.Sessions
 
         public virtual async ValueTask BeginTransactionAsync(CancellationToken token)
         {
-            await EnsureOpenConnectionAsync(token).ConfigureAwait(false);
+            await EnsureConnectedAsync(token).ConfigureAwait(false);
 #if NET5_0_OR_GREATER
             Transaction ??= await Connection
                 .BeginTransactionAsync(_options.IsolationLevel, token).ConfigureAwait(false);
@@ -146,7 +146,7 @@ namespace Marten.Internal.Sessions
         public NpgsqlConnection? Connection { get; protected set; }
         public NpgsqlTransaction? Transaction { get; protected set; }
 
-        protected void EnsureOpenConnection()
+        public void EnsureConnected()
         {
             if (Connection == null)
             {
@@ -161,7 +161,7 @@ namespace Marten.Internal.Sessions
             }
         }
 
-        protected async Task EnsureOpenConnectionAsync(CancellationToken token)
+        public async ValueTask EnsureConnectedAsync(CancellationToken token)
         {
             if (Connection == null)
             {

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,32 +8,34 @@ using Marten.Events.Projections;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
+#nullable enable
 
 namespace Marten.Events.Daemon
 {
-
     /// <summary>
     /// Responsible for running a single async projection shard at runtime. Equivalent to V3 ProjectionTrack
     /// </summary>
     internal class ShardAgent : IShardAgent, IObserver<ShardState>
     {
-        private SessionOptions _sessionOptions;
+        private SessionOptions? _sessionOptions;
 
         private readonly DocumentStore _store;
         private readonly AsyncProjectionShard _projectionShard;
         private readonly ILogger _logger;
         private CancellationToken _cancellation;
-        private TransformBlock<EventRange, EventRangeGroup> _grouping;
-        private readonly ProjectionController _controller;
-        private ActionBlock<Command> _commandBlock;
-        private TransformBlock<EventRange, EventRange> _loader;
-        private EventFetcher _fetcher;
-        private ShardStateTracker _tracker;
-        private IDisposable _subscription;
-        private ProjectionDaemon _daemon;
-        private CancellationTokenSource _cancellationSource;
-        private ActionBlock<EventRangeGroup> _building;
+
+        private TransformBlock<EventRange, EventRangeGroup>? _grouping;
+        private ActionBlock<Command>? _commandBlock;
+        private TransformBlock<EventRange, EventRange>? _loader;
+        private EventFetcher? _fetcher;
+        private ShardStateTracker? _tracker;
+        private IDisposable? _subscription;
+        private ProjectionDaemon? _daemon;
+        private CancellationTokenSource? _cancellationSource;
+        private ActionBlock<EventRangeGroup>? _building;
+
         private readonly IProjectionSource _source;
+        private readonly ProjectionController _controller;
 
         public ShardAgent(DocumentStore store, AsyncProjectionShard projectionShard, ILogger logger, CancellationToken cancellation)
         {
@@ -68,7 +71,7 @@ namespace Marten.Events.Daemon
         {
             var parameters = new ActionParameters(this, async () =>
             {
-                await _fetcher.Load(range, _cancellation).ConfigureAwait(false);
+                await _fetcher!.Load(range, _cancellation).ConfigureAwait(false);
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
@@ -83,7 +86,7 @@ namespace Marten.Events.Daemon
             };
 
 
-            await _daemon.TryAction(parameters).ConfigureAwait(false);
+            await _daemon!.TryAction(parameters).ConfigureAwait(false);
 
             return range;
         }
@@ -100,10 +103,10 @@ namespace Marten.Events.Daemon
                 _logger.LogDebug("Enqueued processing {Range} for {ProjectionShardIdentity}", range, ProjectionShardIdentity);
             }
 
-            _loader.Post(range);
+            _loader!.Post(range);
         }
 
-        public Task TryAction(Func<Task> action, CancellationToken token, Action<ILogger, Exception> logException = null, EventRangeGroup group = null, GroupActionMode actionMode = GroupActionMode.Parent)
+        public Task TryAction(Func<Task> action, CancellationToken token, Action<ILogger, Exception>? logException = null, EventRangeGroup? group = null, GroupActionMode actionMode = GroupActionMode.Parent)
         {
             var parameters = new ActionParameters(this, action, token == default ? _cancellation : token)
             {
@@ -113,13 +116,15 @@ namespace Marten.Events.Daemon
             parameters.LogAction = logException ?? parameters.LogAction;
             parameters.Group = group;
 
-            return _daemon.TryAction(parameters);
+            return _daemon!.TryAction(parameters);
         }
 
         public bool IsStopping { get; private set; } = false;
 
-        public async Task<long> Start(ProjectionDaemon daemon)
+        public async Task<long> Start(ProjectionDaemon daemon, ShardExecutionMode mode)
         {
+            Mode = mode;
+
             if (daemon.Database.Identifier != "Marten")
             {
                 ProjectionShardIdentity = $"{ProjectionShardIdentity}@{daemon.Database.Identifier}";
@@ -133,18 +138,10 @@ namespace Marten.Events.Daemon
 
             var lastCommitted = await daemon.Database.ProjectionProgressFor(_projectionShard.Name, _cancellation).ConfigureAwait(false);
 
-            foreach (var storageType in _source.Options.StorageTypes)
-            {
-                await daemon.Database.EnsureStorageExistsAsync(storageType, _cancellation).ConfigureAwait(false);
-            }
-
-            foreach (var publishedType in _source.PublishedTypes())
-            {
-                await daemon.Database.EnsureStorageExistsAsync(publishedType, _cancellation).ConfigureAwait(false);
-            }
+            await ensureStorageExists(daemon).ConfigureAwait(false);
 
             _subscription = _tracker.Subscribe(this);
-            _commandBlock.Post(Command.Started(_tracker.HighWaterMark, lastCommitted));
+            _commandBlock?.Post(Command.Started(_tracker.HighWaterMark, lastCommitted));
 
             _logger.LogInformation("Projection agent for '{ProjectionShardIdentity}' has started from sequence {LastCommitted} and a high water mark of {HighWaterMark}", ProjectionShardIdentity, lastCommitted, _tracker.HighWaterMark);
 
@@ -154,6 +151,22 @@ namespace Marten.Events.Daemon
             return lastCommitted;
         }
 
+        private async Task ensureStorageExists(ProjectionDaemon daemon)
+        {
+            foreach (var storageType in _source.Options.StorageTypes)
+            {
+                await daemon.Database.EnsureStorageExistsAsync(storageType, _cancellation).ConfigureAwait(false);
+            }
+
+            foreach (var publishedType in _source.PublishedTypes())
+            {
+                await daemon.Database.EnsureStorageExistsAsync(publishedType, _cancellation).ConfigureAwait(false);
+            }
+        }
+
+        public ShardExecutionMode Mode { get; set; } = ShardExecutionMode.Continuous;
+
+        [MemberNotNull(nameof(_commandBlock), nameof(_loader), nameof(_tracker), nameof(_daemon), nameof(_fetcher), nameof(_grouping), nameof(_building))]
         private void initializeDataflowBlocks(ProjectionDaemon daemon)
         {
             var singleFileOptions = new ExecutionDataflowBlockOptions
@@ -193,7 +206,7 @@ namespace Marten.Events.Daemon
             // This should be done *once* here before going to the TryAction()
             group.Reset();
 
-            ProjectionUpdateBatch batch = null;
+            ProjectionUpdateBatch? batch = null;
 
             // Building the ProjectionUpdateBatch
             await TryAction(async () =>
@@ -224,7 +237,7 @@ namespace Marten.Events.Daemon
             }).ConfigureAwait(false);
         }
 
-        private async Task<ProjectionUpdateBatch> buildUpdateBatch(EventRangeGroup @group)
+        private async Task<ProjectionUpdateBatch?> buildUpdateBatch(EventRangeGroup @group)
         {
             if (group.Cancellation.IsCancellationRequested) return null; // get out of here early instead of letting it linger
 
@@ -267,7 +280,7 @@ namespace Marten.Events.Daemon
         {
             if (_cancellation.IsCancellationRequested) return null;
 
-            EventRangeGroup group = null;
+            EventRangeGroup? group = null;
 
             await TryAction(async () =>
             {
@@ -276,7 +289,7 @@ namespace Marten.Events.Daemon
                     _logger.LogDebug("Shard '{ProjectionShardIdentity}':Starting to group {Range}", ProjectionShardIdentity, range);
                 }
 
-                @group = await _source.GroupEvents(_store, _daemon.Database, range, _cancellation).ConfigureAwait(false);
+                @group = await _source.GroupEvents(_store, _daemon!.Database, range, _cancellation).ConfigureAwait(false);
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
@@ -293,7 +306,7 @@ namespace Marten.Events.Daemon
             return group;
         }
 
-        public Task Stop(Exception ex = null)
+        public Task Stop(Exception? ex = null)
         {
             IsStopping = true;
 
@@ -301,14 +314,14 @@ namespace Marten.Events.Daemon
 
             _cancellationSource?.Cancel();
 
-            _commandBlock.Complete();
-            _loader.Complete();
-            _grouping.Complete();
-            _building.Complete();
+            _commandBlock?.Complete();
+            _loader?.Complete();
+            _grouping?.Complete();
+            _building?.Complete();
 
-            _subscription.Dispose();
+            _subscription?.Dispose();
 
-            _fetcher.Dispose();
+            _fetcher?.Dispose();
 
             _subscription = null;
             _fetcher = null;
@@ -319,7 +332,7 @@ namespace Marten.Events.Daemon
 
             _logger.LogInformation("Stopped projection shard '{ProjectionShardIdentity}'", ProjectionShardIdentity);
 
-            _tracker.Publish(new ShardState(_projectionShard.Name, Position)
+            _tracker?.Publish(new ShardState(_projectionShard.Name, Position)
             {
                 Action = ShardAction.Stopped,
                 Exception = ex
@@ -335,7 +348,7 @@ namespace Marten.Events.Daemon
             await Stop().ConfigureAwait(false);
 
             Status = AgentStatus.Paused;
-            _tracker.Publish(new ShardState(_projectionShard, ShardAction.Paused));
+            _tracker!.Publish(new ShardState(_projectionShard, ShardAction.Paused));
 
 #pragma warning disable 4014
             // ReSharper disable once MethodSupportsCancellation
@@ -351,7 +364,7 @@ namespace Marten.Events.Daemon
                 {
                     try
                     {
-                        await Start(_daemon).ConfigureAwait(false);
+                        await Start(_daemon!, ShardExecutionMode.Continuous).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -365,7 +378,7 @@ namespace Marten.Events.Daemon
                         ProjectionShardIdentity);
                 };
 
-                await _daemon.TryAction(parameters).ConfigureAwait(false);
+                await _daemon!.TryAction(parameters).ConfigureAwait(false);
             });
         }
 
@@ -389,7 +402,7 @@ namespace Marten.Events.Daemon
                     _logger.LogDebug("Projection Shard '{ProjectionShardIdentity}' received high water mark at {Sequence}", ProjectionShardIdentity, value.Sequence);
                 }
 
-                _commandBlock.Post(
+                _commandBlock!.Post(
                     Command.HighWaterMarkUpdated(value.Sequence));
             }
         }
@@ -398,8 +411,8 @@ namespace Marten.Events.Daemon
 
         public ProjectionUpdateBatch StartNewBatch(EventRangeGroup group)
         {
-            var session = _store.OpenSession(_sessionOptions);
-            return new ProjectionUpdateBatch(_store.Events, (DocumentSessionBase) session, group.Range, group.Cancellation);
+            var session = _store.OpenSession(_sessionOptions!);
+            return new ProjectionUpdateBatch(_store.Events, _store.Options.Projections, (DocumentSessionBase) session, @group.Range, @group.Cancellation, Mode);
         }
 
         public async Task ExecuteBatch(ProjectionUpdateBatch batch)
@@ -410,7 +423,7 @@ namespace Marten.Events.Daemon
 
             if (_cancellation.IsCancellationRequested) return;
 
-            var session = (DocumentSessionBase)_store.OpenSession(_sessionOptions);
+            var session = (DocumentSessionBase)_store.OpenSession(_sessionOptions!);
             await using (session.ConfigureAwait(false))
             {
                 try
@@ -441,9 +454,9 @@ namespace Marten.Events.Daemon
 
             Position = batch.Range.SequenceCeiling;
 
-            _tracker.Publish(new ShardState(ShardName, batch.Range.SequenceCeiling){Action = ShardAction.Updated});
+            _tracker!.Publish(new ShardState(ShardName, batch.Range.SequenceCeiling){Action = ShardAction.Updated});
 
-            _commandBlock.Post(Command.Completed(batch.Range));
+            _commandBlock!.Post(Command.Completed(batch.Range));
         }
 
         public long Position { get; private set; }

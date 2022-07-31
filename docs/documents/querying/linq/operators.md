@@ -36,7 +36,7 @@ public void select_a_single_value(IDocumentSession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L134-L152' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_select_a_single_value' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### Filtering Documents
+## Filtering Documents
 
 Since you usually don't want to pull down the entire database at one time, Marten supports these basic operators in Linq searches:
 
@@ -193,7 +193,7 @@ public async Task sample_aggregation_operations(IQuerySession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L186-L201' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregation_operations' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### Partitioning Operators
+## Partitioning Operators
 
 Marten has been successfully tested with these [partition operators](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/partitioning-data):
 

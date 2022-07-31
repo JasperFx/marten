@@ -42,11 +42,12 @@ namespace Marten.Internal.Sessions
 
         internal QuerySession(DocumentStore store,
             SessionOptions sessionOptions,
-            IConnectionLifetime connection)
+            IConnectionLifetime connection,
+            Tenant? tenant = default)
         {
             _store = store;
-            TenantId = sessionOptions.Tenant?.TenantId ?? sessionOptions.TenantId;
-            Database = sessionOptions.Tenant?.Database ?? throw new ArgumentNullException(nameof(SessionOptions.Tenant));
+            TenantId = tenant?.TenantId ?? sessionOptions.Tenant?.TenantId ?? sessionOptions.TenantId;
+            Database = tenant?.Database ?? sessionOptions.Tenant?.Database ?? throw new ArgumentNullException(nameof(SessionOptions.Tenant));
 
             SessionOptions = sessionOptions;
 
@@ -68,7 +69,7 @@ namespace Marten.Internal.Sessions
 
             _retryPolicy = Options.RetryPolicy();
 
-            Events = CreateEventStore(store, sessionOptions.Tenant);
+            Events = CreateEventStore(store, tenant ?? sessionOptions.Tenant);
 
             Logger = store.Options.Logger().StartSession(this);
         }
@@ -79,7 +80,7 @@ namespace Marten.Internal.Sessions
         {
             get
             {
-                _connection.BeginTransaction();
+                _connection.EnsureConnected();
                 return _connection.Connection;
             }
         }

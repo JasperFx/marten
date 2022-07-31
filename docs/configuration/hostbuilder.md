@@ -120,20 +120,17 @@ public class Startup
         services.AddMarten(opts =>
         {
             opts.Connection(connectionString);
-
-            // Use the more permissive schema auto create behavior
-            // while in development
-            if (Hosting.IsDevelopment())
-            {
-                opts.AutoCreateSchemaObjects = AutoCreate.All;
-            }
-        });
+        })
+        // Using the "Optimized artifact workflow" for Marten >= V5
+        // sets up your Marten configuration based on your environment
+        // See https://martendb.io/configuration/optimized_artifact_workflow.html
+        .OptimizeArtifactWorkflow();
     }
 
     // And other methods we don't care about here...
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByNestedClosure/Startup.cs#L10-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbynestedclosure' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByNestedClosure/Startup.cs#L10-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbynestedclosure' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Lastly, if you prefer, you can pass a Marten `StoreOptions` object to `AddMarten()` like this example:
@@ -156,7 +153,11 @@ public class Startup
     {
         var options = BuildStoreOptions();
 
-        services.AddMarten(options);
+        services.AddMarten(options)
+        // Using the "Optimized artifact workflow" for Marten >= V5
+        // sets up your Marten configuration based on your environment
+        // See https://martendb.io/configuration/optimized_artifact_workflow.html
+        .OptimizeArtifactWorkflow();
     }
 
     private StoreOptions BuildStoreOptions()
@@ -166,21 +167,13 @@ public class Startup
         // Or lastly, build a StoreOptions object yourself
         var options = new StoreOptions();
         options.Connection(connectionString);
-
-        // Use the more permissive schema auto create behavior
-        // while in development
-        if (Hosting.IsDevelopment())
-        {
-            options.AutoCreateSchemaObjects = AutoCreate.All;
-        }
-
         return options;
     }
 
     // And other methods we don't care about here...
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByStoreOptions/Startup.cs#L10-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbystoreoptions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByStoreOptions/Startup.cs#L10-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbystoreoptions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The last option may be best for more complicated Marten configuration just to keep the configuration code cleaner as `Startup` classes can become convoluted.
@@ -253,7 +246,7 @@ public interface IConfigureMarten
     void Configure(IServiceProvider services, StoreOptions options);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L676-L687' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L641-L652' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You could alternatively implement a custom `IConfigureMarten` class like so:
@@ -399,15 +392,11 @@ public class Startup
         services.AddMarten(opts =>
             {
                 opts.Connection(connectionString);
-
-                // Use the more permissive schema auto create behavior
-                // while in development
-                if (Hosting.IsDevelopment())
-                {
-                    opts.AutoCreateSchemaObjects = AutoCreate.All;
-                }
             })
-
+            // Using the "Optimized artifact workflow" for Marten >= V5
+            // sets up your Marten configuration based on your environment
+            // See https://martendb.io/configuration/optimized_artifact_workflow.html
+            .OptimizeArtifactWorkflow()
             // Chained helper to replace the built in
             // session factory behavior
             .BuildSessionsWith<CustomSessionFactory>();
@@ -416,7 +405,7 @@ public class Startup
     // And other methods we don't care about here...
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L41-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L41-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The session factories can also be used to build out and attach custom `IDocumentSessionListener` objects or replace the logging as we'll see in the next section.
@@ -544,14 +533,11 @@ public class Startup
         services.AddMarten(opts =>
         {
             opts.Connection(connectionString);
-
-            // Use the more permissive schema auto create behavior
-            // while in development
-            if (Hosting.IsDevelopment())
-            {
-                opts.AutoCreateSchemaObjects = AutoCreate.All;
-            }
         })
+        // Using the "Optimized artifact workflow" for Marten >= V5
+        // sets up your Marten configuration based on your environment
+        // See https://martendb.io/configuration/optimized_artifact_workflow.html
+        .OptimizeArtifactWorkflow()
         // Chained helper to replace the CustomSessionFactory
         .BuildSessionsWith<ScopedSessionFactory>(ServiceLifetime.Scoped);
     }
@@ -559,7 +545,7 @@ public class Startup
     // And other methods we don't care about here...
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L91-L124' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreationbyscope' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L91-L121' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreationbyscope' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
@@ -589,15 +575,18 @@ public class Startup
 
         // By only the connection string
         services.AddMarten(connectionString)
-
-            // Spin up the DocumentStore right this second!
-            .InitializeStore();
+        // Using the "Optimized artifact workflow" for Marten >= V5
+        // sets up your Marten configuration based on your environment
+        // See https://martendb.io/configuration/optimized_artifact_workflow.html
+        .OptimizeArtifactWorkflow()
+        // Spin up the DocumentStore right this second!
+        .InitializeStore();
     }
 
     // And other methods we don't care about here...
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/EagerInitialization/Startup.cs#L7-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwitheagerinitialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/EagerInitialization/Startup.cs#L7-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwitheagerinitialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Working with Multiple Marten Databases

@@ -32,6 +32,12 @@ namespace Marten.Events.Projections
             return All.SelectMany(x => x.AsyncProjectionShards(store)).ToList();
         }
 
+        internal bool DoesPersistAggregate(Type aggregateType)
+        {
+            return All.OfType<IAggregateProjection>().Any(x =>
+                x.AggregateType == aggregateType && x.Lifecycle != ProjectionLifecycle.Live);
+        }
+
         internal bool HasAnyAsyncProjections()
         {
             return All.Any(x => x.Lifecycle == ProjectionLifecycle.Async);
@@ -89,7 +95,7 @@ namespace Marten.Events.Projections
 
             if (projection is ProjectionBase p)
             {
-                p.CompileAndAssertValidity();
+                p.AssembleAndAssertValidity();
                 p.Lifecycle = lifecycle;
             }
 
@@ -109,8 +115,6 @@ namespace Marten.Events.Projections
                 asyncConfiguration?.Invoke(wrapper.Options);
                 All.Add(wrapper);
             }
-
-
         }
 
         /// <summary>
@@ -125,7 +129,7 @@ namespace Marten.Events.Projections
                 projection.Lifecycle = lifecycle.Value;
             }
 
-            projection.CompileAndAssertValidity();
+            projection.AssembleAndAssertValidity();
             All.Add(projection);
         }
 
@@ -140,11 +144,11 @@ namespace Marten.Events.Projections
             // Make sure there's a DocumentMapping for the aggregate
             var expression = _options.Schema.For<T>();
 
-            var source = new AggregateProjection<T>()
+            var source = new SingleStreamAggregation<T>()
             {
                 Lifecycle = lifecycle ?? ProjectionLifecycle.Inline
             };
-            source.CompileAndAssertValidity();
+            source.AssembleAndAssertValidity();
             All.Add(source);
 
             return expression;
@@ -167,7 +171,7 @@ namespace Marten.Events.Projections
                 projection.Lifecycle = lifecycle.Value;
             }
 
-            projection.CompileAndAssertValidity();
+            projection.AssembleAndAssertValidity();
 
             All.Add(projection);
         }
@@ -179,14 +183,14 @@ namespace Marten.Events.Projections
         /// <typeparam name="T"></typeparam>
         /// <param name="lifecycle">Optionally override the ProjectionLifecycle</param>
         /// <returns>The extended storage configuration for document T</returns>
-        public void Add<T>(AggregateProjection<T> projection, ProjectionLifecycle? lifecycle = null)
+        public void Add<T>(GeneratedAggregateProjectionBase<T> projection, ProjectionLifecycle? lifecycle = null)
         {
             if (lifecycle.HasValue)
             {
                 projection.Lifecycle = lifecycle.Value;
             }
 
-            projection.CompileAndAssertValidity();
+            projection.AssembleAndAssertValidity();
 
             All.Add(projection);
         }
@@ -204,7 +208,7 @@ namespace Marten.Events.Projections
             }
 
             var source = tryFindProjectionSourceForAggregateType<T>();
-            source.CompileAndAssertValidity();
+            source.AssembleAndAssertValidity();
 
             aggregator = source.As<ILiveAggregatorSource<T>>().Build(_options);
             _liveAggregators = _liveAggregators.AddOrUpdate(typeof(T), aggregator);
@@ -212,9 +216,9 @@ namespace Marten.Events.Projections
             return (ILiveAggregator<T>) aggregator;
         }
 
-        private AggregateProjection<T> tryFindProjectionSourceForAggregateType<T>() where T : class
+        private SingleStreamAggregation<T> tryFindProjectionSourceForAggregateType<T>() where T : class
         {
-            var candidate = All.OfType<AggregateProjection<T>>().FirstOrDefault();
+            var candidate = All.OfType<SingleStreamAggregation<T>>().FirstOrDefault();
             if (candidate != null)
             {
                 return candidate;
@@ -222,10 +226,10 @@ namespace Marten.Events.Projections
 
             if (!_liveAggregateSources.TryGetValue(typeof(T), out var source))
             {
-                return new AggregateProjection<T>();
+                return new SingleStreamAggregation<T>();
             }
 
-            return source as AggregateProjection<T>;
+            return source as SingleStreamAggregation<T>;
         }
 
         internal void AssertValidity(DocumentStore store)

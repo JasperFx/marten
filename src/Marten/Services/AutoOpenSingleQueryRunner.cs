@@ -1,3 +1,4 @@
+using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,7 +27,14 @@ namespace Marten.Services
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
             using var reader = await command.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
 
-            return await handler.HandleAsync(reader, cancellation).ConfigureAwait(false);
+            try
+            {
+                return await handler.HandleAsync(reader, cancellation).ConfigureAwait(false);
+            }
+            finally
+            {
+                await reader.CloseAsync().ConfigureAwait(false);
+            }
         }
 
         public async Task SingleCommit(DbCommand command, CancellationToken cancellation)

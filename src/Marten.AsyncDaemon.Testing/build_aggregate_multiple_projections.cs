@@ -34,8 +34,13 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         //Aggregation 2
-        public class CarAggregation: AggregateProjection<CarView>
+        public class CarAggregation: SingleStreamAggregation<CarView>
         {
+            public CarAggregation()
+            {
+                ProjectionName = "Car";
+            }
+
             public void Apply(CarView view, CarNamed ev)
             {
                 view.Name = ev.Value;
@@ -62,8 +67,13 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         //Aggregation 2
-        public class TruckAggregation: AggregateProjection<TruckView>
+        public class TruckAggregation: SingleStreamAggregation<TruckView>
         {
+            public TruckAggregation()
+            {
+                ProjectionName = "Truck";
+            }
+
             public void Apply(TruckView view, TruckNamed ev)
             {
                 view.Name = ev.Value;
@@ -122,8 +132,8 @@ namespace Marten.AsyncDaemon.Testing
             }
 
             //Wait for shards and highwater agent to catchup on the events
-            await agent.Tracker.WaitForShardState(new ShardState("CarView:All", expectedSequence), 15.Seconds());
-            await agent.Tracker.WaitForShardState(new ShardState("TruckView:All", expectedSequence), 15.Seconds());
+            await agent.Tracker.WaitForShardState(new ShardState("Car:All", expectedSequence), 15.Seconds());
+            await agent.Tracker.WaitForShardState(new ShardState("Truck:All", expectedSequence), 15.Seconds());
             await agent.Tracker.WaitForHighWaterMark(expectedSequence);
 
 

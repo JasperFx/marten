@@ -33,7 +33,7 @@ public async Task load_event_stream_async(IDocumentSession session, Guid streamI
                 .FetchStreamAsync(streamId, timestamp: DateTime.UtcNow.AddDays(-1));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L103-L130' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-fetch-stream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L106-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-fetch-stream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The data returned is a list of `IEvent` objects, where each is a strongly-typed `Event<T>` object shown below:
@@ -259,7 +259,7 @@ public async Task load_a_single_event_asynchronously(IDocumentSession session, G
     var event2 = await session.Events.LoadAsync(eventId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L132-L151' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_load-a-single-event' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L135-L154' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_load-a-single-event' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying Directly Against Event Data

@@ -22,6 +22,11 @@ namespace Marten.Storage
 
             _mapping = mapping;
 
+            foreach (var index in mapping.IgnoredIndexes)
+            {
+                IgnoredIndexes.Add(index);
+            }
+
             var idColumn = new IdColumn(mapping);
 
             AddColumn(idColumn).AsPrimaryKey();

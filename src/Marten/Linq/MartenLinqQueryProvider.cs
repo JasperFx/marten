@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.Includes;
@@ -95,41 +96,77 @@ namespace Marten.Linq
 
         public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken token, ResultOperatorBase op)
         {
-            var builder = new LinqHandlerBuilder(this, _session, expression, op);
-            var handler = builder.BuildHandler<TResult>();
+            try
+            {
+                var builder = new LinqHandlerBuilder(this, _session, expression, op);
+                var handler = builder.BuildHandler<TResult>();
 
-            await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
+                await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
 
-            return await ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
+                return await ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                MartenExceptionTransformer.WrapAndThrow(e);
+            }
+
+            return default;
         }
 
         public async Task<int> StreamJson<TResult>(Stream stream, Expression expression, CancellationToken token, ResultOperatorBase op)
         {
-            var builder = new LinqHandlerBuilder(this, _session, expression, op);
-            var handler = builder.BuildHandler<TResult>();
+            try
+            {
+                var builder = new LinqHandlerBuilder(this, _session, expression, op);
+                var handler = builder.BuildHandler<TResult>();
 
-            await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
+                await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
 
-            var cmd = _session.BuildCommand(handler);
+                var cmd = _session.BuildCommand(handler);
 
-            using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
-            return await handler.StreamJson(stream, reader, token).ConfigureAwait(false);
+                using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+                return await handler.StreamJson(stream, reader, token).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                MartenExceptionTransformer.WrapAndThrow(e);
+            }
+
+            return default;
         }
 
         public async Task<T> ExecuteHandlerAsync<T>(IQueryHandler<T> handler, CancellationToken token)
         {
-            var cmd = _session.BuildCommand(handler);
+            try
+            {
+                var cmd = _session.BuildCommand(handler);
 
-            using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
-            return await handler.HandleAsync(reader, _session, token).ConfigureAwait(false);
+                using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+                return await handler.HandleAsync(reader, _session, token).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                MartenExceptionTransformer.WrapAndThrow(e);
+            }
+
+            return default;
         }
 
         public T ExecuteHandler<T>(IQueryHandler<T> handler)
         {
-            var cmd = _session.BuildCommand(handler);
+            try
+            {
+                var cmd = _session.BuildCommand(handler);
 
-            using var reader = _session.ExecuteReader(cmd);
-            return handler.Handle(reader, _session);
+                using var reader = _session.ExecuteReader(cmd);
+                return handler.Handle(reader, _session);
+            }
+            catch (Exception e)
+            {
+                MartenExceptionTransformer.WrapAndThrow(e);
+            }
+
+            return default;
         }
 
 

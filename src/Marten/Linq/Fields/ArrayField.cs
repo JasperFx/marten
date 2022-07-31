@@ -48,7 +48,7 @@ namespace Marten.Linq.Fields
             }
             else
             {
-                LocatorForFlattenedElements = LocatorForIncludedDocumentId;
+                LocatorForFlattenedElements = $"unnest({LocatorForIncludedDocumentId})";;
             }
 
 

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using EventSourcingTests.Aggregation;
 using Marten;
 using Marten.Events;
 using Marten.Storage;
@@ -20,6 +21,64 @@ namespace EventSourcingTests
             { TenancyStyle.Conjoined },
             { TenancyStyle.Single },
         };
+
+        [Fact]
+        public async Task capture_events_for_multiple_tenants_in_one_session_as_string_identified()
+        {
+            StoreOptions(opts =>
+            {
+                opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+                opts.Events.StreamIdentity = StreamIdentity.AsString;
+
+            }, true);
+
+            theSession.Logger = new TestOutputMartenLogger(_output);
+            theSession.ForTenant("one").Events.StartStream("s1", new AEvent(), new BEvent());
+            theSession.ForTenant("two").Events.StartStream("s1", new CEvent(), new DEvent(), new QuestStarted());
+
+            await theSession.SaveChangesAsync();
+
+            using var queryOne = theStore.QuerySession("one");
+            var eventsOne = await queryOne.Events.FetchStreamAsync("s1");
+            eventsOne[0].Data.ShouldBeOfType<AEvent>();
+            eventsOne[1].Data.ShouldBeOfType<BEvent>();
+
+
+            using var queryTwo = theStore.QuerySession("two");
+            var eventsTwo = await queryTwo.Events.FetchStreamAsync("s1");
+
+            eventsTwo.Count.ShouldBe(3);
+        }
+
+        [Fact]
+        public async Task capture_events_for_multiple_tenants_in_one_session_as_guid_identified()
+        {
+            StoreOptions(opts =>
+            {
+                opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+
+            }, true);
+
+            var streamId = Guid.NewGuid();
+
+            theSession.Logger = new TestOutputMartenLogger(_output);
+
+            theSession.ForTenant("one").Events.StartStream(streamId, new AEvent(), new BEvent());
+            theSession.ForTenant("two").Events.StartStream(streamId, new CEvent(), new DEvent(), new QuestStarted());
+
+            await theSession.SaveChangesAsync();
+
+            using var queryOne = theStore.QuerySession("one");
+            var eventsOne = await queryOne.Events.FetchStreamAsync(streamId);
+            eventsOne[0].Data.ShouldBeOfType<AEvent>();
+            eventsOne[1].Data.ShouldBeOfType<BEvent>();
+
+
+            using var queryTwo = theStore.QuerySession("two");
+            var eventsTwo = await queryTwo.Events.FetchStreamAsync(streamId);
+
+            eventsTwo.Count.ShouldBe(3);
+        }
 
         [Theory]
         [MemberData(nameof(TenancyStyles))]

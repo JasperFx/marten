@@ -143,7 +143,7 @@ namespace CoreTests.Diagnostics
     }
 
 
-    public class AllSync: AggregateProjection<MyAggregate>
+    public class AllSync: SingleStreamAggregation<MyAggregate>
     {
         public AllSync()
         {
@@ -196,7 +196,7 @@ namespace CoreTests.Diagnostics
         }
     }
 
-    public class AllGood: AggregateProjection<MyAggregate>
+    public class AllGood: SingleStreamAggregation<MyAggregate>
     {
         public AllGood()
         {

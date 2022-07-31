@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -243,6 +244,8 @@ namespace Marten
         /// <returns></returns>
         public static MartenStoreExpression<T> AddMartenStore<T>(this IServiceCollection services, Action<StoreOptions> configure) where T : class, IDocumentStore
         {
+            services.AddSingleton<IDocumentStoreSource, DocumentStoreSource<T>>();
+
             return services.AddMartenStore<T>((s =>
             {
                 var options = new StoreOptions();
@@ -250,6 +253,8 @@ namespace Marten
 
                 return options;
             }));
+
+
         }
 
         /// <summary>
@@ -289,6 +294,22 @@ namespace Marten
 
 
             return new MartenStoreExpression<T>(services);
+        }
+
+        internal static IReadOnlyList<IDocumentStore> AllDocumentStores(this IHost host)
+        {
+            return host.Services.AllDocumentStores();
+        }
+
+        public static IReadOnlyList<IDocumentStore> AllDocumentStores(this IServiceProvider services)
+        {
+            var list = new List<IDocumentStore>();
+            var store = services.GetService<IDocumentStore>();
+            if (store != null) list.Add(store);
+
+            list.AddRange(services.GetServices<IDocumentStoreSource>().Select(x => x.Resolve(services)));
+
+            return list;
         }
 
         internal static void EnsureMartenActivatorIsRegistered(this IServiceCollection services)
@@ -536,6 +557,7 @@ namespace Marten
             /// at runtime.
             /// </summary>
             /// <returns></returns>
+            [Obsolete("Please prefer the InitializeWith() approach for applying start up actions to a DocumentStore. This should not be used in combination with the asynchronous projections. WILL BE REMOVED IN MARTEN V6.")]
             public IDocumentStore InitializeStore()
             {
                 if (_options == null)
@@ -596,6 +618,8 @@ namespace Marten
                 Services.AddSingleton<IInitialData, T>();
                 return this;
             }
+
+
         }
 
         internal class AddInitialData<T, TData>: IConfigureMarten<T> where T : IDocumentStore where TData : IInitialData
@@ -611,65 +635,6 @@ namespace Marten
             {
                 options.InitialData.Add(_data);
             }
-        }
-    }
-
-    /// <summary>
-    /// Pluggable strategy for customizing how IDocumentSession / IQuerySession
-    /// objects are created within an application.
-    /// </summary>
-    public interface ISessionFactory
-    {
-        /// <summary>
-        /// Build new instances of IQuerySession on demand
-        /// </summary>
-        /// <returns></returns>
-        IQuerySession QuerySession();
-
-        /// <summary>
-        /// Build new instances of IDocumentSession on demand
-        /// </summary>
-        /// <returns></returns>
-        IDocumentSession OpenSession();
-    }
-
-    internal class DefaultSessionFactory: ISessionFactory
-    {
-        private readonly IDocumentStore _store;
-
-        public DefaultSessionFactory(IDocumentStore store)
-        {
-            _store = store;
-        }
-
-        public IQuerySession QuerySession()
-        {
-            return _store.QuerySession();
-        }
-
-        public IDocumentSession OpenSession()
-        {
-            return _store.OpenSession();
-        }
-    }
-
-    internal class LightweightSessionFactory: ISessionFactory
-    {
-        private readonly IDocumentStore _store;
-
-        public LightweightSessionFactory(IDocumentStore store)
-        {
-            _store = store;
-        }
-
-        public IQuerySession QuerySession()
-        {
-            return _store.QuerySession();
-        }
-
-        public IDocumentSession OpenSession()
-        {
-            return _store.LightweightSession();
         }
     }
 
@@ -734,6 +699,19 @@ namespace Marten
 
                 options.SourceCodeWritingEnabled = false;
             }
+        }
+    }
+
+    internal interface IDocumentStoreSource
+    {
+        IDocumentStore Resolve(IServiceProvider serviceProvider);
+    }
+
+    internal class DocumentStoreSource<T> : IDocumentStoreSource where T : IDocumentStore
+    {
+        public IDocumentStore Resolve(IServiceProvider services)
+        {
+            return services.GetRequiredService<T>();
         }
     }
 

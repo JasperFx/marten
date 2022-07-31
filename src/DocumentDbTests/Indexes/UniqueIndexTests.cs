@@ -18,9 +18,9 @@ namespace DocumentDbTests.Indexes
         public string Surname { get; set; }
     }
 
-    public class UserViewProjection : ViewProjection<UniqueUser, Guid>
+    public class UserMultiStreamAggregation : MultiStreamAggregation<UniqueUser, Guid>
     {
-        public UserViewProjection()
+        public UserMultiStreamAggregation()
         {
             Identity<UserCreated>(x => x.UserId);
         }
@@ -60,7 +60,7 @@ namespace DocumentDbTests.Indexes
             StoreOptions(opts =>
             {
                 opts.Events.AddEventTypes(new[] { typeof(UserCreated) });
-                opts.Projections.Add(new UserViewProjection());
+                opts.Projections.Add(new UserMultiStreamAggregation());
                 opts.RegisterDocumentType<UniqueUser>();
             });
         }

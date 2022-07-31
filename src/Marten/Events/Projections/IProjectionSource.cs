@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
 using Marten.Storage;
+using Weasel.Core;
 
 namespace Marten.Events.Projections
 {
@@ -26,4 +27,14 @@ namespace Marten.Events.Projections
 
         IProjection Build(DocumentStore store);
     }
+
+    /// <summary>
+    /// Optional interface to expose additional schema objects to be
+    /// built as part of the event store
+    /// </summary>
+    public interface IProjectionSchemaSource
+    {
+        IEnumerable<ISchemaObject> CreateSchemaObjects(EventGraph events);
+    }
+
 }

@@ -1,12 +1,14 @@
+using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Baseline.Dates;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.HighWater;
-using Marten.Services;
+using Marten.Testing;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+using NpgsqlTypes;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -76,6 +78,32 @@ namespace Marten.AsyncDaemon.Testing
             agent.Tracker.HighWaterMark.ShouldBe(NumberOfEvents);
 
             await agent.StopAll();
+        }
+
+        [Fact]
+        public async Task ensures_all_gaps_are_delayed()
+        {
+            NumberOfStreams = 10;
+            await PublishSingleThreaded();
+            theStore.Options.Projections.StaleSequenceThreshold = 10.Seconds();
+            await deleteEvents(NumberOfEvents-50, NumberOfEvents - 100);
+            var start = Stopwatch.StartNew();
+            using var agent = await StartDaemon();
+
+            await agent.Tracker.WaitForHighWaterMark(NumberOfEvents, 2.Minutes());
+
+            start.Elapsed.ShouldBeGreaterThan(TimeSpan.FromSeconds(20));
+        }
+
+        private async Task deleteEvents(params long[] ids)
+        {
+            await using var conn = theStore.CreateConnection();
+            await conn.OpenAsync();
+
+            await conn
+                .CreateCommand($"delete from {theStore.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(:ids)")
+                .With("ids", ids, NpgsqlDbType.Bigint | NpgsqlDbType.Array)
+                .ExecuteNonQueryAsync();
         }
     }
 }

@@ -158,7 +158,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
         }
     }
 
-    public class CollateNames: ViewProjection<NamesByLetter, string>
+    public class CollateNames: MultiStreamAggregation<NamesByLetter, string>
     {
         public CollateNames()
         {

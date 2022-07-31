@@ -58,15 +58,11 @@ namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation
             services.AddMarten(opts =>
                 {
                     opts.Connection(connectionString);
-
-                    // Use the more permissive schema auto create behavior
-                    // while in development
-                    if (Hosting.IsDevelopment())
-                    {
-                        opts.AutoCreateSchemaObjects = AutoCreate.All;
-                    }
                 })
-
+                // Using the "Optimized artifact workflow" for Marten >= V5
+                // sets up your Marten configuration based on your environment
+                // See https://martendb.io/configuration/optimized_artifact_workflow.html
+                .OptimizeArtifactWorkflow()
                 // Chained helper to replace the built in
                 // session factory behavior
                 .BuildSessionsWith<CustomSessionFactory>();

@@ -10,7 +10,8 @@ namespace Marten.Events.Daemon
     public interface IProjectionDaemon : IDisposable
     {
         /// <summary>
-        /// Rebuilds a single projection by projection name inline
+        /// Rebuilds a single projection by projection name inline.
+        /// Will timeout if a shard takes longer than 5 minutes.
         /// </summary>
         /// <param name="projectionName"></param>
         /// <param name="token"></param>
@@ -19,12 +20,31 @@ namespace Marten.Events.Daemon
 
 
         /// <summary>
-        /// Rebuilds a single projection by projection type inline
+        /// Rebuilds a single projection by projection type inline.
+        /// Will timeout if a shard takes longer than 5 minutes.
         /// </summary>
         /// <typeparam name="TView">Projection view type</typeparam>
         /// <param name="token"></param>
         /// <returns></returns>
         Task RebuildProjection<TView>(CancellationToken token);
+
+        /// <summary>
+        /// Rebuilds a single projection by projection name inline
+        /// </summary>
+        /// <param name="projectionName"></param>
+        /// <param name="shardTimeout"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task RebuildProjection(string projectionName, TimeSpan shardTimeout, CancellationToken token);
+
+
+        /// <summary>
+        /// Rebuilds a single projection by projection type inline
+        /// </summary>
+        /// <typeparam name="TView">Projection view type</typeparam>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task RebuildProjection<TView>(TimeSpan shardTimeout, CancellationToken token);
 
         /// <summary>
         /// Starts a single projection shard by name
@@ -75,5 +95,9 @@ namespace Marten.Events.Daemon
         /// <param name="timeout"></param>
         /// <returns></returns>
         Task WaitForNonStaleData(TimeSpan timeout);
+
+        Task PauseHighWaterAgent();
+
+        long HighWaterMark();
     }
 }

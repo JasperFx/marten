@@ -156,6 +156,12 @@ namespace Marten.Services
                     _clean.Converters.Add(converter);
                     _withTypes.Converters.Add(converter);
                 }
+
+                var bigIntegerConverter = new SystemTextJsonBigIntegerConverter();
+                _options.Converters.Add(bigIntegerConverter);
+                _optionsDeserialize.Converters.Add(bigIntegerConverter);
+                _clean.Converters.Add(bigIntegerConverter);
+                _withTypes.Converters.Add(bigIntegerConverter);
             }
         }
 

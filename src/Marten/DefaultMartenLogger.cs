@@ -37,12 +37,11 @@ namespace Marten
 
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug("Marten executed in {milliseconds} ms, SQL: {SQL}", _stopwatch?.ElapsedMilliseconds ?? 0 ,command.CommandText);
-
-                foreach (NpgsqlParameter p in command.Parameters)
-                {
-                    _logger.LogDebug("    {ParameterName}: {ParameterValue}", p.ParameterName, p.Value);
-                }
+                var message = "Marten executed in {milliseconds} ms, SQL: {SQL}\n{PARAMS}";
+                var parameters = command.Parameters.OfType<NpgsqlParameter>()
+                    .Select(p => $"  {p.ParameterName}: {p.Value}")
+                    .Join(Environment.NewLine);
+                _logger.LogDebug(message, _stopwatch?.ElapsedMilliseconds ?? 0, command.CommandText, parameters);
             }
         }
 

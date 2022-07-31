@@ -1,11 +1,9 @@
 using System;
 using System.Linq;
 using Baseline;
-using Marten.Internal.CodeGeneration;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Services;
-using Marten.Storage;
 #nullable enable
 namespace Marten.Internal.Sessions
 {

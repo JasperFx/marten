@@ -31,13 +31,11 @@
         <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="LamarCodeGeneration.Commands" Version="6.1.1" />
+        <PackageReference Include="LamarCodeGeneration.Commands" Version="6.1.6" />
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-        <PackageReference Include="Weasel.CommandLine" Version="5.4.0" />
-    </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Commands\Patch" />
+        <PackageReference Include="Oakton" Version="4.5.1" />
+        <PackageReference Include="Weasel.CommandLine" Version="5.5.0" />
     </ItemGroup>
     <Import Project="../../Analysis.Build.props" />
 </Project>

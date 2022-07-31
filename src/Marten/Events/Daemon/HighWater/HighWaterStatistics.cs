@@ -10,15 +10,18 @@ namespace Marten.Events.Daemon.HighWater
         public bool HasChanged => CurrentMark > LastMark;
         public DateTimeOffset? LastUpdated { get; set; }
         public long SafeStartMark { get; set; }
-        public DateTimeOffset Timestamp { get; set; }
+        public DateTimeOffset Timestamp { get; set; } = default;
 
         public HighWaterStatus InterpretStatus(HighWaterStatistics previous)
         {
+            // Postgres sequences start w/ 1 by default. So the initial state is "HighestSequence = 1".
             if (HighestSequence == 1 && CurrentMark == 0) return HighWaterStatus.CaughtUp;
+
+            if (CurrentMark == HighestSequence) return HighWaterStatus.CaughtUp;
 
             if (CurrentMark > previous.CurrentMark)
             {
-                return CurrentMark == HighestSequence ? HighWaterStatus.CaughtUp : HighWaterStatus.Changed;
+                return HighWaterStatus.Changed;
             }
 
             return HighWaterStatus.Stale;

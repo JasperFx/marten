@@ -30,12 +30,12 @@ namespace CommandLineRunner
 
     #region sample_configuring_pre_build_types
 
-    public class Program
+    public static class Program
     {
-        public static Task<int> Main(string[] args)
-        {
-            return CreateHostBuilder(args).RunOaktonCommands(args);
-        }
+public static Task<int> Main(string[] args)
+{
+    return CreateHostBuilder(args).RunOaktonCommands(args);
+}
 
         public static IHostBuilder CreateHostBuilder(string[] args)
         {
@@ -49,38 +49,46 @@ namespace CommandLineRunner
                         opts.GeneratedCodeMode = TypeLoadMode.Auto;
                     });
 
-                    services.AddMarten(opts =>
-                    {
-                        opts.AutoCreateSchemaObjects = AutoCreate.All;
-                        opts.DatabaseSchemaName = "cli";
-                        opts.Connection(ConnectionSource.ConnectionString);
+services.AddMarten(opts =>
+{
+    opts.AutoCreateSchemaObjects = AutoCreate.All;
+    opts.DatabaseSchemaName = "cli";
 
-                        // This is important, setting this option tells Marten to
-                        // *try* to use pre-generated code at runtime
-                        opts.GeneratedCodeMode = TypeLoadMode.Auto;
+    opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
+        .WithTenants("tenant1", "tenant2", "tenant3");
 
-                        opts.Schema.For<Activity>().AddSubClass<Trip>();
+    // This is important, setting this option tells Marten to
+    // *try* to use pre-generated code at runtime
+    opts.GeneratedCodeMode = TypeLoadMode.Auto;
 
-                        // You have to register all persisted document types ahead of time
-                        // RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()
-                        // just to let Marten know that document type exists
-                        opts.RegisterDocumentType<Target>();
-                        opts.RegisterDocumentType<User>();
+    opts.Schema.For<Activity>().AddSubClass<Trip>();
 
-                        // If you use compiled queries, you will need to register the
-                        // compiled query types with Marten ahead of time
-                        opts.RegisterCompiledQueryType(typeof(FindUserByAllTheThings));
+    // You have to register all persisted document types ahead of time
+    // RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()
+    // just to let Marten know that document type exists
+    opts.RegisterDocumentType<Target>();
+    opts.RegisterDocumentType<User>();
 
-                        // Register all event store projections ahead of time
-                        opts.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Inline);
-                        opts.Projections.Add(new DayProjection(), ProjectionLifecycle.Inline);
-                        opts.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Inline);
+    // If you use compiled queries, you will need to register the
+    // compiled query types with Marten ahead of time
+    opts.RegisterCompiledQueryType(typeof(FindUserByAllTheThings));
 
-                        opts.Projections.Add(new SimpleAggregate(), ProjectionLifecycle.Inline);
+    // Register all event store projections ahead of time
+    opts.Projections
+        .Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
 
-                        // This is actually important to register "live" aggregations too for the code generation
-                        opts.Projections.SelfAggregate<SelfAggregatingTrip>(ProjectionLifecycle.Live);
-                    }).AddAsyncDaemon(DaemonMode.Solo);
+    opts.Projections
+        .Add(new DayProjection(), ProjectionLifecycle.Async);
+
+    opts.Projections
+        .Add(new DistanceProjection(), ProjectionLifecycle.Async);
+
+    opts.Projections
+        .Add(new SimpleAggregate(), ProjectionLifecycle.Inline);
+
+    // This is actually important to register "live" aggregations too for the code generation
+    opts.Projections.SelfAggregate<SelfAggregatingTrip>(ProjectionLifecycle.Live);
+}).AddAsyncDaemon(DaemonMode.Solo);
                 });
         }
     }
@@ -107,7 +115,7 @@ namespace CommandLineRunner
         public bool Active { get; set; }
     }
 
-    public class SimpleAggregate: AggregateProjection<MyAggregate>
+    public class SimpleAggregate: SingleStreamAggregation<MyAggregate>
     {
         public SimpleAggregate()
         {

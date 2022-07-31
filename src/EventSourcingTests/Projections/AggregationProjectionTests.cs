@@ -36,7 +36,7 @@ namespace EventSourcingTests.Projections
         public void adding_filter_for_aggregate_type()
         {
             var projection = new SampleAggregate();
-            projection.CompileAndAssertValidity();
+            projection.AssembleAndAssertValidity();
 
             using var store = DocumentStore.For(ConnectionSource.ConnectionString);
             var filters = projection.BuildFilters(store);
@@ -53,10 +53,10 @@ namespace EventSourcingTests.Projections
         [Fact]
         public void adding_filter_for_another_aggregate_type()
         {
-            var projection = new AggregateProjection<MyAggregate>();
+            var projection = new SingleStreamAggregation<MyAggregate>();
             projection.ProjectEvent<AEvent>(a => { });
             projection.FilterIncomingEventsOnStreamType(typeof(OtherAggregate));
-            projection.CompileAndAssertValidity();
+            projection.AssembleAndAssertValidity();
 
             using var store = DocumentStore.For(ConnectionSource.ConnectionString);
             var filters = projection.BuildFilters(store);
@@ -69,7 +69,7 @@ namespace EventSourcingTests.Projections
     public interface IThing{}
     public class Thing : IThing{}
 
-    public class SampleAggregate: AggregateProjection<MyAggregate>
+    public class SampleAggregate: SingleStreamAggregation<MyAggregate>
     {
         public SampleAggregate()
         {

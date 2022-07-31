@@ -115,7 +115,7 @@ namespace Marten
         {
             var database = tenantId == null
                 ? _store.Tenancy.Default.Database
-                : (await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(true)).Database;
+                : (await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false)).Database;
 
             return await database.AllProjectionProgress(token).ConfigureAwait(false);
         }

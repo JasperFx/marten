@@ -133,12 +133,12 @@ As an example, here is the Marten configuration from the project we used to test
 <!-- snippet: sample_configuring_pre_build_types -->
 <a id='snippet-sample_configuring_pre_build_types'></a>
 ```cs
-public class Program
+public static class Program
 {
-    public static Task<int> Main(string[] args)
-    {
-        return CreateHostBuilder(args).RunOaktonCommands(args);
-    }
+public static Task<int> Main(string[] args)
+{
+return CreateHostBuilder(args).RunOaktonCommands(args);
+}
 
     public static IHostBuilder CreateHostBuilder(string[] args)
     {
@@ -152,43 +152,51 @@ public class Program
                     opts.GeneratedCodeMode = TypeLoadMode.Auto;
                 });
 
-                services.AddMarten(opts =>
-                {
-                    opts.AutoCreateSchemaObjects = AutoCreate.All;
-                    opts.DatabaseSchemaName = "cli";
-                    opts.Connection(ConnectionSource.ConnectionString);
+services.AddMarten(opts =>
+{
+opts.AutoCreateSchemaObjects = AutoCreate.All;
+opts.DatabaseSchemaName = "cli";
 
-                    // This is important, setting this option tells Marten to
-                    // *try* to use pre-generated code at runtime
-                    opts.GeneratedCodeMode = TypeLoadMode.Auto;
+opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
+    .WithTenants("tenant1", "tenant2", "tenant3");
 
-                    opts.Schema.For<Activity>().AddSubClass<Trip>();
+// This is important, setting this option tells Marten to
+// *try* to use pre-generated code at runtime
+opts.GeneratedCodeMode = TypeLoadMode.Auto;
 
-                    // You have to register all persisted document types ahead of time
-                    // RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()
-                    // just to let Marten know that document type exists
-                    opts.RegisterDocumentType<Target>();
-                    opts.RegisterDocumentType<User>();
+opts.Schema.For<Activity>().AddSubClass<Trip>();
 
-                    // If you use compiled queries, you will need to register the
-                    // compiled query types with Marten ahead of time
-                    opts.RegisterCompiledQueryType(typeof(FindUserByAllTheThings));
+// You have to register all persisted document types ahead of time
+// RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()
+// just to let Marten know that document type exists
+opts.RegisterDocumentType<Target>();
+opts.RegisterDocumentType<User>();
 
-                    // Register all event store projections ahead of time
-                    opts.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Inline);
-                    opts.Projections.Add(new DayProjection(), ProjectionLifecycle.Inline);
-                    opts.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Inline);
+// If you use compiled queries, you will need to register the
+// compiled query types with Marten ahead of time
+opts.RegisterCompiledQueryType(typeof(FindUserByAllTheThings));
 
-                    opts.Projections.Add(new SimpleAggregate(), ProjectionLifecycle.Inline);
+// Register all event store projections ahead of time
+opts.Projections
+    .Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
 
-                    // This is actually important to register "live" aggregations too for the code generation
-                    opts.Projections.SelfAggregate<SelfAggregatingTrip>(ProjectionLifecycle.Live);
-                }).AddAsyncDaemon(DaemonMode.Solo);
+opts.Projections
+    .Add(new DayProjection(), ProjectionLifecycle.Async);
+
+opts.Projections
+    .Add(new DistanceProjection(), ProjectionLifecycle.Async);
+
+opts.Projections
+    .Add(new SimpleAggregate(), ProjectionLifecycle.Inline);
+
+// This is actually important to register "live" aggregations too for the code generation
+opts.Projections.SelfAggregate<SelfAggregatingTrip>(ProjectionLifecycle.Live);
+}).AddAsyncDaemon(DaemonMode.Solo);
             });
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L31-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L31-L96' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Okay, after all that, there should be a new command line option called `codegen` for your project. Assuming
