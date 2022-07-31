@@ -8,9 +8,6 @@ we strongly recommend using [Computed Indexes/Calculated Indexes](/documents/ind
 Also note that there are few cases where calculated index does not work i.e `DateTime`, `DateTimeOffset` fields, resort to using duplicated fields for these.
 :::
 
-are a great way to optimize the querying of a document type without incurring potentially expensive schema changes and extra runtime insert costs
-
-
 To create a duplicated field, you can use the `[DuplicateField]` attribute like this:
 
 <!-- snippet: sample_using_attributes_on_document -->
