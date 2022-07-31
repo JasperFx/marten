@@ -33,25 +33,19 @@ namespace Marten.Linq.Fields
                 PgType = "jsonb";
             }
 
-
-
             TypedLocator = $"CAST({rawLocator} as {PgType})";
 
-
-
             LocatorForIncludedDocumentId =
-                $"unnest(CASE WHEN {rawLocator} = '[]' THEN '{{null}}'::{innerPgType}[] ELSE CAST(ARRAY(SELECT jsonb_array_elements_text(CAST({rawLocator} as jsonb))) as {innerPgType}[]) END)";
+                $"CAST(CASE WHEN {rawLocator} = '[]' THEN '{{null}}' ELSE ARRAY(SELECT jsonb_array_elements_text(CAST({rawLocator} as jsonb))) END as {innerPgType}[])";
 
             if (PgType.EqualsIgnoreCase("JSONB"))
             {
-                LocatorForFlattenedElements = $"unnest(CASE WHEN {rawLocator} = '[]' THEN '{{null}}'::{innerPgType}[] ELSE CAST(ARRAY(SELECT jsonb_array_elements(CAST({rawLocator} as jsonb))) as jsonb[]) END)";
+                LocatorForFlattenedElements = $"unnest(CAST(CASE WHEN {rawLocator} = '[]' THEN '{{null}}' ELSE ARRAY(SELECT jsonb_array_elements(CAST({rawLocator} as jsonb))) END as jsonb[]))";
             }
             else
             {
-                LocatorForFlattenedElements = $"unnest({LocatorForIncludedDocumentId})";;
+                LocatorForFlattenedElements = $"unnest({LocatorForIncludedDocumentId})";
             }
-
-
         }
 
         public Type ElementType { get; }
