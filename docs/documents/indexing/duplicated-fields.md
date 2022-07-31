@@ -1,10 +1,15 @@
 # Duplicated Fields for Faster Querying
 
-According to our testing, the single best thing you can do to speed up queries against the JSONB documents
-is to duplicate a property or field within the JSONB structure as a separate database column on the document
-table. When you issue a Linq query using this duplicated property or field, Marten is able to write the SQL
-query to run against the duplicated field instead of using JSONB operators. This of course only helps for
-queries using the duplicated field.
+One option to speed up queries against the JSONB documents is by duplicating a property or field within the JSONB structure as a separate database column on the document table. When you issue a Linq query using this duplicated property or field, Marten is able to write the SQL query to run against the duplicated field instead of using JSONB operators. This of course only helps for queries using the duplicated field.
+
+::: tip
+we strongly recommend using [Computed Indexes/Calculated Indexes](/documents/indexing/computed-indexes) over duplicated fields for most cases to speed up queries. Calculated indexes optimize the querying of a document type without incurring potentially expensive schema changes and extra runtime insert costs.
+
+Also note that there are few cases where calculated index does not work i.e `DateTime`, `DateTimeOffset` fields, resort to using duplicated fields for these.
+:::
+
+are a great way to optimize the querying of a document type without incurring potentially expensive schema changes and extra runtime insert costs
+
 
 To create a duplicated field, you can use the `[DuplicateField]` attribute like this:
 
