@@ -40,11 +40,11 @@ namespace Marten.Linq.Fields
 
 
             LocatorForIncludedDocumentId =
-                $"unnest(CAST(ARRAY(SELECT jsonb_array_elements_text(CAST({rawLocator} as jsonb))) as {innerPgType}[]))";
+                $"unnest(CASE WHEN {rawLocator} = '[]' THEN '{{null}}'::{innerPgType}[] ELSE CAST(ARRAY(SELECT jsonb_array_elements_text(CAST({rawLocator} as jsonb))) as {innerPgType}[]) END)";
 
             if (PgType.EqualsIgnoreCase("JSONB"))
             {
-                LocatorForFlattenedElements = $"unnest(CAST(ARRAY(SELECT jsonb_array_elements(CAST({rawLocator} as jsonb))) as jsonb[]))";
+                LocatorForFlattenedElements = $"unnest(CASE WHEN {rawLocator} = '[]' THEN '{{null}}'::{innerPgType}[] ELSE CAST(ARRAY(SELECT jsonb_array_elements(CAST({rawLocator} as jsonb))) as jsonb[]) END)";
             }
             else
             {

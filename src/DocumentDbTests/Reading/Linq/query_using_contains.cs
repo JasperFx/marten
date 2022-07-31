@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Marten;
 using Marten.Linq;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
 namespace DocumentDbTests.Reading.Linq
@@ -26,11 +27,9 @@ namespace DocumentDbTests.Reading.Linq
 
             using (var sess = theStore.LightweightSession())
             {
-                // This currently fails due to the way the query uses unnest to assume the array has items
-                // since the array is empty the unnest results in 0 records to query against
-                var result1 = theSession.Query<Target>().Where(x => x.IsPublic == false || x.UserIds.Contains(10)).ToList();
+                var result1 = await theSession.Query<Target>().Where(x => x.IsPublic == false || x.UserIds.Contains(10)).ToListAsync();
 
-                result1.ShouldContain(x => x.Id == 2);
+                result1.Count.ShouldBeEquivalentTo(0);
 
                 // This should pass without any error as the query will return results
                 var result2 = await theSession.Query<Target>().Where(x => x.IsPublic || x.UserIds.Contains(5)).ToListAsync();
