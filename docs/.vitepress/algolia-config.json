@@ -1,7 +1,7 @@
 {
   "index_name": "marten_index",
   "start_urls": [
-    "https://marten-v4.netlify.app"
+    "https://martendb.io"
   ],
   "selectors": {
     "lvl0": {
