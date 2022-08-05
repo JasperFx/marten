@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
+using Marten.Services.Json;
 using Marten.Storage;
 #nullable enable
 namespace Marten.Events
@@ -46,7 +47,7 @@ namespace Marten.Events
         /// </summary>
         /// <param name="eventTypeName">Event type name</param>
         /// <typeparam name="TEvent">Mapped CLR event type</typeparam>
-        void MapEventType<TEvent>(string eventTypeName) where TEvent : class;
+        EventJsonTransformation MapEventType<TEvent>(string eventTypeName) where TEvent : class;
 
         /// <summary>
         /// Maps CLR event type as particular event type name. This is useful for event type migration.
@@ -54,7 +55,7 @@ namespace Marten.Events
         /// </summary>
         /// <param name="eventType">Event type name</param>
         /// <param name="eventTypeName">Mapped CLR event type</param>
-        void MapEventType(Type eventType, string eventTypeName);
+        EventJsonTransformation MapEventType(Type eventType, string eventTypeName);
 
         public MetadataConfig MetadataConfig { get; }
     }
