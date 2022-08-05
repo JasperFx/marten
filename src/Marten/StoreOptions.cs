@@ -198,7 +198,8 @@ namespace Marten
         /// <returns></returns>
         public ISerializer Serializer()
         {
-            return _serializer ?? SerializerFactory.New();
+            return _serializer ?? new JsonTransformationSerializerWrapper(
+                SerializerFactory.New(), JsonTransformations);
         }
 
         /// <summary>
@@ -283,7 +284,7 @@ namespace Marten
         /// <param name="serializer"></param>
         public void Serializer(ISerializer serializer)
         {
-            _serializer = serializer;
+            _serializer = new JsonTransformationSerializerWrapper(serializer, JsonTransformations);
         }
 
         /// <summary>
@@ -320,8 +321,10 @@ namespace Marten
         /// <typeparam name="T">The ISerializer type</typeparam>
         public void Serializer<T>() where T : ISerializer, new()
         {
-            _serializer = new T();
+            _serializer = new JsonTransformationSerializerWrapper(new T(), JsonTransformations);
         }
+
+        internal JsonTransformations JsonTransformations { get; } = new();
 
         /// <summary>
         ///     Replace the Marten logging strategy
