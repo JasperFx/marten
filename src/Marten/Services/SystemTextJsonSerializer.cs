@@ -114,15 +114,15 @@ namespace Marten.Services
             return FromJson(type, reader.As<NpgsqlDataReader>().GetStream(index));
         }
 
-        public JsonDocument JsonDocumentFromJson(Type type, Stream stream)
+        public JsonDocument JsonDocumentFromJson(Stream stream)
         {
             using var buffer = SharedBuffer.RentAndCopy(stream.ToSOHSkippingStream());
             return JsonDocument.Parse(buffer, _optionsJsonDocumentDeserialize);
         }
 
-        public JsonDocument JsonDocumentFromJson(Type type, DbDataReader reader, int index)
+        public JsonDocument JsonDocumentFromJson(DbDataReader reader, int index)
         {
-            return JsonDocumentFromJson(type, reader.As<NpgsqlDataReader>().GetStream(index));
+            return JsonDocumentFromJson(reader.As<NpgsqlDataReader>().GetStream(index));
         }
 
         public async ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)

@@ -4,12 +4,12 @@ using Marten.Exceptions;
 
 namespace Marten.Services.Json.SystemTextJson
 {
-    public static class SystemTextJsonUpcasters
+    public static class SystemTextJsonEventTransformations
     {
-        public static void With<TEvent>(this EventUpcaster upcaster, Func<JsonDocument, TEvent> transform)
+        public static void Upcast(this EventJsonTransformation jsonTransformation, Func<JsonDocument, TEvent> transform)
             where TEvent : notnull
         {
-            upcaster.With(typeof(TEvent),
+            jsonTransformation.Upcast(
                 (serializer, stream) =>
                 {
                     if (serializer is not SystemTextJsonSerializer systemTextJsonSerializer)
@@ -18,7 +18,7 @@ namespace Marten.Services.Json.SystemTextJson
                             $"Cannot use SystemTextJson upcaster with serializer of type {serializer.GetType().FullName}");
                     }
 
-                    return transform(systemTextJsonSerializer.JsonDocumentFromJson(typeof(TEvent), stream));
+                    return transform(systemTextJsonSerializer.JsonDocumentFromJson(stream));
                 },
                 (serializer, dbDataReader, index) =>
                 {
@@ -29,16 +29,16 @@ namespace Marten.Services.Json.SystemTextJson
                     }
 
                     return transform(
-                        systemTextJsonSerializer.JsonDocumentFromJson(typeof(TEvent), dbDataReader, index));
+                        systemTextJsonSerializer.JsonDocumentFromJson(dbDataReader, index));
                 }
             );
         }
 
-        public static void With<TOldEvent, TEvent>(this EventUpcaster upcaster, Func<TOldEvent, TEvent> transform)
+        public static void Upcast<TOldEvent, TEvent>(this EventJsonTransformation jsonTransformation, Func<TOldEvent, TEvent> transform)
             where TOldEvent : notnull
             where TEvent : notnull
         {
-            upcaster.With(typeof(TEvent),
+            jsonTransformation.Upcast(
                 (serializer, stream) =>
                 {
                     if (serializer is not SystemTextJsonSerializer systemTextJsonSerializer)
