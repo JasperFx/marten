@@ -10,16 +10,6 @@ namespace Marten.Services.Json.SystemTextJson
             where TEvent : notnull
         {
             return new JsonTransformation(
-                (serializer, stream) =>
-                {
-                    if (serializer is not SystemTextJsonSerializer systemTextJsonSerializer)
-                    {
-                        throw new MartenException(
-                            $"Cannot use SystemTextJson upcaster with serializer of type {serializer.GetType().FullName}");
-                    }
-
-                    return transform(systemTextJsonSerializer.JsonDocumentFromJson(stream));
-                },
                 (serializer, dbDataReader, index) =>
                 {
                     if (serializer is not SystemTextJsonSerializer systemTextJsonSerializer)
@@ -39,16 +29,6 @@ namespace Marten.Services.Json.SystemTextJson
             where TEvent : notnull
         {
             return new JsonTransformation(
-                (serializer, stream) =>
-                {
-                    if (serializer is not SystemTextJsonSerializer systemTextJsonSerializer)
-                    {
-                        throw new MartenException(
-                            $"Cannot use SystemTextJson upcaster with serializer of type {serializer.GetType().FullName}");
-                    }
-
-                    return transform(systemTextJsonSerializer.FromJson<TOldEvent>(stream));
-                },
                 (serializer, dbDataReader, index) =>
                 {
                     if (serializer is not SystemTextJsonSerializer systemTextJsonSerializer)
@@ -58,6 +38,16 @@ namespace Marten.Services.Json.SystemTextJson
                     }
 
                     return transform(systemTextJsonSerializer.FromJson<TOldEvent>(dbDataReader, index));
+                },
+                async (serializer, dbDataReader, index, ct) =>
+                {
+                    if (serializer is not SystemTextJsonSerializer systemTextJsonSerializer)
+                    {
+                        throw new MartenException(
+                            $"Cannot use SystemTextJson upcaster with serializer of type {serializer.GetType().FullName}");
+                    }
+
+                    return transform(await systemTextJsonSerializer.FromJsonAsync<TOldEvent>(dbDataReader, index, ct).ConfigureAwait(false));
                 }
             );
         }

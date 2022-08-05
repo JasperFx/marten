@@ -32,7 +32,7 @@ namespace Marten.Events
     /// mapping for the event store in a running system. The actual implementation of this
     /// base type is generated and compiled at runtime by Marten
     /// </summary>
-    public abstract class EventDocumentStorage : IEventStorage
+    public abstract class EventDocumentStorage: IEventStorage
     {
         private readonly EventQueryMapping _mapping;
         private readonly ISerializer _serializer;
@@ -103,6 +103,7 @@ namespace Marten.Events
 
         public string FromObject { get; }
         public Type SelectedType => typeof(IEvent);
+
         public void WriteSelectClause(CommandBuilder sql)
         {
             sql.Append(_selectClause);
@@ -118,7 +119,8 @@ namespace Marten.Events
             return this;
         }
 
-        public IQueryHandler<T> BuildHandler<T>(IMartenSession session, Statement topStatement, Statement currentStatement)
+        public IQueryHandler<T> BuildHandler<T>(IMartenSession session, Statement topStatement,
+            Statement currentStatement)
         {
             return LinqHandlerBuilder.BuildHandler<IEvent, T>(this, topStatement);
         }
@@ -130,6 +132,7 @@ namespace Marten.Events
 
         public Type SourceType => typeof(IEvent);
         public IFieldMapping Fields { get; }
+
         public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
         {
             var shouldBeTenanted = Events.TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant();
@@ -157,10 +160,11 @@ namespace Marten.Events
 
         public object IdentityFor(IEvent document)
         {
-            return Events.StreamIdentity == StreamIdentity.AsGuid ? (object) document.Id : document.StreamKey;
+            return Events.StreamIdentity == StreamIdentity.AsGuid ? (object)document.Id : document.StreamKey;
         }
 
         public Type IdType { get; }
+
         public Guid? VersionFor(IEvent document, IMartenSession session)
         {
             return null;
@@ -201,7 +205,9 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
-        public abstract IStorageOperation AppendEvent(EventGraph events, IMartenSession session, StreamAction stream, IEvent e);
+        public abstract IStorageOperation AppendEvent(EventGraph events, IMartenSession session, StreamAction stream,
+            IEvent e);
+
         public abstract IStorageOperation InsertStream(StreamAction stream);
         public abstract IQueryHandler<StreamState> QueryForStream(StreamAction stream);
         public abstract IStorageOperation UpdateStreamVersion(StreamAction stream);
@@ -218,13 +224,10 @@ namespace Marten.Events
                     throw new UnknownEventTypeException(eventTypeName);
                 }
 
-                var type = Events.TypeForDotNetName(dotnetTypeName);
-                mapping = Events.EventMappingFor(type);
+                mapping = SetEventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
             }
 
-            var data = _serializer.FromJson(mapping.DocumentType, reader, 0).As<object>();
-
-            var @event = mapping.Wrap(data);
+            var @event = DeserializeEvent(mapping, reader);
 
             ApplyReaderDataToEvent(reader, @event);
 
@@ -240,25 +243,11 @@ namespace Marten.Events
             if (mapping == null)
             {
                 var dotnetTypeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
-                if (dotnetTypeName.IsEmpty())
-                {
-                    throw new UnknownEventTypeException(eventTypeName);
-                }
-                Type type;
-                try
-                {
-                    type = Events.TypeForDotNetName(dotnetTypeName);
-                }
-                catch (ArgumentNullException)
-                {
-                    throw new UnknownEventTypeException(dotnetTypeName);
-                }
-                mapping = Events.EventMappingFor(type);
+
+                mapping = SetEventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
             }
 
-            var data = await _serializer.FromJsonAsync(mapping.DocumentType, reader, 0, token).ConfigureAwait(false);
-
-            var @event = mapping.Wrap(data);
+            var @event = await DeserializeEventAsync(mapping, reader, token).ConfigureAwait(false);
 
             await ApplyReaderDataToEventAsync(reader, @event, token).ConfigureAwait(false);
 
@@ -267,6 +256,43 @@ namespace Marten.Events
 
         public abstract Task ApplyReaderDataToEventAsync(DbDataReader reader, IEvent e, CancellationToken token);
 
+        private EventMapping SetEventMappingForDotNetTypeName(string dotnetTypeName, string eventTypeName)
+        {
+            if (dotnetTypeName.IsEmpty())
+            {
+                throw new UnknownEventTypeException(eventTypeName);
+            }
 
+            Type type;
+            try
+            {
+                type = Events.TypeForDotNetName(dotnetTypeName);
+            }
+            catch (ArgumentNullException)
+            {
+                throw new UnknownEventTypeException(dotnetTypeName);
+            }
+
+            return Events.EventMappingFor(type);
+        }
+
+        private IEvent DeserializeEvent(EventMapping mapping, DbDataReader reader)
+        {
+            var data = mapping.Transformation != null?
+                mapping.Transformation.TransformDbDataReader(_serializer, reader, 0)
+                : _serializer.FromJson(mapping.DocumentType, reader, 0);
+
+            return mapping.Wrap(data);
+        }
+
+        private async Task<IEvent> DeserializeEventAsync(EventMapping mapping, DbDataReader reader,
+            CancellationToken token)
+        {
+            var data = mapping.Transformation != null ?
+                await mapping.Transformation.TransformDbDataReaderAsync(_serializer, reader, 0, token).ConfigureAwait(false)
+                : await _serializer.FromJsonAsync(mapping.DocumentType, reader, 0, token).ConfigureAwait(false);
+
+            return mapping.Wrap(data);
+        }
     }
 }

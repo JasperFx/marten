@@ -136,9 +136,7 @@ namespace Marten.Events
         {
             var eventMapping = EventMappingFor(eventType);
             eventMapping.EventTypeName = eventTypeName;
-
-            if (jsonTransformation == null)
-                Options.JsonTransformations.Register(eventType, jsonTransformation);
+            eventMapping.Transformation = jsonTransformation;
         }
 
 
