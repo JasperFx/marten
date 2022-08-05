@@ -28,6 +28,8 @@ namespace Marten.Services
 
         private readonly JsonSerializerOptions _optionsDeserialize = new();
 
+        private JsonDocumentOptions _optionsJsonDocumentDeserialize = new();
+
         private readonly JsonSerializerOptions _withTypes = new();
 
         public SystemTextJsonSerializer()
@@ -43,6 +45,8 @@ namespace Marten.Services
             _options.EnableDynamicTypes();
             _clean.EnableDynamicTypes();
             _withTypes.EnableDynamicTypes();
+
+            SyncDocumentDeserializeOptions();
         }
 
         /// <summary>
@@ -55,7 +59,17 @@ namespace Marten.Services
             configure(_options);
             configure(_optionsDeserialize);
             configure(_withTypes);
+
+            SyncDocumentDeserializeOptions();
         }
+
+        private void SyncDocumentDeserializeOptions() =>
+            _optionsJsonDocumentDeserialize = new JsonDocumentOptions
+            {
+                CommentHandling = _optionsDeserialize.ReadCommentHandling,
+                MaxDepth = _optionsDeserialize.MaxDepth,
+                AllowTrailingCommas = _optionsDeserialize.AllowTrailingCommas
+            };
 
         public string ToJson(object? document)
         {
@@ -100,6 +114,17 @@ namespace Marten.Services
             return FromJson(type, reader.As<NpgsqlDataReader>().GetStream(index));
         }
 
+        public JsonDocument JsonDocumentFromJson(Type type, Stream stream)
+        {
+            using var buffer = SharedBuffer.RentAndCopy(stream.ToSOHSkippingStream());
+            return JsonDocument.Parse(buffer, _optionsJsonDocumentDeserialize);
+        }
+
+        public JsonDocument JsonDocumentFromJson(Type type, DbDataReader reader, int index)
+        {
+            return JsonDocumentFromJson(type, reader.As<NpgsqlDataReader>().GetStream(index));
+        }
+
         public async ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
         {
             return await JsonSerializer.DeserializeAsync(stream.ToSOHSkippingStream(), type, _optionsDeserialize, cancellationToken).ConfigureAwait(false);
@@ -121,7 +146,7 @@ namespace Marten.Services
             return JsonSerializer.Serialize(document, _withTypes);
         }
 
-        public ValueCasting ValueCasting { get; } = ValueCasting.Strict;
+        public ValueCasting ValueCasting => ValueCasting.Strict;
 
         /// <inheritdoc />
         public EnumStorage EnumStorage

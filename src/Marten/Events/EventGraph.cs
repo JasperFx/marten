@@ -9,6 +9,7 @@ using Marten.Events.Projections;
 using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
+using Marten.Services.Json;
 using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
@@ -129,6 +130,13 @@ namespace Marten.Events
             var eventMapping = EventMappingFor(eventType);
             eventMapping.EventTypeName = eventTypeName;
         }
+
+        public EventUpcaster Upcast<TEvent>(string eventTypeName) where TEvent : class
+        {
+            MapEventType(typeof(TEvent), eventTypeName);
+            return new EventUpcaster(eventTypeName, Options.JsonTransformations);
+        }
+
 
         /// <summary>
         ///     Override the database schema name for event related tables. By default this

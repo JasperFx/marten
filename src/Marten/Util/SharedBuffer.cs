@@ -29,5 +29,10 @@ namespace Marten.Util
         {
             return self._buffer;
         }
+
+        public static implicit operator ReadOnlySequence<byte>(SharedBuffer self)
+        {
+            return new ReadOnlySequence<byte>(self._buffer);
+        }
     }
 }
