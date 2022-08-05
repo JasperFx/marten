@@ -122,15 +122,23 @@ namespace Marten.Events
             types.Each(AddEventType);
         }
 
-        public EventJsonTransformation MapEventType<TEvent>(string eventTypeName) where TEvent : class =>
-            MapEventType(typeof(TEvent), eventTypeName);
+        public void MapEventType<TEvent>(
+            string eventTypeName,
+            JsonTransformation jsonTransformation = null
+        ) where TEvent : class =>
+            MapEventType(typeof(TEvent), eventTypeName, jsonTransformation);
 
-        public EventJsonTransformation MapEventType(Type eventType, string eventTypeName)
+        public void MapEventType(
+            Type eventType,
+            string eventTypeName,
+            JsonTransformation jsonTransformation = null
+        )
         {
             var eventMapping = EventMappingFor(eventType);
             eventMapping.EventTypeName = eventTypeName;
 
-            return new EventJsonTransformation(eventTypeName, eventType, Options.JsonTransformations);
+            if (jsonTransformation == null)
+                Options.JsonTransformations.Register(eventType, jsonTransformation);
         }
 
 
