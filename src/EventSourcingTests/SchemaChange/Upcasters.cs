@@ -51,20 +51,19 @@ namespace EventSourcingTests.SchemaChange.Upcasters
     {
         public static void WithClrTypes()
         {
-            #region ssample_upcast_event_with_systemtextjson_with_clr_types
+            #region sample_upcast_event_with_systemtextjson_with_clr_types
 
             var options = new StoreOptions();
             options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
 
             options.EventGraph
                 .MapEventType<ShoppingCartInitializedWithStatus>("shopping_cart_opened",
-                    Upcast<OldEventNamespace.ShoppingCartOpened, ShoppingCartInitializedWithStatus>(
-                        oldEvent =>
-                            new ShoppingCartInitializedWithStatus(
-                                oldEvent.ShoppingCartId,
-                                new Client(oldEvent.ClientId),
-                                ShoppingCartStatus.Opened
-                            )
+                    Upcast((OldEventNamespace.ShoppingCartOpened oldEvent) =>
+                        new ShoppingCartInitializedWithStatus(
+                            oldEvent.ShoppingCartId,
+                            new Client(oldEvent.ClientId),
+                            ShoppingCartStatus.Opened
+                        )
                     )
                 );
 
@@ -124,59 +123,23 @@ namespace EventSourcingTests.SchemaChange.Upcasters
     }
 
     // Events in old namespace `Old`
-    namespace Old
+    namespace OldEventNamespace
     {
-        public class TaskCreated
+        public class ShoppingCart: AggregateBase
         {
-            public Guid TaskId { get; }
-            public string Description { get; }
+            public Guid ClientId { get; private set; }
 
-            public TaskCreated(Guid taskId, string description)
+            public ShoppingCart(Guid id, Guid clientId)
             {
-                TaskId = taskId;
-                Description = description;
-            }
-        }
-
-        public class TaskDescriptionUpdated
-        {
-            public string Description { get; }
-
-            public TaskDescriptionUpdated(string description)
-            {
-                Description = description;
-            }
-        }
-
-        public class Task: AggregateBase
-        {
-            public string Description { get; private set; }
-
-            private Task() { }
-
-            public Task(Guid id, string description)
-            {
-                var @event = new TaskCreated(id, description);
+                var @event = new ShoppingCartOpened(id, clientId);
                 EnqueueEvent(@event);
                 Apply(@event);
             }
 
-            public void UpdateDescription(string description)
+            public void Apply(ShoppingCartOpened @event)
             {
-                var @event = new TaskDescriptionUpdated(description);
-                EnqueueEvent(@event);
-                Apply(@event);
-            }
-
-            public void Apply(TaskCreated @event)
-            {
-                Id = @event.TaskId;
-                Description = @event.Description;
-            }
-
-            public void Apply(TaskDescriptionUpdated @event)
-            {
-                Description = @event.Description;
+                Id = @event.ShoppingCartId;
+                ClientId = @event.ClientId;
             }
         }
     }
@@ -184,60 +147,25 @@ namespace EventSourcingTests.SchemaChange.Upcasters
     // Events in new namespace `New`
     namespace New
     {
-        public class TaskCreated
+        public class ShoppingCart: AggregateBase
         {
-            public Guid TaskId { get; }
-            public string Description { get; }
+            public Client Client { get; private set; }
+            public ShoppingCartStatus Status { get; private set; }
 
-            public TaskCreated(Guid taskId, string description)
+            private ShoppingCart() { }
+
+            public ShoppingCart(Guid id, Client client, ShoppingCartStatus status)
             {
-                TaskId = taskId;
-                Description = description;
-            }
-        }
-
-        // Type name has changed - Event will be stored with `TaskDescriptionChanged`
-        public class TaskDescriptionChanged
-        {
-            public Guid TaskId { get; }
-            public string Description { get; }
-
-            public TaskDescriptionChanged(string description)
-            {
-                Description = description;
-            }
-        }
-
-
-        public class Task: AggregateBase
-        {
-            public string Description { get; private set; }
-
-            private Task() { }
-
-            public Task(Guid id, string description)
-            {
-                var @event = new TaskCreated(id, description);
+                var @event = new ShoppingCartInitializedWithStatus(id, client, status);
                 EnqueueEvent(@event);
                 Apply(@event);
             }
 
-            public void UpdateDescription(string description)
+            public void Apply(ShoppingCartInitializedWithStatus @event)
             {
-                var @event = new TaskDescriptionChanged(description);
-                EnqueueEvent(@event);
-                Apply(@event);
-            }
-
-            public void Apply(TaskCreated @event)
-            {
-                Id = @event.TaskId;
-                Description = @event.Description;
-            }
-
-            public void Apply(TaskDescriptionChanged @event)
-            {
-                Description = @event.Description;
+                Id = @event.ShoppingCartId;
+                Client = @event.Client;
+                Status = @event.Status;
             }
         }
     }
@@ -249,13 +177,13 @@ namespace EventSourcingTests.SchemaChange.Upcasters
         {
             // test events data
             var taskId = Guid.NewGuid();
+            var clientId = Guid.NewGuid();
 
-            var task = new Old.Task(taskId, "Initial Description");
-            task.UpdateDescription("updated description");
+            var task = new OldEventNamespace.ShoppingCart(taskId, clientId);
 
             await theStore.EnsureStorageExistsAsync(typeof(StreamAction));
 
-            using (var session = (DocumentSessionBase)theStore.OpenSession())
+            await using (var session = (DocumentSessionBase)theStore.OpenSession())
             {
                 session.Events.Append(taskId, task.DequeueEvents());
                 await session.SaveChangesAsync();
@@ -263,21 +191,26 @@ namespace EventSourcingTests.SchemaChange.Upcasters
 
             using (var store = SeparateStore(_ =>
                    {
-                       // Add new Event types, if type names won't change then the same type name will be generated
-                       // and we don't need additional config
-                       _.Events.AddEventTypes(new[] { typeof(New.TaskCreated), typeof(New.TaskDescriptionChanged) });
-
                        // When type name has changed we need to define custom mapping
-                       _.EventGraph.EventMappingFor<New.TaskDescriptionChanged>()
-                           .EventTypeName = "task_description_updated";
+                       _.Events.MapEventType<ShoppingCartInitializedWithStatus>(
+                           "task_description_updated",
+                           Upcast((OldEventNamespace.ShoppingCartOpened oldEvent) =>
+                               new ShoppingCartInitializedWithStatus(
+                                   oldEvent.ShoppingCartId,
+                                   new Client(oldEvent.ClientId),
+                                   ShoppingCartStatus.Opened
+                               )
+                           )
+                       );
                    }))
             {
-                using (var session = store.OpenSession())
+                await using (var session = store.OpenSession())
                 {
-                    var taskNew = await session.Events.AggregateStreamAsync<New.Task>(taskId);
+                    var taskNew = await session.Events.AggregateStreamAsync<New.ShoppingCart>(taskId);
 
                     taskNew.Id.ShouldBe(taskId);
-                    taskNew.Description.ShouldBe(task.Description);
+                    taskNew.Client.ShouldNotBeNull();
+                    taskNew.Client.Id.ShouldBe(task.ClientId);
                 }
             }
         }

@@ -22,6 +22,7 @@ using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Services.Json;
 using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
@@ -65,7 +66,6 @@ namespace Marten.Events
                 filter = filter.CombineAnd(CurrentTenantFilter.Instance);
             }
 
-
             _defaultWhereFragment = filter;
         }
 
@@ -73,6 +73,7 @@ namespace Marten.Events
 
         public string DotNetTypeName { get; set; }
 
+        public JsonTransformation? Transformation { get; set; }
 
         IDocumentMapping IDocumentMapping.Root => this;
         public Type DocumentType { get; }
