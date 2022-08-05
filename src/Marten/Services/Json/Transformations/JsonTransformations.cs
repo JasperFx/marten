@@ -8,71 +8,82 @@ using Weasel.Core;
 
 namespace Marten.Services.Json
 {
+    public class JsonTransformation
+    {
+        public Func<ISerializer, Stream, object> TransformStream { get; }
+        public Func<ISerializer, DbDataReader, int, object> TransformTransformDbDataReader { get; }
+        public Func<ISerializer, Stream, CancellationToken, Task<object>> TransformStreamAsync { get; }
+        public Func<ISerializer, DbDataReader, int, CancellationToken, Task<object>> TransformDbDataReaderAsync { get; }
+
+        public JsonTransformation(
+            Func<ISerializer, Stream, object> transformStream,
+            Func<ISerializer, DbDataReader, int, object> transformDbDataReader,
+            Func<ISerializer, Stream, CancellationToken, Task<object>>? transformStreamAsync = null,
+            Func<ISerializer, DbDataReader, int, CancellationToken, Task<object>>? transformDbDataReaderAsync = null
+        )
+        {
+            TransformStream = transformStream;
+            TransformTransformDbDataReader = transformDbDataReader;
+            TransformStreamAsync =
+                transformStreamAsync ??
+                ((serializer, stream, _) => Task.FromResult(TransformStream(serializer, stream)));
+            TransformDbDataReaderAsync =
+                transformDbDataReaderAsync ?? ((serializer, reader, index, _) =>
+                    Task.FromResult(TransformTransformDbDataReader(serializer, reader, index)));
+        }
+    }
+
     public class JsonTransformations
     {
-        private readonly Cache<Type, Func<ISerializer, Stream, object>> _streamTransformations = new();
-        private readonly Cache<Type, Func<ISerializer, Stream, CancellationToken, Task<object>>> _streamAsyncTransformations = new();
-
-        private readonly Cache<Type, Func<ISerializer, DbDataReader, int, object>> _dbDataReaderTransformations = new();
-        private readonly Cache<Type, Func<ISerializer, DbDataReader, int, CancellationToken, Task<object>>>
-            _dbDataReaderAsyncTransformations = new();
+        private readonly Cache<Type, JsonTransformation> _transformations = new();
 
         public bool TryTransform(ISerializer serializer, Type type, Stream stream, out object? result)
         {
-            if (!_streamTransformations.TryFind(type, out var transform))
+            if (!_transformations.TryFind(type, out var transform))
             {
                 result = null;
                 return false;
             }
 
-            result = transform(serializer, stream);
+            result = transform.TransformStream(serializer, stream);
             return true;
         }
 
-        public async Task<(bool, object?)> TryTransformAsync(ISerializer serializer, Type type, Stream stream, CancellationToken ct)
-        {
-            return _streamAsyncTransformations.TryFind(type, out var transform)
-                ? (true, await transform(serializer, stream, ct).ConfigureAwait(false))
-                : (false, null);
-        }
-
-        public bool TryTransform(ISerializer serializer, Type type, DbDataReader dbDataReader, int index, out object? result)
-        {
-            if (!_dbDataReaderTransformations.TryFind(type, out var transform))
-            {
-                result = null;
-                return false;
-            }
-
-            result = transform(serializer, dbDataReader, index);
-            return true;
-        }
-
-        public async Task<(bool, object?)> TryTransformAsync(ISerializer serializer, Type type, DbDataReader dbDataReader, int index,
+        public async Task<(bool, object?)> TryTransformAsync(ISerializer serializer, Type type, Stream stream,
             CancellationToken ct)
         {
-            return _dbDataReaderAsyncTransformations.TryFind(type, out var transform)
-                ? (true, await transform(serializer, dbDataReader, index, ct).ConfigureAwait(false))
+            return _transformations.TryFind(type, out var transform)
+                ? (true, await transform.TransformStreamAsync(serializer, stream, ct).ConfigureAwait(false))
                 : (false, null);
         }
 
-        public JsonTransformations Register(
-            Type type,
-            Func<ISerializer, Stream, object> transformStream,
-            Func<ISerializer, DbDataReader, int, object> transformDbDataReader)
+        public bool TryTransform(ISerializer serializer, Type type, DbDataReader dbDataReader, int index,
+            out object? result)
         {
-            _streamTransformations.Fill(type, transformStream);
-            _dbDataReaderTransformations.Fill(type, transformDbDataReader);
-            return this;
+            if (!_transformations.TryFind(type, out var transform))
+            {
+                result = null;
+                return false;
+            }
+
+            result = transform.TransformTransformDbDataReader(serializer, dbDataReader, index);
+            return true;
         }
 
-        public JsonTransformations Register(
-            Type type,
-            Func<ISerializer, Stream, CancellationToken, Task<object>> transformStream,
-            Func<ISerializer, DbDataReader, int, CancellationToken, Task<object>> transformDbDataReader)
+        public async Task<(bool, object?)> TryTransformAsync(ISerializer serializer, Type type,
+            DbDataReader dbDataReader, int index,
+            CancellationToken ct)
         {
-            _streamAsyncTransformations.Fill(type, transformStream);
-            _dbDataReaderAsyncTransformations.Fill(type, transformDbDataReader);
+            return _transformations.TryFind(type, out var transform)
+                ? (true,
+                    await transform.TransformDbDataReaderAsync(serializer, dbDataReader, index, ct)
+                        .ConfigureAwait(false))
+                : (false, null);
+        }
+
+        public JsonTransformations Register(Type type, JsonTransformation transformation)
+        {
+            _transformations.Fill(type, transformation);
             return this;
         }
     }
@@ -132,17 +143,20 @@ namespace Marten.Services.Json
         public async ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index, CancellationToken ct = default)
         {
             var (wasTransformed, result) =
-                await _jsonTransformations.TryTransformAsync(_serializer, typeof(T), reader, index, ct).ConfigureAwait(false);
+                await _jsonTransformations.TryTransformAsync(_serializer, typeof(T), reader, index, ct)
+                    .ConfigureAwait(false);
 
             return wasTransformed
                 ? (T)result
                 : await _serializer.FromJsonAsync<T>(reader, index, ct).ConfigureAwait(false);
         }
 
-        public async ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index, CancellationToken ct = default)
+        public async ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index,
+            CancellationToken ct = default)
         {
             var (wasTransformed, result) =
-                await _jsonTransformations.TryTransformAsync(_serializer, type, reader, index, ct).ConfigureAwait(false);
+                await _jsonTransformations.TryTransformAsync(_serializer, type, reader, index, ct)
+                    .ConfigureAwait(false);
 
             return wasTransformed
                 ? result

@@ -1,3 +1,4 @@
+#if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,12 +7,12 @@ using Marten;
 using Marten.Events;
 using Marten.Internal.Sessions;
 using Marten.Services.Json;
-using Marten.Services.Json.SystemTextJson;
 using Marten.Testing;
 using Marten.Testing.Harness;
 using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
+using static Marten.Services.Json.SystemTextJson.Transformations;
 
 namespace EventSourcingTests.SchemaChange.Upcasters
 {
@@ -56,14 +57,15 @@ namespace EventSourcingTests.SchemaChange.Upcasters
             options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
 
             options.EventGraph
-                .MapEventType<ShoppingCartInitializedWithStatus>("shopping_cart_opened")
-                .Upcast<OldEventNamespace.ShoppingCartOpened, ShoppingCartInitializedWithStatus>(
-                    oldEvent =>
-                        new ShoppingCartInitializedWithStatus(
-                            oldEvent.ShoppingCartId,
-                            new Client(oldEvent.ClientId),
-                            ShoppingCartStatus.Opened
-                        )
+                .MapEventType<ShoppingCartInitializedWithStatus>("shopping_cart_opened",
+                    Upcast<OldEventNamespace.ShoppingCartOpened, ShoppingCartInitializedWithStatus>(
+                        oldEvent =>
+                            new ShoppingCartInitializedWithStatus(
+                                oldEvent.ShoppingCartId,
+                                new Client(oldEvent.ClientId),
+                                ShoppingCartStatus.Opened
+                            )
+                    )
                 );
 
             #endregion
@@ -77,19 +79,21 @@ namespace EventSourcingTests.SchemaChange.Upcasters
             options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
 
             options.EventGraph
-                .MapEventType<ShoppingCartInitializedWithStatus>("shopping_cart_opened")
-                .Upcast(oldEventJson =>
-                {
-                    var oldEvent = oldEventJson.RootElement;
+                .MapEventType<ShoppingCartInitializedWithStatus>(
+                    "shopping_cart_opened",
+                    Upcast(oldEventJson =>
+                    {
+                        var oldEvent = oldEventJson.RootElement;
 
-                    return new ShoppingCartInitializedWithStatus(
-                        oldEvent.GetProperty("ShoppingCartId").GetGuid(),
-                        new Client(
-                            oldEvent.GetProperty("ClientId").GetGuid()
-                        ),
-                        ShoppingCartStatus.Opened
-                    );
-                });
+                        return new ShoppingCartInitializedWithStatus(
+                            oldEvent.GetProperty("ShoppingCartId").GetGuid(),
+                            new Client(
+                                oldEvent.GetProperty("ClientId").GetGuid()
+                            ),
+                            ShoppingCartStatus.Opened
+                        );
+                    })
+                );
 
             var store = new DocumentStore(options);
 
@@ -279,3 +283,4 @@ namespace EventSourcingTests.SchemaChange.Upcasters
         }
     }
 }
+#endif

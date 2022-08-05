@@ -4,12 +4,12 @@ using Marten.Exceptions;
 
 namespace Marten.Services.Json.SystemTextJson
 {
-    public static class SystemTextJsonEventTransformations
+    public static class Transformations
     {
-        public static void Upcast(this EventJsonTransformation jsonTransformation, Func<JsonDocument, TEvent> transform)
+        public static JsonTransformation Upcast<TEvent>(Func<JsonDocument, TEvent> transform)
             where TEvent : notnull
         {
-            jsonTransformation.Upcast(
+            return new JsonTransformation(
                 (serializer, stream) =>
                 {
                     if (serializer is not SystemTextJsonSerializer systemTextJsonSerializer)
@@ -34,11 +34,11 @@ namespace Marten.Services.Json.SystemTextJson
             );
         }
 
-        public static void Upcast<TOldEvent, TEvent>(this EventJsonTransformation jsonTransformation, Func<TOldEvent, TEvent> transform)
+        public static JsonTransformation Upcast<TOldEvent, TEvent>(Func<TOldEvent, TEvent> transform)
             where TOldEvent : notnull
             where TEvent : notnull
         {
-            jsonTransformation.Upcast(
+            return new JsonTransformation(
                 (serializer, stream) =>
                 {
                     if (serializer is not SystemTextJsonSerializer systemTextJsonSerializer)
