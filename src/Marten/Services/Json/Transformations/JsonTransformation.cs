@@ -22,4 +22,30 @@ namespace Marten.Services.Json.Transformations
                     Task.FromResult(FromDbDataReader(serializer, reader, index)));
         }
     }
+
+    public static class Transformations
+    {
+        public static JsonTransformation Upcast<TOldEvent, TEvent>(Func<TOldEvent, TEvent> transform)
+            where TOldEvent : notnull
+            where TEvent : notnull
+        {
+            return new JsonTransformation(FromDbDataReader(transform), FromDbDataReaderAsync(transform));
+        }
+
+        public static Func<ISerializer, DbDataReader, int, CancellationToken, Task<object>>
+            FromDbDataReaderAsync<TOldEvent, TEvent>(Func<TOldEvent, TEvent> transform)
+            where TOldEvent : notnull where TEvent : notnull
+        {
+            return async (serializer, dbDataReader, index, ct) =>
+                transform(await serializer.FromJsonAsync<TOldEvent>(dbDataReader, index, ct)
+                    .ConfigureAwait(false));
+        }
+
+        public static Func<ISerializer, DbDataReader, int, object> FromDbDataReader<TOldEvent, TEvent>(
+            Func<TOldEvent, TEvent> transform)
+            where TOldEvent : notnull where TEvent : notnull
+        {
+            return (serializer, dbDataReader, index) => transform(serializer.FromJson<TOldEvent>(dbDataReader, index));
+        }
+    }
 }
