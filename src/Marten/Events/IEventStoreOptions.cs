@@ -46,12 +46,8 @@ namespace Marten.Events
         /// See more in docs: https://martendb.io/events/versioning.html#event-type-name-migration
         /// </summary>
         /// <param name="eventTypeName">Event type name</param>
-        /// <param name="jsonTransformation">Event payload transformation</param>
         /// <typeparam name="TEvent">Mapped CLR event type</typeparam>
-        void MapEventType<TEvent>(
-            string eventTypeName,
-            JsonTransformation? jsonTransformation = null
-        ) where TEvent : class;
+        void MapEventType<TEvent>(string eventTypeName) where TEvent : class;
 
         /// <summary>
         /// Maps CLR event type as particular event type name. This is useful for event type migration.
@@ -59,11 +55,34 @@ namespace Marten.Events
         /// </summary>
         /// <param name="eventType">Event type name</param>
         /// <param name="eventTypeName">Mapped CLR event type</param>
+        void MapEventType(Type eventType, string eventTypeName);
+
+
+        /// <summary>
+        /// Maps CLR event type as particular event type name allowing to provide custom transformation.
+        /// This is useful for event type migration.
+        /// See more in docs: https://martendb.io/events/versioning.html#event-type-name-migration
+        /// </summary>
+        /// <param name="eventTypeName">Event type name</param>
         /// <param name="jsonTransformation">Event payload transformation</param>
-        void MapEventType(
+        /// <typeparam name="TEvent">Mapped CLR event type</typeparam>
+        IEventStoreOptions Upcast<TEvent>(
+            string eventTypeName,
+            JsonTransformation jsonTransformation
+        ) where TEvent : class;
+
+        /// <summary>
+        /// Maps CLR event type as particular event type name allowing to provide custom transformation.
+        /// This is useful for event type migration.
+        /// See more in docs: https://martendb.io/events/versioning.html#event-type-name-migration
+        /// </summary>
+        /// <param name="eventType">Event type name</param>
+        /// <param name="eventTypeName">Mapped CLR event type</param>
+        /// <param name="jsonTransformation">Event payload transformation</param>
+        IEventStoreOptions Upcast(
             Type eventType,
             string eventTypeName,
-            JsonTransformation? jsonTransformation = null
+            JsonTransformation jsonTransformation
         );
 
         /// <summary>

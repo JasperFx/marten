@@ -8,12 +8,11 @@ using Marten;
 using Marten.Events;
 using Marten.Internal.Sessions;
 using Marten.Services.Json;
-using Marten.Services.Json.Transformations.SystemTextJson;
 using Marten.Testing;
 using Marten.Testing.Harness;
+using Newtonsoft.Json.Linq;
 using Xunit;
 using Shouldly;
-using static Marten.Services.Json.Transformations.SystemTextJson.Transformations;
 
 namespace EventSourcingTests.SchemaChange
 {
@@ -25,7 +24,6 @@ namespace EventSourcingTests.SchemaChange
     );
 
     #endregion
-
 
     #region sample_upcasters_new_event_type
 
@@ -50,118 +48,239 @@ namespace EventSourcingTests.SchemaChange
 
     #endregion
 
-    public class ShoppingCartOpenedUpcasterWithClrTypes:
-        Upcaster<ShoppingCartOpened, ShoppingCartInitializedWithStatus>
+    namespace SystemTextJson
     {
-        protected override ShoppingCartInitializedWithStatus Upcast(ShoppingCartOpened oldEvent) =>
-            new ShoppingCartInitializedWithStatus(
-                oldEvent.ShoppingCartId,
-                new Client(oldEvent.ClientId),
-                ShoppingCartStatus.Opened
-            );
-    }
+        using Marten.Services.Json.Transformations.SystemTextJson;
+        using static Marten.Services.Json.Transformations.SystemTextJson.Transformations;
 
-    public class ShoppingCartOpenedUpcasterWithClrTypesAndExplicitEventTypeName:
-        Upcaster<ShoppingCartOpened, ShoppingCartInitializedWithStatus>
-    {
-        public override string EventTypeName => "shopping_cart_opened";
-        
-        protected override ShoppingCartInitializedWithStatus Upcast(ShoppingCartOpened oldEvent) =>
-            new ShoppingCartInitializedWithStatus(
-                oldEvent.ShoppingCartId,
-                new Client(oldEvent.ClientId),
-                ShoppingCartStatus.Opened
-            );
-    }
-
-    public class ShoppingCartOpenedUpcasterWithSystemTextJsonDocument:
-        Upcaster<ShoppingCartInitializedWithStatus>
-    {
-        public override string EventTypeName => "shopping_cart_opened";
-
-        protected override ShoppingCartInitializedWithStatus Upcast(JsonDocument oldEventJson)
+        public class ShoppingCartOpenedUpcasterWithClrTypes:
+            Upcaster<ShoppingCartOpened, ShoppingCartInitializedWithStatus>
         {
-            var oldEvent = oldEventJson.RootElement;
-
-            return new ShoppingCartInitializedWithStatus(
-                oldEvent.GetProperty("ShoppingCartId").GetGuid(),
-                new Client(
-                    oldEvent.GetProperty("ClientId").GetGuid()
-                ),
-                ShoppingCartStatus.Opened
-            );
+            protected override ShoppingCartInitializedWithStatus Upcast(ShoppingCartOpened oldEvent) =>
+                new ShoppingCartInitializedWithStatus(
+                    oldEvent.ShoppingCartId,
+                    new Client(oldEvent.ClientId),
+                    ShoppingCartStatus.Opened
+                );
         }
-    }
 
-    public static class SampleEventsUpcasting
-    {
-        public static void LambdaWithClrTypes(StoreOptions options)
+        public class ShoppingCartOpenedUpcasterWithClrTypesAndExplicitEventTypeName:
+            Upcaster<ShoppingCartOpened, ShoppingCartInitializedWithStatus>
         {
-            #region sample_upcast_lambda_event_with_systemtextjson_with_clr_types
+            public override string EventTypeName => "shopping_cart_opened";
 
-            options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+            protected override ShoppingCartInitializedWithStatus Upcast(ShoppingCartOpened oldEvent) =>
+                new ShoppingCartInitializedWithStatus(
+                    oldEvent.ShoppingCartId,
+                    new Client(oldEvent.ClientId),
+                    ShoppingCartStatus.Opened
+                );
+        }
 
-            options.EventGraph
-                .MapEventType<ShoppingCartInitializedWithStatus>(
-                    "shopping_cart_opened",
-                    Upcast((ShoppingCartOpened oldEvent) =>
-                        new ShoppingCartInitializedWithStatus(
-                            oldEvent.ShoppingCartId,
-                            new Client(oldEvent.ClientId),
-                            ShoppingCartStatus.Opened
+        public class ShoppingCartOpenedUpcasterWithSystemTextJsonDocument:
+            Upcaster<ShoppingCartInitializedWithStatus>
+        {
+            public override string EventTypeName => "shopping_cart_opened";
+
+            protected override ShoppingCartInitializedWithStatus Upcast(JsonDocument oldEventJson)
+            {
+                var oldEvent = oldEventJson.RootElement;
+
+                return new ShoppingCartInitializedWithStatus(
+                    oldEvent.GetProperty("ShoppingCartId").GetGuid(),
+                    new Client(
+                        oldEvent.GetProperty("ClientId").GetGuid()
+                    ),
+                    ShoppingCartStatus.Opened
+                );
+            }
+        }
+
+        public static class SampleEventsUpcasting
+        {
+            public static void LambdaWithClrTypes(StoreOptions options)
+            {
+                #region sample_upcast_lambda_event_with_systemtextjson_with_clr_types
+
+                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+
+                options.Events
+                    .Upcast<ShoppingCartInitializedWithStatus>(
+                        "shopping_cart_opened",
+                        Upcast((ShoppingCartOpened oldEvent) =>
+                            new ShoppingCartInitializedWithStatus(
+                                oldEvent.ShoppingCartId,
+                                new Client(oldEvent.ClientId),
+                                ShoppingCartStatus.Opened
+                            )
                         )
-                    )
+                    );
+
+                #endregion
+            }
+
+            public static void LambdaWithSystemTextJsonJsonDocument(StoreOptions options)
+            {
+                #region sample_upcast_lambda_event_with_systemtextjson_json_document
+
+                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+
+                options.Events
+                    .Upcast<ShoppingCartInitializedWithStatus>(
+                        "shopping_cart_opened",
+                        Upcast(oldEventJson =>
+                        {
+                            var oldEvent = oldEventJson.RootElement;
+
+                            return new ShoppingCartInitializedWithStatus(
+                                oldEvent.GetProperty("ShoppingCartId").GetGuid(),
+                                new Client(
+                                    oldEvent.GetProperty("ClientId").GetGuid()
+                                ),
+                                ShoppingCartStatus.Opened
+                            );
+                        })
+                    );
+
+                #endregion
+            }
+
+            public static void ClassWithClrTypes(StoreOptions options)
+            {
+                #region sample_upcast_class_event_with_systemtextjson_with_clr_types
+
+                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+
+                options.Events.Upcast<ShoppingCartOpenedUpcasterWithClrTypes>();
+
+                #endregion
+            }
+
+            public static void ClassWithSystemTextJsonJsonDocument(StoreOptions options)
+            {
+                #region sample_upcast_class_event_with_systemtextjson_json_document
+
+                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+
+                options.Events.Upcast<ShoppingCartOpenedUpcasterWithSystemTextJsonDocument>();
+
+                #endregion
+            }
+        }
+    }
+
+
+    namespace JsonNet
+    {
+        using Marten.Services.Json.Transformations.JsonNet;
+        using static Marten.Services.Json.Transformations.JsonNet.Transformations;
+
+        public class ShoppingCartOpenedUpcasterWithClrTypes:
+            Upcaster<ShoppingCartOpened, ShoppingCartInitializedWithStatus>
+        {
+            protected override ShoppingCartInitializedWithStatus Upcast(ShoppingCartOpened oldEvent) =>
+                new ShoppingCartInitializedWithStatus(
+                    oldEvent.ShoppingCartId,
+                    new Client(oldEvent.ClientId),
+                    ShoppingCartStatus.Opened
                 );
-
-            #endregion
         }
 
-        public static void LambdaWithSystemTextJsonJsonDocument(StoreOptions options)
+        public class ShoppingCartOpenedUpcasterWithClrTypesAndExplicitEventTypeName:
+            Upcaster<ShoppingCartOpened, ShoppingCartInitializedWithStatus>
         {
-            #region sample_upcast_lambda_event_with_systemtextjson_json_document
+            public override string EventTypeName => "shopping_cart_opened";
 
-            options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
-
-            options.EventGraph
-                .MapEventType<ShoppingCartInitializedWithStatus>(
-                    "shopping_cart_opened",
-                    Upcast(oldEventJson =>
-                    {
-                        var oldEvent = oldEventJson.RootElement;
-
-                        return new ShoppingCartInitializedWithStatus(
-                            oldEvent.GetProperty("ShoppingCartId").GetGuid(),
-                            new Client(
-                                oldEvent.GetProperty("ClientId").GetGuid()
-                            ),
-                            ShoppingCartStatus.Opened
-                        );
-                    })
+            protected override ShoppingCartInitializedWithStatus Upcast(ShoppingCartOpened oldEvent) =>
+                new ShoppingCartInitializedWithStatus(
+                    oldEvent.ShoppingCartId,
+                    new Client(oldEvent.ClientId),
+                    ShoppingCartStatus.Opened
                 );
-
-            #endregion
         }
 
-        public static void ClassWithClrTypes(StoreOptions options)
+        public class ShoppingCartOpenedUpcasterWithSystemTextJsonDocument:
+            Upcaster<ShoppingCartInitializedWithStatus>
         {
-            #region sample_upcast_class_event_with_systemtextjson_with_clr_types
+            public override string EventTypeName => "shopping_cart_opened";
 
-            options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
-
-            options.EventGraph.Upcast<ShoppingCartOpenedUpcasterWithClrTypes>();
-
-            #endregion
+            protected override ShoppingCartInitializedWithStatus Upcast(JObject oldEvent) =>
+                new ShoppingCartInitializedWithStatus(
+                    (Guid)oldEvent["ShoppingCartId"]!,
+                    new Client(
+                        (Guid)oldEvent["ClientId"]!
+                    ),
+                    ShoppingCartStatus.Opened
+                );
         }
 
-        public static void ClassWithSystemTextJsonJsonDocument(StoreOptions options)
+        public static class SampleEventsUpcasting
         {
-            #region sample_upcast_class_event_with_systemtextjson_json_document
+            public static void LambdaWithClrTypes(StoreOptions options)
+            {
+                #region sample_upcast_lambda_event_with_systemtextjson_with_clr_types
 
-            options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
 
-            options.EventGraph.Upcast<ShoppingCartOpenedUpcasterWithSystemTextJsonDocument>();
+                options.Events
+                    .Upcast<ShoppingCartInitializedWithStatus>(
+                        "shopping_cart_opened",
+                        Upcast((ShoppingCartOpened oldEvent) =>
+                            new ShoppingCartInitializedWithStatus(
+                                oldEvent.ShoppingCartId,
+                                new Client(oldEvent.ClientId),
+                                ShoppingCartStatus.Opened
+                            )
+                        )
+                    );
 
-            #endregion
+                #endregion
+            }
+
+            public static void LambdaWithJsonNetJObject(StoreOptions options)
+            {
+                #region sample_upcast_lambda_event_with_systemtextjson_json_document
+
+                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+
+                options.Events
+                    .Upcast<ShoppingCartInitializedWithStatus>(
+                        "shopping_cart_opened",
+                        Upcast(oldEvent =>
+                            new ShoppingCartInitializedWithStatus(
+                                (Guid)oldEvent["ShoppingCartId"]!,
+                                new Client(
+                                    (Guid)oldEvent["ClientId"]!
+                                ),
+                                ShoppingCartStatus.Opened
+                            )
+                        )
+                    );
+
+                #endregion
+            }
+
+            public static void ClassWithClrTypes(StoreOptions options)
+            {
+                #region sample_upcast_class_event_with_systemtextjson_with_clr_types
+
+                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+
+                options.Events.Upcast<ShoppingCartOpenedUpcasterWithClrTypes>();
+
+                #endregion
+            }
+
+            public static void ClassWithJsonNetJObject(StoreOptions options)
+            {
+                #region sample_upcast_class_event_with_systemtextjson_json_document
+
+                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+
+                options.Events.Upcast<ShoppingCartOpenedUpcasterWithSystemTextJsonDocument>();
+
+                #endregion
+            }
         }
     }
 
@@ -246,13 +365,17 @@ namespace EventSourcingTests.SchemaChange
             }
         }
 
-        public static IEnumerable<Action<StoreOptions>> UpcastersConfiguration =>
-            new List<Action<StoreOptions>>
+        public static TheoryData<Action<StoreOptions>> UpcastersConfiguration =>
+            new()
             {
-                SampleEventsUpcasting.LambdaWithClrTypes,
-                SampleEventsUpcasting.LambdaWithSystemTextJsonJsonDocument,
-                SampleEventsUpcasting.ClassWithClrTypes,
-                SampleEventsUpcasting.ClassWithSystemTextJsonJsonDocument
+                JsonNet.SampleEventsUpcasting.LambdaWithClrTypes,
+                JsonNet.SampleEventsUpcasting.LambdaWithJsonNetJObject,
+                JsonNet.SampleEventsUpcasting.ClassWithClrTypes,
+                JsonNet.SampleEventsUpcasting.ClassWithJsonNetJObject,
+                SystemTextJson.SampleEventsUpcasting.LambdaWithClrTypes,
+                SystemTextJson.SampleEventsUpcasting.LambdaWithSystemTextJsonJsonDocument,
+                SystemTextJson.SampleEventsUpcasting.ClassWithClrTypes,
+                SystemTextJson.SampleEventsUpcasting.ClassWithSystemTextJsonJsonDocument
             };
     }
 }
