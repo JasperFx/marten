@@ -6,7 +6,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 using LamarCodeGeneration;
 using Marten.Events.Archiving;
 using Marten.Internal;
@@ -22,7 +21,7 @@ using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Services;
-using Marten.Services.Json;
+using Marten.Services.Json.Transformations;
 using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
@@ -53,7 +52,7 @@ namespace Marten.Events
             _parent = parent;
             DocumentType = eventType;
 
-            EventTypeName = eventType.IsGenericType ? eventType.ShortNameInCode() : DocumentType.Name.ToTableAlias();
+            EventTypeName = eventType.GetEventTypeName();
             IdMember = DocumentType.GetProperty(nameof(IEvent.Id));
 
             _inner = new DocumentMapping(eventType, parent.Options);
@@ -301,5 +300,11 @@ namespace Marten.Events
                 DotNetTypeName = DotNetTypeName
             };
         }
+    }
+
+    public static class EventMappingExtensions
+    {
+        public static string GetEventTypeName(this Type eventType) =>
+            eventType.IsGenericType ? eventType.ShortNameInCode() : eventType.Name.ToTableAlias();
     }
 }

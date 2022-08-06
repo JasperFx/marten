@@ -1,8 +1,9 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
-using Marten.Services.Json;
+using Marten.Services.Json.Transformations;
 using Marten.Storage;
-#nullable enable
 
 namespace Marten.Events
 {
@@ -50,7 +51,7 @@ namespace Marten.Events
         void MapEventType<TEvent>(
             string eventTypeName,
             JsonTransformation? jsonTransformation = null
-       ) where TEvent : class;
+        ) where TEvent : class;
 
         /// <summary>
         /// Maps CLR event type as particular event type name. This is useful for event type migration.
@@ -64,6 +65,24 @@ namespace Marten.Events
             string eventTypeName,
             JsonTransformation? jsonTransformation = null
         );
+
+        /// <summary>
+        /// Maps CLR event type as particular event type name allowing to provide custom transformation.
+        /// This is useful for event type migration.
+        /// See more in docs: https://martendb.io/events/versioning.html#event-type-name-migration
+        /// </summary>
+        /// <param name="upcaster">List of upcasters transforming event</param>
+        /// <returns>Store options allowing to continue mapping definition</returns>
+        IEventStoreOptions Upcast(params IEventUpcaster[] upcasters);
+
+        /// <summary>
+        /// Maps CLR event type as particular event type name allowing to provide custom transformation.
+        /// This is useful for event type migration.
+        /// See more in docs: https://martendb.io/events/versioning.html#event-type-name-migration
+        /// </summary>
+        /// <typeparam name="TUpcaster">Upcaster class type. It has to derive from IUpcaster and have default public constructor</typeparam>
+        /// <returns>Store options allowing to continue mapping definition</returns>
+        IEventStoreOptions Upcast<TUpcaster>() where TUpcaster: IEventUpcaster, new ();
 
         public MetadataConfig MetadataConfig { get; }
     }

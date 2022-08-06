@@ -4,17 +4,15 @@ using System.Linq;
 using Baseline;
 using Baseline.ImTools;
 using Marten.Events.Daemon;
-using Marten.Events.Operations;
 using Marten.Events.Projections;
 using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
-using Marten.Services.Json;
+using Marten.Services.Json.Transformations;
 using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
 using Weasel.Core;
-using Weasel.Postgresql;
 
 namespace Marten.Events
 {
@@ -139,6 +137,32 @@ namespace Marten.Events
             eventMapping.Transformation = jsonTransformation;
         }
 
+        public IEventStoreOptions Upcast(params IEventUpcaster[] upcasters)
+        {
+            foreach (var upcaster in upcasters)
+            {
+                MapEventType(
+                    upcaster.EventType,
+                    upcaster.EventTypeName,
+                    new JsonTransformation(upcaster.FromDbDataReader, upcaster.FromDbDataReaderAsync)
+                );
+            }
+
+            return this;
+        }
+
+        public IEventStoreOptions Upcast<TUpcaster>() where TUpcaster: IEventUpcaster, new ()
+        {
+            var upcaster = new TUpcaster();
+
+            MapEventType(
+                upcaster.EventType,
+                upcaster.EventTypeName,
+                new JsonTransformation(upcaster.FromDbDataReader, upcaster.FromDbDataReaderAsync)
+            );
+
+            return this;
+        }
 
         /// <summary>
         ///     Override the database schema name for event related tables. By default this
