@@ -79,8 +79,5 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
     </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Services\Json\Transformations\JsonNet" />
-    </ItemGroup>
     <Import Project="../../Analysis.Build.props" />
 </Project>

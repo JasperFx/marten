@@ -279,7 +279,7 @@ namespace Marten.Events
         private IEvent DeserializeEvent(EventMapping mapping, DbDataReader reader)
         {
             var data = mapping.Transformation != null?
-                mapping.Transformation.TransformDbDataReader(_serializer, reader, 0)
+                mapping.Transformation.FromDbDataReader(_serializer, reader, 0)
                 : _serializer.FromJson(mapping.DocumentType, reader, 0);
 
             return mapping.Wrap(data);
@@ -289,7 +289,7 @@ namespace Marten.Events
             CancellationToken token)
         {
             var data = mapping.Transformation != null ?
-                await mapping.Transformation.TransformDbDataReaderAsync(_serializer, reader, 0, token).ConfigureAwait(false)
+                await mapping.Transformation.FromDbDataReaderAsync(_serializer, reader, 0, token).ConfigureAwait(false)
                 : await _serializer.FromJsonAsync(mapping.DocumentType, reader, 0, token).ConfigureAwait(false);
 
             return mapping.Wrap(data);
