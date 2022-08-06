@@ -120,13 +120,22 @@ namespace Marten.Events
             types.Each(AddEventType);
         }
 
-        public void MapEventType<TEvent>(
+        public void MapEventType<TEvent>(string eventTypeName) where TEvent : class =>
+            MapEventType(typeof(TEvent), eventTypeName);
+
+        public void MapEventType(Type eventType, string eventTypeName)
+        {
+            var eventMapping = EventMappingFor(eventType);
+            eventMapping.EventTypeName = eventTypeName;
+        }
+
+        public IEventStoreOptions Upcast<TEvent>(
             string eventTypeName,
             JsonTransformation jsonTransformation = null
         ) where TEvent : class =>
-            MapEventType(typeof(TEvent), eventTypeName, jsonTransformation);
+            Upcast(typeof(TEvent), eventTypeName, jsonTransformation);
 
-        public void MapEventType(
+        public IEventStoreOptions Upcast(
             Type eventType,
             string eventTypeName,
             JsonTransformation jsonTransformation = null
@@ -135,13 +144,15 @@ namespace Marten.Events
             var eventMapping = EventMappingFor(eventType);
             eventMapping.EventTypeName = eventTypeName;
             eventMapping.Transformation = jsonTransformation;
+
+            return this;
         }
 
         public IEventStoreOptions Upcast(params IEventUpcaster[] upcasters)
         {
             foreach (var upcaster in upcasters)
             {
-                MapEventType(
+                Upcast(
                     upcaster.EventType,
                     upcaster.EventTypeName,
                     new JsonTransformation(upcaster.FromDbDataReader, upcaster.FromDbDataReaderAsync)
@@ -155,7 +166,7 @@ namespace Marten.Events
         {
             var upcaster = new TUpcaster();
 
-            MapEventType(
+            Upcast(
                 upcaster.EventType,
                 upcaster.EventTypeName,
                 new JsonTransformation(upcaster.FromDbDataReader, upcaster.FromDbDataReaderAsync)

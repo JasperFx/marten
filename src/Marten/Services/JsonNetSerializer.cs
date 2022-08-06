@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Buffers;
 using System.Data.Common;
@@ -9,10 +10,9 @@ using Marten.Services.Json;
 using Marten.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 using Weasel.Core;
 using ConstructorHandling = Newtonsoft.Json.ConstructorHandling;
-
-#nullable enable
 namespace Marten.Services
 {
     /// <summary>
@@ -93,11 +93,7 @@ namespace Marten.Services
 
         public T FromJson<T>(Stream stream)
         {
-            using var jsonReader = new JsonTextReader(stream.GetStreamReader())
-            {
-                ArrayPool = _jsonArrayPool,
-                CloseInput = false
-            };
+            using var jsonReader = GetJsonTextReader(stream);
 
             return _serializer.Deserialize<T>(jsonReader)!;
         }
@@ -105,13 +101,9 @@ namespace Marten.Services
         public T FromJson<T>(DbDataReader reader, int index)
         {
             using var textReader = reader.GetTextReader(index);
-            using var jsonReader = new JsonTextReader(textReader)
-            {
-                ArrayPool = _jsonArrayPool,
-                CloseInput = false
-            };
+            using var jsonReader = GetJsonTextReader(textReader);
 
-            return _serializer.Deserialize<T>(jsonReader);
+            return _serializer.Deserialize<T>(jsonReader)!;
         }
 
         public ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
@@ -126,25 +118,17 @@ namespace Marten.Services
 
         public object FromJson(Type type, Stream stream)
         {
-            using var jsonReader = new JsonTextReader(stream.GetStreamReader())
-            {
-                ArrayPool = _jsonArrayPool,
-                CloseInput = false
-            };
+            using var jsonReader = GetJsonTextReader(stream);
 
-            return _serializer.Deserialize(jsonReader, type);
+            return _serializer.Deserialize(jsonReader, type)!;
         }
 
         public object FromJson(Type type, DbDataReader reader, int index)
         {
             using var textReader = reader.GetTextReader(index);
-            using var jsonReader = new JsonTextReader(textReader)
-            {
-                ArrayPool = _jsonArrayPool,
-                CloseInput = false
-            };
+            using var jsonReader = GetJsonTextReader(textReader);
 
-            return _serializer.Deserialize(jsonReader, type);
+            return _serializer.Deserialize(jsonReader, type)!;
         }
 
         public ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
@@ -155,6 +139,20 @@ namespace Marten.Services
         public ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index, CancellationToken cancellationToken = default)
         {
             return new (FromJson(type, reader, index));
+        }
+
+        public JObject JObjectFromJson(Stream stream)
+        {
+            using var jsonReader = GetJsonTextReader(stream);
+
+            return JObject.Load(jsonReader);
+        }
+
+        public JObject JObjectFromJson(DbDataReader reader, int index)
+        {
+            using var textReader = reader.GetTextReader(index);
+            using var jsonReader = GetJsonTextReader(textReader);
+            return JObject.Load(jsonReader);
         }
 
         public string ToCleanJson(object? document)
@@ -266,6 +264,20 @@ namespace Marten.Services
             }
         }
 
-        public ValueCasting ValueCasting { get; } = ValueCasting.Relaxed;
+        public ValueCasting ValueCasting => ValueCasting.Relaxed;
+
+        private JsonTextReader GetJsonTextReader(Stream stream) =>
+            new JsonTextReader(stream.GetStreamReader())
+            {
+                ArrayPool = _jsonArrayPool,
+                CloseInput = false
+            };
+
+        private JsonTextReader GetJsonTextReader(TextReader textReader) =>
+            new JsonTextReader(textReader)
+            {
+                ArrayPool = _jsonArrayPool,
+                CloseInput = false
+            };
     }
 }
