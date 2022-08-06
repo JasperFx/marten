@@ -57,7 +57,6 @@ namespace Marten.Events
         /// <param name="eventTypeName">Mapped CLR event type</param>
         void MapEventType(Type eventType, string eventTypeName);
 
-
         /// <summary>
         /// Maps CLR event type as particular event type name allowing to provide custom transformation.
         /// This is useful for event type migration.
@@ -84,6 +83,34 @@ namespace Marten.Events
             string eventTypeName,
             JsonTransformation jsonTransformation
         );
+
+        /// <summary>
+        /// Maps CLR event type as particular event type name allowing to provide custom transformation.
+        /// This is useful for event type migration.
+        /// See more in docs: https://martendb.io/events/versioning.html#event-type-name-migration
+        /// </summary>
+        /// <param name="eventTypeName">Mapped CLR event type</param>
+        /// <param name="upcast">Event payload transformation</param>
+        /// <typeparam name="TOldEvent">Old event type</typeparam>
+        /// <typeparam name="TEvent">New event type</typeparam>
+        /// <returns></returns>
+        public IEventStoreOptions Upcast<TOldEvent, TEvent>(string eventTypeName, Func<TOldEvent, TEvent> upcast)
+            where TOldEvent : class
+            where TEvent : class;
+
+        /// <summary>
+        /// Maps CLR event type as particular event type name allowing to provide custom transformation.
+        /// This is useful for event type migration.
+        /// This implementation will take the event type name (by convention) based on the old event type.
+        /// See more in docs: https://martendb.io/events/versioning.html#event-type-name-migration
+        /// </summary>
+        /// <param name="upcast">Event payload transformation</param>
+        /// <typeparam name="TOldEvent">Old event type</typeparam>
+        /// <typeparam name="TEvent">New event type</typeparam>
+        /// <returns></returns>
+        public IEventStoreOptions Upcast<TOldEvent, TEvent>(Func<TOldEvent, TEvent> upcast)
+            where TOldEvent : class
+            where TEvent : class;
 
         /// <summary>
         /// Maps CLR event type as particular event type name allowing to provide custom transformation.

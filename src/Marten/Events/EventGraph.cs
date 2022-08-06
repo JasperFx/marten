@@ -148,6 +148,23 @@ namespace Marten.Events
             return this;
         }
 
+        public IEventStoreOptions Upcast<TOldEvent, TEvent>(
+            string eventTypeName,
+            Func<TOldEvent, TEvent> upcast
+        ) where TOldEvent : class where TEvent : class
+        {
+            var eventMapping = EventMappingFor<TEvent>();
+            eventMapping.EventTypeName = eventTypeName;
+            eventMapping.Transformation = Transformations.Upcast(upcast);
+
+            return this;
+        }
+
+        public IEventStoreOptions Upcast<TOldEvent, TEvent>(
+            Func<TOldEvent, TEvent> upcast
+        ) where TOldEvent : class where TEvent : class =>
+            Upcast(typeof(TOldEvent).GetEventTypeName(), upcast);
+
         public IEventStoreOptions Upcast(params IEventUpcaster[] upcasters)
         {
             foreach (var upcaster in upcasters)
@@ -162,7 +179,7 @@ namespace Marten.Events
             return this;
         }
 
-        public IEventStoreOptions Upcast<TUpcaster>() where TUpcaster: IEventUpcaster, new ()
+        public IEventStoreOptions Upcast<TUpcaster>() where TUpcaster : IEventUpcaster, new()
         {
             var upcaster = new TUpcaster();
 
