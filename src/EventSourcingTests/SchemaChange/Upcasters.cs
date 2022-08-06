@@ -93,24 +93,34 @@ namespace EventSourcingTests.SchemaChange
                 #region sample_upcast_event_lambda_with_clr_types
 
                 options.Events
-                    .Upcast<ShoppingCartInitializedWithStatus>(
-                        "shopping_cart_opened",
-                        Upcast((ShoppingCartOpened oldEvent) =>
+                    .Upcast<ShoppingCartOpened, ShoppingCartInitializedWithStatus>(
+                        oldEvent =>
                             new ShoppingCartInitializedWithStatus(
                                 oldEvent.ShoppingCartId,
                                 new Client(oldEvent.ClientId),
                                 ShoppingCartStatus.Opened
                             )
-                        )
                     );
 
                 #endregion
             }
 
-            public static void NewtonsoftLambdaWithClrTypes(StoreOptions options)
+            public static void LambdaWithClrTypesAndExplicitTypeName(StoreOptions options)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
-                LambdaWithClrTypes(options);
+                #region sample_upcast_event_lambda_with_clr_types_and_explicit_type_name
+
+                options.Events
+                    .Upcast<ShoppingCartOpened, ShoppingCartInitializedWithStatus>(
+                        "shopping_cart_opened",
+                        oldEvent =>
+                            new ShoppingCartInitializedWithStatus(
+                                oldEvent.ShoppingCartId,
+                                new Client(oldEvent.ClientId),
+                                ShoppingCartStatus.Opened
+                            )
+                    );
+
+                #endregion
             }
 
             public static void ClassWithClrTypes(StoreOptions options)
@@ -120,18 +130,6 @@ namespace EventSourcingTests.SchemaChange
                 options.Events.Upcast<ShoppingCartOpenedEventUpcasterWithClrTypes>();
 
                 #endregion
-            }
-
-            public static void SystemTextJsonClassWithClrTypes(StoreOptions options)
-            {
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
-                ClassWithClrTypes(options);
-            }
-
-            public static void NewtonsoftClassWithClrTypes(StoreOptions options)
-            {
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
-                ClassWithClrTypes(options);
             }
         }
     }
@@ -205,6 +203,12 @@ namespace EventSourcingTests.SchemaChange
                 ClrTypes.SampleEventsUpcasting.LambdaWithClrTypes(options);
             }
 
+            public static void LambdaWithClrTypesAndExplicitTypeName(StoreOptions options)
+            {
+                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                ClrTypes.SampleEventsUpcasting.LambdaWithClrTypesAndExplicitTypeName(options);
+            }
+
             public static void ClassWithClrTypes(StoreOptions options)
             {
                 options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
@@ -274,6 +278,12 @@ namespace EventSourcingTests.SchemaChange
             {
                 options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
                 ClrTypes.SampleEventsUpcasting.LambdaWithClrTypes(options);
+            }
+
+            public static void LambdaWithClrTypesAndExplicitTypeName(StoreOptions options)
+            {
+                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                ClrTypes.SampleEventsUpcasting.LambdaWithClrTypesAndExplicitTypeName(options);
             }
 
             public static void ClassWithClrTypes(StoreOptions options)
@@ -369,10 +379,12 @@ namespace EventSourcingTests.SchemaChange
             new()
             {
                 JsonNet.SampleEventsUpcasting.LambdaWithClrTypes,
+                JsonNet.SampleEventsUpcasting.LambdaWithClrTypesAndExplicitTypeName,
                 JsonNet.SampleEventsUpcasting.LambdaWithJObject,
                 JsonNet.SampleEventsUpcasting.ClassWithClrTypes,
                 JsonNet.SampleEventsUpcasting.ClassWithJObject,
                 SystemTextJson.SampleEventsUpcasting.LambdaWithClrTypes,
+                SystemTextJson.SampleEventsUpcasting.LambdaWithClrTypesAndExplicitTypeName,
                 SystemTextJson.SampleEventsUpcasting.LambdaWithJsonDocument,
                 SystemTextJson.SampleEventsUpcasting.ClassWithClrTypes,
                 SystemTextJson.SampleEventsUpcasting.ClassWithJsonDocument
