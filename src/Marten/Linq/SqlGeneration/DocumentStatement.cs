@@ -22,6 +22,9 @@ namespace Marten.Linq.SqlGeneration
         // TODO -- return IEnumerable<ISqlFragment> instead
         protected override ISqlFragment buildWhereFragment(IMartenSession session)
         {
+            if (WhereClauses.Count == 0)
+                return Storage.DefaultWhereFragment();
+
             var parser = new WhereClauseParser(session, this);
 
             ISqlFragment where = null;
