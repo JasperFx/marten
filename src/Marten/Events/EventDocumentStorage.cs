@@ -285,7 +285,7 @@ namespace Marten.Events
             return mapping.Wrap(data);
         }
 
-        private async Task<IEvent> DeserializeEventAsync(EventMapping mapping, DbDataReader reader,
+        private async ValueTask<IEvent> DeserializeEventAsync(EventMapping mapping, DbDataReader reader,
             CancellationToken token)
         {
             var data = mapping.Transformation != null ?

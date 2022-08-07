@@ -2,6 +2,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
 
@@ -112,6 +114,40 @@ namespace Marten.Events
             where TOldEvent : class
             where TEvent : class;
 
+
+        /// <summary>
+        /// Maps CLR event type as particular event type name allowing to provide custom transformation.
+        /// This is useful for event type migration.
+        /// WARNING! Transformation will be only run in the async API and will throw exception when run in sync method calls.
+        /// See more in docs: https://martendb.io/events/versioning.html#event-type-name-migration
+        /// </summary>
+        /// <param name="eventTypeName">Mapped CLR event type</param>
+        /// <param name="upcast">Event payload transformation</param>
+        /// <typeparam name="TOldEvent">Old event type</typeparam>
+        /// <typeparam name="TEvent">New event type</typeparam>
+        /// <returns></returns>
+        public IEventStoreOptions Upcast<TOldEvent, TEvent>(
+            string eventTypeName,
+            Func<TOldEvent, CancellationToken, Task<TEvent>> upcast
+        )
+            where TOldEvent : class
+            where TEvent : class;
+
+        /// <summary>
+        /// Maps CLR event type as particular event type name allowing to provide custom transformation.
+        /// This is useful for event type migration.
+        /// This implementation will take the event type name (by convention) based on the old event type.
+        /// WARNING! Transformation will be only run in the async API and will throw exception when run in sync method calls.
+        /// See more in docs: https://martendb.io/events/versioning.html#event-type-name-migration
+        /// </summary>
+        /// <param name="upcast">Event payload transformation</param>
+        /// <typeparam name="TOldEvent">Old event type</typeparam>
+        /// <typeparam name="TEvent">New event type</typeparam>
+        /// <returns></returns>
+        public IEventStoreOptions Upcast<TOldEvent, TEvent>(Func<TOldEvent, CancellationToken, Task<TEvent>> upcast)
+            where TOldEvent : class
+            where TEvent : class;
+
         /// <summary>
         /// Maps CLR event type as particular event type name allowing to provide custom transformation.
         /// This is useful for event type migration.
@@ -128,7 +164,7 @@ namespace Marten.Events
         /// </summary>
         /// <typeparam name="TUpcaster">Upcaster class type. It has to derive from IUpcaster and have default public constructor</typeparam>
         /// <returns>Store options allowing to continue mapping definition</returns>
-        IEventStoreOptions Upcast<TUpcaster>() where TUpcaster: IEventUpcaster, new ();
+        IEventStoreOptions Upcast<TUpcaster>() where TUpcaster : IEventUpcaster, new();
 
         public MetadataConfig MetadataConfig { get; }
     }

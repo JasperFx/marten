@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Exceptions;
 
 namespace Marten.Services.Json.Transformations
 {
@@ -13,7 +14,9 @@ namespace Marten.Services.Json.Transformations
         Type EventType { get; }
 
         object FromDbDataReader(ISerializer serializer, DbDataReader dbDataReader, int index);
-        Task<object> FromDbDataReaderAsync(ISerializer serializer, DbDataReader dbDataReader, int index, CancellationToken ct);
+
+        ValueTask<object> FromDbDataReaderAsync(ISerializer serializer, DbDataReader dbDataReader, int index,
+            CancellationToken ct);
     }
 
     public abstract class EventUpcaster: IEventUpcaster
@@ -23,9 +26,9 @@ namespace Marten.Services.Json.Transformations
 
         public abstract object FromDbDataReader(ISerializer serializer, DbDataReader dbDataReader, int index);
 
-        public virtual Task<object>
+        public virtual ValueTask<object>
             FromDbDataReaderAsync(ISerializer serializer, DbDataReader dbDataReader, int index, CancellationToken ct) =>
-            Task.FromResult(FromDbDataReader(serializer, dbDataReader, index));
+            new(FromDbDataReader(serializer, dbDataReader, index));
     }
 
     public abstract class EventUpcaster<TEvent>: EventUpcaster
@@ -39,13 +42,32 @@ namespace Marten.Services.Json.Transformations
         public override string EventTypeName => (typeof(TOldEvent)).GetEventTypeName();
 
         public override object FromDbDataReader(ISerializer serializer, DbDataReader dbDataReader, int index) =>
-            Transformations.FromDbDataReader<TOldEvent, TEvent>(Upcast)(serializer, dbDataReader, index);
+            JsonTransformations.FromDbDataReader<TOldEvent, TEvent>(Upcast)(serializer, dbDataReader, index);
 
-        public override Task<object> FromDbDataReaderAsync(ISerializer serializer, DbDataReader dbDataReader,
+        public override ValueTask<object> FromDbDataReaderAsync(ISerializer serializer, DbDataReader dbDataReader,
             int index, CancellationToken ct) =>
-            Transformations.FromDbDataReaderAsync<TOldEvent, TEvent>(Upcast)(serializer, dbDataReader,
-                index, ct);
+            JsonTransformations.FromDbDataReaderAsync<TOldEvent, TEvent>(Upcast)(
+                serializer, dbDataReader, index, ct
+            );
 
         protected abstract TEvent Upcast(TOldEvent oldEvent);
+    }
+
+    public abstract class AsyncOnlyEventUpcaster<TOldEvent, TEvent>: EventUpcaster<TEvent>
+        where TOldEvent : notnull where TEvent : notnull
+    {
+        public override string EventTypeName => (typeof(TOldEvent)).GetEventTypeName();
+
+        public override object FromDbDataReader(ISerializer serializer, DbDataReader dbDataReader, int index) =>
+            throw new MartenException(
+                $"Cannot use AsyncOnlyEventUpcaster of type {GetType().AssemblyQualifiedName} in the synchronous API.");
+
+        public override ValueTask<object> FromDbDataReaderAsync(ISerializer serializer, DbDataReader dbDataReader,
+            int index, CancellationToken ct) =>
+            JsonTransformations.FromDbDataReaderAsync<TOldEvent, TEvent>(UpcastAsync)(
+                serializer, dbDataReader, index, ct
+            );
+
+        protected abstract Task<TEvent> UpcastAsync(TOldEvent oldEvent, CancellationToken ct);
     }
 }

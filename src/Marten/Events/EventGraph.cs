@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Baseline.ImTools;
 using Marten.Events.Daemon;
@@ -155,13 +157,30 @@ namespace Marten.Events
         {
             var eventMapping = EventMappingFor<TEvent>();
             eventMapping.EventTypeName = eventTypeName;
-            eventMapping.Transformation = Transformations.Upcast(upcast);
+            eventMapping.Transformation = JsonTransformations.Upcast(upcast);
 
             return this;
         }
 
         public IEventStoreOptions Upcast<TOldEvent, TEvent>(
             Func<TOldEvent, TEvent> upcast
+        ) where TOldEvent : class where TEvent : class =>
+            Upcast(typeof(TOldEvent).GetEventTypeName(), upcast);
+
+        public IEventStoreOptions Upcast<TOldEvent, TEvent>(
+            string eventTypeName,
+            Func<TOldEvent, CancellationToken, Task<TEvent>> upcast
+        ) where TOldEvent : class where TEvent : class
+        {
+            var eventMapping = EventMappingFor<TEvent>();
+            eventMapping.EventTypeName = eventTypeName;
+            eventMapping.Transformation = JsonTransformations.Upcast(upcast);
+
+            return this;
+        }
+
+        public IEventStoreOptions Upcast<TOldEvent, TEvent>(
+            Func<TOldEvent, CancellationToken, Task<TEvent>> upcast
         ) where TOldEvent : class where TEvent : class =>
             Upcast(typeof(TOldEvent).GetEventTypeName(), upcast);
 
