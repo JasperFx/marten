@@ -8,16 +8,16 @@ using Marten.Internal;
 using Marten.Linq.Fields;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
+using Microsoft.CodeAnalysis.Operations;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing;
+using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing
 {
-
-
     internal partial class WhereClauseParser : RelinqExpressionVisitor, IWhereFragmentHolder
     {
         private static readonly IDictionary<ExpressionType, string> _operators = new Dictionary<ExpressionType, string>
@@ -82,32 +82,83 @@ namespace Marten.Linq.Parsing
             return null;
         }
 
+        protected bool BinaryExpressionIsReferenceComparision(BinaryExpression expression)
+        {
+            var leftOperandType = expression.Left.Type;
+            var rightOperandType = expression.Right.Type;
+            var nodeType = expression.NodeType;
+            return (nodeType == ExpressionType.Equal || nodeType == ExpressionType.NotEqual)
+                   && expression.Method == null && !leftOperandType.IsValueType && !rightOperandType.IsValueType;
+        }
 
         protected override Expression VisitBinary(BinaryExpression node)
         {
+            if (BinaryExpressionIsReferenceComparision(node))
+            {
+                _holder.Register(new IgnoredWhereClauseFragment());
+                return null;
+            }
+
             if (_operators.TryGetValue(node.NodeType, out var op))
             {
                 var binary = new BinaryExpressionVisitor(this);
                 _holder.Register(binary.BuildWhereFragment(node, op));
-
                 return null;
             }
 
             switch (node.NodeType)
             {
                 case ExpressionType.AndAlso:
-                    buildCompoundWhereFragment(node, "and");
-                    break;
-
+                    var leftBinaryExpressionFromAnd = node.Left as BinaryExpression;
+                    var rightBinaryExpressionFromAnd = node.Right as BinaryExpression;
+                    if (leftBinaryExpressionFromAnd != null && BinaryExpressionIsReferenceComparision(leftBinaryExpressionFromAnd))
+                    {
+                        Visit(node.Right);
+                        return null;
+                    }
+                    else if (rightBinaryExpressionFromAnd != null && BinaryExpressionIsReferenceComparision(rightBinaryExpressionFromAnd))
+                    {
+                        Visit(node.Left);
+                        return null;
+                    }
+                    else if ((leftBinaryExpressionFromAnd != null && BinaryExpressionIsReferenceComparision(leftBinaryExpressionFromAnd)) &&
+                             (rightBinaryExpressionFromAnd != null && BinaryExpressionIsReferenceComparision(rightBinaryExpressionFromAnd)))
+                    {
+                        _holder.Register(new IgnoredWhereClauseFragment());
+                        return null;
+                    }
+                    else
+                    {
+                        buildCompoundWhereFragment(node, "and");
+                        return null;
+                    }
                 case ExpressionType.OrElse:
-                    buildCompoundWhereFragment(node, "or");
-                    break;
-
+                    var leftBinaryExpressionFromOr = node.Left as BinaryExpression;
+                    var rightBinaryExpressionFromOr = node.Right as BinaryExpression;
+                    if (leftBinaryExpressionFromOr != null && BinaryExpressionIsReferenceComparision(leftBinaryExpressionFromOr))
+                    {
+                        Visit(node.Right);
+                        return null;
+                    }
+                    else if (rightBinaryExpressionFromOr != null && BinaryExpressionIsReferenceComparision(rightBinaryExpressionFromOr))
+                    {
+                        Visit(node.Left);
+                        return null;
+                    }
+                    else if ((leftBinaryExpressionFromOr != null && BinaryExpressionIsReferenceComparision(leftBinaryExpressionFromOr)) &&
+                             (rightBinaryExpressionFromOr != null && BinaryExpressionIsReferenceComparision(rightBinaryExpressionFromOr)))
+                    {
+                        _holder.Register(new IgnoredWhereClauseFragment());
+                        return null;
+                    }
+                    else
+                    {
+                        buildCompoundWhereFragment(node, "or");
+                        return null;
+                    }
                 default:
                     throw new BadLinqExpressionException($"Unsupported expression type '{node.NodeType}' in binary expression");
             }
-
-
             return null;
         }
 
