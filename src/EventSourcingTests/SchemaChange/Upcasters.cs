@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Events;
@@ -49,13 +50,32 @@ namespace EventSourcingTests.SchemaChange
 
     #endregion
 
+
+    #region sample_async_upcaster dependency
+
+    public interface IClientRepository
+    {
+        Task<string> GetClientName(Guid clientId, CancellationToken ct);
+    }
+
+    #endregion
+
+    public class DummyClientRepository: IClientRepository
+    {
+        private readonly Func<Guid, string> _getClientName;
+
+        public DummyClientRepository(Func<Guid, string> getClientName) =>
+            _getClientName = getClientName;
+
+        public Task<string> GetClientName(Guid clientId, CancellationToken ct) =>
+            Task.FromResult(_getClientName(clientId));
+    }
+
     namespace ClrTypes
     {
-        using static Transformations;
-
         #region sample_upcaster_with_clr_types_and_event_type_name_from_old_type
 
-        public class ShoppingCartOpenedEventUpcasterWithClrTypes:
+        public class ShoppingCartOpenedUpcaster:
             EventUpcaster<ShoppingCartOpened, ShoppingCartInitializedWithStatus>
         {
             protected override ShoppingCartInitializedWithStatus Upcast(ShoppingCartOpened oldEvent) =>
@@ -69,22 +89,89 @@ namespace EventSourcingTests.SchemaChange
         #endregion
 
 
-        #region sample_upcaster_with_clr_types_and_explicit_event_type_name
+        #region sample_async_only_upcaster_with_clr_types_and_event_type_name_from_old_type
 
-        public class ShoppingCartOpenedEventUpcasterWithClrTypesAndExplicitTypeName:
-            EventUpcaster<ShoppingCartOpened, ShoppingCartInitializedWithStatus>
+        public class ShoppingCartOpenedAsyncOnlyUpcaster:
+            AsyncOnlyEventUpcaster<ShoppingCartOpened, ShoppingCartInitializedWithStatus>
         {
-            public override string EventTypeName => "shopping_cart_opened";
+            private readonly IClientRepository _clientRepository;
 
-            protected override ShoppingCartInitializedWithStatus Upcast(ShoppingCartOpened oldEvent) =>
-                new ShoppingCartInitializedWithStatus(
+            public ShoppingCartOpenedAsyncOnlyUpcaster(IClientRepository clientRepository) =>
+                _clientRepository = clientRepository;
+
+            protected override async Task<ShoppingCartInitializedWithStatus> UpcastAsync(
+                ShoppingCartOpened oldEvent,
+                CancellationToken ct
+            )
+            {
+                // WARNING: UpcastAsync method is called each type old event is read from database and deserialized.
+                // We discourage to run resource consuming methods here. It might end up with N+1 problem.
+                var clientName = await _clientRepository.GetClientName(oldEvent.ClientId, ct);
+
+                return new ShoppingCartInitializedWithStatus(
                     oldEvent.ShoppingCartId,
-                    new Client(oldEvent.ClientId),
+                    new Client(oldEvent.ClientId, clientName),
                     ShoppingCartStatus.Opened
                 );
+            }
         }
 
         #endregion
+
+        namespace ExplicitTypeName
+        {
+            #region sample_upcaster_with_clr_types_and_explicit_event_type_name
+
+            public class ShoppingCartOpenedUpcaster:
+                EventUpcaster<ShoppingCartOpened, ShoppingCartInitializedWithStatus>
+            {
+                // Explicit event type name mapping may be useful if you used other than default event type name
+                // for old event type.
+                public override string EventTypeName => "shopping_cart_opened";
+
+                protected override ShoppingCartInitializedWithStatus Upcast(ShoppingCartOpened oldEvent) =>
+                    new ShoppingCartInitializedWithStatus(
+                        oldEvent.ShoppingCartId,
+                        new Client(oldEvent.ClientId),
+                        ShoppingCartStatus.Opened
+                    );
+            }
+
+            #endregion
+
+            #region sample_async_only_upcaster_with_clr_types_and_explicit_event_type_name
+
+            public class ShoppingCartOpenedAsyncOnlyUpcaster:
+                AsyncOnlyEventUpcaster<ShoppingCartOpened, ShoppingCartInitializedWithStatus>
+            {
+                // Explicit event type name mapping may be useful if you used other than default event type name
+                // for old event type.
+                public override string EventTypeName => "shopping_cart_opened";
+
+                private readonly IClientRepository _clientRepository;
+
+                public ShoppingCartOpenedAsyncOnlyUpcaster(IClientRepository clientRepository) =>
+                    _clientRepository = clientRepository;
+
+                protected override async Task<ShoppingCartInitializedWithStatus> UpcastAsync(
+                    ShoppingCartOpened oldEvent,
+                    CancellationToken ct
+                )
+                {
+                    // WARNING: UpcastAsync method is called each type old event is read from database and deserialized.
+                    // We discourage to run resource consuming methods here. It might end up with N+1 problem.
+                    var clientName = await _clientRepository.GetClientName(oldEvent.ClientId, ct);
+
+                    return new ShoppingCartInitializedWithStatus(
+                        oldEvent.ShoppingCartId,
+                        new Client(oldEvent.ClientId, clientName),
+                        ShoppingCartStatus.Opened
+                    );
+                }
+            }
+
+            #endregion
+        }
 
         public static class SampleEventsUpcasting
         {
@@ -105,7 +192,30 @@ namespace EventSourcingTests.SchemaChange
                 #endregion
             }
 
-            public static void LambdaWithClrTypesAndExplicitTypeName(StoreOptions options)
+            public static void AsyncLambdaWithClrTypes(StoreOptions options, IClientRepository clientRepository)
+            {
+                #region sample_async_upcast_event_lambda_with_clr_types
+
+                options.Events
+                    .Upcast<ShoppingCartOpened, ShoppingCartInitializedWithStatus>(
+                        async (oldEvent, ct) =>
+                        {
+                            // WARNING: UpcastAsync method is called each type old event is read from database and deserialized.
+                            // We discourage to run resource consuming methods here. It might end up with N+1 problem.
+                            var clientName = await clientRepository.GetClientName(oldEvent.ClientId, ct);
+
+                            return new ShoppingCartInitializedWithStatus(
+                                oldEvent.ShoppingCartId,
+                                new Client(oldEvent.ClientId, clientName),
+                                ShoppingCartStatus.Opened
+                            );
+                        }
+                    );
+
+                #endregion
+            }
+
+            public static void LambdaWithClrTypesAndExplicitEventTypeName(StoreOptions options)
             {
                 #region sample_upcast_event_lambda_with_clr_types_and_explicit_type_name
 
@@ -123,11 +233,64 @@ namespace EventSourcingTests.SchemaChange
                 #endregion
             }
 
+            public static void AsyncLambdaWithClrTypesAndExplicitEventTypeName(StoreOptions options,
+                IClientRepository clientRepository)
+            {
+                #region sample_async_upcast_event_lambda_with_clr_types_and_explicit_type_name
+
+                options.Events
+                    .Upcast<ShoppingCartOpened, ShoppingCartInitializedWithStatus>(
+                        "shopping_cart_opened",
+                        async (oldEvent, ct) =>
+                        {
+                            // WARNING: UpcastAsync method is called each type old event is read from database and deserialized.
+                            // We discourage to run resource consuming methods here. It might end up with N+1 problem.
+                            var clientName = await clientRepository.GetClientName(oldEvent.ClientId, ct);
+
+                            return new ShoppingCartInitializedWithStatus(
+                                oldEvent.ShoppingCartId,
+                                new Client(oldEvent.ClientId, clientName),
+                                ShoppingCartStatus.Opened
+                            );
+                        }
+                    );
+
+                #endregion
+            }
+
             public static void ClassWithClrTypes(StoreOptions options)
             {
                 #region sample_upcast_event_class_with_clr_types
 
-                options.Events.Upcast<ShoppingCartOpenedEventUpcasterWithClrTypes>();
+                options.Events.Upcast<ShoppingCartOpenedUpcaster>();
+
+                #endregion
+            }
+
+            public static void AsyncClassWithClrTypes(StoreOptions options, IClientRepository clientRepository)
+            {
+                #region sample_async_upcast_event_class_with_clr_types
+
+                options.Events.Upcast(new ShoppingCartOpenedAsyncOnlyUpcaster(clientRepository));
+
+                #endregion
+            }
+
+            public static void ClassWithClrTypesWithExplicitEventTypeName(StoreOptions options)
+            {
+                #region sample_upcast_event_class_with_clr_types_with_explicit_event_type_name
+
+                options.Events.Upcast<ExplicitTypeName.ShoppingCartOpenedUpcaster>();
+
+                #endregion
+            }
+
+            public static void AsyncClassWithClrTypesWithExplicitEventTypeName(StoreOptions options,
+                IClientRepository clientRepository)
+            {
+                #region sample_async_upcast_event_class_with_clr_types_with_explicit_event_type_name
+
+                options.Events.Upcast(new ExplicitTypeName.ShoppingCartOpenedAsyncOnlyUpcaster(clientRepository));
 
                 #endregion
             }
@@ -137,9 +300,9 @@ namespace EventSourcingTests.SchemaChange
     namespace SystemTextJson
     {
         using Marten.Services.Json.Transformations.SystemTextJson;
-        using static Marten.Services.Json.Transformations.SystemTextJson.Transformations;
+        using static Marten.Services.Json.Transformations.SystemTextJson.JsonTransformations;
 
-        public class ShoppingCartOpenedEventUpcasterWithSystemTextJsonDocument:
+        public class ShoppingCartOpenedUpcaster:
             EventUpcaster<ShoppingCartInitializedWithStatus>
         {
             public override string EventTypeName => "shopping_cart_opened";
@@ -153,6 +316,37 @@ namespace EventSourcingTests.SchemaChange
                     new Client(
                         oldEvent.GetProperty("ClientId").GetGuid()
                     ),
+                    ShoppingCartStatus.Opened
+                );
+            }
+        }
+
+
+        public class ShoppingCartOpenedAsyncOnlyUpcaster:
+            AsyncOnlyEventUpcaster<ShoppingCartInitializedWithStatus>
+        {
+            private readonly IClientRepository _clientRepository;
+
+            public ShoppingCartOpenedAsyncOnlyUpcaster(IClientRepository clientRepository) =>
+                _clientRepository = clientRepository;
+
+            public override string EventTypeName => "shopping_cart_opened";
+
+            protected override async Task<ShoppingCartInitializedWithStatus> UpcastAsync(
+                JsonDocument oldEventJson, CancellationToken ct
+            )
+            {
+                var oldEvent = oldEventJson.RootElement;
+
+                var clientId = oldEvent.GetProperty("ClientId").GetGuid();
+
+                // WARNING: UpcastAsync method is called each type old event is read from database and deserialized.
+                // We discourage to run resource consuming methods here. It might end up with N+1 problem.
+                var clientName = await _clientRepository.GetClientName(clientId, ct);
+
+                return new ShoppingCartInitializedWithStatus(
+                    oldEvent.GetProperty("ShoppingCartId").GetGuid(),
+                    new Client(clientId, clientName),
                     ShoppingCartStatus.Opened
                 );
             }
@@ -186,13 +380,54 @@ namespace EventSourcingTests.SchemaChange
                 #endregion
             }
 
+            public static void AsyncLambdaWithJsonDocument(StoreOptions options, IClientRepository clientRepository)
+            {
+                #region sample_async_upcast_event_lambda_with_systemtextjson_json_document
+
+                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+
+                options.Events
+                    .Upcast<ShoppingCartInitializedWithStatus>(
+                        "shopping_cart_opened",
+                        Upcast(async (oldEventJson, ct) =>
+                        {
+                            var oldEvent = oldEventJson.RootElement;
+
+                            var clientId = oldEvent.GetProperty("ClientId").GetGuid();
+
+                            // WARNING: UpcastAsync method is called each type old event is read from database and deserialized.
+                            // We discourage to run resource consuming methods here. It might end up with N+1 problem.
+                            var clientName = await clientRepository.GetClientName(clientId, ct);
+
+                            return new ShoppingCartInitializedWithStatus(
+                                oldEvent.GetProperty("ShoppingCartId").GetGuid(),
+                                new Client(clientId, clientName),
+                                ShoppingCartStatus.Opened
+                            );
+                        })
+                    );
+
+                #endregion
+            }
+
             public static void ClassWithJsonDocument(StoreOptions options)
             {
                 #region sample_upcast_event_class_with_systemtextjson_json_document
 
                 options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
 
-                options.Events.Upcast<ShoppingCartOpenedEventUpcasterWithSystemTextJsonDocument>();
+                options.Events.Upcast<ShoppingCartOpenedUpcaster>();
+
+                #endregion
+            }
+
+            public static void AsyncClassWithJsonDocument(StoreOptions options, IClientRepository clientRepository)
+            {
+                #region sample_upcast_event_class_with_systemtextjson_json_document
+
+                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+
+                options.Events.Upcast(new ShoppingCartOpenedAsyncOnlyUpcaster(clientRepository));
 
                 #endregion
             }
@@ -203,10 +438,24 @@ namespace EventSourcingTests.SchemaChange
                 ClrTypes.SampleEventsUpcasting.LambdaWithClrTypes(options);
             }
 
-            public static void LambdaWithClrTypesAndExplicitTypeName(StoreOptions options)
+            public static void AsyncLambdaWithClrTypes(StoreOptions options, IClientRepository clientRepository)
             {
                 options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
-                ClrTypes.SampleEventsUpcasting.LambdaWithClrTypesAndExplicitTypeName(options);
+                ClrTypes.SampleEventsUpcasting.AsyncLambdaWithClrTypes(options, clientRepository);
+            }
+
+            public static void LambdaWithClrTypesAndExplicitEventTypeName(StoreOptions options)
+            {
+                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                ClrTypes.SampleEventsUpcasting.LambdaWithClrTypesAndExplicitEventTypeName(options);
+            }
+
+            public static void AsyncLambdaWithClrTypesAndExplicitEventTypeName(StoreOptions options,
+                IClientRepository clientRepository)
+            {
+                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                ClrTypes.SampleEventsUpcasting.AsyncLambdaWithClrTypesAndExplicitEventTypeName(options,
+                    clientRepository);
             }
 
             public static void ClassWithClrTypes(StoreOptions options)
@@ -214,16 +463,35 @@ namespace EventSourcingTests.SchemaChange
                 options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
                 ClrTypes.SampleEventsUpcasting.ClassWithClrTypes(options);
             }
+
+            public static void AsyncClassWithClrTypes(StoreOptions options, IClientRepository clientRepository)
+            {
+                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                ClrTypes.SampleEventsUpcasting.AsyncClassWithClrTypes(options, clientRepository);
+            }
+
+            public static void ClassWithClrTypesWithExplicitEventTypeName(StoreOptions options)
+            {
+                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                ClrTypes.SampleEventsUpcasting.ClassWithClrTypesWithExplicitEventTypeName(options);
+            }
+
+            public static void AsyncClassWithClrTypesWithExplicitEventTypeName(StoreOptions options,
+                IClientRepository clientRepository)
+            {
+                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                ClrTypes.SampleEventsUpcasting.AsyncClassWithClrTypesWithExplicitEventTypeName(options,
+                    clientRepository);
+            }
         }
     }
-
 
     namespace JsonNet
     {
         using Marten.Services.Json.Transformations.JsonNet;
-        using static Marten.Services.Json.Transformations.JsonNet.Transformations;
+        using static Marten.Services.Json.Transformations.JsonNet.JsonTransformations;
 
-        public class ShoppingCartOpenedEventUpcasterWithNewtonsoftJObject:
+        public class ShoppingCartOpenedUpcaster:
             EventUpcaster<ShoppingCartInitializedWithStatus>
         {
             public override string EventTypeName => "shopping_cart_opened";
@@ -236,6 +504,35 @@ namespace EventSourcingTests.SchemaChange
                     ),
                     ShoppingCartStatus.Opened
                 );
+        }
+
+
+        public class ShoppingCartOpenedAsyncOnlyUpcaster:
+            AsyncOnlyEventUpcaster<ShoppingCartInitializedWithStatus>
+        {
+            private readonly IClientRepository _clientRepository;
+
+            public ShoppingCartOpenedAsyncOnlyUpcaster(IClientRepository clientRepository) =>
+                _clientRepository = clientRepository;
+
+            public override string EventTypeName => "shopping_cart_opened";
+
+            protected override async Task<ShoppingCartInitializedWithStatus> UpcastAsync(
+                JObject oldEvent,
+                CancellationToken ct
+            )
+            {
+                var clientId = (Guid)oldEvent["ClientId"]!;
+                // WARNING: UpcastAsync method is called each type old event is read from database and deserialized.
+                // We discourage to run resource consuming methods here. It might end up with N+1 problem.
+                var clientName = await _clientRepository.GetClientName(clientId, ct);
+
+                return new ShoppingCartInitializedWithStatus(
+                    (Guid)oldEvent["ShoppingCartId"]!,
+                    new Client(clientId, clientName),
+                    ShoppingCartStatus.Opened
+                );
+            }
         }
 
         public static class SampleEventsUpcasting
@@ -263,13 +560,52 @@ namespace EventSourcingTests.SchemaChange
                 #endregion
             }
 
+            public static void AsyncLambdaWithJObject(StoreOptions options, IClientRepository clientRepository)
+            {
+                #region sample_async_upcast_event_lambda_with_jsonnet_jobject
+
+                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+
+                options.Events
+                    .Upcast<ShoppingCartInitializedWithStatus>(
+                        "shopping_cart_opened",
+                        Upcast(async (oldEvent, ct) =>
+                            {
+                                var clientId = (Guid)oldEvent["ClientId"]!;
+                                // WARNING: UpcastAsync method is called each type old event is read from database and deserialized.
+                                // We discourage to run resource consuming methods here. It might end up with N+1 problem.
+                                var clientName = await clientRepository.GetClientName(clientId, ct);
+
+                                return new ShoppingCartInitializedWithStatus(
+                                    (Guid)oldEvent["ShoppingCartId"]!,
+                                    new Client(clientId, clientName),
+                                    ShoppingCartStatus.Opened
+                                );
+                            }
+                        )
+                    );
+
+                #endregion
+            }
+
             public static void ClassWithJObject(StoreOptions options)
             {
                 #region sample_upcast_event_class_with_jsonnet_json_jobject
 
                 options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
 
-                options.Events.Upcast<ShoppingCartOpenedEventUpcasterWithNewtonsoftJObject>();
+                options.Events.Upcast<ShoppingCartOpenedUpcaster>();
+
+                #endregion
+            }
+
+            public static void AsyncClassWithJObject(StoreOptions options, IClientRepository clientRepository)
+            {
+                #region sample_async_upcast_event_class_with_jsonnet_json_jobject
+
+                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+
+                options.Events.Upcast(new ShoppingCartOpenedAsyncOnlyUpcaster(clientRepository));
 
                 #endregion
             }
@@ -280,16 +616,50 @@ namespace EventSourcingTests.SchemaChange
                 ClrTypes.SampleEventsUpcasting.LambdaWithClrTypes(options);
             }
 
-            public static void LambdaWithClrTypesAndExplicitTypeName(StoreOptions options)
+            public static void AsyncLambdaWithClrTypes(StoreOptions options, IClientRepository clientRepository)
             {
                 options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
-                ClrTypes.SampleEventsUpcasting.LambdaWithClrTypesAndExplicitTypeName(options);
+                ClrTypes.SampleEventsUpcasting.AsyncLambdaWithClrTypes(options, clientRepository);
+            }
+
+            public static void LambdaWithClrTypesAndExplicitEventTypeName(StoreOptions options)
+            {
+                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                ClrTypes.SampleEventsUpcasting.LambdaWithClrTypesAndExplicitEventTypeName(options);
+            }
+
+            public static void AsyncLambdaWithClrTypesAndExplicitEventTypeName(StoreOptions options,
+                IClientRepository clientRepository)
+            {
+                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                ClrTypes.SampleEventsUpcasting.AsyncLambdaWithClrTypesAndExplicitEventTypeName(options,
+                    clientRepository);
             }
 
             public static void ClassWithClrTypes(StoreOptions options)
             {
                 options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
                 ClrTypes.SampleEventsUpcasting.ClassWithClrTypes(options);
+            }
+
+            public static void AsyncClassWithClrTypes(StoreOptions options, IClientRepository clientRepository)
+            {
+                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                ClrTypes.SampleEventsUpcasting.AsyncClassWithClrTypes(options, clientRepository);
+            }
+
+            public static void ClassWithClrTypesWithExplicitEventTypeName(StoreOptions options)
+            {
+                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                ClrTypes.SampleEventsUpcasting.ClassWithClrTypes(options);
+            }
+
+            public static void AsyncClassWithClrTypesWithExplicitEventTypeName(StoreOptions options,
+                IClientRepository clientRepository)
+            {
+                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                ClrTypes.SampleEventsUpcasting.AsyncClassWithClrTypesWithExplicitEventTypeName(options,
+                    clientRepository);
             }
         }
     }
@@ -351,43 +721,58 @@ namespace EventSourcingTests.SchemaChange
         public async Task HavingEvents_WithSchemaChange_AggregationShouldWork(Action<StoreOptions> configureUpcasters)
         {
             // test events data
-            var taskId = Guid.NewGuid();
+            var shoppingCartId = Guid.NewGuid();
             var clientId = Guid.NewGuid();
 
-            var task = new Old.ShoppingCart(taskId, clientId);
+            var shoppingCart = new Old.ShoppingCart(shoppingCartId, clientId);
 
             await theStore.EnsureStorageExistsAsync(typeof(StreamAction));
 
             await using (var session = (DocumentSessionBase)theStore.OpenSession())
             {
-                session.Events.Append(taskId, (IEnumerable<object>)task.DequeueEvents());
+                session.Events.Append(shoppingCartId, (IEnumerable<object>)shoppingCart.DequeueEvents());
                 await session.SaveChangesAsync();
             }
 
             using var store = SeparateStore(configureUpcasters);
             {
                 await using var session = store.OpenSession();
-                var taskNew = await session.Events.AggregateStreamAsync<New.ShoppingCart>(taskId);
+                var shoppingCartNew = await session.Events.AggregateStreamAsync<New.ShoppingCart>(shoppingCartId);
 
-                taskNew.Id.ShouldBe(taskId);
-                taskNew.Client.ShouldNotBeNull();
-                taskNew.Client.Id.ShouldBe(task.ClientId);
+                shoppingCartNew.Id.ShouldBe(shoppingCartId);
+                shoppingCartNew.Client.ShouldNotBeNull();
+                shoppingCartNew.Client.Id.ShouldBe(shoppingCart.ClientId);
             }
         }
+
+        private const string ClientName = "DummyClientName";
+        public static readonly IClientRepository clientRepository = new DummyClientRepository(_ => ClientName);
 
         public static TheoryData<Action<StoreOptions>> UpcastersConfiguration =>
             new()
             {
                 JsonNet.SampleEventsUpcasting.LambdaWithClrTypes,
-                JsonNet.SampleEventsUpcasting.LambdaWithClrTypesAndExplicitTypeName,
+                JsonNet.SampleEventsUpcasting.LambdaWithClrTypesAndExplicitEventTypeName,
                 JsonNet.SampleEventsUpcasting.LambdaWithJObject,
                 JsonNet.SampleEventsUpcasting.ClassWithClrTypes,
                 JsonNet.SampleEventsUpcasting.ClassWithJObject,
+                options => JsonNet.SampleEventsUpcasting.AsyncLambdaWithClrTypes(options, clientRepository),
+                options => JsonNet.SampleEventsUpcasting.AsyncLambdaWithClrTypesAndExplicitEventTypeName(options, clientRepository),
+                options => JsonNet.SampleEventsUpcasting.AsyncLambdaWithJObject(options, clientRepository),
+                options => JsonNet.SampleEventsUpcasting.AsyncClassWithClrTypes(options, clientRepository),
+                options => JsonNet.SampleEventsUpcasting.AsyncClassWithClrTypesWithExplicitEventTypeName(options, clientRepository),
+                options => JsonNet.SampleEventsUpcasting.AsyncClassWithJObject(options, clientRepository),
                 SystemTextJson.SampleEventsUpcasting.LambdaWithClrTypes,
-                SystemTextJson.SampleEventsUpcasting.LambdaWithClrTypesAndExplicitTypeName,
+                SystemTextJson.SampleEventsUpcasting.LambdaWithClrTypesAndExplicitEventTypeName,
                 SystemTextJson.SampleEventsUpcasting.LambdaWithJsonDocument,
                 SystemTextJson.SampleEventsUpcasting.ClassWithClrTypes,
-                SystemTextJson.SampleEventsUpcasting.ClassWithJsonDocument
+                SystemTextJson.SampleEventsUpcasting.ClassWithJsonDocument,
+                options => SystemTextJson.SampleEventsUpcasting.AsyncLambdaWithClrTypes(options, clientRepository),
+                options => SystemTextJson.SampleEventsUpcasting.AsyncLambdaWithClrTypesAndExplicitEventTypeName(options, clientRepository),
+                options => SystemTextJson.SampleEventsUpcasting.AsyncLambdaWithJsonDocument(options, clientRepository),
+                options => SystemTextJson.SampleEventsUpcasting.AsyncClassWithClrTypes(options, clientRepository),
+                options => SystemTextJson.SampleEventsUpcasting.AsyncClassWithClrTypesWithExplicitEventTypeName(options, clientRepository),
+                options => SystemTextJson.SampleEventsUpcasting.AsyncClassWithJsonDocument(options, clientRepository),
             };
     }
 }
