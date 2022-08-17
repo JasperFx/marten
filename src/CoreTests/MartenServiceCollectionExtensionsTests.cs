@@ -136,7 +136,6 @@ namespace CoreTests
 
             var rules = store.Options.CreateGenerationRules();
             rules.ApplicationAssembly.ShouldBe(store.Options.ApplicationAssembly);
-            rules.GeneratedCodeOutputPath.ShouldBe(store.Options.GeneratedCodeOutputPath.AppendPath("Internal", "Generated"));
         }
 
         [Fact]

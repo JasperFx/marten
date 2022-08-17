@@ -123,6 +123,7 @@ namespace Marten.Linq
                 await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
 
                 var cmd = _session.BuildCommand(handler);
+                _session.TrySetTenantId(cmd);
 
                 using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
                 return await handler.StreamJson(stream, reader, token).ConfigureAwait(false);
@@ -181,6 +182,7 @@ namespace Marten.Linq
             var statement = builder.TopStatement;
 
             var cmd = _session.BuildCommand(statement);
+            _session.TrySetTenantId(cmd);
 
             using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
             while (await reader.ReadAsync(token).ConfigureAwait(false))
@@ -196,6 +198,7 @@ namespace Marten.Linq
             await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
 
             var command = builder.TopStatement.BuildCommand();
+            _session.TrySetTenantId(command);
 
             return await _session.StreamMany(command, destination, token).ConfigureAwait(false);
         }
@@ -222,6 +225,8 @@ namespace Marten.Linq
             var statement = builder.TopStatement;
             statement.Current().Limit = 1;
             var command = statement.BuildCommand();
+
+            _session.TrySetTenantId(command);
 
             return await _session.StreamOne(command, destination, token).ConfigureAwait(false);
         }
