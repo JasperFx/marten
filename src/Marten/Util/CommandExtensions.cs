@@ -26,14 +26,19 @@ namespace Marten.Util
 
             command.CommandText = builder.ToString();
 
+            session.TrySetTenantId(command);
+
+            return command;
+        }
+
+        public static void TrySetTenantId(this IMartenSession session, NpgsqlCommand command)
+        {
             var tenantParameter = command.Parameters.FirstOrDefault(x => x.ParameterName == TenantIdArgument.ArgName);
 
             if (tenantParameter != null)
             {
                 tenantParameter.Value = session.TenantId;
             }
-
-            return command;
         }
 
         public static NpgsqlCommand BuildCommand(this IMartenSession session, IQueryHandler handler)
@@ -45,12 +50,7 @@ namespace Marten.Util
 
             command.CommandText = builder.ToString();
 
-            var tenantParameter = command.Parameters.FirstOrDefault(x => x.ParameterName == TenantIdArgument.ArgName);
-
-            if (tenantParameter != null)
-            {
-                tenantParameter.Value = session.TenantId;
-            }
+            session.TrySetTenantId(command);
 
             return command;
         }
@@ -68,12 +68,7 @@ namespace Marten.Util
 
             command.CommandText = builder.ToString();
 
-            var tenantParameter = command.Parameters.FirstOrDefault(x => x.ParameterName == TenantIdArgument.ArgName);
-
-            if (tenantParameter != null)
-            {
-                tenantParameter.Value = session.TenantId;
-            }
+            session.TrySetTenantId(command);
 
             return command;
         }
