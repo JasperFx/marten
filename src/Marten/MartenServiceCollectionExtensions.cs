@@ -51,7 +51,14 @@ namespace Marten
             var environment = services.Select(x => x.ImplementationInstance)
                 .OfType<IHostEnvironment>().LastOrDefault();
 
-            environment.ApplicationName = assembly.GetName().Name;
+            var applicationName = assembly.GetName().Name;
+
+            // There are possible project setups where IHostEnvironment is
+            // not available
+            if (environment != null)
+            {
+                environment.ApplicationName = applicationName;
+            }
 
             string path = AppContext.BaseDirectory.ToFullPath();
             if (hintPath.IsNotEmpty())
@@ -68,7 +75,7 @@ namespace Marten
 
                 // Go up once to get to the test project directory, then up again to the "src" level,
                 // then "down" to the application directory
-                path = path.ParentDirectory().ParentDirectory().AppendPath(environment.ApplicationName);
+                path = path.ParentDirectory().ParentDirectory().AppendPath(applicationName);
             }
 
             environment.ContentRootPath = path;
