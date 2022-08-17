@@ -446,24 +446,34 @@ namespace Marten
         public void SetApplicationProject(Assembly assembly,
             string? hintPath = null)
         {
-            ApplicationAssembly = assembly;
+            ApplicationAssembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
 
-            string path = AppContext.BaseDirectory.ToFullPath();
+            // TODO -- pull this into LamarCodeGeneration itself.
+            var path = AppContext.BaseDirectory.ToFullPath();
             if (hintPath.IsNotEmpty())
             {
                 path = path.AppendPath(hintPath).ToFullPath();
             }
             else
             {
-                path = path.TrimEnd(Path.DirectorySeparatorChar);
-                while (!path.EndsWith("bin"))
+                try
                 {
-                    path = path.ParentDirectory();
-                }
+                    path = path.TrimEnd(Path.DirectorySeparatorChar);
+                    while (!path.EndsWith("bin"))
+                    {
+                        path = path.ParentDirectory();
+                    }
 
-                // Go up once to get to the test project directory, then up again to the "src" level,
-                // then "down" to the application directory
-                path = path.ParentDirectory().ParentDirectory().AppendPath(assembly.GetName().Name);
+                    // Go up once to get to the test project directory, then up again to the "src" level,
+                    // then "down" to the application directory
+                    path = path.ParentDirectory().ParentDirectory().AppendPath(assembly.GetName().Name);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Unable to determine the ");
+                    Console.WriteLine(e);
+                    path = AppContext.BaseDirectory.ToFullPath();
+                }
             }
 
             GeneratedCodeOutputPath = path.AppendPath("Internal", "Generated");
