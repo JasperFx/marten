@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
@@ -24,7 +25,7 @@ namespace Marten.Linq.Fields
         {
             TypedLocator = $"CAST({RawLocator} as {PgType})";
             _intermediateLocator = RawLocator.Replace("->>", "->");
-            var valueType = FieldType.GenericTypeArguments[1];
+            var valueType = FieldType.FindInterfaceThatCloses(typeof(IDictionary<,>))!.GenericTypeArguments[1];
             _valueIsObject = valueType == typeof(object);
             _isStringValue = valueType == typeof(string);
             _valuePgType = PostgresqlProvider.Instance.GetDatabaseType(valueType, enumStorage);
