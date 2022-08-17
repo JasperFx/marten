@@ -177,6 +177,13 @@ namespace Marten.Events.Daemon.HighWater
         public async Task CheckNow()
         {
             var statistics = await _detector.Detect(_token).ConfigureAwait(false);
+            var initialHighMark = statistics.HighestSequence;
+            while (statistics.CurrentMark < initialHighMark)
+            {
+                await Task.Delay(_settings.SlowPollingTime, _token).ConfigureAwait(false);
+                statistics = await _detector.DetectInSafeZone(_token).ConfigureAwait(false);
+            }
+
             _tracker.MarkHighWater(statistics.CurrentMark);
         }
 

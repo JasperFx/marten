@@ -154,12 +154,14 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         [Fact]
-        public async Task bug_repro_2()
+        public async Task rebuild_with_gaps_in_sequence_from_initial_position_before_high_water_is_started()
         {
             // register projection
             StoreOptions(x =>
             {
                 x.Projections.Add<CarAggregation>();
+                x.Projections.StaleSequenceThreshold = 250.Milliseconds();
+                x.Projections.SlowPollingTime = 500.Milliseconds();
             }, true);
 
             // create car stream with 1000 events
@@ -187,19 +189,14 @@ namespace Marten.AsyncDaemon.Testing
 
             await deleteEvents(groupsToRemove);
 
-            var projections = new[] { "CarView" };
-
             // rebuild the projection
             var daemon = await theStore.BuildProjectionDaemonAsync(logger: Logger);
 
-            await daemon.StartDaemon();
+            //await daemon.StartDaemon();
 
             try
             {
-                foreach (var projection in projections)
-                {
-                    await daemon.RebuildProjection($"{nameof(build_aggregate_multiple_projections)}.{projection}", default);
-                }
+                await daemon.RebuildProjection<CarAggregation>(default);
             }
             catch (Exception ex)
             {
@@ -223,6 +220,75 @@ namespace Marten.AsyncDaemon.Testing
                 cars.Last().Name.ShouldBe("car-name-999");
             }
         }
+
+                [Fact]
+        public async Task rebuild_with_gaps_in_sequence_from_initial_position_after_high_water_is_started()
+        {
+            // register projection
+            StoreOptions(x =>
+            {
+                x.Projections.Add<CarAggregation>();
+                x.Projections.StaleSequenceThreshold = 250.Milliseconds();
+                x.Projections.SlowPollingTime = 500.Milliseconds();
+            }, true);
+
+            // create car stream with 1000 events
+            using (var session = theStore.LightweightSession())
+            {
+                var events = new List<CarNamed>();
+
+                for (var i = 0; i < 1000; i++)
+                {
+                    events.Add(new CarNamed { Value = $"car-name-{i}" });
+                }
+
+                session.Events.StartStream(Guid.NewGuid(), events);
+                await session.SaveChangesAsync();
+            }
+
+            // create some gaps
+            long startingId = 25;
+            var group1 = Enumerable.Range(0, 5).Select(x => x + startingId).ToArray();
+            var group2 = Enumerable.Range(0, 5).Select(x => x + startingId + 10).ToArray();
+            var group3 = Enumerable.Range(0, 5).Select(x => x + startingId + 20).ToArray();
+            var group4 = Enumerable.Range(0, 5).Select(x => x + startingId + 45).ToArray();
+
+            var groupsToRemove = group1.Concat(group2).Concat(group3).Concat(group4).ToArray();
+
+            await deleteEvents(groupsToRemove);
+
+            // rebuild the projection
+            var daemon = await theStore.BuildProjectionDaemonAsync(logger: Logger);
+
+            await daemon.StartDaemon();
+
+            try
+            {
+                await daemon.RebuildProjection<CarAggregation>(default);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            finally
+            {
+                await daemon.StopAll();
+                daemon.Dispose();
+            }
+
+            // assert that the projections have reached max seq_id
+            using (var session = theStore.QuerySession())
+            {
+                var waterMark = await GetHighWaterMark();
+                var maxSeqId = await GetMaxSeqId();
+
+                var cars = await session.Query<CarView>().ToListAsync();
+
+                waterMark.ShouldBe(maxSeqId);
+                cars.Last().Name.ShouldBe("car-name-999");
+            }
+        }
+
 
         protected async Task deleteEvents(params long[] ids)
         {
