@@ -138,3 +138,12 @@ public async Task append_exclusive(IDocumentSession session, Guid streamId)
 <!-- endSnippet -->
 
 This usage will in effect serialize access to a single event stream.
+
+## Tombstone Events
+
+It's an imperfect world and sometimes transactions involving Marten events will fail in process. That historically caused issues with Marten's asynchronous projection support when there were "gaps"
+in the event store sequence due to failed transactions. Marten V4 introduced support for "tombstone" events where Marten tries to insert placeholder rows in the events table with the 
+event sequence numbers that failed in a Marten transaction. This is done strictly to improve the functioning of the [async daemon](/events/projections/async-daemon) that looks for gaps in the event sequence to "know" how
+far it's safe to process asynchronous projections. If you see event rows in your database of type "tombstone", it's representative of failed transactions (maybe from optimistic concurrency violations,
+transient network issues, timeouts, etc.).
+
