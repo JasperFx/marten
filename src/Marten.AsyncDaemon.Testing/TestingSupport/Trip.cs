@@ -9,9 +9,6 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
 
     public class Trip : Activity
     {
-
-
-
         public int EndedOn { get; set; }
 
         public double Traveled { get; set; }

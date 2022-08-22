@@ -61,6 +61,9 @@ public class SampleEventProjection : EventProjection
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/SampleEventProjection.cs#L60-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sampleeventprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+Do note that at any point you can access event metadata by accepting `IEvent<T>` where `T` is the event type instead of just the event type. You can also take in an additional variable for `IEvent` to just
+access the current event metadata (it's the same object regardless, but sometimes taking in both the event body and the event metadata results in simpler code);
+
 And that projection can run either inline or asynchronously with the registration as shown below:
 
 <!-- snippet: sample_register_event_projection -->
