@@ -96,7 +96,9 @@ Regardless of how things are configured, the daemon is designed to detect when m
 
 ## Daemon Logging
 
-The daemon logs through the standard .Net `ILogger` interface service registered in your application's underlying DI container.
+The daemon logs through the standard .Net `ILogger` interface service registered in your application's underlying DI container. In the case of the daemon having to skip 
+"poison pill" events, you can see a record of this in the `DeadLetterEvent` storage in your database (the `mt_doc_dead_letter_event` table) along with the exception. Use this to fix underlying issues
+and be able to replay events later after the fix.
 
 ## Error Handling
 
