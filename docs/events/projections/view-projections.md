@@ -1,7 +1,12 @@
-# Cross-Stream Aggregations
+# Multi-Stream Aggregations
 
-View projections are designed to handle multi-stream projections where a view is aggregated over events between streams. The `ViewProjection<TDoc, TId>`
-base class is a subclass of the simpler [Aggregate Projection](/events/projections/aggregate-projections) and supports all the same method conventions and inline event handling, but allows
+::: tip
+This may change again in V6 (sigh), but we have replaced the earlier nomenclature of "ViewProjection" and renamed this concept as
+`MultiStreamAggregation` to hopefully be more intention revealing.
+:::
+
+Multi stream projections are designed to handle multi-stream projections where a view is aggregated over events between streams. The `MultiStreamAggregation<TDoc, TId>`
+base class is a subclass of the simpler [Single Stream Projection](/events/projections/aggregate-projections) and supports all the same method conventions and inline event handling, but allows
 the user to specify how events apply to aggregated views in ways besides the simple aggregation by stream model.
 
 For simple event to aggregate groupings, you can use the:

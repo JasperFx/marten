@@ -494,3 +494,35 @@ internal async Task use_a_self_aggregate()
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripAggregationWithCustomName.cs#L84-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_self_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Aggregate Versioning
+
+It's frequently valuable to know the version of the underlying event stream that a single stream aggregate represents. Marten 5.4 added a 
+new, built in convention to automatically set the aggregate version on the aggregate document itself. The immediate usage is probably to help 
+Marten users opt into Marten's [optimistic concurrency for appending events](/events/appending.html#appending-events-1) by making it easier to get the current aggregate (stream) version that you need
+in order to opt into the optimistic concurrency check. 
+
+To start with, let's say
+we have a self aggregating `OrderAggregate` document like this:
+
+snippet: sample_OrderAggregate_with_version
+
+Notice the `Version` property of that document above. Using a naming convention (we'll talk about how to go around the convention in just a second),
+Marten "knows" that that property should reflect the latest versioned event within the individual stream encountered by this projection. So if 
+there have been 5 events captured for a particular stream and all five events have been processed through the projection, the value of the `Version`
+property will be 5. 
+
+There are of course some restrictions:
+
+* The version member can be either a field or a property
+* The getter can be internal or private (but the mechanics are a tiny bit smoother with a public setter)
+* The version member can be either an `int` (Int32) or `long` (Int64)
+
+Marten determines whether a member is the version of the aggregate by first finding all public members
+of either type `int` or `long`, then running down these rules:
+
+1. A member marked with the `[Version]` attribute will override the naming convention
+2. Look for an member named "version" (it's not case sensitive)
+3. **But**, ignore any member marked with `[MartenIgnore]` in case "Version" has a different meaning on your aggregate document
+
+
