@@ -39,6 +39,17 @@ public class Program
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L13-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sampleconsoleapp' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+Or if you're on >= .Net 6, you can still use the Marten CLI options with the `WebApplication` style
+of bootstrapping with a few changes. First, to completely enable the Weasel/Marten command line diagnostics,
+you'll need to add this line of code:
+
+snippet: sample_using_WebApplication_1
+
+And finally, use Oakton as the command line parser and executor with this last line of code in your
+`Program.cs` file:
+
+snippet: sample_using_WebApplication_2
+
 Once the _Marten.CommandLine_ Nuget is installed and Oakton is handling your command line parsing, you should be able to see the Marten commands by typing `dotnet run -- help` in the command line terminal of your choice at the root of your project:
 
 ```bash
