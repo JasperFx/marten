@@ -35,20 +35,20 @@ is configured as:
 2. `Inline`, Marten is loading the persisted `Order` document directly from the underlying database
 
 Regardless of how Marten is loading or deriving the state of `Order`, it's also quietly fetching the current version of that `Order` stream
-at the point that the aggregate was fetched. Stepping down inside the code, we're doing some crude validation of the current state of the 
-`Order` and potentially rejecting the entire command. Past that we're appending a new event for `ItemReady` and conditionally appending a 
+at the point that the aggregate was fetched. Stepping down inside the code, we're doing some crude validation of the current state of the
+`Order` and potentially rejecting the entire command. Past that we're appending a new event for `ItemReady` and conditionally appending a
 second event for `OrderReady` if every item within the `Order` is ready (for shipping I guess, this isn't really a fully formed domain model here).
 
 After appending the events via the new `IEventStream.AppendOne()` (there's also an `AppendMany()` method), we're ready to save the new events with
 the standard `IDocumentSession.SaveChangesAsync()` method call. At that point, if some other process has managed to commit changes to the same
-`Order` stream between our handler calling `FetchForWriting()` and `IDocumentSession.SaveChangesAsync()`, the entire command will fail with a Marten 
-`ConcurrencyException`. 
+`Order` stream between our handler calling `FetchForWriting()` and `IDocumentSession.SaveChangesAsync()`, the entire command will fail with a Marten
+`ConcurrencyException`.
 
 ## Explicit Optimistic Concurrency
 
 This time let's explicitly opt into optimistic concurrency checks by telling Marten what the expected starting
 version of the stream should be in order for the command to be processed. In this usage, you're probably assuming that
-the command message was based on the starting state. 
+the command message was based on the starting state.
 
 The ever so slightly version of the original handler is shown below:
 
@@ -76,4 +76,3 @@ Lastly, there are several overloads of a method called `IEventStore.WriteToAggre
 over the top of `FetchForWriting()` to simplify the entire workflow. Using that method, our handler versions above becomes:
 
 snippet: sample_using_WriteToAggregate
-
