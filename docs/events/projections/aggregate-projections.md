@@ -525,7 +525,6 @@ of either type `int` or `long`, then running down these rules:
 2. Look for an member named "version" (it's not case sensitive)
 3. **But**, ignore any member marked with `[MartenIgnore]` in case "Version" has a different meaning on your aggregate document
 
-
 ## Using Event Metadata in Aggregates
 
 All the previous examples showed `Apply` / `Create` / `ShouldDelete` methods that accepted
