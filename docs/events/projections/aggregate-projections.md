@@ -31,14 +31,14 @@ public class QuestParty
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/QuestParty.cs#L8-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Once again, here's the class diagram of the key projection types inside of Marten, but please note the `AggregationProjection<T>`:
+Once again, here's the class diagram of the key projection types inside of Marten, but please note the `SingleStreamAggregation<T>`:
 
 ![Projection Class Diagram](/images/Projections.png)
 
 Marten supports a few different types of aggregated projections:
 
-* **Aggregates by Stream** -- creating a rolled up view of all or a segment of the events within an event stream. This is done through either a *self-aggregate* or by using `AggregateStream<T>` as a base class for your projection.
-* **Aggregates across Streams** -- creating a rolled up view of a user-defined grouping of events across streams. These projections are done by sub-classing the `ViewProjection<TDoc, TId>` class and is further described in [View Projections](/events/projections/view-projections).
+* **Single Stream Aggregates** -- creating a rolled up view of all or a segment of the events within an event stream. This is done through either a *self-aggregate* or by using `AggregateStream<T>` as a base class for your projection.
+* **Multi Stream Aggregates** -- creating a rolled up view of a user-defined grouping of events across streams. These projections are done by sub-classing the `MultiStreamAggregation<TDoc, TId>` class and is further described in [View Projections](/events/projections/view-projections).
 
 Please note that all aggregated projections share the same set of method conventions described in this page.
 
@@ -526,3 +526,15 @@ of either type `int` or `long`, then running down these rules:
 3. **But**, ignore any member marked with `[MartenIgnore]` in case "Version" has a different meaning on your aggregate document
 
 
+## Using Event Metadata in Aggregates
+
+All the previous examples showed `Apply` / `Create` / `ShouldDelete` methods that accepted
+the specific event type as the first argument. If there is a need for accessing the
+event metadata (timestamps, causation/correlation information, custom event headers),
+you can alternatively accept an argument of type `IEvent<T>` where `T` is the actual event type (do this in
+place of the event body) or by accepting an additional argument of type `IEvent`
+just to access the event metadata.
+
+Below is a small example of accessing event metadata during aggregation:
+
+snippet: sample_aggregation_using_event_metadata

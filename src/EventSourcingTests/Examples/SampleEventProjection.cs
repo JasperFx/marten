@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Marten;
+using Marten.Events;
 using Marten.Events.Projections;
 
 namespace EventSourcingTests.Examples
@@ -39,7 +40,11 @@ namespace EventSourcingTests.Examples
         public Guid Id { get; set; }
     }
 
-    public class Event2 : ISpecialEvent{}
+    public class Event2: ISpecialEvent
+    {
+        public Guid Id { get; set; }
+    }
+
     public class Event3
     {
         public Guid LookupId { get; set; }
@@ -55,6 +60,12 @@ namespace EventSourcingTests.Examples
     public class Lookup
     {
         public Guid Id { get; set; }
+    }
+
+    public class Document2
+    {
+        public Guid Id { get; set; }
+        public DateTimeOffset Timestamp { get; set; }
     }
 
     #region sample_SampleEventProjection
@@ -89,6 +100,9 @@ namespace EventSourcingTests.Examples
 
         // This is the conventional method equivalents to the inline calls above
         public Document1 Create(Event1 e) => new Document1 {Id = e.Id};
+
+        // Or with event metadata
+        public Document2 Create(IEvent<Event2> e) => new Document2 { Id = e.Data.Id, Timestamp = e.Timestamp };
 
         public void Project(StopEvent1 e, IDocumentOperations ops)
             => ops.Delete<Document1>(e.Id);
