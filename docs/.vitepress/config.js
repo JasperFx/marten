@@ -65,7 +65,7 @@ module.exports = {
           ]
         },
         {
-          text:'Configuration',  
+          text:'Configuration',
           collapsible: true,
           collapsed: true,
           items: [
@@ -167,7 +167,7 @@ module.exports = {
             },
           ]
         },
-        { text: 'Diagnostics', 
+        { text: 'Diagnostics',
           collapsible: true,
           collapsed: true,
           items: [
@@ -187,7 +187,7 @@ module.exports = {
             {text: 'Tearing Down Document Storage', link: '/schema/cleaning'},
           ]
         },
-        { text: 'Troubleshoot', 
+        { text: 'Troubleshoot',
           collapsible: true,
           collapsed: true,
           items: [
@@ -215,6 +215,10 @@ module.exports = {
               text: 'Using sequences for unique identifiers',
               link: '/scenarios/using-sequence-for-unique-id'
             },
+            {
+              text: 'Command Handler Workflow for Capturing Events',
+              link: '/scenarios/command_handler_workflow'
+            }
           ]
         },
         {
