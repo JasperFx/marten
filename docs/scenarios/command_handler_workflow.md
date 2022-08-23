@@ -1,4 +1,4 @@
-# Command Handler Workflow for Capturing Events
+# CQRS Command Handler Workflow for Capturing Events
 
 ::: tip
 All of this functionality originated with Marten V5.4 as a way to optimize the development workflow of typical
