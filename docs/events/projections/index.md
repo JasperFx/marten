@@ -38,7 +38,7 @@ For other descriptions of the _Projections_ pattern inside of Event Sourcing arc
 
 Aggregates condense data described by a single stream. As of v1.0, Marten only supports aggregation via .Net classes. Aggregates are calculated upon every request by running the event stream through them, as compared to inline projections, which are computed at event commit time and stored as documents.
 
-The out-of-the box convention is to expose `public Apply(<EventType>)` methods on your aggregate class to do all incremental updates to an aggregate object. This can be customized using [AggregatorLookup](#aggregator-lookup).
+The out-of-the box convention is to expose `public Apply(<EventType>)` methods on your aggregate class to do all incremental updates to an aggregate object.
 
 Sticking with the fantasy theme, the `QuestParty` class shown below could be used to aggregate streams of quest data:
 
