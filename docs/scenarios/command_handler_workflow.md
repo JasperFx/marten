@@ -2,7 +2,7 @@
 
 ::: tip
 All of this functionality originated with Marten V5.4 as a way to optimize the development workflow of typical
-CQRS command handlers that possibly emit events to Marten
+command handlers that possibly emit events to Marten
 :::
 
 So you're using Marten's event sourcing functionality within some kind architecture (CQRS maybe?) where your business logic needs to emit events modeling
