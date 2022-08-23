@@ -75,7 +75,8 @@
         "NAMEDATALEN",
         "unigrams",
         "bigrams",
-        "Blazor"
+        "Blazor",
+        "CQRS"
     ],
     "ignoreRegExpList": [
         "\\((.*)\\)", // Markdown links
