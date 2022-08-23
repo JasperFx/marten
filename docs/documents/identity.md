@@ -226,9 +226,9 @@ public class DocumentWithStringId
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/IdentityKeyGenerationTests.cs#L30-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_documentwithstringid' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-You can use the "identity key" option for identity generation that would create string values of the pattern `[type alias]/[sequence]` where the type alias is typically the document class name in all lower case and the sequence is a *HiLo* sequence number.
+You can use the "identity key" option for identity generation that would create string values of the pattern `[type alias]/[sequence]` where the type alias is typically the document class name in all lower case and the sequence is a _HiLo_ sequence number.
 
-You can opt into the *identity key* strategy for identity and even override the document alias name with this syntax:
+You can opt into the _identity key_ strategy for identity and even override the document alias name with this syntax:
 
 <!-- snippet: sample_using_IdentityKey -->
 <a id='snippet-sample_using_identitykey'></a>

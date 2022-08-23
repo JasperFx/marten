@@ -90,7 +90,7 @@ public class User
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L17-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_user_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-_For more information on document identity, see [identity](/documents/identity)._
+*For more information on document identity, see [identity](/documents/identity).*
 
 And now that we've got a PostgreSQL schema and an `IDocumentStore` variable called `store`, let's start persisting and loading user documents:
 

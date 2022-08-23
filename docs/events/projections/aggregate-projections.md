@@ -37,7 +37,7 @@ Once again, here's the class diagram of the key projection types inside of Marte
 
 Marten supports a few different types of aggregated projections:
 
-* **Single Stream Aggregates** -- creating a rolled up view of all or a segment of the events within an event stream. This is done through either a *self-aggregate* or by using `AggregateStream<T>` as a base class for your projection.
+* **Single Stream Aggregates** -- creating a rolled up view of all or a segment of the events within an event stream. This is done through either a _self-aggregate_ or by using `AggregateStream<T>` as a base class for your projection.
 * **Multi Stream Aggregates** -- creating a rolled up view of a user-defined grouping of events across streams. These projections are done by sub-classing the `MultiStreamAggregation<TDoc, TId>` class and is further described in [View Projections](/events/projections/view-projections).
 
 Please note that all aggregated projections share the same set of method conventions described in this page.
@@ -404,7 +404,7 @@ Additionally, `ShouldDelete()` methods should return either a `Boolean` or `Task
 
 ## "Self-Aggregates"
 
-You can use the `AggregateProjection<T>` method conventions with a *self-aggregate*, which we just mean to be an aggregate document type that implements its
+You can use the `AggregateProjection<T>` method conventions with a _self-aggregate_, which we just mean to be an aggregate document type that implements its
 own `Apply()` or `ShouldDelete()` methods to mutate itself. Using that concept, let's take the `TripProjection` we have been using and apply that instead
 to a self-aggregating `Trip` type:
 

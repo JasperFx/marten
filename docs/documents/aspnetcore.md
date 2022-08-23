@@ -115,7 +115,7 @@ public Task OpenIssues2([FromServices] IQuerySession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L91-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_compiled_query_with_json_streaming' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Likewise, you *could* use a compiled query to write a single document. As a contrived
+Likewise, you _could_ use a compiled query to write a single document. As a contrived
 sample, here's an example compiled query that reads a single `Issue` document by its
 id:
 
