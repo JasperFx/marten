@@ -18,7 +18,7 @@ jobs:
       - name: Lint Code Base
         uses: docker://avtodev/markdown-lint:v1
         with:
-          args: "--disable MD009 docs/**/*.md"
+          args: "--disable MD009 -- docs/**/*.md"
   spellcheck:
     name: "Spell check"
     runs-on: ubuntu-latest
