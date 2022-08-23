@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v2
         name: Check out the code
       - name: Lint Code Base
-        uses: docker://avtodev/markdown-lint:v1
+        uses: docker://ghcr.io/igorshubovych/markdownlint-cli:latest
         with:
           args: "--disable MD009 -- docs/**/*.md"
   spellcheck:
