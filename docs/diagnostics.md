@@ -184,7 +184,7 @@ public class FakeListener: IChangeListener
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/basic_async_daemon_tests.cs#L47-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asyncdaemonlistener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/basic_async_daemon_tests.cs#L52-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asyncdaemonlistener' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Wiring a Async Daemon listener:
@@ -198,7 +198,7 @@ StoreOptions(x =>
     x.Projections.AsyncListeners.Add(listener);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/basic_async_daemon_tests.cs#L64-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asynclisteners' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/basic_async_daemon_tests.cs#L69-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asynclisteners' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Logging

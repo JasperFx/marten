@@ -338,18 +338,18 @@ namespace Marten.Events.Daemon
             var sessionOptions = SessionOptions.ForDatabase(Database);
             sessionOptions.AllowAnyTenant = true;
             sessionOptions.Tracking = DocumentTracking.None;
-            var session = await _store.OpenSessionAsync(sessionOptions, token).ConfigureAwait(false);
-            await using (session.ConfigureAwait(false))
+            await using var session = await _store.OpenSessionAsync(sessionOptions, token).ConfigureAwait(false);
+            source.Options.Teardown(session);
+
+            foreach (var shard in shards)
             {
-                source.Options.Teardown(session);
-
-                foreach (var shard in shards)
-                {
-                    session.QueueOperation(new DeleteProjectionProgress(_store.Events, shard.Name.Identity));
-                }
-
-                await session.SaveChangesAsync(token).ConfigureAwait(false);
+                session.QueueOperation(new DeleteProjectionProgress(_store.Events, shard.Name.Identity));
             }
+
+            // Rewind previous DeadLetterEvents because you're going to replay them all anyway
+            session.DeleteWhere<DeadLetterEvent>(x => x.ProjectionName == source.ProjectionName);
+
+            await session.SaveChangesAsync(token).ConfigureAwait(false);
         }
 
         private static async Task waitForAllShardsToComplete(CancellationToken token, Task[] waiters)

@@ -15,5 +15,7 @@ namespace Marten.Events.Daemon
 
         Task TryAction(Func<Task> action, CancellationToken token, Action<ILogger, Exception>? logException = null, EventRangeGroup? group = null, GroupActionMode actionMode = GroupActionMode.Parent);
 
+        ShardName Name { get; }
+        ShardExecutionMode Mode { get; set; }
     }
 }

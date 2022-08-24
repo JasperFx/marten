@@ -6,6 +6,8 @@ using Marten.Events;
 
 namespace Marten.AsyncDaemon.Testing.TestingSupport
 {
+
+
     public class TripStream
     {
         public static List<TripStream> RandomStreams(int number)
@@ -85,6 +87,8 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
                     Events.Add(arrival);
                 }
             }
+
+            Events.Add(new FailingEvent());
 
             if (randomNumber > .5)
             {

@@ -23,6 +23,7 @@ namespace Marten.Events.Daemon
     internal class EventFetcher : IDisposable
     {
         private readonly IDocumentStore _store;
+        private readonly IShardAgent _shardAgent;
         private readonly IMartenDatabase _database;
         private readonly ISqlFragment[] _filters;
         private readonly IEventStorage _storage;
@@ -31,9 +32,11 @@ namespace Marten.Events.Daemon
         private readonly NpgsqlCommand _command;
         private readonly int _aggregateIndex;
 
-        public EventFetcher(IDocumentStore store, IMartenDatabase database, ISqlFragment[] filters)
+        public EventFetcher(IDocumentStore store, IShardAgent shardAgent, IMartenDatabase database,
+            ISqlFragment[] filters)
         {
             _store = store;
+            _shardAgent = shardAgent;
             _database = database;
             _filters = filters;
 
@@ -92,7 +95,7 @@ namespace Marten.Events.Daemon
             {
                 range.Events = new List<IEvent>();
 
-                using var session = querySession();
+                await using var session = querySession();
                 _floor.Value = range.SequenceFloor;
                 _ceiling.Value = range.SequenceCeiling;
 
