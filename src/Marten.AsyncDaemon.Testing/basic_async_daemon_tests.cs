@@ -9,6 +9,7 @@ using Marten.Events.Projections;
 using Marten.Linq.SqlGeneration;
 using Marten.Services;
 using Marten.Testing.Harness;
+using NSubstitute;
 using Shouldly;
 using Weasel.Postgresql.SqlGeneration;
 using Xunit;
@@ -18,8 +19,12 @@ namespace Marten.AsyncDaemon.Testing
 {
     public class basic_async_daemon_tests: DaemonContext
     {
+        private readonly IShardAgent theAgent;
+
         public basic_async_daemon_tests(ITestOutputHelper output) : base(output)
         {
+            theAgent = Substitute.For<IShardAgent>();
+            theAgent.Mode.Returns(ShardExecutionMode.Continuous);
         }
 
         [Fact]
@@ -133,7 +138,7 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public async Task event_fetcher_simple_case()
         {
-            using var fetcher = new EventFetcher(theStore, theStore.Tenancy.Default.Database, new ISqlFragment[0]);
+            using var fetcher = new EventFetcher(theStore, theAgent, theStore.Tenancy.Default.Database, new ISqlFragment[0]);
 
             NumberOfStreams = 10;
             await PublishSingleThreaded();
@@ -161,7 +166,7 @@ namespace Marten.AsyncDaemon.Testing
             NumberOfStreams = 10;
             await PublishSingleThreaded();
 
-            using var fetcher1 = new EventFetcher(theStore, theStore.Tenancy.Default.Database, new ISqlFragment[0]);
+            using var fetcher1 = new EventFetcher(theStore, theAgent, theStore.Tenancy.Default.Database, new ISqlFragment[0]);
 
             var shardName = new ShardName("name");
             var range1 = new EventRange(shardName, 0, NumberOfEvents);
@@ -173,7 +178,7 @@ namespace Marten.AsyncDaemon.Testing
             uniqueTypeCount.ShouldBe(5);
 
             var filter = new EventTypeFilter(theStore.Events, new Type[] {typeof(Travel), typeof(Arrival)});
-            using var fetcher2 = new EventFetcher(theStore, theStore.Tenancy.Default.Database, new ISqlFragment[]{filter});
+            using var fetcher2 = new EventFetcher(theStore, theAgent, theStore.Tenancy.Default.Database, new ISqlFragment[]{filter});
 
             var range2 = new EventRange(shardName, 0, NumberOfEvents);
             await fetcher2.Load(range2, CancellationToken.None);

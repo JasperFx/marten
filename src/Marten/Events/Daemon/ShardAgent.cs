@@ -182,7 +182,7 @@ namespace Marten.Events.Daemon
             _tracker = daemon.Tracker;
             _daemon = daemon;
 
-            _fetcher = new EventFetcher(_store, _daemon.Database, _projectionShard.EventFilters);
+            _fetcher = new EventFetcher(_store, this, _daemon.Database, _projectionShard.EventFilters);
             _grouping = new TransformBlock<EventRange, EventRangeGroup>(groupEventRange, singleFileOptions);
 
             _building = new ActionBlock<EventRangeGroup>(processRange, singleFileOptions);
