@@ -1,7 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Castle.DynamicProxy.Contributors;
-using EventSourcingTests.Aggregation;
 using LamarCodeGeneration;
 using Marten;
 using Marten.AsyncDaemon.Testing;
@@ -21,150 +19,149 @@ using CreateEvent = EventSourcingTests.Aggregation.CreateEvent;
 using DEvent = EventSourcingTests.Aggregation.DEvent;
 using MyAggregate = EventSourcingTests.Aggregation.MyAggregate;
 
-namespace CommandLineRunner
+namespace CommandLineRunner;
+
+public interface IOtherStore: IDocumentStore
 {
-    public interface IOtherStore : IDocumentStore
-    {
-
-    }
-
-    #region sample_configuring_pre_build_types
-
-    public static class Program
-    {
-public static Task<int> Main(string[] args)
-{
-    return CreateHostBuilder(args).RunOaktonCommands(args);
 }
 
-        public static IHostBuilder CreateHostBuilder(string[] args)
-        {
-            return Host.CreateDefaultBuilder(args)
-                .ConfigureServices((hostContext, services) =>
-                {
-                    services.AddMartenStore<IOtherStore>(opts =>
-                    {
-                        opts.Connection(ConnectionSource.ConnectionString);
-                        opts.RegisterDocumentType<Target>();
-                        opts.GeneratedCodeMode = TypeLoadMode.Auto;
-                    });
+#region sample_configuring_pre_build_types
 
-services.AddMarten(opts =>
+public static class Program
 {
-    opts.AutoCreateSchemaObjects = AutoCreate.All;
-    opts.DatabaseSchemaName = "cli";
+    public static Task<int> Main(string[] args)
+    {
+        return CreateHostBuilder(args).RunOaktonCommands(args);
+    }
 
-    opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
-        .WithTenants("tenant1", "tenant2", "tenant3");
-
-    // This is important, setting this option tells Marten to
-    // *try* to use pre-generated code at runtime
-    opts.GeneratedCodeMode = TypeLoadMode.Auto;
-
-    opts.Schema.For<Activity>().AddSubClass<Trip>();
-
-    // You have to register all persisted document types ahead of time
-    // RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()
-    // just to let Marten know that document type exists
-    opts.RegisterDocumentType<Target>();
-    opts.RegisterDocumentType<User>();
-
-    // If you use compiled queries, you will need to register the
-    // compiled query types with Marten ahead of time
-    opts.RegisterCompiledQueryType(typeof(FindUserByAllTheThings));
-
-    // Register all event store projections ahead of time
-    opts.Projections
-        .Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
-
-    opts.Projections
-        .Add(new DayProjection(), ProjectionLifecycle.Async);
-
-    opts.Projections
-        .Add(new DistanceProjection(), ProjectionLifecycle.Async);
-
-    opts.Projections
-        .Add(new SimpleAggregate(), ProjectionLifecycle.Inline);
-
-    // This is actually important to register "live" aggregations too for the code generation
-    opts.Projections.SelfAggregate<SelfAggregatingTrip>(ProjectionLifecycle.Live);
-}).AddAsyncDaemon(DaemonMode.Solo);
+    public static IHostBuilder CreateHostBuilder(string[] args)
+    {
+        return Host.CreateDefaultBuilder(args)
+            .ConfigureServices((hostContext, services) =>
+            {
+                services.AddMartenStore<IOtherStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.RegisterDocumentType<Target>();
+                    opts.GeneratedCodeMode = TypeLoadMode.Auto;
                 });
-        }
+
+                services.AddMarten(opts =>
+                {
+                    opts.AutoCreateSchemaObjects = AutoCreate.All;
+                    opts.DatabaseSchemaName = "cli";
+
+                    opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
+                        .WithTenants("tenant1", "tenant2", "tenant3");
+
+                    // This is important, setting this option tells Marten to
+                    // *try* to use pre-generated code at runtime
+                    opts.GeneratedCodeMode = TypeLoadMode.Auto;
+
+                    opts.Schema.For<Activity>().AddSubClass<Trip>();
+
+                    // You have to register all persisted document types ahead of time
+                    // RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()
+                    // just to let Marten know that document type exists
+                    opts.RegisterDocumentType<Target>();
+                    opts.RegisterDocumentType<User>();
+
+                    // If you use compiled queries, you will need to register the
+                    // compiled query types with Marten ahead of time
+                    opts.RegisterCompiledQueryType(typeof(FindUserByAllTheThings));
+
+                    // Register all event store projections ahead of time
+                    opts.Projections
+                        .Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
+
+                    opts.Projections
+                        .Add(new DayProjection(), ProjectionLifecycle.Async);
+
+                    opts.Projections
+                        .Add(new DistanceProjection(), ProjectionLifecycle.Async);
+
+                    opts.Projections
+                        .Add(new SimpleAggregate(), ProjectionLifecycle.Inline);
+
+                    // This is actually important to register "live" aggregations too for the code generation
+                    opts.Projections.SelfAggregate<SelfAggregatingTrip>(ProjectionLifecycle.Live);
+                }).AddAsyncDaemon(DaemonMode.Solo);
+            });
+    }
+}
+
+#endregion
+
+public class SelfAggregatingTrip
+{
+    public Guid Id { get; set; }
+    public string State { get; set; } = null!;
+    public double Traveled { get; set; }
+
+    public int EndedOn { get; set; }
+
+    public bool Active { get; set; }
+
+    public void Apply(Arrival e)
+    {
+        State = e.State;
     }
 
-    #endregion
-
-    public class SelfAggregatingTrip
+    public void Apply(Travel e)
     {
-        public Guid Id { get; set; }
-        public void Apply(Arrival e) => State = e.State;
-        public string State { get; set; } = null!;
-
-        public void Apply(Travel e) => Traveled += e.TotalDistance();
-        public double Traveled { get; set; }
-
-        public void Apply(TripEnded e)
-        {
-            Active = false;
-            EndedOn = e.Day;
-        }
-
-        public int EndedOn { get; set; }
-
-        public bool Active { get; set; }
+        Traveled += e.TotalDistance();
     }
 
-    public class SimpleAggregate: SingleStreamAggregation<MyAggregate>
+    public void Apply(TripEnded e)
     {
-        public SimpleAggregate()
-        {
-            ProjectionName = "AllGood";
-        }
+        Active = false;
+        EndedOn = e.Day;
+    }
+}
 
-        public MyAggregate Create(CreateEvent @event)
-        {
-            return new MyAggregate
-            {
-                ACount = @event.A,
-                BCount = @event.B,
-                CCount = @event.C,
-                DCount = @event.D
-            };
-        }
+public class SimpleAggregate: SingleStreamAggregation<MyAggregate>
+{
+    public SimpleAggregate()
+    {
+        ProjectionName = "AllGood";
+    }
 
-        public void Apply(AEvent @event, MyAggregate aggregate)
-        {
-            aggregate.ACount++;
-        }
+    public MyAggregate Create(CreateEvent @event)
+    {
+        return new MyAggregate { ACount = @event.A, BCount = @event.B, CCount = @event.C, DCount = @event.D };
+    }
 
-        public MyAggregate Apply(BEvent @event, MyAggregate aggregate)
-        {
-            return new MyAggregate
-            {
-                ACount = aggregate.ACount,
-                BCount = aggregate.BCount + 1,
-                CCount = aggregate.CCount,
-                DCount = aggregate.DCount,
-                Id = aggregate.Id
-            };
-        }
+    public void Apply(AEvent @event, MyAggregate aggregate)
+    {
+        aggregate.ACount++;
+    }
 
-        public void Apply(MyAggregate aggregate, CEvent @event)
+    public MyAggregate Apply(BEvent @event, MyAggregate aggregate)
+    {
+        return new MyAggregate
         {
-            aggregate.CCount++;
-        }
+            ACount = aggregate.ACount,
+            BCount = aggregate.BCount + 1,
+            CCount = aggregate.CCount,
+            DCount = aggregate.DCount,
+            Id = aggregate.Id
+        };
+    }
 
-        public MyAggregate Apply(MyAggregate aggregate, DEvent @event)
+    public void Apply(MyAggregate aggregate, CEvent @event)
+    {
+        aggregate.CCount++;
+    }
+
+    public MyAggregate Apply(MyAggregate aggregate, DEvent @event)
+    {
+        return new MyAggregate
         {
-            return new MyAggregate
-            {
-                ACount = aggregate.ACount,
-                BCount = aggregate.BCount,
-                CCount = aggregate.CCount,
-                DCount = aggregate.DCount + 1,
-                Id = aggregate.Id
-            };
-        }
+            ACount = aggregate.ACount,
+            BCount = aggregate.BCount,
+            CCount = aggregate.CCount,
+            DCount = aggregate.DCount + 1,
+            Id = aggregate.Id
+        };
     }
 }

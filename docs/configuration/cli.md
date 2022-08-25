@@ -43,12 +43,29 @@ Or if you're on >= .Net 6, you can still use the Marten CLI options with the `We
 of bootstrapping with a few changes. First, to completely enable the Weasel/Marten command line diagnostics,
 you'll need to add this line of code:
 
-snippet: sample_using_WebApplication_1
+<!-- snippet: sample_using_WebApplication_1 -->
+<a id='snippet-sample_using_webapplication_1'></a>
+```cs
+var builder = WebApplication.CreateBuilder(args);
+
+// Easiest to just do this right after creating builder
+// Must be done before calling builder.Build() at least
+builder.Host.ApplyOaktonExtensions();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/MinimalAPI/Program.cs#L9-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_webapplication_1' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 And finally, use Oakton as the command line parser and executor with this last line of code in your
 `Program.cs` file:
 
-snippet: sample_using_WebApplication_2
+<!-- snippet: sample_using_WebApplication_2 -->
+<a id='snippet-sample_using_webapplication_2'></a>
+```cs
+// This should be the last line of your Program.cs file
+return await app.RunOaktonCommands(args);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/MinimalAPI/Program.cs#L51-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_webapplication_2' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Once the _Marten.CommandLine_ Nuget is installed and Oakton is handling your command line parsing, you should be able to see the Marten commands by typing `dotnet run -- help` in the command line terminal of your choice at the root of your project:
 

@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="LamarCodeGeneration.Commands" Version="6.1.6" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
     </ItemGroup>
 

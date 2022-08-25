@@ -17,15 +17,98 @@ To that end, Marten has the `FetchForWriting()` operation for optimized command 
 
 Let's say that you are building an order fulfillment system, so we're naturally going to model our domain as an `Order` aggregate:
 
-snippet: sample_Order_for_optimized_command_handling
+<!-- snippet: sample_Order_for_optimized_command_handling -->
+<a id='snippet-sample_order_for_optimized_command_handling'></a>
+```cs
+public class Item
+{
+    public string Name { get; set; }
+    public bool Ready { get; set; }
+}
+
+public class Order
+{
+    // This would be the stream id
+    public Guid Id { get; set; }
+
+    // This is important, by Marten convention this would
+    // be the
+    public int Version { get; set; }
+
+    public Order(OrderCreated created)
+    {
+        foreach (var item in created.Items)
+        {
+            Items[item.Name] = item;
+        }
+    }
+
+    public void Apply(IEvent<OrderShipped> shipped) => Shipped = shipped.Timestamp;
+    public void Apply(ItemReady ready) => Items[ready.Name].Ready = true;
+
+    public DateTimeOffset? Shipped { get; private set; }
+
+    public Dictionary<string, Item> Items { get; set; } = new();
+
+    public bool IsReadyToShip()
+    {
+        return Shipped == null && Items.Values.All(x => x.Ready);
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L26-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_order_for_optimized_command_handling' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 And with some events like these:
 
-snippet: sample_Order_events_for_optimized_command_handling
+<!-- snippet: sample_Order_events_for_optimized_command_handling -->
+<a id='snippet-sample_order_events_for_optimized_command_handling'></a>
+```cs
+public record OrderShipped;
+public record OrderCreated(Item[] Items);
+public record OrderReady;
+
+public record ItemReady(string Name);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L14-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_order_events_for_optimized_command_handling' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Let's jump right into the first sample with simple concurrency handling:
 
-snippet: sample_fetch_for_writing_naive
+<!-- snippet: sample_fetch_for_writing_naive -->
+<a id='snippet-sample_fetch_for_writing_naive'></a>
+```cs
+public async Task Handle1(MarkItemReady command, IDocumentSession session)
+{
+    // Fetch the current value of the Order aggregate
+    var stream = await session
+        .Events
+        .FetchForWriting<Order>(command.OrderId);
+
+    var order = stream.Aggregate;
+
+    if (order.Items.TryGetValue(command.ItemName, out var item))
+    {
+        // Mark that the this item is ready
+        stream.AppendOne(new ItemReady(command.ItemName));
+    }
+    else
+    {
+        // Some crude validation
+        throw new InvalidOperationException($"Item {command.ItemName} does not exist in this order");
+    }
+
+    // If the order is ready to ship, also emit an OrderReady event
+    if (order.IsReadyToShip())
+    {
+        stream.AppendOne(new OrderReady());
+    }
+
+    await session.SaveChangesAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L71-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_for_writing_naive' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 In this usage, `FetchForWriting<Order>()` is finding the current state of the stream based on the stream id we passed in. If the `Order` aggregate
 is configured as:
@@ -52,7 +135,43 @@ the command message was based on the starting state.
 
 The ever so slightly version of the original handler is shown below:
 
-snippet: sample_fetch_for_writing_explicit_optimistic_concurrency
+<!-- snippet: sample_fetch_for_writing_explicit_optimistic_concurrency -->
+<a id='snippet-sample_fetch_for_writing_explicit_optimistic_concurrency'></a>
+```cs
+public async Task Handle2(MarkItemReady command, IDocumentSession session)
+{
+    // Fetch the current value of the Order aggregate
+    var stream = await session
+        .Events
+
+        // Explicitly tell Marten the exptected, starting version of the
+        // event stream
+        .FetchForWriting<Order>(command.OrderId, command.Version);
+
+    var order = stream.Aggregate;
+
+    if (order.Items.TryGetValue(command.ItemName, out var item))
+    {
+        // Mark that the this item is ready
+        stream.AppendOne(new ItemReady(command.ItemName));
+    }
+    else
+    {
+        // Some crude validation
+        throw new InvalidOperationException($"Item {command.ItemName} does not exist in this order");
+    }
+
+    // If the order is ready to ship, also emit an OrderReady event
+    if (order.IsReadyToShip())
+    {
+        stream.AppendOne(new OrderReady());
+    }
+
+    await session.SaveChangesAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L104-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_for_writing_explicit_optimistic_concurrency' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 In this case, Marten will throw a `ConcurrencyException` if the expected starting version being passed to `FetchForWriting()` has
 been incremented by some other process before this command. The same expected version check will also be evaluated during the call to
@@ -64,7 +183,43 @@ The last flavor of concurrency is to leverage Postgresql's ability to do row lev
 the event stream. This might be applicable when the result of the command is just dependent upon the initial state of the
 `Order` aggregate. This usage is shown below:
 
-snippet: sample_sample_fetch_for_writing_exclusive_lock
+<!-- snippet: sample_sample_fetch_for_writing_exclusive_lock -->
+<a id='snippet-sample_sample_fetch_for_writing_exclusive_lock'></a>
+```cs
+public async Task Handle3(MarkItemReady command, IDocumentSession session)
+{
+    // Fetch the current value of the Order aggregate
+    var stream = await session
+        .Events
+
+        // Explicitly tell Marten the exptected, starting version of the
+        // event stream
+        .FetchForExclusiveWriting<Order>(command.OrderId);
+
+    var order = stream.Aggregate;
+
+    if (order.Items.TryGetValue(command.ItemName, out var item))
+    {
+        // Mark that the this item is ready
+        stream.AppendOne(new ItemReady(command.ItemName));
+    }
+    else
+    {
+        // Some crude validation
+        throw new InvalidOperationException($"Item {command.ItemName} does not exist in this order");
+    }
+
+    // If the order is ready to ship, also emit an OrderReady event
+    if (order.IsReadyToShip())
+    {
+        stream.AppendOne(new OrderReady());
+    }
+
+    await session.SaveChangesAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L140-L174' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample_fetch_for_writing_exclusive_lock' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Do note that the `FetchForExclusiveWriting()` command can time out if it is unable to achieve a lock in a timely manner. In this case,
 Marten will throw a `StreamLockedException`. The lock will be released when either `IDocumentSession.SaveChangesAsync()` is called or
@@ -75,4 +230,33 @@ the `IDocumentSession` is disposed.
 Lastly, there are several overloads of a method called `IEventStore.WriteToAggregate()` that just puts some syntactic sugar
 over the top of `FetchForWriting()` to simplify the entire workflow. Using that method, our handler versions above becomes:
 
-snippet: sample_using_WriteToAggregate
+<!-- snippet: sample_using_WriteToAggregate -->
+<a id='snippet-sample_using_writetoaggregate'></a>
+```cs
+public Task Handle4(MarkItemReady command, IDocumentSession session)
+{
+    return session.Events.WriteToAggregate<Order>(command.OrderId, command.Version, stream =>
+    {
+        var order = stream.Aggregate;
+
+        if (order.Items.TryGetValue(command.ItemName, out var item))
+        {
+            // Mark that the this item is ready
+            stream.AppendOne(new ItemReady(command.ItemName));
+        }
+        else
+        {
+            // Some crude validation
+            throw new InvalidOperationException($"Item {command.ItemName} does not exist in this order");
+        }
+
+        // If the order is ready to ship, also emit an OrderReady event
+        if (order.IsReadyToShip())
+        {
+            stream.AppendOne(new OrderReady());
+        }
+    });
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L176-L203' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_writetoaggregate' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
