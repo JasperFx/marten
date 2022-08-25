@@ -220,7 +220,7 @@ namespace Marten.Events
             {
                 var dotnetTypeName = reader.GetFieldValue<string>(2);
 
-                mapping = EventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
+                mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
             }
 
             var @event = deserializeEvent(mapping, reader);
@@ -240,7 +240,7 @@ namespace Marten.Events
             {
                 var dotnetTypeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
 
-                mapping = EventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
+                mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
             }
 
             var @event = await deserializeEventAsync(mapping, reader, token).ConfigureAwait(false);
@@ -252,7 +252,7 @@ namespace Marten.Events
 
         public abstract Task ApplyReaderDataToEventAsync(DbDataReader reader, IEvent e, CancellationToken token);
 
-        private EventMapping EventMappingForDotNetTypeName(string dotnetTypeName, string eventTypeName)
+        private EventMapping eventMappingForDotNetTypeName(string dotnetTypeName, string eventTypeName)
         {
             if (dotnetTypeName.IsEmpty())
             {
