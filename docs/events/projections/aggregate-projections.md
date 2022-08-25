@@ -505,7 +505,24 @@ in order to opt into the optimistic concurrency check.
 To start with, let's say
 we have a self aggregating `OrderAggregate` document like this:
 
-snippet: sample_OrderAggregate_with_version
+<!-- snippet: sample_OrderAggregate_with_version -->
+<a id='snippet-sample_orderaggregate_with_version'></a>
+```cs
+public class OrderAggregate
+{
+    // This is most likely the stream id
+    public Guid Id { get; set; }
+
+    // This would be set automatically by Marten if
+    // used as the target of a SingleStreamAggregation
+    public int Version { get; set; }
+
+    public void Apply(OrderShipped shipped) => HasShipped = true;
+    public bool HasShipped { get; private set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/AggregateVersioningTests.cs#L77-L92' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_orderaggregate_with_version' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Notice the `Version` property of that document above. Using a naming convention (we'll talk about how to go around the convention in just a second),
 Marten "knows" that that property should reflect the latest versioned event within the individual stream encountered by this projection. So if
@@ -536,4 +553,38 @@ just to access the event metadata.
 
 Below is a small example of accessing event metadata during aggregation:
 
-snippet: sample_aggregation_using_event_metadata
+<!-- snippet: sample_aggregation_using_event_metadata -->
+<a id='snippet-sample_aggregation_using_event_metadata'></a>
+```cs
+public class TripProjection: SingleStreamAggregation<Trip>
+{
+    // Access event metadata through IEvent<T>
+    public Trip Create(IEvent<TripStarted> @event)
+    {
+        var trip = new Trip
+        {
+            Id = @event.StreamId, // Marten does this for you anyway
+            Started = @event.Timestamp,
+            CorrelationId = @event.Timestamp, // Open telemetry type tracing
+            Description = @event.Data.Description // Still access to the event body
+        };
+
+        // Use a custom header
+        if (@event.Headers.TryGetValue("customer", out var customerId))
+        {
+            trip.CustomerId = (string)customerId;
+        }
+
+        return trip;
+    }
+
+    public void Apply(TripEnded ended, Trip trip, IEvent @event)
+    {
+        trip.Ended = @event.Timestamp;
+    }
+
+    // Other Apply/ShouldDelete methods
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TripProjectionWithEventMetadata.cs#L23-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregation_using_event_metadata' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
