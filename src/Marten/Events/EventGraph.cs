@@ -31,7 +31,6 @@ namespace Marten.Events
 
         private readonly Lazy<IProjection[]> _inlineProjections;
 
-
         private readonly Ref<ImHashMap<string, Type>> _nameToType = Ref.Of(ImHashMap<string, Type>.Empty);
 
         private string _databaseSchemaName;
@@ -169,20 +168,20 @@ namespace Marten.Events
 
         public IEventStoreOptions Upcast<TOldEvent, TEvent>(
             string eventTypeName,
-            Func<TOldEvent, CancellationToken, Task<TEvent>> upcast
+            Func<TOldEvent, CancellationToken, Task<TEvent>> upcastAsync
         ) where TOldEvent : class where TEvent : class
         {
             var eventMapping = EventMappingFor<TEvent>();
             eventMapping.EventTypeName = eventTypeName;
-            eventMapping.Transformation = JsonTransformations.Upcast(upcast);
+            eventMapping.Transformation = JsonTransformations.Upcast(upcastAsync);
 
             return this;
         }
 
         public IEventStoreOptions Upcast<TOldEvent, TEvent>(
-            Func<TOldEvent, CancellationToken, Task<TEvent>> upcast
+            Func<TOldEvent, CancellationToken, Task<TEvent>> upcastAsync
         ) where TOldEvent : class where TEvent : class =>
-            Upcast(typeof(TOldEvent).GetEventTypeName(), upcast);
+            Upcast(typeof(TOldEvent).GetEventTypeName(), upcastAsync);
 
         public IEventStoreOptions Upcast(params IEventUpcaster[] upcasters)
         {
@@ -288,7 +287,6 @@ namespace Marten.Events
             return alias;
         }
 
-
         internal string GetStreamIdDBType()
         {
             return StreamIdentity == StreamIdentity.AsGuid ? "uuid" : "varchar";
@@ -336,7 +334,6 @@ namespace Marten.Events
 
             return session.EventStorage();
         }
-
 
         internal IEvent BuildEvent(object eventData)
         {

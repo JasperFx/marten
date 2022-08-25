@@ -46,7 +46,7 @@ namespace Marten.Services
             _clean.EnableDynamicTypes();
             _withTypes.EnableDynamicTypes();
 
-            SyncDocumentDeserializeOptions();
+            syncDocumentDeserializeOptions();
         }
 
         /// <summary>
@@ -60,10 +60,10 @@ namespace Marten.Services
             configure(_optionsDeserialize);
             configure(_withTypes);
 
-            SyncDocumentDeserializeOptions();
+            syncDocumentDeserializeOptions();
         }
 
-        private void SyncDocumentDeserializeOptions() =>
+        private void syncDocumentDeserializeOptions() =>
             _optionsJsonDocumentDeserialize = new JsonDocumentOptions
             {
                 CommentHandling = _optionsDeserialize.ReadCommentHandling,

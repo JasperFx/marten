@@ -122,13 +122,13 @@ namespace Marten.Events
         /// See more in docs: https://martendb.io/events/versioning.html#event-type-name-migration
         /// </summary>
         /// <param name="eventTypeName">Mapped CLR event type</param>
-        /// <param name="upcast">Event payload transformation</param>
+        /// <param name="upcastAsync">Event payload transformation</param>
         /// <typeparam name="TOldEvent">Old event type</typeparam>
         /// <typeparam name="TEvent">New event type</typeparam>
         /// <returns></returns>
         public IEventStoreOptions Upcast<TOldEvent, TEvent>(
             string eventTypeName,
-            Func<TOldEvent, CancellationToken, Task<TEvent>> upcast
+            Func<TOldEvent, CancellationToken, Task<TEvent>> upcastAsync
         )
             where TOldEvent : class
             where TEvent : class;
@@ -140,11 +140,12 @@ namespace Marten.Events
         /// WARNING! Transformation will be only run in the async API and will throw exception when run in sync method calls.
         /// See more in docs: https://martendb.io/events/versioning.html#event-type-name-migration
         /// </summary>
-        /// <param name="upcast">Event payload transformation</param>
+        /// <param name="upcastAsync">Event payload transformation</param>
         /// <typeparam name="TOldEvent">Old event type</typeparam>
         /// <typeparam name="TEvent">New event type</typeparam>
         /// <returns></returns>
-        public IEventStoreOptions Upcast<TOldEvent, TEvent>(Func<TOldEvent, CancellationToken, Task<TEvent>> upcast)
+        public IEventStoreOptions Upcast<TOldEvent, TEvent>(
+            Func<TOldEvent, CancellationToken, Task<TEvent>> upcastAsync)
             where TOldEvent : class
             where TEvent : class;
 
