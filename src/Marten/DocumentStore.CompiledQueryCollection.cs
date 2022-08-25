@@ -11,6 +11,7 @@ using Marten.Internal.CompiledQueries;
 using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Storage;
 
 namespace Marten
 {
@@ -65,19 +66,20 @@ namespace Marten
 
         IReadOnlyList<ICodeFile> ICodeFileCollection.BuildFiles()
         {
+            var tenant = new Tenant(Marten.Storage.Tenancy.DefaultTenantId, new StandinDatabase(Options));
             using var lightweight =
                 (QuerySession)OpenSession(
-                    new SessionOptions { Tracking = DocumentTracking.None, AllowAnyTenant = true });
+                    new SessionOptions { Tracking = DocumentTracking.None, AllowAnyTenant = true, Tenant = tenant});
 
             using var identityMap = (QuerySession)OpenSession(
-                new SessionOptions { Tracking = DocumentTracking.IdentityOnly, AllowAnyTenant = true });
+                new SessionOptions { Tracking = DocumentTracking.IdentityOnly, AllowAnyTenant = true, Tenant = tenant });
             using var dirty = (QuerySession)OpenSession(
-                new SessionOptions { Tracking = DocumentTracking.DirtyTracking, AllowAnyTenant = true });
+                new SessionOptions { Tracking = DocumentTracking.DirtyTracking, AllowAnyTenant = true, Tenant = tenant });
 
 
             var options = new SessionOptions
             {
-                AllowAnyTenant = true
+                AllowAnyTenant = true, Tenant = tenant
             };
 
             var connection = options.Initialize(this, CommandRunnerMode.ReadOnly);
