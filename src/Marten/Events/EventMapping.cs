@@ -302,9 +302,9 @@ namespace Marten.Events
         }
     }
 
-    public static class EventMappingExtensions
+    internal static class EventMappingExtensions
     {
-        public static string GetEventTypeName(this Type eventType) =>
+        internal static string GetEventTypeName(this Type eventType) =>
             eventType.IsGenericType ? eventType.ShortNameInCode() : eventType.Name.ToTableAlias();
     }
 }
