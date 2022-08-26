@@ -31,7 +31,7 @@ Depending on the particular business case, we may use a different technique for 
 Marten stores, by default, both CLR event class qualified assembly name and mapped event type name. It enables handling migrations of the CLR types, e.g. namespace or class name change. The Qualified assembly name is stored in the `mt_dotnet_type` column, and the event type name is stored in the `type` column of the `mt_events` table. Read more in [events schema documentation](/events/storage).
 
 Marten will try to do automatic matching based on the qualified assembly name unless you specify the custom mapping. You can define it by:
-- either registering events with store options `Events.AddEventTypes` method,
+- either registering events with store options using `Events.AddEventType` or `Events.AddEventTypes` methods,
 - or by defining custom mapping with the `Events.MapEventType` method.
 
 The default mapping changes the _CamelCase_ CLR class name into the lowered _snake\_case_. For instance, the mapped event type name for the `ECommerce.Orders.OrderStatusChanged` class will be `order_status_changed`.
@@ -91,7 +91,7 @@ It's enough to register a new event type as follows:
 ```cs
 var options = new StoreOptions();
 
-options.Events.AddEventTypes(new[] {typeof(NewEventNamespace.OrderStatusChanged)});
+options.Events.AddEventType<NewEventNamespace.OrderStatusChanged>();
 
 var store = new DocumentStore(options);
 ```
