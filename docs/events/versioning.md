@@ -1,27 +1,44 @@
 # Events Versioning
 
-Events by their nature represent facts that happened in the past. They should be immutable even if they had wrong values (as we can only roughly guess what should be the missing property value).
+Events, by their nature, represent facts that happened in the past. They should be immutable even if they had wrong values (as we can only roughly guess what should be the missing property value). Postgres allows us to do SQL migration even for the JSON data. Yet, those changes will only be reflected in the specific module. They won't be propagated further to other modules. In the distributed world we're living, that's a no-go. 
 
-However, in practice, it's unavoidable in the living system to not have the event schema migrations. They might come from:
+**The best strategy is not to change the past data but compensate our mishaps.** In Event Sourcing, that means appending the new event with correction. That's also how business work in general. If you issued the wrong invoice, you do not modify it; you send a new one with updated data.
 
-- bug - eg. typo in the property name, missing event data,
-- new business requirements - eg. besides storing the user email we'd like to be also storing its full name,
-- refactorings - eg. renaming event class, moving to different namespace or assembly,
+Events versioning is presented as something scary, as you cannot "just update data" as in the traditional systems. Running migrations or finding broken data is challenging even in the classical way. **In Event Sourcing, you're at least getting tools to run a proper investigation.** By checking the history of events, you may find where was the place your data was broken (and, e.g. correlate it with the new deployment or system-wide failure).
+
+**Business processes usually don't change so rapidly. Our understanding of how they work may change often.** Still, that typically means an issue in the requirements discovery or modelling. Typically you should not get a lot of schema versions of the same event. If you do, try to get back to the whiteboard and work on modelling, as there may be some design or process smell.
+
+**It's also worth thinking about data in the context of the usage type.** It may be:
+- _hot_ - accessed daily for our transactions/operations needs. That type of data represents active business processes. This is data that we're using actively in our business logic (write model),
+- _warm_ - data used sporadically or read-only. They usually represent data we're accessing for our UI (read model) and data we typically won't change.
+- _cold_ - data not used in our application or used by other modules (for instance, reporting). We may want to keep also for the legal obligations.
+
+Once we realise that, we may discover that we might not separate the storage for each type. We also might not need to keep all data in the same database. If we also apply the temporal modelling practices to our model, then instead of keeping, e.g. all transactions for the cash register, we may just keep data for the current cashier shift. It will make our event streams shorter and more manageable. We may also decide to just keep read model <a href="TODO">documents</a> and <a href="TODO">archive</a> events from the inactive cashier shift, as effectively we won't be accessing them.
+
+**Applying explained above modelling, and archiving techniques will keep our streams short-living. It may reduce the need to keep all event schemas.** When we need to introduce the new schema, we can do it with backward compatibility and support both old and new schema during the next deployment. Based on our business process lifetime, we can define the graceful period. For instance, helpdesk tickets live typically for 1-3 days. We can assume that, after two weeks from deployment, active tickets will be using only the new event schema. Of course, we should verify that, and events with the old schema will still be in the database. Yet, we can archive the inactive tickets, as they won't be needed for operational purposes (they will be either _warm_ or _cold_ data). By doing that, we can make the old event schema obsolete and don't need to maintain it.
+
+Nevertheless, life is not only in black and white colours. We cannot predict everything and always be correct. **In practice, it's unavoidable in the living system not to have event schema migrations.** Even during the graceful period of making old schema obsolete. They might come from:
+
+- bug - e.g. typo in the property name, missing event data,
+- new business requirements - e.g. besides storing the user email, we'd like to be also storing its full name,
+- refactorings - e.g. renaming event class, moving to a different namespace or assembly,
 - etc.
 
-Depending on the concrete business case we may use a different technique for handling such event migrations.
+Depending on the particular business case, we may use a different technique for handling such event migrations.
+
+## Event type name mapping
+
+Marten stores, by default, both CLR event class qualified assembly name and mapped event type name. It enables handling migrations of the CLR types, e.g. namespace or class name change. The Qualified assembly name is stored in the `mt_dotnet_type` column, and the event type name is stored in the `type` column of the `mt_events` table. Read more in [events schema documentation](/events/storage).
+
+Marten will try to do automatic matching based on the qualified assembly name unless you specify the custom mapping. You can define it by:
+- either registering events with store options `Events.AddEventTypes` method,
+- or by defining custom mapping with the `Events.MapEventType` method.
+
+The default mapping changes the _CamelCase_ CLR class name into the lowered _snake\_case_. For instance, the mapped event type name for the `ECommerce.Orders.OrderStatusChanged` class will be `order_status_changed`.
 
 ## Namespace Migration
 
-Marten by default tries to find the event class based on the fully qualified assembly name (it's stored in `mt_dotnet_type` column of `mt_events` table, read more in [events schema documentation](/events/storage).
-When it is not able to find event type with the same assembly, namespace and type name then it tries to make a lookup for mapping on the event type name (stored in `type` column of `mt_events` table).
-
-Such mapping needs to be defined manually:
-
-- either by registering events with store options `Events.AddEventTypes` method,
-- or by defining custom mapping with `Events.MapEventType` method.
-
-For the case of namespace migration, it's enough to use `AddEventTypes` method as it's generating mapping based on the event type. As an example, change `OrderStatusChanged` event from:
+If you changed the namespace of your event class, it's enough to use the `AddEventTypes` method as it generates mapping based on the CLR event class name. As an example, change the `OrderStatusChanged` event from:
 
 <!-- snippet: sample_old_event_namespace -->
 <a id='snippet-sample_old_event_namespace'></a>
@@ -67,7 +84,7 @@ namespace NewEventNamespace
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/NamespaceChange.cs#L33-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_new_event_namespace' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-It's enough to register new event type as follows:
+It's enough to register a new event type as follows:
 
 <!-- snippet: sample_event_namespace_migration_options -->
 <a id='snippet-sample_event_namespace_migration_options'></a>
@@ -81,7 +98,7 @@ var store = new DocumentStore(options);
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/NamespaceChange.cs#L72-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_namespace_migration_options' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-After that Marten will automatically perform a matching based on the type name (that didn't change) - `order_status_changed`.
+After that, Marten can do automatic mapping based on the class name (as it didn't change).
 
 ## Event Type Name Migration
 
