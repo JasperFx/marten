@@ -168,7 +168,7 @@ namespace Marten.Events
         /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
         /// <para><b>WARNING!</b> Transformation will only be run in the async API and throw exceptions when run in sync method calls.</para>
         /// </summary>
-        /// <param name="upcastAsync">Async only event payload transformation, upcasting object of old CLR event type into the new one</para>
+        /// <param name="upcastAsync">Async only event payload transformation, upcasting object of old CLR event type into the new one</param>
         /// <typeparam name="TOldEvent">Old CLR event type</typeparam>
         /// <typeparam name="TEvent">New CLR event type</typeparam>
         /// <exception cref="MartenException">when provided transformation is called in sync API</exception>
