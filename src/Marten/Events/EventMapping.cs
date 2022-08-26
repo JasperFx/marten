@@ -72,6 +72,13 @@ namespace Marten.Events
 
         public string DotNetTypeName { get; set; }
 
+        /// <summary>
+        /// <para>Defines the event JSON payload transformation. It transforms one event schema into another.
+        /// You can use it to handle the event schema versioning/migration.</para>
+        /// <para>By calling it, you tell that instead of the old CLR type, for the specific event type name,
+        /// you'd like to get the new CLR event type.
+        /// Provided functions take the deserialized object of the old event type and returns the new, mapped one.</para>
+        /// </summary>
         public JsonTransformation? Transformation { get; set; }
 
         IDocumentMapping IDocumentMapping.Root => this;
@@ -302,8 +309,17 @@ namespace Marten.Events
         }
     }
 
+    /// <summary>
+    /// Class <c>EventMappingExtensions</c> exposes extensions and helpers to handle event type mapping.
+    /// </summary>
     internal static class EventMappingExtensions
     {
+        /// <summary>
+        /// Translates by convention the CLR type name into string event type name.
+        /// It can handle both regular and generic types.
+        /// </summary>
+        /// <param name="eventType">CLR event type</param>
+        /// <returns>Mapped string event type name</returns>
         internal static string GetEventTypeName(this Type eventType) =>
             eventType.IsGenericType ? eventType.ShortNameInCode() : eventType.Name.ToTableAlias();
     }
