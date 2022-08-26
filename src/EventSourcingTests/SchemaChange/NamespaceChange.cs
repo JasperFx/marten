@@ -72,7 +72,7 @@ namespace EventSourcingTests.SchemaChange
             #region sample_event_namespace_migration_options
             var options = new StoreOptions();
 
-            options.Events.AddEventTypes(new[] {typeof(NewEventNamespace.OrderStatusChanged)});
+            options.Events.AddEventType<NewEventNamespace.OrderStatusChanged>();
 
             var store = new DocumentStore(options);
             #endregion

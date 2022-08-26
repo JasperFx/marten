@@ -30,7 +30,18 @@ namespace Marten.Events
         /// <summary>
         /// Register an event type with Marten. This isn't strictly necessary for normal usage,
         /// but can help Marten with asynchronous projections where Marten hasn't yet encountered
-        /// the event type
+        /// the event type. It can also be used for the event namespace migration.
+        /// See more in <a href="https://martendb.io/events/versioning.html#namespace-migration">documentation</a>
+        /// </summary>
+        /// <typeparam name="TEvent">CLR event type</typeparam>
+        /// <returns>Event store options, to allow fluent definition</returns>
+        IEventStoreOptions AddEventType<TEvent>();
+
+        /// <summary>
+        /// Register an event type with Marten. This isn't strictly necessary for normal usage,
+        /// but can help Marten with asynchronous projections where Marten hasn't yet encountered
+        /// the event type. It can also be used for the event namespace migration.
+        /// See more in <a href="https://martendb.io/events/versioning.html#namespace-migration">documentation</a>
         /// </summary>
         /// <param name="eventType"></param>
         void AddEventType(Type eventType);
@@ -38,7 +49,8 @@ namespace Marten.Events
         /// <summary>
         /// Register an event type with Marten. This isn't strictly necessary for normal usage,
         /// but can help Marten with asynchronous projections where Marten hasn't yet encountered
-        /// the event type
+        /// the event type. It can also be used for the event namespace migration.
+        /// See more in <a href="https://martendb.io/events/versioning.html#namespace-migration">documentation</a>
         /// </summary>
         /// <param name="types"></param>
         void AddEventTypes(IEnumerable<Type> types);

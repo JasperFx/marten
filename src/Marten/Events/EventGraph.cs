@@ -100,6 +100,19 @@ namespace Marten.Events
         public MetadataConfig MetadataConfig => new(Metadata);
 
         /// <summary>
+        /// Register an event type with Marten. This isn't strictly necessary for normal usage,
+        /// but can help Marten with asynchronous projections where Marten hasn't yet encountered
+        /// the event type. It can also be used for the event namespace migration.
+        /// </summary>
+        /// <typeparam name="TEvent"></typeparam>
+        /// <returns>Event store options, to allow fluent definition</returns>
+        public IEventStoreOptions AddEventType<TEvent>()
+        {
+            AddEventType(typeof(TEvent));
+            return this;
+        }
+
+        /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
         ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
         ///     the event type
