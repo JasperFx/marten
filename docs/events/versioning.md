@@ -9,11 +9,12 @@ Events versioning is presented as something scary, as you cannot "just update da
 **Business processes usually don't change so rapidly. Our understanding of how they work may change often.** Still, that typically means an issue in the requirements discovery or modelling. Typically you should not get a lot of schema versions of the same event. If you do, try to get back to the whiteboard and work on modelling, as there may be some design or process smell.
 
 **It's also worth thinking about data in the context of the usage type.** It may be:
+
 - _hot_ - accessed daily for our transactions/operations needs. That type of data represents active business processes. This is data that we're using actively in our business logic (write model),
 - _warm_ - data used sporadically or read-only. They usually represent data we're accessing for our UI (read model) and data we typically won't change.
 - _cold_ - data not used in our application or used by other modules (for instance, reporting). We may want to keep also for the legal obligations.
 
-Once we realise that, we may discover that we might not separate the storage for each type. We also might not need to keep all data in the same database. If we also apply the temporal modelling practices to our model, then instead of keeping, e.g. all transactions for the cash register, we may just keep data for the current cashier shift. It will make our event streams shorter and more manageable. We may also decide to just keep read model <a href="TODO">documents</a> and <a href="TODO">archive</a> events from the inactive cashier shift, as effectively we won't be accessing them.
+Once we realize that, we may discover that we might not separate the storage for each type. We also might not need to keep all data in the same database. If we also apply the temporal modelling practices to our model, then instead of keeping, e.g. all transactions for the cash register, we may just keep data for the current cashier shift. It will make our event streams shorter and more manageable. We may also decide to just keep read model <a href="TODO">documents</a> and <a href="TODO">archive</a> events from the inactive cashier shift, as effectively we won't be accessing them.
 
 **Applying explained above modelling, and archiving techniques will keep our streams short-living. It may reduce the need to keep all event schemas.** When we need to introduce the new schema, we can do it with backward compatibility and support both old and new schema during the next deployment. Based on our business process lifetime, we can define the graceful period. For instance, helpdesk tickets live typically for 1-3 days. We can assume that, after two weeks from deployment, active tickets will be using only the new event schema. Of course, we should verify that, and events with the old schema will still be in the database. Yet, we can archive the inactive tickets, as they won't be needed for operational purposes (they will be either _warm_ or _cold_ data). By doing that, we can make the old event schema obsolete and don't need to maintain it.
 
@@ -31,6 +32,7 @@ Depending on the particular business case, we may use a different technique for 
 Marten stores, by default, both CLR event class qualified assembly name and mapped event type name. It enables handling migrations of the CLR types, e.g. namespace or class name change. The Qualified assembly name is stored in the `mt_dotnet_type` column, and the event type name is stored in the `type` column of the `mt_events` table. Read more in [events schema documentation](/events/storage).
 
 Marten will try to do automatic matching based on the qualified assembly name unless you specify the custom mapping. You can define it by:
+
 - either registering events with store options using `Events.AddEventType` or `Events.AddEventTypes` methods,
 - or by defining custom mapping with the `Events.MapEventType` method.
 
@@ -91,7 +93,7 @@ It's enough to register a new event type as follows:
 ```cs
 var options = new StoreOptions();
 
-options.Events.AddEventType<NewEventNamespace.OrderStatusChanged>();
+options.Events.AddEventTypes(new[] {typeof(NewEventNamespace.OrderStatusChanged)});
 
 var store = new DocumentStore(options);
 ```
@@ -102,11 +104,9 @@ After that, Marten can do automatic mapping based on the class name (as it didn'
 
 ## Event Type Name Migration
 
-When the event class type name has changed, Marten does not perform automatic mapping but allows to define a custom one.
+If you change the event type class name, Marten cannot do mapping by convention. You need to define the custom one.
 
-To do that you need to use `Events.MapEventType` method to define the type name for the new event.
-
-Eg. for migrating `OrderStatusChanged` event into `ConfirmedOrderStatusChanged`
+To do that, you need to use the `Events.MapEventType` method. By calling it, you're telling that you'd like to use a selected CLR event class for the specific event type (e.g. `order_status_changed). For instance to migrate `OrderStatusChanged` event into `ConfirmedOrderStatusChanged`.
 
 <!-- snippet: sample_new_event_type_name -->
 <a id='snippet-sample_new_event_type_name'></a>
@@ -129,7 +129,7 @@ namespace NewEventNamespace
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/NamespaceChange.cs#L51-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_new_event_type_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-it's needed to register mapping using old event type name (`order_status_changed`) as follows:
+You need to map the previous event type name (`order_status_changed`) into the renamed class as follows:
 
 <!-- snippet: sample_event_type_name_migration_options -->
 <a id='snippet-sample_event_type_name_migration_options'></a>
@@ -145,5 +145,5 @@ var store = new DocumentStore(options);
 <!-- endSnippet -->
 
 ::: warning
-In this case, both old `OrderStatusChanged` and new `ConfirmedOrderStatusChanged` event type names will get published with the same `order_status_changed` event type.
+In this case, old `OrderStatusChanged` and new `ConfirmedOrderStatusChanged` event type names will be stored with the same `order_status_changed` event type.
 :::
