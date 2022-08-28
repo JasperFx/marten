@@ -7,6 +7,11 @@ using Marten.Exceptions;
 
 namespace Marten.Services.Json.Transformations
 {
+    /// <summary>
+    /// Defines JSON payload transformation API. This is currently used for internal, low level processing.
+    /// If you want to use it explicitly, check first
+    /// <a href="https://martendb.io/events/versioning.html#namespace-migration">Event Versioning documentation</a>.
+    /// </summary>
     public class JsonTransformation
     {
         public Func<ISerializer, DbDataReader, int, object> FromDbDataReader { get; }
@@ -49,14 +54,14 @@ namespace Marten.Services.Json.Transformations
             );
         }
 
-        public static Func<ISerializer, DbDataReader, int, object> FromDbDataReader<TOldEvent, TEvent>(
+        internal static Func<ISerializer, DbDataReader, int, object> FromDbDataReader<TOldEvent, TEvent>(
             Func<TOldEvent, TEvent> transform)
             where TOldEvent : notnull where TEvent : notnull
         {
             return (serializer, dbDataReader, index) => transform(serializer.FromJson<TOldEvent>(dbDataReader, index));
         }
 
-        public static Func<ISerializer, DbDataReader, int, CancellationToken, ValueTask<object>>
+        internal static Func<ISerializer, DbDataReader, int, CancellationToken, ValueTask<object>>
             FromDbDataReaderAsync<TOldEvent, TEvent>(Func<TOldEvent, CancellationToken, Task<TEvent>> transform)
             where TOldEvent : notnull where TEvent : notnull
         {
@@ -67,7 +72,7 @@ namespace Marten.Services.Json.Transformations
                 ).ConfigureAwait(false);
         }
 
-        public static Func<ISerializer, DbDataReader, int, CancellationToken, ValueTask<object>>
+        internal static Func<ISerializer, DbDataReader, int, CancellationToken, ValueTask<object>>
             FromDbDataReaderAsync<TOldEvent, TEvent>(Func<TOldEvent, TEvent> transform)
             where TOldEvent : notnull where TEvent : notnull
         {

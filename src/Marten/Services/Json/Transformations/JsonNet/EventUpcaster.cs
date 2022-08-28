@@ -27,7 +27,7 @@ namespace Marten.Services.Json.Transformations.JsonNet
     /// </summary>
     /// <example>
     /// Example implementation:
-    /// <code>
+    /// <code lang="csharp">
     /// public class ShoppingCartOpenedUpcaster:
     ///     EventUpcaster&#60;ShoppingCartInitializedWithStatus&#62;
     /// {
@@ -42,7 +42,7 @@ namespace Marten.Services.Json.Transformations.JsonNet
     /// }
     /// </code>
     /// Example registration:
-    /// <code>
+    /// <code lang="csharp">
     /// storeOptions.Events.Upcast&#60;ShoppingCartOpenedUpcaster&#62;();
     /// </code>
     /// </example>
@@ -62,11 +62,11 @@ namespace Marten.Services.Json.Transformations.JsonNet
         /// Function takes the <a href="https://www.newtonsoft.com/json/help/html/queryinglinqtojson.htm">Json.Net JObject</a>
         /// and returns the new, mapped one of type <c>TEvent</c>.</para>
         /// <para>In your application code, you should use only the new event type in the aggregation and projection logic.
-        /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
+        /// See more in <a href="https://martendb.io/events/versioning.htmll#raw-json-transformation-with-json-net-1">documentation</a></para>
         /// </summary>
         /// <example>
         /// Example implementation:
-        /// <code>
+        /// <code lang="csharp">
         /// protected override ShoppingCartInitializedWithStatus Upcast(JObject oldEvent) =>
         ///     new ShoppingCartInitializedWithStatus(
         ///         (Guid)oldEvent["ShoppingCartId"]!,
@@ -106,7 +106,7 @@ namespace Marten.Services.Json.Transformations.JsonNet
     /// </summary>
     /// <example>
     /// Example implementation:
-    /// <code>
+    /// <code lang="csharp">
     /// public class ShoppingCartOpenedAsyncOnlyUpcaster:
     ///     AsyncOnlyEventUpcaster&#60;ShoppingCartInitializedWithStatus&#62;
     /// {
@@ -132,7 +132,7 @@ namespace Marten.Services.Json.Transformations.JsonNet
     /// }
     /// </code>
     /// Example registration:
-    /// <code>
+    /// <code lang="csharp">
     /// storeOptions.Events.Upcast&#60;ShoppingCartOpenedUpcaster&#62;();
     /// </code>
     /// </example>
@@ -159,7 +159,7 @@ namespace Marten.Services.Json.Transformations.JsonNet
         /// you'd like to get the new CLR event type.
         /// Provided function takes the deserialized object of the old event type and returns the new, mapped one.</para>
         /// <para>In your application code, you should use only the new event type in the aggregation and projection logic.
-        /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
+        /// See more in <a href="https://martendb.io/events/versioning.htmll#class-with-raw-json-transformation-with-json-net">documentation</a></para>
         /// <para><b>WARNING!</b> <c>UpcastAsync</c> method is called each type old event is read from database and deserialized.
         /// <c>AsyncOnlyEventUpcaster</c> will only be run in the async API and throw exception when run in sync method calls.
         /// We discourage to run resource consuming methods here. It might end up with N+1 performance issue.
@@ -167,7 +167,7 @@ namespace Marten.Services.Json.Transformations.JsonNet
         /// </summary>
         /// <example>
         /// Example implementation:
-        /// <code>
+        /// <code lang="csharp">
         /// protected override async Task&#60;ShoppingCartInitializedWithStatus&#62; UpcastAsync(
         ///     JObject oldEvent,
         ///     CancellationToken ct
