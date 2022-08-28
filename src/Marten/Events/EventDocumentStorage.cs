@@ -153,8 +153,8 @@ namespace Marten.Events
 
         public bool UseOptimisticConcurrency { get; } = false;
         public IOperationFragment DeleteFragment => throw new NotSupportedException();
-        public IOperationFragment HardDeleteFragment { get; }
-        public DuplicatedField[] DuplicatedFields { get; } = new DuplicatedField[0];
+        public IOperationFragment HardDeleteFragment => throw new NotSupportedException();
+        public DuplicatedField[] DuplicatedFields { get; } = Array.Empty<DuplicatedField>();
         public DbObjectName TableName => _mapping.TableName;
         public Type DocumentType => typeof(IEvent);
 
@@ -243,7 +243,16 @@ namespace Marten.Events
                 mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
             }
 
-            var @event = await deserializeEventAsync(mapping, reader, token).ConfigureAwait(false);
+            IEvent @event;
+            try
+            {
+                @event = await deserializeEventAsync(mapping, reader, token).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                var sequence = await reader.GetFieldValueAsync<long>(3, token).ConfigureAwait(false);
+                throw new EventDeserializationFailureException(sequence, e);
+            }
 
             await ApplyReaderDataToEventAsync(reader, @event, token).ConfigureAwait(false);
 
@@ -284,6 +293,7 @@ namespace Marten.Events
         private async ValueTask<IEvent> deserializeEventAsync(EventMapping mapping, DbDataReader reader,
             CancellationToken token)
         {
+            // TODO -- eliminate the runtime logic here
             var data = mapping.Transformation != null ?
                 await mapping.Transformation.FromDbDataReaderAsync(_serializer, reader, 0, token).ConfigureAwait(false)
                 : await _serializer.FromJsonAsync(mapping.DocumentType, reader, 0, token).ConfigureAwait(false);

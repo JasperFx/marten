@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -17,10 +18,15 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Daemon
 {
+    internal interface IEventFetcher: IDisposable
+    {
+        Task Load(EventRange range, CancellationToken token);
+    }
+
     /// <summary>
     /// Fetches ranges of event objects. Used within the asynchronous projections
     /// </summary>
-    internal class EventFetcher : IDisposable
+    internal class EventFetcher : IEventFetcher
     {
         private readonly IDocumentStore _store;
         private readonly IShardAgent _shardAgent;
@@ -76,14 +82,9 @@ namespace Marten.Events.Daemon
             return (QuerySession)_store.QuerySession(SessionOptions.ForDatabase(_database));
         }
 
-        private void teardown()
-        {
-
-        }
 
         public void Dispose()
         {
-            teardown();
         }
 
         public async Task Load(EventRange range, CancellationToken token)
@@ -102,23 +103,26 @@ namespace Marten.Events.Daemon
                 using var reader = await session.ExecuteReaderAsync(_command, token).ConfigureAwait(false);
                 while (await reader.ReadAsync(token).ConfigureAwait(false))
                 {
-                    var @event = await _storage.ResolveAsync(reader, token).ConfigureAwait(false);
-
-                    if (!await reader.IsDBNullAsync(_aggregateIndex, token).ConfigureAwait(false))
-                    {
-                        @event.AggregateTypeName = await reader.GetFieldValueAsync<string>(_aggregateIndex, token).ConfigureAwait(false);
-                    }
-
-                    range.Events.Add(@event);
+                    await handleEvent(range, token, reader).ConfigureAwait(false);
                 }
-
-
-
             }
             catch (Exception e)
             {
                 throw new EventFetcherException(range.ShardName, _database, e);
             }
+        }
+
+        protected virtual async Task handleEvent(EventRange range, CancellationToken token, DbDataReader reader)
+        {
+            var @event = await _storage.ResolveAsync(reader, token).ConfigureAwait(false);
+
+            if (!await reader.IsDBNullAsync(_aggregateIndex, token).ConfigureAwait(false))
+            {
+                @event.AggregateTypeName =
+                    await reader.GetFieldValueAsync<string>(_aggregateIndex, token).ConfigureAwait(false);
+            }
+
+            range.Events.Add(@event);
         }
     }
 }

@@ -190,7 +190,7 @@ namespace Marten.Events.Aggregation
                     slice.Aggregate = aggregate;
                 }
 
-                _builder.Post(slice);
+                _builder?.Post(slice);
             }
         }
 
