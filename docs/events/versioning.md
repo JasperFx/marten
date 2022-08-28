@@ -16,11 +16,11 @@ Events versioning is presented as something scary, as you cannot "just update da
 - _warm_ - data used sporadically or read-only. They usually represent data we're accessing for our UI (read model) and data we typically won't change.
 - _cold_ - data not used in our application or used by other modules (for instance, reporting). We may want to keep also for the legal obligations.
 
-Once we realizerealize that, we may discover that we might not separate the storage for each type. We also might not need to keep all data in the same database. If we also apply the temporal modelling practices to our model, then instead of keeping, e.g. all transactions for the cash register, we may just keep data for the current cashier shift. It will make our event streams shorter and more manageable. We may also decide to just keep read model [documents](/documents/) and [archive](/events/archiving) events from the inactive cashier shift, as effectively we won't be accessing them.
+Once we realize that, we may discover that we might not separate the storage for each type. We also might not need to keep all data in the same database. If we also apply the temporal modelling practices to our model, then instead of keeping, e.g. all transactions for the cash register, we may just keep data for the current cashier shift. It will make our event streams shorter and more manageable. We may also decide to just keep read model [documents](/documents/) and [archive](/events/archiving) events from the inactive cashier shift, as effectively we won't be accessing them.
 
 **Applying explained above modelling, and archiving techniques will keep our streams short-living. It may reduce the need to keep all event schemas.** When we need to introduce the new schema, we can do it with backward compatibility and support both old and new schema during the next deployment. Based on our business process lifetime, we can define the graceful period. For instance, helpdesk tickets live typically for 1-3 days. We can assume that, after two weeks from deployment, active tickets will be using only the new event schema. Of course, we should verify that, and events with the old schema will still be in the database. Yet, we can archive the inactive tickets, as they won't be needed for operational purposes (they will be either _warm_ or _cold_ data). By doing that, we can make the old event schema obsolete and don't need to maintain it.
 
-Nevertheless, life is not only in black and white colours. We cannot predict everything and always be correct. **In practice, it's unavoidable in the living system not to have event schema migrations.** Even during the graceful period of making old schema obsolete. They might come from:
+Nevertheless, life is not only in black and white colors. We cannot predict everything and always be correct. **In practice, it's unavoidable in the living system not to have event schema migrations.** Even during the graceful period of making old schema obsolete. They might come from:
 
 - bug - e.g. typo in the property name, missing event data,
 - new business requirements - e.g. besides storing the user email, we'd like to be also storing its full name,
@@ -30,6 +30,7 @@ Nevertheless, life is not only in black and white colours. We cannot predict eve
 Depending on the particular business case, we may use a different technique for handling such event migrations.
 
 Read also more in:
+
 - [Oskar Dudycz - How to (not) do the events versioning?](https://event-driven.io/en/how_to_do_event_versioning/),
 - [Oskar Dudycz - Simple patterns for events schema versioning](https://event-driven.io/en/how_to_do_event_versioning/),
 - [Greg Young - Versioning in an Event Sourced System](https://leanpub.com/esversioning/read).
@@ -113,7 +114,7 @@ After that, Marten can do automatic mapping based on the class name (as it didn'
 
 If you change the event type class name, Marten cannot do mapping by convention. You need to define the custom one.
 
-To do that, you need to use the `Events.MapEventType` method. By calling it, you're telling that you'd like to use a selected CLR event class for the specific event type (e.g. `order_status_changed). For instance to migrate `OrderStatusChanged` event into `ConfirmedOrderStatusChanged`.
+To do that, you need to use the `Events.MapEventType` method. By calling it, you're telling that you'd like to use a selected CLR event class for the specific event type (e.g. `order_status_changed`). For instance to migrate `OrderStatusChanged` event into `ConfirmedOrderStatusChanged`.
 
 <!-- snippet: sample_new_event_type_name -->
 <a id='snippet-sample_new_event_type_name'></a>
@@ -168,7 +169,7 @@ Those questions are not specific to Event Sourcing changes; they're the same for
 
 ## Simple schema mapping
 
-Many schema changes don't require sophisticated logic. See the examples below to learn how to do them using the basic serializerserializer capabilities. 
+Many schema changes don't require sophisticated logic. See the examples below to learn how to do them using the basic serializer capabilities. 
 
 ### New not required property
 
@@ -231,7 +232,7 @@ Of course, in that case, we should also consider if it wouldn't be better to add
 
 ### Renamed property
 
-Rename is also a form of breaking change. Humans can spot the intention, but for computers (and, in this case, serializersserializers), it's the removal of the old property and the introduction of the new one. We should avoid such changes, but we'd also like to avoid embarrassing typos in our codebase. Most of the serializersserializers allow property name mapping. Let's say we'd like to shorten the property name from `ShoppingCartId` to `CartId`. Both Newtonsoft Json.NET and System.Text.Json allow doing the mapping using property attributes.
+Rename is also a form of breaking change. Humans can spot the intention, but for computers (and, in this case, serializers), it's the removal of the old property and the introduction of the new one. We should avoid such changes, but we'd also like to avoid embarrassing typos in our codebase. Most of the serializers allow property name mapping. Let's say we'd like to shorten the property name from `ShoppingCartId` to `CartId`. Both Newtonsoft Json.NET and System.Text.Json allow doing the mapping using property attributes.
 
 With Json.NET, you should use [JsonProperty attribute](https://www.newtonsoft.com/json/help/html/jsonpropertyname.htm):
 
@@ -287,8 +288,8 @@ Remember that if you use this attribute, new events will still produce the old (
 
 Sometimes with more extensive schema changes, you'd like more flexibility in payload transformations. Upcasting is a process of transforming the old JSON schema into the new one. It's performed on the fly each time the event is read. You can think of it as a pluggable middleware between the deserialization and application logic. Having that, we can either grab raw JSON or a deserialized object of the old CLR type and transform them into the new schema. Thanks to that, we can keep only the last version of the event schema in our stream aggregation or projection handling.
 
-
 There are two main ways of upcasting the old schema into the new one:
+
 - **CLR types transformation** - if we're okay with keeping the old CLR class in the codebase, we could define a function that takes the instance of the old type and returns the new one. Internally it will use default deserialization and event type mapping for the old CLR type and calls the upcasting function.
 - **Raw JSON transformation** - if we don't want to keep the old CLR class or want to get the best performance by reducing the number of allocations, we can do raw JSON transformations. Most of the serializers have classes enabling that. [Newtonsoft Json.NET has  JObject](https://www.newtonsoft.com/json/help/html/queryinglinqtojson.htm) and [System.Text.Json has JsonDocument](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-overview). This gives the best flexibility, but logic may be more cryptic and _stringly-typed_.
 
@@ -599,7 +600,9 @@ public interface IClientRepository
 <!-- endSnippet -->
 
 You can use it in all the ways presented above.
+
 #### Function with CLR types
+
 <!-- snippet: sample_async_upcast_event_lambda_with_clr_types -->
 <a id='snippet-sample_async_upcast_event_lambda_with_clr_types'></a>
 ```cs
@@ -625,6 +628,7 @@ options.Events
 <!-- endSnippet -->
 
 #### Function with CLR types and explicit event type name
+
 <!-- snippet: sample_async_upcast_event_lambda_with_clr_types_and_explicit_type_name -->
 <a id='snippet-sample_async_upcast_event_lambda_with_clr_types_and_explicit_type_name'></a>
 ```cs
@@ -875,10 +879,3 @@ options.Events.Upcast(new ShoppingCartOpenedAsyncOnlyUpcaster(clientRepository))
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L279-L283' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_class_with_clr_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
-
-
-
-
-
-
