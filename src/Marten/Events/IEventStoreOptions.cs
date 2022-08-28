@@ -77,7 +77,7 @@ namespace Marten.Events
         /// <para>By calling it, you tell that for provided event type name, you'd like to get the particular CLR event type.
         /// JSON transformation defines the custom mapping from JSON string to the CLR object.</para>
         /// <para>When you define it, default deserialization for the particular event type won't be used.
-        /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
+        /// See more in <a href="https://martendb.io/events/versioning.html#raw-json-transformation-with-json-net">documentation</a></para>
         /// </summary>
         /// <param name="eventTypeName">Event type name</param>
         /// <param name="jsonTransformation">Event payload transformation</param>
@@ -94,7 +94,7 @@ namespace Marten.Events
         /// <para>By calling it, you tell that for provided event type name, you'd like to get the particular CLR event type.
         /// JSON transformation defines the custom mapping from JSON string to the CLR object.</para>
         /// <para>When you define it, default deserialization for the particular event type won't be used.
-        /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
+        /// See more in <a href="https://martendb.io/events/versioning.html#raw-json-transformation-with-json-net">documentation</a></para>
         /// </summary>
         /// <param name="eventType">Mapped CLR event type</param>
         /// <param name="eventTypeName">Event type name</param>
@@ -115,7 +115,7 @@ namespace Marten.Events
         /// <para>Internally it uses default deserialization and event type mapping for old CLR type
         /// and calls the mapping function.
         /// In your application code, you should use only the new event type in the aggregation and projection logic.
-        /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
+        /// See more in <a href="https://martendb.io/events/versioning.html#transformation-with-clr-types-will-look-like-this">documentation</a></para>
         /// </summary>
         /// <param name="eventTypeName">Event type name</param>
         /// <param name="upcast">Event payload transformation, upcasting object of old CLR event type into the new one</param>
@@ -134,7 +134,7 @@ namespace Marten.Events
         /// <para>Internally it uses default deserialization and event type mapping for old CLR type
         /// and calls the mapping function.
         /// In your application code, you should use only the new event type in the aggregation and projection logic.
-        /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
+        /// See more in <a href="https://martendb.io/events/versioning.htmltransformation-with-clr-types-will-look-like-this">documentation</a></para>
         /// </summary>
         /// <param name="upcast">Event payload transformation, upcasting object of old CLR event type into the new one</param>
         /// <typeparam name="TOldEvent">Old CLR event type</typeparam>
@@ -153,7 +153,7 @@ namespace Marten.Events
         /// <para>Internally it uses default deserialization and event type mapping for old CLR type
         /// and calls the mapping function.
         /// In your application code, you should use only the new event type in the aggregation and projection logic
-        /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
+        /// See more in <a href="https://martendb.io/events/versioning.html#function-with-clr-types">documentation</a></para>
         /// <para><b>WARNING!</b> Transformation will only be run in the async API and throw exceptions when run in sync method calls.</para>
         /// </summary>
         /// <param name="eventTypeName">Event type name</param>
@@ -177,7 +177,7 @@ namespace Marten.Events
         /// <para>Internally it uses default deserialization and event type mapping for old CLR type
         /// and calls the mapping function.
         /// In your application code, you should use only the new event type in the aggregation and projection logic.
-        /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
+        /// See more in <a href="https://martendb.io/events/versioning.html#function-with-clr-types">documentation</a></para>
         /// <para><b>WARNING!</b> Transformation will only be run in the async API and throw exceptions when run in sync method calls.</para>
         /// </summary>
         /// <param name="upcastAsync">Async only event payload transformation, upcasting object of old CLR event type into the new one</param>
@@ -193,7 +193,7 @@ namespace Marten.Events
         /// <summary>
         /// <para>Method defines the set of event JSON payload transformations. Each of them "upcasts" one event schema into another.
         /// You can use it to handle the event schema versioning/migration.</para>
-        /// <para>See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
+        /// <para>See more in <a href="https://martendb.io/events/versioning.html#upcasting-with-classes">documentation</a></para>
         /// </summary>
         /// <param name="upcasters">List of upcasters transforming ("upcasting") events JSON payloads from one schema to another.</param>
         /// <returns>Event store options, to allow fluent definition</returns>
@@ -202,7 +202,7 @@ namespace Marten.Events
         /// <summary>
         /// <para>Method defines the event JSON payload transformation. It "upcasts" one event schema into another.
         /// You can use it to handle the event schema versioning/migration.</para>
-        /// <para>See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
+        /// <para>See more in <a href="https://martendb.io/events/versioning.html#upcasting-with-classes">documentation</a></para>
         /// </summary>
         /// <param name="upcasters">Upcaster type transforming ("upcasting") event JSON payload from one schema to another.</param>
         /// <returns>Event store options, to allow fluent definition</returns>

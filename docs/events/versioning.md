@@ -664,7 +664,7 @@ options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
 options.Events
     .Upcast<ShoppingCartOpenedWithStatus>(
         "shopping_cart_opened",
-        Upcast(async (oldEvent, ct) =>
+        AsyncOnlyUpcast(async (oldEvent, ct) =>
             {
                 var clientId = (Guid)oldEvent["ClientId"]!;
                 // WARNING: UpcastAsync method is called each time old event
@@ -705,7 +705,7 @@ options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
 options.Events
     .Upcast<ShoppingCartOpenedWithStatus>(
         "shopping_cart_opened",
-        Upcast(async (oldEventJson, ct) =>
+        AsyncOnlyUpcast(async (oldEventJson, ct) =>
         {
             var oldEvent = oldEventJson.RootElement;
 
@@ -728,7 +728,6 @@ options.Events
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L410-L437' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_lambda_with_systemtextjson_json_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 Add also static import of helper classes to get a concise syntax as above:
 
 <!-- snippet: sample_upcast_system_text_json_static_using -->
@@ -738,7 +737,6 @@ using static Marten.Services.Json.Transformations.SystemTextJson.JsonTransformat
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L315-L319' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_system_text_json_static_using' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
 
 #### Class with CLR types
 

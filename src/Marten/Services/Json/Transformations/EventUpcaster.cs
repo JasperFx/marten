@@ -20,7 +20,7 @@ namespace Marten.Services.Json.Transformations
     /// and tell Marten that you'd like to use it.</para>
     /// <para>We recommend to depend on the built-in <c>IEventUpcaster</c> implementations.
     /// Custom implementations should only happen if you need to do something highly specific to your use case.
-    /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
+    /// See more in <a href="https://martendb.io/events/versioning.html##upcasting-advanced-payload-transformations">documentation</a></para>
     /// </summary>
     public interface IEventUpcaster
     {
@@ -75,7 +75,7 @@ namespace Marten.Services.Json.Transformations
     /// and tell Marten that you'd like to use it.</para>
     /// <para>We recommend to depend on the built-in <c>EventUpcaster</c> implementations.
     /// Custom implementations should only happen if you need to do something highly specific to your use case.
-    /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
+    /// See more in <a href="https://martendb.io/events/versioning.html#upcasting-advanced-payload-transformations">documentation</a></para>
     /// </summary>
     public abstract class EventUpcaster: IEventUpcaster
     {
@@ -108,7 +108,7 @@ namespace Marten.Services.Json.Transformations
     /// and tell Marten that you'd like to use it.</para>
     /// <para>We recommend to depend on the built-in <c>EventUpcaster</c> implementations.
     /// Custom implementations should only happen if you need to do something highly specific to your use case.
-    /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
+    /// See more in <a href="https://martendb.io/events/versioning.html#upcasting-advanced-payload-transformations">documentation</a></para>
     /// </summary>
     /// <typeparam name="TEvent">Mapped CLR event type</typeparam>
     public abstract class EventUpcaster<TEvent>: EventUpcaster
@@ -131,7 +131,7 @@ namespace Marten.Services.Json.Transformations
     /// </summary>
     /// <example>
     /// Example implementation:
-    /// <code>
+    /// <code lang="csharp">
     /// public class ShoppingCartOpenedUpcaster:
     ///      EventUpcaster&#60;ShoppingCartOpened, ShoppingCartInitializedWithStatus&#62;
     /// {
@@ -145,7 +145,7 @@ namespace Marten.Services.Json.Transformations
     /// }
     /// </code>
     /// Example registration:
-    /// <code>
+    /// <code lang="csharp">
     /// storeOptions.Events.Upcast&#60;ShoppingCartOpenedUpcaster&#62;();
     /// </code>
     /// </example>
@@ -174,11 +174,11 @@ namespace Marten.Services.Json.Transformations
         /// <para>Internally it uses default deserialization and event type mapping for old CLR type
         /// and calls the mapping function.
         /// In your application code, you should use only the new event type in the aggregation and projection logic.
-        /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
+        /// See more in <a href="https://martendb.io/events/versioning.html#transformation-with-clr-types-will-look-like-this-1">documentation</a></para>
         /// </summary>
         /// <example>
         /// Example implementation:
-        /// <code>
+        /// <code lang="csharp">
         /// protected override ShoppingCartInitializedWithStatus Upcast(
         ///     ShoppingCartOpened oldEvent) =>
         ///     new ShoppingCartInitializedWithStatus(
@@ -210,7 +210,7 @@ namespace Marten.Services.Json.Transformations
     /// </summary>
     /// <example>
     /// Example implementation:
-    /// <code>
+    /// <code lang="csharp">
     /// public class ShoppingCartOpenedAsyncOnlyUpcaster:
     ///         AsyncOnlyEventUpcaster&#60;ShoppingCartOpened, ShoppingCartInitializedWithStatus&#62;
     /// {
@@ -235,7 +235,7 @@ namespace Marten.Services.Json.Transformations
     /// }
     /// </code>
     /// Example registration:
-    /// <code>
+    /// <code lang="csharp">
     /// storeOptions.Events.Upcast&#60;ShoppingCartOpenedAsyncOnlyUpcaster&#62;();
     /// </code>
     /// </example>
@@ -266,7 +266,7 @@ namespace Marten.Services.Json.Transformations
         /// <para>Internally it uses default deserialization and event type mapping for old CLR type
         /// and calls the mapping function.
         /// In your application code, you should use only the new event type in the aggregation and projection logic.
-        /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a></para>
+        /// See more in <a href="https://martendb.io/events/versioning.html#upcasting-advanced-payload-transformations">documentation</a></para>
         /// <para><b>WARNING!</b> <c>UpcastAsync</c> method is called each type old event is read from database and deserialized.
         /// <c>AsyncOnlyEventUpcaster</c> will only be run in the async API and throw exception when run in sync method calls.
         /// We discourage to run resource consuming methods here. It might end up with N+1 performance issue.
@@ -274,7 +274,7 @@ namespace Marten.Services.Json.Transformations
         /// </summary>
         /// <example>
         /// Example implementation:
-        /// <code>
+        /// <code lang="csharp">
         /// protected override async Task&#60;ShoppingCartInitializedWithStatus&#62; UpcastAsync(
         ///     ShoppingCartOpened oldEvent,
         ///     CancellationToken ct

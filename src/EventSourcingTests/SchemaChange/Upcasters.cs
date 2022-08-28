@@ -414,7 +414,7 @@ namespace EventSourcingTests.SchemaChange
                 options.Events
                     .Upcast<ShoppingCartOpenedWithStatus>(
                         "shopping_cart_opened",
-                        Upcast(async (oldEventJson, ct) =>
+                        AsyncOnlyUpcast(async (oldEventJson, ct) =>
                         {
                             var oldEvent = oldEventJson.RootElement;
 
@@ -612,7 +612,7 @@ namespace EventSourcingTests.SchemaChange
                 options.Events
                     .Upcast<ShoppingCartOpenedWithStatus>(
                         "shopping_cart_opened",
-                        Upcast(async (oldEvent, ct) =>
+                        AsyncOnlyUpcast(async (oldEvent, ct) =>
                             {
                                 var clientId = (Guid)oldEvent["ClientId"]!;
                                 // WARNING: UpcastAsync method is called each time old event
