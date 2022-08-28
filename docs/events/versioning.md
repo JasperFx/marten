@@ -1,5 +1,7 @@
 # Events Versioning
 
+## Overview
+
 Events, by their nature, represent facts that happened in the past. They should be immutable even if they had wrong values (as we can only roughly guess what should be the missing property value). Postgres allows us to do SQL migration even for the JSON data. Yet, those changes will only be reflected in the specific module. They won't be propagated further to other modules. In the distributed world we're living, that's a no-go. 
 
 **The best strategy is not to change the past data but compensate our mishaps.** In Event Sourcing, that means appending the new event with correction. That's also how business work in general. If you issued the wrong invoice, you do not modify it; you send a new one with updated data.
@@ -14,7 +16,7 @@ Events versioning is presented as something scary, as you cannot "just update da
 - _warm_ - data used sporadically or read-only. They usually represent data we're accessing for our UI (read model) and data we typically won't change.
 - _cold_ - data not used in our application or used by other modules (for instance, reporting). We may want to keep also for the legal obligations.
 
-Once we realizerealize that, we may discover that we might not separate the storage for each type. We also might not need to keep all data in the same database. If we also apply the temporal modelling practices to our model, then instead of keeping, e.g. all transactions for the cash register, we may just keep data for the current cashier shift. It will make our event streams shorter and more manageable. We may also decide to just keep read model <a href="TODO">documents</a> and <a href="TODO">archive</a> events from the inactive cashier shift, as effectively we won't be accessing them.
+Once we realizerealize that, we may discover that we might not separate the storage for each type. We also might not need to keep all data in the same database. If we also apply the temporal modelling practices to our model, then instead of keeping, e.g. all transactions for the cash register, we may just keep data for the current cashier shift. It will make our event streams shorter and more manageable. We may also decide to just keep read model [documents](/documents/) and [archive](/events/archiving) events from the inactive cashier shift, as effectively we won't be accessing them.
 
 **Applying explained above modelling, and archiving techniques will keep our streams short-living. It may reduce the need to keep all event schemas.** When we need to introduce the new schema, we can do it with backward compatibility and support both old and new schema during the next deployment. Based on our business process lifetime, we can define the graceful period. For instance, helpdesk tickets live typically for 1-3 days. We can assume that, after two weeks from deployment, active tickets will be using only the new event schema. Of course, we should verify that, and events with the old schema will still be in the database. Yet, we can archive the inactive tickets, as they won't be needed for operational purposes (they will be either _warm_ or _cold_ data). By doing that, we can make the old event schema obsolete and don't need to maintain it.
 
@@ -26,6 +28,11 @@ Nevertheless, life is not only in black and white colours. We cannot predict eve
 - etc.
 
 Depending on the particular business case, we may use a different technique for handling such event migrations.
+
+Read also more in:
+- [Oskar Dudycz - How to (not) do the events versioning?](https://event-driven.io/en/how_to_do_event_versioning/),
+- [Oskar Dudycz - Simple patterns for events schema versioning](https://event-driven.io/en/how_to_do_event_versioning/),
+- [Greg Young - Versioning in an Event Sourced System](https://leanpub.com/esversioning/read).
 
 ## Event type name mapping
 
@@ -157,7 +164,7 @@ Schema changes are always tricky. Once you find out that you have to do them, it
 - is the change breaking?
 - what to do with old data?
 
-Those questions are not specific to Event Sourcing changes; they're the same for all types of migrations. The solutions are also similar. The best advice is to avoid breaking changes. As explained [above](TODO), you can make each change in a non-breaking manner.
+Those questions are not specific to Event Sourcing changes; they're the same for all types of migrations. The solutions are also similar. The best advice is to avoid breaking changes. As explained [above](#events-versioning), you can make each change in a non-breaking manner.
 
 ## Simple schema mapping
 
@@ -276,9 +283,14 @@ public class ShoppingCartOpened
 
 Remember that if you use this attribute, new events will still produce the old (mapped) event type name.
 
-## Upcasting
+## Upcasting - advanced payload transformations
 
-Sometimes with more extensive schema changes, you'd like more flexibility in payload transformations. Upcasting is a process of transforming the old JSON schema into the new one. It's performed on the fly each time the event is read. You can think of it as a pluggable middleware between the deserialization and application logic. Having that, we can either grab raw JSON or a deserialized object of the old CLR type and transform them into the new schema. Marten provides extended capabilities around that.
+Sometimes with more extensive schema changes, you'd like more flexibility in payload transformations. Upcasting is a process of transforming the old JSON schema into the new one. It's performed on the fly each time the event is read. You can think of it as a pluggable middleware between the deserialization and application logic. Having that, we can either grab raw JSON or a deserialized object of the old CLR type and transform them into the new schema. Thanks to that, we can keep only the last version of the event schema in our stream aggregation or projection handling.
+
+
+There are two main ways of upcasting the old schema into the new one:
+- **CLR types transformation** - if we're okay with keeping the old CLR class in the codebase, we could define a function that takes the instance of the old type and returns the new one. Internally it will use default deserialization and event type mapping for the old CLR type and calls the upcasting function.
+- **Raw JSON transformation** - if we don't want to keep the old CLR class or want to get the best performance by reducing the number of allocations, we can do raw JSON transformations. Most of the serializers have classes enabling that. [Newtonsoft Json.NET has  JObject](https://www.newtonsoft.com/json/help/html/queryinglinqtojson.htm) and [System.Text.Json has JsonDocument](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-overview). This gives the best flexibility, but logic may be more cryptic and _stringly-typed_.
 
 Let's say that we'd like to transform the event type known from previous examples:
 
@@ -293,7 +305,7 @@ public record ShoppingCartOpened(
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L21-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcasters_old_event_type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-We'd like to enrich it with shopping cart status and client name. To have a more straightforward structure, we'd like to group the client id and name into a nested object.
+We want to enrich it with shopping cart status and client name. To have a more straightforward structure, we'd like to group the client id and name into a nested object.
 
 <!-- snippet: sample_upcasters_new_event_type -->
 <a id='snippet-sample_upcasters_new_event_type'></a>
@@ -319,3 +331,554 @@ public enum ShoppingCartStatus
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L30-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcasters_new_event_type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+Marten provides extended capabilities around that and enables different styles for handling the upcasting transformations.
+
+### Upcasting with functions
+
+The simplest way to define transformations is to do that using functions. As upcasting is a process that takes the old event payload and returns the new one, we could think of them as pure functions without side effects. That makes them also easy to test with unit or contract tests. 
+
+We can define them with store options customization code or place them as static functions inside the class and register them. The former is simpler, the latter more maintainable and testable.
+
+#### Transformation with CLR types will look like this:
+
+<!-- snippet: sample_upcast_event_lambda_with_clr_types -->
+<a id='snippet-sample_upcast_event_lambda_with_clr_types'></a>
+```cs
+options.Events
+    .Upcast<ShoppingCartOpened, ShoppingCartOpenedWithStatus>(
+        oldEvent =>
+            new ShoppingCartOpenedWithStatus(
+                oldEvent.ShoppingCartId,
+                new Client(oldEvent.ClientId),
+                ShoppingCartStatus.Opened
+            )
+    );
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L183-L195' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_event_lambda_with_clr_types' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+It will default take the event type name based on the old CLR type. You can also define it explicitly. It can be helpful if you changed the event schema more than once, and the old CLR class doesn't represent the initial event type name. You can do that with:
+
+<!-- snippet: sample_upcast_event_lambda_with_clr_types_and_explicit_type_name -->
+<a id='snippet-sample_upcast_event_lambda_with_clr_types_and_explicit_type_name'></a>
+```cs
+options.Events
+    .Upcast<ShoppingCartOpened, ShoppingCartOpenedWithStatus>(
+        "shopping_cart_opened",
+        oldEvent =>
+            new ShoppingCartOpenedWithStatus(
+                oldEvent.ShoppingCartId,
+                new Client(oldEvent.ClientId),
+                ShoppingCartStatus.Opened
+            )
+    );
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L225-L238' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_event_lambda_with_clr_types_and_explicit_type_name' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Raw JSON transformation with Json .NET:
+
+<!-- snippet: sample_upcast_event_lambda_with_jsonnet_jobject -->
+<a id='snippet-sample_upcast_event_lambda_with_jsonnet_jobject'></a>
+```cs
+options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+
+options.Events
+    .Upcast<ShoppingCartOpenedWithStatus>(
+        "shopping_cart_opened",
+        Upcast(oldEvent =>
+            new ShoppingCartOpenedWithStatus(
+                (Guid)oldEvent["ShoppingCartId"]!,
+                new Client(
+                    (Guid)oldEvent["ClientId"]!
+                ),
+                ShoppingCartStatus.Opened
+            )
+        )
+    );
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L585-L603' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_event_lambda_with_jsonnet_jobject' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Add also static import of helper classes to get a concise syntax as above:
+
+<!-- snippet: sample_upcast_json_net_static_using -->
+<a id='snippet-sample_upcast_json_net_static_using'></a>
+```cs
+using static Marten.Services.Json.Transformations.JsonNet.JsonTransformations;
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L524-L528' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_json_net_static_using' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Raw JSON transformation with System.Text.Json:
+
+<!-- snippet: sample_upcast_event_lambda_with_systemtextjson_json_document -->
+<a id='snippet-sample_upcast_event_lambda_with_systemtextjson_json_document'></a>
+```cs
+options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+
+options.Events
+    .Upcast<ShoppingCartOpenedWithStatus>(
+        "shopping_cart_opened",
+        Upcast(oldEventJson =>
+        {
+            var oldEvent = oldEventJson.RootElement;
+
+            return new ShoppingCartOpenedWithStatus(
+                oldEvent.GetProperty("ShoppingCartId").GetGuid(),
+                new Client(
+                    oldEvent.GetProperty("ClientId").GetGuid()
+                ),
+                ShoppingCartStatus.Opened
+            );
+        })
+    );
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L384-L405' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_event_lambda_with_systemtextjson_json_document' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Add also static import of helper classes to get a concise syntax as above:
+
+<!-- snippet: sample_upcast_system_text_json_static_using -->
+<a id='snippet-sample_upcast_system_text_json_static_using'></a>
+```cs
+using static Marten.Services.Json.Transformations.SystemTextJson.JsonTransformations;
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L315-L319' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_system_text_json_static_using' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Upcasting with classes
+
+Some people prefer to use classes instead of pure functions. It may help encapsulation, especially if you're using external dependencies for the transformation logic. It may also help in structuring the schema migrations code. You get the same set of capabilities as with functions registration.
+
+#### Transformation with CLR types will look like this:
+
+<!-- snippet: sample_upcaster_with_clr_types_and_event_type_name_from_old_type -->
+<a id='snippet-sample_upcaster_with_clr_types_and_event_type_name_from_old_type'></a>
+```cs
+public class ShoppingCartOpenedUpcaster:
+    EventUpcaster<ShoppingCartOpened, ShoppingCartOpenedWithStatus>
+{
+    protected override ShoppingCartOpenedWithStatus Upcast(ShoppingCartOpened oldEvent) =>
+        new ShoppingCartOpenedWithStatus(
+            oldEvent.ShoppingCartId,
+            new Client(oldEvent.ClientId),
+            ShoppingCartStatus.Opened
+        );
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L76-L89' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcaster_with_clr_types_and_event_type_name_from_old_type' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Just like with functions, by default, it takes the event type name based on the old CLR type. You can also define it explicitly. It can be helpful if you changed the event schema more than once, and the old CLR class doesn't represent the initial event type name. You can do that with:
+
+<!-- snippet: sample_upcaster_with_clr_types_and_explicit_event_type_name -->
+<a id='snippet-sample_upcaster_with_clr_types_and_explicit_event_type_name'></a>
+```cs
+public class ShoppingCartOpenedUpcaster:
+    EventUpcaster<ShoppingCartOpened, ShoppingCartOpenedWithStatus>
+{
+    // Explicit event type name mapping may be useful if you used other than default event type name
+    // for old event type.
+    public override string EventTypeName => "shopping_cart_opened";
+
+    protected override ShoppingCartOpenedWithStatus Upcast(ShoppingCartOpened oldEvent) =>
+        new ShoppingCartOpenedWithStatus(
+            oldEvent.ShoppingCartId,
+            new Client(oldEvent.ClientId),
+            ShoppingCartStatus.Opened
+        );
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L124-L141' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcaster_with_clr_types_and_explicit_event_type_name' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Raw JSON transformation with Json .NET:
+
+<!-- snippet: sample_upcaster_with_clr_types_and_event_type_name_from_old_type_with_jsonnet_jobject -->
+<a id='snippet-sample_upcaster_with_clr_types_and_event_type_name_from_old_type_with_jsonnet_jobject'></a>
+```cs
+public class ShoppingCartOpenedUpcaster:
+    EventUpcaster<ShoppingCartOpenedWithStatus>
+{
+    public override string EventTypeName => "shopping_cart_opened";
+
+    protected override ShoppingCartOpenedWithStatus Upcast(JObject oldEvent) =>
+        new ShoppingCartOpenedWithStatus(
+            (Guid)oldEvent["ShoppingCartId"]!,
+            new Client(
+                (Guid)oldEvent["ClientId"]!
+            ),
+            ShoppingCartStatus.Opened
+        );
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L530-L547' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcaster_with_clr_types_and_event_type_name_from_old_type_with_jsonnet_jobject' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+To use it, add the following using:
+
+<!-- snippet: sample_upcast_json_net_class_using -->
+<a id='snippet-sample_upcast_json_net_class_using'></a>
+```cs
+using Marten.Services.Json.Transformations.JsonNet;
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L518-L522' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_json_net_class_using' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Raw JSON transformation with System.Text.Json:
+
+<!-- snippet: sample_upcaster_with_clr_types_and_event_type_name_from_old_type_with_systemtextjson_json_document -->
+<a id='snippet-sample_upcaster_with_clr_types_and_event_type_name_from_old_type_with_systemtextjson_json_document'></a>
+```cs
+public class ShoppingCartOpenedUpcaster:
+    EventUpcaster<ShoppingCartOpenedWithStatus>
+{
+    public override string EventTypeName => "shopping_cart_opened";
+
+    protected override ShoppingCartOpenedWithStatus Upcast(JsonDocument oldEventJson)
+    {
+        var oldEvent = oldEventJson.RootElement;
+
+        return new ShoppingCartOpenedWithStatus(
+            oldEvent.GetProperty("ShoppingCartId").GetGuid(),
+            new Client(
+                oldEvent.GetProperty("ClientId").GetGuid()
+            ),
+            ShoppingCartStatus.Opened
+        );
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L321-L342' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcaster_with_clr_types_and_event_type_name_from_old_type_with_systemtextjson_json_document' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+To use it, add the following using:
+
+<!-- snippet: sample_upcast_system_text_json_class_using -->
+<a id='snippet-sample_upcast_system_text_json_class_using'></a>
+```cs
+using Marten.Services.Json.Transformations.SystemTextJson;
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L309-L313' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_system_text_json_class_using' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Registering upcaster class
+
+<!-- snippet: sample_upcast_event_class_with_clr_types -->
+<a id='snippet-sample_upcast_event_class_with_clr_types'></a>
+```cs
+options.Events.Upcast<ShoppingCartOpenedUpcaster>();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L270-L274' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_event_class_with_clr_types' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Async Only Upcasters
+
+The techniques presented above should be enough for the majority of cases. Yet, sometimes we need to do more than that. E.g. load the JSON schema to validate event payload and do different mapping in case of validation failure. We may also want to load some additional data or use the library with the async-only API. We got you also covered in this case. You can also define upcasting transformations using .NET async code.
+
+::: warning
+We recommend ensuring that you know what you're doing, as:
+
+1. **Upcasting code is run each time the event is deserialized.** That means that if you read a lot of events and you're trying to call external resources (especially if that involves network calls or IO operations), then you may end up with poor performance and the [N+1 problem](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping). If you need to do more exhausting call, make sure that you're caching results or getting the results upfront and reusing Task. Read also [Understanding the Whys, Whats, and Whens of ValueTask](https://devblogs.microsoft.com/dotnet/understanding-the-whys-whats-and-whens-of-valuetask/).
+2. Marten supports both synchronous and asynchronous calls. **If you define async upcaster, the exception will be thrown if you read events with sync code.**
+:::
+
+Let's assume that you're aware of the async code consequences explained above and that you'd like to read additional client data while upcasting using the following interface:
+
+<!-- snippet: sample_async_upcaster_dependency -->
+<a id='snippet-sample_async_upcaster_dependency'></a>
+```cs
+public interface IClientRepository
+{
+    Task<string> GetClientName(Guid clientId, CancellationToken ct);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L54-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcaster_dependency' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+You can use it in all the ways presented above.
+#### Function with CLR types
+<!-- snippet: sample_async_upcast_event_lambda_with_clr_types -->
+<a id='snippet-sample_async_upcast_event_lambda_with_clr_types'></a>
+```cs
+options.Events
+    .Upcast<ShoppingCartOpened, ShoppingCartOpenedWithStatus>(
+        async (oldEvent, ct) =>
+        {
+            // WARNING: UpcastAsync method is called each time old event
+            // is read from database and deserialized.
+            // We discourage to run resource consuming methods here.
+            // It might end up with N+1 problem.
+            var clientName = await clientRepository.GetClientName(oldEvent.ClientId, ct);
+
+            return new ShoppingCartOpenedWithStatus(
+                oldEvent.ShoppingCartId,
+                new Client(oldEvent.ClientId, clientName),
+                ShoppingCartStatus.Opened
+            );
+        }
+    );
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L200-L220' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_lambda_with_clr_types' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Function with CLR types and explicit event type name
+<!-- snippet: sample_async_upcast_event_lambda_with_clr_types_and_explicit_type_name -->
+<a id='snippet-sample_async_upcast_event_lambda_with_clr_types_and_explicit_type_name'></a>
+```cs
+options.Events
+    .Upcast<ShoppingCartOpened, ShoppingCartOpenedWithStatus>(
+        "shopping_cart_opened",
+        async (oldEvent, ct) =>
+        {
+            // WARNING: UpcastAsync method is called each time old event
+            // is read from database and deserialized.
+            // We discourage to run resource consuming methods here.
+            // It might end up with N+1 problem.
+            var clientName = await clientRepository.GetClientName(oldEvent.ClientId, ct);
+
+            return new ShoppingCartOpenedWithStatus(
+                oldEvent.ShoppingCartId,
+                new Client(oldEvent.ClientId, clientName),
+                ShoppingCartStatus.Opened
+            );
+        }
+    );
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L244-L265' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_lambda_with_clr_types_and_explicit_type_name' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Function with raw JSON transformation with Json .NET:
+
+<!-- snippet: sample_async_upcast_event_lambda_with_jsonnet_jobject -->
+<a id='snippet-sample_async_upcast_event_lambda_with_jsonnet_jobject'></a>
+```cs
+options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+
+options.Events
+    .Upcast<ShoppingCartOpenedWithStatus>(
+        "shopping_cart_opened",
+        Upcast(async (oldEvent, ct) =>
+            {
+                var clientId = (Guid)oldEvent["ClientId"]!;
+                // WARNING: UpcastAsync method is called each time old event
+                // is read from database and deserialized.
+                // We discourage to run resource consuming methods here.
+                // It might end up with N+1 problem.
+                var clientName = await clientRepository.GetClientName(clientId, ct);
+
+                return new ShoppingCartOpenedWithStatus(
+                    (Guid)oldEvent["ShoppingCartId"]!,
+                    new Client(clientId, clientName),
+                    ShoppingCartStatus.Opened
+                );
+            }
+        )
+    );
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L608-L633' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_lambda_with_jsonnet_jobject' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Function with raw JSON transformation with System.Text.Json:
+
+<!-- snippet: sample_async_upcast_event_lambda_with_systemtextjson_json_document -->
+<a id='snippet-sample_async_upcast_event_lambda_with_systemtextjson_json_document'></a>
+```cs
+options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+
+options.Events
+    .Upcast<ShoppingCartOpenedWithStatus>(
+        "shopping_cart_opened",
+        Upcast(async (oldEventJson, ct) =>
+        {
+            var oldEvent = oldEventJson.RootElement;
+
+            var clientId = oldEvent.GetProperty("ClientId").GetGuid();
+
+            // WARNING: UpcastAsync method is called each time
+            // old event is read from database and deserialized.
+            // We discourage to run resource consuming methods here.
+            // It might end up with N+1 problem.
+            var clientName = await clientRepository.GetClientName(clientId, ct);
+
+            return new ShoppingCartOpenedWithStatus(
+                oldEvent.GetProperty("ShoppingCartId").GetGuid(),
+                new Client(clientId, clientName),
+                ShoppingCartStatus.Opened
+            );
+        })
+    );
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L410-L437' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_lambda_with_systemtextjson_json_document' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Class with CLR types
+
+<!-- snippet: sample_async_only_upcaster_with_clr_types_and_event_type_name_from_old_type -->
+<a id='snippet-sample_async_only_upcaster_with_clr_types_and_event_type_name_from_old_type'></a>
+```cs
+public class ShoppingCartOpenedAsyncOnlyUpcaster:
+    AsyncOnlyEventUpcaster<ShoppingCartOpened, ShoppingCartOpenedWithStatus>
+{
+    private readonly IClientRepository _clientRepository;
+
+    public ShoppingCartOpenedAsyncOnlyUpcaster(IClientRepository clientRepository) =>
+        _clientRepository = clientRepository;
+
+    protected override async Task<ShoppingCartOpenedWithStatus> UpcastAsync(
+        ShoppingCartOpened oldEvent,
+        CancellationToken ct
+    )
+    {
+        // WARNING: UpcastAsync method is called each time old event
+        // is read from database and deserialized.
+        // We discourage to run resource consuming methods here.
+        // It might end up with N+1 problem.
+        var clientName = await _clientRepository.GetClientName(oldEvent.ClientId, ct);
+
+        return new ShoppingCartOpenedWithStatus(
+            oldEvent.ShoppingCartId,
+            new Client(oldEvent.ClientId, clientName),
+            ShoppingCartStatus.Opened
+        );
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L91-L120' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_only_upcaster_with_clr_types_and_event_type_name_from_old_type' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Class with CLR types and explicit event type name
+
+<!-- snippet: sample_async_only_upcaster_with_clr_types_and_explicit_event_type_name -->
+<a id='snippet-sample_async_only_upcaster_with_clr_types_and_explicit_event_type_name'></a>
+```cs
+public class ShoppingCartOpenedAsyncOnlyUpcaster:
+    AsyncOnlyEventUpcaster<ShoppingCartOpened, ShoppingCartOpenedWithStatus>
+{
+    // Explicit event type name mapping may be useful if you used other than default event type name
+    // for old event type.
+    public override string EventTypeName => "shopping_cart_opened";
+
+    private readonly IClientRepository _clientRepository;
+
+    public ShoppingCartOpenedAsyncOnlyUpcaster(IClientRepository clientRepository) =>
+        _clientRepository = clientRepository;
+
+    protected override async Task<ShoppingCartOpenedWithStatus> UpcastAsync(
+        ShoppingCartOpened oldEvent,
+        CancellationToken ct
+    )
+    {
+        // WARNING: UpcastAsync method is called each time old event
+        // is read from database and deserialized.
+        // We discourage to run resource consuming methods here.
+        // It might end up with N+1 problem.
+        var clientName = await _clientRepository.GetClientName(oldEvent.ClientId, ct);
+
+        return new ShoppingCartOpenedWithStatus(
+            oldEvent.ShoppingCartId,
+            new Client(oldEvent.ClientId, clientName),
+            ShoppingCartStatus.Opened
+        );
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L143-L176' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_only_upcaster_with_clr_types_and_explicit_event_type_name' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Class with raw JSON transformation with Json .NET:
+
+<!-- snippet: sample_async_upcaster_with_jsonnet_jobject -->
+<a id='snippet-sample_async_upcaster_with_jsonnet_jobject'></a>
+```cs
+public class ShoppingCartOpenedAsyncOnlyUpcaster:
+    AsyncOnlyEventUpcaster<ShoppingCartOpenedWithStatus>
+{
+    private readonly IClientRepository _clientRepository;
+
+    public ShoppingCartOpenedAsyncOnlyUpcaster(IClientRepository clientRepository) =>
+        _clientRepository = clientRepository;
+
+    public override string EventTypeName => "shopping_cart_opened";
+
+    protected override async Task<ShoppingCartOpenedWithStatus> UpcastAsync(
+        JObject oldEvent,
+        CancellationToken ct
+    )
+    {
+        var clientId = (Guid)oldEvent["ClientId"]!;
+        // WARNING: UpcastAsync method is called each time old event
+        // is read from database and deserialized.
+        // We discourage to run resource consuming methods here.
+        // It might end up with N+1 problem.
+        var clientName = await _clientRepository.GetClientName(clientId, ct);
+
+        return new ShoppingCartOpenedWithStatus(
+            (Guid)oldEvent["ShoppingCartId"]!,
+            new Client(clientId, clientName),
+            ShoppingCartStatus.Opened
+        );
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L549-L579' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcaster_with_jsonnet_jobject' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Class with raw JSON transformation with System.Text.Json:
+
+<!-- snippet: sample_async_upcaster_with_systemtextjson_json_document -->
+<a id='snippet-sample_async_upcaster_with_systemtextjson_json_document'></a>
+```cs
+public class ShoppingCartOpenedAsyncOnlyUpcaster:
+    AsyncOnlyEventUpcaster<ShoppingCartOpenedWithStatus>
+{
+    private readonly IClientRepository _clientRepository;
+
+    public ShoppingCartOpenedAsyncOnlyUpcaster(IClientRepository clientRepository) =>
+        _clientRepository = clientRepository;
+
+    public override string EventTypeName => "shopping_cart_opened";
+
+    protected override async Task<ShoppingCartOpenedWithStatus> UpcastAsync(
+        JsonDocument oldEventJson, CancellationToken ct
+    )
+    {
+        var oldEvent = oldEventJson.RootElement;
+
+        var clientId = oldEvent.GetProperty("ClientId").GetGuid();
+
+        // WARNING: UpcastAsync method is called each time old event
+        // is read from database and deserialized.
+        // We discourage to run resource consuming methods here.
+        // It might end up with N+1 problem.
+        var clientName = await _clientRepository.GetClientName(clientId, ct);
+
+        return new ShoppingCartOpenedWithStatus(
+            oldEvent.GetProperty("ShoppingCartId").GetGuid(),
+            new Client(clientId, clientName),
+            ShoppingCartStatus.Opened
+        );
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L344-L378' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcaster_with_systemtextjson_json_document' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Registering Upcaster class
+
+<!-- snippet: sample_async_upcast_event_class_with_clr_types -->
+<a id='snippet-sample_async_upcast_event_class_with_clr_types'></a>
+```cs
+options.Events.Upcast(new ShoppingCartOpenedAsyncOnlyUpcaster(clientRepository));
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L279-L283' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_class_with_clr_types' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+
+
+
+
+
