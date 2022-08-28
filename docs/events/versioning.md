@@ -93,7 +93,7 @@ It's enough to register a new event type as follows:
 ```cs
 var options = new StoreOptions();
 
-options.Events.AddEventTypes(new[] {typeof(NewEventNamespace.OrderStatusChanged)});
+options.Events.AddEventType<NewEventNamespace.OrderStatusChanged>();
 
 var store = new DocumentStore(options);
 ```
@@ -147,3 +147,131 @@ var store = new DocumentStore(options);
 ::: warning
 In this case, old `OrderStatusChanged` and new `ConfirmedOrderStatusChanged` event type names will be stored with the same `order_status_changed` event type.
 :::
+
+## Event Schema Migration
+
+Schema changes are always tricky. Once you find out that you have to do them, it's worth making the thought process to understand the origins of that. You can ask yourself the following questions:
+
+- what caused the change?
+- what are the possible solutions?
+- is the change breaking?
+- what to do with old data?
+
+Those questions are not specific to Event Sourcing changes; they're the same for all types of migrations. The solutions are also similar. The best advice is to avoid breaking changes. As explained [above](TODO), you can make each change in a non-breaking manner.
+
+## Simple schema mapping
+
+Many schema changes don't require sophisticated logic. See the examples below to learn how to do them using the basic serializer capabilities. 
+
+### New not required property
+
+Having event defined as such:
+
+<!-- snippet: sample_schema_migration_default_event -->
+<a id='snippet-sample_schema_migration_default_event'></a>
+```cs
+public record ShoppingCartOpened(
+    Guid ShoppingCartId,
+    Guid ClientId
+);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/SimpleMappings.cs#L11-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_schema_migration_default_event' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+If you want to add a new not-required column, you may add it with the nullable type. By that, old events won't have it, and the new ones will have the value set. For instance, adding the optional date telling when the shopping cart was opened will look like this:
+
+<!-- snippet: sample_schema_migration_not_required_property -->
+<a id='snippet-sample_schema_migration_not_required_property'></a>
+```cs
+public record ShoppingCartOpened(
+    Guid ShoppingCartId,
+    Guid ClientId,
+    // Adding new not required property as nullable
+    DateTime? OpenedAt
+);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/SimpleMappings.cs#L23-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_schema_migration_not_required_property' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### New required property
+
+When introducing new property, we should always ensure the impact on our business logic. You may want the value to be always present (e.g. when you unintentionally forgot to add it or a new requirement came up). Like in the traditional approach, you should consider the default value of the newly added required column. It may be either calculated based on the other event data or some arbitrary value.
+
+For our shopping cart open event, we may decide that we need to send; also status (to, e.g. allow fraud detection or enable a one-click "buy now" feature). Previously, we assumed that opened shopping cart would always put the shopping cart into "opened" status.
+
+<!-- snippet: sample_schema_migration_required_property -->
+<a id='snippet-sample_schema_migration_required_property'></a>
+```cs
+public enum ShoppingCartStatus
+{
+    UnderFraudDetection = 1,
+    Opened = 2,
+    Confirmed = 3,
+    Cancelled = 4
+}
+
+public record ShoppingCartOpened(
+    Guid ShoppingCartId,
+    Guid ClientId,
+    // Adding new required property with default value
+    ShoppingCartStatus Status = ShoppingCartStatus.Opened
+);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/SimpleMappings.cs#L37-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_schema_migration_required_property' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Of course, in that case, we should also consider if it wouldn't be better to add an explicit event type instead.
+
+### Renamed property
+
+Rename is also a form of breaking change. Humans can spot the intention, but for computers (and, in this case, serializers), it's the removal of the old property and the introduction of the new one. We should avoid such changes, but we'd also like to avoid embarrassing typos in our codebase. Most of the serializers allow property name mapping. Let's say we'd like to shorten the property name from `ShoppingCartId` to `CartId`. Both Newtonsoft Json.NET and System.Text.Json allow doing the mapping using property attributes.
+
+With Json.NET, you should use [JsonProperty attribute](https://www.newtonsoft.com/json/help/html/jsonpropertyname.htm):
+
+<!-- snippet: sample_schema_migration_renamed_property_jsonnet -->
+<a id='snippet-sample_schema_migration_renamed_property_jsonnet'></a>
+```cs
+public class ShoppingCartOpened
+{
+    [JsonProperty("ShoppingCartId")]
+    public Guid CartId { get; }
+    public Guid ClientId { get; }
+
+    public ShoppingCartOpened(
+        Guid cartId,
+        Guid clientId
+    )
+    {
+        CartId = cartId;
+        ClientId = clientId;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/SimpleMappings.cs#L84-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_schema_migration_renamed_property_jsonnet' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+With System.Text.Json, you should use [JsonPropertyName attribute](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-customize-properties):
+
+<!-- snippet: sample_schema_migration_renamed_property_stj -->
+<a id='snippet-sample_schema_migration_renamed_property_stj'></a>
+```cs
+public class ShoppingCartOpened
+{
+    [JsonPropertyName("ShoppingCartId")]
+    public Guid CartId { get; }
+    public Guid ClientId { get; }
+
+    public ShoppingCartOpened(
+        Guid cartId,
+        Guid clientId
+    )
+    {
+        CartId = cartId;
+        ClientId = clientId;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/SimpleMappings.cs#L61-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_schema_migration_renamed_property_stj' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Remember that if you use this property, new events will still produce the old (mapped) name.
