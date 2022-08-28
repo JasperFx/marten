@@ -29,7 +29,7 @@ namespace EventSourcingTests.SchemaChange
 
     #region sample_upcasters_new_event_type
 
-    public record ShoppingCartInitializedWithStatus(
+    public record ShoppingCartOpenedWithStatus(
         Guid ShoppingCartId,
         Client Client,
         ShoppingCartStatus Status
@@ -76,10 +76,10 @@ namespace EventSourcingTests.SchemaChange
         #region sample_upcaster_with_clr_types_and_event_type_name_from_old_type
 
         public class ShoppingCartOpenedUpcaster:
-            EventUpcaster<ShoppingCartOpened, ShoppingCartInitializedWithStatus>
+            EventUpcaster<ShoppingCartOpened, ShoppingCartOpenedWithStatus>
         {
-            protected override ShoppingCartInitializedWithStatus Upcast(ShoppingCartOpened oldEvent) =>
-                new ShoppingCartInitializedWithStatus(
+            protected override ShoppingCartOpenedWithStatus Upcast(ShoppingCartOpened oldEvent) =>
+                new ShoppingCartOpenedWithStatus(
                     oldEvent.ShoppingCartId,
                     new Client(oldEvent.ClientId),
                     ShoppingCartStatus.Opened
@@ -92,14 +92,14 @@ namespace EventSourcingTests.SchemaChange
         #region sample_async_only_upcaster_with_clr_types_and_event_type_name_from_old_type
 
         public class ShoppingCartOpenedAsyncOnlyUpcaster:
-            AsyncOnlyEventUpcaster<ShoppingCartOpened, ShoppingCartInitializedWithStatus>
+            AsyncOnlyEventUpcaster<ShoppingCartOpened, ShoppingCartOpenedWithStatus>
         {
             private readonly IClientRepository _clientRepository;
 
             public ShoppingCartOpenedAsyncOnlyUpcaster(IClientRepository clientRepository) =>
                 _clientRepository = clientRepository;
 
-            protected override async Task<ShoppingCartInitializedWithStatus> UpcastAsync(
+            protected override async Task<ShoppingCartOpenedWithStatus> UpcastAsync(
                 ShoppingCartOpened oldEvent,
                 CancellationToken ct
             )
@@ -108,7 +108,7 @@ namespace EventSourcingTests.SchemaChange
                 // We discourage to run resource consuming methods here. It might end up with N+1 problem.
                 var clientName = await _clientRepository.GetClientName(oldEvent.ClientId, ct);
 
-                return new ShoppingCartInitializedWithStatus(
+                return new ShoppingCartOpenedWithStatus(
                     oldEvent.ShoppingCartId,
                     new Client(oldEvent.ClientId, clientName),
                     ShoppingCartStatus.Opened
@@ -123,14 +123,14 @@ namespace EventSourcingTests.SchemaChange
             #region sample_upcaster_with_clr_types_and_explicit_event_type_name
 
             public class ShoppingCartOpenedUpcaster:
-                EventUpcaster<ShoppingCartOpened, ShoppingCartInitializedWithStatus>
+                EventUpcaster<ShoppingCartOpened, ShoppingCartOpenedWithStatus>
             {
                 // Explicit event type name mapping may be useful if you used other than default event type name
                 // for old event type.
                 public override string EventTypeName => "shopping_cart_opened";
 
-                protected override ShoppingCartInitializedWithStatus Upcast(ShoppingCartOpened oldEvent) =>
-                    new ShoppingCartInitializedWithStatus(
+                protected override ShoppingCartOpenedWithStatus Upcast(ShoppingCartOpened oldEvent) =>
+                    new ShoppingCartOpenedWithStatus(
                         oldEvent.ShoppingCartId,
                         new Client(oldEvent.ClientId),
                         ShoppingCartStatus.Opened
@@ -142,7 +142,7 @@ namespace EventSourcingTests.SchemaChange
             #region sample_async_only_upcaster_with_clr_types_and_explicit_event_type_name
 
             public class ShoppingCartOpenedAsyncOnlyUpcaster:
-                AsyncOnlyEventUpcaster<ShoppingCartOpened, ShoppingCartInitializedWithStatus>
+                AsyncOnlyEventUpcaster<ShoppingCartOpened, ShoppingCartOpenedWithStatus>
             {
                 // Explicit event type name mapping may be useful if you used other than default event type name
                 // for old event type.
@@ -153,7 +153,7 @@ namespace EventSourcingTests.SchemaChange
                 public ShoppingCartOpenedAsyncOnlyUpcaster(IClientRepository clientRepository) =>
                     _clientRepository = clientRepository;
 
-                protected override async Task<ShoppingCartInitializedWithStatus> UpcastAsync(
+                protected override async Task<ShoppingCartOpenedWithStatus> UpcastAsync(
                     ShoppingCartOpened oldEvent,
                     CancellationToken ct
                 )
@@ -162,7 +162,7 @@ namespace EventSourcingTests.SchemaChange
                     // We discourage to run resource consuming methods here. It might end up with N+1 problem.
                     var clientName = await _clientRepository.GetClientName(oldEvent.ClientId, ct);
 
-                    return new ShoppingCartInitializedWithStatus(
+                    return new ShoppingCartOpenedWithStatus(
                         oldEvent.ShoppingCartId,
                         new Client(oldEvent.ClientId, clientName),
                         ShoppingCartStatus.Opened
@@ -180,9 +180,9 @@ namespace EventSourcingTests.SchemaChange
                 #region sample_upcast_event_lambda_with_clr_types
 
                 options.Events
-                    .Upcast<ShoppingCartOpened, ShoppingCartInitializedWithStatus>(
+                    .Upcast<ShoppingCartOpened, ShoppingCartOpenedWithStatus>(
                         oldEvent =>
-                            new ShoppingCartInitializedWithStatus(
+                            new ShoppingCartOpenedWithStatus(
                                 oldEvent.ShoppingCartId,
                                 new Client(oldEvent.ClientId),
                                 ShoppingCartStatus.Opened
@@ -197,14 +197,14 @@ namespace EventSourcingTests.SchemaChange
                 #region sample_async_upcast_event_lambda_with_clr_types
 
                 options.Events
-                    .Upcast<ShoppingCartOpened, ShoppingCartInitializedWithStatus>(
+                    .Upcast<ShoppingCartOpened, ShoppingCartOpenedWithStatus>(
                         async (oldEvent, ct) =>
                         {
                             // WARNING: UpcastAsync method is called each type old event is read from database and deserialized.
                             // We discourage to run resource consuming methods here. It might end up with N+1 problem.
                             var clientName = await clientRepository.GetClientName(oldEvent.ClientId, ct);
 
-                            return new ShoppingCartInitializedWithStatus(
+                            return new ShoppingCartOpenedWithStatus(
                                 oldEvent.ShoppingCartId,
                                 new Client(oldEvent.ClientId, clientName),
                                 ShoppingCartStatus.Opened
@@ -220,10 +220,10 @@ namespace EventSourcingTests.SchemaChange
                 #region sample_upcast_event_lambda_with_clr_types_and_explicit_type_name
 
                 options.Events
-                    .Upcast<ShoppingCartOpened, ShoppingCartInitializedWithStatus>(
+                    .Upcast<ShoppingCartOpened, ShoppingCartOpenedWithStatus>(
                         "shopping_cart_opened",
                         oldEvent =>
-                            new ShoppingCartInitializedWithStatus(
+                            new ShoppingCartOpenedWithStatus(
                                 oldEvent.ShoppingCartId,
                                 new Client(oldEvent.ClientId),
                                 ShoppingCartStatus.Opened
@@ -239,7 +239,7 @@ namespace EventSourcingTests.SchemaChange
                 #region sample_async_upcast_event_lambda_with_clr_types_and_explicit_type_name
 
                 options.Events
-                    .Upcast<ShoppingCartOpened, ShoppingCartInitializedWithStatus>(
+                    .Upcast<ShoppingCartOpened, ShoppingCartOpenedWithStatus>(
                         "shopping_cart_opened",
                         async (oldEvent, ct) =>
                         {
@@ -247,7 +247,7 @@ namespace EventSourcingTests.SchemaChange
                             // We discourage to run resource consuming methods here. It might end up with N+1 problem.
                             var clientName = await clientRepository.GetClientName(oldEvent.ClientId, ct);
 
-                            return new ShoppingCartInitializedWithStatus(
+                            return new ShoppingCartOpenedWithStatus(
                                 oldEvent.ShoppingCartId,
                                 new Client(oldEvent.ClientId, clientName),
                                 ShoppingCartStatus.Opened
@@ -303,15 +303,15 @@ namespace EventSourcingTests.SchemaChange
         using static Marten.Services.Json.Transformations.SystemTextJson.JsonTransformations;
 
         public class ShoppingCartOpenedUpcaster:
-            EventUpcaster<ShoppingCartInitializedWithStatus>
+            EventUpcaster<ShoppingCartOpenedWithStatus>
         {
             public override string EventTypeName => "shopping_cart_opened";
 
-            protected override ShoppingCartInitializedWithStatus Upcast(JsonDocument oldEventJson)
+            protected override ShoppingCartOpenedWithStatus Upcast(JsonDocument oldEventJson)
             {
                 var oldEvent = oldEventJson.RootElement;
 
-                return new ShoppingCartInitializedWithStatus(
+                return new ShoppingCartOpenedWithStatus(
                     oldEvent.GetProperty("ShoppingCartId").GetGuid(),
                     new Client(
                         oldEvent.GetProperty("ClientId").GetGuid()
@@ -323,7 +323,7 @@ namespace EventSourcingTests.SchemaChange
 
 
         public class ShoppingCartOpenedAsyncOnlyUpcaster:
-            AsyncOnlyEventUpcaster<ShoppingCartInitializedWithStatus>
+            AsyncOnlyEventUpcaster<ShoppingCartOpenedWithStatus>
         {
             private readonly IClientRepository _clientRepository;
 
@@ -332,7 +332,7 @@ namespace EventSourcingTests.SchemaChange
 
             public override string EventTypeName => "shopping_cart_opened";
 
-            protected override async Task<ShoppingCartInitializedWithStatus> UpcastAsync(
+            protected override async Task<ShoppingCartOpenedWithStatus> UpcastAsync(
                 JsonDocument oldEventJson, CancellationToken ct
             )
             {
@@ -344,7 +344,7 @@ namespace EventSourcingTests.SchemaChange
                 // We discourage to run resource consuming methods here. It might end up with N+1 problem.
                 var clientName = await _clientRepository.GetClientName(clientId, ct);
 
-                return new ShoppingCartInitializedWithStatus(
+                return new ShoppingCartOpenedWithStatus(
                     oldEvent.GetProperty("ShoppingCartId").GetGuid(),
                     new Client(clientId, clientName),
                     ShoppingCartStatus.Opened
@@ -361,13 +361,13 @@ namespace EventSourcingTests.SchemaChange
                 options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
 
                 options.Events
-                    .Upcast<ShoppingCartInitializedWithStatus>(
+                    .Upcast<ShoppingCartOpenedWithStatus>(
                         "shopping_cart_opened",
                         Upcast(oldEventJson =>
                         {
                             var oldEvent = oldEventJson.RootElement;
 
-                            return new ShoppingCartInitializedWithStatus(
+                            return new ShoppingCartOpenedWithStatus(
                                 oldEvent.GetProperty("ShoppingCartId").GetGuid(),
                                 new Client(
                                     oldEvent.GetProperty("ClientId").GetGuid()
@@ -387,7 +387,7 @@ namespace EventSourcingTests.SchemaChange
                 options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
 
                 options.Events
-                    .Upcast<ShoppingCartInitializedWithStatus>(
+                    .Upcast<ShoppingCartOpenedWithStatus>(
                         "shopping_cart_opened",
                         Upcast(async (oldEventJson, ct) =>
                         {
@@ -399,7 +399,7 @@ namespace EventSourcingTests.SchemaChange
                             // We discourage to run resource consuming methods here. It might end up with N+1 problem.
                             var clientName = await clientRepository.GetClientName(clientId, ct);
 
-                            return new ShoppingCartInitializedWithStatus(
+                            return new ShoppingCartOpenedWithStatus(
                                 oldEvent.GetProperty("ShoppingCartId").GetGuid(),
                                 new Client(clientId, clientName),
                                 ShoppingCartStatus.Opened
@@ -492,12 +492,12 @@ namespace EventSourcingTests.SchemaChange
         using static Marten.Services.Json.Transformations.JsonNet.JsonTransformations;
 
         public class ShoppingCartOpenedUpcaster:
-            EventUpcaster<ShoppingCartInitializedWithStatus>
+            EventUpcaster<ShoppingCartOpenedWithStatus>
         {
             public override string EventTypeName => "shopping_cart_opened";
 
-            protected override ShoppingCartInitializedWithStatus Upcast(JObject oldEvent) =>
-                new ShoppingCartInitializedWithStatus(
+            protected override ShoppingCartOpenedWithStatus Upcast(JObject oldEvent) =>
+                new ShoppingCartOpenedWithStatus(
                     (Guid)oldEvent["ShoppingCartId"]!,
                     new Client(
                         (Guid)oldEvent["ClientId"]!
@@ -508,7 +508,7 @@ namespace EventSourcingTests.SchemaChange
 
 
         public class ShoppingCartOpenedAsyncOnlyUpcaster:
-            AsyncOnlyEventUpcaster<ShoppingCartInitializedWithStatus>
+            AsyncOnlyEventUpcaster<ShoppingCartOpenedWithStatus>
         {
             private readonly IClientRepository _clientRepository;
 
@@ -517,7 +517,7 @@ namespace EventSourcingTests.SchemaChange
 
             public override string EventTypeName => "shopping_cart_opened";
 
-            protected override async Task<ShoppingCartInitializedWithStatus> UpcastAsync(
+            protected override async Task<ShoppingCartOpenedWithStatus> UpcastAsync(
                 JObject oldEvent,
                 CancellationToken ct
             )
@@ -527,7 +527,7 @@ namespace EventSourcingTests.SchemaChange
                 // We discourage to run resource consuming methods here. It might end up with N+1 problem.
                 var clientName = await _clientRepository.GetClientName(clientId, ct);
 
-                return new ShoppingCartInitializedWithStatus(
+                return new ShoppingCartOpenedWithStatus(
                     (Guid)oldEvent["ShoppingCartId"]!,
                     new Client(clientId, clientName),
                     ShoppingCartStatus.Opened
@@ -544,10 +544,10 @@ namespace EventSourcingTests.SchemaChange
                 options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
 
                 options.Events
-                    .Upcast<ShoppingCartInitializedWithStatus>(
+                    .Upcast<ShoppingCartOpenedWithStatus>(
                         "shopping_cart_opened",
                         Upcast(oldEvent =>
-                            new ShoppingCartInitializedWithStatus(
+                            new ShoppingCartOpenedWithStatus(
                                 (Guid)oldEvent["ShoppingCartId"]!,
                                 new Client(
                                     (Guid)oldEvent["ClientId"]!
@@ -567,7 +567,7 @@ namespace EventSourcingTests.SchemaChange
                 options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
 
                 options.Events
-                    .Upcast<ShoppingCartInitializedWithStatus>(
+                    .Upcast<ShoppingCartOpenedWithStatus>(
                         "shopping_cart_opened",
                         Upcast(async (oldEvent, ct) =>
                             {
@@ -576,7 +576,7 @@ namespace EventSourcingTests.SchemaChange
                                 // We discourage to run resource consuming methods here. It might end up with N+1 problem.
                                 var clientName = await clientRepository.GetClientName(clientId, ct);
 
-                                return new ShoppingCartInitializedWithStatus(
+                                return new ShoppingCartOpenedWithStatus(
                                     (Guid)oldEvent["ShoppingCartId"]!,
                                     new Client(clientId, clientName),
                                     ShoppingCartStatus.Opened
@@ -700,12 +700,12 @@ namespace EventSourcingTests.SchemaChange
 
             public ShoppingCart(Guid id, Client client, ShoppingCartStatus status)
             {
-                var @event = new ShoppingCartInitializedWithStatus(id, client, status);
+                var @event = new ShoppingCartOpenedWithStatus(id, client, status);
                 EnqueueEvent(@event);
                 Apply(@event);
             }
 
-            public void Apply(ShoppingCartInitializedWithStatus @event)
+            public void Apply(ShoppingCartOpenedWithStatus @event)
             {
                 Id = @event.ShoppingCartId;
                 Client = @event.Client;

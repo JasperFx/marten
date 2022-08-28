@@ -14,7 +14,7 @@ Events versioning is presented as something scary, as you cannot "just update da
 - _warm_ - data used sporadically or read-only. They usually represent data we're accessing for our UI (read model) and data we typically won't change.
 - _cold_ - data not used in our application or used by other modules (for instance, reporting). We may want to keep also for the legal obligations.
 
-Once we realize that, we may discover that we might not separate the storage for each type. We also might not need to keep all data in the same database. If we also apply the temporal modelling practices to our model, then instead of keeping, e.g. all transactions for the cash register, we may just keep data for the current cashier shift. It will make our event streams shorter and more manageable. We may also decide to just keep read model <a href="TODO">documents</a> and <a href="TODO">archive</a> events from the inactive cashier shift, as effectively we won't be accessing them.
+Once we realizerealize that, we may discover that we might not separate the storage for each type. We also might not need to keep all data in the same database. If we also apply the temporal modelling practices to our model, then instead of keeping, e.g. all transactions for the cash register, we may just keep data for the current cashier shift. It will make our event streams shorter and more manageable. We may also decide to just keep read model <a href="TODO">documents</a> and <a href="TODO">archive</a> events from the inactive cashier shift, as effectively we won't be accessing them.
 
 **Applying explained above modelling, and archiving techniques will keep our streams short-living. It may reduce the need to keep all event schemas.** When we need to introduce the new schema, we can do it with backward compatibility and support both old and new schema during the next deployment. Based on our business process lifetime, we can define the graceful period. For instance, helpdesk tickets live typically for 1-3 days. We can assume that, after two weeks from deployment, active tickets will be using only the new event schema. Of course, we should verify that, and events with the old schema will still be in the database. Yet, we can archive the inactive tickets, as they won't be needed for operational purposes (they will be either _warm_ or _cold_ data). By doing that, we can make the old event schema obsolete and don't need to maintain it.
 
@@ -161,7 +161,7 @@ Those questions are not specific to Event Sourcing changes; they're the same for
 
 ## Simple schema mapping
 
-Many schema changes don't require sophisticated logic. See the examples below to learn how to do them using the basic serializer capabilities. 
+Many schema changes don't require sophisticated logic. See the examples below to learn how to do them using the basic serializerserializer capabilities. 
 
 ### New not required property
 
@@ -224,7 +224,7 @@ Of course, in that case, we should also consider if it wouldn't be better to add
 
 ### Renamed property
 
-Rename is also a form of breaking change. Humans can spot the intention, but for computers (and, in this case, serializers), it's the removal of the old property and the introduction of the new one. We should avoid such changes, but we'd also like to avoid embarrassing typos in our codebase. Most of the serializers allow property name mapping. Let's say we'd like to shorten the property name from `ShoppingCartId` to `CartId`. Both Newtonsoft Json.NET and System.Text.Json allow doing the mapping using property attributes.
+Rename is also a form of breaking change. Humans can spot the intention, but for computers (and, in this case, serializersserializers), it's the removal of the old property and the introduction of the new one. We should avoid such changes, but we'd also like to avoid embarrassing typos in our codebase. Most of the serializersserializers allow property name mapping. Let's say we'd like to shorten the property name from `ShoppingCartId` to `CartId`. Both Newtonsoft Json.NET and System.Text.Json allow doing the mapping using property attributes.
 
 With Json.NET, you should use [JsonProperty attribute](https://www.newtonsoft.com/json/help/html/jsonpropertyname.htm):
 
@@ -274,4 +274,48 @@ public class ShoppingCartOpened
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/SimpleMappings.cs#L61-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_schema_migration_renamed_property_stj' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Remember that if you use this property, new events will still produce the old (mapped) name.
+Remember that if you use this attribute, new events will still produce the old (mapped) event type name.
+
+## Upcasting
+
+Sometimes with more extensive schema changes, you'd like more flexibility in payload transformations. Upcasting is a process of transforming the old JSON schema into the new one. It's performed on the fly each time the event is read. You can think of it as a pluggable middleware between the deserialization and application logic. Having that, we can either grab raw JSON or a deserialized object of the old CLR type and transform them into the new schema. Marten provides extended capabilities around that.
+
+Let's say that we'd like to transform the event type known from previous examples:
+
+<!-- snippet: sample_upcasters_old_event_type -->
+<a id='snippet-sample_upcasters_old_event_type'></a>
+```cs
+public record ShoppingCartOpened(
+    Guid ShoppingCartId,
+    Guid ClientId
+);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L21-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcasters_old_event_type' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+We'd like to enrich it with shopping cart status and client name. To have a more straightforward structure, we'd like to group the client id and name into a nested object.
+
+<!-- snippet: sample_upcasters_new_event_type -->
+<a id='snippet-sample_upcasters_new_event_type'></a>
+```cs
+public record ShoppingCartOpenedWithStatus(
+    Guid ShoppingCartId,
+    Client Client,
+    ShoppingCartStatus Status
+);
+
+public record Client(
+    Guid Id,
+    string Name = "Unknown"
+);
+
+public enum ShoppingCartStatus
+{
+    Pending = 1,
+    Opened = 2,
+    Confirmed = 3,
+    Cancelled = 4
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L30-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcasters_new_event_type' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
