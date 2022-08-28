@@ -329,7 +329,22 @@ namespace Marten.Events.Daemon
 
             await waitForAllShardsToComplete(token, waiters).ConfigureAwait(false);
 #endif
-            foreach (var shard in shards) await StopShard(shard.Name.Identity).ConfigureAwait(false);
+
+            foreach (var shard in shards)
+            {
+                if (_agents.TryGetValue(shard.Name.Identity, out var agent))
+                {
+                    var serializationFailures = await agent.DrainSerializationFailureRecording().ConfigureAwait(false);
+                    if (serializationFailures > 0)
+                    {
+                        Console.WriteLine($"There were {serializationFailures} deserialization failures during rebuild of shard {shard.Name.Identity}");
+                    }
+                }
+
+                await StopShard(shard.Name.Identity).ConfigureAwait(false);
+            }
+
+
         }
 
         private async Task teardownExistingProjectionProgress(IProjectionSource source, CancellationToken token,

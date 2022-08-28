@@ -66,9 +66,13 @@ public class rebuilds_with_serialization_or_poison_pill_events : DaemonContext
 
         await agent.RebuildProjection("Trip", CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
+
+        // Gotta do this, or the expected aggregation will fail w/ fake
+        // serialization failures
+        FailingEvent.SerializationFails = false;
         await CheckAllExpectedAggregatesAgainstActuals();
 
-        var deadLetters = await theSession.Query<DeadLetterEvent>().Where(x => x.ShardName == "Trip:All")
+        var deadLetters = await theSession.Query<DeadLetterEvent>().Where(x => x.ShardName == "All" && x.ProjectionName == "Trip")
             .ToListAsync();
 
         var badEventCount = Streams.SelectMany(x => x.Events).OfType<FailingEvent>().Count();
@@ -78,27 +82,35 @@ public class rebuilds_with_serialization_or_poison_pill_events : DaemonContext
     [Fact]
     public async Task rebuild_the_projection_skip_failed_events()
     {
-        FailingEvent.SerializationFails = true;
+        FailingEvent.SerializationFails = false;
+        SometimesFailingTripProjection.FailingEventFails = true;
 
-        NumberOfStreams = 10;
+        NumberOfStreams = 5;
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-        StoreOptions(x => x.Projections.Add(new SometimesFailingTripProjection(), ProjectionLifecycle.Async), true);
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new SometimesFailingTripProjection(), ProjectionLifecycle.Async);
+            x.Projections.OnApplyEventException().SkipEvent();
+        }, true);
 
         var agent = await StartDaemon();
 
         await PublishSingleThreaded();
 
-        var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 30.Seconds());
+        var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 60.Seconds());
 
         await waiter;
         Logger.LogDebug("About to rebuild Trip:All");
         await agent.RebuildProjection("Trip", CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
+
+        // Gotta latch the failures so the aggregate checking can work here
+        SometimesFailingTripProjection.FailingEventFails = false;
         await CheckAllExpectedAggregatesAgainstActuals();
 
-        var deadLetters = await theSession.Query<DeadLetterEvent>().Where(x => x.ShardName == "Trip:All")
+        var deadLetters = await theSession.Query<DeadLetterEvent>().Where(x => x.ProjectionName == "Trip")
             .ToListAsync();
 
         var badEventCount = Streams.SelectMany(x => x.Events).OfType<FailingEvent>().Count();

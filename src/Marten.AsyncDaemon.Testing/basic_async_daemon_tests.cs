@@ -175,7 +175,7 @@ namespace Marten.AsyncDaemon.Testing
             var uniqueTypeCount = range1.Events.Select(x => x.EventType).Distinct()
                 .Count();
 
-            uniqueTypeCount.ShouldBe(5);
+            uniqueTypeCount.ShouldBe(6);
 
             var filter = new EventTypeFilter(theStore.Events, new Type[] {typeof(Travel), typeof(Arrival)});
             using var fetcher2 = new EventFetcher(theStore, theAgent, theStore.Tenancy.Default.Database, new ISqlFragment[]{filter});
