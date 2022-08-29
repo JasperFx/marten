@@ -223,7 +223,7 @@ namespace Marten.Events
                 mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
             }
 
-            var @event = deserializeEvent(mapping, reader);
+            var @event = mapping.ReadEventData(reader);
 
             ApplyReaderDataToEvent(reader, @event);
 
@@ -246,7 +246,7 @@ namespace Marten.Events
             IEvent @event;
             try
             {
-                @event = await deserializeEventAsync(mapping, reader, token).ConfigureAwait(false);
+                @event = await mapping.ReadEventDataAsync(reader, token).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -279,26 +279,6 @@ namespace Marten.Events
             }
 
             return Events.EventMappingFor(type);
-        }
-
-        private IEvent deserializeEvent(EventMapping mapping, DbDataReader reader)
-        {
-            var data = mapping.Transformation != null?
-                mapping.Transformation.FromDbDataReader(_serializer, reader, 0)
-                : _serializer.FromJson(mapping.DocumentType, reader, 0);
-
-            return mapping.Wrap(data);
-        }
-
-        private async ValueTask<IEvent> deserializeEventAsync(EventMapping mapping, DbDataReader reader,
-            CancellationToken token)
-        {
-            // TODO -- eliminate the runtime logic here
-            var data = mapping.Transformation != null ?
-                await mapping.Transformation.FromDbDataReaderAsync(_serializer, reader, 0, token).ConfigureAwait(false)
-                : await _serializer.FromJsonAsync(mapping.DocumentType, reader, 0, token).ConfigureAwait(false);
-
-            return mapping.Wrap(data);
         }
     }
 }

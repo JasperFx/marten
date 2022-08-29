@@ -44,6 +44,7 @@ namespace Marten.Events
         protected readonly EventGraph _parent;
         protected readonly DocumentMapping _inner;
         private ISqlFragment _defaultWhereFragment;
+        private readonly ISerializer _serializer;
 
         protected EventMapping(EventGraph parent, Type eventType)
         {
@@ -65,21 +66,19 @@ namespace Marten.Events
                 filter = filter.CombineAnd(CurrentTenantFilter.Instance);
             }
 
+            _serializer = parent.Options.Serializer();
             _defaultWhereFragment = filter;
+
+            JsonTransformation(null);
         }
 
         Type IEventType.EventType => DocumentType;
 
         public string DotNetTypeName { get; set; }
 
-        /// <summary>
-        /// <para>Defines the event JSON payload transformation. It transforms one event schema into another.
-        /// You can use it to handle the event schema versioning/migration.</para>
-        /// <para>By calling it, you tell that instead of the old CLR type, for the specific event type name,
-        /// you'd like to get the new CLR event type.
-        /// Provided functions take the deserialized object of the old event type and returns the new, mapped one.</para>
-        /// </summary>
-        public JsonTransformation? Transformation { get; set; }
+        public Func<DbDataReader, IEvent> ReadEventData { get; private set; }
+
+        public Func<DbDataReader, CancellationToken, Task<IEvent>> ReadEventDataAsync { get; private set; }
 
         IDocumentMapping IDocumentMapping.Root => this;
         public Type DocumentType { get; }
@@ -150,6 +149,49 @@ namespace Marten.Events
         }
 
         public abstract IEvent Wrap(object data);
+
+        /// <summary>
+        /// <para>Defines the event JSON payload transformation. It transforms one event schema into another.
+        /// You can use it to handle the event schema versioning/migration.</para>
+        /// <para>By calling it, you tell that instead of the old CLR type, for the specific event type name,
+        /// you'd like to get the new CLR event type.
+        /// Provided functions take the deserialized object of the old event type and returns the new, mapped one.</para>
+        /// </summary>
+        /// <param name="jsonTransformation">Json transfromation</param>
+        public void JsonTransformation(JsonTransformation? jsonTransformation)
+        {
+            ReadEventData =
+                jsonTransformation == null
+                    ? reader =>
+                    {
+                        var data = _serializer.FromJson(DocumentType, reader, 0);
+
+                        return Wrap(data);
+                    }
+                    : reader =>
+                    {
+                        var data = jsonTransformation.FromDbDataReader(_serializer, reader, 0);
+
+                        return Wrap(data);
+                    }
+                ;
+
+            ReadEventDataAsync = jsonTransformation == null
+                ? async (reader, token) =>
+                {
+                    var data = await _serializer.FromJsonAsync(DocumentType, reader, 0, token)
+                        .ConfigureAwait(false);
+
+                    return Wrap(data);
+                }
+                : async (reader, token) =>
+                {
+                    var data = await jsonTransformation.FromDbDataReaderAsync(_serializer, reader, 0, token)
+                        .ConfigureAwait(false);
+
+                    return Wrap(data);
+                };
+        }
     }
 
     public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
@@ -157,7 +199,7 @@ namespace Marten.Events
         private readonly string _tableName;
         private Type _idType;
 
-        public EventMapping(EventGraph parent) : base(parent, typeof(T))
+        public EventMapping(EventGraph parent): base(parent, typeof(T))
         {
             var schemaName = parent.DatabaseSchemaName;
             _tableName = schemaName == SchemaConstants.DefaultSchema ? "mt_events" : $"{schemaName}.mt_events";
@@ -195,7 +237,8 @@ namespace Marten.Events
             return new EventSelector<T>(session.Serializer);
         }
 
-        IQueryHandler<TResult> ISelectClause.BuildHandler<TResult>(IMartenSession session, Statement topStatement, Statement currentStatement)
+        IQueryHandler<TResult> ISelectClause.BuildHandler<TResult>(IMartenSession session, Statement topStatement,
+            Statement currentStatement)
         {
             var selector = new EventSelector<T>(session.Serializer);
 
@@ -301,11 +344,7 @@ namespace Marten.Events
 
         public override IEvent Wrap(object data)
         {
-            return new Event<T>((T) data)
-            {
-                EventTypeName = EventTypeName,
-                DotNetTypeName = DotNetTypeName
-            };
+            return new Event<T>((T)data) { EventTypeName = EventTypeName, DotNetTypeName = DotNetTypeName };
         }
     }
 
