@@ -157,7 +157,7 @@ namespace Marten.Events
         {
             var eventMapping = EventMappingFor(eventType);
             eventMapping.EventTypeName = eventTypeName;
-            eventMapping.Transformation = jsonTransformation;
+            eventMapping.JsonTransformation(jsonTransformation);
 
             return this;
         }
@@ -169,7 +169,7 @@ namespace Marten.Events
         {
             var eventMapping = EventMappingFor<TEvent>();
             eventMapping.EventTypeName = eventTypeName;
-            eventMapping.Transformation = JsonTransformations.Upcast(upcast);
+            eventMapping.JsonTransformation(JsonTransformations.Upcast(upcast));
 
             return this;
         }
@@ -186,7 +186,7 @@ namespace Marten.Events
         {
             var eventMapping = EventMappingFor<TEvent>();
             eventMapping.EventTypeName = eventTypeName;
-            eventMapping.Transformation = JsonTransformations.Upcast(upcastAsync);
+            eventMapping.JsonTransformation(JsonTransformations.Upcast(upcastAsync));
 
             return this;
         }
