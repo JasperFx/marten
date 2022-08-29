@@ -157,7 +157,7 @@ namespace Marten.Events
         /// <para><b>WARNING!</b> Transformation will only be run in the async API and throw exceptions when run in sync method calls.</para>
         /// </summary>
         /// <param name="eventTypeName">Event type name</param>
-        /// <param name="upcastAsync">Async only event payload transformation, upcasting object of old CLR event type into the new one</para>
+        /// <param name="upcastAsync">Async only event payload transformation, upcasting object of old CLR event type into the new one</param>
         /// <typeparam name="TOldEvent">Old CLR event type</typeparam>
         /// <typeparam name="TEvent">New CLR event type</typeparam>
         /// <returns>Event store options, to allow fluent definition</returns>

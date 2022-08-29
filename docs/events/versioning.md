@@ -2,13 +2,13 @@
 
 ## Overview
 
-Events, by their nature, represent facts that happened in the past. They should be immutable even if they had wrong values (as we can only roughly guess what should be the missing property value). Postgres allows us to do SQL migration even for the JSON data. Yet, those changes will only be reflected in the specific module. They won't be propagated further to other modules. In the distributed world we're living, that's a no-go. 
+Events, by their nature, represent facts that happened in the past. They should be immutable even if they had wrong or missing values (as we can only roughly guess what should be the correct value). Postgres allows us to do SQL migration even for the JSON data. Yet, those changes will only be reflected in the specific module. They won't be propagated further to other modules. In the distributed world we're living, that's a no-go. 
 
 **The best strategy is not to change the past data but compensate our mishaps.** In Event Sourcing, that means appending the new event with correction. That's also how business work in general. If you issued the wrong invoice, you do not modify it; you send a new one with updated data.
 
 Events versioning is presented as something scary, as you cannot "just update data" as in the traditional systems. Running migrations or finding broken data is challenging even in the classical way. **In Event Sourcing, you're at least getting tools to run a proper investigation.** By checking the history of events, you may find where was the place your data was broken (and, e.g. correlate it with the new deployment or system-wide failure).
 
-**Business processes usually don't change so rapidly. Our understanding of how they work may change often.** Still, that typically means an issue in the requirements discovery or modelling. Typically you should not get a lot of schema versions of the same event. If you do, try to get back to the whiteboard and work on modelling, as there may be some design or process smell.
+**Business processes usually don't change so rapidly. Our understanding of how they work may change often.** Still, that typically means an issue in the requirements discovery or modeling. Typically you should not get a lot of schema versions of the same event. If you do, try to get back to the whiteboard and work on modeling, as there may be some design or process smell.
 
 **It's also worth thinking about data in the context of the usage type.** It may be:
 
@@ -16,9 +16,9 @@ Events versioning is presented as something scary, as you cannot "just update da
 - _warm_ - data used sporadically or read-only. They usually represent data we're accessing for our UI (read model) and data we typically won't change.
 - _cold_ - data not used in our application or used by other modules (for instance, reporting). We may want to keep also for the legal obligations.
 
-Once we realize that, we may discover that we might not separate the storage for each type. We also might not need to keep all data in the same database. If we also apply the temporal modelling practices to our model, then instead of keeping, e.g. all transactions for the cash register, we may just keep data for the current cashier shift. It will make our event streams shorter and more manageable. We may also decide to just keep read model [documents](/documents/) and [archive](/events/archiving) events from the inactive cashier shift, as effectively we won't be accessing them.
+Once we realize that, we may discover that we could separate the storage for each type. We also might not need to keep all data in the same database. If we also apply the temporal modeling practices to our model, then instead of keeping, e.g. all transactions for the cash register, we may just keep data for the current cashier shift. It will make our event streams shorter and more manageable. We may also decide to just keep read model [documents](/documents/) and [archive](/events/archiving) events from the inactive cashier shift, as effectively we won't be accessing them.
 
-**Applying explained above modelling, and archiving techniques will keep our streams short-living. It may reduce the need to keep all event schemas.** When we need to introduce the new schema, we can do it with backward compatibility and support both old and new schema during the next deployment. Based on our business process lifetime, we can define the graceful period. For instance, helpdesk tickets live typically for 1-3 days. We can assume that, after two weeks from deployment, active tickets will be using only the new event schema. Of course, we should verify that, and events with the old schema will still be in the database. Yet, we can archive the inactive tickets, as they won't be needed for operational purposes (they will be either _warm_ or _cold_ data). By doing that, we can make the old event schema obsolete and don't need to maintain it.
+**Applying explained above modeling, and archiving techniques will keep our streams short-living. It may reduce the need to keep all event schemas.** When we need to introduce the new schema, we can do it with backward compatibility and support both old and new schema during the next deployment. Based on our business process lifetime, we can define the graceful period. For instance, helpdesk tickets live typically for 1-3 days. We can assume that, after two weeks from deployment, active tickets will be using only the new event schema. Of course, we should verify that, and events with the old schema will still be in the database. Yet, we can archive the inactive tickets, as they won't be needed for operational purposes (they will be either _warm_ or _cold_ data). By doing that, we can make the old event schema obsolete and don't need to maintain it.
 
 Nevertheless, life is not only in black and white colors. We cannot predict everything and always be correct. **In practice, it's unavoidable in the living system not to have event schema migrations.** Even during the graceful period of making old schema obsolete. They might come from:
 
@@ -282,7 +282,11 @@ public class ShoppingCartOpened
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/SimpleMappings.cs#L61-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_schema_migration_renamed_property_stj' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: warning
 Remember that if you use this attribute, new events will still produce the old (mapped) event type name.
+
+One of the consequences is that you won't be able to [query event data](/events/querying) by this property. Marten while performing database query using a direct mapping from CLR expressions. The query will then use the new name, while you'll find the old one in the payload. As we're querying JSON, it won't throw an exception, but just not find the respectful event data returning no results.
+:::
 
 ## Upcasting - advanced payload transformations
 
@@ -291,7 +295,7 @@ Sometimes with more extensive schema changes, you'd like more flexibility in pay
 There are two main ways of upcasting the old schema into the new one:
 
 - **CLR types transformation** - if we're okay with keeping the old CLR class in the codebase, we could define a function that takes the instance of the old type and returns the new one. Internally it will use default deserialization and event type mapping for the old CLR type and calls the upcasting function.
-- **Raw JSON transformation** - if we don't want to keep the old CLR class or want to get the best performance by reducing the number of allocations, we can do raw JSON transformations. Most of the serializers have classes enabling that. [Newtonsoft Json.NET has  JObject](https://www.newtonsoft.com/json/help/html/queryinglinqtojson.htm) and [System.Text.Json has JsonDocument](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-overview). This gives the best flexibility, but logic may be more cryptic and _stringly-typed_.
+- **Raw JSON transformation** - if we don't want to keep the old CLR class or want to get the best performance by reducing the number of allocations, we can do raw JSON transformations. Most of the serializers have classes enabling that. [Newtonsoft Json.NET has  JObject](https://www.newtonsoft.com/json/help/html/queryinglinqtojson.htm) and [System.Text.Json has JsonDocument](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-use-dom-utf8jsonreader-utf8jsonwriter#use-jsondocument). This gives the best flexibility, but logic may be more cryptic and _stringly-typed_.
 
 Let's say that we'd like to transform the event type known from previous examples:
 
