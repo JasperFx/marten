@@ -182,7 +182,7 @@ namespace martenbuild
 
             Target("init-db", () =>
             {
-                Run("docker-compose", "up -d");
+                Run("docker", "compose up -d");
 
                 WaitForDatabaseToBeReady();
 
