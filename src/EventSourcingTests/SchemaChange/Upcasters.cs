@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Events;
-using Marten.Internal.Sessions;
 using Marten.Services.Json;
 using Marten.Services.Json.Transformations;
 using Marten.Testing;
@@ -773,7 +772,7 @@ namespace EventSourcingTests.SchemaChange
 
             await theStore.EnsureStorageExistsAsync(typeof(StreamAction));
 
-            await using (var session = (DocumentSessionBase)theStore.OpenSession())
+            await using (var session = theStore.OpenSession())
             {
                 session.Events.Append(shoppingCartId, (IEnumerable<object>)shoppingCart.DequeueEvents());
                 await session.SaveChangesAsync();
