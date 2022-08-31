@@ -3,8 +3,8 @@ using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Events;
 using Marten.Exceptions;
+using static Marten.Events.EventMappingExtensions;
 
 namespace Marten.Services.Json.Transformations
 {
@@ -84,7 +84,7 @@ namespace Marten.Services.Json.Transformations
         /// <summary>
         /// Event type name that you would like to transform. By default it uses the default convention
         /// </summary>
-        public virtual string EventTypeName => EventType.GetEventTypeName();
+        public virtual string EventTypeName => GetEventTypeName(EventType);
 
         public abstract object FromDbDataReader(ISerializer serializer, DbDataReader dbDataReader, int index);
 
@@ -154,7 +154,7 @@ namespace Marten.Services.Json.Transformations
     public abstract class EventUpcaster<TOldEvent, TEvent>: EventUpcaster<TEvent>
         where TOldEvent : notnull where TEvent : notnull
     {
-        public override string EventTypeName => (typeof(TOldEvent)).GetEventTypeName();
+        public override string EventTypeName => GetEventTypeName<TOldEvent>();
 
         public override object FromDbDataReader(ISerializer serializer, DbDataReader dbDataReader, int index) =>
             JsonTransformations.FromDbDataReader<TOldEvent, TEvent>(Upcast)(serializer, dbDataReader, index);
@@ -245,7 +245,7 @@ namespace Marten.Services.Json.Transformations
     public abstract class AsyncOnlyEventUpcaster<TOldEvent, TEvent>: EventUpcaster<TEvent>
         where TOldEvent : notnull where TEvent : notnull
     {
-        public override string EventTypeName => (typeof(TOldEvent)).GetEventTypeName();
+        public override string EventTypeName => GetEventTypeName<TOldEvent>();
 
         public override object FromDbDataReader(ISerializer serializer, DbDataReader dbDataReader, int index) =>
             throw new MartenException(
