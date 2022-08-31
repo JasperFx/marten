@@ -155,46 +155,36 @@ namespace Marten.Events
             JsonTransformation jsonTransformation = null
         )
         {
-            var eventMapping = EventMappingFor(eventType);
+            var eventMapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
             eventMapping.EventTypeName = eventTypeName;
             eventMapping.JsonTransformation(jsonTransformation);
 
+            _byEventName.Fill(eventTypeName, eventMapping);
+
             return this;
         }
 
         public IEventStoreOptions Upcast<TOldEvent, TEvent>(
             string eventTypeName,
             Func<TOldEvent, TEvent> upcast
-        ) where TOldEvent : class where TEvent : class
-        {
-            var eventMapping = EventMappingFor<TEvent>();
-            eventMapping.EventTypeName = eventTypeName;
-            eventMapping.JsonTransformation(JsonTransformations.Upcast(upcast));
-
-            return this;
-        }
+        ) where TOldEvent : class where TEvent : class =>
+            Upcast(typeof(TEvent), eventTypeName, JsonTransformations.Upcast(upcast));
 
         public IEventStoreOptions Upcast<TOldEvent, TEvent>(
             Func<TOldEvent, TEvent> upcast
         ) where TOldEvent : class where TEvent : class =>
-            Upcast(typeof(TOldEvent).GetEventTypeName(), upcast);
+            Upcast(typeof(TEvent), typeof(TOldEvent).GetEventTypeName(), JsonTransformations.Upcast(upcast));
 
         public IEventStoreOptions Upcast<TOldEvent, TEvent>(
             string eventTypeName,
             Func<TOldEvent, CancellationToken, Task<TEvent>> upcastAsync
-        ) where TOldEvent : class where TEvent : class
-        {
-            var eventMapping = EventMappingFor<TEvent>();
-            eventMapping.EventTypeName = eventTypeName;
-            eventMapping.JsonTransformation(JsonTransformations.Upcast(upcastAsync));
-
-            return this;
-        }
+        ) where TOldEvent : class where TEvent : class =>
+            Upcast(typeof(TEvent), eventTypeName, JsonTransformations.Upcast(upcastAsync));
 
         public IEventStoreOptions Upcast<TOldEvent, TEvent>(
             Func<TOldEvent, CancellationToken, Task<TEvent>> upcastAsync
-        ) where TOldEvent : class where TEvent : class =>
-            Upcast(typeof(TOldEvent).GetEventTypeName(), upcastAsync);
+        ) where TOldEvent : class where TEvent : class  =>
+            Upcast(typeof(TEvent), typeof(TOldEvent).GetEventTypeName(), JsonTransformations.Upcast(upcastAsync));
 
         public IEventStoreOptions Upcast(params IEventUpcaster[] upcasters)
         {
