@@ -65,7 +65,12 @@ namespace Marten.Events.CodeGeneration
 
             method.Frames.Add(new DefaultAggregateConstruction(AggregateType, generatedType)
             {
-                IfStyle = IfStyle.None
+                IfStyle = IfStyle.None,
+                AdditionalNoConstructorExceptionDetails =
+                    "  or Create method for {{@event.DotNetTypeName}} event type." +
+                    "Check more about the create method convention in documentation: https://martendb.io/events/projections/event-projections.html#create-method-convention. " +
+                    "If you're using Upcasting, check if {{@event.DotNetTypeName}} is an old event type. If it is, make sure to define transformation for it to new event type. " +
+                    "Read more in Upcasting docs: https://martendb.io/events/versioning.html#upcasting-advanced-payload-transformations"
             });
         }
 

@@ -34,6 +34,8 @@ namespace Marten.Events.CodeGeneration
 
         public IfStyle IfStyle { get; set; } = IfStyle.Else;
 
+        public string AdditionalNoConstructorExceptionDetails { get; set; } = string.Empty;
+
         public override IEnumerable<Variable> FindVariables(IMethodVariables chain)
         {
             _event = chain.FindVariable(typeof(IEvent));
@@ -47,10 +49,8 @@ namespace Marten.Events.CodeGeneration
             if (_constructor == null)
             {
                 writer.WriteLine(
-                    $"throw new {typeof(InvalidOperationException).FullNameInCode()}(\"There is no default constructor or Create method for {_returnType.FullNameInCode()} event type." +
-                    "Check more about the create convention in documentation: https://martendb.io/events/projections/event-projections.html#create-method-convention." +
-                    $"If you're using Upcasting, check if {_returnType.FullNameInCode()} is an old event type. If it is, make sure to define mapping for it to new event type." +
-                    "Read more in Upcasting docs: https://martendb.io/events/versioning.html#upcasting-advanced-payload-transformations.\");");
+                    $"throw new {typeof(InvalidOperationException).FullNameInCode()}(\"There is no default constructor for {_returnType.FullNameInCode()}{AdditionalNoConstructorExceptionDetails}.\");"
+                );
             }
             else if (_setter != null)
             {
