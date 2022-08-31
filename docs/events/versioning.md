@@ -283,7 +283,7 @@ public class ShoppingCartOpened
 <!-- endSnippet -->
 
 ::: warning
-Remember that if you use this attribute, new events will still produce the old (mapped) event type name.
+Remember that if you use this attribute, new events will still produce the old (mapped) property name.
 
 One of the consequences is that you won't be able to [query event data](/events/querying) by this property. Marten while performing database query using a direct mapping from CLR expressions. The query will then use the new name, while you'll find the old one in the payload. As we're querying JSON, it won't throw an exception, but just not find the respectful event data returning no results.
 :::
@@ -923,3 +923,5 @@ options.Events.Upcast(new ShoppingCartOpenedAsyncOnlyUpcaster(clientRepository))
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L278-L282' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_class_with_clr_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Working with multiple Event type versions

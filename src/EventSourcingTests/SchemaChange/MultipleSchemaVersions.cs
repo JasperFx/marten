@@ -10,6 +10,7 @@ using Marten.Testing;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using static Marten.Events.EventMappingExtensions;
 
 namespace EventSourcingTests.SchemaChange
 {
@@ -182,7 +183,7 @@ namespace EventSourcingTests.SchemaChange
 
             public record ShoppingCart(
                 Guid Id,
-                Client Client,
+                Guid ClientId,
                 Dictionary<Guid, int> ProductItems,
                 ShoppingCartStatus Status = ShoppingCartStatus.Opened,
                 DateTime? OpenedAt = null
@@ -191,7 +192,7 @@ namespace EventSourcingTests.SchemaChange
                 public static ShoppingCart Create(ShoppingCartOpened @event) =>
                     new ShoppingCart(
                         @event.CartId,
-                        @event.Client,
+                        @event.Client.Id,
                         new Dictionary<Guid, int>(),
                         @event.Status,
                         @event.OpenedAt
@@ -277,7 +278,7 @@ namespace EventSourcingTests.SchemaChange
                 currentQuantity
             );
 
-            currentQuantity = await CheckV2Upcasting(
+            currentQuantity = await CheckV2WithDifferentNameUpcasting(
                 shoppingCartId,
                 clientId,
                 productId,
@@ -285,7 +286,49 @@ namespace EventSourcingTests.SchemaChange
                 price
             );
 
-            await CheckV3Upcasting(
+            await CheckV3WithDifferentNameUpcasting(
+                shoppingCartId,
+                clientId,
+                productId,
+                currentQuantity,
+                price
+            );
+        }
+
+
+        [Fact]
+        public async Task UpcastingWithMultipleSchemaAndTheSameTypeNamesShouldWork()
+        {
+            // test events data
+            var shoppingCartId = Guid.NewGuid();
+            var clientId = Guid.NewGuid();
+            var productId = Guid.NewGuid();
+            var currentQuantity = 3;
+            var price = 1.23m;
+
+            StoreOptions(options =>
+            {
+                options.GeneratedCodeMode = TypeLoadMode.Auto;
+                options.Projections.SelfAggregate<MultipleVersions.V1.ShoppingCart>();
+            });
+            await theStore.EnsureStorageExistsAsync(typeof(StreamAction));
+
+            await AppendEventsInV1Schema(
+                shoppingCartId,
+                clientId,
+                productId,
+                currentQuantity
+            );
+
+            currentQuantity = await CheckV2WithTheSameNameUpcasting(
+                shoppingCartId,
+                clientId,
+                productId,
+                currentQuantity,
+                price
+            );
+
+            await CheckV3WithTheSameNameUpcasting(
                 shoppingCartId,
                 clientId,
                 productId,
@@ -305,7 +348,209 @@ namespace EventSourcingTests.SchemaChange
             await session.SaveChangesAsync();
         }
 
-        private async Task<int> CheckV2Upcasting(Guid shoppingCartId,
+        private async Task<int> CheckV2WithTheSameNameUpcasting(Guid shoppingCartId,
+            Guid clientId,
+            Guid productId,
+            int currentQuantity,
+            decimal price)
+        {
+            using var storeV2 = SeparateStore(options =>
+            {
+                options.GeneratedCodeMode = TypeLoadMode.Auto;
+                options.Projections.SelfAggregate<MultipleVersions.V2.WithTheSameName.ShoppingCart>();
+                ////////////////////////////////////////////////////////
+                // 2.1. Define Upcast methods from V1 to V2
+                ////////////////////////////////////////////////////////
+                options.Events
+                    .Upcast((MultipleVersions.V1.ShoppingCartOpened @event) =>
+                        new MultipleVersions.V2.WithTheSameName.ShoppingCartOpened(
+                            @event.ShoppingCartId,
+                            @event.ClientId
+                        )
+                    )
+                    .Upcast((MultipleVersions.V1.ProductItemAddedToShoppingCart @event) =>
+                        new MultipleVersions.V2.WithTheSameName.ProductItemAddedToShoppingCart(
+                            @event.ShoppingCartId,
+                            @event.ProductId,
+                            @event.Quantity
+                        )
+                    )
+                    .MapEventTypeWithSchemaVersion<
+                        MultipleVersions.V2.WithTheSameName.ShoppingCartOpened>(2)
+                    .MapEventTypeWithSchemaVersion<
+                        MultipleVersions.V2.WithTheSameName.ProductItemAddedToShoppingCart>(2);
+            });
+            {
+                await using var session = storeV2.OpenSession();
+
+                ////////////////////////////////////////////////////////
+                // 2.2. Append Event with V2 schema
+                ////////////////////////////////////////////////////////
+                var additionalQuantity = 2;
+                session.Events.Append(shoppingCartId,
+                    new MultipleVersions.V2.WithTheSameName.ProductItemAddedToShoppingCart(
+                        shoppingCartId,
+                        productId,
+                        additionalQuantity,
+                        price
+                    )
+                );
+                await session.SaveChangesAsync();
+
+                ////////////////////////////////////////////////////////
+                // 2.3. Ensure that all events are read with V2 schema
+                ////////////////////////////////////////////////////////
+                var events = await session.Events.FetchStreamAsync(shoppingCartId);
+                events.Count.ShouldBe(3);
+                events[0].ShouldBeOfType<MultipleVersions.V2.WithTheSameName.ShoppingCartOpened>(
+                    "shopping_cart_opened"
+                );
+                events[1].ShouldBeOfType<MultipleVersions.V2.WithTheSameName.ProductItemAddedToShoppingCart>(
+                    "product_item_added_to_shopping_cart"
+                );
+                events[2].ShouldBeOfType<MultipleVersions.V2.WithTheSameName.ProductItemAddedToShoppingCart>(
+                    "product_item_added_to_shopping_cart_v2"
+                );
+
+                ////////////////////////////////////////////////////////
+                // 2.4. Ensure that aggregation is using V2 schema
+                ////////////////////////////////////////////////////////
+                var shoppingCartV2 =
+                    await session.Events.AggregateStreamAsync<MultipleVersions.V2.WithTheSameName.ShoppingCart>(
+                        shoppingCartId
+                    );
+
+                var shoppingCartV2Projection =
+                    await session.LoadAsync<MultipleVersions.V2.WithTheSameName.ShoppingCart>(shoppingCartId);
+
+                shoppingCartV2
+                    .ShouldNotBeNull()
+                    .ShouldBeEquivalentTo(
+                        new MultipleVersions.V2.WithTheSameName.ShoppingCart(
+                            shoppingCartId,
+                            clientId,
+                            new Dictionary<Guid, int> { { productId, currentQuantity + additionalQuantity } },
+                            MultipleVersions.V2.ShoppingCartStatus.Opened,
+                            null
+                        )
+                    );
+
+                shoppingCartV2Projection.ShouldBeEquivalentTo(shoppingCartV2);
+
+                return currentQuantity + additionalQuantity;
+            }
+        }
+
+        private async Task CheckV3WithTheSameNameUpcasting(
+            Guid shoppingCartId,
+            Guid clientId,
+            Guid productId,
+            int currentQuantity,
+            decimal price
+        )
+        {
+            using var storeV3 = SeparateStore(options =>
+            {
+                options.GeneratedCodeMode = TypeLoadMode.Auto;
+                options.Projections.SelfAggregate<MultipleVersions.V3.WithTheSameName.ShoppingCart>();
+                ////////////////////////////////////////////////////////
+                // 3.1. Define Upcast methods from V1 to V3, and from V2 to V3
+                ////////////////////////////////////////////////////////
+                options.Events
+                    .Upcast((MultipleVersions.V1.ShoppingCartOpened @event) =>
+                        new MultipleVersions.V3.WithTheSameName.ShoppingCartOpened(
+                            @event.ShoppingCartId,
+                            new MultipleVersions.V3.Client(@event.ClientId)
+                        )
+                    )
+                    .Upcast((MultipleVersions.V1.ProductItemAddedToShoppingCart @event) =>
+                        new MultipleVersions.V3.WithTheSameName.ProductItemAddedToShoppingCart(
+                            @event.ShoppingCartId,
+                            new MultipleVersions.V3.ProductItem(@event.ProductId, @event.Quantity)
+                        )
+                    )
+                    .Upcast(2, (MultipleVersions.V2.WithTheSameName.ShoppingCartOpened @event) =>
+                        new MultipleVersions.V3.WithTheSameName.ShoppingCartOpened(
+                            @event.ShoppingCartId,
+                            new MultipleVersions.V3.Client(@event.ClientId)
+                        )
+                    )
+                    .Upcast(2, (MultipleVersions.V2.WithTheSameName.ProductItemAddedToShoppingCart @event) =>
+                        new MultipleVersions.V3.WithTheSameName.ProductItemAddedToShoppingCart(
+                            @event.ShoppingCartId,
+                            new MultipleVersions.V3.ProductItem(@event.ProductId, @event.Quantity, @event.Price)
+                        )
+                    )
+                    .MapEventTypeWithSchemaVersion<
+                        MultipleVersions.V3.WithTheSameName.ShoppingCartOpened>(3)
+                    .MapEventTypeWithSchemaVersion<
+                        MultipleVersions.V3.WithTheSameName.ProductItemAddedToShoppingCart>(3);
+            });
+            {
+                await using var session = storeV3.OpenSession();
+
+                ////////////////////////////////////////////////////////
+                // 3.2. Append Event with V3 schema
+                ////////////////////////////////////////////////////////
+                var additionalQuantity = 4;
+                session.Events.Append(shoppingCartId,
+                    new MultipleVersions.V3.WithTheSameName.ProductItemAddedToShoppingCart(
+                        shoppingCartId,
+                        new MultipleVersions.V3.ProductItem(
+                            productId,
+                            additionalQuantity,
+                            price
+                        )
+                    )
+                );
+                await session.SaveChangesAsync();
+
+                ////////////////////////////////////////////////////////
+                // 3.3. Ensure that all events are read with V2 schema
+                ////////////////////////////////////////////////////////
+                var events = await session.Events.FetchStreamAsync(shoppingCartId);
+                events.Count.ShouldBe(4);
+                events[0].ShouldBeOfType<MultipleVersions.V3.WithTheSameName.ShoppingCartOpened>(
+                    "shopping_cart_opened"
+                );
+                events[1].ShouldBeOfType<MultipleVersions.V3.WithTheSameName.ProductItemAddedToShoppingCart>(
+                    "product_item_added_to_shopping_cart"
+                );
+                events[2].ShouldBeOfType<MultipleVersions.V3.WithTheSameName.ProductItemAddedToShoppingCart>(
+                    "product_item_added_to_shopping_cart_v2"
+                );
+                events[3].ShouldBeOfType<MultipleVersions.V3.WithTheSameName.ProductItemAddedToShoppingCart>(
+                    "product_item_added_to_shopping_cart_v3"
+                );
+
+                ////////////////////////////////////////////////////////
+                // 3.4. Ensure that aggregation is using V3 schema
+                ////////////////////////////////////////////////////////
+                var shoppingCartV3 =
+                    await session.Events.AggregateStreamAsync<MultipleVersions.V3.WithTheSameName.ShoppingCart>(
+                        shoppingCartId
+                    );
+
+                var shoppingCartV3Projection =
+                    await session.LoadAsync<MultipleVersions.V3.WithTheSameName.ShoppingCart>(shoppingCartId);
+
+                shoppingCartV3
+                    .ShouldNotBeNull()
+                    .ShouldBeEquivalentTo(
+                        new MultipleVersions.V3.WithTheSameName.ShoppingCart(
+                            shoppingCartId,
+                            clientId,
+                            new Dictionary<Guid, int> { { productId, currentQuantity + additionalQuantity } },
+                            MultipleVersions.V3.ShoppingCartStatus.Opened,
+                            null
+                        )
+                    );
+
+                shoppingCartV3Projection.ShouldBeEquivalentTo(shoppingCartV3);
+            }
+        }
+
+        private async Task<int> CheckV2WithDifferentNameUpcasting(Guid shoppingCartId,
             Guid clientId,
             Guid productId,
             int currentQuantity,
@@ -356,13 +601,13 @@ namespace EventSourcingTests.SchemaChange
                 var events = await session.Events.FetchStreamAsync(shoppingCartId);
                 events.Count.ShouldBe(3);
                 events[0].ShouldBeOfType<MultipleVersions.V2.WithDifferentName.ShoppingCartOpenedV2>(
-                    typeof(MultipleVersions.V1.ShoppingCartOpened).GetEventTypeName()
+                    "shopping_cart_opened"
                 );
                 events[1].ShouldBeOfType<MultipleVersions.V2.WithDifferentName.ProductItemAddedToShoppingCartV2>(
-                    typeof(MultipleVersions.V1.ProductItemAddedToShoppingCart).GetEventTypeName()
+                    "product_item_added_to_shopping_cart"
                 );
                 events[2].ShouldBeOfType<MultipleVersions.V2.WithDifferentName.ProductItemAddedToShoppingCartV2>(
-                    typeof(MultipleVersions.V2.WithDifferentName.ProductItemAddedToShoppingCartV2).GetEventTypeName()
+                    "product_item_added_to_shopping_cart_v2"
                 );
 
                 ////////////////////////////////////////////////////////
@@ -394,8 +639,7 @@ namespace EventSourcingTests.SchemaChange
             }
         }
 
-
-        private async Task CheckV3Upcasting(
+        private async Task CheckV3WithDifferentNameUpcasting(
             Guid shoppingCartId,
             Guid clientId,
             Guid productId,
@@ -461,16 +705,16 @@ namespace EventSourcingTests.SchemaChange
                 var events = await session.Events.FetchStreamAsync(shoppingCartId);
                 events.Count.ShouldBe(4);
                 events[0].ShouldBeOfType<MultipleVersions.V3.WithDifferentName.ShoppingCartOpenedV3>(
-                    typeof(MultipleVersions.V1.ShoppingCartOpened).GetEventTypeName()
+                    "shopping_cart_opened"
                 );
                 events[1].ShouldBeOfType<MultipleVersions.V3.WithDifferentName.ProductItemAddedToShoppingCartV3>(
-                    typeof(MultipleVersions.V1.ProductItemAddedToShoppingCart).GetEventTypeName()
+                    "product_item_added_to_shopping_cart"
                 );
                 events[2].ShouldBeOfType<MultipleVersions.V3.WithDifferentName.ProductItemAddedToShoppingCartV3>(
-                    typeof(MultipleVersions.V2.WithDifferentName.ProductItemAddedToShoppingCartV2).GetEventTypeName()
+                    "product_item_added_to_shopping_cart_v2"
                 );
                 events[3].ShouldBeOfType<MultipleVersions.V3.WithDifferentName.ProductItemAddedToShoppingCartV3>(
-                    typeof(MultipleVersions.V3.WithDifferentName.ProductItemAddedToShoppingCartV3).GetEventTypeName()
+                    "product_item_added_to_shopping_cart_v3"
                 );
 
                 ////////////////////////////////////////////////////////

@@ -28,6 +28,7 @@ using NpgsqlTypes;
 using Remotion.Linq;
 using Weasel.Core;
 using Weasel.Postgresql.SqlGeneration;
+using static Marten.Events.EventMappingExtensions;
 
 namespace Marten.Events
 {
@@ -53,7 +54,7 @@ namespace Marten.Events
             _parent = parent;
             DocumentType = eventType;
 
-            EventTypeName = eventType.GetEventTypeName();
+            EventTypeName = GetEventTypeName(eventType);
             IdMember = DocumentType.GetProperty(nameof(IEvent.Id));
 
             _inner = new DocumentMapping(eventType, parent.Options);
@@ -351,7 +352,7 @@ namespace Marten.Events
     /// <summary>
     /// Class <c>EventMappingExtensions</c> exposes extensions and helpers to handle event type mapping.
     /// </summary>
-    internal static class EventMappingExtensions
+    public static class EventMappingExtensions
     {
         /// <summary>
         /// Translates by convention the CLR type name into string event type name.
@@ -359,7 +360,74 @@ namespace Marten.Events
         /// </summary>
         /// <param name="eventType">CLR event type</param>
         /// <returns>Mapped string event type name</returns>
-        internal static string GetEventTypeName(this Type eventType) =>
+        public static string GetEventTypeName(Type eventType) =>
             eventType.IsGenericType ? eventType.ShortNameInCode() : eventType.Name.ToTableAlias();
+
+        /// <summary>
+        /// Translates by convention the CLR type name into string event type name.
+        /// It can handle both regular and generic types.
+        /// </summary>
+        /// <typeparam name="TEvent">CLR event type</typeparam>
+        /// <returns>Mapped string event type name</returns>
+        public static string GetEventTypeName<TEvent>() =>
+            GetEventTypeName(typeof(TEvent));
+
+        /// <summary>
+        /// Translates by convention the event type name into string event type name and suffix.
+        /// It can handle both regular and generic types.
+        /// </summary>
+        /// <param name="eventTypeName">event type name</param>
+        /// <param name="suffix">Type name suffix</param>
+        /// <returns>Mapped string event type name in the format: $"{eventTypeName}_{suffix}"</returns>
+        public static string GetEventTypeNameWithSuffix(string eventTypeName, string suffix) =>
+            $"{eventTypeName}_{suffix}";
+
+        /// <summary>
+        /// Translates by convention the CLR type name into string event type name and suffix.
+        /// It can handle both regular and generic types.
+        /// </summary>
+        /// <param name="eventType">CLR event type</param>
+        /// <returns>Mapped string event type name with suffix</returns>
+        public static string GetEventTypeNameWithSuffix(Type eventType, string suffix) =>
+            GetEventTypeNameWithSuffix(GetEventTypeName(eventType), suffix);
+
+        /// <summary>
+        /// Translates by convention the CLR type name into string event type name and suffix.
+        /// It can handle both regular and generic types.
+        /// </summary>
+        /// <typeparam name="TEvent">CLR event type</typeparam>
+        /// <returns>Mapped string event type name with suffix</returns>
+        public static string GetEventTypeNameWithSuffix<TEvent>(string suffix) =>
+            GetEventTypeNameWithSuffix(typeof(TEvent), suffix);
+
+        /// <summary>
+        /// Translates by convention the CLR type name into string event type name with schema version suffix.
+        /// It can handle both regular and generic types.
+        /// </summary>
+        /// <param name="eventType">CLR event type</param>
+        /// <param name="schemaVersion">Event schema version</param>
+        /// <returns>Mapped string event type name with schema version suffix</returns>
+        public static string GetEventTypeNameWithSchemaVersion(Type eventType, uint schemaVersion) =>
+            GetEventTypeNameWithSuffix(eventType, $"v{schemaVersion}");
+
+        /// <summary>
+        /// Translates by convention the CLR type name into string event type name with schema version suffix.
+        /// It can handle both regular and generic types.
+        /// </summary>
+        /// <typeparam name="TEvent">CLR event type</typeparam>
+        /// <param name="schemaVersion">Event schema version</param>
+        /// <returns>Mapped string event type name with schema version suffix</returns>
+        public static string GetEventTypeNameWithSchemaVersion<TEvent>(uint schemaVersion) =>
+            GetEventTypeNameWithSchemaVersion(typeof(TEvent), schemaVersion);
+
+        /// <summary>
+        /// Translates by convention the event type name into string event type name with schema version suffix.
+        /// It can handle both regular and generic types.
+        /// </summary>
+        /// <param name="eventTypeName">event type name</param>
+        /// <param name="schemaVersion">Event schema version</param>
+        /// <returns>Mapped string event type name in the format: $"{eventTypeName}_{version}"</returns>
+        public static string GetEventTypeNameWithSchemaVersion(string eventTypeName, uint schemaVersion) =>
+            GetEventTypeNameWithSuffix(eventTypeName, $"v{schemaVersion}");
     }
 }

@@ -4,8 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
+using static Marten.Events.EventMappingExtensions;
 
 namespace Marten.Events
 {
@@ -210,4 +212,174 @@ namespace Marten.Events
 
         public MetadataConfig MetadataConfig { get; }
     }
+}
+
+public static class EventStoreOptionsExtensions
+{
+    /// <summary>
+    /// Maps CLR event type as particular event type name and suffix. This is useful for event type migration.
+    /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a>
+    /// </summary>
+    /// <param name="options">Event store options</param>
+    /// <param name="eventTypeName">Event type name</param>
+    /// <param name="suffix">Event type name suffix</param>
+    /// <typeparam name="TEvent">Mapped CLR event type</typeparam>
+    public static IEventStoreOptions MapEventTypeWithNameSuffix<TEvent>(
+        this IEventStoreOptions options,
+        string eventTypeName,
+        string suffix
+    )
+        where TEvent : class
+    {
+        options.MapEventType<TEvent>(GetEventTypeNameWithSuffix(eventTypeName, suffix));
+        return options;
+    }
+
+    /// <summary>
+    /// Maps CLR event type as particular event type name and suffix. This is useful for event type migration.
+    /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a>
+    /// </summary>
+    /// <param name="options">Event store options</param>
+    /// <param name="suffix">Event type name suffix</param>
+    /// <typeparam name="TEvent">Mapped CLR event type</typeparam>
+    public static IEventStoreOptions MapEventTypeWithNameSuffix<TEvent>(
+        this IEventStoreOptions options,
+        string suffix
+    )
+        where TEvent : class
+    {
+        options.MapEventType<TEvent>(GetEventTypeNameWithSuffix<TEvent>(suffix));
+        return options;
+    }
+
+    /// <summary>
+    /// Maps CLR event type as particular event type name and suffix. This is useful for event type migration.
+    /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a>
+    /// </summary>
+    /// <param name="options">Event store options</param>
+    /// <param name="eventTypeName">Event type name</param>
+    /// <param name="schemaVersion">Event schema version</param>
+    /// <typeparam name="TEvent">Mapped CLR event type</typeparam>
+    public static IEventStoreOptions MapEventTypeWithSchemaVersion<TEvent>(
+        this IEventStoreOptions options,
+        uint schemaVersion
+    )
+        where TEvent : class
+    {
+        options.MapEventType<TEvent>(GetEventTypeNameWithSchemaVersion(typeof(TEvent), schemaVersion));
+        return options;
+    }
+
+    /// <summary>
+    /// Maps CLR event type as particular event type name and suffix. This is useful for event type migration.
+    /// See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a>
+    /// </summary>
+    /// <param name="options">Event store options</param>
+    /// <param name="eventTypeName">Event type name</param>
+    /// <param name="schemaVersion">Event schema version</param>
+    /// <typeparam name="TEvent">Mapped CLR event type</typeparam>
+    public static IEventStoreOptions MapEventTypeWithSchemaVersion<TEvent>(
+        this IEventStoreOptions options,
+        string eventTypeName,
+        uint schemaVersion
+    )
+        where TEvent : class
+    {
+        options.MapEventType<TEvent>(GetEventTypeNameWithSchemaVersion(eventTypeName, schemaVersion));
+        return options;
+    }
+
+    /// <summary>
+    /// <para>Method defines the JSON payload transformation. It "upcasts" one event schema version into another.
+    /// You can use it to handle the event schema versioning/migration.</para>
+    /// <para>By calling it, you tell that for provided event type name, you'd like to get the particular CLR event type.
+    /// JSON transformation defines the custom mapping from JSON string to the CLR object.</para>
+    /// <para>When you define it, default deserialization for the particular event type won't be used.
+    /// See more in <a href="https://martendb.io/events/versioning.html#raw-json-transformation-with-json-net">documentation</a></para>
+    /// </summary>
+    /// <param name="schemaVersion">Event schema version</param>
+    /// <param name="jsonTransformation">Event payload transformation</param>
+    /// <typeparam name="TEvent">Mapped CLR event type</typeparam>
+    /// <returns>Event store options, to allow fluent definition</returns>
+    public static IEventStoreOptions Upcast<TEvent>(
+        this IEventStoreOptions options,
+        uint schemaVersion,
+        JsonTransformation jsonTransformation
+    ) where TEvent : class =>
+        options.Upcast<TEvent>(GetEventTypeNameWithSchemaVersion<TEvent>(schemaVersion), jsonTransformation);
+
+    /// <summary>
+    /// <para>Method defines the event JSON payload transformation. It "upcasts" one event schema version into another.
+    /// You can use it to handle the event schema versioning/migration.</para>
+    /// <para>By calling it, you tell that for provided event type name, you'd like to get the particular CLR event type.
+    /// JSON transformation defines the custom mapping from JSON string to the CLR object.</para>
+    /// <para>When you define it, default deserialization for the particular event type won't be used.
+    /// See more in <a href="https://martendb.io/events/versioning.html#raw-json-transformation-with-json-net">documentation</a></para>
+    /// </summary>
+    /// <param name="eventType">Mapped CLR event type</param>
+    /// <param name="schemaVersion">Event schema version</param>
+    /// <param name="jsonTransformation">Event payload transformation</param>
+    /// <returns>Event store options, to allow fluent definition</returns>
+    public static IEventStoreOptions Upcast(
+        this IEventStoreOptions options,
+        Type eventType,
+        uint schemaVersion,
+        JsonTransformation jsonTransformation
+    ) =>
+        options.Upcast(eventType, GetEventTypeNameWithSchemaVersion(eventType, schemaVersion), jsonTransformation);
+
+    /// <summary>
+    /// <para>Method defines the event JSON payload transformation. It "upcasts" one event schema version into another.
+    /// You can use it to handle the event schema versioning/migration.</para>
+    /// <para>By calling it, you tell that instead of the old CLR type, for the specific event type name,
+    /// you'd like to get the new CLR event type.
+    /// Provided function takes the deserialized object of the old event type and returns the new, mapped one.</para>
+    /// <para>Internally it uses default deserialization and event type mapping for old CLR type
+    /// and calls the mapping function.
+    /// In your application code, you should use only the new event type in the aggregation and projection logic.
+    /// See more in <a href="https://martendb.io/events/versioning.html#transformation-with-clr-types-will-look-like-this">documentation</a></para>
+    /// </summary>
+    /// <param name="options">Event store options</param>
+    /// <param name="schemaVersion">Event schema version</param>
+    /// <param name="upcast">Event payload transformation, upcasting object of old CLR event type into the new one</param>
+    /// <typeparam name="TOldEvent">Old CLR event type</typeparam>
+    /// <typeparam name="TEvent">New CLR event type</typeparam>
+    /// <returns>Event store options, to allow fluent definition</returns>
+    public static IEventStoreOptions Upcast<TOldEvent, TEvent>(
+        this IEventStoreOptions options,
+        uint schemaVersion,
+        Func<TOldEvent, TEvent> upcast
+    )
+        where TOldEvent : class
+        where TEvent : class =>
+        options.Upcast(GetEventTypeNameWithSchemaVersion<TOldEvent>(schemaVersion), upcast);
+
+
+    /// <summary>
+    /// <para>Method defines the event JSON payload transformation. It "upcasts" one event schema version into another.
+    /// You can use it to handle the event schema versioning/migration.</para>
+    /// <para>By calling it, you tell that instead of the old CLR type, for the specific event type name,
+    /// you'd like to get the new CLR event type.
+    /// Provided function takes the deserialized object of the old event type and returns the new, mapped one.</para>
+    /// <para>Internally it uses default deserialization and event type mapping for old CLR type
+    /// and calls the mapping function.
+    /// In your application code, you should use only the new event type in the aggregation and projection logic
+    /// See more in <a href="https://martendb.io/events/versioning.html#function-with-clr-types">documentation</a></para>
+    /// <para><b>WARNING!</b> Transformation will only be run in the async API and throw exceptions when run in sync method calls.</para>
+    /// </summary>
+    /// <param name="options">Event store options</param>
+    /// <param name="schemaVersion">Event schema version</param>
+    /// <param name="upcastAsync">Async only event payload transformation, upcasting object of old CLR event type into the new one</param>
+    /// <typeparam name="TOldEvent">Old CLR event type</typeparam>
+    /// <typeparam name="TEvent">New CLR event type</typeparam>
+    /// <returns>Event store options, to allow fluent definition</returns>
+    /// <exception cref="MartenException">when provided transformation is called in sync API</exception>
+    public static IEventStoreOptions Upcast<TOldEvent, TEvent>(
+        this IEventStoreOptions options,
+        uint schemaVersion,
+        Func<TOldEvent, CancellationToken, Task<TEvent>> upcastAsync
+    )
+        where TOldEvent : class
+        where TEvent : class =>
+        options.Upcast(GetEventTypeNameWithSchemaVersion<TOldEvent>(schemaVersion), upcastAsync);
 }

@@ -15,6 +15,7 @@ using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
 using Weasel.Core;
+using static Marten.Events.EventMappingExtensions;
 
 namespace Marten.Events
 {
@@ -173,7 +174,7 @@ namespace Marten.Events
         public IEventStoreOptions Upcast<TOldEvent, TEvent>(
             Func<TOldEvent, TEvent> upcast
         ) where TOldEvent : class where TEvent : class =>
-            Upcast(typeof(TEvent), typeof(TOldEvent).GetEventTypeName(), JsonTransformations.Upcast(upcast));
+            Upcast(typeof(TEvent), GetEventTypeName<TOldEvent>(), JsonTransformations.Upcast(upcast));
 
         public IEventStoreOptions Upcast<TOldEvent, TEvent>(
             string eventTypeName,
@@ -184,7 +185,7 @@ namespace Marten.Events
         public IEventStoreOptions Upcast<TOldEvent, TEvent>(
             Func<TOldEvent, CancellationToken, Task<TEvent>> upcastAsync
         ) where TOldEvent : class where TEvent : class  =>
-            Upcast(typeof(TEvent), typeof(TOldEvent).GetEventTypeName(), JsonTransformations.Upcast(upcastAsync));
+            Upcast(typeof(TEvent), GetEventTypeName<TOldEvent>(), JsonTransformations.Upcast(upcastAsync));
 
         public IEventStoreOptions Upcast(params IEventUpcaster[] upcasters)
         {
