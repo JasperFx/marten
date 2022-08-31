@@ -82,8 +82,6 @@ namespace Marten.Testing.Harness
 
             _store = new DocumentStore(options);
 
-
-
             _disposables.Add(_store);
 
             return _store;
