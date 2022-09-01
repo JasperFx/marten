@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using EventSourcingTests.SchemaChange.MultipleVersions.Lambdas;
 using LamarCodeGeneration;
 using Marten;
 using Marten.Events;
@@ -443,17 +442,19 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
     public static TheoryData<Action<StoreOptions>, Action<StoreOptions>> UpcastersConfigurationWithTheSameName =>
         new()
         {
-            { ClrUpcastConfiguration.V2WithTheSameName, ClrUpcastConfiguration.V3WithTheSameName },
-            { SystemTextJsonUpcastConfiguration.V2WithTheSameName, SystemTextJsonUpcastConfiguration.V3WithTheSameName },
-            { JsonNetUpcastConfiguration.V2WithTheSameName, JsonNetUpcastConfiguration.V3WithTheSameName }
+            { Lambdas.ClrUpcastConfiguration.V2WithTheSameName, Lambdas.ClrUpcastConfiguration.V3WithTheSameName },
+            { Lambdas.SystemTextJsonUpcastConfiguration.V2WithTheSameName, Lambdas.SystemTextJsonUpcastConfiguration.V3WithTheSameName },
+            { Lambdas.JsonNetUpcastConfiguration.V2WithTheSameName, Lambdas.JsonNetUpcastConfiguration.V3WithTheSameName },
+            { Classes.ClrUpcastConfiguration.V2WithTheSameName, Classes.ClrUpcastConfiguration.V3WithTheSameName }
         };
 
     public static TheoryData<Action<StoreOptions>, Action<StoreOptions>> UpcastersConfigurationWithDifferentName =>
         new()
         {
-            { ClrUpcastConfiguration.V2WithDifferentName, ClrUpcastConfiguration.V3WithDifferentName },
-            { SystemTextJsonUpcastConfiguration.V2WithDifferentName, SystemTextJsonUpcastConfiguration.V3WithDifferentName },
-            { JsonNetUpcastConfiguration.V2WithDifferentName, JsonNetUpcastConfiguration.V3WithDifferentName }
+            { Lambdas.ClrUpcastConfiguration.V2WithDifferentName, Lambdas.ClrUpcastConfiguration.V3WithDifferentName },
+            { Lambdas.SystemTextJsonUpcastConfiguration.V2WithDifferentName, Lambdas.SystemTextJsonUpcastConfiguration.V3WithDifferentName },
+            { Lambdas.JsonNetUpcastConfiguration.V2WithDifferentName, Lambdas.JsonNetUpcastConfiguration.V3WithDifferentName },
+            { Classes.JsonNetUpcastConfiguration.V2WithDifferentName, Classes.JsonNetUpcastConfiguration.V3WithDifferentName }
         };
 }
 
