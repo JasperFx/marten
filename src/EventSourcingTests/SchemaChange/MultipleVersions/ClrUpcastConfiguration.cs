@@ -44,7 +44,9 @@ public class ClrUpcastConfiguration
             .Upcast(2, (V2.WithTheSameName.ShoppingCartOpened @event) =>
                 new V3.WithTheSameName.ShoppingCartOpened(
                     @event.ShoppingCartId,
-                    new V3.Client(@event.ClientId)
+                    new V3.Client(@event.ClientId),
+                    (V3.ShoppingCartStatus)(int)@event.Status,
+                    @event.OpenedAt
                 )
             )
             .Upcast(2, (V2.WithTheSameName.ProductItemAddedToShoppingCart @event) =>
@@ -91,7 +93,9 @@ public class ClrUpcastConfiguration
             .Upcast((V2.WithDifferentName.ShoppingCartOpenedV2 @event) =>
                 new V3.WithDifferentName.ShoppingCartOpenedV3(
                     @event.ShoppingCartId,
-                    new V3.Client(@event.ClientId)
+                    new V3.Client(@event.ClientId),
+                    (V3.ShoppingCartStatus)(int)@event.Status,
+                    @event.OpenedAt
                 )
             )
             .Upcast((V2.WithDifferentName.ProductItemAddedToShoppingCartV2 @event) =>

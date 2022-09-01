@@ -290,6 +290,46 @@ public static class EventStoreOptionsExtensions
     }
 
     /// <summary>
+    /// <para>Method defines the JSON payload transformation. It "upcasts" one event schema into another.
+    /// You can use it to handle the event schema versioning/migration.</para>
+    /// <para>By calling it, you tell that you'd like to get the particular CLR event type.
+    /// Event type name will be used from the default <c>TEvent</c> mapping.
+    /// JSON transformation defines the custom mapping from JSON string to the CLR object.</para>
+    /// <para>When you define it, default deserialization for the particular event type won't be used.
+    /// See more in <a href="https://martendb.io/events/versioning.html#raw-json-transformation-with-json-net">documentation</a></para>
+    /// </summary>
+    /// <param name="options">Event store options</param>
+    /// <param name="eventTypeName">Event type name</param>
+    /// <param name="jsonTransformation">Event payload transformation</param>
+    /// <typeparam name="TEvent">Mapped CLR event type</typeparam>
+    /// <returns>Event store options, to allow fluent definition</returns>
+    public static IEventStoreOptions Upcast<TEvent>(
+        this IEventStoreOptions options,
+        JsonTransformation jsonTransformation
+    ) where TEvent : class =>
+        options.Upcast<TEvent>(GetEventTypeName<TEvent>(), jsonTransformation);
+
+    /// <summary>
+    /// <para>Method defines the event JSON payload transformation. It "upcasts" one event schema into another.
+    /// You can use it to handle the event schema versioning/migration.</para>
+    /// <para>By calling it, you tell that you'd like to get the particular CLR event type.
+    /// Event type name will be used from the default <see cref="eventType"/> mapping.
+    /// JSON transformation defines the custom mapping from JSON string to the CLR object.</para>
+    /// <para>When you define it, default deserialization for the particular event type won't be used.
+    /// See more in <a href="https://martendb.io/events/versioning.html#raw-json-transformation-with-json-net">documentation</a></para>
+    /// </summary>
+    /// <param name="options">Event store options</param>
+    /// <param name="eventType">Mapped CLR event type</param>
+    /// <param name="jsonTransformation">Event payload transformation</param>
+    /// <returns>Event store options, to allow fluent definition</returns>
+    public static IEventStoreOptions Upcast(
+        this IEventStoreOptions options,
+        Type eventType,
+        JsonTransformation jsonTransformation
+    )=>
+        options.Upcast(eventType, GetEventTypeName(eventType), jsonTransformation);
+
+    /// <summary>
     /// <para>Method defines the JSON payload transformation. It "upcasts" one event schema version into another.
     /// You can use it to handle the event schema versioning/migration.</para>
     /// <para>By calling it, you tell that for provided event type name, you'd like to get the particular CLR event type.
@@ -297,6 +337,7 @@ public static class EventStoreOptionsExtensions
     /// <para>When you define it, default deserialization for the particular event type won't be used.
     /// See more in <a href="https://martendb.io/events/versioning.html#raw-json-transformation-with-json-net">documentation</a></para>
     /// </summary>
+    /// <param name="options">Event store options</param>
     /// <param name="schemaVersion">Event schema version</param>
     /// <param name="jsonTransformation">Event payload transformation</param>
     /// <typeparam name="TEvent">Mapped CLR event type</typeparam>
@@ -316,6 +357,7 @@ public static class EventStoreOptionsExtensions
     /// <para>When you define it, default deserialization for the particular event type won't be used.
     /// See more in <a href="https://martendb.io/events/versioning.html#raw-json-transformation-with-json-net">documentation</a></para>
     /// </summary>
+    /// <param name="options">Event store options</param>
     /// <param name="eventType">Mapped CLR event type</param>
     /// <param name="schemaVersion">Event schema version</param>
     /// <param name="jsonTransformation">Event payload transformation</param>
