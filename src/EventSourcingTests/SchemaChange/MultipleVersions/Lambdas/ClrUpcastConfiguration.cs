@@ -3,7 +3,7 @@
 using System;
 using Marten;
 
-namespace EventSourcingTests.SchemaChange.MultipleVersions;
+namespace EventSourcingTests.SchemaChange.MultipleVersions.Lambdas;
 
 public class ClrUpcastConfiguration
 {

@@ -6,7 +6,7 @@ using Marten;
 using Marten.Services.Json;
 using static Marten.Services.Json.Transformations.SystemTextJson.JsonTransformations;
 
-namespace EventSourcingTests.SchemaChange.MultipleVersions;
+namespace EventSourcingTests.SchemaChange.MultipleVersions.Lambdas;
 
 public class SystemTextJsonUpcastConfiguration
 {
