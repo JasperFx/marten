@@ -440,10 +440,18 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
     }
 
     public static TheoryData<Action<StoreOptions>, Action<StoreOptions>> UpcastersConfigurationWithTheSameName =>
-        new() { { ClrUpcastConfiguration.V2WithTheSameName, ClrUpcastConfiguration.V3WithTheSameName } };
+        new()
+        {
+            { ClrUpcastConfiguration.V2WithTheSameName, ClrUpcastConfiguration.V3WithTheSameName },
+            { SystemTextJsonUpcastConfiguration.V2WithTheSameName, SystemTextJsonUpcastConfiguration.V3WithTheSameName }
+        };
 
     public static TheoryData<Action<StoreOptions>, Action<StoreOptions>> UpcastersConfigurationWithDifferentName =>
-        new() { { ClrUpcastConfiguration.V2WithDifferentName, ClrUpcastConfiguration.V3WithDifferentName } };
+        new()
+        {
+            { ClrUpcastConfiguration.V2WithDifferentName, ClrUpcastConfiguration.V3WithDifferentName },
+            { SystemTextJsonUpcastConfiguration.V2WithDifferentName, SystemTextJsonUpcastConfiguration.V3WithDifferentName }
+        };
 }
 
 public static class UpcastingTestsExtensions

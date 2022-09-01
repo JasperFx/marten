@@ -49,7 +49,7 @@ namespace Marten.Events.CodeGeneration
             if (_constructor == null)
             {
                 writer.WriteLine(
-                    $"throw new {typeof(InvalidOperationException).FullNameInCode()}(\"There is no default constructor for {_returnType.FullNameInCode()}{AdditionalNoConstructorExceptionDetails}.\");"
+                    $"throw new {typeof(InvalidOperationException).FullNameInCode()}($\"There is no default constructor for {_returnType.FullNameInCode()}{AdditionalNoConstructorExceptionDetails}.\");"
                 );
             }
             else if (_setter != null)
