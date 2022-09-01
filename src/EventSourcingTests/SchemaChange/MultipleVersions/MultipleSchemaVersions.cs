@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using EventSourcingTests.SchemaChange.MultipleVersions.Lambdas;
 using LamarCodeGeneration;
 using Marten;
 using Marten.Events;
@@ -443,14 +444,16 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
         new()
         {
             { ClrUpcastConfiguration.V2WithTheSameName, ClrUpcastConfiguration.V3WithTheSameName },
-            { SystemTextJsonUpcastConfiguration.V2WithTheSameName, SystemTextJsonUpcastConfiguration.V3WithTheSameName }
+            { SystemTextJsonUpcastConfiguration.V2WithTheSameName, SystemTextJsonUpcastConfiguration.V3WithTheSameName },
+            { JsonNetUpcastConfiguration.V2WithTheSameName, JsonNetUpcastConfiguration.V3WithTheSameName }
         };
 
     public static TheoryData<Action<StoreOptions>, Action<StoreOptions>> UpcastersConfigurationWithDifferentName =>
         new()
         {
             { ClrUpcastConfiguration.V2WithDifferentName, ClrUpcastConfiguration.V3WithDifferentName },
-            { SystemTextJsonUpcastConfiguration.V2WithDifferentName, SystemTextJsonUpcastConfiguration.V3WithDifferentName }
+            { SystemTextJsonUpcastConfiguration.V2WithDifferentName, SystemTextJsonUpcastConfiguration.V3WithDifferentName },
+            { JsonNetUpcastConfiguration.V2WithDifferentName, JsonNetUpcastConfiguration.V3WithDifferentName }
         };
 }
 
