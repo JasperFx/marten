@@ -7,7 +7,7 @@ using static Marten.Events.EventMappingExtensions;
 
 namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
 {
-    namespace WithTheSameName
+    namespace Clr.WithTheSameName
     {
         public class ShoppingCartOpenedV1toV2Upcaster:
             EventUpcaster<V1.ShoppingCartOpened, V2.WithTheSameName.ShoppingCartOpened>
@@ -92,7 +92,7 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
         }
     }
 
-    namespace WithDifferentName
+    namespace Clr.WithDifferentName
     {
         public class ShoppingCartOpenedV1toV2Upcaster:
             EventUpcaster<V1.ShoppingCartOpened, V2.WithDifferentName.ShoppingCartOpenedV2>
@@ -146,9 +146,6 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
         public class ShoppingCartOpenedV2toV3Upcaster:
             EventUpcaster<V2.WithDifferentName.ShoppingCartOpenedV2, V3.WithDifferentName.ShoppingCartOpenedV3>
         {
-            public override string EventTypeName =>
-                GetEventTypeNameWithSchemaVersion<V1.ShoppingCartOpened>(2);
-
             protected override V3.WithDifferentName.ShoppingCartOpenedV3 Upcast(
                 V2.WithDifferentName.ShoppingCartOpenedV2 @event
             ) =>
@@ -164,9 +161,6 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
             EventUpcaster<V2.WithDifferentName.ProductItemAddedToShoppingCartV2,
                 V3.WithDifferentName.ProductItemAddedToShoppingCartV3>
         {
-            public override string EventTypeName =>
-                GetEventTypeNameWithSchemaVersion<V1.ProductItemAddedToShoppingCart>(2);
-
             protected override V3.WithDifferentName.ProductItemAddedToShoppingCartV3 Upcast(
                 V2.WithDifferentName.ProductItemAddedToShoppingCartV2 @event
             ) =>
@@ -177,15 +171,14 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
         }
     }
 
-
     public class ClrUpcastConfiguration
     {
         public static Action<StoreOptions> V2WithTheSameName =>
             options => options.Events
                 .Upcast
                 (
-                    new WithTheSameName.ShoppingCartOpenedV1toV2Upcaster(),
-                    new WithTheSameName.ProductItemAddedToShoppingCartV1toV2Upcaster()
+                    new Clr.WithTheSameName.ShoppingCartOpenedV1toV2Upcaster(),
+                    new Clr.WithTheSameName.ProductItemAddedToShoppingCartV1toV2Upcaster()
                 )
                 .MapEventTypeWithSchemaVersion<
                     V2.WithTheSameName.ShoppingCartOpened>(2)
@@ -196,10 +189,10 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
             options => options.Events
                 .Upcast
                 (
-                    new WithTheSameName.ShoppingCartOpenedV1toV3Upcaster(),
-                    new WithTheSameName.ProductItemAddedToShoppingCartV1toV3Upcaster(),
-                    new WithTheSameName.ShoppingCartOpenedV2toV3Upcaster(),
-                    new WithTheSameName.ProductItemAddedToShoppingCartV2toV3Upcaster()
+                    new Clr.WithTheSameName.ShoppingCartOpenedV1toV3Upcaster(),
+                    new Clr.WithTheSameName.ProductItemAddedToShoppingCartV1toV3Upcaster(),
+                    new Clr.WithTheSameName.ShoppingCartOpenedV2toV3Upcaster(),
+                    new Clr.WithTheSameName.ProductItemAddedToShoppingCartV2toV3Upcaster()
                 )
                 .MapEventTypeWithSchemaVersion<
                     V3.WithTheSameName.ShoppingCartOpened>(3)
@@ -210,18 +203,18 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
             options => options.Events
                 .Upcast
                 (
-                    new WithDifferentName.ShoppingCartOpenedV1toV2Upcaster(),
-                    new WithDifferentName.ProductItemAddedToShoppingCartV1toV2Upcaster()
+                    new Clr.WithDifferentName.ShoppingCartOpenedV1toV2Upcaster(),
+                    new Clr.WithDifferentName.ProductItemAddedToShoppingCartV1toV2Upcaster()
                 );
 
         public static Action<StoreOptions> V3WithDifferentName =>
             options => options.Events
                 .Upcast
                 (
-                    new WithDifferentName.ShoppingCartOpenedV1toV3Upcaster(),
-                    new WithDifferentName.ProductItemAddedToShoppingCartV1toV3Upcaster(),
-                    new WithDifferentName.ShoppingCartOpenedV2toV3Upcaster(),
-                    new WithDifferentName.ProductItemAddedToShoppingCartV2toV3Upcaster()
+                    new Clr.WithDifferentName.ShoppingCartOpenedV1toV3Upcaster(),
+                    new Clr.WithDifferentName.ProductItemAddedToShoppingCartV1toV3Upcaster(),
+                    new Clr.WithDifferentName.ShoppingCartOpenedV2toV3Upcaster(),
+                    new Clr.WithDifferentName.ProductItemAddedToShoppingCartV2toV3Upcaster()
                 );
     }
 }
