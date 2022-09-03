@@ -13,7 +13,16 @@ module.exports = {
     ['link', { rel: 'apple-touch-icon', type: 'image/png', size: "180x180", href: '/apple-touch-icon.png' }],
     ['link', { rel: 'icon', type: 'image/png', size: "32x32", href: '/favicon-32x32.png' }],
     ['link', { rel: 'icon', type: 'image/png', size: "16x16", href: '/favicon-16x16.png' }],
-    ['link', { rel: 'manifest', manifest: '/manifest.json' }]
+    ['link', { rel: 'manifest', manifest: '/manifest.json' }],
+    ['meta', { property: 'og:title', content: 'Marten' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:description', content: '.NET Transactional Document DB and Event Store on PostgreSQL' }],
+    ['meta', { property: 'og:image', content: 'https://martendb.io/social.png' }],
+    ['meta', { property: 'og:url', content: 'https://martendb.io' }],
+    ['meta', { property: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { property: 'twitter:site', content: 'marten_lib' }],
+    ['meta', { property: 'twitter:creator', content: 'marten_lib' }],
+    ['meta', { property: 'twitter:image', content: 'https://martendb.io/social.png' }]
   ],
 
   lastUpdated: true,
