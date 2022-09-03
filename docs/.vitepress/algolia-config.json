@@ -14,5 +14,6 @@
     "lvl4": ".main h4",
     "lvl5": ".main h5",
     "text": ".main p, .main li"
-  }
+  },
+  "selectors_exclude": ["sup"]
 }
