@@ -10,23 +10,22 @@ using Marten.Testing.Harness;
 using Marten.Testing.OtherAssembly;
 using Xunit;
 
-namespace DocumentDbTests.Bugs
+namespace DocumentDbTests.Bugs;
+
+public class Bug_2049_custom_id_generation_code_gen : BugIntegrationContext
 {
-    public class Bug_2049_custom_id_generation_code_gen : BugIntegrationContext
+
+
+    [Fact]
+    public async Task can_use_custom_codegen()
     {
-
-
-        [Fact]
-        public async Task can_use_custom_codegen()
+        StoreOptions(opts =>
         {
-            StoreOptions(opts =>
-            {
-                opts.Schema.For<StringDoc>().IdStrategy(new String2IdGeneration());
-            });
+            opts.Schema.For<StringDoc>().IdStrategy(new String2IdGeneration());
+        });
 
-            var doc = new StringDoc();
-            theSession.Store(doc);
-            await theSession.SaveChangesAsync();
-        }
+        var doc = new StringDoc();
+        theSession.Store(doc);
+        await theSession.SaveChangesAsync();
     }
 }

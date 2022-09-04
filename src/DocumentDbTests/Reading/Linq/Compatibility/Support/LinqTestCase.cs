@@ -2,14 +2,13 @@ using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 
-namespace DocumentDbTests.Reading.Linq.Compatibility.Support
+namespace DocumentDbTests.Reading.Linq.Compatibility.Support;
+
+public abstract class LinqTestCase
 {
-    public abstract class LinqTestCase
-    {
-        public string Description { get; set; }
+    public string Description { get; set; }
 
-        public abstract Task Compare(IQuerySession session, Target[] documents);
+    public abstract Task Compare(IQuerySession session, Target[] documents);
 
-        public bool Ordered { get; set; }
-    }
+    public bool Ordered { get; set; }
 }

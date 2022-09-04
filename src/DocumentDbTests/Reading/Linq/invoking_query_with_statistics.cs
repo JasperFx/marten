@@ -11,203 +11,202 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace DocumentDbTests.Reading.Linq
+namespace DocumentDbTests.Reading.Linq;
+
+public class invoking_query_with_statistics: IntegrationContext
 {
-    public class invoking_query_with_statistics: IntegrationContext
+    public invoking_query_with_statistics(DefaultStoreFixture fixture) : base(fixture)
     {
-        public invoking_query_with_statistics(DefaultStoreFixture fixture) : base(fixture)
-        {
 
+    }
+
+    protected override Task fixtureSetup()
+    {
+        return theStore.BulkInsertAsync(Target.GenerateRandomData(100).ToArray());
+    }
+
+    #region sample_compiled-query-statistics
+    public class TargetPaginationQuery: ICompiledListQuery<Target>
+    {
+        public TargetPaginationQuery(int pageNumber, int pageSize)
+        {
+            PageNumber = pageNumber;
+            PageSize = pageSize;
         }
 
-        protected override Task fixtureSetup()
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+
+        public QueryStatistics Stats { get; } = new QueryStatistics();
+
+        public Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> QueryIs()
         {
-            return theStore.BulkInsertAsync(Target.GenerateRandomData(100).ToArray());
+            return query => query
+                .Where(x => x.Number > 10)
+                .Skip(PageNumber)
+                .Take(PageSize);
         }
+    }
 
-        #region sample_compiled-query-statistics
-        public class TargetPaginationQuery: ICompiledListQuery<Target>
-        {
-            public TargetPaginationQuery(int pageNumber, int pageSize)
-            {
-                PageNumber = pageNumber;
-                PageSize = pageSize;
-            }
+    #endregion
 
-            public int PageNumber { get; set; }
-            public int PageSize { get; set; }
+    [Fact]
+    public void can_get_the_total_from_a_compiled_query()
+    {
+        var count = theSession.Query<Target>().Count(x => x.Number > 10);
+        count.ShouldBeGreaterThan(0);
 
-            public QueryStatistics Stats { get; } = new QueryStatistics();
+        var query = new TargetPaginationQuery(2, 5);
+        var list = theSession
+            .Query(query)
+            .ToList();
 
-            public Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> QueryIs()
-            {
-                return query => query
-                    .Where(x => x.Number > 10)
-                    .Skip(PageNumber)
-                    .Take(PageSize);
-            }
-        }
+        list.Any().ShouldBeTrue();
 
-        #endregion
+        query.Stats.TotalResults.ShouldBe(count);
+    }
 
-        [Fact]
-        public void can_get_the_total_from_a_compiled_query()
-        {
-            var count = theSession.Query<Target>().Count(x => x.Number > 10);
-            count.ShouldBeGreaterThan(0);
+    [Fact]
+    public async Task can_use_json_streaming_with_statistics()
+    {
 
-            var query = new TargetPaginationQuery(2, 5);
-            var list = theSession
-                .Query(query)
-                .ToList();
+        var count = theSession.Query<Target>().Count(x => x.Number > 10);
+        count.ShouldBeGreaterThan(0);
 
-            list.Any().ShouldBeTrue();
+        var query = new TargetPaginationQuery(2, 5);
+        var stream = new MemoryStream();
+        var resultCount = await theSession
+            .StreamJsonMany(query, stream);
 
-            query.Stats.TotalResults.ShouldBe(count);
-        }
+        resultCount.ShouldBeGreaterThan(0);
 
-        [Fact]
-        public async Task can_use_json_streaming_with_statistics()
-        {
+        stream.Position = 0;
+        var list = theStore.Options.Serializer().FromJson<Target[]>(stream);
+        list.Length.ShouldBe(5);
 
-            var count = theSession.Query<Target>().Count(x => x.Number > 10);
-            count.ShouldBeGreaterThan(0);
+    }
 
-            var query = new TargetPaginationQuery(2, 5);
-            var stream = new MemoryStream();
-            var resultCount = await theSession
-                .StreamJsonMany(query, stream);
+    [Fact]
+    public async Task can_get_the_total_from_a_compiled_query_running_in_a_batch()
+    {
+        var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
+        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
-            resultCount.ShouldBeGreaterThan(0);
+        var query = new TargetPaginationQuery(2, 5);
 
-            stream.Position = 0;
-            var list = theStore.Options.Serializer().FromJson<Target[]>(stream);
-            list.Length.ShouldBe(5);
+        var batch = theSession.CreateBatchQuery();
 
-        }
+        var targets = batch.Query(query);
 
-        [Fact]
-        public async Task can_get_the_total_from_a_compiled_query_running_in_a_batch()
-        {
-            var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
-            SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+        await batch.Execute();
 
-            var query = new TargetPaginationQuery(2, 5);
+        (await targets)
+            .Any().ShouldBeTrue();
 
-            var batch = theSession.CreateBatchQuery();
+        query.Stats.TotalResults.ShouldBe(count);
+    }
 
-            var targets = batch.Query(query);
+    [Fact]
+    public void can_get_the_total_from_a_compiled_query_running_in_a_batch_sync()
+    {
+        var count = theSession.Query<Target>().Count(x => x.Number > 10);
+        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
-            await batch.Execute();
+        var query = new TargetPaginationQuery(2, 5);
 
-            (await targets)
-                .Any().ShouldBeTrue();
+        var batch = theSession.CreateBatchQuery();
 
-            query.Stats.TotalResults.ShouldBe(count);
-        }
+        var targets = batch.Query(query);
 
-        [Fact]
-        public void can_get_the_total_from_a_compiled_query_running_in_a_batch_sync()
-        {
-            var count = theSession.Query<Target>().Count(x => x.Number > 10);
-            SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+        batch.ExecuteSynchronously();
 
-            var query = new TargetPaginationQuery(2, 5);
+        targets.Result
+            .Any().ShouldBeTrue();
 
-            var batch = theSession.CreateBatchQuery();
+        query.Stats.TotalResults.ShouldBe(count);
+    }
 
-            var targets = batch.Query(query);
+    [Fact]
+    public async Task can_get_the_total_in_batch_query()
+    {
+        var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
+        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
-            batch.ExecuteSynchronously();
+        QueryStatistics stats = null;
 
-            targets.Result
-                .Any().ShouldBeTrue();
+        var batch = theSession.CreateBatchQuery();
 
-            query.Stats.TotalResults.ShouldBe(count);
-        }
+        var list = batch.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
+            .ToList();
 
-        [Fact]
-        public async Task can_get_the_total_in_batch_query()
-        {
-            var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
-            SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+        await batch.Execute();
 
-            QueryStatistics stats = null;
+        (await list).Any().ShouldBeTrue();
 
-            var batch = theSession.CreateBatchQuery();
+        stats.TotalResults.ShouldBe(count);
+    }
 
-            var list = batch.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
-                .ToList();
+    [Fact]
+    public void can_get_the_total_in_batch_query_sync()
+    {
+        var count = theSession.Query<Target>().Count(x => x.Number > 10);
+        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
-            await batch.Execute();
+        QueryStatistics stats = null;
 
-            (await list).Any().ShouldBeTrue();
+        var batch = theSession.CreateBatchQuery();
 
-            stats.TotalResults.ShouldBe(count);
-        }
+        var list = batch.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
+            .ToList();
 
-        [Fact]
-        public void can_get_the_total_in_batch_query_sync()
-        {
-            var count = theSession.Query<Target>().Count(x => x.Number > 10);
-            SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+        batch.ExecuteSynchronously();
 
-            QueryStatistics stats = null;
+        list.Result.Any().ShouldBeTrue();
 
-            var batch = theSession.CreateBatchQuery();
+        stats.TotalResults.ShouldBe(count);
+    }
 
-            var list = batch.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
-                .ToList();
+    #region sample_using-query-statistics
+    [Fact]
+    public void can_get_the_total_in_results()
+    {
+        var count = theSession.Query<Target>().Count(x => x.Number > 10);
+        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
-            batch.ExecuteSynchronously();
+        // We're going to use stats as an output
+        // parameter to the call below, so we
+        // have to declare the "stats" object
+        // first
+        QueryStatistics stats = null;
 
-            list.Result.Any().ShouldBeTrue();
+        var list = theSession
+            .Query<Target>()
+            .Stats(out stats)
+            .Where(x => x.Number > 10).Take(5)
+            .ToList();
 
-            stats.TotalResults.ShouldBe(count);
-        }
+        list.Any().ShouldBeTrue();
 
-        #region sample_using-query-statistics
-        [Fact]
-        public void can_get_the_total_in_results()
-        {
-            var count = theSession.Query<Target>().Count(x => x.Number > 10);
-            SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+        // Now, the total results data should
+        // be available
+        stats.TotalResults.ShouldBe(count);
+    }
 
-            // We're going to use stats as an output
-            // parameter to the call below, so we
-            // have to declare the "stats" object
-            // first
-            QueryStatistics stats = null;
+    #endregion
 
-            var list = theSession
-                .Query<Target>()
-                .Stats(out stats)
-                .Where(x => x.Number > 10).Take(5)
-                .ToList();
+    [Fact]
+    public async Task can_get_the_total_in_results_async()
+    {
+        var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
+        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
-            list.Any().ShouldBeTrue();
+        QueryStatistics stats = null;
 
-            // Now, the total results data should
-            // be available
-            stats.TotalResults.ShouldBe(count);
-        }
+        var list = await theSession.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
+            .ToListAsync();
 
-        #endregion
+        list.Any().ShouldBeTrue();
 
-        [Fact]
-        public async Task can_get_the_total_in_results_async()
-        {
-            var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
-            SpecificationExtensions.ShouldBeGreaterThan(count, 0);
-
-            QueryStatistics stats = null;
-
-            var list = await theSession.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
-                .ToListAsync();
-
-            list.Any().ShouldBeTrue();
-
-            stats.TotalResults.ShouldBe(count);
-        }
+        stats.TotalResults.ShouldBe(count);
     }
 }

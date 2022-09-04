@@ -1,6 +1,5 @@
-namespace Marten.Testing.Documents
+namespace Marten.Testing.Documents;
+
+public class UserFromBaseDocument: OtherAssembly.DeeperNamespace.BaseDocumentWithId
 {
-    public class UserFromBaseDocument: OtherAssembly.DeeperNamespace.BaseDocumentWithId
-    {
-    }
 }

@@ -5,38 +5,37 @@ using Weasel.Postgresql.SqlGeneration;
 using Xunit;
 using NotWhereFragment = Weasel.Postgresql.SqlGeneration.NotWhereFragment;
 
-namespace DocumentDbTests.Reading.Linq.Parsing
+namespace DocumentDbTests.Reading.Linq.Parsing;
+
+public class NotWhereFragmentTests
 {
-    public class NotWhereFragmentTests
+    [Fact]
+    public void register_against_an_inner_fragment_that_is_not_reversiable()
     {
-        [Fact]
-        public void register_against_an_inner_fragment_that_is_not_reversiable()
-        {
-            var parent = Substitute.For<IWhereFragmentHolder>();
-            var not = new NotWhereFragment(parent);
+        var parent = Substitute.For<IWhereFragmentHolder>();
+        var not = new NotWhereFragment(parent);
 
-            var where = new WhereFragment("a = b");
+        var where = new WhereFragment("a = b");
 
-            not.As<IWhereFragmentHolder>().Register(where);
+        not.As<IWhereFragmentHolder>().Register(where);
 
-            not.Inner.ShouldBe(where);
+        not.Inner.ShouldBe(where);
 
-            parent.Received().Register(not);
-        }
+        parent.Received().Register(not);
+    }
 
-        [Fact]
-        public void register_against_an_inner_fragment_that_is_reversible()
-        {
-            var parent = Substitute.For<IWhereFragmentHolder>();
-            var not = new NotWhereFragment(parent);
+    [Fact]
+    public void register_against_an_inner_fragment_that_is_reversible()
+    {
+        var parent = Substitute.For<IWhereFragmentHolder>();
+        var not = new NotWhereFragment(parent);
 
-            var reversible = Substitute.For<IReversibleWhereFragment>();
-            var reversed = new WhereFragment("a = b");
-            reversible.Reverse().Returns(reversed);
+        var reversible = Substitute.For<IReversibleWhereFragment>();
+        var reversed = new WhereFragment("a = b");
+        reversible.Reverse().Returns(reversed);
 
-            not.As<IWhereFragmentHolder>().Register(reversible);
+        not.As<IWhereFragmentHolder>().Register(reversible);
 
-            parent.Received().Register(reversed);
-        }
+        parent.Received().Register(reversed);
     }
 }

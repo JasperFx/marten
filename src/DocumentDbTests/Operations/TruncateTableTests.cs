@@ -7,41 +7,40 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace DocumentDbTests.Operations
+namespace DocumentDbTests.Operations;
+
+public class TruncateTableTests : IntegrationContext
 {
-    public class TruncateTableTests : IntegrationContext
+    public TruncateTableTests(DefaultStoreFixture fixture) : base(fixture)
     {
-        public TruncateTableTests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
+    }
 
-        [Fact]
-        public async Task truncate_by_document()
-        {
-            var targets = Target.GenerateRandomData(100).ToList();
-            await theStore.BulkInsertAsync(targets);
+    [Fact]
+    public async Task truncate_by_document()
+    {
+        var targets = Target.GenerateRandomData(100).ToList();
+        await theStore.BulkInsertAsync(targets);
 
-            var op = new TruncateTable(typeof(Target));
-            theSession.QueueOperation(op);
-            await theSession.SaveChangesAsync();
+        var op = new TruncateTable(typeof(Target));
+        theSession.QueueOperation(op);
+        await theSession.SaveChangesAsync();
 
-            var count = await theSession.Query<Target>().CountAsync();
-            count.ShouldBe(0);
-        }
+        var count = await theSession.Query<Target>().CountAsync();
+        count.ShouldBe(0);
+    }
 
-        [Fact]
-        public async Task truncate_by_table_name()
-        {
-            var targets = Target.GenerateRandomData(100).ToList();
-            await theStore.BulkInsertAsync(targets);
+    [Fact]
+    public async Task truncate_by_table_name()
+    {
+        var targets = Target.GenerateRandomData(100).ToList();
+        await theStore.BulkInsertAsync(targets);
 
-            var tableName = theStore.Options.Storage.MappingFor(typeof(Target)).TableName;
-            var op = new TruncateTable(tableName);
-            theSession.QueueOperation(op);
-            await theSession.SaveChangesAsync();
+        var tableName = theStore.Options.Storage.MappingFor(typeof(Target)).TableName;
+        var op = new TruncateTable(tableName);
+        theSession.QueueOperation(op);
+        await theSession.SaveChangesAsync();
 
-            var count = await theSession.Query<Target>().CountAsync();
-            count.ShouldBe(0);
-        }
+        var count = await theSession.Query<Target>().CountAsync();
+        count.ShouldBe(0);
     }
 }

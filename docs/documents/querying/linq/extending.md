@@ -44,16 +44,16 @@ Lastly, to plug in our new parser, we can add that to the `StoreOptions` object 
 public void query_with_custom_parser()
 {
     using (var store = DocumentStore.For(_ =>
-    {
-        _.Connection(ConnectionSource.ConnectionString);
+           {
+               _.Connection(ConnectionSource.ConnectionString);
 
-        // IsBlue is a custom parser I used for testing this
-        _.Linq.MethodCallParsers.Add(new IsBlue());
-        _.AutoCreateSchemaObjects = AutoCreate.All;
+               // IsBlue is a custom parser I used for testing this
+               _.Linq.MethodCallParsers.Add(new IsBlue());
+               _.AutoCreateSchemaObjects = AutoCreate.All;
 
-        // This is just to isolate the test
-        _.DatabaseSchemaName = "isblue";
-    }))
+               // This is just to isolate the test
+               _.DatabaseSchemaName = "isblue";
+           }))
     {
         store.Advanced.Clean.CompletelyRemoveAll();
 

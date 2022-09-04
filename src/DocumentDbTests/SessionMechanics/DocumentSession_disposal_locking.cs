@@ -5,24 +5,23 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace DocumentDbTests.SessionMechanics
+namespace DocumentDbTests.SessionMechanics;
+
+public class DocumentSession_disposal_locking
 {
-    public class DocumentSession_disposal_locking
+    [Fact]
+    public void throw_disposed_ex_after_disposed()
     {
-        [Fact]
-        public void throw_disposed_ex_after_disposed()
+        var store = DocumentStore.For(_ => _.Connection(ConnectionSource.ConnectionString));
+
+        var session = store.OpenSession();
+        session.Dispose();
+
+        Should.Throw<ObjectDisposedException>(() =>
         {
-            var store = DocumentStore.For(_ => _.Connection(ConnectionSource.ConnectionString));
-
-            var session = store.OpenSession();
-            session.Dispose();
-
-            Should.Throw<ObjectDisposedException>(() =>
-            {
-                session.Load<User>(Guid.NewGuid());
-            });
+            session.Load<User>(Guid.NewGuid());
+        });
 
 
-        }
     }
 }

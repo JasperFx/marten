@@ -80,25 +80,25 @@ var stub1 = new StubDocumentSessionListener();
 var stub2 = new StubDocumentSessionListener();
 
 using (var store = SeparateStore(_ =>
-{
-    _.Connection(ConnectionSource.ConnectionString);
-    _.AutoCreateSchemaObjects = AutoCreate.All;
+       {
+           _.Connection(ConnectionSource.ConnectionString);
+           _.AutoCreateSchemaObjects = AutoCreate.All;
 
-    _.Listeners.Add(stub1);
-    _.Listeners.Add(stub2);
-}))
+           _.Listeners.Add(stub1);
+           _.Listeners.Add(stub2);
+       }))
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/Using_Global_DocumentSessionListener_Tests.cs#L22-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-a-document-session-listener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/Using_Global_DocumentSessionListener_Tests.cs#L21-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-a-document-session-listener' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_registering-a-document-session-listener-1'></a>
 ```cs
 var stub1 = new StubDocumentSessionListener();
 var stub2 = new StubDocumentSessionListener();
 
 using (var store = SeparateStore(_ =>
-{
-    _.Connection(ConnectionSource.ConnectionString);
-    _.AutoCreateSchemaObjects = AutoCreate.All;
-}))
+       {
+           _.Connection(ConnectionSource.ConnectionString);
+           _.AutoCreateSchemaObjects = AutoCreate.All;
+       }))
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/Using_Local_DocumentSessionListener_Tests.cs#L20-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-a-document-session-listener-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

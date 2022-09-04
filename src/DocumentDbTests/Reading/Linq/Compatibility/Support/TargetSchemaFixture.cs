@@ -5,39 +5,38 @@ using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 
-namespace DocumentDbTests.Reading.Linq.Compatibility.Support
+namespace DocumentDbTests.Reading.Linq.Compatibility.Support;
+
+public abstract class TargetSchemaFixture: IDisposable
 {
-    public abstract class TargetSchemaFixture: IDisposable
+    public readonly Target[] Documents = Target.GenerateRandomData(1000).ToArray();
+
+    private readonly IList<DocumentStore> _stores = new List<DocumentStore>();
+
+    public void Dispose()
     {
-        public readonly Target[] Documents = Target.GenerateRandomData(1000).ToArray();
-
-        private readonly IList<DocumentStore> _stores = new List<DocumentStore>();
-
-        public void Dispose()
+        foreach (var documentStore in _stores)
         {
-            foreach (var documentStore in _stores)
-            {
-                documentStore.Dispose();
-            }
+            documentStore.Dispose();
         }
+    }
 
-        protected DocumentStore provisionStore(string schema, Action<StoreOptions> configure = null)
+    protected DocumentStore provisionStore(string schema, Action<StoreOptions> configure = null)
+    {
+        var store = DocumentStore.For(x =>
         {
-            var store = DocumentStore.For(x =>
-            {
-                x.Connection(ConnectionSource.ConnectionString);
-                x.DatabaseSchemaName = schema;
+            x.Connection(ConnectionSource.ConnectionString);
+            x.DatabaseSchemaName = schema;
 
-                configure?.Invoke(x);
-            });
+            configure?.Invoke(x);
+        });
 
-            store.Advanced.Clean.CompletelyRemoveAll();
+        store.Advanced.Clean.CompletelyRemoveAll();
 
-            store.BulkInsert(Documents);
+        store.BulkInsert(Documents);
 
-            _stores.Add(store);
+        _stores.Add(store);
 
-            return store;
-        }
+        return store;
     }
 }

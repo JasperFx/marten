@@ -1,7 +1,6 @@
-namespace Marten.Testing.Documents
+namespace Marten.Testing.Documents;
+
+public class Account
 {
-    public class Account
-    {
-        public string Id { get;set; }
-    }
+    public string Id { get;set; }
 }

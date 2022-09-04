@@ -99,11 +99,11 @@ public void multiple_includes()
         User reporter2 = null;
 
         query
-                .Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => assignee2 = x)
-                .Include<User>(x => x.ReporterId, x => reporter2 = x)
-                .Single()
-                .ShouldNotBeNull();
+            .Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => assignee2 = x)
+            .Include<User>(x => x.ReporterId, x => reporter2 = x)
+            .Single()
+            .ShouldNotBeNull();
 
         assignee2.Id.ShouldBe(assignee.Id);
         reporter2.Id.ShouldBe(reporter.Id);

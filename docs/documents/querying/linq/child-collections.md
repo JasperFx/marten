@@ -69,7 +69,7 @@ var results = theSession
     .Where(x => x.Children.Any(_ => _.Number == 6 && _.Double == -1))
     .ToArray();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_against_child_collections_integrated_Tests.cs#L93-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any-query-through-child-collection-with-and' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_against_child_collections_integrated_Tests.cs#L92-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any-query-through-child-collection-with-and' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Finally, you can query for child collections that do **not** contain a value:
@@ -112,7 +112,7 @@ public void query_against_string_array()
         .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_against_child_collections_integrated_Tests.cs#L417-L434' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_string_array' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_against_child_collections_integrated_Tests.cs#L416-L433' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_string_array' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten also allows you to query over IEnumerables using the Any method for equality (similar to Contains):
@@ -140,7 +140,7 @@ public void query_against_number_list_with_any()
         .Count(x => x.Numbers.Any()).ShouldBe(3);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_against_child_collections_integrated_Tests.cs#L521-L542' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_any_string_array' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_against_child_collections_integrated_Tests.cs#L520-L541' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_any_string_array' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As of 1.2, you can also query against the `Count()` or `Length` of a child collection with the normal comparison
@@ -166,7 +166,7 @@ public void query_against_number_list_with_count_method()
         .Single(x => x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_against_child_collections_integrated_Tests.cs#L544-L562' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_number_list_with_count_method' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_against_child_collections_integrated_Tests.cs#L543-L561' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_number_list_with_count_method' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## IsOneOf
@@ -270,7 +270,7 @@ var users = session.Query<SuperUser>()
 var posts = theSession.Query<Post>()
     .Where(x => x.Tags.IsSupersetOf("c#", "json", "postgres"));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_IsSuperSetOf_Tests.cs#L17-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_is_superset_of' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_IsSuperSetOf_Tests.cs#L16-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_is_superset_of' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## IsSubsetOf
@@ -283,5 +283,5 @@ var posts = theSession.Query<Post>()
 var posts = theSession.Query<Post>()
     .Where(x => x.Tags.IsSubsetOf("c#", "json", "postgres"));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_IsSubsetOf_Tests.cs#L37-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_is_subset_of' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_IsSubsetOf_Tests.cs#L36-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_is_subset_of' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

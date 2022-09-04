@@ -5,69 +5,67 @@ using Marten;
 using Marten.Testing.Harness;
 using Xunit;
 
-namespace DocumentDbTests.Reading.Linq
+namespace DocumentDbTests.Reading.Linq;
+
+public class query_with_multiple_where_clauses_and_soft_deletes_configured : OneOffConfigurationsContext
 {
-    public class query_with_multiple_where_clauses_and_soft_deletes_configured : OneOffConfigurationsContext
+    [Fact]
+    public async Task TestMultipleWhereClausesWithSoftDeleteConfigured()
     {
-        [Fact]
-        public async Task TestMultipleWhereClausesWithSoftDeleteConfigured()
+        StoreOptions(_ => _.Schema.For<SoftDeletedItem>().SoftDeleted());
+
+        var item1 = new SoftDeletedItem { Number = 1, Name = "Jim Bob" };
+        var item2 = new SoftDeletedItem { Number = 2, Name = "Joe Bill" };
+        var item3 = new SoftDeletedItem { Number = 1, Name = "Jim Beam" };
+
+        using (var session = theStore.OpenSession())
         {
-            StoreOptions(_ => _.Schema.For<SoftDeletedItem>().SoftDeleted());
-
-            var item1 = new SoftDeletedItem { Number = 1, Name = "Jim Bob" };
-            var item2 = new SoftDeletedItem { Number = 2, Name = "Joe Bill" };
-            var item3 = new SoftDeletedItem { Number = 1, Name = "Jim Beam" };
-
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(item1, item2, item3);
-                session.SaveChanges();
-            }
-
-            using (var session = theStore.QuerySession())
-            {
-                var query = session.Query<SoftDeletedItem>()
-                    .Where(x => x.Number == 1)
-                    .Where(x => x.Name.StartsWith("Jim"));
-
-                var result = await query.ToListAsync();
-                Assert.Equal(2, result.Count);
-            }
+            session.Store(item1, item2, item3);
+            session.SaveChanges();
         }
 
-        [Fact]
-        public async Task TestMultipleWhereClausesWithoutSoftDeleteConfigured()
+        using (var session = theStore.QuerySession())
         {
-            StoreOptions(_ => _.Schema.For<SoftDeletedItem>());
+            var query = session.Query<SoftDeletedItem>()
+                .Where(x => x.Number == 1)
+                .Where(x => x.Name.StartsWith("Jim"));
 
-            var item1 = new SoftDeletedItem { Number = 1, Name = "Jim Bob" };
-            var item2 = new SoftDeletedItem { Number = 2, Name = "Joe Bill" };
-            var item3 = new SoftDeletedItem { Number = 1, Name = "Jim Beam" };
+            var result = await query.ToListAsync();
+            Assert.Equal(2, result.Count);
+        }
+    }
 
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(item1, item2, item3);
-                session.SaveChanges();
-            }
+    [Fact]
+    public async Task TestMultipleWhereClausesWithoutSoftDeleteConfigured()
+    {
+        StoreOptions(_ => _.Schema.For<SoftDeletedItem>());
 
-            using (var session = theStore.QuerySession())
-            {
-                var query = session.Query<SoftDeletedItem>()
-                    .Where(x => x.Number == 1)
-                    .Where(x => x.Name.StartsWith("Jim"));
+        var item1 = new SoftDeletedItem { Number = 1, Name = "Jim Bob" };
+        var item2 = new SoftDeletedItem { Number = 2, Name = "Joe Bill" };
+        var item3 = new SoftDeletedItem { Number = 1, Name = "Jim Beam" };
 
-                var result = await query.ToListAsync();
-                Assert.Equal(2, result.Count);
-            }
+        using (var session = theStore.OpenSession())
+        {
+            session.Store(item1, item2, item3);
+            session.SaveChanges();
         }
 
+        using (var session = theStore.QuerySession())
+        {
+            var query = session.Query<SoftDeletedItem>()
+                .Where(x => x.Number == 1)
+                .Where(x => x.Name.StartsWith("Jim"));
+
+            var result = await query.ToListAsync();
+            Assert.Equal(2, result.Count);
+        }
     }
 
-    public class SoftDeletedItem
-    {
-        public Guid Id { get; set; }
-        public int Number { get; set; }
-        public string Name { get; set; }
-    }
+}
 
+public class SoftDeletedItem
+{
+    public Guid Id { get; set; }
+    public int Number { get; set; }
+    public string Name { get; set; }
 }

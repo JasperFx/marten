@@ -1,7 +1,6 @@
-namespace DocumentDbTests.Reading
+namespace DocumentDbTests.Reading;
+
+public class UserName
 {
-    public class UserName
-    {
-        public string Name { get; set; }
-    }
+    public string Name { get; set; }
 }

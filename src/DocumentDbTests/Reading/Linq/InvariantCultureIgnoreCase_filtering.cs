@@ -5,46 +5,45 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace DocumentDbTests.Reading.Linq
+namespace DocumentDbTests.Reading.Linq;
+
+public class InvariantCultureIgnoreCase_filtering: IntegrationContext
 {
-    public class InvariantCultureIgnoreCase_filtering: IntegrationContext
+    [Fact]
+    public void can_search_case_insensitive()
     {
-        [Fact]
-        public void can_search_case_insensitive()
+        var user = new User {UserName = "TEST_USER"};
+
+        using (var session = theStore.OpenSession())
         {
-            var user = new User {UserName = "TEST_USER"};
-
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(user);
-                session.SaveChanges();
-            }
-
-            using (var query = theStore.QuerySession())
-            {
-                query.Query<User>().Single(x => x.UserName.Equals("test_user", StringComparison.InvariantCultureIgnoreCase)).Id.ShouldBe(user.Id);
-            }
+            session.Store(user);
+            session.SaveChanges();
         }
 
-        [Fact]
-        public void can_search_string_with_back_slash_case_insensitive()
+        using (var query = theStore.QuerySession())
         {
-            var user = new User {UserName = @"DOMAIN\TEST_USER"};
+            query.Query<User>().Single(x => x.UserName.Equals("test_user", StringComparison.InvariantCultureIgnoreCase)).Id.ShouldBe(user.Id);
+        }
+    }
 
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(user);
-                session.SaveChanges();
-            }
+    [Fact]
+    public void can_search_string_with_back_slash_case_insensitive()
+    {
+        var user = new User {UserName = @"DOMAIN\TEST_USER"};
 
-            using (var query = theStore.QuerySession())
-            {
-                query.Query<User>().Single(x => x.UserName.Equals(@"domain\test_user", StringComparison.InvariantCultureIgnoreCase)).Id.ShouldBe(user.Id);
-            }
+        using (var session = theStore.OpenSession())
+        {
+            session.Store(user);
+            session.SaveChanges();
         }
 
-        public InvariantCultureIgnoreCase_filtering(DefaultStoreFixture fixture) : base(fixture)
+        using (var query = theStore.QuerySession())
         {
+            query.Query<User>().Single(x => x.UserName.Equals(@"domain\test_user", StringComparison.InvariantCultureIgnoreCase)).Id.ShouldBe(user.Id);
         }
+    }
+
+    public InvariantCultureIgnoreCase_filtering(DefaultStoreFixture fixture) : base(fixture)
+    {
     }
 }

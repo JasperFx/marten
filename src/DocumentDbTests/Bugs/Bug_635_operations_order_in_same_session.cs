@@ -6,51 +6,50 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace DocumentDbTests.Bugs
+namespace DocumentDbTests.Bugs;
+
+public class Bug_635_operations_order_in_same_session: IntegrationContext
 {
-    public class Bug_635_operations_order_in_same_session: IntegrationContext
+    [Fact]
+    public void deletewhere_and_store()
     {
-        [Fact]
-        public void deletewhere_and_store()
+        var batchSize = 256;
+
+        for (var i = 0; i < batchSize; i++)
         {
-            var batchSize = 256;
-
-            for (var i = 0; i < batchSize; i++)
-            {
-                theSession.Store(i % 2 == 0 ? new User { LastName = "batch-id1" } : new User { LastName = "batch-id2" });
-            }
-
-            theSession.SaveChanges();
-
-            var batch = new List<User>();
-            var newBatchSize = 2;
-            for (var i = 0; i < newBatchSize; i++)
-            {
-                batch.Add(new User { LastName = "batch-id1" });
-            }
-
-            using (var replaceSession = theStore.OpenSession())
-            {
-                //First, delete everything matching a given criteria
-                replaceSession.DeleteWhere<User>(x => x.LastName == "batch-id1");
-
-                //Then store all new documents, in this case they also match the delete criteria
-                replaceSession.Store(batch.ToArray());
-
-                replaceSession.SaveChanges();
-            }
-
-            using (var querySession = theStore.QuerySession())
-            {
-                var count = querySession.Query<User>().Count(x => x.LastName == "batch-id1");
-
-                //This fails as the DeleteWhere gets executed after the Store(...) in the replaceSession
-                count.ShouldBe(newBatchSize);
-            }
+            theSession.Store(i % 2 == 0 ? new User { LastName = "batch-id1" } : new User { LastName = "batch-id2" });
         }
 
-        public Bug_635_operations_order_in_same_session(DefaultStoreFixture fixture) : base(fixture)
+        theSession.SaveChanges();
+
+        var batch = new List<User>();
+        var newBatchSize = 2;
+        for (var i = 0; i < newBatchSize; i++)
         {
+            batch.Add(new User { LastName = "batch-id1" });
         }
+
+        using (var replaceSession = theStore.OpenSession())
+        {
+            //First, delete everything matching a given criteria
+            replaceSession.DeleteWhere<User>(x => x.LastName == "batch-id1");
+
+            //Then store all new documents, in this case they also match the delete criteria
+            replaceSession.Store(batch.ToArray());
+
+            replaceSession.SaveChanges();
+        }
+
+        using (var querySession = theStore.QuerySession())
+        {
+            var count = querySession.Query<User>().Count(x => x.LastName == "batch-id1");
+
+            //This fails as the DeleteWhere gets executed after the Store(...) in the replaceSession
+            count.ShouldBe(newBatchSize);
+        }
+    }
+
+    public Bug_635_operations_order_in_same_session(DefaultStoreFixture fixture) : base(fixture)
+    {
     }
 }

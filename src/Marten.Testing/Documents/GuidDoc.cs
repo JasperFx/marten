@@ -1,9 +1,8 @@
 using System;
 
-namespace Marten.Testing.Documents
+namespace Marten.Testing.Documents;
+
+public class GuidDoc
 {
-    public class GuidDoc
-    {
-        public Guid Id { get; set; }
-    }
+    public Guid Id { get; set; }
 }

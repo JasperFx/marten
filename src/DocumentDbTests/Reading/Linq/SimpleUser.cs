@@ -1,23 +1,23 @@
 using System;
 
-namespace DocumentDbTests.Reading.Linq
+namespace DocumentDbTests.Reading.Linq;
+
+public class SimpleUser
 {
-    public class SimpleUser
+    public SimpleUser()
     {
-        public SimpleUser()
-        {
-            Id = Guid.NewGuid();
-        }
+        Id = Guid.NewGuid();
+    }
 
-        public Guid Id { get; set; }
-        public string UserName { get; set; }
-        public DateTime Birthdate { get; set; }
-        public int Number { get; set; }
-        public SimpleAddress Address { get; set; }
+    public Guid Id { get; set; }
+    public string UserName { get; set; }
+    public DateTime Birthdate { get; set; }
+    public int Number { get; set; }
+    public SimpleAddress Address { get; set; }
 
-        public string ToJson()
-        {
-            return $@"
+    public string ToJson()
+    {
+        return $@"
 {{
 ""Id"": ""{Id}"", ""Number"": {Number}, ""Address"":
 {{
@@ -26,12 +26,11 @@ namespace DocumentDbTests.Reading.Linq
 ""UserName"": ""{UserName}"",
 ""Birthdate"": ""{Birthdate.ToString("s")}""
 }}".Replace("\r\n", "").Replace("\n", "");
-        }
     }
+}
 
-    public class SimpleAddress
-    {
-        public string Street { get; set; }
-        public string HouseNumber { get; set; }
-    }
+public class SimpleAddress
+{
+    public string Street { get; set; }
+    public string HouseNumber { get; set; }
 }

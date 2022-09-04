@@ -6,25 +6,24 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace DocumentDbTests.Bugs
+namespace DocumentDbTests.Bugs;
+
+public class Bug_382_bulk_insert_that_causes_multiple_batches: BugIntegrationContext
 {
-    public class Bug_382_bulk_insert_that_causes_multiple_batches: BugIntegrationContext
+    [Fact]
+    public void load_with_batch_larger_than_batch_size_and_overwrite_existing_on_empty_database()
     {
-        [Fact]
-        public void load_with_batch_larger_than_batch_size_and_overwrite_existing_on_empty_database()
+        StoreOptions(_ =>
         {
-            StoreOptions(_ =>
-            {
-                _.Schema.For<Target>().Duplicate(x => x.Date);
-            });
+            _.Schema.For<Target>().Duplicate(x => x.Date);
+        });
 
-            var data = Target.GenerateRandomData(11).ToArray();
+        var data = Target.GenerateRandomData(11).ToArray();
 
-            theStore.BulkInsert(data, BulkInsertMode.OverwriteExisting, batchSize: 10);
+        theStore.BulkInsert(data, BulkInsertMode.OverwriteExisting, batchSize: 10);
 
-            theSession.Query<Target>().Count().ShouldBe(data.Length);
-        }
-
-
+        theSession.Query<Target>().Count().ShouldBe(data.Length);
     }
+
+
 }

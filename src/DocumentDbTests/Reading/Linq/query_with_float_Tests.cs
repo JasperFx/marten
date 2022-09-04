@@ -3,28 +3,26 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;
 
-namespace DocumentDbTests.Reading.Linq
+namespace DocumentDbTests.Reading.Linq;
+
+public class query_with_float_Tests : IntegrationContext
 {
-
-    public class query_with_float_Tests : IntegrationContext
+    [Fact]
+    public void can_query_by_float()
     {
-        [Fact]
-        public void can_query_by_float()
-        {
-            var target1 = new Target {Float = 123.45F};
-            var target2 = new Target {Float = 456.45F};
+        var target1 = new Target {Float = 123.45F};
+        var target2 = new Target {Float = 456.45F};
 
-            theSession.Store(target1, target2);
-            theSession.Store(Target.GenerateRandomData(5).ToArray());
+        theSession.Store(target1, target2);
+        theSession.Store(Target.GenerateRandomData(5).ToArray());
 
-            theSession.SaveChanges();
+        theSession.SaveChanges();
 
-            theSession.Query<Target>().Where(x => x.Float > 400).ToArray().Select(x => x.Id)
-                .ShouldContain(x => x == target2.Id);
-        }
+        theSession.Query<Target>().Where(x => x.Float > 400).ToArray().Select(x => x.Id)
+            .ShouldContain(x => x == target2.Id);
+    }
 
-        public query_with_float_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
+    public query_with_float_Tests(DefaultStoreFixture fixture) : base(fixture)
+    {
     }
 }

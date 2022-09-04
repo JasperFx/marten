@@ -4,17 +4,16 @@ using Shouldly;
 using Weasel.Postgresql.SqlGeneration;
 using Xunit;
 
-namespace DocumentDbTests.Reading.Linq.MatchesSql
+namespace DocumentDbTests.Reading.Linq.MatchesSql;
+
+public class MatchesSqlExtensionsTests
 {
-    public class MatchesSqlExtensionsTests
+    [Fact]
+    public void Throws_NotSupportedException_when_called_directly()
     {
-        [Fact]
-        public void Throws_NotSupportedException_when_called_directly()
-        {
-            Should.Throw<NotSupportedException>(
-                () => new object().MatchesSql("d.data ->> 'UserName' = ? or d.data ->> 'UserName' = ?", "baz", "jack"));
-            Should.Throw<NotSupportedException>(
-                () => new object().MatchesSql(new WhereFragment("d.data ->> 'UserName' != ?", "baz")));
-        }
+        Should.Throw<NotSupportedException>(
+            () => new object().MatchesSql("d.data ->> 'UserName' = ? or d.data ->> 'UserName' = ?", "baz", "jack"));
+        Should.Throw<NotSupportedException>(
+            () => new object().MatchesSql(new WhereFragment("d.data ->> 'UserName' != ?", "baz")));
     }
 }

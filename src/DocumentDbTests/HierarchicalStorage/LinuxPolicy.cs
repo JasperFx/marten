@@ -1,9 +1,8 @@
 using Newtonsoft.Json;
 
-namespace DocumentDbTests.HierarchicalStorage
+namespace DocumentDbTests.HierarchicalStorage;
+
+public class LinuxPolicy: OsPolicy
 {
-    public class LinuxPolicy: OsPolicy
-    {
-        [JsonIgnore] public override PolicyType Type { get; protected set; } = PolicyType.Linux;
-    }
+    [JsonIgnore] public override PolicyType Type { get; protected set; } = PolicyType.Linux;
 }

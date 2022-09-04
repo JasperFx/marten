@@ -5,69 +5,68 @@ using Marten.Testing.Harness;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DocumentDbTests.Reading.Linq
+namespace DocumentDbTests.Reading.Linq;
+
+public class BoolNotVisitorTests : OneOffConfigurationsContext
 {
-    public class BoolNotVisitorTests : OneOffConfigurationsContext
+    private readonly ITestOutputHelper _output;
+
+    public class TestClass
     {
-        private readonly ITestOutputHelper _output;
-
-        public class TestClass
+        public TestClass()
         {
-            public TestClass()
-            {
-                Id = Guid.NewGuid();
-            }
-
-            public Guid Id { get; set; }
-            public bool Flag { get; set; }
+            Id = Guid.NewGuid();
         }
 
-        [Fact]
-        public void when_doc_with_bool_false_should_return_records()
+        public Guid Id { get; set; }
+        public bool Flag { get; set; }
+    }
+
+    [Fact]
+    public void when_doc_with_bool_false_should_return_records()
+    {
+        var docWithFlagFalse = new TestClass();
+
+        theSession.Store(docWithFlagFalse);
+        theSession.SaveChanges();
+
+        using (var s = theStore.OpenSession())
         {
-            var docWithFlagFalse = new TestClass();
+            var items = s.Query<TestClass>().Where(x => !x.Flag).ToList();
 
-            theSession.Store(docWithFlagFalse);
-            theSession.SaveChanges();
-
-            using (var s = theStore.OpenSession())
-            {
-                var items = s.Query<TestClass>().Where(x => !x.Flag).ToList();
-
-                Assert.Single(items);
-                Assert.Equal(docWithFlagFalse.Id, items[0].Id);
-            }
+            Assert.Single(items);
+            Assert.Equal(docWithFlagFalse.Id, items[0].Id);
         }
+    }
 
-        [Fact]
-        public void when_doc_with_bool_false_with_serializer_default_value_handling_null_should_return_records()
+    [Fact]
+    public void when_doc_with_bool_false_with_serializer_default_value_handling_null_should_return_records()
+    {
+        var serializer = new JsonNetSerializer();
+        serializer.Customize(s =>
         {
-            var serializer = new JsonNetSerializer();
-            serializer.Customize(s =>
-            {
-                s.DefaultValueHandling = Newtonsoft.Json.DefaultValueHandling.Ignore;
-            });
+            s.DefaultValueHandling = Newtonsoft.Json.DefaultValueHandling.Ignore;
+        });
 
-            StoreOptions(x => x.Serializer(serializer));
+        StoreOptions(x => x.Serializer(serializer));
 
-            // Note: with serializer settings DefaultValueHandling.Ignore, serialized JSON won't have Flag property
-            var docWithFlagFalse = new TestClass();
+        // Note: with serializer settings DefaultValueHandling.Ignore, serialized JSON won't have Flag property
+        var docWithFlagFalse = new TestClass();
 
-            theSession.Store(docWithFlagFalse);
-            theSession.SaveChanges();
+        theSession.Store(docWithFlagFalse);
+        theSession.SaveChanges();
 
-            using (var s = theStore.OpenSession())
-            {
-                var items = s.Query<TestClass>().Where(x => !x.Flag).ToList();
-
-                Assert.Single(items);
-                Assert.Equal(docWithFlagFalse.Id, items[0].Id);
-            }
-        }
-
-        public BoolNotVisitorTests(ITestOutputHelper output)
+        using (var s = theStore.OpenSession())
         {
-            _output = output;
+            var items = s.Query<TestClass>().Where(x => !x.Flag).ToList();
+
+            Assert.Single(items);
+            Assert.Equal(docWithFlagFalse.Id, items[0].Id);
         }
+    }
+
+    public BoolNotVisitorTests(ITestOutputHelper output)
+    {
+        _output = output;
     }
 }

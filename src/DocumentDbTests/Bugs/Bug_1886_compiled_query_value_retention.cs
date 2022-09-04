@@ -7,67 +7,66 @@ using Marten.Schema;
 using Marten.Testing.Harness;
 using Xunit;
 
-namespace DocumentDbTests.Bugs
+namespace DocumentDbTests.Bugs;
+
+public class UserBug1886
 {
-    public class UserBug1886
+    public Guid Id { get; set; }
+
+    [DuplicateField]
+    public string NormalizedUserName { get; set; }
+
+    [DuplicateField]
+    public string NormalizedEmail { get; set; }
+}
+
+public class FindUserBug1886ByNameQuery : ICompiledQuery<UserBug1886, UserBug1886>
+{
+    public string NormalizedName { get; set; } = string.Empty;
+
+    public Expression<Func<IMartenQueryable<UserBug1886>, UserBug1886>> QueryIs()
     {
-        public Guid Id { get; set; }
-
-        [DuplicateField]
-        public string NormalizedUserName { get; set; }
-
-        [DuplicateField]
-        public string NormalizedEmail { get; set; }
+        return q => q.FirstOrDefault(
+            x => x.NormalizedUserName == NormalizedName
+                 || x.NormalizedEmail == NormalizedName);
     }
+}
 
-    public class FindUserBug1886ByNameQuery : ICompiledQuery<UserBug1886, UserBug1886>
+public class Bug_1886_compiled_query_value_retention: BugIntegrationContext
+{
+    [Fact]
+    public async Task Should_be_able_to_run_query_multiple_times()
     {
-        public string NormalizedName { get; set; } = string.Empty;
-
-        public Expression<Func<IMartenQueryable<UserBug1886>, UserBug1886>> QueryIs()
+        var insertSession = theStore.LightweightSession();
+        await using (insertSession)
         {
-            return q => q.FirstOrDefault(
-                x => x.NormalizedUserName == NormalizedName
-                     || x.NormalizedEmail == NormalizedName);
+            var testUser = new UserBug1886 { NormalizedEmail = "TEST@EXAMPLE.COM", NormalizedUserName = "ADMIN" };
+            insertSession.Insert(testUser);
+            await insertSession.SaveChangesAsync();
         }
-    }
 
-    public class Bug_1886_compiled_query_value_retention: BugIntegrationContext
-    {
-        [Fact]
-        public async Task Should_be_able_to_run_query_multiple_times()
+        var session1 = theStore.QuerySession();
+        await using (session1)
         {
-            var insertSession = theStore.LightweightSession();
-            await using (insertSession)
-            {
-                var testUser = new UserBug1886 { NormalizedEmail = "TEST@EXAMPLE.COM", NormalizedUserName = "ADMIN" };
-                insertSession.Insert(testUser);
-                await insertSession.SaveChangesAsync();
-            }
+            var foundUser = await session1
+                .QueryAsync(
+                    new FindUserBug1886ByNameQuery
+                    {
+                        NormalizedName = "ADMIN",
+                    });
+            foundUser.ShouldNotBeNull();
+        }
 
-            var session1 = theStore.QuerySession();
-            await using (session1)
-            {
-                var foundUser = await session1
-                    .QueryAsync(
-                        new FindUserBug1886ByNameQuery
-                        {
-                            NormalizedName = "ADMIN",
-                        });
-                foundUser.ShouldNotBeNull();
-            }
-
-            var session2 = theStore.QuerySession();
-            await using (session2)
-            {
-                var foundUser = await session2
-                    .QueryAsync(
-                        new FindUserBug1886ByNameQuery
-                        {
-                            NormalizedName = "TEST@EXAMPLE.COM",
-                        });
-                foundUser.ShouldNotBeNull();
-            }
+        var session2 = theStore.QuerySession();
+        await using (session2)
+        {
+            var foundUser = await session2
+                .QueryAsync(
+                    new FindUserBug1886ByNameQuery
+                    {
+                        NormalizedName = "TEST@EXAMPLE.COM",
+                    });
+            foundUser.ShouldNotBeNull();
         }
     }
 }

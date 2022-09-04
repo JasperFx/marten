@@ -8,81 +8,80 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace DocumentDbTests.Bugs
+namespace DocumentDbTests.Bugs;
+
+public class Bug_606_string_contains_starts_or_ends_with_in_compiled_queries: IntegrationContext
 {
-    public class Bug_606_string_contains_starts_or_ends_with_in_compiled_queries: IntegrationContext
+    [Fact]
+    public void compiled_query_with_ends_with()
     {
-        [Fact]
-        public void compiled_query_with_ends_with()
-        {
-            var query = theStore.Diagnostics.PreviewCommand(new WhereUsernameEndsWith("foo.com"));
+        var query = theStore.Diagnostics.PreviewCommand(new WhereUsernameEndsWith("foo.com"));
 
-            query.Parameters[0].Value.ShouldBe("%foo.com");
+        query.Parameters[0].Value.ShouldBe("%foo.com");
+    }
+
+    public class WhereUsernameEndsWith: ICompiledListQuery<User, User>
+    {
+        public string EndsWith { get; }
+
+        public WhereUsernameEndsWith(string endsWith)
+        {
+            EndsWith = endsWith;
         }
 
-        public class WhereUsernameEndsWith: ICompiledListQuery<User, User>
+        public Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> QueryIs()
         {
-            public string EndsWith { get; }
+            return q => q.Where(u => u.UserName.EndsWith(EndsWith));
+        }
+    }
 
-            public WhereUsernameEndsWith(string endsWith)
-            {
-                EndsWith = endsWith;
-            }
+    [Fact]
+    public void compiled_query_with_starts_with()
+    {
+        var query = theStore.Diagnostics.PreviewCommand(new WhereUsernameStartsWith("foo.com"));
 
-            public Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> QueryIs()
-            {
-                return q => q.Where(u => u.UserName.EndsWith(EndsWith));
-            }
+        query.Parameters[0].Value.ShouldBe("foo.com%");
+    }
+
+    public class WhereUsernameStartsWith: ICompiledListQuery<User, User>
+    {
+        public string StartsWith { get; }
+
+        public WhereUsernameStartsWith(string startsWith)
+        {
+            StartsWith = startsWith;
         }
 
-        [Fact]
-        public void compiled_query_with_starts_with()
+        public Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> QueryIs()
         {
-            var query = theStore.Diagnostics.PreviewCommand(new WhereUsernameStartsWith("foo.com"));
+            return q => q.Where(u => u.UserName.StartsWith(StartsWith));
+        }
+    }
 
-            query.Parameters[0].Value.ShouldBe("foo.com%");
+    [Fact]
+    public void compiled_query_with_contains()
+    {
+        var query = theStore.Diagnostics.PreviewCommand(new WhereUsernameContains("foo.com"));
+
+        query.Parameters[0].Value.ShouldBe("%foo.com%");
+    }
+
+    public class WhereUsernameContains: ICompiledListQuery<User, User>
+    {
+        public string Contains { get; }
+
+        public WhereUsernameContains(string contains)
+        {
+            Contains = contains;
         }
 
-        public class WhereUsernameStartsWith: ICompiledListQuery<User, User>
+        public Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> QueryIs()
         {
-            public string StartsWith { get; }
-
-            public WhereUsernameStartsWith(string startsWith)
-            {
-                StartsWith = startsWith;
-            }
-
-            public Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> QueryIs()
-            {
-                return q => q.Where(u => u.UserName.StartsWith(StartsWith));
-            }
+            return q => q.Where(u => u.UserName.Contains(Contains));
         }
+    }
 
-        [Fact]
-        public void compiled_query_with_contains()
-        {
-            var query = theStore.Diagnostics.PreviewCommand(new WhereUsernameContains("foo.com"));
-
-            query.Parameters[0].Value.ShouldBe("%foo.com%");
-        }
-
-        public class WhereUsernameContains: ICompiledListQuery<User, User>
-        {
-            public string Contains { get; }
-
-            public WhereUsernameContains(string contains)
-            {
-                Contains = contains;
-            }
-
-            public Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> QueryIs()
-            {
-                return q => q.Where(u => u.UserName.Contains(Contains));
-            }
-        }
-
-        public Bug_606_string_contains_starts_or_ends_with_in_compiled_queries(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
+    public Bug_606_string_contains_starts_or_ends_with_in_compiled_queries(DefaultStoreFixture fixture) : base(fixture)
+    {
     }
 }

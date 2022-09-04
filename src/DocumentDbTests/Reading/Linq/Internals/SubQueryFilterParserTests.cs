@@ -9,28 +9,27 @@ using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
 using Xunit;
 
-namespace DocumentDbTests.Reading.Linq.Internals
+namespace DocumentDbTests.Reading.Linq.Internals;
+
+public class SubQueryFilterParserTests
 {
-    public class SubQueryFilterParserTests
+
+    private SubQueryExpression forExpression(Expression<Func<Target, bool>> filter)
     {
+        Expression<Func<IQueryable<Target>, IQueryable<Target>>> query = q => q.Where(filter);
 
-        private SubQueryExpression forExpression(Expression<Func<Target, bool>> filter)
-        {
-            Expression<Func<IQueryable<Target>, IQueryable<Target>>> query = q => q.Where(filter);
-
-            var invocation = Expression.Invoke(query, Expression.Parameter(typeof(IQueryable<Target>)));
+        var invocation = Expression.Invoke(query, Expression.Parameter(typeof(IQueryable<Target>)));
 
 
-            var model = MartenQueryParser.Flyweight.GetParsedQuery(invocation);
+        var model = MartenQueryParser.Flyweight.GetParsedQuery(invocation);
 
-            return (SubQueryExpression) model.BodyClauses.Single().As<WhereClause>().Predicate;
-        }
+        return (SubQueryExpression) model.BodyClauses.Single().As<WhereClause>().Predicate;
+    }
 
-        [Fact]
-        public void try_stuff()
-        {
-            var expression = forExpression(x => x.Children.Any(c => c.Children.Length > 2));
-            expression.ShouldNotBeNull();
-        }
+    [Fact]
+    public void try_stuff()
+    {
+        var expression = forExpression(x => x.Children.Any(c => c.Children.Length > 2));
+        expression.ShouldNotBeNull();
     }
 }

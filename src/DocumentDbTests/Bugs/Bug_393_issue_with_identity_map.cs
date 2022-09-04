@@ -4,69 +4,68 @@ using Marten.Services;
 using Marten.Testing.Harness;
 using Xunit;
 
-namespace DocumentDbTests.Bugs
+namespace DocumentDbTests.Bugs;
+
+public class Bug_393_issue_with_identity_map: IntegrationContext
 {
-    public class Bug_393_issue_with_identity_map: IntegrationContext
+    [Fact]
+    public void load_non_existing_with_a_store_shoudl_return_new_added_document()
     {
-        [Fact]
-        public void load_non_existing_with_a_store_shoudl_return_new_added_document()
+        var routeId = CombGuidIdGeneration.NewGuid();
+
+        using (var session = theStore.OpenSession())
         {
-            var routeId = CombGuidIdGeneration.NewGuid();
+            var details = session.Load<RouteDetails>(routeId);
+            details.ShouldBeNull();
 
-            using (var session = theStore.OpenSession())
-            {
-                var details = session.Load<RouteDetails>(routeId);
-                details.ShouldBeNull();
+            var routeDetails = new RouteDetails { Id = routeId };
+            session.Store(routeDetails);
 
-                var routeDetails = new RouteDetails { Id = routeId };
-                session.Store(routeDetails);
+            details = session.Load<RouteDetails>(routeId); // this was always null
 
-                details = session.Load<RouteDetails>(routeId); // this was always null
-
-                details.ShouldBeTheSameAs(routeDetails);
-            }
-        }
-
-        public Bug_393_issue_with_identity_map(DefaultStoreFixture fixture) : base(fixture)
-        {
-            DocumentTracking = Marten.DocumentTracking.IdentityOnly;
+            details.ShouldBeTheSameAs(routeDetails);
         }
     }
 
-    public class Bug_393_issue_with_dirty_tracking_identity_map: IntegrationContext
+    public Bug_393_issue_with_identity_map(DefaultStoreFixture fixture) : base(fixture)
     {
-        [Fact]
-        public void load_non_existing_with_a_store_shoudl_return_new_added_document()
+        DocumentTracking = Marten.DocumentTracking.IdentityOnly;
+    }
+}
+
+public class Bug_393_issue_with_dirty_tracking_identity_map: IntegrationContext
+{
+    [Fact]
+    public void load_non_existing_with_a_store_shoudl_return_new_added_document()
+    {
+        var routeId = CombGuidIdGeneration.NewGuid();
+
+        using (var session = theStore.OpenSession())
         {
-            var routeId = CombGuidIdGeneration.NewGuid();
+            var details = session.Load<RouteDetails>(routeId);
+            details.ShouldBeNull();
 
-            using (var session = theStore.OpenSession())
-            {
-                var details = session.Load<RouteDetails>(routeId);
-                details.ShouldBeNull();
+            var routeDetails = new RouteDetails { Id = routeId };
+            session.Store(routeDetails);
 
-                var routeDetails = new RouteDetails { Id = routeId };
-                session.Store(routeDetails);
+            details = session.Load<RouteDetails>(routeId);
 
-                details = session.Load<RouteDetails>(routeId);
-
-                details.ShouldBeTheSameAs(routeDetails);
-            }
-        }
-
-        public Bug_393_issue_with_dirty_tracking_identity_map(DefaultStoreFixture fixture) : base(fixture)
-        {
-            DocumentTracking = Marten.DocumentTracking.DirtyTracking;
+            details.ShouldBeTheSameAs(routeDetails);
         }
     }
 
-    public class RouteDetails
+    public Bug_393_issue_with_dirty_tracking_identity_map(DefaultStoreFixture fixture) : base(fixture)
     {
-        public Guid Id { get; set; }
-        public DateTime PlannedDate { get; set; }
-        public DateTime PlannedSince { get; set; }
-        public DateTime DrivingDate { get; set; }
-
-        public string Status { get; set; }
+        DocumentTracking = Marten.DocumentTracking.DirtyTracking;
     }
+}
+
+public class RouteDetails
+{
+    public Guid Id { get; set; }
+    public DateTime PlannedDate { get; set; }
+    public DateTime PlannedSince { get; set; }
+    public DateTime DrivingDate { get; set; }
+
+    public string Status { get; set; }
 }

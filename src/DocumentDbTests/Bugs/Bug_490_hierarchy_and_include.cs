@@ -8,109 +8,108 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace DocumentDbTests.Bugs
+namespace DocumentDbTests.Bugs;
+
+public class Bug_490_hierarchy_and_include: BugIntegrationContext
 {
-    public class Bug_490_hierarchy_and_include: BugIntegrationContext
+    public Bug_490_hierarchy_and_include()
     {
-        public Bug_490_hierarchy_and_include()
+        StoreOptions(_ =>
         {
-            StoreOptions(_ =>
-            {
-                _.Schema.For<Activity>()
-                    .AddSubClass<StatusActivity>();
-            });
+            _.Schema.For<Activity>()
+                .AddSubClass<StatusActivity>();
+        });
+    }
+
+    public class Account
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+
+    public abstract class Activity
+    {
+        public Activity()
+        {
+            Id = Guid.NewGuid();
         }
 
-        public class Account
+        public Guid Id { get; set; }
+
+        public int AccountId { get; set; }
+
+        public abstract string Type { get; }
+    }
+
+    public class StatusActivity: Activity
+    {
+        public override string Type => "StatusUpdate";
+        public string StatusText { get; set; }
+    }
+
+    [Fact]
+    public void load_abstract_type_with_include()
+    {
+        var account = new Account()
         {
-            public int Id { get; set; }
-            public string Name { get; set; }
+            Id = 1,
+            Name = "Paul"
+        };
+
+        theSession.Store(account);
+
+        var activity = new StatusActivity()
+        {
+            Id = Guid.NewGuid(),
+            StatusText = "testing status",
+            AccountId = 1
+        };
+
+        theSession.Store(activity);
+        theSession.SaveChanges();
+
+        using (var session = theStore.QuerySession())
+        {
+            List<Account> accounts = new List<Account>();
+            session.Query<Activity>()
+                .Include(a => a.AccountId, accounts)
+                .ToList()
+                .ShouldNotBeTheSameAs(activity).ShouldNotBeNull();
+
+            accounts.First().Id.ShouldBe(1);
         }
+    }
 
-        public abstract class Activity
+    [Fact]
+    public async Task load_abstract_type_with_include_async()
+    {
+        var account = new Account()
         {
-            public Activity()
-            {
-                Id = Guid.NewGuid();
-            }
+            Id = 1,
+            Name = "Paul"
+        };
 
-            public Guid Id { get; set; }
+        theSession.Store(account);
 
-            public int AccountId { get; set; }
-
-            public abstract string Type { get; }
-        }
-
-        public class StatusActivity: Activity
+        var activity = new StatusActivity()
         {
-            public override string Type => "StatusUpdate";
-            public string StatusText { get; set; }
-        }
+            Id = Guid.NewGuid(),
+            StatusText = "testing status",
+            AccountId = 1
+        };
 
-        [Fact]
-        public void load_abstract_type_with_include()
+        theSession.Store(activity);
+        await theSession.SaveChangesAsync();
+
+        using (var session = theStore.QuerySession())
         {
-            var account = new Account()
-            {
-                Id = 1,
-                Name = "Paul"
-            };
-
-            theSession.Store(account);
-
-            var activity = new StatusActivity()
-            {
-                Id = Guid.NewGuid(),
-                StatusText = "testing status",
-                AccountId = 1
-            };
-
-            theSession.Store(activity);
-            theSession.SaveChanges();
-
-            using (var session = theStore.QuerySession())
-            {
-                List<Account> accounts = new List<Account>();
-                session.Query<Activity>()
-                    .Include(a => a.AccountId, accounts)
-                    .ToList()
-                    .ShouldNotBeTheSameAs(activity).ShouldNotBeNull();
-
-                accounts.First().Id.ShouldBe(1);
-            }
-        }
-
-        [Fact]
-        public async Task load_abstract_type_with_include_async()
-        {
-            var account = new Account()
-            {
-                Id = 1,
-                Name = "Paul"
-            };
-
-            theSession.Store(account);
-
-            var activity = new StatusActivity()
-            {
-                Id = Guid.NewGuid(),
-                StatusText = "testing status",
-                AccountId = 1
-            };
-
-            theSession.Store(activity);
-            await theSession.SaveChangesAsync();
-
-            using (var session = theStore.QuerySession())
-            {
-                List<Account> accounts = new List<Account>();
-                (await session.Query<Activity>()
+            List<Account> accounts = new List<Account>();
+            (await session.Query<Activity>()
                     .Include(a => a.AccountId, accounts)
                     .ToListAsync())
-                    .ShouldNotBeTheSameAs(activity).ShouldNotBeNull();
+                .ShouldNotBeTheSameAs(activity).ShouldNotBeNull();
 
-                accounts.First().Id.ShouldBe(1);
-            }
+            accounts.First().Id.ShouldBe(1);
         }
     }
 }

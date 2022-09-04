@@ -6,35 +6,34 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;
 
-namespace DocumentDbTests.Bugs
+namespace DocumentDbTests.Bugs;
+
+public class Bug_620_alias_bool : BugIntegrationContext
 {
-    public class Bug_620_alias_bool : BugIntegrationContext
+    [Fact]
+    public async Task can_canonicize_bool()
     {
-        [Fact]
-        public async Task can_canonicize_bool()
+        using (var store1 = SeparateStore())
         {
-            using (var store1 = SeparateStore())
-            {
-                await store1.EnsureStorageExistsAsync(typeof(DocWithBool));
+            await store1.EnsureStorageExistsAsync(typeof(DocWithBool));
 
-                await store1.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-            }
+            await store1.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        }
 
-            using (var store2 = SeparateStore(_ =>
-            {
-                _.Schema.For<DocWithBool>();
-            }))
-            {
-                await store2.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
-            }
+        using (var store2 = SeparateStore(_ =>
+               {
+                   _.Schema.For<DocWithBool>();
+               }))
+        {
+            await store2.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         }
     }
+}
 
-    public class DocWithBool
-    {
-        public Guid Id;
+public class DocWithBool
+{
+    public Guid Id;
 
-        [DuplicateField(PgType = "bool")]
-        public bool IsTrue { get; set; }
-    }
+    [DuplicateField(PgType = "bool")]
+    public bool IsTrue { get; set; }
 }
