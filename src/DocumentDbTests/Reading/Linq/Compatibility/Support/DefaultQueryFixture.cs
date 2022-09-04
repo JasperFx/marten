@@ -1,29 +1,28 @@
 using Marten;
 using Marten.Testing.Documents;
 
-namespace DocumentDbTests.Reading.Linq.Compatibility.Support
+namespace DocumentDbTests.Reading.Linq.Compatibility.Support;
+
+public class DefaultQueryFixture: TargetSchemaFixture
 {
-    public class DefaultQueryFixture: TargetSchemaFixture
+    public DefaultQueryFixture()
     {
-        public DefaultQueryFixture()
+        Store = provisionStore("linq_querying");
+
+        DuplicatedFieldStore = provisionStore("duplicate_fields", o =>
         {
-            Store = provisionStore("linq_querying");
-
-            DuplicatedFieldStore = provisionStore("duplicate_fields", o =>
-            {
-                o.Schema.For<Target>()
-                    .Duplicate(x => x.Number)
-                    .Duplicate(x => x.Long)
-                    .Duplicate(x => x.String)
-                    .Duplicate(x => x.Date)
-                    .Duplicate(x => x.Double)
-                    .Duplicate(x => x.Flag)
-                    .Duplicate(x => x.Color);
-            });
-        }
-
-        public DocumentStore DuplicatedFieldStore { get; set; }
-
-        public DocumentStore Store { get; set; }
+            o.Schema.For<Target>()
+                .Duplicate(x => x.Number)
+                .Duplicate(x => x.Long)
+                .Duplicate(x => x.String)
+                .Duplicate(x => x.Date)
+                .Duplicate(x => x.Double)
+                .Duplicate(x => x.Flag)
+                .Duplicate(x => x.Color);
+        });
     }
+
+    public DocumentStore DuplicatedFieldStore { get; set; }
+
+    public DocumentStore Store { get; set; }
 }

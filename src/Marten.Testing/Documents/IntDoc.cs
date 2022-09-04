@@ -1,16 +1,15 @@
-namespace Marten.Testing.Documents
+namespace Marten.Testing.Documents;
+
+public class IntDoc
 {
-    public class IntDoc
+    public int Id { get; set; }
+
+    public IntDoc()
     {
-        public int Id { get; set; }
+    }
 
-        public IntDoc()
-        {
-        }
-
-        public IntDoc(int id)
-        {
-            Id = id;
-        }
+    public IntDoc(int id)
+    {
+        Id = id;
     }
 }

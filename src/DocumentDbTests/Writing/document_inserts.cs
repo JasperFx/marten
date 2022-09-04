@@ -6,51 +6,51 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace DocumentDbTests.Writing
+namespace DocumentDbTests.Writing;
+
+public class document_inserts: IntegrationContext
 {
-    public class document_inserts: IntegrationContext
+    [Fact]
+    public void can_insert_all_new_documents()
     {
-        [Fact]
-        public void can_insert_all_new_documents()
+        using (var session = theStore.OpenSession())
         {
-            using (var session = theStore.OpenSession())
-            {
-                session.Insert(Target.GenerateRandomData(99).ToArray());
-                session.SaveChanges();
-            }
-
-            using (var query = theStore.QuerySession())
-            {
-                query.Query<Target>().Count().ShouldBe(99);
-            }
+            session.Insert(Target.GenerateRandomData(99).ToArray());
+            session.SaveChanges();
         }
 
-        [Fact]
-        public void can_insert_a_mixed_bag_of_documents()
+        using (var query = theStore.QuerySession())
         {
-            var docs = new object[]
-            {
-                Target.Random(),
-                Target.Random(),
-                Target.Random(),
-                new User(),
-                new User(),
-                new User(),
-                new User()
-            };
-
-            using (var session = theStore.OpenSession())
-            {
-                session.InsertObjects(docs);
-                session.SaveChanges();
-            }
-
-            using (var query = theStore.QuerySession())
-            {
-                query.Query<Target>().Count().ShouldBe(3);
-                query.Query<User>().Count().ShouldBe(4);
-            }
+            query.Query<Target>().Count().ShouldBe(99);
         }
+    }
+
+    [Fact]
+    public void can_insert_a_mixed_bag_of_documents()
+    {
+        var docs = new object[]
+        {
+            Target.Random(),
+            Target.Random(),
+            Target.Random(),
+            new User(),
+            new User(),
+            new User(),
+            new User()
+        };
+
+        using (var session = theStore.OpenSession())
+        {
+            session.InsertObjects(docs);
+            session.SaveChanges();
+        }
+
+        using (var query = theStore.QuerySession())
+        {
+            query.Query<Target>().Count().ShouldBe(3);
+            query.Query<User>().Count().ShouldBe(4);
+        }
+    }
 #if NET
         [Fact]
         public void can_insert_records()
@@ -72,31 +72,30 @@ namespace DocumentDbTests.Writing
         public record RecordDocument(Guid Id, string Name);
 #endif
 
-        [Fact]
-        public void insert_sad_path()
-        {
-            var target = Target.Random();
+    [Fact]
+    public void insert_sad_path()
+    {
+        var target = Target.Random();
 
-            #region sample_sample-document-insertonly
-            using (var session = theStore.OpenSession())
+        #region sample_sample-document-insertonly
+        using (var session = theStore.OpenSession())
+        {
+            session.Insert(target);
+            session.SaveChanges();
+        }
+        #endregion
+
+        using (var session = theStore.OpenSession())
+        {
+            Exception<DocumentAlreadyExistsException>.ShouldBeThrownBy(() =>
             {
                 session.Insert(target);
                 session.SaveChanges();
-            }
-            #endregion
-
-            using (var session = theStore.OpenSession())
-            {
-                Exception<DocumentAlreadyExistsException>.ShouldBeThrownBy(() =>
-                {
-                    session.Insert(target);
-                    session.SaveChanges();
-                });
-            }
+            });
         }
+    }
 
-        public document_inserts(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
+    public document_inserts(DefaultStoreFixture fixture) : base(fixture)
+    {
     }
 }

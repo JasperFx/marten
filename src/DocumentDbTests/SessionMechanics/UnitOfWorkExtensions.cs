@@ -5,55 +5,54 @@ using Marten.Linq.SqlGeneration;
 using Marten.Testing.Documents;
 using Shouldly;
 
-namespace DocumentDbTests.SessionMechanics
+namespace DocumentDbTests.SessionMechanics;
+
+public static class UnitOfWorkExtensions
 {
-    public static class UnitOfWorkExtensions
+    public static void ShouldHaveUpsertFor<T>(this IDocumentSession session, T document)
     {
-        public static void ShouldHaveUpsertFor<T>(this IDocumentSession session, T document)
-        {
-            session.PendingChanges.Operations()
-                .OfType<IDocumentStorageOperation>()
+        session.PendingChanges.Operations()
+            .OfType<IDocumentStorageOperation>()
 
-                .ShouldContain(x => x.Role() == OperationRole.Upsert && document.Equals(x.Document));
-        }
+            .ShouldContain(x => x.Role() == OperationRole.Upsert && document.Equals(x.Document));
+    }
 
-        public static void ShouldHaveInsertFor<T>(this IDocumentSession session, T document)
-        {
-            session.PendingChanges.Operations()
-                .OfType<IDocumentStorageOperation>()
+    public static void ShouldHaveInsertFor<T>(this IDocumentSession session, T document)
+    {
+        session.PendingChanges.Operations()
+            .OfType<IDocumentStorageOperation>()
 
-                .ShouldContain(x => x.Role() == OperationRole.Insert && document.Equals(x.Document));
-        }
+            .ShouldContain(x => x.Role() == OperationRole.Insert && document.Equals(x.Document));
+    }
 
-        public static void ShouldHaveUpdateFor<T>(this IDocumentSession session, T document)
-        {
-            session.PendingChanges.Operations()
-                .OfType<IDocumentStorageOperation>()
+    public static void ShouldHaveUpdateFor<T>(this IDocumentSession session, T document)
+    {
+        session.PendingChanges.Operations()
+            .OfType<IDocumentStorageOperation>()
 
-                .ShouldContain(x => x.Role() == OperationRole.Update && document.Equals(x.Document));
-        }
+            .ShouldContain(x => x.Role() == OperationRole.Update && document.Equals(x.Document));
+    }
 
-        public static void ShouldHaveDeleteFor(this IDocumentSession session, User user)
-        {
-            session.PendingChanges.Operations()
-                .OfType<Deletion>()
-                .ShouldContain(x => x.Id.Equals(user.Id));
-        }
+    public static void ShouldHaveDeleteFor(this IDocumentSession session, User user)
+    {
+        session.PendingChanges.Operations()
+            .OfType<Deletion>()
+            .ShouldContain(x => x.Id.Equals(user.Id));
+    }
 
-        public static void ShouldHaveDeleteFor(this IDocumentSession session, Target target)
-        {
-            session.PendingChanges.Operations()
-                .OfType<Deletion>()
-                .ShouldContain(x => MatchesDeletion(target, x));
-        }
+    public static void ShouldHaveDeleteFor(this IDocumentSession session, Target target)
+    {
+        session.PendingChanges.Operations()
+            .OfType<Deletion>()
+            .ShouldContain(x => MatchesDeletion(target, x));
+    }
 
-        internal static bool MatchesDeletion(Target target, Deletion deletion)
-        {
-            if (deletion.Id.Equals(target.Id)) return true;
+    internal static bool MatchesDeletion(Target target, Deletion deletion)
+    {
+        if (deletion.Id.Equals(target.Id)) return true;
 
-            if (deletion.Document is Target t) return t.Id == target.Id;
+        if (deletion.Document is Target t) return t.Id == target.Id;
 
-            return false;
-        }
+        return false;
     }
 }

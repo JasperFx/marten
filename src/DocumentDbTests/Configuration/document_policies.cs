@@ -7,69 +7,68 @@ using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DocumentDbTests.Configuration
+namespace DocumentDbTests.Configuration;
+
+public class document_policies: OneOffConfigurationsContext
 {
-    public class document_policies: OneOffConfigurationsContext
+    private readonly ITestOutputHelper _output;
+
+    public document_policies(ITestOutputHelper output)
     {
-        private readonly ITestOutputHelper _output;
+        _output = output;
 
-        public document_policies(ITestOutputHelper output)
+        StoreOptions(_ =>
         {
-            _output = output;
+            _.Schema.For<Target>();
+            _.Schema.For<User>().UseOptimisticConcurrency(false);
 
-            StoreOptions(_ =>
-            {
-                _.Schema.For<Target>();
-                _.Schema.For<User>().UseOptimisticConcurrency(false);
+            _.Policies.ForAllDocuments(m => m.UseOptimisticConcurrency = true);
+        });
+    }
 
-                _.Policies.ForAllDocuments(m => m.UseOptimisticConcurrency = true);
-            });
-        }
+    [Fact]
+    public void applies_to_all_document_types_that_are_not_otherwise_configured()
+    {
+        theStore.StorageFeatures.MappingFor(typeof(Target)).UseOptimisticConcurrency.ShouldBeTrue();
+        theStore.StorageFeatures.MappingFor(typeof(Issue)).UseOptimisticConcurrency.ShouldBeTrue();
+    }
 
-        [Fact]
-        public void applies_to_all_document_types_that_are_not_otherwise_configured()
+    [Fact]
+    public void can_be_overridden_by_explicits()
+    {
+        theStore.StorageFeatures.MappingFor(typeof(User)).UseOptimisticConcurrency.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void attribute_can_override_a_policy()
+    {
+        StoreOptions(_ =>
         {
-            theStore.StorageFeatures.MappingFor(typeof(Target)).UseOptimisticConcurrency.ShouldBeTrue();
-            theStore.StorageFeatures.MappingFor(typeof(Issue)).UseOptimisticConcurrency.ShouldBeTrue();
-        }
+            _.Policies.ForAllDocuments(x => x.TenancyStyle = TenancyStyle.Single);
+        });
 
-        [Fact]
-        public void can_be_overridden_by_explicits()
+        theStore.StorageFeatures.MappingFor(typeof(TenantedDoc))
+            .TenancyStyle.ShouldBe(TenancyStyle.Conjoined);
+    }
+
+    [Fact]
+    public void fluent_interface_overrides_policies()
+    {
+        StoreOptions(storeOptions =>
         {
-            theStore.StorageFeatures.MappingFor(typeof(User)).UseOptimisticConcurrency.ShouldBeFalse();
-        }
+            #region sample_tenancy-configure-override
+            storeOptions.Policies.ForAllDocuments(x => x.TenancyStyle = TenancyStyle.Single);
+            storeOptions.Schema.For<Target>().MultiTenanted();
+            #endregion
+        });
 
-        [Fact]
-        public void attribute_can_override_a_policy()
-        {
-            StoreOptions(_ =>
-            {
-                _.Policies.ForAllDocuments(x => x.TenancyStyle = TenancyStyle.Single);
-            });
+        theStore.StorageFeatures.MappingFor(typeof(Target))
+            .TenancyStyle.ShouldBe(TenancyStyle.Conjoined);
+    }
 
-            theStore.StorageFeatures.MappingFor(typeof(TenantedDoc))
-                .TenancyStyle.ShouldBe(TenancyStyle.Conjoined);
-        }
-
-        [Fact]
-        public void fluent_interface_overrides_policies()
-        {
-            StoreOptions(storeOptions =>
-            {
-                #region sample_tenancy-configure-override
-                storeOptions.Policies.ForAllDocuments(x => x.TenancyStyle = TenancyStyle.Single);
-                storeOptions.Schema.For<Target>().MultiTenanted();
-                #endregion
-            });
-
-            theStore.StorageFeatures.MappingFor(typeof(Target))
-                .TenancyStyle.ShouldBe(TenancyStyle.Conjoined);
-        }
-
-        [MultiTenanted]
-        public class TenantedDoc
-        {
-            public Guid Id;
-        }
+    [MultiTenanted]
+    public class TenantedDoc
+    {
+        public Guid Id;
     }
 }

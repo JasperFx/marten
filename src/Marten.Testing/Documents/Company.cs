@@ -1,16 +1,15 @@
 ﻿using System;
 
-namespace Marten.Testing.Documents
+namespace Marten.Testing.Documents;
+
+public class Company
 {
-    public class Company
+    public Company()
     {
-        public Company()
-        {
-           
-        }
 
-        public Guid Id { get; set; }
-
-        public string Name { get; set; }
     }
+
+    public Guid Id { get; set; }
+
+    public string Name { get; set; }
 }

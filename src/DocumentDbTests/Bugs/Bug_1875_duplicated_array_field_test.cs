@@ -9,56 +9,55 @@ using Shouldly;
 using Weasel.Core;
 using Xunit;
 
-namespace DocumentDbTests.Bugs
+namespace DocumentDbTests.Bugs;
+
+public class Bug_1875_duplicated_array_field_test : BugIntegrationContext
 {
-    public class Bug_1875_duplicated_array_field_test : BugIntegrationContext
+    [Fact]
+    public void query_on_duplicated_number_array_field_test()
     {
-        [Fact]
-        public void query_on_duplicated_number_array_field_test()
+        StoreOptions(_ =>
         {
-            StoreOptions(_ =>
+            _.Schema.For<Target>().Duplicate(t => t.NumberArray, "int[]");
+        });
+
+        using (var session = theStore.OpenSession())
+        {
+            session.Store(new Target
             {
-                _.Schema.For<Target>().Duplicate(t => t.NumberArray, "int[]");
+                NumberArray = new []{ 1, 2 }
             });
 
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(new Target
-                {
-                    NumberArray = new []{ 1, 2 }
-                });
-
-                session.SaveChanges();
-            }
-
-            using (var session = theStore.OpenSession())
-            {
-                session.Query<Target>().Single(x => x.NumberArray.Contains(1))
-                    .NumberArray[0].ShouldBe(1);
-            }
+            session.SaveChanges();
         }
 
-        [Fact]
-        public void query_on_duplicated_guid_array_field_test()
+        using (var session = theStore.OpenSession())
         {
-            StoreOptions(_ =>
-            {
-                _.Schema.For<Target>().Duplicate(t => t.GuidArray, "uuid[]");
-            });
+            session.Query<Target>().Single(x => x.NumberArray.Contains(1))
+                .NumberArray[0].ShouldBe(1);
+        }
+    }
 
-            var target = new Target {GuidArray = new Guid[] {Guid.NewGuid(), Guid.NewGuid()}};
+    [Fact]
+    public void query_on_duplicated_guid_array_field_test()
+    {
+        StoreOptions(_ =>
+        {
+            _.Schema.For<Target>().Duplicate(t => t.GuidArray, "uuid[]");
+        });
 
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(target);
-                session.SaveChanges();
-            }
+        var target = new Target {GuidArray = new Guid[] {Guid.NewGuid(), Guid.NewGuid()}};
 
-            using (var session = theStore.OpenSession())
-            {
-                session.Query<Target>().Single(x => x.GuidArray.Contains(target.GuidArray[0]))
-                    .GuidArray[0].ShouldBe(target.GuidArray[0]);
-            }
+        using (var session = theStore.OpenSession())
+        {
+            session.Store(target);
+            session.SaveChanges();
+        }
+
+        using (var session = theStore.OpenSession())
+        {
+            session.Query<Target>().Single(x => x.GuidArray.Contains(target.GuidArray[0]))
+                .GuidArray[0].ShouldBe(target.GuidArray[0]);
         }
     }
 }

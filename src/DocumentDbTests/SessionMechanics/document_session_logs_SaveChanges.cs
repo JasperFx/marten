@@ -9,71 +9,70 @@ using Npgsql;
 using Shouldly;
 using Xunit;
 
-namespace DocumentDbTests.SessionMechanics
+namespace DocumentDbTests.SessionMechanics;
+
+public class document_session_logs_SaveChanges : IntegrationContext
 {
-    public class document_session_logs_SaveChanges : IntegrationContext
+    [Fact]
+    public void records_on_SaveChanges()
     {
-        [Fact]
-        public void records_on_SaveChanges()
-        {
-            var logger = new RecordingLogger();
+        var logger = new RecordingLogger();
 
-            theSession.Logger = logger;
+        theSession.Logger = logger;
 
-            theSession.Store(Target.Random());
+        theSession.Store(Target.Random());
 
-            theSession.SaveChanges();
+        theSession.SaveChanges();
 
-            logger.LastSession.ShouldBe(theSession);
-        }
-
-        [Fact]
-        public async Task records_on_SaveChangesAsync()
-        {
-            var logger = new RecordingLogger();
-
-            theSession.Logger = logger;
-
-            theSession.Store(Target.Random());
-
-            await theSession.SaveChangesAsync();
-
-            logger.LastSession.ShouldBe(theSession);
-        }
-
-        public document_session_logs_SaveChanges(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
+        logger.LastSession.ShouldBe(theSession);
     }
 
-    public class RecordingLogger : IMartenSessionLogger
+    [Fact]
+    public async Task records_on_SaveChangesAsync()
     {
-        public readonly IList<IChangeSet> Commits = new List<IChangeSet>();
+        var logger = new RecordingLogger();
 
-        public void LogSuccess(NpgsqlCommand command)
-        {
+        theSession.Logger = logger;
 
-        }
+        theSession.Store(Target.Random());
 
-        public void LogFailure(NpgsqlCommand command, Exception ex)
-        {
-        }
+        await theSession.SaveChangesAsync();
 
-        public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
-        {
-            LastSession = session;
-            LastCommit = commit.Clone();
-
-            Commits.Add(commit);
-        }
-
-        public void OnBeforeExecute(NpgsqlCommand command)
-        {
-
-        }
-
-        public IChangeSet LastCommit { get; set; }
-
-        public IDocumentSession LastSession { get; set; }
+        logger.LastSession.ShouldBe(theSession);
     }
+
+    public document_session_logs_SaveChanges(DefaultStoreFixture fixture) : base(fixture)
+    {
+    }
+}
+
+public class RecordingLogger : IMartenSessionLogger
+{
+    public readonly IList<IChangeSet> Commits = new List<IChangeSet>();
+
+    public void LogSuccess(NpgsqlCommand command)
+    {
+
+    }
+
+    public void LogFailure(NpgsqlCommand command, Exception ex)
+    {
+    }
+
+    public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
+    {
+        LastSession = session;
+        LastCommit = commit.Clone();
+
+        Commits.Add(commit);
+    }
+
+    public void OnBeforeExecute(NpgsqlCommand command)
+    {
+
+    }
+
+    public IChangeSet LastCommit { get; set; }
+
+    public IDocumentSession LastSession { get; set; }
 }

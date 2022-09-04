@@ -4,58 +4,57 @@ using System.Linq;
 using Marten.Testing.Harness;
 using Xunit;
 
-namespace DocumentDbTests.Reading.Linq
+namespace DocumentDbTests.Reading.Linq;
+
+public class query_with_is_in_generic_enumerable_Tests : IntegrationContext
 {
-    public class query_with_is_in_generic_enumerable_Tests : IntegrationContext
+    [Fact]
+    public void can_query_against_number_in_iList()
     {
-        [Fact]
-        public void can_query_against_number_in_iList()
-        {
-            var doc1 = new DocWithNumber { Number = 1 };
-            var doc2 = new DocWithNumber { Number = 2 };
-            var doc3 = new DocWithNumber { Number = 3 };
+        var doc1 = new DocWithNumber { Number = 1 };
+        var doc2 = new DocWithNumber { Number = 2 };
+        var doc3 = new DocWithNumber { Number = 3 };
 
 
-            theSession.Store(doc1);
-            theSession.Store(doc2);
-            theSession.Store(doc3);
+        theSession.Store(doc1);
+        theSession.Store(doc2);
+        theSession.Store(doc3);
 
-            theSession.SaveChanges();
+        theSession.SaveChanges();
 
-            IList<int> searchValues = new List<int> {2, 4, 5};
+        IList<int> searchValues = new List<int> {2, 4, 5};
 
-            theSession.Query<DocWithNumber>().Where(x=>searchValues.Contains(x.Number)).ToArray()
-                .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc2.Id);
-        }
-
-        [Fact]
-        public void can_query_against_number_in_List()
-        {
-            var doc1 = new DocWithNumber { Number = 1 };
-            var doc2 = new DocWithNumber { Number = 2 };
-            var doc3 = new DocWithNumber { Number = 3 };
-
-
-            theSession.Store(doc1);
-            theSession.Store(doc2);
-            theSession.Store(doc3);
-
-            theSession.SaveChanges();
-
-            List<int> searchValues = new List<int> { 2, 4, 5 };
-
-            theSession.Query<DocWithNumber>().Where(x => searchValues.Contains(x.Number)).ToArray()
-                .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc2.Id);
-        }
-
-        public query_with_is_in_generic_enumerable_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
+        theSession.Query<DocWithNumber>().Where(x=>searchValues.Contains(x.Number)).ToArray()
+            .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc2.Id);
     }
 
-    public class DocWithNumber
+    [Fact]
+    public void can_query_against_number_in_List()
     {
-        public Guid Id { get; set; }
-        public int Number { get; set; }
+        var doc1 = new DocWithNumber { Number = 1 };
+        var doc2 = new DocWithNumber { Number = 2 };
+        var doc3 = new DocWithNumber { Number = 3 };
+
+
+        theSession.Store(doc1);
+        theSession.Store(doc2);
+        theSession.Store(doc3);
+
+        theSession.SaveChanges();
+
+        List<int> searchValues = new List<int> { 2, 4, 5 };
+
+        theSession.Query<DocWithNumber>().Where(x => searchValues.Contains(x.Number)).ToArray()
+            .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc2.Id);
     }
+
+    public query_with_is_in_generic_enumerable_Tests(DefaultStoreFixture fixture) : base(fixture)
+    {
+    }
+}
+
+public class DocWithNumber
+{
+    public Guid Id { get; set; }
+    public int Number { get; set; }
 }

@@ -1,7 +1,6 @@
-namespace Marten.Testing.Documents
+namespace Marten.Testing.Documents;
+
+public class LongDoc
 {
-    public class LongDoc
-    {
-        public long Id { get; set; }
-    }
+    public long Id { get; set; }
 }

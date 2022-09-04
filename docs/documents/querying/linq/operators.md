@@ -299,5 +299,5 @@ public void use_modulo()
         .ShouldHaveTheSameElementsAs(2, 4);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_modulo_Tests.cs#L11-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying-with-modulo' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_modulo_Tests.cs#L10-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying-with-modulo' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

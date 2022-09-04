@@ -1,8 +1,7 @@
-namespace DocumentDbTests.HierarchicalStorage
+namespace DocumentDbTests.HierarchicalStorage;
+
+public enum PolicyType
 {
-    public enum PolicyType
-    {
-        Windows = 1,
-        Linux = 2
-    }
+    Windows = 1,
+    Linux = 2
 }

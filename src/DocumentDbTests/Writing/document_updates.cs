@@ -7,65 +7,64 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace DocumentDbTests.Writing
+namespace DocumentDbTests.Writing;
+
+public class document_updates: IntegrationContext
 {
-    public class document_updates: IntegrationContext
+
+
+    [Fact]
+    public void can_update_existing_documents()
     {
+        var targets = Target.GenerateRandomData(99).ToArray();
+        theStore.BulkInsert(targets);
 
-
-        [Fact]
-        public void can_update_existing_documents()
+        var theNewNumber = 54321;
+        using (var session = theStore.OpenSession())
         {
-            var targets = Target.GenerateRandomData(99).ToArray();
-            theStore.BulkInsert(targets);
+            targets[0].Double = theNewNumber;
+            session.Update(targets[0]);
+            session.SaveChanges();
+        }
 
-            var theNewNumber = 54321;
-            using (var session = theStore.OpenSession())
+        using (var query = theStore.QuerySession())
+        {
+            query.Load<Target>(targets[0].Id)
+                .Double.ShouldBe(theNewNumber);
+        }
+    }
+
+    [Fact]
+    public void update_sad_path()
+    {
+        var target = Target.Random();
+
+        using (var session = theStore.OpenSession())
+        {
+            Exception<NonExistentDocumentException>.ShouldBeThrownBy(() =>
             {
-                targets[0].Double = theNewNumber;
-                session.Update(targets[0]);
+                session.Update(target);
                 session.SaveChanges();
-            }
-
-            using (var query = theStore.QuerySession())
-            {
-                query.Load<Target>(targets[0].Id)
-                    .Double.ShouldBe(theNewNumber);
-            }
+            });
         }
+    }
 
-        [Fact]
-        public void update_sad_path()
+    [Fact]
+    public async Task update_sad_path_async()
+    {
+        var target = Target.Random();
+
+        using (var session = theStore.OpenSession())
         {
-            var target = Target.Random();
-
-            using (var session = theStore.OpenSession())
+            await Exception<NonExistentDocumentException>.ShouldBeThrownByAsync(async () =>
             {
-                Exception<NonExistentDocumentException>.ShouldBeThrownBy(() =>
-                {
-                    session.Update(target);
-                    session.SaveChanges();
-                });
-            }
+                session.Update(target);
+                await session.SaveChangesAsync();
+            });
         }
+    }
 
-        [Fact]
-        public async Task update_sad_path_async()
-        {
-            var target = Target.Random();
-
-            using (var session = theStore.OpenSession())
-            {
-                await Exception<NonExistentDocumentException>.ShouldBeThrownByAsync(async () =>
-                {
-                    session.Update(target);
-                    await session.SaveChangesAsync();
-                });
-            }
-        }
-
-        public document_updates(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
+    public document_updates(DefaultStoreFixture fixture) : base(fixture)
+    {
     }
 }

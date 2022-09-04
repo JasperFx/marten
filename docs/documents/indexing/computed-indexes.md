@@ -103,40 +103,40 @@ var store = DocumentStore.For(_ =>
     // The second, optional argument to Index()
     // allows you to customize the calculated index
     _.Schema.For<Target>().Index(x => x.Number, x =>
-            {
-                // Change the index method to "brin"
-                x.Method = IndexMethod.brin;
+    {
+        // Change the index method to "brin"
+        x.Method = IndexMethod.brin;
 
-                // Force the index to be generated with casing rules
-                x.Casing = ComputedIndex.Casings.Lower;
+        // Force the index to be generated with casing rules
+        x.Casing = ComputedIndex.Casings.Lower;
 
-                // Override the index name if you want
-                x.Name = "mt_my_name";
+        // Override the index name if you want
+        x.Name = "mt_my_name";
 
-                // Toggle whether or not the index is concurrent
-                // Default is false
-                x.IsConcurrent = true;
+        // Toggle whether or not the index is concurrent
+        // Default is false
+        x.IsConcurrent = true;
 
-                // Toggle whether or not the index is a UNIQUE
-                // index
-                x.IsUnique = true;
+        // Toggle whether or not the index is a UNIQUE
+        // index
+        x.IsUnique = true;
 
-                // Toggle whether index value will be constrained unique in scope of whole document table (Global)
-                // or in a scope of a single tenant (PerTenant)
-                // Default is Global
-                x.TenancyScope = Marten.Schema.Indexing.Unique.TenancyScope.PerTenant;
+        // Toggle whether index value will be constrained unique in scope of whole document table (Global)
+        // or in a scope of a single tenant (PerTenant)
+        // Default is Global
+        x.TenancyScope = Marten.Schema.Indexing.Unique.TenancyScope.PerTenant;
 
-                // Partial index by supplying a condition
-                x.Predicate = "(data ->> 'Number')::int > 10";
-            });
+        // Partial index by supplying a condition
+        x.Predicate = "(data ->> 'Number')::int > 10";
+    });
 
     // For B-tree indexes, it's also possible to change
     // the sort order from the default of "ascending"
     _.Schema.For<User>().Index(x => x.LastName, x =>
-            {
-                // Change the index method to "brin"
-                x.SortOrder = SortOrder.Desc;
-            });
+    {
+        // Change the index method to "brin"
+        x.SortOrder = SortOrder.Desc;
+    });
 });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L80-L123' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customizing-calculated-index' title='Start of snippet'>anchor</a></sup>

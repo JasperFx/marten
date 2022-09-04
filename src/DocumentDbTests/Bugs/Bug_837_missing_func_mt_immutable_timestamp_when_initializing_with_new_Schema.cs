@@ -6,26 +6,25 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
-namespace DocumentDbTests.Bugs
+namespace DocumentDbTests.Bugs;
+
+public class Bug_837_missing_func_mt_immutable_timestamp_when_initializing_with_new_Schema: BugIntegrationContext
 {
-    public class Bug_837_missing_func_mt_immutable_timestamp_when_initializing_with_new_Schema: BugIntegrationContext
+    [Fact]
+    public void missing_func_mt_immutable_timestamp_when_initializing_with_new_Schema()
     {
-        [Fact]
-        public void missing_func_mt_immutable_timestamp_when_initializing_with_new_Schema()
+        var store = SeparateStore(_ =>
         {
-            var store = SeparateStore(_ =>
-            {
-                _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.DatabaseSchemaName = "other1";
-            });
+            _.AutoCreateSchemaObjects = AutoCreate.All;
+            _.DatabaseSchemaName = "other1";
+        });
 
-            using (var session = store.OpenSession())
-            {
-                session.Query<Target>().FirstOrDefault(m => m.DateOffset > DateTimeOffset.UtcNow)
-                    .ShouldBeNull();
-            }
+        using (var session = store.OpenSession())
+        {
+            session.Query<Target>().FirstOrDefault(m => m.DateOffset > DateTimeOffset.UtcNow)
+                .ShouldBeNull();
         }
-
-
     }
+
+
 }

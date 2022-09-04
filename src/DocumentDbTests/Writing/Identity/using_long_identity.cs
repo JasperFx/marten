@@ -5,79 +5,78 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace DocumentDbTests.Writing.Identity
+namespace DocumentDbTests.Writing.Identity;
+
+public class using_long_identity : IntegrationContext
 {
-    public class using_long_identity : IntegrationContext
+    [Fact]
+    public async Task persist_and_load()
     {
-        [Fact]
-        public async Task persist_and_load()
+        var LongDoc = new LongDoc { Id = 456 };
+
+        theSession.Store(LongDoc);
+        await theSession.SaveChangesAsync();
+
+        using var session = theStore.OpenSession();
+        session.Load<LongDoc>(456).ShouldNotBeNull();
+
+        session.Load<LongDoc>(222).ShouldBeNull();
+    }
+
+    [Fact]
+    public void auto_assign_id_for_0_id()
+    {
+        var doc = new LongDoc { Id = 0 };
+
+        theSession.Store(doc);
+
+        SpecificationExtensions.ShouldBeGreaterThan(doc.Id, 0L);
+
+        var doc2 = new LongDoc { Id = 0 };
+        theSession.Store(doc2);
+
+        doc2.Id.ShouldNotBe(0L);
+
+        doc2.Id.ShouldNotBe(doc.Id);
+    }
+
+    [Fact]
+    public void persist_and_delete()
+    {
+        var LongDoc = new LongDoc { Id = 567 };
+
+        theSession.Store(LongDoc);
+        theSession.SaveChanges();
+
+        using (var session = theStore.OpenSession())
         {
-            var LongDoc = new LongDoc { Id = 456 };
-
-            theSession.Store(LongDoc);
-            await theSession.SaveChangesAsync();
-
-            using var session = theStore.OpenSession();
-            session.Load<LongDoc>(456).ShouldNotBeNull();
-
-            session.Load<LongDoc>(222).ShouldBeNull();
+            session.Delete<LongDoc>((int) LongDoc.Id);
+            session.SaveChanges();
         }
 
-        [Fact]
-        public void auto_assign_id_for_0_id()
+        using (var session = theStore.OpenSession())
         {
-            var doc = new LongDoc { Id = 0 };
-
-            theSession.Store(doc);
-
-            SpecificationExtensions.ShouldBeGreaterThan(doc.Id, 0L);
-
-            var doc2 = new LongDoc { Id = 0 };
-            theSession.Store(doc2);
-
-            doc2.Id.ShouldNotBe(0L);
-
-            doc2.Id.ShouldNotBe(doc.Id);
+            SpecificationExtensions.ShouldBeNull(session.Load<LongDoc>(LongDoc.Id));
         }
+    }
 
-        [Fact]
-        public void persist_and_delete()
+    [Fact]
+    public void load_by_array_of_ids()
+    {
+        theSession.Store(new LongDoc{Id = 3});
+        theSession.Store(new LongDoc{Id = 4});
+        theSession.Store(new LongDoc{Id = 5});
+        theSession.Store(new LongDoc{Id = 6});
+        theSession.Store(new LongDoc{Id = 7});
+        theSession.SaveChanges();
+
+        using (var session = theStore.OpenSession())
         {
-            var LongDoc = new LongDoc { Id = 567 };
-
-            theSession.Store(LongDoc);
-            theSession.SaveChanges();
-
-            using (var session = theStore.OpenSession())
-            {
-                session.Delete<LongDoc>((int) LongDoc.Id);
-                session.SaveChanges();
-            }
-
-            using (var session = theStore.OpenSession())
-            {
-                SpecificationExtensions.ShouldBeNull(session.Load<LongDoc>(LongDoc.Id));
-            }
+            session.LoadMany<LongDoc>(4, 5, 6).Count().ShouldBe(3);
         }
+    }
 
-        [Fact]
-        public void load_by_array_of_ids()
-        {
-            theSession.Store(new LongDoc{Id = 3});
-            theSession.Store(new LongDoc{Id = 4});
-            theSession.Store(new LongDoc{Id = 5});
-            theSession.Store(new LongDoc{Id = 6});
-            theSession.Store(new LongDoc{Id = 7});
-            theSession.SaveChanges();
-
-            using (var session = theStore.OpenSession())
-            {
-                session.LoadMany<LongDoc>(4, 5, 6).Count().ShouldBe(3);
-            }
-        }
-
-        public using_long_identity(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
+    public using_long_identity(DefaultStoreFixture fixture) : base(fixture)
+    {
     }
 }
