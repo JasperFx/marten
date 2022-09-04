@@ -10,66 +10,65 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace EventSourcingTests.Projections
+namespace EventSourcingTests.Projections;
+
+public class when_registering_a_custom_projection_type: IDisposable
 {
-    public class when_registering_a_custom_projection_type: IDisposable
+    private readonly DocumentStore _store;
+    private IProjectionSource theProjection;
+
+    public when_registering_a_custom_projection_type()
     {
-        private readonly DocumentStore _store;
-        private IProjectionSource theProjection;
-
-        public when_registering_a_custom_projection_type()
+        _store = DocumentStore.For(opts =>
         {
-            _store = DocumentStore.For(opts =>
-            {
-                opts.Connection(ConnectionSource.ConnectionString);
-                opts.Projections.Add(new MyProjection(), ProjectionLifecycle.Async,
-                    projectionName: "NewProjection", asyncConfiguration:
-                    o =>
-                    {
-                        o.BatchSize = 111;
-                    });
-            });
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.Projections.Add(new MyProjection(), ProjectionLifecycle.Async,
+                projectionName: "NewProjection", asyncConfiguration:
+                o =>
+                {
+                    o.BatchSize = 111;
+                });
+        });
 
-            _store.Options.Projections.TryFindProjection("NewProjection", out var projection)
-                .ShouldBeTrue();
+        _store.Options.Projections.TryFindProjection("NewProjection", out var projection)
+            .ShouldBeTrue();
 
-            theProjection = projection;
+        theProjection = projection;
+    }
+
+    [Fact]
+    public void can_customize_the_projection_name()
+    {
+        theProjection.ProjectionName.ShouldBe("NewProjection");
+    }
+
+    [Fact]
+    public void can_customize_the_async_options()
+    {
+        theProjection.Options.BatchSize.ShouldBe(111);
+    }
+
+    [Fact]
+    public void can_customize_the_projection_lifecycle()
+    {
+        theProjection.Lifecycle.ShouldBe(ProjectionLifecycle.Async);
+    }
+
+    public void Dispose()
+    {
+        _store?.Dispose();
+    }
+
+    public class MyProjection: IProjection
+    {
+        public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
+        {
+            throw new System.NotSupportedException();
         }
 
-        [Fact]
-        public void can_customize_the_projection_name()
+        public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
         {
-            theProjection.ProjectionName.ShouldBe("NewProjection");
-        }
-
-        [Fact]
-        public void can_customize_the_async_options()
-        {
-            theProjection.Options.BatchSize.ShouldBe(111);
-        }
-
-        [Fact]
-        public void can_customize_the_projection_lifecycle()
-        {
-            theProjection.Lifecycle.ShouldBe(ProjectionLifecycle.Async);
-        }
-
-        public void Dispose()
-        {
-            _store?.Dispose();
-        }
-
-        public class MyProjection: IProjection
-        {
-            public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
-            {
-                throw new System.NotSupportedException();
-            }
-
-            public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
-            {
-                throw new System.NotSupportedException();
-            }
+            throw new System.NotSupportedException();
         }
     }
 }

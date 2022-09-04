@@ -8,42 +8,41 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace EventSourcingTests
+namespace EventSourcingTests;
+
+public class EventSequenceFetcherTests : OneOffConfigurationsContext
 {
-    public class EventSequenceFetcherTests : OneOffConfigurationsContext
+    [Fact]
+    public async Task fetch_sequence_numbers_async()
     {
-        [Fact]
-        public async Task fetch_sequence_numbers_async()
+        await theStore.EnsureStorageExistsAsync(typeof(IEvent));
+
+        using var query = (QuerySession)theStore.QuerySession();
+
+        var handler = new EventSequenceFetcher(theStore.Events, 5);
+        var sequences = (await query.ExecuteHandlerAsync(handler, CancellationToken.None)).ToList();
+
+        sequences.Count.ShouldBe(5);
+        for (var i = 0; i < sequences.Count - 1; i++)
         {
-            await theStore.EnsureStorageExistsAsync(typeof(IEvent));
-
-            using var query = (QuerySession)theStore.QuerySession();
-
-            var handler = new EventSequenceFetcher(theStore.Events, 5);
-            var sequences = (await query.ExecuteHandlerAsync(handler, CancellationToken.None)).ToList();
-
-            sequences.Count.ShouldBe(5);
-            for (var i = 0; i < sequences.Count - 1; i++)
-            {
-                (sequences[i + 1] - sequences[i]).ShouldBe(1);
-            }
+            (sequences[i + 1] - sequences[i]).ShouldBe(1);
         }
+    }
 
-        [Fact]
-        public void fetch_sequence_numbers_sync()
+    [Fact]
+    public void fetch_sequence_numbers_sync()
+    {
+        theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(IEvent));
+
+        using var query = (QuerySession)theStore.QuerySession();
+
+        var handler = new EventSequenceFetcher(theStore.Events, 5);
+        var sequences = query.ExecuteHandler(handler).ToList();
+
+        sequences.Count.ShouldBe(5);
+        for (var i = 0; i < sequences.Count - 1; i++)
         {
-            theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(IEvent));
-
-            using var query = (QuerySession)theStore.QuerySession();
-
-            var handler = new EventSequenceFetcher(theStore.Events, 5);
-            var sequences = query.ExecuteHandler(handler).ToList();
-
-            sequences.Count.ShouldBe(5);
-            for (var i = 0; i < sequences.Count - 1; i++)
-            {
-                (sequences[i + 1] - sequences[i]).ShouldBe(1);
-            }
+            (sequences[i + 1] - sequences[i]).ShouldBe(1);
         }
     }
 }

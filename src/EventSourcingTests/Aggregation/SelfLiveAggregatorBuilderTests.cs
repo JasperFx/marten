@@ -7,48 +7,47 @@ using Marten.Events.Aggregation;
 using Marten.Testing.Harness;
 using Xunit;
 
-namespace EventSourcingTests.Aggregation
+namespace EventSourcingTests.Aggregation;
+
+public class SelfLiveAggregatorBuilderTests
 {
-    public class SelfLiveAggregatorBuilderTests
+    [Fact]
+    public void try_existing_QuestParty()
     {
-        [Fact]
-        public void try_existing_QuestParty()
-        {
-            var aggregator = new SingleStreamAggregation<QuestParty>().Build(new StoreOptions());
-            aggregator.ShouldNotBeNull();
-        }
-
-        [Fact]
-        public void try_with_all_possibilities()
-        {
-            new SingleStreamAggregation<FakeAggregate>()
-                .Build(new StoreOptions())
-                .ShouldNotBeNull();
-        }
-
-        public class EventE{}
+        var aggregator = new SingleStreamAggregation<QuestParty>().Build(new StoreOptions());
+        aggregator.ShouldNotBeNull();
     }
 
-    public class FakeAggregate
+    [Fact]
+    public void try_with_all_possibilities()
     {
-        public Guid Id { get; set; }
+        new SingleStreamAggregation<FakeAggregate>()
+            .Build(new StoreOptions())
+            .ShouldNotBeNull();
+    }
 
-        public void Apply(EventA @event){}
-        public void Apply(IEvent<EventB> @event){}
+    public class EventE{}
+}
 
-        public FakeAggregate Apply(IEvent<EventC> @event)
-        {
-            return this;
-        }
+public class FakeAggregate
+{
+    public Guid Id { get; set; }
 
-        public Task<FakeAggregate> Apply(EventD @event, IQuerySession session)
-        {
-            return Task.FromResult(this);
-        }
+    public void Apply(EventA @event){}
+    public void Apply(IEvent<EventB> @event){}
 
-        public Task<FakeAggregate> Apply(IEvent<SelfLiveAggregatorBuilderTests.EventE> @event, IQuerySession session)
-        {
-            return Task.FromResult(this);
-        }
+    public FakeAggregate Apply(IEvent<EventC> @event)
+    {
+        return this;
+    }
+
+    public Task<FakeAggregate> Apply(EventD @event, IQuerySession session)
+    {
+        return Task.FromResult(this);
+    }
+
+    public Task<FakeAggregate> Apply(IEvent<SelfLiveAggregatorBuilderTests.EventE> @event, IQuerySession session)
+    {
+        return Task.FromResult(this);
     }
 }

@@ -4,67 +4,66 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace EventSourcingTests.Projections
+namespace EventSourcingTests.Projections;
+
+public class inline_aggregation_with_subclass : OneOffConfigurationsContext
 {
-    public class inline_aggregation_with_subclass : OneOffConfigurationsContext
+    public inline_aggregation_with_subclass()
     {
-        public inline_aggregation_with_subclass()
+        StoreOptions(x =>
         {
-            StoreOptions(x =>
-            {
-                x.Schema.For<FooBase>().AddSubClass<FooA>();
+            x.Schema.For<FooBase>().AddSubClass<FooA>();
 
-                x.Projections.SelfAggregate<FooA>();
-            });
-        }
-
-        [Fact]
-        public void can_create_subclass_projection()
-        {
-            var description = "FooDescription";
-
-            var streamId = theSession.Events.StartStream(new FooACreated { Description = description } ).Id;
-            theSession.SaveChanges();
-
-            var fooInstance = theSession.Query<FooA>().Single(x => x.Id == streamId);
-
-            fooInstance.Id.ShouldBe(streamId);
-            fooInstance.Description.ShouldBe(description);
-        }
-
-        [Fact]
-        public void can_query_subclass_root()
-        {
-            var description = "FooDescription";
-
-            var streamId = theSession.Events.StartStream(new FooACreated { Description = description }).Id;
-            theSession.SaveChanges();
-
-            var fooInstance = theSession.Query<FooBase>().Single(x => x.Id == streamId);
-
-            fooInstance.Id.ShouldBe(streamId);
-            fooInstance.ShouldBeOfType<FooA>();
-        }
+            x.Projections.SelfAggregate<FooA>();
+        });
     }
 
-    public abstract class FooBase
+    [Fact]
+    public void can_create_subclass_projection()
     {
-        public Guid Id { get; set; }
+        var description = "FooDescription";
+
+        var streamId = theSession.Events.StartStream(new FooACreated { Description = description } ).Id;
+        theSession.SaveChanges();
+
+        var fooInstance = theSession.Query<FooA>().Single(x => x.Id == streamId);
+
+        fooInstance.Id.ShouldBe(streamId);
+        fooInstance.Description.ShouldBe(description);
     }
 
-
-    public class FooA : FooBase
+    [Fact]
+    public void can_query_subclass_root()
     {
-        public string Description { get; set; }
+        var description = "FooDescription";
 
-        public void Apply(FooACreated @event)
-        {
-            Description = @event.Description;
-        }
+        var streamId = theSession.Events.StartStream(new FooACreated { Description = description }).Id;
+        theSession.SaveChanges();
+
+        var fooInstance = theSession.Query<FooBase>().Single(x => x.Id == streamId);
+
+        fooInstance.Id.ShouldBe(streamId);
+        fooInstance.ShouldBeOfType<FooA>();
     }
+}
 
-    public class FooACreated
+public abstract class FooBase
+{
+    public Guid Id { get; set; }
+}
+
+
+public class FooA : FooBase
+{
+    public string Description { get; set; }
+
+    public void Apply(FooACreated @event)
     {
-        public string Description { get; set; }
+        Description = @event.Description;
     }
+}
+
+public class FooACreated
+{
+    public string Description { get; set; }
 }

@@ -5,22 +5,22 @@ using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Xunit;
 
-namespace EventSourcingTests.Bugs
-{
-    public class CodeGenIEventIssue : BugIntegrationContext
-    {
-        [Fact]
-        public void TestAggregation()
-        {
-            var store = StoreOptions(_ =>
-            {
-                _.Projections.Add(new FooProjection());
-            });
+namespace EventSourcingTests.Bugs;
 
-            using var session = store.OpenSession();
-            session.Events.Append(Guid.NewGuid(), new FooCreated { Id = Guid.NewGuid() });
-            session.SaveChanges();
-        }
+public class CodeGenIEventIssue : BugIntegrationContext
+{
+    [Fact]
+    public void TestAggregation()
+    {
+        var store = StoreOptions(_ =>
+        {
+            _.Projections.Add(new FooProjection());
+        });
+
+        using var session = store.OpenSession();
+        session.Events.Append(Guid.NewGuid(), new FooCreated { Id = Guid.NewGuid() });
+        session.SaveChanges();
+    }
 
 #if NET
         [Fact]
@@ -40,37 +40,37 @@ namespace EventSourcingTests.Bugs
         }
 
 #endif
-    }
-    public class FooCreated
+}
+public class FooCreated
+{
+    public Guid Id { get; set; }
+}
+
+
+public class Foo
+{
+    public Guid Id { get; set; }
+}
+
+public class FooAuditLog
+{
+    public Guid Id { get; set; }
+    public List<string> Changes { get; set; } = new List<string>();
+
+}
+
+public class FooProjection: MultiStreamAggregation<FooAuditLog, Guid>
+{
+    public FooProjection()
     {
-        public Guid Id { get; set; }
+        ProjectionName = nameof(FooAuditLog);
+        Lifecycle = ProjectionLifecycle.Inline;
+
+        Identity<FooCreated>(x => x.Id);
+
+        ProjectEvent<IEvent<FooCreated>>((state, ev) => state.Changes.Add($"Foo was updated at {ev.Timestamp}"));
     }
-
-
-    public class Foo
-    {
-        public Guid Id { get; set; }
-    }
-
-    public class FooAuditLog
-    {
-        public Guid Id { get; set; }
-        public List<string> Changes { get; set; } = new List<string>();
-
-    }
-
-    public class FooProjection: MultiStreamAggregation<FooAuditLog, Guid>
-    {
-        public FooProjection()
-        {
-            ProjectionName = nameof(FooAuditLog);
-            Lifecycle = ProjectionLifecycle.Inline;
-
-            Identity<FooCreated>(x => x.Id);
-
-            ProjectEvent<IEvent<FooCreated>>((state, ev) => state.Changes.Add($"Foo was updated at {ev.Timestamp}"));
-        }
-    }
+}
 
 #if NET
 
@@ -102,5 +102,3 @@ namespace EventSourcingTests.Bugs
     }
 
 #endif
-
-}
