@@ -16,7 +16,6 @@ using Xunit;
 
 namespace Marten.AsyncDaemon.Testing.Bugs
 {
-#if NET6_0_OR_GREATER
     public class Bug_2073_tenancy_problems
     {
         [Fact]
@@ -102,5 +101,4 @@ namespace Marten.AsyncDaemon.Testing.Bugs
             return current with { Owner = @event.NewOwner };
         }
     }
-#endif
 }

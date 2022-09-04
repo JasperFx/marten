@@ -1,5 +1,4 @@
 #nullable enable
-#if NET6_0_OR_GREATER
 using System;
 using Marten;
 using Marten.Services.Json.Transformations;
@@ -218,4 +217,3 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
                 );
     }
 }
-#endif

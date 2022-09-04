@@ -1,4 +1,3 @@
-#if NET6_0_OR_GREATER
 using System;
 using System.Threading.Tasks;
 using Baseline.Dates;
@@ -73,7 +72,7 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
         await daemon.WaitForNonStaleData(10.Seconds());
     }
 
-        [Fact]
+    [Fact]
     public async Task ErrorOnSyncProjection_ShouldNotBreakAsyncProjection_Synchronous_SaveChanges()
     {
         StoreOptions(opts =>
@@ -174,5 +173,3 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
         }
     }
 }
-
-#endif

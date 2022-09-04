@@ -11,7 +11,6 @@ using Xunit.Abstractions;
 
 namespace EventSourcingTests.Bugs
 {
-#if NET6_0_OR_GREATER
     public class Bug_2025_event_inheritance_in_projection : IntegrationContext
     {
         private readonly ITestOutputHelper _output;
@@ -63,6 +62,4 @@ namespace EventSourcingTests.Bugs
         }
 
     }
-#endif
-
 }

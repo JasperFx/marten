@@ -1,5 +1,4 @@
 #nullable enable
-#if NET6_0_OR_GREATER
 using System;
 using System.Text.Json;
 using EventSourcingTests.SchemaChange.MultipleVersions.V3;
@@ -311,4 +310,3 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
             };
     }
 }
-#endif
