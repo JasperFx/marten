@@ -1,7 +1,6 @@
-namespace Marten.AsyncDaemon.Testing.TestingSupport
+namespace Marten.AsyncDaemon.Testing.TestingSupport;
+
+public interface IDayEvent
 {
-    public interface IDayEvent
-    {
-        int Day { get; }
-    }
+    int Day { get; }
 }

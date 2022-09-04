@@ -1,8 +1,7 @@
-namespace Marten.AsyncDaemon.Testing.TestingSupport
+namespace Marten.AsyncDaemon.Testing.TestingSupport;
+
+public class Arrival
 {
-    public class Arrival
-    {
-        public int Day { get; set; }
-        public string State { get; set; }
-    }
+    public int Day { get; set; }
+    public string State { get; set; }
 }

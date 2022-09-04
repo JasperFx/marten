@@ -8,29 +8,28 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Oakton;
 
-namespace AspNetCoreWithMarten
+namespace AspNetCoreWithMarten;
+
+#region sample_SampleConsoleApp
+public class Program
 {
-    #region sample_SampleConsoleApp
-    public class Program
+    // It's actually important to return Task<int>
+    // so that the application commands can communicate
+    // success or failure
+    public static Task<int> Main(string[] args)
     {
-        // It's actually important to return Task<int>
-        // so that the application commands can communicate
-        // success or failure
-        public static Task<int> Main(string[] args)
-        {
-            return CreateHostBuilder(args)
+        return CreateHostBuilder(args)
 
-                // This line replaces Build().Start()
-                // in most dotnet new templates
-                .RunOaktonCommands(args);
-        }
-
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+            // This line replaces Build().Start()
+            // in most dotnet new templates
+            .RunOaktonCommands(args);
     }
-    #endregion
+
+    public static IHostBuilder CreateHostBuilder(string[] args) =>
+        Host.CreateDefaultBuilder(args)
+            .ConfigureWebHostDefaults(webBuilder =>
+            {
+                webBuilder.UseStartup<Startup>();
+            });
 }
+#endregion

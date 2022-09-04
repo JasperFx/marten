@@ -9,38 +9,38 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
-namespace CoreTests.Bugs
+namespace CoreTests.Bugs;
+
+public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
 {
-    public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
+    [Fact]
+    public async Task can_properly_detect_changes_when_user_defined_type()
     {
-        [Fact]
-        public async Task can_properly_detect_changes_when_user_defined_type()
+        theStore.Advanced.Clean.CompletelyRemoveAll();
+        StoreOptions(_ =>
         {
-            theStore.Advanced.Clean.CompletelyRemoveAll();
-            StoreOptions(_ =>
+            _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
+            _.Schema.For<UserWithCustomType>();
+            _.Schema.For<IssueForUserWithCustomType>().ForeignKey<UserWithCustomType>(x => x.UserId);
+            _.Schema.For<IssueForUserWithCustomType>().GinIndexJsonData();
+            _.Schema.For<UserWithCustomType>().Duplicate(u => u.Name, pgType: "cust_type", configure: idx =>
             {
-                _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-                _.Schema.For<UserWithCustomType>();
-                _.Schema.For<IssueForUserWithCustomType>().ForeignKey<UserWithCustomType>(x => x.UserId);
-                _.Schema.For<IssueForUserWithCustomType>().GinIndexJsonData();
-                _.Schema.For<UserWithCustomType>().Duplicate(u => u.Name, pgType: "cust_type", configure: idx =>
-                {
-                    idx.IsUnique = true;
-                });
-                _.Schema.For<UserWithCustomType>().GinIndexJsonData();
+                idx.IsUnique = true;
             });
+            _.Schema.For<UserWithCustomType>().GinIndexJsonData();
+        });
 
-            var guyWithCustomType1 = new UserWithCustomType { Id = Guid.NewGuid(), Name = "test_guy", CustomType = "test_cust_type" };
-            var guyWithCustomType2 = new UserWithCustomType { Id = Guid.NewGuid(), Name = "another_test_guy", CustomType = "test_cust_type" };
+        var guyWithCustomType1 = new UserWithCustomType { Id = Guid.NewGuid(), Name = "test_guy", CustomType = "test_cust_type" };
+        var guyWithCustomType2 = new UserWithCustomType { Id = Guid.NewGuid(), Name = "another_test_guy", CustomType = "test_cust_type" };
 
-            var issue1 = new IssueForUserWithCustomType { UserId = guyWithCustomType1.Id, Title = "Issue #1" };
-            var issue2 = new IssueForUserWithCustomType { UserId = guyWithCustomType2.Id, Title = "Issue #2" };
-            var issue3 = new IssueForUserWithCustomType { UserId = guyWithCustomType2.Id, Title = "Issue #3" };
+        var issue1 = new IssueForUserWithCustomType { UserId = guyWithCustomType1.Id, Title = "Issue #1" };
+        var issue2 = new IssueForUserWithCustomType { UserId = guyWithCustomType2.Id, Title = "Issue #2" };
+        var issue3 = new IssueForUserWithCustomType { UserId = guyWithCustomType2.Id, Title = "Issue #3" };
 
-            using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
-            {
-                await conn.OpenAsync();
-                var sql = @"
+        using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            var sql = @"
                     DROP CAST IF EXISTS (text AS cust_type);
                     DROP CAST IF EXISTS (cust_type AS text);
                     DROP OPERATOR CLASS IF EXISTS cust_type_ops USING btree;
@@ -158,84 +158,83 @@ namespace CoreTests.Bugs
                     CREATE CAST (text AS cust_type) WITH INOUT AS IMPLICIT;
                     CREATE CAST (cust_type AS text) WITH INOUT AS IMPLICIT;";
 
-                await conn.CreateCommand(sql).ExecuteNonQueryAsync();
-            }
-
-            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-
-            using (var session = theStore.LightweightSession())
-            {
-                session.Store(guyWithCustomType1, guyWithCustomType2);
-                session.Store(issue1, issue2, issue3);
-                await session.SaveChangesAsync();
-            }
-
-            using (var session = theStore.QuerySession())
-            {
-                session.Load<UserWithCustomType>(guyWithCustomType1.Id).CustomType.ShouldBe("test_cust_type");
-            }
-
-            using (var query = theStore.QuerySession())
-            {
-                var userList = new List<UserWithCustomType>();
-
-                var issues = query.Query<IssueForUserWithCustomType>().Include<UserWithCustomType>(x => x.UserId, userList).ToArray();
-
-                userList.Count.ShouldBe(2);
-
-                userList.Any(x => x.Id == guyWithCustomType1.Id);
-                userList.Any(x => x.Id == guyWithCustomType2.Id);
-                userList.Any(x => x == null);
-
-                issues.Length.ShouldBe(3);
-            }
-
-            var secondStore = SeparateStore(_ =>
-            {
-                _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-                _.Schema.For<UserWithCustomType>();
-                _.Schema.For<IssueForUserWithCustomType>().ForeignKey<UserWithCustomType>(x => x.UserId);
-                _.Schema.For<IssueForUserWithCustomType>().GinIndexJsonData();
-                _.Schema.For<UserWithCustomType>().Duplicate(u => u.Name, pgType: "cust_type", configure: idx =>
-                {
-                    idx.IsUnique = true;
-                });
-                _.Schema.For<UserWithCustomType>().GinIndexJsonData();
-            });
-
-            using (var query = secondStore.QuerySession())
-            {
-                var userList = new List<UserWithCustomType>();
-
-                var issues = query.Query<IssueForUserWithCustomType>().Include<UserWithCustomType>(x => x.UserId, userList).ToArray();
-
-                userList.Count.ShouldBe(2);
-
-                userList.Any(x => x.Id == guyWithCustomType1.Id);
-                userList.Any(x => x.Id == guyWithCustomType2.Id);
-                userList.Any(x => x == null);
-
-                issues.Length.ShouldBe(3);
-            }
+            await conn.CreateCommand(sql).ExecuteNonQueryAsync();
         }
 
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        using (var session = theStore.LightweightSession())
+        {
+            session.Store(guyWithCustomType1, guyWithCustomType2);
+            session.Store(issue1, issue2, issue3);
+            await session.SaveChangesAsync();
+        }
+
+        using (var session = theStore.QuerySession())
+        {
+            session.Load<UserWithCustomType>(guyWithCustomType1.Id).CustomType.ShouldBe("test_cust_type");
+        }
+
+        using (var query = theStore.QuerySession())
+        {
+            var userList = new List<UserWithCustomType>();
+
+            var issues = query.Query<IssueForUserWithCustomType>().Include<UserWithCustomType>(x => x.UserId, userList).ToArray();
+
+            userList.Count.ShouldBe(2);
+
+            userList.Any(x => x.Id == guyWithCustomType1.Id);
+            userList.Any(x => x.Id == guyWithCustomType2.Id);
+            userList.Any(x => x == null);
+
+            issues.Length.ShouldBe(3);
+        }
+
+        var secondStore = SeparateStore(_ =>
+        {
+            _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
+            _.Schema.For<UserWithCustomType>();
+            _.Schema.For<IssueForUserWithCustomType>().ForeignKey<UserWithCustomType>(x => x.UserId);
+            _.Schema.For<IssueForUserWithCustomType>().GinIndexJsonData();
+            _.Schema.For<UserWithCustomType>().Duplicate(u => u.Name, pgType: "cust_type", configure: idx =>
+            {
+                idx.IsUnique = true;
+            });
+            _.Schema.For<UserWithCustomType>().GinIndexJsonData();
+        });
+
+        using (var query = secondStore.QuerySession())
+        {
+            var userList = new List<UserWithCustomType>();
+
+            var issues = query.Query<IssueForUserWithCustomType>().Include<UserWithCustomType>(x => x.UserId, userList).ToArray();
+
+            userList.Count.ShouldBe(2);
+
+            userList.Any(x => x.Id == guyWithCustomType1.Id);
+            userList.Any(x => x.Id == guyWithCustomType2.Id);
+            userList.Any(x => x == null);
+
+            issues.Length.ShouldBe(3);
+        }
     }
 
-    public class UserWithCustomType
-    {
-        public Guid Id { get; set; }
+}
 
-        public string Name { get; set; }
+public class UserWithCustomType
+{
+    public Guid Id { get; set; }
 
-        public string CustomType { get; set; }
-    }
+    public string Name { get; set; }
 
-    public class IssueForUserWithCustomType
-    {
-        public Guid Id { get; set; }
+    public string CustomType { get; set; }
+}
 
-        public string Title { get; set; }
+public class IssueForUserWithCustomType
+{
+    public Guid Id { get; set; }
 
-        public Guid? UserId { get; set; }
-    }
+    public string Title { get; set; }
+
+    public Guid? UserId { get; set; }
 }

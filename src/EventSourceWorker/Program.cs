@@ -7,28 +7,28 @@ using Microsoft.Extensions.Hosting;
 using Weasel.Core;
 using Weasel.Postgresql;
 
-namespace EventSourceWorker
+namespace EventSourceWorker;
+
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
-        {
-            CreateHostBuilder(args).Build().Run();
-        }
+        CreateHostBuilder(args).Build().Run();
+    }
 
-        public static IHostBuilder CreateHostBuilder(string[] args)
-        {
-            return Host.CreateDefaultBuilder(args)
-                .ConfigureServices((hostContext, services) =>
-                {
-                    var configuration = hostContext.Configuration;
-                    var environment = hostContext.HostingEnvironment;
+    public static IHostBuilder CreateHostBuilder(string[] args)
+    {
+        return Host.CreateDefaultBuilder(args)
+            .ConfigureServices((hostContext, services) =>
+            {
+                var configuration = hostContext.Configuration;
+                var environment = hostContext.HostingEnvironment;
 
-                    services.AddHostedService<Worker>();
+                services.AddHostedService<Worker>();
 
-                    // This is the absolute, simplest way to integrate Marten into your
-                    // .Net Core application with Marten's default configuration
-                    services.AddMarten(options =>
+                // This is the absolute, simplest way to integrate Marten into your
+                // .Net Core application with Marten's default configuration
+                services.AddMarten(options =>
                     {
                         // Establish the connection string to your Marten database
                         options.Connection(configuration.GetConnectionString("Marten"));
@@ -42,9 +42,8 @@ namespace EventSourceWorker
 
                         options.Projections.Add(new TripAggregationWithCustomName());
                     })
-                        // Run the asynchronous projections in this node
-                        .AddAsyncDaemon(DaemonMode.Solo);
-                });
-        }
+                    // Run the asynchronous projections in this node
+                    .AddAsyncDaemon(DaemonMode.Solo);
+            });
     }
 }

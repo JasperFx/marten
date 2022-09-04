@@ -1,14 +1,13 @@
 using System;
 
-namespace Marten.Testing.OtherAssembly.DeeperNamespace
-{
-    public abstract class BaseDocumentWithId
-    {
-        public BaseDocumentWithId()
-        {
-            Id = Guid.NewGuid();
-        }
+namespace Marten.Testing.OtherAssembly.DeeperNamespace;
 
-        public Guid Id { get; set; }
+public abstract class BaseDocumentWithId
+{
+    public BaseDocumentWithId()
+    {
+        Id = Guid.NewGuid();
     }
+
+    public Guid Id { get; set; }
 }

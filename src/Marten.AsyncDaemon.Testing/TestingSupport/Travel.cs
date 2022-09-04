@@ -1,39 +1,38 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Marten.AsyncDaemon.Testing.TestingSupport
+namespace Marten.AsyncDaemon.Testing.TestingSupport;
+
+public class Travel : IDayEvent
 {
-    public class Travel : IDayEvent
+    public static Travel Random(int day)
     {
-        public static Travel Random(int day)
-        {
-            var travel = new Travel {Day = day,};
+        var travel = new Travel {Day = day,};
 
-            var length = TripStream.Random.Next(1, 20);
-            for (var i = 0; i < length; i++)
+        var length = TripStream.Random.Next(1, 20);
+        for (var i = 0; i < length; i++)
+        {
+            var movement = new Movement
             {
-                var movement = new Movement
-                {
-                    Direction = TripStream.RandomDirection(), Distance = TripStream.Random.Next(500, 3000) / 100
-                };
+                Direction = TripStream.RandomDirection(), Distance = TripStream.Random.Next(500, 3000) / 100
+            };
 
-                travel.Movements.Add(movement);
-            }
-
-            return travel;
+            travel.Movements.Add(movement);
         }
 
-        public int Day { get; set; }
+        return travel;
+    }
 
-        #region sample_Travel_Movements
+    public int Day { get; set; }
 
-        public IList<Movement> Movements { get; set; } = new List<Movement>();
+    #region sample_Travel_Movements
 
-        #endregion
+    public IList<Movement> Movements { get; set; } = new List<Movement>();
 
-        public double TotalDistance()
-        {
-            return Movements.Sum(x => x.Distance);
-        }
+    #endregion
+
+    public double TotalDistance()
+    {
+        return Movements.Sum(x => x.Distance);
     }
 }

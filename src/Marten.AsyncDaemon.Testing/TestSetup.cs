@@ -6,14 +6,13 @@ using Xunit.Sdk;
 
 [assembly: TestFramework("Marten.AsyncDaemon.TestSetup", "Marten.AsyncDaemon")]
 
-namespace Marten.AsyncDaemon.Testing
+namespace Marten.AsyncDaemon.Testing;
+
+public class TestSetup : XunitTestFramework
 {
-    public class TestSetup : XunitTestFramework
+    public TestSetup(IMessageSink messageSink)
+        :base(messageSink)
     {
-        public TestSetup(IMessageSink messageSink)
-            :base(messageSink)
-        {
-            SerializerFactory.DefaultSerializerType = TestsSettings.SerializerType;
-        }
+        SerializerFactory.DefaultSerializerType = TestsSettings.SerializerType;
     }
 }

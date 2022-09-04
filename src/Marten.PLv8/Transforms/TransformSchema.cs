@@ -7,129 +7,128 @@ using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 
-namespace Marten.PLv8.Transforms
+namespace Marten.PLv8.Transforms;
+
+internal class TransformSchema: ITransforms, IFeatureSchema
 {
-    internal class TransformSchema: ITransforms, IFeatureSchema
+    public const string PatchDoc = "patch_doc";
+
+    private readonly IDictionary<string, TransformFunction> _functions
+        = new Dictionary<string, TransformFunction>();
+
+    private readonly StoreOptions _options;
+
+    public TransformSchema(StoreOptions options)
     {
-        public const string PatchDoc = "patch_doc";
+        _options = options;
+    }
 
-        private readonly IDictionary<string, TransformFunction> _functions
-            = new Dictionary<string, TransformFunction>();
+    public IEnumerable<Type> DependentTypes()
+    {
+        yield break;
+    }
 
-        private readonly StoreOptions _options;
+    public ISchemaObject[] Objects => schemaObjects().ToArray();
 
-        public TransformSchema(StoreOptions options)
+    public Type StorageType { get; } = typeof(TransformSchema);
+    public string Identifier { get; } = "transforms";
+    public Migrator Migrator => _options.Advanced.Migrator;
+
+    public void WritePermissions(Migrator rules, TextWriter writer)
+    {
+        // Nothing
+    }
+
+    public void LoadFile(string file, string name = null)
+    {
+        if (!Path.IsPathRooted(file))
         {
-            _options = options;
+            file = AppContext.BaseDirectory.AppendPath(file);
         }
 
-        public IEnumerable<Type> DependentTypes()
+        var function = TransformFunction.ForFile(_options, file, name);
+        AddFunction(function);
+    }
+
+    public void LoadDirectory(string directory)
+    {
+        if (!Path.IsPathRooted(directory))
         {
-            yield break;
+            directory = AppContext.BaseDirectory.AppendPath(directory);
         }
 
-        public ISchemaObject[] Objects => schemaObjects().ToArray();
-
-        public Type StorageType { get; } = typeof(TransformSchema);
-        public string Identifier { get; } = "transforms";
-        public Migrator Migrator => _options.Advanced.Migrator;
-
-        public void WritePermissions(Migrator rules, TextWriter writer)
+        new FileSystem().FindFiles(directory, FileSet.Deep("*.js")).Each(file =>
         {
-            // Nothing
-        }
+            LoadFile(file);
+        });
+    }
 
-        public void LoadFile(string file, string name = null)
+    public void LoadJavascript(string name, string script)
+    {
+        var func = new TransformFunction(_options, name, script);
+        AddFunction(func);
+    }
+
+    public void Load(TransformFunction function)
+    {
+        AddFunction(function);
+    }
+
+    public TransformFunction For(string name)
+    {
+        if (!_functions.TryGetValue(name, out var function))
         {
-            if (!Path.IsPathRooted(file))
+            if (name == PatchDoc)
             {
-                file = AppContext.BaseDirectory.AppendPath(file);
+                return loadPatchDoc();
             }
 
-            var function = TransformFunction.ForFile(_options, file, name);
-            AddFunction(function);
+            throw new ArgumentOutOfRangeException(nameof(name), $"Unknown Transform Name '{name}'");
         }
 
-        public void LoadDirectory(string directory)
+        return function;
+    }
+
+    public IEnumerable<TransformFunction> AllFunctions()
+    {
+        return _functions.Values;
+    }
+
+    private void AddFunction(TransformFunction function)
+    {
+        if (!_functions.ContainsKey(function.Name))
         {
-            if (!Path.IsPathRooted(directory))
-            {
-                directory = AppContext.BaseDirectory.AppendPath(directory);
-            }
-
-            new FileSystem().FindFiles(directory, FileSet.Deep("*.js")).Each(file =>
-            {
-                LoadFile(file);
-            });
+            _functions.Add(function.Name, function);
         }
+    }
 
-        public void LoadJavascript(string name, string script)
+    public bool IsActive(StoreOptions options)
+    {
+        return true;
+    }
+
+    private IEnumerable<ISchemaObject> schemaObjects()
+    {
+        if (!_functions.ContainsKey(PatchDoc))
         {
-            var func = new TransformFunction(_options, name, script);
-            AddFunction(func);
+            loadPatchDoc();
         }
 
-        public void Load(TransformFunction function)
-        {
-            AddFunction(function);
-        }
+        yield return new Extension("PLV8");
 
-        public TransformFunction For(string name)
-        {
-            if (!_functions.TryGetValue(name, out var function))
-            {
-                if (name == PatchDoc)
-                {
-                    return loadPatchDoc();
-                }
+        foreach (var function in _functions.Values) yield return function;
+    }
 
-                throw new ArgumentOutOfRangeException(nameof(name), $"Unknown Transform Name '{name}'");
-            }
+    private TransformFunction loadPatchDoc()
+    {
+        var stream = GetType().Assembly.GetManifestResourceStream("Marten.PLv8.mt_patching.js");
+        var js = stream.ReadAllText().Replace("{databaseSchema}", _options.DatabaseSchemaName);
 
-            return function;
-        }
+        var patching = new TransformFunction(_options, PatchDoc, js);
+        patching.OtherArgs.Add("patch");
 
-        public IEnumerable<TransformFunction> AllFunctions()
-        {
-            return _functions.Values;
-        }
+        Load(patching);
 
-        private void AddFunction(TransformFunction function)
-        {
-            if (!_functions.ContainsKey(function.Name))
-            {
-                _functions.Add(function.Name, function);
-            }
-        }
-
-        public bool IsActive(StoreOptions options)
-        {
-            return true;
-        }
-
-        private IEnumerable<ISchemaObject> schemaObjects()
-        {
-            if (!_functions.ContainsKey(PatchDoc))
-            {
-                loadPatchDoc();
-            }
-
-            yield return new Extension("PLV8");
-
-            foreach (var function in _functions.Values) yield return function;
-        }
-
-        private TransformFunction loadPatchDoc()
-        {
-            var stream = GetType().Assembly.GetManifestResourceStream("Marten.PLv8.mt_patching.js");
-            var js = stream.ReadAllText().Replace("{databaseSchema}", _options.DatabaseSchemaName);
-
-            var patching = new TransformFunction(_options, PatchDoc, js);
-            patching.OtherArgs.Add("patch");
-
-            Load(patching);
-
-            return patching;
-        }
+        return patching;
     }
 }

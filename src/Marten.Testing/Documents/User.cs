@@ -3,122 +3,121 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 
-namespace Marten.Testing.Documents
+namespace Marten.Testing.Documents;
+
+#region sample_NoSetterDocument
+
+public class NoSetterDocument
 {
-    #region sample_NoSetterDocument
-
-    public class NoSetterDocument
+    public NoSetterDocument(Guid id)
     {
-        public NoSetterDocument(Guid id)
-        {
-            Id = id;
-        }
-
-        public Guid Id { get; }
+        Id = id;
     }
 
-    #endregion
+    public Guid Id { get; }
+}
 
-    public class User
+#endregion
+
+public class User
+{
+    public User()
     {
-        public User()
-        {
-            Id = Guid.NewGuid();
-        }
-
-        public string[] Roles { get; set; }
-
-        public Guid Id { get; set; }
-
-        public string UserName { get; set; }
-
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-
-        public bool Internal { get; set; }
-
-        public string Department { get; set; } = "";
-
-        public string FullName => "{0} {1}".ToFormat(FirstName, LastName);
-
-        public int Age { get; set; }
-
-        public string ToJson()
-        {
-            return $"{{\"Id\": \"{Id}\", \"Age\": {Age}, \"FullName\": \"{FullName}\", \"Internal\": {Internal.ToString().ToLowerInvariant()}, \"LastName\": \"{LastName}\", \"UserName\": \"{UserName}\", \"FirstName\": \"{FirstName}\", \"Department\": \"{Department}\"}}";
-        }
-
-        public void From(User user)
-        {
-            Id = user.Id;
-        }
-
-        public override string ToString()
-        {
-            return $"{nameof(FirstName)}: {FirstName}, {nameof(LastName)}: {LastName}";
-        }
+        Id = Guid.NewGuid();
     }
 
-    public class SuperUser: User
+    public string[] Roles { get; set; }
+
+    public Guid Id { get; set; }
+
+    public string UserName { get; set; }
+
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+
+    public bool Internal { get; set; }
+
+    public string Department { get; set; } = "";
+
+    public string FullName => "{0} {1}".ToFormat(FirstName, LastName);
+
+    public int Age { get; set; }
+
+    public string ToJson()
     {
-        public string Role { get; set; }
+        return $"{{\"Id\": \"{Id}\", \"Age\": {Age}, \"FullName\": \"{FullName}\", \"Internal\": {Internal.ToString().ToLowerInvariant()}, \"LastName\": \"{LastName}\", \"UserName\": \"{UserName}\", \"FirstName\": \"{FirstName}\", \"Department\": \"{Department}\"}}";
     }
 
-    public class AdminUser: User
+    public void From(User user)
     {
-        public string Region { get; set; }
+        Id = user.Id;
     }
 
-    public class UserWithPrivateId
+    public override string ToString()
     {
-        public Guid Id { get; private set; }
-
-        public string UserName { get; set; }
+        return $"{nameof(FirstName)}: {FirstName}, {nameof(LastName)}: {LastName}";
     }
+}
 
-    public class UserWithoutIdSetter
-    {
-        public UserWithoutIdSetter()
-        {
-        }
+public class SuperUser: User
+{
+    public string Role { get; set; }
+}
 
-        public Guid Id { get; }
+public class AdminUser: User
+{
+    public string Region { get; set; }
+}
 
-        public string UserName { get; set; }
-    }
+public class UserWithPrivateId
+{
+    public Guid Id { get; private set; }
 
-    public class UserWithInterface: User, IUserWithInterface
+    public string UserName { get; set; }
+}
+
+public class UserWithoutIdSetter
+{
+    public UserWithoutIdSetter()
     {
     }
 
-    public interface IUserWithInterface
-    {
-        Guid Id { get; set; }
-        string UserName { get; set; }
-    }
+    public Guid Id { get; }
 
-    public class UserWithNicknames
-    {
-        public string[] Nicknames { get; set; }
-    }
+    public string UserName { get; set; }
+}
 
-    public class UserWithReadonlyCollectionWithPrivateSetter
-    {
-        public Guid Id { get; private set; }
-        public string Name { get; private set; }
-        public IReadOnlyCollection<int> Collection { get; private set; }
+public class UserWithInterface: User, IUserWithInterface
+{
+}
 
-        public UserWithReadonlyCollectionWithPrivateSetter(Guid id, string name, IReadOnlyCollection<int> collection)
-        {
-            Id = id;
-            Name = name;
-            Collection = collection.ToList();
-        }
-    }
+public interface IUserWithInterface
+{
+    Guid Id { get; set; }
+    string UserName { get; set; }
+}
 
-    public class Post
+public class UserWithNicknames
+{
+    public string[] Nicknames { get; set; }
+}
+
+public class UserWithReadonlyCollectionWithPrivateSetter
+{
+    public Guid Id { get; private set; }
+    public string Name { get; private set; }
+    public IReadOnlyCollection<int> Collection { get; private set; }
+
+    public UserWithReadonlyCollectionWithPrivateSetter(Guid id, string name, IReadOnlyCollection<int> collection)
     {
-        public Guid Id { get; set; }
-        public string[] Tags { get; set; }
+        Id = id;
+        Name = name;
+        Collection = collection.ToList();
     }
+}
+
+public class Post
+{
+    public Guid Id { get; set; }
+    public string[] Tags { get; set; }
 }

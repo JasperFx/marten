@@ -6,50 +6,50 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Functions;
 
-namespace Marten.PLv8.Transforms
+namespace Marten.PLv8.Transforms;
+
+public class TransformFunction: Function
 {
-    public class TransformFunction: Function
+    public static readonly string Prefix = "mt_transform_";
+
+    public readonly IList<string> OtherArgs = new List<string>();
+
+    public TransformFunction(StoreOptions options, string name, string body)
+        : base(new DbObjectName(options.DatabaseSchemaName, "mt_transform_" + name.Replace(".", "_")))
     {
-        public static readonly string Prefix = "mt_transform_";
+        Name = name;
+        Body = body;
+    }
 
-        public readonly IList<string> OtherArgs = new List<string>();
+    public string Name { get; set; }
+    public string Body { get; set; }
 
-        public TransformFunction(StoreOptions options, string name, string body)
-            : base(new DbObjectName(options.DatabaseSchemaName, "mt_transform_" + name.Replace(".", "_")))
-        {
-            Name = name;
-            Body = body;
-        }
+    private IEnumerable<string> allArgs()
+    {
+        return new[] { "doc" }.Concat(OtherArgs);
+    }
 
-        public string Name { get; set; }
-        public string Body { get; set; }
+    public override void WriteCreateStatement(Migrator rules, TextWriter writer)
+    {
+        writer.WriteLine(GenerateFunction());
+        writer.WriteLine();
+    }
 
-        private IEnumerable<string> allArgs()
-        {
-            return new[] { "doc" }.Concat(OtherArgs);
-        }
+    public string ToDropSignature()
+    {
+        var signature = allArgs().Select(_ => $"JSONB").Join(", ");
+        return $"DROP FUNCTION IF EXISTS {Identifier}({signature});";
+    }
 
-        public override void WriteCreateStatement(Migrator rules, TextWriter writer)
-        {
-            writer.WriteLine(GenerateFunction());
-            writer.WriteLine();
-        }
+    public string GenerateFunction()
+    {
+        var defaultExport = "{export: {}}";
 
-        public string ToDropSignature()
-        {
-            var signature = allArgs().Select(_ => $"JSONB").Join(", ");
-            return $"DROP FUNCTION IF EXISTS {Identifier}({signature});";
-        }
+        var signature = allArgs().Select(x => $"{x} JSONB").Join(", ");
+        var args = allArgs().Join(", ");
 
-        public string GenerateFunction()
-        {
-            var defaultExport = "{export: {}}";
-
-            var signature = allArgs().Select(x => $"{x} JSONB").Join(", ");
-            var args = allArgs().Join(", ");
-
-            return
-                $@"
+        return
+            $@"
 CREATE OR REPLACE FUNCTION {Identifier}({signature}) RETURNS JSONB AS $$
 
   var module = {defaultExport};
@@ -62,19 +62,18 @@ CREATE OR REPLACE FUNCTION {Identifier}({signature}) RETURNS JSONB AS $$
 
 $$ LANGUAGE plv8 IMMUTABLE STRICT;
 ";
-        }
+    }
 
-        public static TransformFunction ForFile(StoreOptions options, string file, string name = null)
-        {
-            var body = new FileSystem().ReadStringFromFile(file);
-            name = name ?? Path.GetFileNameWithoutExtension(file).ToLowerInvariant();
+    public static TransformFunction ForFile(StoreOptions options, string file, string name = null)
+    {
+        var body = new FileSystem().ReadStringFromFile(file);
+        name = name ?? Path.GetFileNameWithoutExtension(file).ToLowerInvariant();
 
-            return new TransformFunction(options, name, body);
-        }
+        return new TransformFunction(options, name, body);
+    }
 
-        public override string ToString()
-        {
-            return $"Transform Function '{Name}'";
-        }
+    public override string ToString()
+    {
+        return $"Transform Function '{Name}'";
     }
 }

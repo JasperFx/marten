@@ -9,58 +9,57 @@ using Microsoft.Extensions.Hosting;
 using Weasel.Core;
 using Weasel.Postgresql;
 
-namespace AspNetCoreWithMarten
+namespace AspNetCoreWithMarten;
+
+public class Startup
 {
-    public class Startup
+    public IConfiguration Configuration { get; }
+    public IHostEnvironment Environment { get; }
+
+    public Startup(IConfiguration configuration, IHostEnvironment environment)
     {
-        public IConfiguration Configuration { get; }
-        public IHostEnvironment Environment { get; }
+        Configuration = configuration;
+        Environment = environment;
+    }
+    #region sample_StartupConfigureServices
 
-        public Startup(IConfiguration configuration, IHostEnvironment environment)
+    public void ConfigureServices(IServiceCollection services)
+    {
+        // This is the absolute, simplest way to integrate Marten into your
+        // .Net Core application with Marten's default configuration
+        services.AddMarten(options =>
         {
-            Configuration = configuration;
-            Environment = environment;
-        }
-      #region sample_StartupConfigureServices
+            // Establish the connection string to your Marten database
+            options.Connection(Configuration.GetConnectionString("Marten"));
 
-        public void ConfigureServices(IServiceCollection services)
-        {
-            // This is the absolute, simplest way to integrate Marten into your
-            // .Net Core application with Marten's default configuration
-            services.AddMarten(options =>
+            // If we're running in development mode, let Marten just take care
+            // of all necessary schema building and patching behind the scenes
+            if (Environment.IsDevelopment())
             {
-                // Establish the connection string to your Marten database
-                options.Connection(Configuration.GetConnectionString("Marten"));
-
-                // If we're running in development mode, let Marten just take care
-                // of all necessary schema building and patching behind the scenes
-                if (Environment.IsDevelopment())
-                {
-                    options.AutoCreateSchemaObjects = AutoCreate.All;
-                }
-            });
-        }
-        // and other methods we don't care about right now...
-
-        #endregion
-
-
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
+                options.AutoCreateSchemaObjects = AutoCreate.All;
             }
+        });
+    }
+    // and other methods we don't care about right now...
 
-            app.UseRouting();
+    #endregion
 
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapGet("/", context =>
-                {
-                    return context.Response.WriteAsync("Hello World!");
-                });
-            });
+
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        if (env.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
         }
+
+        app.UseRouting();
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapGet("/", context =>
+            {
+                return context.Response.WriteAsync("Hello World!");
+            });
+        });
     }
 }

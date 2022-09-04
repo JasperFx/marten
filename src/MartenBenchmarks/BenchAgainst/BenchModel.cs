@@ -1,14 +1,13 @@
 ﻿using System;
 
-namespace MartenBenchmarks.BenchAgainst
-{
-    public sealed class BenchModel
-    {
-        public BenchModel()
-        {
-            Id = Guid.NewGuid();
-        }
+namespace MartenBenchmarks.BenchAgainst;
 
-        public Guid Id { get; set; }
+public sealed class BenchModel
+{
+    public BenchModel()
+    {
+        Id = Guid.NewGuid();
     }
+
+    public Guid Id { get; set; }
 }

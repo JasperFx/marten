@@ -2,36 +2,33 @@ using Lamar;
 using Weasel.Core;
 using Weasel.Postgresql;
 
-namespace Marten.Testing
+namespace Marten.Testing;
+
+#region sample_MartenServices
+public class MartenServices : ServiceRegistry
 {
-
-
-    #region sample_MartenServices
-    public class MartenServices : ServiceRegistry
+    public MartenServices()
     {
-        public MartenServices()
+        ForSingletonOf<IDocumentStore>().Use(c =>
         {
-            ForSingletonOf<IDocumentStore>().Use(c =>
+            return DocumentStore.For(options =>
             {
-                return DocumentStore.For(options =>
-                {
-                    options.Connection("your connection string");
-                    options.AutoCreateSchemaObjects = AutoCreate.None;
+                options.Connection("your connection string");
+                options.AutoCreateSchemaObjects = AutoCreate.None;
 
-                    // other Marten configuration options
-                });
+                // other Marten configuration options
             });
+        });
 
-            // Register IDocumentSession as Scoped
-            For<IDocumentSession>()
-                .Use(c => c.GetInstance<IDocumentStore>().LightweightSession())
-                .Scoped();
+        // Register IDocumentSession as Scoped
+        For<IDocumentSession>()
+            .Use(c => c.GetInstance<IDocumentStore>().LightweightSession())
+            .Scoped();
 
-            // Register IQuerySession as Scoped
-            For<IQuerySession>()
-                .Use(c => c.GetInstance<IDocumentStore>().QuerySession())
-                .Scoped();
-        }
+        // Register IQuerySession as Scoped
+        For<IQuerySession>()
+            .Use(c => c.GetInstance<IDocumentStore>().QuerySession())
+            .Scoped();
     }
-    #endregion
 }
+#endregion

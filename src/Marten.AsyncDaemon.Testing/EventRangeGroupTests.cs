@@ -7,91 +7,90 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.AsyncDaemon.Testing
+namespace Marten.AsyncDaemon.Testing;
+
+public class EventRangeGroupTests
 {
-    public class EventRangeGroupTests
+    private readonly TestEventRangeGroup theGroup = new TestEventRangeGroup(new EventRange(new ShardName("Trip", "All"), 100, 200));
+
+    [Fact]
+    public void initial_state()
     {
-        private readonly TestEventRangeGroup theGroup = new TestEventRangeGroup(new EventRange(new ShardName("Trip", "All"), 100, 200));
-
-        [Fact]
-        public void initial_state()
-        {
-            theGroup.WasAborted.ShouldBeFalse();
-            theGroup.Attempts.ShouldBe(-1);
-        }
-
-        [Fact]
-        public void after_first_reset()
-        {
-            theGroup.Reset();
-            theGroup.WasAborted.ShouldBeFalse();
-            theGroup.Cancellation.IsCancellationRequested.ShouldBeFalse();
-            theGroup.Attempts.ShouldBe(0);
-        }
-
-        [Fact]
-        public void reset_and_abort()
-        {
-            theGroup.Reset();
-            theGroup.Abort();
-
-            theGroup.WasAborted.ShouldBeTrue();
-            theGroup.Cancellation.IsCancellationRequested.ShouldBeTrue();
-        }
-
-        [Fact]
-        public void reset_and_abort_and_reset_again()
-        {
-            theGroup.Reset();
-            theGroup.Abort();
-            theGroup.Reset();
-
-            theGroup.WasAborted.ShouldBeFalse();
-            theGroup.Cancellation.IsCancellationRequested.ShouldBeFalse();
-            theGroup.Attempts.ShouldBe(1); // increment
-        }
-
-        [Fact]
-        public void reset_and_abort_and_reset_again_with_exception()
-        {
-            theGroup.Reset();
-            var exception = new DivideByZeroException();
-            theGroup.Abort(exception);
-
-            theGroup.Exception.ShouldBe(exception);
-
-            theGroup.Reset();
-
-            theGroup.Exception.ShouldBeNull();
-        }
+        theGroup.WasAborted.ShouldBeFalse();
+        theGroup.Attempts.ShouldBe(-1);
     }
 
-    internal class TestEventRangeGroup: EventRangeGroup
+    [Fact]
+    public void after_first_reset()
     {
-        public TestEventRangeGroup(EventRange range) : base(range, CancellationToken.None)
-        {
-        }
+        theGroup.Reset();
+        theGroup.WasAborted.ShouldBeFalse();
+        theGroup.Cancellation.IsCancellationRequested.ShouldBeFalse();
+        theGroup.Attempts.ShouldBe(0);
+    }
 
-        protected override void reset()
-        {
-            WasReset = true;
-        }
+    [Fact]
+    public void reset_and_abort()
+    {
+        theGroup.Reset();
+        theGroup.Abort();
 
-        public bool WasReset { get; set; }
+        theGroup.WasAborted.ShouldBeTrue();
+        theGroup.Cancellation.IsCancellationRequested.ShouldBeTrue();
+    }
 
-        public override void Dispose()
-        {
-            // nothing
-        }
+    [Fact]
+    public void reset_and_abort_and_reset_again()
+    {
+        theGroup.Reset();
+        theGroup.Abort();
+        theGroup.Reset();
 
-        public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch)
-        {
-            throw new NotSupportedException();
-        }
+        theGroup.WasAborted.ShouldBeFalse();
+        theGroup.Cancellation.IsCancellationRequested.ShouldBeFalse();
+        theGroup.Attempts.ShouldBe(1); // increment
+    }
 
-        public override ValueTask SkipEventSequence(long eventSequence, IMartenDatabase database)
-        {
-            throw new NotSupportedException();
-        }
+    [Fact]
+    public void reset_and_abort_and_reset_again_with_exception()
+    {
+        theGroup.Reset();
+        var exception = new DivideByZeroException();
+        theGroup.Abort(exception);
+
+        theGroup.Exception.ShouldBe(exception);
+
+        theGroup.Reset();
+
+        theGroup.Exception.ShouldBeNull();
+    }
+}
+
+internal class TestEventRangeGroup: EventRangeGroup
+{
+    public TestEventRangeGroup(EventRange range) : base(range, CancellationToken.None)
+    {
+    }
+
+    protected override void reset()
+    {
+        WasReset = true;
+    }
+
+    public bool WasReset { get; set; }
+
+    public override void Dispose()
+    {
+        // nothing
+    }
+
+    public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch)
+    {
+        throw new NotSupportedException();
+    }
+
+    public override ValueTask SkipEventSequence(long eventSequence, IMartenDatabase database)
+    {
+        throw new NotSupportedException();
     }
 }

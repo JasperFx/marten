@@ -1,51 +1,50 @@
 using System;
 
-namespace Marten.AsyncDaemon.Testing.TestingSupport
+namespace Marten.AsyncDaemon.Testing.TestingSupport;
+
+public class Movement
 {
-    public class Movement
+    public Direction Direction
     {
-        public Direction Direction
-        {
-            get;
-            set;
+        get;
+        set;
 
+    }
+
+    public double Distance { get; set; }
+
+    protected bool Equals(Movement other)
+    {
+        return Direction == other.Direction && Distance.Equals(other.Distance);
+    }
+
+    public override string ToString()
+    {
+        return $"{nameof(Direction)}: {Direction}, {nameof(Distance)}: {Distance}";
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (ReferenceEquals(null, obj))
+        {
+            return false;
         }
 
-        public double Distance { get; set; }
-
-        protected bool Equals(Movement other)
+        if (ReferenceEquals(this, obj))
         {
-            return Direction == other.Direction && Distance.Equals(other.Distance);
+            return true;
         }
 
-        public override string ToString()
+        if (obj.GetType() != this.GetType())
         {
-            return $"{nameof(Direction)}: {Direction}, {nameof(Distance)}: {Distance}";
+            return false;
         }
 
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj))
-            {
-                return false;
-            }
+        return Equals((Movement)obj);
+    }
 
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
-            }
-
-            if (obj.GetType() != this.GetType())
-            {
-                return false;
-            }
-
-            return Equals((Movement)obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine((int)Direction, Distance);
-        }
+    public override int GetHashCode()
+    {
+        return HashCode.Combine((int)Direction, Distance);
     }
 }

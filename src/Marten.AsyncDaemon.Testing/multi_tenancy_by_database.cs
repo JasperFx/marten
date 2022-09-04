@@ -19,373 +19,370 @@ using Weasel.Postgresql.Migrations;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Marten.AsyncDaemon.Testing
+namespace Marten.AsyncDaemon.Testing;
+
+public class multi_tenancy_by_database : IAsyncLifetime
 {
+    private readonly ITestOutputHelper _output;
+    private IHost _host;
+    private IDocumentStore theStore;
 
-
-    public class multi_tenancy_by_database : IAsyncLifetime
+    public multi_tenancy_by_database(ITestOutputHelper output)
     {
-        private readonly ITestOutputHelper _output;
-        private IHost _host;
-        private IDocumentStore theStore;
+        _output = output;
+        Logger = new TestLogger<IProjection>(output);
+    }
 
-        public multi_tenancy_by_database(ITestOutputHelper output)
+    public TestLogger<IProjection> Logger { get; set; }
+
+    private async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
+    {
+        var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
+
+        var exists = await conn.DatabaseExists(databaseName);
+        if (!exists)
         {
-            _output = output;
-            Logger = new TestLogger<IProjection>(output);
+            await new DatabaseSpecification().BuildDatabase(conn, databaseName);
         }
 
-        public TestLogger<IProjection> Logger { get; set; }
+        builder.Database = databaseName;
 
-        private async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
-        {
-            var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
+        using var dbConn = new NpgsqlConnection(builder.ConnectionString);
+        await dbConn.OpenAsync();
+        await dbConn.DropSchema("multi_tenancy_daemon");
 
-            var exists = await conn.DatabaseExists(databaseName);
-            if (!exists)
+        return builder.ConnectionString;
+    }
+
+    public async Task InitializeAsync()
+    {
+        using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+
+        var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");
+        var tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");
+        var tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant4");
+
+
+        _host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
             {
-                await new DatabaseSpecification().BuildDatabase(conn, databaseName);
-            }
-
-            builder.Database = databaseName;
-
-            using var dbConn = new NpgsqlConnection(builder.ConnectionString);
-            await dbConn.OpenAsync();
-            await dbConn.DropSchema("multi_tenancy_daemon");
-
-            return builder.ConnectionString;
-        }
-
-        public async Task InitializeAsync()
-        {
-            using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-            await conn.OpenAsync();
 
 
-            var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");
-            var tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");
-            var tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant4");
+                services.AddSingleton<ILogger<IProjection>>(Logger);
 
-
-            _host = await Host.CreateDefaultBuilder()
-                .ConfigureServices(services =>
+                services.AddMarten(opts =>
                 {
+                    opts.DatabaseSchemaName = "multi_tenancy_daemon";
+
+                    opts
+                        .MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
+                        .WithTenants("tenant1").InDatabaseNamed("database1")
+                        .WithTenants("tenant3", "tenant4"); // own database
 
 
-                    services.AddSingleton<ILogger<IProjection>>(Logger);
+                    opts.RegisterDocumentType<User>();
+                    opts.RegisterDocumentType<Target>();
 
-                    services.AddMarten(opts =>
-                    {
-                        opts.DatabaseSchemaName = "multi_tenancy_daemon";
+                    opts.Projections.Add<AllGood>(ProjectionLifecycle.Async);
 
-                        opts
-                            .MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
-                            .WithTenants("tenant1").InDatabaseNamed("database1")
-                            .WithTenants("tenant3", "tenant4"); // own database
+                }).ApplyAllDatabaseChangesOnStartup().AddAsyncDaemon(DaemonMode.Solo);
+            }).StartAsync();
 
-
-                        opts.RegisterDocumentType<User>();
-                        opts.RegisterDocumentType<Target>();
-
-                        opts.Projections.Add<AllGood>(ProjectionLifecycle.Async);
-
-                    }).ApplyAllDatabaseChangesOnStartup().AddAsyncDaemon(DaemonMode.Solo);
-                }).StartAsync();
-
-            theStore = _host.Services.GetRequiredService<IDocumentStore>();
-        }
-
-        public Task DisposeAsync()
-        {
-            return _host.StopAsync();
-        }
-
-        [Fact]
-        public async Task fail_when_trying_to_create_daemon_with_no_tenant()
-        {
-            await Should.ThrowAsync<DefaultTenantUsageDisabledException>(async () =>
-            {
-                await theStore.BuildProjectionDaemonAsync();
-            });
-        }
-
-        [Fact]
-        public void fail_when_trying_to_create_daemon_with_no_tenant_sync()
-        {
-            Should.Throw<DefaultTenantUsageDisabledException>(() =>
-            {
-                theStore.BuildProjectionDaemon();
-            });
-        }
-
-        [Fact]
-        public async Task build_daemon_for_database()
-        {
-            using var daemon = (ProjectionDaemon)await theStore.BuildProjectionDaemonAsync("tenant1");
-
-            daemon.Database.Identifier.ShouldBe("database1");
-
-            using var conn = daemon.Database.CreateConnection();
-            conn.Database.ShouldBe("database1");
-        }
-
-
-        [Fact]
-        public void build_daemon_for_database_sync()
-        {
-            using var daemon = (ProjectionDaemon)theStore.BuildProjectionDaemon("tenant1");
-
-            daemon.Database.Identifier.ShouldBe("database1");
-
-            using var conn = daemon.Database.CreateConnection();
-            conn.Database.ShouldBe("database1");
-        }
-
-        [Fact]
-        public async Task run_projections_end_to_end()
-        {
-            var id = Guid.NewGuid();
-
-            using var session1 = theStore.LightweightSession("tenant1");
-            session1.Events.Append(id, new AEvent(), new BEvent(), new BEvent());
-            await session1.SaveChangesAsync();
-
-            using var session3 = theStore.LightweightSession("tenant3");
-            session3.Events.Append(id, new AEvent(), new AEvent(), new BEvent(), new BEvent());
-            await session3.SaveChangesAsync();
-
-            using var session4 = theStore.LightweightSession("tenant4");
-            session4.Events.Append(id, new AEvent(), new BEvent(), new BEvent(), new BEvent());
-            await session4.SaveChangesAsync();
-
-            await (await theStore.Storage.FindOrCreateDatabase("tenant1")).Tracker.WaitForShardState("AllGood:All", 3);
-            await (await theStore.Storage.FindOrCreateDatabase("tenant3")).Tracker.WaitForShardState("AllGood:All", 4);
-            await (await theStore.Storage.FindOrCreateDatabase("tenant4")).Tracker.WaitForShardState("AllGood:All", 4);
-
-            (await session1.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate{Id = id, ACount = 1, BCount = 2});
-            (await session3.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate{Id = id, ACount = 2, BCount = 2});
-            (await session4.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate{Id = id, ACount = 1, BCount = 3});
-        }
+        theStore = _host.Services.GetRequiredService<IDocumentStore>();
     }
 
-        public class AllSync: SingleStreamAggregation<MyAggregate>
+    public Task DisposeAsync()
     {
-        public AllSync()
-        {
-            ProjectionName = "AllSync";
-        }
-
-        public MyAggregate Create(CreateEvent @event)
-        {
-            return new MyAggregate
-            {
-                ACount = @event.A,
-                BCount = @event.B,
-                CCount = @event.C,
-                DCount = @event.D
-            };
-        }
-
-        public void Apply(AEvent @event, MyAggregate aggregate)
-        {
-            aggregate.ACount++;
-        }
-
-        public MyAggregate Apply(BEvent @event, MyAggregate aggregate)
-        {
-            return new MyAggregate
-            {
-                ACount = aggregate.ACount,
-                BCount = aggregate.BCount + 1,
-                CCount = aggregate.CCount,
-                DCount = aggregate.DCount,
-                Id = aggregate.Id
-            };
-        }
-
-        public void Apply(MyAggregate aggregate, CEvent @event)
-        {
-            aggregate.CCount++;
-        }
-
-        public MyAggregate Apply(MyAggregate aggregate, DEvent @event)
-        {
-            return new MyAggregate
-            {
-                ACount = aggregate.ACount,
-                BCount = aggregate.BCount,
-                CCount = aggregate.CCount,
-                DCount = aggregate.DCount + 1,
-                Id = aggregate.Id
-            };
-        }
+        return _host.StopAsync();
     }
 
-    public class AllGood: SingleStreamAggregation<MyAggregate>
+    [Fact]
+    public async Task fail_when_trying_to_create_daemon_with_no_tenant()
     {
-        public AllGood()
+        await Should.ThrowAsync<DefaultTenantUsageDisabledException>(async () =>
         {
-            ProjectionName = "AllGood";
-        }
-
-        [MartenIgnore]
-        public void RandomMethodName()
-        {
-
-        }
-
-        public MyAggregate Create(CreateEvent @event)
-        {
-            return new MyAggregate
-            {
-                ACount = @event.A,
-                BCount = @event.B,
-                CCount = @event.C,
-                DCount = @event.D
-            };
-        }
-
-        public void Apply(AEvent @event, MyAggregate aggregate)
-        {
-            aggregate.ACount++;
-        }
-
-        public MyAggregate Apply(BEvent @event, MyAggregate aggregate)
-        {
-            return new MyAggregate
-            {
-                ACount = aggregate.ACount,
-                BCount = aggregate.BCount + 1,
-                CCount = aggregate.CCount,
-                DCount = aggregate.DCount,
-                Id = aggregate.Id
-            };
-        }
-
-        public void Apply(MyAggregate aggregate, CEvent @event)
-        {
-            aggregate.CCount++;
-        }
-
-        public MyAggregate Apply(MyAggregate aggregate, DEvent @event)
-        {
-            return new MyAggregate
-            {
-                ACount = aggregate.ACount,
-                BCount = aggregate.BCount,
-                CCount = aggregate.CCount,
-                DCount = aggregate.DCount + 1,
-                Id = aggregate.Id
-            };
-        }
+            await theStore.BuildProjectionDaemonAsync();
+        });
     }
 
-    public class MyAggregate
+    [Fact]
+    public void fail_when_trying_to_create_daemon_with_no_tenant_sync()
     {
-        public Guid Id { get; set; }
-
-        public int ACount { get; set; }
-        public int BCount { get; set; }
-        public int CCount { get; set; }
-        public int DCount { get; set; }
-        public int ECount { get; set; }
-
-        public string Created { get; set; }
-        public string UpdatedBy { get; set; }
-        public Guid EventId { get; set; }
-
-        protected bool Equals(MyAggregate other)
+        Should.Throw<DefaultTenantUsageDisabledException>(() =>
         {
-            return Id.Equals(other.Id) && ACount == other.ACount && BCount == other.BCount && CCount == other.CCount && DCount == other.DCount && ECount == other.ECount;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj))
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
-            }
-
-            if (obj.GetType() != this.GetType())
-            {
-                return false;
-            }
-
-            return Equals((MyAggregate)obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Id, ACount, BCount, CCount, DCount, ECount);
-        }
-
-        public override string ToString()
-        {
-            return $"{nameof(Id)}: {Id}, {nameof(ACount)}: {ACount}, {nameof(BCount)}: {BCount}, {nameof(CCount)}: {CCount}, {nameof(DCount)}: {DCount}, {nameof(ECount)}: {ECount}";
-        }
+            theStore.BuildProjectionDaemon();
+        });
     }
 
-    public interface ITabulator
+    [Fact]
+    public async Task build_daemon_for_database()
     {
-        void Apply(MyAggregate aggregate);
+        using var daemon = (ProjectionDaemon)await theStore.BuildProjectionDaemonAsync("tenant1");
+
+        daemon.Database.Identifier.ShouldBe("database1");
+
+        using var conn = daemon.Database.CreateConnection();
+        conn.Database.ShouldBe("database1");
     }
 
-    public class AEvent : ITabulator
+
+    [Fact]
+    public void build_daemon_for_database_sync()
     {
-        // Necessary for a couple tests. Let it go.
-        public Guid Id { get; set; }
+        using var daemon = (ProjectionDaemon)theStore.BuildProjectionDaemon("tenant1");
 
-        public void Apply(MyAggregate aggregate)
-        {
-            aggregate.ACount++;
-        }
+        daemon.Database.Identifier.ShouldBe("database1");
 
-        public Guid Tracker { get; } = Guid.NewGuid();
+        using var conn = daemon.Database.CreateConnection();
+        conn.Database.ShouldBe("database1");
     }
 
-    public class BEvent : ITabulator
+    [Fact]
+    public async Task run_projections_end_to_end()
     {
-        public void Apply(MyAggregate aggregate)
-        {
-            aggregate.BCount++;
-        }
+        var id = Guid.NewGuid();
+
+        using var session1 = theStore.LightweightSession("tenant1");
+        session1.Events.Append(id, new AEvent(), new BEvent(), new BEvent());
+        await session1.SaveChangesAsync();
+
+        using var session3 = theStore.LightweightSession("tenant3");
+        session3.Events.Append(id, new AEvent(), new AEvent(), new BEvent(), new BEvent());
+        await session3.SaveChangesAsync();
+
+        using var session4 = theStore.LightweightSession("tenant4");
+        session4.Events.Append(id, new AEvent(), new BEvent(), new BEvent(), new BEvent());
+        await session4.SaveChangesAsync();
+
+        await (await theStore.Storage.FindOrCreateDatabase("tenant1")).Tracker.WaitForShardState("AllGood:All", 3);
+        await (await theStore.Storage.FindOrCreateDatabase("tenant3")).Tracker.WaitForShardState("AllGood:All", 4);
+        await (await theStore.Storage.FindOrCreateDatabase("tenant4")).Tracker.WaitForShardState("AllGood:All", 4);
+
+        (await session1.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate{Id = id, ACount = 1, BCount = 2});
+        (await session3.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate{Id = id, ACount = 2, BCount = 2});
+        (await session4.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate{Id = id, ACount = 1, BCount = 3});
+    }
+}
+
+public class AllSync: SingleStreamAggregation<MyAggregate>
+{
+    public AllSync()
+    {
+        ProjectionName = "AllSync";
     }
 
-    public class CEvent : ITabulator
+    public MyAggregate Create(CreateEvent @event)
     {
-        public void Apply(MyAggregate aggregate)
+        return new MyAggregate
         {
-            aggregate.CCount++;
-        }
+            ACount = @event.A,
+            BCount = @event.B,
+            CCount = @event.C,
+            DCount = @event.D
+        };
     }
 
-    public class DEvent : ITabulator
+    public void Apply(AEvent @event, MyAggregate aggregate)
     {
-        public void Apply(MyAggregate aggregate)
-        {
-            aggregate.DCount++;
-        }
+        aggregate.ACount++;
     }
-    public class EEvent {}
 
-    public class CreateEvent
+    public MyAggregate Apply(BEvent @event, MyAggregate aggregate)
     {
-        public int A { get; }
-        public int B { get; }
-        public int C { get; }
-        public int D { get; }
-
-        public CreateEvent(int a, int b, int c, int d)
+        return new MyAggregate
         {
-            A = a;
-            B = b;
-            C = c;
-            D = d;
+            ACount = aggregate.ACount,
+            BCount = aggregate.BCount + 1,
+            CCount = aggregate.CCount,
+            DCount = aggregate.DCount,
+            Id = aggregate.Id
+        };
+    }
+
+    public void Apply(MyAggregate aggregate, CEvent @event)
+    {
+        aggregate.CCount++;
+    }
+
+    public MyAggregate Apply(MyAggregate aggregate, DEvent @event)
+    {
+        return new MyAggregate
+        {
+            ACount = aggregate.ACount,
+            BCount = aggregate.BCount,
+            CCount = aggregate.CCount,
+            DCount = aggregate.DCount + 1,
+            Id = aggregate.Id
+        };
+    }
+}
+
+public class AllGood: SingleStreamAggregation<MyAggregate>
+{
+    public AllGood()
+    {
+        ProjectionName = "AllGood";
+    }
+
+    [MartenIgnore]
+    public void RandomMethodName()
+    {
+
+    }
+
+    public MyAggregate Create(CreateEvent @event)
+    {
+        return new MyAggregate
+        {
+            ACount = @event.A,
+            BCount = @event.B,
+            CCount = @event.C,
+            DCount = @event.D
+        };
+    }
+
+    public void Apply(AEvent @event, MyAggregate aggregate)
+    {
+        aggregate.ACount++;
+    }
+
+    public MyAggregate Apply(BEvent @event, MyAggregate aggregate)
+    {
+        return new MyAggregate
+        {
+            ACount = aggregate.ACount,
+            BCount = aggregate.BCount + 1,
+            CCount = aggregate.CCount,
+            DCount = aggregate.DCount,
+            Id = aggregate.Id
+        };
+    }
+
+    public void Apply(MyAggregate aggregate, CEvent @event)
+    {
+        aggregate.CCount++;
+    }
+
+    public MyAggregate Apply(MyAggregate aggregate, DEvent @event)
+    {
+        return new MyAggregate
+        {
+            ACount = aggregate.ACount,
+            BCount = aggregate.BCount,
+            CCount = aggregate.CCount,
+            DCount = aggregate.DCount + 1,
+            Id = aggregate.Id
+        };
+    }
+}
+
+public class MyAggregate
+{
+    public Guid Id { get; set; }
+
+    public int ACount { get; set; }
+    public int BCount { get; set; }
+    public int CCount { get; set; }
+    public int DCount { get; set; }
+    public int ECount { get; set; }
+
+    public string Created { get; set; }
+    public string UpdatedBy { get; set; }
+    public Guid EventId { get; set; }
+
+    protected bool Equals(MyAggregate other)
+    {
+        return Id.Equals(other.Id) && ACount == other.ACount && BCount == other.BCount && CCount == other.CCount && DCount == other.DCount && ECount == other.ECount;
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (ReferenceEquals(null, obj))
+        {
+            return false;
         }
+
+        if (ReferenceEquals(this, obj))
+        {
+            return true;
+        }
+
+        if (obj.GetType() != this.GetType())
+        {
+            return false;
+        }
+
+        return Equals((MyAggregate)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Id, ACount, BCount, CCount, DCount, ECount);
+    }
+
+    public override string ToString()
+    {
+        return $"{nameof(Id)}: {Id}, {nameof(ACount)}: {ACount}, {nameof(BCount)}: {BCount}, {nameof(CCount)}: {CCount}, {nameof(DCount)}: {DCount}, {nameof(ECount)}: {ECount}";
+    }
+}
+
+public interface ITabulator
+{
+    void Apply(MyAggregate aggregate);
+}
+
+public class AEvent : ITabulator
+{
+    // Necessary for a couple tests. Let it go.
+    public Guid Id { get; set; }
+
+    public void Apply(MyAggregate aggregate)
+    {
+        aggregate.ACount++;
+    }
+
+    public Guid Tracker { get; } = Guid.NewGuid();
+}
+
+public class BEvent : ITabulator
+{
+    public void Apply(MyAggregate aggregate)
+    {
+        aggregate.BCount++;
+    }
+}
+
+public class CEvent : ITabulator
+{
+    public void Apply(MyAggregate aggregate)
+    {
+        aggregate.CCount++;
+    }
+}
+
+public class DEvent : ITabulator
+{
+    public void Apply(MyAggregate aggregate)
+    {
+        aggregate.DCount++;
+    }
+}
+public class EEvent {}
+
+public class CreateEvent
+{
+    public int A { get; }
+    public int B { get; }
+    public int C { get; }
+    public int D { get; }
+
+    public CreateEvent(int a, int b, int c, int d)
+    {
+        A = a;
+        B = b;
+        C = c;
+        D = d;
     }
 }

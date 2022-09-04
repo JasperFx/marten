@@ -1,19 +1,18 @@
 using System.Collections.Generic;
 
-namespace Marten.PLv8.Transforms
+namespace Marten.PLv8.Transforms;
+
+public interface ITransforms
 {
-    public interface ITransforms
-    {
-        void LoadFile(string file, string name = null);
+    void LoadFile(string file, string name = null);
 
-        void LoadDirectory(string directory);
+    void LoadDirectory(string directory);
 
-        void LoadJavascript(string name, string script);
+    void LoadJavascript(string name, string script);
 
-        void Load(TransformFunction function);
+    void Load(TransformFunction function);
 
-        TransformFunction For(string name);
+    TransformFunction For(string name);
 
-        IEnumerable<TransformFunction> AllFunctions();
-    }
+    IEnumerable<TransformFunction> AllFunctions();
 }

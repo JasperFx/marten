@@ -4,86 +4,85 @@ using System.Threading.Tasks;
 using Marten;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 
-namespace EventSourceWorker
+namespace EventSourceWorker;
+
+public class CreateNewTrip
 {
-    public class CreateNewTrip
+    public int Day { get; set; }
+    public string State { get; set; } = null!;
+    public Movement[] Movements { get; set; } = null!;
+}
+
+public class NewTripHandler
+{
+    private readonly IDocumentSession _session;
+
+    public NewTripHandler(IDocumentSession session)
     {
-        public int Day { get; set; }
-        public string State { get; set; } = null!;
-        public Movement[] Movements { get; set; } = null!;
+        _session = session;
     }
 
-    public class NewTripHandler
+    public async Task Handle(CreateNewTrip trip)
     {
-        private readonly IDocumentSession _session;
-
-        public NewTripHandler(IDocumentSession session)
+        var started = new TripStarted
         {
-            _session = session;
-        }
+            Day = trip.Day
+        };
 
-        public async Task Handle(CreateNewTrip trip)
+        var departure = new Departure
         {
-            var started = new TripStarted
-            {
-                Day = trip.Day
-            };
+            Day = trip.Day,
+            State = trip.State
+        };
 
-            var departure = new Departure
-            {
-                Day = trip.Day,
-                State = trip.State
-            };
+        var travel = new Travel
+        {
+            Day = trip.Day,
+            Movements = new List<Movement>(trip.Movements)
+        };
 
-            var travel = new Travel
-            {
-                Day = trip.Day,
-                Movements = new List<Movement>(trip.Movements)
-            };
+        // This will create a new event stream and
+        // append the three events to that new stream
+        // when the IDocumentSession is saved
+        var action = _session.Events
+            .StartStream(started, departure, travel);
 
-            // This will create a new event stream and
-            // append the three events to that new stream
-            // when the IDocumentSession is saved
-            var action = _session.Events
-                .StartStream(started, departure, travel);
+        // You can also use strings as the identifier
+        // for streams
+        var tripId = action.Id;
 
-            // You can also use strings as the identifier
-            // for streams
-            var tripId = action.Id;
+        // Commit the events to the new event
+        // stream for this trip
+        await _session.SaveChangesAsync();
+    }
+}
 
-            // Commit the events to the new event
-            // stream for this trip
-            await _session.SaveChangesAsync();
-        }
+public class EndTrip
+{
+    public Guid TripId { get; set; }
+    public bool Successful { get; set; }
+    public string State { get; set; } = null!;
+    public int Day { get; set; }
+}
+
+public class EndTripHandler
+{
+    private readonly IDocumentSession _session;
+
+    public EndTripHandler(IDocumentSession session)
+    {
+        _session = session;
     }
 
-    public class EndTrip
+    public async Task Handle(EndTrip end)
     {
-        public Guid TripId { get; set; }
-        public bool Successful { get; set; }
-        public string State { get; set; } = null!;
-        public int Day { get; set; }
-    }
+        // we need to first see the current
+        // state of the Trip to decide how
+        // to proceed, so load the pre-built
+        // projected document from the database
+        var trip = await _session
+            .LoadAsync<Trip>(end.TripId);
 
-    public class EndTripHandler
-    {
-        private readonly IDocumentSession _session;
-
-        public EndTripHandler(IDocumentSession session)
-        {
-            _session = session;
-        }
-
-        public async Task Handle(EndTrip end)
-        {
-            // we need to first see the current
-            // state of the Trip to decide how
-            // to proceed, so load the pre-built
-            // projected document from the database
-            var trip = await _session
-                .LoadAsync<Trip>(end.TripId);
-
-            // finish processing the EndTrip command...
-        }
+        // finish processing the EndTrip command...
     }
 }

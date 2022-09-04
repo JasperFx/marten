@@ -6,72 +6,69 @@ using Microsoft.Extensions.Hosting;
 using Weasel.Core;
 using Weasel.Postgresql;
 
-namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation
+namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation;
+
+#region sample_CustomSessionFactory
+
+public class CustomSessionFactory: ISessionFactory
 {
-    #region sample_CustomSessionFactory
+    private readonly IDocumentStore _store;
 
-    public class CustomSessionFactory: ISessionFactory
+    // This is important! You will need to use the
+    // IDocumentStore to open sessions
+    public CustomSessionFactory(IDocumentStore store)
     {
-        private readonly IDocumentStore _store;
-
-        // This is important! You will need to use the
-        // IDocumentStore to open sessions
-        public CustomSessionFactory(IDocumentStore store)
-        {
-            _store = store;
-        }
-
-        public IQuerySession QuerySession()
-        {
-            return _store.QuerySession();
-        }
-
-        public IDocumentSession OpenSession()
-        {
-            // Opting for the "lightweight" session
-            // option with no identity map tracking
-            // and choosing to use Serializable transactions
-            // just to be different
-            return _store.LightweightSession(IsolationLevel.Serializable);
-        }
+        _store = store;
     }
 
-    #endregion
-
-    #region sample_AddMartenWithCustomSessionCreation
-
-    public class Startup
+    public IQuerySession QuerySession()
     {
-        public Startup(IConfiguration configuration, IHostEnvironment hosting)
-        {
-            Configuration = configuration;
-            Hosting = hosting;
-        }
-
-        public IConfiguration Configuration { get; }
-        public IHostEnvironment Hosting { get; }
-
-        public void ConfigureServices(IServiceCollection services)
-        {
-            var connectionString = Configuration.GetConnectionString("postgres");
-
-            services.AddMarten(opts =>
-                {
-                    opts.Connection(connectionString);
-                })
-                // Using the "Optimized artifact workflow" for Marten >= V5
-                // sets up your Marten configuration based on your environment
-                // See https://martendb.io/configuration/optimized_artifact_workflow.html
-                .OptimizeArtifactWorkflow()
-                // Chained helper to replace the built in
-                // session factory behavior
-                .BuildSessionsWith<CustomSessionFactory>();
-        }
-
-        // And other methods we don't care about here...
+        return _store.QuerySession();
     }
 
-    #endregion
+    public IDocumentSession OpenSession()
+    {
+        // Opting for the "lightweight" session
+        // option with no identity map tracking
+        // and choosing to use Serializable transactions
+        // just to be different
+        return _store.LightweightSession(IsolationLevel.Serializable);
+    }
 }
 
+#endregion
 
+#region sample_AddMartenWithCustomSessionCreation
+
+public class Startup
+{
+    public Startup(IConfiguration configuration, IHostEnvironment hosting)
+    {
+        Configuration = configuration;
+        Hosting = hosting;
+    }
+
+    public IConfiguration Configuration { get; }
+    public IHostEnvironment Hosting { get; }
+
+    public void ConfigureServices(IServiceCollection services)
+    {
+        var connectionString = Configuration.GetConnectionString("postgres");
+
+        services.AddMarten(opts =>
+            {
+                opts.Connection(connectionString);
+            })
+            // Using the "Optimized artifact workflow" for Marten >= V5
+            // sets up your Marten configuration based on your environment
+            // See https://martendb.io/configuration/optimized_artifact_workflow.html
+            .OptimizeArtifactWorkflow()
+            // Chained helper to replace the built in
+            // session factory behavior
+            .BuildSessionsWith<CustomSessionFactory>();
+    }
+
+    // And other methods we don't care about here...
+}
+
+#endregion

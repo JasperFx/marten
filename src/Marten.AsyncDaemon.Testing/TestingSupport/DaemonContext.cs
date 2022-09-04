@@ -16,352 +16,351 @@ using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Marten.AsyncDaemon.Testing.TestingSupport
+namespace Marten.AsyncDaemon.Testing.TestingSupport;
+
+public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
 {
-    public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
+    protected DaemonContext(ITestOutputHelper output)
     {
-        protected DaemonContext(ITestOutputHelper output)
+        _schemaName = "daemon";
+        theStore.Advanced.Clean.DeleteAllEventData();
+        Logger = new TestLogger<IProjection>(output);
+
+        theStore.Options.Projections.DaemonLockId++;
+
+        _output = output;
+    }
+
+    public ILogger<IProjection> Logger { get; }
+
+    internal async Task<ProjectionDaemon> StartDaemon()
+    {
+        var daemon = new ProjectionDaemon(theStore, Logger);
+
+        await daemon.StartAllShards();
+
+        _daemon = daemon;
+
+        return daemon;
+    }
+
+    internal async Task<ProjectionDaemon> StartDaemonInHotColdMode()
+    {
+        theStore.Options.Projections.LeadershipPollingTime = 100;
+
+        var coordinator = new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
+        var daemon = new ProjectionDaemon(theStore, theStore.Tenancy.Default.Database, new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
+
+        await daemon.UseCoordinator(coordinator);
+
+        _daemon = daemon;
+
+        _disposables.Add(daemon);
+        return daemon;
+    }
+
+    internal async Task<ProjectionDaemon> StartAdditionalDaemonInHotColdMode()
+    {
+        theStore.Options.Projections.LeadershipPollingTime = 100;
+        var coordinator = new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
+        var daemon = new ProjectionDaemon(theStore, theStore.Tenancy.Default.Database, new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
+
+        await daemon.UseCoordinator(coordinator);
+
+        _disposables.Add(daemon);
+        return daemon;
+    }
+
+    protected Task WaitForAction(string shardName, ShardAction action, TimeSpan timeout = default)
+    {
+        if (timeout == default)
         {
-            _schemaName = "daemon";
-            theStore.Advanced.Clean.DeleteAllEventData();
-            Logger = new TestLogger<IProjection>(output);
-
-            theStore.Options.Projections.DaemonLockId++;
-
-            _output = output;
+            timeout = 30.Seconds();
         }
 
-        public ILogger<IProjection> Logger { get; }
+        return new ShardActionWatcher(_daemon.Tracker,shardName, action, timeout).Task;
+    }
 
-        internal async Task<ProjectionDaemon> StartDaemon()
+    public int NumberOfStreams
+    {
+        get
         {
-            var daemon = new ProjectionDaemon(theStore, Logger);
-
-            await daemon.StartAllShards();
-
-            _daemon = daemon;
-
-            return daemon;
+            return _streams.Count;
         }
-
-        internal async Task<ProjectionDaemon> StartDaemonInHotColdMode()
+        set
         {
-            theStore.Options.Projections.LeadershipPollingTime = 100;
-
-            var coordinator = new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
-            var daemon = new ProjectionDaemon(theStore, theStore.Tenancy.Default.Database, new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
-
-            await daemon.UseCoordinator(coordinator);
-
-            _daemon = daemon;
-
-            _disposables.Add(daemon);
-            return daemon;
+            _streams.Clear();
+            _streams.AddRange(TripStream.RandomStreams(value));
         }
+    }
 
-        internal async Task<ProjectionDaemon> StartAdditionalDaemonInHotColdMode()
+    public void UseMixOfTenants(int numberOfStreams)
+    {
+        NumberOfStreams = numberOfStreams;
+
+        foreach (var stream in _streams.ToArray())
         {
-            theStore.Options.Projections.LeadershipPollingTime = 100;
-            var coordinator = new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
-            var daemon = new ProjectionDaemon(theStore, theStore.Tenancy.Default.Database, new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
-
-            await daemon.UseCoordinator(coordinator);
-
-            _disposables.Add(daemon);
-            return daemon;
-        }
-
-        protected Task WaitForAction(string shardName, ShardAction action, TimeSpan timeout = default)
-        {
-            if (timeout == default)
+            stream.TenantId = "a";
+            var other = new TripStream
             {
-                timeout = 30.Seconds();
+                TenantId = "b",
+                StreamId = stream.StreamId
+            };
+
+            _streams.Add(other);
+        }
+    }
+
+    public long NumberOfEvents => _streams.Sum(x => x.Events.Count);
+
+    private readonly List<TripStream> _streams = new List<TripStream>();
+    private ProjectionDaemon _daemon;
+    protected ITestOutputHelper _output;
+
+    public IReadOnlyList<TripStream> Streams => _streams;
+
+    protected StreamAction[] ToStreamActions()
+    {
+        return _streams.Select(x => x.ToAction(theStore.Events)).ToArray();
+    }
+
+    protected async Task CheckAllExpectedAggregatesAgainstActuals()
+    {
+        var actuals = await LoadAllAggregatesFromDatabase();
+
+        foreach (var stream in _streams)
+        {
+            var expected = await theSession.Events.AggregateStreamAsync<Trip>(stream.StreamId);
+
+            if (expected == null)
+            {
+                actuals.ContainsKey(stream.StreamId).ShouldBeFalse();
             }
-
-            return new ShardActionWatcher(_daemon.Tracker,shardName, action, timeout).Task;
-        }
-
-        public int NumberOfStreams
-        {
-            get
+            else
             {
-                return _streams.Count;
-            }
-            set
-            {
-                _streams.Clear();
-                _streams.AddRange(TripStream.RandomStreams(value));
-            }
-        }
-
-        public void UseMixOfTenants(int numberOfStreams)
-        {
-            NumberOfStreams = numberOfStreams;
-
-            foreach (var stream in _streams.ToArray())
-            {
-                stream.TenantId = "a";
-                var other = new TripStream
+                if (actuals.TryGetValue(stream.StreamId, out var actual))
                 {
-                    TenantId = "b",
-                    StreamId = stream.StreamId
-                };
-
-                _streams.Add(other);
-            }
-        }
-
-        public long NumberOfEvents => _streams.Sum(x => x.Events.Count);
-
-        private readonly List<TripStream> _streams = new List<TripStream>();
-        private ProjectionDaemon _daemon;
-        protected ITestOutputHelper _output;
-
-        public IReadOnlyList<TripStream> Streams => _streams;
-
-        protected StreamAction[] ToStreamActions()
-        {
-            return _streams.Select(x => x.ToAction(theStore.Events)).ToArray();
-        }
-
-        protected async Task CheckAllExpectedAggregatesAgainstActuals()
-        {
-            var actuals = await LoadAllAggregatesFromDatabase();
-
-            foreach (var stream in _streams)
-            {
-                var expected = await theSession.Events.AggregateStreamAsync<Trip>(stream.StreamId);
-
-                if (expected == null)
-                {
-                    actuals.ContainsKey(stream.StreamId).ShouldBeFalse();
+                    expected.ShouldBe(actual);
                 }
                 else
                 {
-                    if (actuals.TryGetValue(stream.StreamId, out var actual))
-                    {
-                        expected.ShouldBe(actual);
-                    }
-                    else
-                    {
-                        throw new Exception("Missing expected aggregate");
-                    }
+                    throw new Exception("Missing expected aggregate");
                 }
             }
         }
+    }
 
-        protected async Task CheckAllExpectedAggregatesAgainstActuals(string tenantId)
+    protected async Task CheckAllExpectedAggregatesAgainstActuals(string tenantId)
+    {
+        var actuals = await LoadAllAggregatesFromDatabase(tenantId);
+
+        using var session = theStore.LightweightSession(tenantId);
+
+        foreach (var stream in _streams.Where(x => x.TenantId == tenantId))
         {
-            var actuals = await LoadAllAggregatesFromDatabase(tenantId);
+            var expected = await session.Events.AggregateStreamAsync<Trip>(stream.StreamId);
 
+            if (expected == null)
+            {
+                actuals.ContainsKey(stream.StreamId).ShouldBeFalse();
+            }
+            else
+            {
+                if (actuals.TryGetValue(stream.StreamId, out var actual))
+                {
+                    expected.ShouldBe(actual);
+                }
+                else
+                {
+                    throw new Exception("Missing expected aggregate");
+                }
+            }
+        }
+    }
+
+    protected async Task<Dictionary<Guid, Trip>> LoadAllAggregatesFromDatabase(string tenantId = null)
+    {
+
+        if (tenantId.IsNullOrEmpty())
+        {
+            var data = await theSession.Query<Trip>().ToListAsync();
+            var dict = data.ToDictionary(x => x.Id);
+            return dict;
+        }
+        else
+        {
             using var session = theStore.LightweightSession(tenantId);
-
-            foreach (var stream in _streams.Where(x => x.TenantId == tenantId))
-            {
-                var expected = await session.Events.AggregateStreamAsync<Trip>(stream.StreamId);
-
-                if (expected == null)
-                {
-                    actuals.ContainsKey(stream.StreamId).ShouldBeFalse();
-                }
-                else
-                {
-                    if (actuals.TryGetValue(stream.StreamId, out var actual))
-                    {
-                        expected.ShouldBe(actual);
-                    }
-                    else
-                    {
-                        throw new Exception("Missing expected aggregate");
-                    }
-                }
-            }
+            var data = await session.Query<Trip>().ToListAsync();
+            var dict = data.ToDictionary(x => x.Id);
+            return dict;
         }
+    }
 
-        protected async Task<Dictionary<Guid, Trip>> LoadAllAggregatesFromDatabase(string tenantId = null)
+    protected async Task PublishSingleThreaded()
+    {
+
+        var groups = _streams.GroupBy(x => x.TenantId).ToArray();
+        if (groups.Length > 1)
         {
-
-            if (tenantId.IsNullOrEmpty())
+            foreach (var @group in groups)
             {
-                var data = await theSession.Query<Trip>().ToListAsync();
-                var dict = data.ToDictionary(x => x.Id);
-                return dict;
-            }
-            else
-            {
-                using var session = theStore.LightweightSession(tenantId);
-                var data = await session.Query<Trip>().ToListAsync();
-                var dict = data.ToDictionary(x => x.Id);
-                return dict;
-            }
-        }
-
-        protected async Task PublishSingleThreaded()
-        {
-
-            var groups = _streams.GroupBy(x => x.TenantId).ToArray();
-            if (groups.Length > 1)
-            {
-                foreach (var @group in groups)
+                foreach (var stream in @group)
                 {
-                    foreach (var stream in @group)
-                    {
-                        using (var session = theStore.LightweightSession(@group.Key))
-                        {
-                            session.Events.StartStream(stream.StreamId, stream.Events);
-                            await session.SaveChangesAsync();
-                        }
-                    }
-                }
-            }
-            else
-            {
-                foreach (var stream in _streams)
-                {
-                    using (var session = theStore.LightweightSession())
+                    using (var session = theStore.LightweightSession(@group.Key))
                     {
                         session.Events.StartStream(stream.StreamId, stream.Events);
                         await session.SaveChangesAsync();
                     }
                 }
             }
-
-
         }
-
-        protected Task PublishMultiThreaded(int threads)
+        else
         {
             foreach (var stream in _streams)
             {
-                stream.Reset();
-            }
-
-            var publishers = createPublishers(threads);
-
-            var tasks = publishers.Select(x => x.PublishAll()).ToArray();
-            return Task.WhenAll(tasks);
-        }
-
-        private List<EventPublisher> createPublishers(int threads)
-        {
-            var streamsPerPublisher = (int) Math.Floor((double) _streams.Count / threads);
-            var index = 0;
-
-            var publishers = new List<EventPublisher>();
-            for (var i = 0; i < threads; i++)
-            {
-                publishers.Add(new EventPublisher(theStore));
-            }
-
-
-            foreach (var publisher in publishers)
-            {
-                publisher.Streams.AddRange(_streams.GetRange(index, streamsPerPublisher));
-                index += streamsPerPublisher;
-            }
-
-            if (index < _streams.Count - 1)
-            {
-                publishers.Last().Streams.Add(_streams.Last());
-            }
-
-            return publishers;
-        }
-
-        public class EventPublisher
-        {
-            private readonly DocumentStore _store;
-            private readonly TaskCompletionSource<bool> _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-            public EventPublisher(DocumentStore store)
-            {
-                _store = store;
-            }
-
-            public IList<TripStream> Streams { get; } = new List<TripStream>();
-
-            public Task PublishAll()
-            {
-                Task.Factory.StartNew(publishAll, TaskCreationOptions.AttachedToParent);
-                return _completion.Task;
-            }
-
-            private async Task publishAll()
-            {
-                try
+                using (var session = theStore.LightweightSession())
                 {
-                    while (Streams.Any() && !Streams.All(x => x.IsFinishedPublishing()))
-                    {
-                        using (var session = _store.LightweightSession())
-                        {
-                            foreach (var stream in Streams)
-                            {
-                                if (stream.TryCheckOutEvents(out var events))
-                                {
-                                    if (events.Length == 0) throw new DivideByZeroException();
-                                    session.Events.Append(stream.StreamId, events);
-                                }
-                            }
-
-                            await session.SaveChangesAsync();
-
-                        }
-                    }
+                    session.Events.StartStream(stream.StreamId, stream.Events);
+                    await session.SaveChangesAsync();
                 }
-                catch (Exception e)
-                {
-                    _completion.SetException(e);
-                }
-
-                _completion.SetResult(true);
             }
         }
+
+
     }
 
-    internal class ShardActionWatcher: IObserver<ShardState>
+    protected Task PublishMultiThreaded(int threads)
     {
-        private readonly IDisposable _unsubscribe;
-        private readonly string _shardName;
-        private readonly ShardAction _expected;
-        private readonly TaskCompletionSource<ShardState> _completion;
-        private readonly CancellationTokenSource _timeout;
-
-        public ShardActionWatcher(ShardStateTracker tracker, string shardName, ShardAction expected, TimeSpan timeout)
+        foreach (var stream in _streams)
         {
-            _shardName = shardName;
-            _expected = expected;
-            _completion = new TaskCompletionSource<ShardState>();
+            stream.Reset();
+        }
+
+        var publishers = createPublishers(threads);
+
+        var tasks = publishers.Select(x => x.PublishAll()).ToArray();
+        return Task.WhenAll(tasks);
+    }
+
+    private List<EventPublisher> createPublishers(int threads)
+    {
+        var streamsPerPublisher = (int) Math.Floor((double) _streams.Count / threads);
+        var index = 0;
+
+        var publishers = new List<EventPublisher>();
+        for (var i = 0; i < threads; i++)
+        {
+            publishers.Add(new EventPublisher(theStore));
+        }
 
 
-            _timeout = new CancellationTokenSource(timeout);
-            _timeout.Token.Register(() =>
+        foreach (var publisher in publishers)
+        {
+            publisher.Streams.AddRange(_streams.GetRange(index, streamsPerPublisher));
+            index += streamsPerPublisher;
+        }
+
+        if (index < _streams.Count - 1)
+        {
+            publishers.Last().Streams.Add(_streams.Last());
+        }
+
+        return publishers;
+    }
+
+    public class EventPublisher
+    {
+        private readonly DocumentStore _store;
+        private readonly TaskCompletionSource<bool> _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public EventPublisher(DocumentStore store)
+        {
+            _store = store;
+        }
+
+        public IList<TripStream> Streams { get; } = new List<TripStream>();
+
+        public Task PublishAll()
+        {
+            Task.Factory.StartNew(publishAll, TaskCreationOptions.AttachedToParent);
+            return _completion.Task;
+        }
+
+        private async Task publishAll()
+        {
+            try
             {
-                _completion.TrySetException(new TimeoutException(
-                    $"Shard {_shardName} did receive the action {_expected} in the time allowed"));
-            });
+                while (Streams.Any() && !Streams.All(x => x.IsFinishedPublishing()))
+                {
+                    using (var session = _store.LightweightSession())
+                    {
+                        foreach (var stream in Streams)
+                        {
+                            if (stream.TryCheckOutEvents(out var events))
+                            {
+                                if (events.Length == 0) throw new DivideByZeroException();
+                                session.Events.Append(stream.StreamId, events);
+                            }
+                        }
 
-            _unsubscribe = tracker.Subscribe(this);
-        }
+                        await session.SaveChangesAsync();
 
-        public Task<ShardState> Task => _completion.Task;
-
-        public void OnCompleted()
-        {
-
-        }
-
-        public void OnError(Exception error)
-        {
-            _completion.SetException(error);
-        }
-
-        public void OnNext(ShardState value)
-        {
-            if (value.ShardName.EqualsIgnoreCase(_shardName) && value.Action == _expected)
-            {
-                _completion.SetResult(value);
-                _unsubscribe.Dispose();
+                    }
+                }
             }
+            catch (Exception e)
+            {
+                _completion.SetException(e);
+            }
+
+            _completion.SetResult(true);
+        }
+    }
+}
+
+internal class ShardActionWatcher: IObserver<ShardState>
+{
+    private readonly IDisposable _unsubscribe;
+    private readonly string _shardName;
+    private readonly ShardAction _expected;
+    private readonly TaskCompletionSource<ShardState> _completion;
+    private readonly CancellationTokenSource _timeout;
+
+    public ShardActionWatcher(ShardStateTracker tracker, string shardName, ShardAction expected, TimeSpan timeout)
+    {
+        _shardName = shardName;
+        _expected = expected;
+        _completion = new TaskCompletionSource<ShardState>();
+
+
+        _timeout = new CancellationTokenSource(timeout);
+        _timeout.Token.Register(() =>
+        {
+            _completion.TrySetException(new TimeoutException(
+                $"Shard {_shardName} did receive the action {_expected} in the time allowed"));
+        });
+
+        _unsubscribe = tracker.Subscribe(this);
+    }
+
+    public Task<ShardState> Task => _completion.Task;
+
+    public void OnCompleted()
+    {
+
+    }
+
+    public void OnError(Exception error)
+    {
+        _completion.SetException(error);
+    }
+
+    public void OnNext(ShardState value)
+    {
+        if (value.ShardName.EqualsIgnoreCase(_shardName) && value.Action == _expected)
+        {
+            _completion.SetResult(value);
+            _unsubscribe.Dispose();
         }
     }
 }
