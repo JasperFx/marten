@@ -44,13 +44,13 @@ I can use this syntax shown below to configure Marten:
 ```cs
 var store = DocumentStore
     .For(_ =>
-         {
-             _.Connection("some database connection");
+    {
+        _.Connection("some database connection");
 
-             // In the following line of code, I'm setting
-             // up a foreign key relationship to the User document
-             _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId);
-         });
+        // In the following line of code, I'm setting
+        // up a foreign key relationship to the User document
+        _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId);
+    });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ForeignKeyExamples.cs#L11-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure-foreign-key' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -83,13 +83,13 @@ of `Issue`, we can create a foreign key from our `Issue` to our external bug tra
 ```cs
 var store = DocumentStore
     .For(_ =>
-         {
-             _.Connection("some database connection");
+    {
+        _.Connection("some database connection");
 
-             // Here we create a foreign key to table that is not
-             // created or managed by marten
-             _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugtracker", "bugs", "id");
-         });
+        // Here we create a foreign key to table that is not
+        // created or managed by marten
+        _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugtracker", "bugs", "id");
+    });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ForeignKeyExamples.cs#L29-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure-external-foreign-key' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -114,11 +114,11 @@ to enable this is to use a configuration function like:
 ```cs
 var store = DocumentStore
     .For(_ =>
-         {
-             _.Connection("some database connection");
+    {
+        _.Connection("some database connection");
 
-             _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.OnDelete = CascadeAction.Cascade);
-         });
+        _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.OnDelete = CascadeAction.Cascade);
+    });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ForeignKeyExamples.cs#L44-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_cascade_deletes_with_config_func' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

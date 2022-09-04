@@ -1,10 +1,9 @@
 ﻿using System;
 
-namespace Marten.Testing.OtherAssembly.Bug1984
+namespace Marten.Testing.OtherAssembly.Bug1984;
+
+public class GenericEntity<T>
 {
-    public class GenericEntity<T>
-    {
-        public Guid Id { get; set; }
-        public T Data { get; set; }
-    }
+    public Guid Id { get; set; }
+    public T Data { get; set; }
 }

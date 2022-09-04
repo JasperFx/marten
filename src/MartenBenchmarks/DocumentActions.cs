@@ -3,28 +3,27 @@ using BenchmarkDotNet.Attributes;
 using Marten.Testing;
 using Marten.Testing.Documents;
 
-namespace MartenBenchmarks
+namespace MartenBenchmarks;
+
+[SimpleJob(warmupCount: 2)]
+[MemoryDiagnoser]
+public class DocumentActions
 {
-    [SimpleJob(warmupCount: 2)]
-    [MemoryDiagnoser]
-    public class DocumentActions
+    public static Target[] Docs = Target.GenerateRandomData(100).ToArray();
+
+    [GlobalSetup]
+    public void Setup()
     {
-        public static Target[] Docs = Target.GenerateRandomData(100).ToArray();
+        BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsByType(typeof(Target));
+    }
 
-        [GlobalSetup]
-        public void Setup()
+    [Benchmark]
+    public void InsertDocuments()
+    {
+        using (var session = BenchmarkStore.Store.OpenSession())
         {
-            BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsByType(typeof(Target));
-        }
-
-        [Benchmark]
-        public void InsertDocuments()
-        {
-            using (var session = BenchmarkStore.Store.OpenSession())
-            {
-                session.Store(Docs);
-                session.SaveChanges();
-            }
+            session.Store(Docs);
+            session.SaveChanges();
         }
     }
 }

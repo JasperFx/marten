@@ -1,6 +1,3 @@
 ﻿using System.Collections;
 
-namespace Marten.Testing
-{
-
-}
+namespace Marten.Testing;

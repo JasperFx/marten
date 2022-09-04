@@ -7,96 +7,95 @@ using Marten.Services;
 using Marten.Storage;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.PLv8.Transforms
+namespace Marten.PLv8.Transforms;
+
+internal class DocumentTransforms: IDocumentTransforms, IDisposable
 {
-    internal class DocumentTransforms: IDocumentTransforms, IDisposable
+    private readonly DocumentStore _store;
+    private readonly Tenant _tenant;
+
+    public DocumentTransforms(DocumentStore store, Tenant tenant)
     {
-        private readonly DocumentStore _store;
-        private readonly Tenant _tenant;
+        _store = store;
+        _tenant = tenant;
 
-        public DocumentTransforms(DocumentStore store, Tenant tenant)
-        {
-            _store = store;
-            _tenant = tenant;
+        Session = (DocumentSessionBase)_store.OpenSession(new SessionOptions{Tenant = tenant, Tracking = DocumentTracking.None});
+    }
 
-            Session = (DocumentSessionBase)_store.OpenSession(new SessionOptions{Tenant = tenant, Tracking = DocumentTracking.None});
-        }
+    public void Dispose()
+    {
+        Session?.Dispose();
+    }
 
-        public void Dispose()
-        {
-            Session?.Dispose();
-        }
+    public DocumentSessionBase Session { get; }
 
-        public DocumentSessionBase Session { get; }
+    public void All<T>(string transformName)
+    {
+        var transform = Session.Options.TransformFor(transformName);
+        var storage = Session.Options.Providers.StorageFor<T>().QueryOnly;
 
-        public void All<T>(string transformName)
-        {
-            var transform = Session.Options.TransformFor(transformName);
-            var storage = Session.Options.Providers.StorageFor<T>().QueryOnly;
+        var operation = new DocumentTransformOperationFragment(storage, transform);
+        var statement = new StatementOperation(storage, operation);
 
-            var operation = new DocumentTransformOperationFragment(storage, transform);
-            var statement = new StatementOperation(storage, operation);
+        // To bake in the default document filtering here
+        statement.CompileLocal(Session);
+        Session.QueueOperation(statement);
+    }
 
-            // To bake in the default document filtering here
-            statement.CompileLocal(Session);
-            Session.QueueOperation(statement);
-        }
+    public void Tenant<T>(string transformName, string tenantId)
+    {
+        Where<T>(transformName, x => x.TenantIsOneOf(tenantId));
+    }
 
-        public void Tenant<T>(string transformName, string tenantId)
-        {
-            Where<T>(transformName, x => x.TenantIsOneOf(tenantId));
-        }
+    public void Tenants<T>(string transformName, params string[] tenantIds)
+    {
+        Where<T>(transformName, x => x.TenantIsOneOf(tenantIds));
+    }
 
-        public void Tenants<T>(string transformName, params string[] tenantIds)
-        {
-            Where<T>(transformName, x => x.TenantIsOneOf(tenantIds));
-        }
+    public void Where<T>(string transformName, Expression<Func<T, bool>> @where)
+    {
+        var transform = Session.Options.TransformFor(transformName);
 
-        public void Where<T>(string transformName, Expression<Func<T, bool>> @where)
-        {
-            var transform = Session.Options.TransformFor(transformName);
+        var storage = Session.StorageFor<T>();
+        var operation = new DocumentTransformOperationFragment(storage, transform);
 
-            var storage = Session.StorageFor<T>();
-            var operation = new DocumentTransformOperationFragment(storage, transform);
-
-            var statement = new StatementOperation(storage, operation);
-            statement.ApplyFiltering(Session, @where);
-            Session.QueueOperation(statement);
-        }
+        var statement = new StatementOperation(storage, operation);
+        statement.ApplyFiltering(Session, @where);
+        Session.QueueOperation(statement);
+    }
 
 
-        public void Document<T>(string transformName, string id)
-        {
-            transformOne<T>(transformName, new ByStringFilter(id));
-        }
+    public void Document<T>(string transformName, string id)
+    {
+        transformOne<T>(transformName, new ByStringFilter(id));
+    }
 
-        private void transformOne<T>(string transformName, ISqlFragment filter)
-        {
-            var transform = Session.Options.TransformFor(transformName);
+    private void transformOne<T>(string transformName, ISqlFragment filter)
+    {
+        var transform = Session.Options.TransformFor(transformName);
 
-            var storage = Session.StorageFor<T>();
-            var operation = new DocumentTransformOperationFragment(storage, transform);
+        var storage = Session.StorageFor<T>();
+        var operation = new DocumentTransformOperationFragment(storage, transform);
 
-            var statement = new StatementOperation(storage, operation) {Where = filter};
+        var statement = new StatementOperation(storage, operation) {Where = filter};
 
-            // To bake in the default document filtering here
-            statement.CompileLocal(Session);
-            Session.QueueOperation(statement);
-        }
+        // To bake in the default document filtering here
+        statement.CompileLocal(Session);
+        Session.QueueOperation(statement);
+    }
 
-        public void Document<T>(string transformName, int id)
-        {
-            transformOne<T>(transformName, new ByIntFilter(id));
-        }
+    public void Document<T>(string transformName, int id)
+    {
+        transformOne<T>(transformName, new ByIntFilter(id));
+    }
 
-        public void Document<T>(string transformName, long id)
-        {
-            transformOne<T>(transformName, new ByLongFilter(id));
-        }
+    public void Document<T>(string transformName, long id)
+    {
+        transformOne<T>(transformName, new ByLongFilter(id));
+    }
 
-        public void Document<T>(string transformName, Guid id)
-        {
-            transformOne<T>(transformName, new ByGuidFilter(id));
-        }
+    public void Document<T>(string transformName, Guid id)
+    {
+        transformOne<T>(transformName, new ByGuidFilter(id));
     }
 }

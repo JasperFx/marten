@@ -118,13 +118,13 @@ public class Startup
         var connectionString = Configuration.GetConnectionString("postgres");
 
         services.AddMarten(opts =>
-        {
-            opts.Connection(connectionString);
-        })
-        // Using the "Optimized artifact workflow" for Marten >= V5
-        // sets up your Marten configuration based on your environment
-        // See https://martendb.io/configuration/optimized_artifact_workflow.html
-        .OptimizeArtifactWorkflow();
+            {
+                opts.Connection(connectionString);
+            })
+            // Using the "Optimized artifact workflow" for Marten >= V5
+            // sets up your Marten configuration based on your environment
+            // See https://martendb.io/configuration/optimized_artifact_workflow.html
+            .OptimizeArtifactWorkflow();
     }
 
     // And other methods we don't care about here...
@@ -154,10 +154,10 @@ public class Startup
         var options = BuildStoreOptions();
 
         services.AddMarten(options)
-        // Using the "Optimized artifact workflow" for Marten >= V5
-        // sets up your Marten configuration based on your environment
-        // See https://martendb.io/configuration/optimized_artifact_workflow.html
-        .OptimizeArtifactWorkflow();
+            // Using the "Optimized artifact workflow" for Marten >= V5
+            // sets up your Marten configuration based on your environment
+            // See https://martendb.io/configuration/optimized_artifact_workflow.html
+            .OptimizeArtifactWorkflow();
     }
 
     private StoreOptions BuildStoreOptions()
@@ -207,7 +207,7 @@ public static IServiceCollection AddUserModule(this IServiceCollection services)
     return services;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L13-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addusermodule' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L12-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addusermodule' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And next, let's put that into context with its usage inside your application's bootstrapping:
@@ -228,7 +228,7 @@ using var host = await Host.CreateDefaultBuilder()
         services.AddUserModule();
     }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L71-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_configure_marten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L70-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_configure_marten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `ConfigureMarten()` method is the interesting part of the code samples above. That is registering a small
@@ -263,7 +263,7 @@ internal class UserMartenConfiguration: IConfigureMarten
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L52-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usermartenconfiguration' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L51-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usermartenconfiguration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 and registering it in your IoC container something like this:
@@ -283,7 +283,7 @@ public static IServiceCollection AddUserModule2(this IServiceCollection services
     return services;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L35-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addusermodule2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L34-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addusermodule2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Using Lightweight Sessions
@@ -317,19 +317,19 @@ public class Startup
         var connectionString = Configuration.GetConnectionString("postgres");
 
         services.AddMarten(opts =>
-        {
-            opts.Connection(connectionString);
-        })
+            {
+                opts.Connection(connectionString);
+            })
 
-        // Chained helper to replace the built in
-        // session factory behavior
-        .UseLightweightSessions();
+            // Chained helper to replace the built in
+            // session factory behavior
+            .UseLightweightSessions();
     }
 
     // And other methods we don't care about here...
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/LightweightSessions/Startup.cs#L11-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithlightweightsessions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/LightweightSessions/Startup.cs#L10-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithlightweightsessions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Customizing Session Creation Globally
@@ -531,15 +531,15 @@ public class Startup
         var connectionString = Configuration.GetConnectionString("postgres");
 
         services.AddMarten(opts =>
-        {
-            opts.Connection(connectionString);
-        })
-        // Using the "Optimized artifact workflow" for Marten >= V5
-        // sets up your Marten configuration based on your environment
-        // See https://martendb.io/configuration/optimized_artifact_workflow.html
-        .OptimizeArtifactWorkflow()
-        // Chained helper to replace the CustomSessionFactory
-        .BuildSessionsWith<ScopedSessionFactory>(ServiceLifetime.Scoped);
+            {
+                opts.Connection(connectionString);
+            })
+            // Using the "Optimized artifact workflow" for Marten >= V5
+            // sets up your Marten configuration based on your environment
+            // See https://martendb.io/configuration/optimized_artifact_workflow.html
+            .OptimizeArtifactWorkflow()
+            // Chained helper to replace the CustomSessionFactory
+            .BuildSessionsWith<ScopedSessionFactory>(ServiceLifetime.Scoped);
     }
 
     // And other methods we don't care about here...
@@ -575,12 +575,12 @@ public class Startup
 
         // By only the connection string
         services.AddMarten(connectionString)
-        // Using the "Optimized artifact workflow" for Marten >= V5
-        // sets up your Marten configuration based on your environment
-        // See https://martendb.io/configuration/optimized_artifact_workflow.html
-        .OptimizeArtifactWorkflow()
-        // Spin up the DocumentStore right this second!
-        .InitializeStore();
+            // Using the "Optimized artifact workflow" for Marten >= V5
+            // sets up your Marten configuration based on your environment
+            // See https://martendb.io/configuration/optimized_artifact_workflow.html
+            .OptimizeArtifactWorkflow()
+            // Spin up the DocumentStore right this second!
+            .InitializeStore();
     }
 
     // And other methods we don't care about here...

@@ -3,10 +3,10 @@ using Marten;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace CoreTests.Examples
+namespace CoreTests.Examples;
+
+public class EnvironmentChecks
 {
-    public class EnvironmentChecks
-    {
 
 #if NET6_0_OR_GREATER
 
@@ -32,5 +32,4 @@ namespace CoreTests.Examples
 
         #endregion
 #endif
-    }
 }

@@ -3,17 +3,16 @@ using Baseline;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 
-namespace CoreTests
+namespace CoreTests;
+
+internal class MartenHostEnvironment : IHostEnvironment
 {
-    internal class MartenHostEnvironment : IHostEnvironment
-    {
-        public string ApplicationName { get; set; } = typeof(MartenHostEnvironment).Assembly.GetName().Name;
+    public string ApplicationName { get; set; } = typeof(MartenHostEnvironment).Assembly.GetName().Name;
 
-        public IFileProvider ContentRootFileProvider { get; set; } =
-            new PhysicalFileProvider(AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory());
-        public string ContentRootPath { get; set; } =
-            AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory();
+    public IFileProvider ContentRootFileProvider { get; set; } =
+        new PhysicalFileProvider(AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory());
+    public string ContentRootPath { get; set; } =
+        AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory();
 
-        public string EnvironmentName { get; set; } = "Development";
-    }
+    public string EnvironmentName { get; set; } = "Development";
 }

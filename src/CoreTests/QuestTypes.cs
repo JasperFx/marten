@@ -2,179 +2,178 @@ using System;
 using System.Linq;
 using Baseline;
 
-namespace CoreTests
+namespace CoreTests;
+
+public class Quest
 {
-    public class Quest
+    public Guid Id { get; set; }
+}
+
+#region sample_sample-events_1
+public class ArrivedAtLocation
+{
+    public int Day { get; set; }
+
+    public string Location { get; set; }
+
+    public override string ToString()
     {
-        public Guid Id { get; set; }
+        return $"Arrived at {Location} on Day {Day}";
+    }
+}
+
+public class MembersJoined
+{
+    public MembersJoined()
+    {
     }
 
-    #region sample_sample-events_1
-    public class ArrivedAtLocation
+    public MembersJoined(int day, string location, params string[] members)
     {
-        public int Day { get; set; }
-
-        public string Location { get; set; }
-
-        public override string ToString()
-        {
-            return $"Arrived at {Location} on Day {Day}";
-        }
+        Day = day;
+        Location = location;
+        Members = members;
     }
 
-    public class MembersJoined
+    public Guid QuestId { get; set; }
+
+    public int Day { get; set; }
+
+    public string Location { get; set; }
+
+    public string[] Members { get; set; }
+
+    public override string ToString()
     {
-        public MembersJoined()
-        {
-        }
-
-        public MembersJoined(int day, string location, params string[] members)
-        {
-            Day = day;
-            Location = location;
-            Members = members;
-        }
-
-        public Guid QuestId { get; set; }
-
-        public int Day { get; set; }
-
-        public string Location { get; set; }
-
-        public string[] Members { get; set; }
-
-        public override string ToString()
-        {
-            return $"Members {Members.Join(", ")} joined at {Location} on Day {Day}";
-        }
-
-        protected bool Equals(MembersJoined other)
-        {
-            return QuestId.Equals(other.QuestId) && Day == other.Day && Location == other.Location && Members.SequenceEqual(other.Members);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((MembersJoined) obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(QuestId, Day, Location, Members);
-        }
+        return $"Members {Members.Join(", ")} joined at {Location} on Day {Day}";
     }
 
-    public class QuestStarted
+    protected bool Equals(MembersJoined other)
     {
-        public string Name { get; set; }
-        public Guid Id { get; set; }
-
-        public override string ToString()
-        {
-            return $"Quest {Name} started";
-        }
-
-        protected bool Equals(QuestStarted other)
-        {
-            return Name == other.Name && Id.Equals(other.Id);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((QuestStarted) obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Name, Id);
-        }
+        return QuestId.Equals(other.QuestId) && Day == other.Day && Location == other.Location && Members.SequenceEqual(other.Members);
     }
 
-    public class QuestEnded
+    public override bool Equals(object obj)
     {
-        public string Name { get; set; }
-        public Guid Id { get; set; }
-
-        public override string ToString()
-        {
-            return $"Quest {Name} ended";
-        }
+        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != this.GetType()) return false;
+        return Equals((MembersJoined) obj);
     }
 
-    public class MembersDeparted
+    public override int GetHashCode()
     {
-        public Guid Id { get; set; }
+        return HashCode.Combine(QuestId, Day, Location, Members);
+    }
+}
 
-        public Guid QuestId { get; set; }
+public class QuestStarted
+{
+    public string Name { get; set; }
+    public Guid Id { get; set; }
 
-        public int Day { get; set; }
-
-        public string Location { get; set; }
-
-        public string[] Members { get; set; }
-
-        public override string ToString()
-        {
-            return $"Members {Members.Join(", ")} departed at {Location} on Day {Day}";
-        }
+    public override string ToString()
+    {
+        return $"Quest {Name} started";
     }
 
-    public class MembersEscaped
+    protected bool Equals(QuestStarted other)
     {
-        public Guid Id { get; set; }
-
-        public Guid QuestId { get; set; }
-
-        public string Location { get; set; }
-
-        public string[] Members { get; set; }
-
-        public override string ToString()
-        {
-            return $"Members {Members.Join(", ")} escaped from {Location}";
-        }
+        return Name == other.Name && Id.Equals(other.Id);
     }
 
-    #endregion
-
-
-    public class IssueCreated
+    public override bool Equals(object obj)
     {
-        public Guid Id { get; set; }
+        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != this.GetType()) return false;
+        return Equals((QuestStarted) obj);
     }
 
-    public class IssueAssigned
+    public override int GetHashCode()
     {
-        public Guid Id { get; set; }
+        return HashCode.Combine(Name, Id);
     }
+}
 
-    public class ImmutableEvent
+public class QuestEnded
+{
+    public string Name { get; set; }
+    public Guid Id { get; set; }
+
+    public override string ToString()
     {
-        public Guid Id { get; private set; }
-        public string Name { get; private set; }
-
-        public ImmutableEvent(Guid id, string name)
-        {
-            Id = id;
-            Name = name;
-        }
+        return $"Quest {Name} ended";
     }
+}
 
-    public class ImmutableEvent2
+public class MembersDeparted
+{
+    public Guid Id { get; set; }
+
+    public Guid QuestId { get; set; }
+
+    public int Day { get; set; }
+
+    public string Location { get; set; }
+
+    public string[] Members { get; set; }
+
+    public override string ToString()
     {
-        public string Key { get; }
-        public string Name { get; private set; }
+        return $"Members {Members.Join(", ")} departed at {Location} on Day {Day}";
+    }
+}
 
-        public ImmutableEvent2(string key, string name)
-        {
-            Key = key;
-            Name = name;
-        }
+public class MembersEscaped
+{
+    public Guid Id { get; set; }
+
+    public Guid QuestId { get; set; }
+
+    public string Location { get; set; }
+
+    public string[] Members { get; set; }
+
+    public override string ToString()
+    {
+        return $"Members {Members.Join(", ")} escaped from {Location}";
+    }
+}
+
+#endregion
+
+
+public class IssueCreated
+{
+    public Guid Id { get; set; }
+}
+
+public class IssueAssigned
+{
+    public Guid Id { get; set; }
+}
+
+public class ImmutableEvent
+{
+    public Guid Id { get; private set; }
+    public string Name { get; private set; }
+
+    public ImmutableEvent(Guid id, string name)
+    {
+        Id = id;
+        Name = name;
+    }
+}
+
+public class ImmutableEvent2
+{
+    public string Key { get; }
+    public string Name { get; private set; }
+
+    public ImmutableEvent2(string key, string name)
+    {
+        Key = key;
+        Name = name;
     }
 }

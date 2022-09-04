@@ -2,29 +2,28 @@ using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AspNetCoreWithMarten.Samples.ByConnectionString
+namespace AspNetCoreWithMarten.Samples.ByConnectionString;
+
+#region sample_AddMartenByConnectionString
+public class Startup
 {
-    #region sample_AddMartenByConnectionString
-    public class Startup
+    public Startup(IConfiguration configuration)
     {
-        public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
-
-        public IConfiguration Configuration { get; }
-
-        public void ConfigureServices(IServiceCollection services)
-        {
-
-            var connectionString = Configuration.GetConnectionString("postgres");
-
-
-            // By only the connection string
-            services.AddMarten(connectionString);
-        }
-
-        // And other methods we don't care about here...
+        Configuration = configuration;
     }
-    #endregion
+
+    public IConfiguration Configuration { get; }
+
+    public void ConfigureServices(IServiceCollection services)
+    {
+
+        var connectionString = Configuration.GetConnectionString("postgres");
+
+
+        // By only the connection string
+        services.AddMarten(connectionString);
+    }
+
+    // And other methods we don't care about here...
 }
+#endregion

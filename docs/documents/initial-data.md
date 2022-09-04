@@ -55,11 +55,11 @@ using var host = await Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
     {
         services.AddMarten(opts =>
-        {
-            opts.DatabaseSchemaName = "Bug962";
+            {
+                opts.DatabaseSchemaName = "Bug962";
 
-            opts.Connection(ConnectionSource.ConnectionString);
-        })
+                opts.Connection(ConnectionSource.ConnectionString);
+            })
             // Add as many implementations of IInitialData as you need
             .InitializeWith(new InitialData(InitialDatasets.Companies), new InitialData(InitialDatasets.Users));
     }).StartAsync();

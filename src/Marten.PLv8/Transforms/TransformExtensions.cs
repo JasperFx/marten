@@ -11,187 +11,186 @@ using Marten.Linq;
 using Marten.Services;
 using Marten.Storage;
 
-namespace Marten.PLv8.Transforms
+namespace Marten.PLv8.Transforms;
+
+public static class TransformExtensions
 {
-    public static class TransformExtensions
+    internal static TransformFunction TransformFor(this StoreOptions options, string transformName)
     {
-        internal static TransformFunction TransformFor(this StoreOptions options, string transformName)
+        try
         {
-            try
-            {
-                var schema = options.Storage.FindFeature(typeof(TransformSchema));
-                if (schema == null)
-                {
-                    throw new InvalidOperationException(
-                        $"Attempting to use a PLV8/Javascript related feature, but the support is not active in this DocumentStore. Did you forget to call {nameof(StoreOptions)}.{nameof(StoreOptionsExtensions.UseJavascriptTransformsAndPatching)}()?");
-                }
-
-                return schema.As<TransformSchema>().For(transformName);
-            }
-            catch (InvalidDocumentException)
+            var schema = options.Storage.FindFeature(typeof(TransformSchema));
+            if (schema == null)
             {
                 throw new InvalidOperationException(
                     $"Attempting to use a PLV8/Javascript related feature, but the support is not active in this DocumentStore. Did you forget to call {nameof(StoreOptions)}.{nameof(StoreOptionsExtensions.UseJavascriptTransformsAndPatching)}()?");
             }
-        }
 
-        internal static void EnsureTransformsExist(this IDocumentOperations operations)
+            return schema.As<TransformSchema>().For(transformName);
+        }
+        catch (InvalidDocumentException)
         {
-            try
-            {
-                operations.As<DocumentSessionBase>().Database.EnsureStorageExists(typeof(TransformSchema));
-            }
-            catch (InvalidDocumentException)
-            {
-                throw new InvalidOperationException(
-                    $"Attempting to use a PLV8/Javascript related feature, but the support is not active in this DocumentStore. Did you forget to call {nameof(StoreOptions)}.{nameof(StoreOptionsExtensions.UseJavascriptTransformsAndPatching)}()?");
-            }
+            throw new InvalidOperationException(
+                $"Attempting to use a PLV8/Javascript related feature, but the support is not active in this DocumentStore. Did you forget to call {nameof(StoreOptions)}.{nameof(StoreOptionsExtensions.UseJavascriptTransformsAndPatching)}()?");
         }
+    }
 
-        /// <summary>
-        /// Write the JSON for one document via a named Javascript transform name to the supplied Stream
-        /// </summary>
-        /// <param name="queryable"></param>
-        /// <param name="transformName"></param>
-        /// <param name="destination"></param>
-        /// <param name="token"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        public static Task StreamOneTransformed<T>(this IQueryable<T> queryable, string transformName,
-            Stream destination, CancellationToken token)
+    internal static void EnsureTransformsExist(this IDocumentOperations operations)
+    {
+        try
         {
-            return queryable.As<IMartenLinqQueryable>().StreamOneTransformed(transformName, destination, token);
+            operations.As<DocumentSessionBase>().Database.EnsureStorageExists(typeof(TransformSchema));
         }
-
-
-        private static async Task StreamOneTransformed(this IMartenLinqQueryable martenQueryable, string transformName,
-            Stream destination, CancellationToken token)
+        catch (InvalidDocumentException)
         {
-            var builder = martenQueryable.BuildLinqHandler();
-
-            var session = martenQueryable.Session;
-
-            await session.Database.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
-
-            var transform = session.Options.TransformFor(transformName);
-
-            builder.CurrentStatement.SelectClause =
-                new TransformSelectClause<string>(transform, builder.CurrentStatement.SelectClause);
-
-            var statement = builder.TopStatement;
-            statement.Current().Limit = 1;
-            var command = statement.BuildCommand();
-
-            await session.StreamOne(command, destination, token).ConfigureAwait(false);
+            throw new InvalidOperationException(
+                $"Attempting to use a PLV8/Javascript related feature, but the support is not active in this DocumentStore. Did you forget to call {nameof(StoreOptions)}.{nameof(StoreOptionsExtensions.UseJavascriptTransformsAndPatching)}()?");
         }
+    }
 
-        /// <summary>
-        /// Write many document via a named Javascript transform name to the supplied Stream as a JSON array
-        /// </summary>
-        /// <param name="queryable"></param>
-        /// <param name="transformName"></param>
-        /// <param name="destination"></param>
-        /// <param name="token"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        public static Task StreamManyTransformed<T>(this IQueryable<T> queryable, string transformName,
-            Stream destination, CancellationToken token = default)
-        {
-            return StreamManyTransformed(queryable.As<IMartenLinqQueryable>(), transformName, destination, token);
-        }
+    /// <summary>
+    /// Write the JSON for one document via a named Javascript transform name to the supplied Stream
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <param name="transformName"></param>
+    /// <param name="destination"></param>
+    /// <param name="token"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static Task StreamOneTransformed<T>(this IQueryable<T> queryable, string transformName,
+        Stream destination, CancellationToken token)
+    {
+        return queryable.As<IMartenLinqQueryable>().StreamOneTransformed(transformName, destination, token);
+    }
 
-        private static async Task StreamManyTransformed(this IMartenLinqQueryable martenQueryable, string transformName,
-            Stream destination, CancellationToken token)
-        {
-            var builder = martenQueryable.BuildLinqHandler();
 
-            var session = martenQueryable.Session;
+    private static async Task StreamOneTransformed(this IMartenLinqQueryable martenQueryable, string transformName,
+        Stream destination, CancellationToken token)
+    {
+        var builder = martenQueryable.BuildLinqHandler();
 
-            await session.Database.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
+        var session = martenQueryable.Session;
 
-            var transform = session.Options.TransformFor(transformName);
+        await session.Database.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
 
-            builder.CurrentStatement.SelectClause =
-                new TransformSelectClause<string>(transform, builder.CurrentStatement.SelectClause);
+        var transform = session.Options.TransformFor(transformName);
 
-            var statement = builder.TopStatement;
-            var command = statement.BuildCommand();
+        builder.CurrentStatement.SelectClause =
+            new TransformSelectClause<string>(transform, builder.CurrentStatement.SelectClause);
 
-            await session.StreamMany(command, destination, token).ConfigureAwait(false);
-        }
+        var statement = builder.TopStatement;
+        statement.Current().Limit = 1;
+        var command = statement.BuildCommand();
 
-        /// <summary>
-        /// Fetch the JSON for a single document transformed by the named Javascript transform
-        /// </summary>
-        /// <param name="queryable"></param>
-        /// <param name="transformName"></param>
-        /// <param name="token"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        public static async Task<string> TransformOneToJson<T>(this IQueryable<T> queryable, string transformName,
-            CancellationToken token = default)
-        {
-            var stream = new MemoryStream();
-            await queryable.StreamOneTransformed(transformName, stream, token).ConfigureAwait(false);
-            stream.Position = 0;
-            return await stream.ReadAllTextAsync().ConfigureAwait(false);
-        }
+        await session.StreamOne(command, destination, token).ConfigureAwait(false);
+    }
 
-        /// <summary>
-        /// Fetch the JSON array string for many document transformed by the named Javascript transform
-        /// </summary>
-        /// <param name="queryable"></param>
-        /// <param name="transformName"></param>
-        /// <param name="token"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        public static async Task<string> TransformManyToJson<T>(this IQueryable<T> queryable, string transformName,
-            CancellationToken token = default)
-        {
-            var stream = new MemoryStream();
-            await queryable.StreamManyTransformed(transformName, stream, token).ConfigureAwait(false);
-            stream.Position = 0;
-            return await stream.ReadAllTextAsync().ConfigureAwait(false);
-        }
+    /// <summary>
+    /// Write many document via a named Javascript transform name to the supplied Stream as a JSON array
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <param name="transformName"></param>
+    /// <param name="destination"></param>
+    /// <param name="token"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static Task StreamManyTransformed<T>(this IQueryable<T> queryable, string transformName,
+        Stream destination, CancellationToken token = default)
+    {
+        return StreamManyTransformed(queryable.As<IMartenLinqQueryable>(), transformName, destination, token);
+    }
 
-        /// <summary>
-        /// Return a single document transformed to type T by the named Javascript transform
-        /// </summary>
-        /// <param name="queryable"></param>
-        /// <param name="transformName"></param>
-        /// <param name="token"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        public static async Task<T> TransformOneTo<T>(this IQueryable queryable, string transformName,
-            CancellationToken token = default)
-        {
-            var stream = new MemoryStream();
-            var martenQueryable = queryable.As<IMartenLinqQueryable>();
+    private static async Task StreamManyTransformed(this IMartenLinqQueryable martenQueryable, string transformName,
+        Stream destination, CancellationToken token)
+    {
+        var builder = martenQueryable.BuildLinqHandler();
 
-            await martenQueryable.StreamOneTransformed(transformName, stream, token).ConfigureAwait(false);
-            stream.Position = 0;
+        var session = martenQueryable.Session;
 
-            return martenQueryable.Session.Serializer.FromJson<T>(stream);
-        }
+        await session.Database.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
 
-        /// <summary>
-        /// Return many documents transformed to a list of type T by the named Javascript transform
-        /// </summary>
-        /// <param name="queryable"></param>
-        /// <param name="transformName"></param>
-        /// <param name="token"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        public static async Task<IReadOnlyList<T>> TransformManyTo<T>(this IQueryable queryable, string transformName,
-            CancellationToken token = default)
-        {
-            var stream = new MemoryStream();
-            var martenQueryable = queryable.As<IMartenLinqQueryable>();
-            await martenQueryable.StreamManyTransformed(transformName, stream, token).ConfigureAwait(false);
+        var transform = session.Options.TransformFor(transformName);
 
-            stream.Position = 0;
+        builder.CurrentStatement.SelectClause =
+            new TransformSelectClause<string>(transform, builder.CurrentStatement.SelectClause);
 
-            return martenQueryable.Session.Serializer.FromJson<T[]>(stream);
-        }
+        var statement = builder.TopStatement;
+        var command = statement.BuildCommand();
+
+        await session.StreamMany(command, destination, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Fetch the JSON for a single document transformed by the named Javascript transform
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <param name="transformName"></param>
+    /// <param name="token"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static async Task<string> TransformOneToJson<T>(this IQueryable<T> queryable, string transformName,
+        CancellationToken token = default)
+    {
+        var stream = new MemoryStream();
+        await queryable.StreamOneTransformed(transformName, stream, token).ConfigureAwait(false);
+        stream.Position = 0;
+        return await stream.ReadAllTextAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Fetch the JSON array string for many document transformed by the named Javascript transform
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <param name="transformName"></param>
+    /// <param name="token"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static async Task<string> TransformManyToJson<T>(this IQueryable<T> queryable, string transformName,
+        CancellationToken token = default)
+    {
+        var stream = new MemoryStream();
+        await queryable.StreamManyTransformed(transformName, stream, token).ConfigureAwait(false);
+        stream.Position = 0;
+        return await stream.ReadAllTextAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Return a single document transformed to type T by the named Javascript transform
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <param name="transformName"></param>
+    /// <param name="token"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static async Task<T> TransformOneTo<T>(this IQueryable queryable, string transformName,
+        CancellationToken token = default)
+    {
+        var stream = new MemoryStream();
+        var martenQueryable = queryable.As<IMartenLinqQueryable>();
+
+        await martenQueryable.StreamOneTransformed(transformName, stream, token).ConfigureAwait(false);
+        stream.Position = 0;
+
+        return martenQueryable.Session.Serializer.FromJson<T>(stream);
+    }
+
+    /// <summary>
+    /// Return many documents transformed to a list of type T by the named Javascript transform
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <param name="transformName"></param>
+    /// <param name="token"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static async Task<IReadOnlyList<T>> TransformManyTo<T>(this IQueryable queryable, string transformName,
+        CancellationToken token = default)
+    {
+        var stream = new MemoryStream();
+        var martenQueryable = queryable.As<IMartenLinqQueryable>();
+        await martenQueryable.StreamManyTransformed(transformName, stream, token).ConfigureAwait(false);
+
+        stream.Position = 0;
+
+        return martenQueryable.Session.Serializer.FromJson<T[]>(stream);
     }
 }

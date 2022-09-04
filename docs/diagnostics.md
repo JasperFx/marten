@@ -152,7 +152,7 @@ public class SimpleSessionListener: DocumentSessionListenerBase
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/SimpleSessionListener.cs#L9-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_writing_custom_session_listener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/SimpleSessionListener.cs#L8-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_writing_custom_session_listener' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As of Marten 1.4, you can also register `IDocumentSessionListener` objects scoped to a particular session with the

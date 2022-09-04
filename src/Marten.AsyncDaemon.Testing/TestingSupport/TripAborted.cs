@@ -1,17 +1,16 @@
-namespace Marten.AsyncDaemon.Testing.TestingSupport
+namespace Marten.AsyncDaemon.Testing.TestingSupport;
+
+public class TripAborted
 {
-    public class TripAborted
-    {
 
-    }
+}
 
-    public class Breakdown
-    {
-        public bool IsCritical { get; set; }
-    }
+public class Breakdown
+{
+    public bool IsCritical { get; set; }
+}
 
-    public class VacationOver
-    {
+public class VacationOver
+{
 
-    }
 }

@@ -2,45 +2,44 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Testing.Documents;
 
-namespace Marten.Testing.Examples
+namespace Marten.Testing.Examples;
+
+public sealed class InExamples
 {
-    public sealed class InExamples
+    public void in_example(IDocumentSession session)
     {
-        public void in_example(IDocumentSession session)
-        {
-            #region sample_in
-            // Finds all SuperUser's whose role is either
-            // Admin, Supervisor, or Director
-            var users = session.Query<SuperUser>()
-                .Where(x => x.Role.In("Admin", "Supervisor", "Director"));
+        #region sample_in
+        // Finds all SuperUser's whose role is either
+        // Admin, Supervisor, or Director
+        var users = session.Query<SuperUser>()
+            .Where(x => x.Role.In("Admin", "Supervisor", "Director"));
 
-            #endregion
-        }
+        #endregion
+    }
 
-        public void in_list_example(IDocumentSession session)
-        {
-            #region sample_in_list
-            // Finds all SuperUser's whose role is either
-            // Admin, Supervisor, or Director
-            var listOfRoles = new List<string> {"Admin", "Supervisor", "Director"};
+    public void in_list_example(IDocumentSession session)
+    {
+        #region sample_in_list
+        // Finds all SuperUser's whose role is either
+        // Admin, Supervisor, or Director
+        var listOfRoles = new List<string> {"Admin", "Supervisor", "Director"};
 
-            var users = session.Query<SuperUser>()
-                .Where(x => x.Role.In(listOfRoles));
+        var users = session.Query<SuperUser>()
+            .Where(x => x.Role.In(listOfRoles));
 
-            #endregion
-        }
+        #endregion
+    }
 
-        public void in_array_example(IDocumentSession session)
-        {
-            #region sample_in_array
-            // Finds all UserWithNicknames's whose nicknames matches either "Melinder" or "Norrland"
+    public void in_array_example(IDocumentSession session)
+    {
+        #region sample_in_array
+        // Finds all UserWithNicknames's whose nicknames matches either "Melinder" or "Norrland"
 
-            var nickNames = new[] {"Melinder", "Norrland"};
+        var nickNames = new[] {"Melinder", "Norrland"};
 
-            var users = session.Query<UserWithNicknames>()
-                .Where(x => x.Nicknames.In(nickNames));
+        var users = session.Query<UserWithNicknames>()
+            .Where(x => x.Nicknames.In(nickNames));
 
-            #endregion
-        }
+        #endregion
     }
 }

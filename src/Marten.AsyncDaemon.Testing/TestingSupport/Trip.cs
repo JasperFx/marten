@@ -1,46 +1,45 @@
 using System;
 
-namespace Marten.AsyncDaemon.Testing.TestingSupport
+namespace Marten.AsyncDaemon.Testing.TestingSupport;
+
+public class Activity
 {
-    public class Activity
+    public Guid Id { get; set; }
+}
+
+public class Trip : Activity
+{
+    public int EndedOn { get; set; }
+
+    public double Traveled { get; set; }
+
+    public string State { get; set; }
+
+    public bool Active { get; set; }
+
+    public int StartedOn { get; set; }
+    public Guid? RepairShopId { get; set; }
+
+    protected bool Equals(Trip other)
     {
-        public Guid Id { get; set; }
+        return Id.Equals(other.Id) && EndedOn == other.EndedOn && Traveled.Equals(other.Traveled) && State == other.State && Active == other.Active && StartedOn == other.StartedOn;
     }
 
-    public class Trip : Activity
+    public override bool Equals(object obj)
     {
-        public int EndedOn { get; set; }
+        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != this.GetType()) return false;
+        return Equals((Trip) obj);
+    }
 
-        public double Traveled { get; set; }
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Id, EndedOn, Traveled, State, Active, StartedOn);
+    }
 
-        public string State { get; set; }
-
-        public bool Active { get; set; }
-
-        public int StartedOn { get; set; }
-        public Guid? RepairShopId { get; set; }
-
-        protected bool Equals(Trip other)
-        {
-            return Id.Equals(other.Id) && EndedOn == other.EndedOn && Traveled.Equals(other.Traveled) && State == other.State && Active == other.Active && StartedOn == other.StartedOn;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((Trip) obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Id, EndedOn, Traveled, State, Active, StartedOn);
-        }
-
-        public override string ToString()
-        {
-            return $"{nameof(Id)}: {Id}, {nameof(EndedOn)}: {EndedOn}, {nameof(Traveled)}: {Traveled}, {nameof(State)}: {State}, {nameof(Active)}: {Active}, {nameof(StartedOn)}: {StartedOn}";
-        }
+    public override string ToString()
+    {
+        return $"{nameof(Id)}: {Id}, {nameof(EndedOn)}: {EndedOn}, {nameof(Traveled)}: {Traveled}, {nameof(State)}: {State}, {nameof(Active)}: {Active}, {nameof(StartedOn)}: {StartedOn}";
     }
 }

@@ -5,160 +5,155 @@ using Marten;
 using Marten.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AspNetCoreWithMarten
+namespace AspNetCoreWithMarten;
+
+public class Issue
 {
-    public class Issue
+    public Guid Id { get; set; }
+    public string Description { get; set; }
+    public bool Open { get; set; }
+}
+
+public class CreateIssue
+{
+    public string Description { get; set; }
+}
+
+public class IssueCreated
+{
+    public Guid IssueId { get; set; }
+}
+
+public class IssueCreator
+{
+    private readonly IDocumentSession _session;
+
+    public IssueCreator(IDocumentSession session)
     {
-        public Guid Id { get; set; }
-        public string Description { get; set; }
-        public bool Open { get; set; }
+        _session = session;
     }
 
-    public class CreateIssue
+    public Task Insert(Issue issue)
     {
-        public string Description { get; set; }
+        _session.Store(issue);
+
+        // This does not do what you want it to
+        // do here
+        try
+        {
+            return _session.SaveChangesAsync();
+        }
+        catch (Exception)
+        {
+            // handle the exception
+            return Task.CompletedTask;
+        }
+    }
+}
+
+
+#region sample_GetIssueController
+
+public class GetIssueController: ControllerBase
+{
+    private readonly IQuerySession _session;
+
+    public GetIssueController(IQuerySession session)
+    {
+        _session = session;
     }
 
-    public class IssueCreated
+    [HttpGet("/issue/{issueId}")]
+    public Task<Issue> Get(Guid issueId)
     {
-        public Guid IssueId { get; set; }
+        return _session.LoadAsync<Issue>(issueId);
     }
 
-    public class IssueCreator
+    [HttpGet("/issue/fast/{issueId}")]
+    public Task GetFast(Guid issueId)
+    {
+        return _session.Json.WriteById<Issue>(issueId, HttpContext);
+    }
+
+}
+
+#endregion
+
+public class IssueController
+{
+    [HttpPost("/issue")]
+    public async Task<IssueCreated> PostIssue(
+        [FromBody] CreateIssue command,
+        [FromServices] IDocumentSession session)
+    {
+        var issue = new Issue
+        {
+            Description = command.Description
+        };
+
+        session.Store(issue);
+        await session.SaveChangesAsync();
+
+        return new IssueCreated
+        {
+            IssueId = issue.Id
+        };
+    }
+
+    [HttpPost("/issue")]
+    public IssueCreated PostIssueSync(
+        [FromBody] CreateIssue command,
+        [FromServices] IssueCreator creator)
+    {
+        var issue = new Issue
+        {
+            Description = command.Description
+        };
+
+        // Better, but still not ideal
+        creator.Insert(issue)
+            .GetAwaiter().GetResult();
+
+        return new IssueCreated
+        {
+            IssueId = issue.Id
+        };
+    }
+
+    public class RaceCondition
     {
         private readonly IDocumentSession _session;
 
-        public IssueCreator(IDocumentSession session)
+        public RaceCondition(IDocumentSession session)
         {
             _session = session;
         }
 
-        public Task Insert(Issue issue)
+        public async Task WorkOnIssue(Guid issueId)
         {
-            _session.Store(issue);
-
-            // This does not do what you want it to
-            // do here
-            try
-            {
-                return _session.SaveChangesAsync();
-            }
-            catch (Exception)
-            {
-                // handle the exception
-                return Task.CompletedTask;
-            }
+            // This will work just fine
+            var lookup = _session.LoadAsync<Issue>(issueId);
+            var issue = await lookup;
         }
     }
 
-
-    #region sample_GetIssueController
-
-    public class GetIssueController: ControllerBase
+    public interface IValidator
     {
-        private readonly IQuerySession _session;
-
-        public GetIssueController(IQuerySession session)
-        {
-            _session = session;
-        }
-
-        [HttpGet("/issue/{issueId}")]
-        public Task<Issue> Get(Guid issueId)
-        {
-            return _session.LoadAsync<Issue>(issueId);
-        }
-
-        [HttpGet("/issue/fast/{issueId}")]
-        public Task GetFast(Guid issueId)
-        {
-            return _session.Json.WriteById<Issue>(issueId, HttpContext);
-        }
-
+        Task AssertValid(Issue issue);
+        Task<string> Validate(Issue issue);
     }
 
-    #endregion
-
-    public class IssueController
+    public class Validator: IValidator
     {
-
-
-
-
-        [HttpPost("/issue")]
-        public async Task<IssueCreated> PostIssue(
-            [FromBody] CreateIssue command,
-            [FromServices] IDocumentSession session)
+        public Task AssertValid(Issue issue)
         {
-            var issue = new Issue
-            {
-                Description = command.Description
-            };
-
-            session.Store(issue);
-            await session.SaveChangesAsync();
-
-            return new IssueCreated
-            {
-                IssueId = issue.Id
-            };
+            // throw if there are any errors
+            return Task.CompletedTask;
         }
 
-        [HttpPost("/issue")]
-        public IssueCreated PostIssueSync(
-            [FromBody] CreateIssue command,
-            [FromServices] IssueCreator creator)
+        public Task<string> Validate(Issue issue)
         {
-            var issue = new Issue
-            {
-                Description = command.Description
-            };
-
-            // Better, but still not ideal
-            creator.Insert(issue)
-                .GetAwaiter().GetResult();
-
-            return new IssueCreated
-            {
-                IssueId = issue.Id
-            };
-        }
-
-        public class RaceCondition
-        {
-            private readonly IDocumentSession _session;
-
-            public RaceCondition(IDocumentSession session)
-            {
-                _session = session;
-            }
-
-            public async Task WorkOnIssue(Guid issueId)
-            {
-                // This will work just fine
-                var lookup = _session.LoadAsync<Issue>(issueId);
-                var issue = await lookup;
-            }
-        }
-
-        public interface IValidator
-        {
-            Task AssertValid(Issue issue);
-            Task<string> Validate(Issue issue);
-        }
-
-        public class Validator: IValidator
-        {
-            public Task AssertValid(Issue issue)
-            {
-                // throw if there are any errors
-                return Task.CompletedTask;
-            }
-
-            public Task<string> Validate(Issue issue)
-            {
-                return Task.FromResult("No problems");
-            }
+            return Task.FromResult("No problems");
         }
     }
 }

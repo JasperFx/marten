@@ -14,91 +14,90 @@ using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
 
-namespace Marten.AsyncDaemon.Testing.Bugs
+namespace Marten.AsyncDaemon.Testing.Bugs;
+
+public class Bug_2073_tenancy_problems
 {
-    public class Bug_2073_tenancy_problems
+    [Fact]
+    public async Task do_not_throw_tenancy_errors()
     {
-        [Fact]
-        public async Task do_not_throw_tenancy_errors()
+        var builder = new HostBuilder();
+        builder.ConfigureServices(services =>
         {
-            var builder = new HostBuilder();
-            builder.ConfigureServices(services =>
+            services.AddLogging(logging =>
             {
-                services.AddLogging(logging =>
-                {
-                    logging.AddConsole();
-                    logging.SetMinimumLevel(LogLevel.Debug);
-                });
-
-                services.AddMarten(options =>
-                {
-                    options.Connection(ConnectionSource.ConnectionString);
-                    options.DatabaseSchemaName = "bug2073";
-
-                    // Multi tenancy
-                    options.Policies.AllDocumentsAreMultiTenanted();
-                    options.Advanced.DefaultTenantUsageEnabled = false;
-                    options.Events.TenancyStyle = TenancyStyle.Conjoined;
-
-                    options.Events.StreamIdentity = StreamIdentity.AsString;
-
-                    // Add projections
-                    options.Projections.Add<DocumentProjection>(ProjectionLifecycle.Async);
-                });
+                logging.AddConsole();
+                logging.SetMinimumLevel(LogLevel.Debug);
             });
 
-            using var host = await builder.StartAsync();
-
-            var store = host.Services.GetRequiredService<IDocumentStore>();
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
-            var daemon = (ProjectionDaemon)store.BuildProjectionDaemon();
-            await daemon.StartAllShards();
-
-            using (var session = store.LightweightSession("tenant1"))
+            services.AddMarten(options =>
             {
-                session.Events.Append(Guid.NewGuid().ToString(), new CreateDoc("a", "owner", "content"));
-                await session.SaveChangesAsync();
-            }
+                options.Connection(ConnectionSource.ConnectionString);
+                options.DatabaseSchemaName = "bug2073";
 
-            await daemon.Tracker.WaitForShardState("Document:All", 1);
+                // Multi tenancy
+                options.Policies.AllDocumentsAreMultiTenanted();
+                options.Advanced.DefaultTenantUsageEnabled = false;
+                options.Events.TenancyStyle = TenancyStyle.Conjoined;
 
-            daemon.CurrentShards().Single()
-                .Status.ShouldBe(AgentStatus.Running);
+                options.Events.StreamIdentity = StreamIdentity.AsString;
 
-            await daemon.StopAll();
+                // Add projections
+                options.Projections.Add<DocumentProjection>(ProjectionLifecycle.Async);
+            });
+        });
+
+        using var host = await builder.StartAsync();
+
+        var store = host.Services.GetRequiredService<IDocumentStore>();
+        await store.Advanced.Clean.CompletelyRemoveAllAsync();
+        var daemon = (ProjectionDaemon)store.BuildProjectionDaemon();
+        await daemon.StartAllShards();
+
+        using (var session = store.LightweightSession("tenant1"))
+        {
+            session.Events.Append(Guid.NewGuid().ToString(), new CreateDoc("a", "owner", "content"));
+            await session.SaveChangesAsync();
         }
+
+        await daemon.Tracker.WaitForShardState("Document:All", 1);
+
+        daemon.CurrentShards().Single()
+            .Status.ShouldBe(AgentStatus.Running);
+
+        await daemon.StopAll();
     }
+}
 
-    // events
-    public record CreateDoc(string DocumentId, string Owner, string Content);
+// events
+public record CreateDoc(string DocumentId, string Owner, string Content);
 
-    public record ChangeDocOwner(string DocumentId, string OldOwner, string NewOwner);
+public record ChangeDocOwner(string DocumentId, string OldOwner, string NewOwner);
 
-    public record UpdateDoc(string DocumentId, string Content);
+public record UpdateDoc(string DocumentId, string Content);
 
 // projection
-    public record Document([property: Identity] string DocumentId, string Owner, string Content);
+public record Document([property: Identity] string DocumentId, string Owner, string Content);
 
-    public class DocumentProjection: SingleStreamAggregation<Document>
+public class DocumentProjection: SingleStreamAggregation<Document>
+{
+    public DocumentProjection()
     {
-        public DocumentProjection()
-        {
-            ProjectionName = "Document";
-        }
+        ProjectionName = "Document";
+    }
 
-        public Document Create(CreateDoc @event)
-        {
-            return new Document(@event.DocumentId, @event.Owner, @event.Content);
-        }
+    public Document Create(CreateDoc @event)
+    {
+        return new Document(@event.DocumentId, @event.Owner, @event.Content);
+    }
 
-        public Document Apply(UpdateDoc @event, Document current)
-        {
-            return current with { Content = @event.Content };
-        }
+    public Document Apply(UpdateDoc @event, Document current)
+    {
+        return current with { Content = @event.Content };
+    }
 
-        public Document Apply(ChangeDocOwner @event, Document current)
-        {
-            return current with { Owner = @event.NewOwner };
-        }
+    public Document Apply(ChangeDocOwner @event, Document current)
+    {
+        return current with { Owner = @event.NewOwner };
     }
 }

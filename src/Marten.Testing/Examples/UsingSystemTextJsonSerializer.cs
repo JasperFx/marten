@@ -2,33 +2,32 @@ using Marten.Services;
 using Marten.Services.Json;
 using Weasel.Core;
 
-namespace Marten.Testing.Examples
+namespace Marten.Testing.Examples;
+
+public class UsingSystemTextJsonSerializer
 {
-    public class UsingSystemTextJsonSerializer
+    internal void using_stj()
     {
-        internal void using_stj()
+        #region sample_using_STJ_serialization
+
+        var store = DocumentStore.For(opts =>
         {
-            #region sample_using_STJ_serialization
+            opts.Connection("some connection string");
 
-            var store = DocumentStore.For(opts =>
+            // Opt into System.Text.Json serialization
+            opts.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+
+            // Optionally configure the serializer directly
+            opts.Serializer(new SystemTextJsonSerializer
             {
-                opts.Connection("some connection string");
+                // Optionally override the enum storage
+                EnumStorage = EnumStorage.AsString,
 
-                // Opt into System.Text.Json serialization
-                opts.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
-
-                // Optionally configure the serializer directly
-                opts.Serializer(new SystemTextJsonSerializer
-                {
-                    // Optionally override the enum storage
-                    EnumStorage = EnumStorage.AsString,
-
-                    // Optionally override the member casing
-                    Casing = Casing.CamelCase
-                });
+                // Optionally override the member casing
+                Casing = Casing.CamelCase
             });
+        });
 
-            #endregion
-        }
+        #endregion
     }
 }
