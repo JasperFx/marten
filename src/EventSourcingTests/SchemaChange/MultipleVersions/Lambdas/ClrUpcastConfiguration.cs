@@ -1,5 +1,4 @@
 #nullable enable
-#if NET6_0_OR_GREATER
 using System;
 using Marten;
 
@@ -105,4 +104,3 @@ public class ClrUpcastConfiguration
                 )
             );
 }
-#endif

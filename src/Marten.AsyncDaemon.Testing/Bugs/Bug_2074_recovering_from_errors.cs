@@ -11,7 +11,6 @@ using Xunit;
 
 namespace Marten.AsyncDaemon.Testing.Bugs
 {
-#if NET6_0_OR_GREATER
     public class Bug_2074_recovering_from_errors
     {
         [Fact]
@@ -55,10 +54,6 @@ namespace Marten.AsyncDaemon.Testing.Bugs
             await waiter;
         }
     }
-#endif
-
-
-
 
     public record IssueCountIncremented(Guid Id);
 

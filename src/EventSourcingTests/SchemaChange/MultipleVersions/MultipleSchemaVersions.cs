@@ -1,5 +1,4 @@
 #nullable enable
-#if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -497,4 +496,3 @@ public static class UpcastingTestsExtensions
         @event.Data.ShouldBeOfType<TEvent>();
     }
 }
-#endif

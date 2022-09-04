@@ -1,5 +1,4 @@
 #nullable enable
-#if NET6_0_OR_GREATER
 using System;
 using EventSourcingTests.SchemaChange.MultipleVersions.V3;
 using Marten;
@@ -204,4 +203,3 @@ public class SystemTextJsonUpcastConfiguration
                 );
         };
 }
-#endif
