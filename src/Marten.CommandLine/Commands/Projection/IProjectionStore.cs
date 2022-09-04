@@ -2,25 +2,24 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
 
-namespace Marten.CommandLine.Commands.Projection
+namespace Marten.CommandLine.Commands.Projection;
+
+public interface IProjectionStore
 {
-    public interface IProjectionStore
-    {
-        string Name { get; }
+    string Name { get; }
 
-        IReadOnlyList<AsyncProjectionShard> Shards { get; }
+    IReadOnlyList<AsyncProjectionShard> Shards { get; }
 
-        ValueTask<IReadOnlyList<IProjectionDatabase>> BuildDatabases();
+    ValueTask<IReadOnlyList<IProjectionDatabase>> BuildDatabases();
 
-        DocumentStore InnerStore { get; }
-    }
+    DocumentStore InnerStore { get; }
+}
 
-    public interface IProjectionDatabase
-    {
-        IProjectionStore Parent { get; }
+public interface IProjectionDatabase
+{
+    IProjectionStore Parent { get; }
 
-        string Identifier { get; }
+    string Identifier { get; }
 
-        IProjectionDaemon BuildDaemon();
-    }
+    IProjectionDaemon BuildDaemon();
 }

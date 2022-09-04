@@ -1,9 +1,8 @@
-namespace Marten.CommandLine.Commands.Projection
+namespace Marten.CommandLine.Commands.Projection;
+
+internal enum ShardExecutionState
 {
-    internal enum ShardExecutionState
-    {
-        Running,
-        Stopped,
-        Paused
-    }
+    Running,
+    Stopped,
+    Paused
 }

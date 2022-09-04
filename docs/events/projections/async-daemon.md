@@ -40,12 +40,12 @@ var host = await Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
     {
         services.AddMarten(opts =>
-        {
-            opts.Connection("some connection string");
+            {
+                opts.Connection("some connection string");
 
-            // Register any projections you need to run asynchronously
-            opts.Projections.Add<TripAggregationWithCustomName>(ProjectionLifecycle.Async);
-        })
+                // Register any projections you need to run asynchronously
+                opts.Projections.Add<TripAggregationWithCustomName>(ProjectionLifecycle.Async);
+            })
             // Turn on the async daemon in "Solo" mode
             .AddAsyncDaemon(DaemonMode.Solo);
     })
@@ -63,12 +63,12 @@ var host = await Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
     {
         services.AddMarten(opts =>
-        {
-            opts.Connection("some connection string");
+            {
+                opts.Connection("some connection string");
 
-            // Register any projections you need to run asynchronously
-            opts.Projections.Add<TripAggregationWithCustomName>(ProjectionLifecycle.Async);
-        })
+                // Register any projections you need to run asynchronously
+                opts.Projections.Add<TripAggregationWithCustomName>(ProjectionLifecycle.Async);
+            })
             // Turn on the async daemon in "HotCold" mode
             // with built in leader election
             .AddAsyncDaemon(DaemonMode.HotCold);
