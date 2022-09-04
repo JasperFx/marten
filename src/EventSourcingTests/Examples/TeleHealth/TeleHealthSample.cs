@@ -1,8 +1,7 @@
 using System;
 using Marten.Schema;
 
-namespace EventSourcingTests.Examples.TeleHealth
-{
+namespace EventSourcingTests.Examples.TeleHealth;
 #if NET6_0_OR_GREATER
     public record AppointmentRequested(string PatientName);
 
@@ -47,4 +46,3 @@ namespace EventSourcingTests.Examples.TeleHealth
 
 
 #endif
-}

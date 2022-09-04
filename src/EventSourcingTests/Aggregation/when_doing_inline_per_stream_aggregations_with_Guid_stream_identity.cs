@@ -6,266 +6,265 @@ using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace EventSourcingTests.Aggregation
+namespace EventSourcingTests.Aggregation;
+
+public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity : AggregationContext
 {
-    public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity : AggregationContext
+    private readonly ITestOutputHelper _output;
+
+    public when_doing_inline_per_stream_aggregations_with_Guid_stream_identity(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
     {
-        private readonly ITestOutputHelper _output;
+        _output = output;
+    }
 
-        public when_doing_inline_per_stream_aggregations_with_Guid_stream_identity(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    [Fact]
+    public async Task explicitly_new_stream()
+    {
+        var stream1 = Guid.NewGuid();
+        var stream2 = Guid.NewGuid();
+
+        UsingDefinition<AllSync>();
+
+        _output.WriteLine(_projection.SourceCode());
+
+        await InlineProject(x =>
         {
-            _output = output;
-        }
+            x.Streams[stream1].IsNew = true;
+            x.Streams[stream1].Add(new CreateEvent(1, 2, 3, 4));
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
 
-        [Fact]
-        public async Task explicitly_new_stream()
+            x.Streams[stream2].IsNew = true;
+            x.Streams[stream2].Add(new CreateEvent(3, 3, 3, 3));
+            x.Streams[stream2].A();
+            x.Streams[stream2].B();
+            x.Streams[stream2].C();
+        });
+
+        using var query = theStore.QuerySession();
+
+        var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
+        aggregate1.ACount.ShouldBe(4);
+        aggregate1.BCount.ShouldBe(2);
+        aggregate1.CCount.ShouldBe(3);
+        aggregate1.DCount.ShouldBe(4);
+
+        var aggregate2 = await query.LoadAsync<MyAggregate>(stream2);
+        aggregate2.ACount.ShouldBe(4);
+        aggregate2.BCount.ShouldBe(4);
+        aggregate2.CCount.ShouldBe(4);
+        aggregate2.DCount.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task new_stream_but_not_marked_that_way()
+    {
+        var stream1 = Guid.NewGuid();
+        var stream2 = Guid.NewGuid();
+
+        UsingDefinition<AllSync>();
+
+        _output.WriteLine(_projection.SourceCode());
+
+        await InlineProject(x =>
         {
-            var stream1 = Guid.NewGuid();
-            var stream2 = Guid.NewGuid();
+            x.Streams[stream1].Add(new CreateEvent(1, 2, 3, 4));
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
 
-            UsingDefinition<AllSync>();
+            x.Streams[stream2].Add(new CreateEvent(3, 3, 3, 3));
+            x.Streams[stream2].A();
+            x.Streams[stream2].B();
+            x.Streams[stream2].C();
+        });
 
-            _output.WriteLine(_projection.SourceCode());
+        using var query = theStore.QuerySession();
 
-            await InlineProject(x =>
-            {
-                x.Streams[stream1].IsNew = true;
-                x.Streams[stream1].Add(new CreateEvent(1, 2, 3, 4));
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
+        var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
+        aggregate1.ACount.ShouldBe(4);
+        aggregate1.BCount.ShouldBe(2);
+        aggregate1.CCount.ShouldBe(3);
+        aggregate1.DCount.ShouldBe(4);
 
-                x.Streams[stream2].IsNew = true;
-                x.Streams[stream2].Add(new CreateEvent(3, 3, 3, 3));
-                x.Streams[stream2].A();
-                x.Streams[stream2].B();
-                x.Streams[stream2].C();
-            });
+        var aggregate2 = await query.LoadAsync<MyAggregate>(stream2);
+        aggregate2.ACount.ShouldBe(4);
+        aggregate2.BCount.ShouldBe(4);
+        aggregate2.CCount.ShouldBe(4);
+        aggregate2.DCount.ShouldBe(3);
+    }
 
-            using var query = theStore.QuerySession();
+    [Fact]
+    public async Task adding_to_an_existing_stream()
+    {
+        var stream1 = Guid.NewGuid();
+        var stream2 = Guid.NewGuid();
 
-            var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
-            aggregate1.ACount.ShouldBe(4);
-            aggregate1.BCount.ShouldBe(2);
-            aggregate1.CCount.ShouldBe(3);
-            aggregate1.DCount.ShouldBe(4);
-
-            var aggregate2 = await query.LoadAsync<MyAggregate>(stream2);
-            aggregate2.ACount.ShouldBe(4);
-            aggregate2.BCount.ShouldBe(4);
-            aggregate2.CCount.ShouldBe(4);
-            aggregate2.DCount.ShouldBe(3);
-        }
-
-        [Fact]
-        public async Task new_stream_but_not_marked_that_way()
+        theSession.Store(new MyAggregate
         {
-            var stream1 = Guid.NewGuid();
-            var stream2 = Guid.NewGuid();
+            Id = stream1,
+            ACount = 1,
+            BCount = 2,
+            CCount = 3,
+            DCount = 4
+        });
 
-            UsingDefinition<AllSync>();
-
-            _output.WriteLine(_projection.SourceCode());
-
-            await InlineProject(x =>
-            {
-                x.Streams[stream1].Add(new CreateEvent(1, 2, 3, 4));
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-
-                x.Streams[stream2].Add(new CreateEvent(3, 3, 3, 3));
-                x.Streams[stream2].A();
-                x.Streams[stream2].B();
-                x.Streams[stream2].C();
-            });
-
-            using var query = theStore.QuerySession();
-
-            var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
-            aggregate1.ACount.ShouldBe(4);
-            aggregate1.BCount.ShouldBe(2);
-            aggregate1.CCount.ShouldBe(3);
-            aggregate1.DCount.ShouldBe(4);
-
-            var aggregate2 = await query.LoadAsync<MyAggregate>(stream2);
-            aggregate2.ACount.ShouldBe(4);
-            aggregate2.BCount.ShouldBe(4);
-            aggregate2.CCount.ShouldBe(4);
-            aggregate2.DCount.ShouldBe(3);
-        }
-
-        [Fact]
-        public async Task adding_to_an_existing_stream()
+        theSession.Store(new MyAggregate
         {
-            var stream1 = Guid.NewGuid();
-            var stream2 = Guid.NewGuid();
+            Id = stream2,
+            ACount = 3,
+            BCount = 3,
+            CCount = 3,
+            DCount = 3
+        });
 
-            theSession.Store(new MyAggregate
-            {
-                Id = stream1,
-                ACount = 1,
-                BCount = 2,
-                CCount = 3,
-                DCount = 4
-            });
+        await theSession.SaveChangesAsync();
 
-            theSession.Store(new MyAggregate
-            {
-                Id = stream2,
-                ACount = 3,
-                BCount = 3,
-                CCount = 3,
-                DCount = 3
-            });
+        UsingDefinition<AllSync>();
 
-            await theSession.SaveChangesAsync();
+        _output.WriteLine(_projection.SourceCode());
 
-            UsingDefinition<AllSync>();
-
-            _output.WriteLine(_projection.SourceCode());
-
-            await InlineProject(x =>
-            {
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-
-                x.Streams[stream2].A();
-                x.Streams[stream2].B();
-                x.Streams[stream2].C();
-            });
-
-            using var query = theStore.QuerySession();
-
-            var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
-            aggregate1.ACount.ShouldBe(4);
-            aggregate1.BCount.ShouldBe(2);
-            aggregate1.CCount.ShouldBe(3);
-            aggregate1.DCount.ShouldBe(4);
-
-            var aggregate2 = await query.LoadAsync<MyAggregate>(stream2);
-            aggregate2.ACount.ShouldBe(4);
-            aggregate2.BCount.ShouldBe(4);
-            aggregate2.CCount.ShouldBe(4);
-            aggregate2.DCount.ShouldBe(3);
-        }
-
-        [Fact]
-        public async Task maybe_delete_negative()
+        await InlineProject(x =>
         {
-            var stream1 = Guid.NewGuid();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
 
-            UsingDefinition<SometimesDeletes>();
+            x.Streams[stream2].A();
+            x.Streams[stream2].B();
+            x.Streams[stream2].C();
+        });
 
-            _output.WriteLine(_projection.SourceCode());
+        using var query = theStore.QuerySession();
 
-            await InlineProject(x =>
-            {
-                x.Streams[stream1].IsNew = true;
-                x.Streams[stream1].Add(new CreateEvent(1, 1, 1, 1));
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].Add<Finished>();
+        var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
+        aggregate1.ACount.ShouldBe(4);
+        aggregate1.BCount.ShouldBe(2);
+        aggregate1.CCount.ShouldBe(3);
+        aggregate1.DCount.ShouldBe(4);
 
-            });
+        var aggregate2 = await query.LoadAsync<MyAggregate>(stream2);
+        aggregate2.ACount.ShouldBe(4);
+        aggregate2.BCount.ShouldBe(4);
+        aggregate2.CCount.ShouldBe(4);
+        aggregate2.DCount.ShouldBe(3);
+    }
 
-            using var query = theStore.QuerySession();
+    [Fact]
+    public async Task maybe_delete_negative()
+    {
+        var stream1 = Guid.NewGuid();
 
-            var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
-            aggregate1.ShouldNotBeNull();
+        UsingDefinition<SometimesDeletes>();
 
-        }
+        _output.WriteLine(_projection.SourceCode());
 
-        [Fact]
-        public async Task maybe_delete_positive()
+        await InlineProject(x =>
         {
-            var stream1 = Guid.NewGuid();
+            x.Streams[stream1].IsNew = true;
+            x.Streams[stream1].Add(new CreateEvent(1, 1, 1, 1));
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].Add<Finished>();
 
-            UsingDefinition<SometimesDeletes>();
+        });
 
+        using var query = theStore.QuerySession();
 
-            await InlineProject(x =>
-            {
-                x.Streams[stream1].IsNew = true;
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-                x.Streams[stream1].A();
-
-                // This will trip off the finished, MaybeDelete logic
-                x.Streams[stream1].Add<Finished>();
-
-            });
-
-            using var query = theStore.QuerySession();
-
-            var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
-            aggregate1.ShouldBeNull();
-
-        }
-
-        public class SometimesDeletes: SingleStreamAggregation<MyAggregate>
-        {
-            public void Apply(AEvent @event, MyAggregate aggregate)
-            {
-                aggregate.ACount++;
-            }
-
-            public MyAggregate Apply(BEvent @event, MyAggregate aggregate)
-            {
-                return new MyAggregate
-                {
-                    ACount = aggregate.ACount,
-                    BCount = aggregate.BCount + 1,
-                    CCount = aggregate.CCount,
-                    DCount = aggregate.DCount,
-                    Id = aggregate.Id
-                };
-            }
-
-            public void Apply(MyAggregate aggregate, CEvent @event)
-            {
-                aggregate.CCount++;
-            }
-
-            public MyAggregate Apply(MyAggregate aggregate, DEvent @event)
-            {
-                return new MyAggregate
-                {
-                    ACount = aggregate.ACount,
-                    BCount = aggregate.BCount,
-                    CCount = aggregate.CCount,
-                    DCount = aggregate.DCount + 1,
-                    Id = aggregate.Id
-                };
-            }
-
-            public bool ShouldDelete(MyAggregate aggregate, Finished @event)
-            {
-                return (aggregate.ACount + aggregate.BCount + aggregate.CCount + aggregate.DCount) > 10;
-            }
-        }
+        var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
+        aggregate1.ShouldNotBeNull();
 
     }
 
-    public class Finished
+    [Fact]
+    public async Task maybe_delete_positive()
     {
-        public bool Nevermind { get; set; }
+        var stream1 = Guid.NewGuid();
+
+        UsingDefinition<SometimesDeletes>();
+
+
+        await InlineProject(x =>
+        {
+            x.Streams[stream1].IsNew = true;
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+            x.Streams[stream1].A();
+
+            // This will trip off the finished, MaybeDelete logic
+            x.Streams[stream1].Add<Finished>();
+
+        });
+
+        using var query = theStore.QuerySession();
+
+        var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
+        aggregate1.ShouldBeNull();
+
     }
+
+    public class SometimesDeletes: SingleStreamAggregation<MyAggregate>
+    {
+        public void Apply(AEvent @event, MyAggregate aggregate)
+        {
+            aggregate.ACount++;
+        }
+
+        public MyAggregate Apply(BEvent @event, MyAggregate aggregate)
+        {
+            return new MyAggregate
+            {
+                ACount = aggregate.ACount,
+                BCount = aggregate.BCount + 1,
+                CCount = aggregate.CCount,
+                DCount = aggregate.DCount,
+                Id = aggregate.Id
+            };
+        }
+
+        public void Apply(MyAggregate aggregate, CEvent @event)
+        {
+            aggregate.CCount++;
+        }
+
+        public MyAggregate Apply(MyAggregate aggregate, DEvent @event)
+        {
+            return new MyAggregate
+            {
+                ACount = aggregate.ACount,
+                BCount = aggregate.BCount,
+                CCount = aggregate.CCount,
+                DCount = aggregate.DCount + 1,
+                Id = aggregate.Id
+            };
+        }
+
+        public bool ShouldDelete(MyAggregate aggregate, Finished @event)
+        {
+            return (aggregate.ACount + aggregate.BCount + aggregate.CCount + aggregate.DCount) > 10;
+        }
+    }
+
+}
+
+public class Finished
+{
+    public bool Nevermind { get; set; }
 }

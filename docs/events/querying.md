@@ -17,7 +17,7 @@ public void load_event_stream(IDocumentSession session, Guid streamId)
 
     // Fetch the events for this stream at this time yesterday
     var events3 = session.Events
-                .FetchStream(streamId, timestamp: DateTime.UtcNow.AddDays(-1));
+        .FetchStream(streamId, timestamp: DateTime.UtcNow.AddDays(-1));
 }
 
 public async Task load_event_stream_async(IDocumentSession session, Guid streamId)
@@ -30,7 +30,7 @@ public async Task load_event_stream_async(IDocumentSession session, Guid streamI
 
     // Fetch the events for this stream at this time yesterday
     var events3 = await session.Events
-                .FetchStreamAsync(streamId, timestamp: DateTime.UtcNow.AddDays(-1));
+        .FetchStreamAsync(streamId, timestamp: DateTime.UtcNow.AddDays(-1));
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L106-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-fetch-stream' title='Start of snippet'>anchor</a></sup>

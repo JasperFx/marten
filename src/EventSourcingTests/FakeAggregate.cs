@@ -1,36 +1,35 @@
 using System;
 
-namespace EventSourcingTests
+namespace EventSourcingTests;
+
+public class FakeAggregate
 {
-    public class FakeAggregate
-    {
-        public Guid Id { get; set; }
+    public Guid Id { get; set; }
 
-        public string[] ANames;
-        public string[] BNames;
-        public string[] CNames;
-        public string[] DNames;
-    }
+    public string[] ANames;
+    public string[] BNames;
+    public string[] CNames;
+    public string[] DNames;
+}
 
-    public class EventA
-    {
-        public string Name { get; set; }
-    }
+public class EventA
+{
+    public string Name { get; set; }
+}
 
-    public class EventB
-    {
-        public string Name { get; set; }
-    }
+public class EventB
+{
+    public string Name { get; set; }
+}
 
-    public class EventC
-    {
-        public string Name { get; set; }
-    }
+public class EventC
+{
+    public string Name { get; set; }
+}
 
-    public class EventD
-    {
-        public Guid Id { get; set; }
+public class EventD
+{
+    public Guid Id { get; set; }
 
-        public string Name { get; set; }
-    }
+    public string Name { get; set; }
 }

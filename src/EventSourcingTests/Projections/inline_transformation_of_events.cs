@@ -11,159 +11,158 @@ using Shouldly;
 using Weasel.Core;
 using Xunit;
 
-namespace EventSourcingTests.Projections
+namespace EventSourcingTests.Projections;
+
+public class inline_transformation_of_events: OneOffConfigurationsContext
 {
-    public class inline_transformation_of_events: OneOffConfigurationsContext
+    private QuestStarted started = new QuestStarted { Name = "Find the Orb" };
+    private MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
+    private MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
+    private MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
+
+    private MembersJoined joined2 = new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
+
+    private async Task sample_usage()
     {
-        private QuestStarted started = new QuestStarted { Name = "Find the Orb" };
-        private MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
-        private MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
-        private MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
+        #region sample_usage_of_inline_projection
 
-        private MembersJoined joined2 = new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
-
-        private async Task sample_usage()
+        var store = DocumentStore.For(opts =>
         {
-            #region sample_usage_of_inline_projection
+            opts.Connection("some connection string");
 
-            var store = DocumentStore.For(opts =>
-            {
-                opts.Connection("some connection string");
+            opts.Projections.Add(new MonsterDefeatedTransform(),
+                ProjectionLifecycle.Inline);
+        });
 
-                opts.Projections.Add(new MonsterDefeatedTransform(),
-                    ProjectionLifecycle.Inline);
-            });
+        using var session = store.LightweightSession();
 
-            using var session = store.LightweightSession();
+        var streamId = session.Events
+            .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
 
-            var streamId = session.Events
-                .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
+        // The projection is going to be applied right here during
+        // the call to SaveChangesAsync() and the resulting document update
+        // of the new MonsterDefeated document will happen in the same database
+        // transaction
+        await theSession.SaveChangesAsync();
 
-            // The projection is going to be applied right here during
-            // the call to SaveChangesAsync() and the resulting document update
-            // of the new MonsterDefeated document will happen in the same database
-            // transaction
-            await theSession.SaveChangesAsync();
+        #endregion
+    }
 
-            #endregion
-        }
-
-        [Theory]
-        [InlineData(TenancyStyle.Single)]
-        [InlineData(TenancyStyle.Conjoined)]
-        public void sync_projection_of_events(TenancyStyle tenancyStyle)
+    [Theory]
+    [InlineData(TenancyStyle.Single)]
+    [InlineData(TenancyStyle.Conjoined)]
+    public void sync_projection_of_events(TenancyStyle tenancyStyle)
+    {
+        StoreOptions(_ =>
         {
-            StoreOptions(_ =>
-            {
-                _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.TenancyStyle = tenancyStyle;
+            _.AutoCreateSchemaObjects = AutoCreate.All;
+            _.Events.TenancyStyle = tenancyStyle;
 
-                _.Projections.Add(new MonsterDefeatedTransform());
-            });
+            _.Projections.Add(new MonsterDefeatedTransform());
+        });
 
-            var streamId = theSession.Events
-                .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-            theSession.SaveChanges();
+        var streamId = theSession.Events
+            .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
+        theSession.SaveChanges();
 
-            var monsterEvents =
-                theSession.Events.FetchStream(streamId).OfType<Event<MonsterSlayed>>().ToArray();
+        var monsterEvents =
+            theSession.Events.FetchStream(streamId).OfType<Event<MonsterSlayed>>().ToArray();
 
-            monsterEvents.Length.ShouldBe(2); // precondition
+        monsterEvents.Length.ShouldBe(2); // precondition
 
-            monsterEvents.Each(e =>
-            {
-                var doc = theSession.Load<MonsterDefeated>(e.Id);
-                doc.Monster.ShouldBe(e.Data.Name);
-            });
-        }
-
-        [Fact]
-        public void sync_projection_of_events_with_direct_configuration()
+        monsterEvents.Each(e =>
         {
-            StoreOptions(_ =>
-            {
-                _.AutoCreateSchemaObjects = AutoCreate.All;
+            var doc = theSession.Load<MonsterDefeated>(e.Id);
+            doc.Monster.ShouldBe(e.Data.Name);
+        });
+    }
 
-                _.Projections.Add(new MonsterDefeatedTransform());
-            });
-
-            var streamId = theSession.Events
-                .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-            theSession.SaveChanges();
-
-            var monsterEvents =
-                theSession.Events.FetchStream(streamId).OfType<Event<MonsterSlayed>>().ToArray();
-
-            monsterEvents.Length.ShouldBe(2); // precondition
-
-            monsterEvents.Each(e =>
-            {
-                var doc = theSession.Load<MonsterDefeated>(e.Id);
-                doc.Monster.ShouldBe(e.Data.Name);
-            });
-        }
-
-        [Fact]
-        public async Task async_projection_of_events()
+    [Fact]
+    public void sync_projection_of_events_with_direct_configuration()
+    {
+        StoreOptions(_ =>
         {
-            #region sample_applying-monster-defeated
-            var store = DocumentStore.For(_ =>
-            {
-                _.Connection(ConnectionSource.ConnectionString);
-                _.DatabaseSchemaName = "monster_defeated";
+            _.AutoCreateSchemaObjects = AutoCreate.All;
 
-                _.Projections.Add(new MonsterDefeatedTransform());
-            });
-            #endregion
+            _.Projections.Add(new MonsterDefeatedTransform());
+        });
 
-            // The code below is just customizing the document store
-            // used in the tests
-            StoreOptions(_ =>
-            {
-                _.AutoCreateSchemaObjects = AutoCreate.All;
+        var streamId = theSession.Events
+            .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
+        theSession.SaveChanges();
 
-                _.Projections.Add(new MonsterDefeatedTransform());
-            });
+        var monsterEvents =
+            theSession.Events.FetchStream(streamId).OfType<Event<MonsterSlayed>>().ToArray();
 
-            var streamId = theSession.Events
-                .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-            await theSession.SaveChangesAsync();
+        monsterEvents.Length.ShouldBe(2); // precondition
 
-            var monsterEvents =
-                (await theSession.Events.FetchStreamAsync(streamId)).OfType<Event<MonsterSlayed>>().ToArray();
-
-            monsterEvents.Length.ShouldBe(2); // precondition
-
-            foreach (var e in monsterEvents)
-            {
-                var doc = await theSession.LoadAsync<MonsterDefeated>(e.Id);
-                doc.Monster.ShouldBe(e.Data.Name);
-            }
-        }
-
-        public inline_transformation_of_events()
+        monsterEvents.Each(e =>
         {
+            var doc = theSession.Load<MonsterDefeated>(e.Id);
+            doc.Monster.ShouldBe(e.Data.Name);
+        });
+    }
+
+    [Fact]
+    public async Task async_projection_of_events()
+    {
+        #region sample_applying-monster-defeated
+        var store = DocumentStore.For(_ =>
+        {
+            _.Connection(ConnectionSource.ConnectionString);
+            _.DatabaseSchemaName = "monster_defeated";
+
+            _.Projections.Add(new MonsterDefeatedTransform());
+        });
+        #endregion
+
+        // The code below is just customizing the document store
+        // used in the tests
+        StoreOptions(_ =>
+        {
+            _.AutoCreateSchemaObjects = AutoCreate.All;
+
+            _.Projections.Add(new MonsterDefeatedTransform());
+        });
+
+        var streamId = theSession.Events
+            .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
+        await theSession.SaveChangesAsync();
+
+        var monsterEvents =
+            (await theSession.Events.FetchStreamAsync(streamId)).OfType<Event<MonsterSlayed>>().ToArray();
+
+        monsterEvents.Length.ShouldBe(2); // precondition
+
+        foreach (var e in monsterEvents)
+        {
+            var doc = await theSession.LoadAsync<MonsterDefeated>(e.Id);
+            doc.Monster.ShouldBe(e.Data.Name);
         }
     }
 
-    #region sample_MonsterDefeatedTransform
-    public class MonsterDefeatedTransform: EventProjection
+    public inline_transformation_of_events()
     {
-        public MonsterDefeated Create(IEvent<MonsterSlayed> input)
-        {
-            return new MonsterDefeated
-            {
-                Id = input.Id,
-                Monster = input.Data.Name
-            };
-        }
     }
-
-    public class MonsterDefeated
-    {
-        public Guid Id { get; set; }
-        public string Monster { get; set; }
-    }
-
-    #endregion
 }
+
+#region sample_MonsterDefeatedTransform
+public class MonsterDefeatedTransform: EventProjection
+{
+    public MonsterDefeated Create(IEvent<MonsterSlayed> input)
+    {
+        return new MonsterDefeated
+        {
+            Id = input.Id,
+            Monster = input.Data.Name
+        };
+    }
+}
+
+public class MonsterDefeated
+{
+    public Guid Id { get; set; }
+    public string Monster { get; set; }
+}
+
+#endregion

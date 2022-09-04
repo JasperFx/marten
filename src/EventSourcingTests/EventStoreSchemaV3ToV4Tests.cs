@@ -11,110 +11,109 @@ using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 using Xunit;
 
-namespace EventSourcingTests
+namespace EventSourcingTests;
+
+public class EventStoreSchemaV3ToV4Tests : OneOffConfigurationsContext
 {
-    public class EventStoreSchemaV3ToV4Tests : OneOffConfigurationsContext
+    [Fact]
+    public async Task can_create_patch_for_event_store_schema_changes()
     {
-        [Fact]
-        public async Task can_create_patch_for_event_store_schema_changes()
+        var store1 = Store(AutoCreate.All);
+        await store1.EnsureStorageExistsAsync(typeof(StreamAction));
+
+        SimulateEventStoreV3Schema();
+
+        // create another store and check if the schema can be be auto updated
+        using var store2 = Store(AutoCreate.CreateOrUpdate);
+
+        var sql = (await store2.Storage.Database.CreateMigrationAsync()).UpdateSql();
+        sql.ShouldContain($"alter table {_schemaName}.mt_events alter column version type bigint", Case.Insensitive);
+        sql.ShouldContain($"alter table {_schemaName}.mt_streams alter column version type bigint", Case.Insensitive);
+        sql.ShouldContain($"drop function if exists {_schemaName}.mt_append_event", Case.Insensitive);
+    }
+
+    [Fact]
+    public async Task can_auto_update_event_store_schema_changes()
+    {
+        using var store1 = Store(AutoCreate.All);
+        await store1.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        SimulateEventStoreV3Schema();
+
+        // create another store and check if the schema can be be auto updated
+        using var store2 = Store(AutoCreate.CreateOrUpdate);
+
+        await Should.ThrowAsync<DatabaseValidationException>(async () =>
         {
-            var store1 = Store(AutoCreate.All);
-            await store1.EnsureStorageExistsAsync(typeof(StreamAction));
+            await store2.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+        });
 
-            SimulateEventStoreV3Schema();
-
-            // create another store and check if the schema can be be auto updated
-            using var store2 = Store(AutoCreate.CreateOrUpdate);
-
-            var sql = (await store2.Storage.Database.CreateMigrationAsync()).UpdateSql();
-            sql.ShouldContain($"alter table {_schemaName}.mt_events alter column version type bigint", Case.Insensitive);
-            sql.ShouldContain($"alter table {_schemaName}.mt_streams alter column version type bigint", Case.Insensitive);
-            sql.ShouldContain($"drop function if exists {_schemaName}.mt_append_event", Case.Insensitive);
-        }
-
-        [Fact]
-        public async Task can_auto_update_event_store_schema_changes()
+        await Should.NotThrowAsync(async () =>
         {
-            using var store1 = Store(AutoCreate.All);
-            await store1.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+            await store2.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+            await store2.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+        });
+    }
 
-            SimulateEventStoreV3Schema();
+    [Fact]
+    public async Task should_not_have_v3_to_v4_patches_on_v4_schema()
+    {
+        using var store1 = Store(AutoCreate.All);
+        await store1.Tenancy.Default.Database.EnsureStorageExistsAsync(typeof(StreamAction));
 
-            // create another store and check if the schema can be be auto updated
-            using var store2 = Store(AutoCreate.CreateOrUpdate);
+        // create another store and check if no v3 to v4 patches are generated
+        using var store2 = Store(AutoCreate.CreateOrUpdate);
 
-            await Should.ThrowAsync<DatabaseValidationException>(async () =>
-            {
-                await store2.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
-            });
+        var sql = (await store2.Storage.Database.CreateMigrationAsync()).UpdateSql();
+        sql.ShouldNotContain($"alter table {_schemaName}.mt_events alter column version type bigint", Case.Insensitive);
+        sql.ShouldNotContain($"alter table {_schemaName}.mt_streams alter column version type bigint", Case.Insensitive);
+        sql.ShouldNotContain($"drop function if exists {_schemaName}.mt_append_event", Case.Insensitive);
+    }
 
-            await Should.NotThrowAsync(async () =>
-            {
-                await store2.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-                await store2.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
-            });
-        }
-
-        [Fact]
-        public async Task should_not_have_v3_to_v4_patches_on_v4_schema()
+    private DocumentStore Store(AutoCreate autoCreate)
+    {
+        return DocumentStore.For(_ =>
         {
-            using var store1 = Store(AutoCreate.All);
-            await store1.Tenancy.Default.Database.EnsureStorageExistsAsync(typeof(StreamAction));
+            _.DatabaseSchemaName = _schemaName;
+            _.Connection(ConnectionSource.ConnectionString);
+            _.AutoCreateSchemaObjects = autoCreate;
+            _.EventGraph.EventMappingFor<MembersJoined>();
+        });
+    }
 
-            // create another store and check if no v3 to v4 patches are generated
-            using var store2 = Store(AutoCreate.CreateOrUpdate);
-
-            var sql = (await store2.Storage.Database.CreateMigrationAsync()).UpdateSql();
-            sql.ShouldNotContain($"alter table {_schemaName}.mt_events alter column version type bigint", Case.Insensitive);
-            sql.ShouldNotContain($"alter table {_schemaName}.mt_streams alter column version type bigint", Case.Insensitive);
-            sql.ShouldNotContain($"drop function if exists {_schemaName}.mt_append_event", Case.Insensitive);
-        }
-
-        private DocumentStore Store(AutoCreate autoCreate)
+    private void SimulateEventStoreV3Schema()
+    {
+        // simulate to event store v3 schema with version fields as int
+        using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        try
         {
-            return DocumentStore.For(_ =>
-            {
-                _.DatabaseSchemaName = _schemaName;
-                _.Connection(ConnectionSource.ConnectionString);
-                _.AutoCreateSchemaObjects = autoCreate;
-                _.EventGraph.EventMappingFor<MembersJoined>();
-            });
-        }
+            conn.Open();
+            // version as integer in mt_events
+            conn.CreateCommand($"alter table {_schemaName}.mt_events alter column version type int")
+                .ExecuteNonQuery();
 
-        private void SimulateEventStoreV3Schema()
+            conn.CreateCommand($"alter table {_schemaName}.mt_events drop column is_archived")
+                .ExecuteNonQuery();
+
+            conn.CreateCommand($"alter table {_schemaName}.mt_streams drop column is_archived")
+                .ExecuteNonQuery();
+
+            // version as integer in mt_streams
+            conn.CreateCommand($"alter table {_schemaName}.mt_streams alter column version type int")
+                .ExecuteNonQuery();
+            conn.CreateCommand($"create function {_schemaName}.mt_append_event(uuid, varchar, varchar, uuid[], varchar[], varchar[], jsonb[]) returns int language plpgsql as $$ begin return 1; end; $$;")
+                .ExecuteNonQuery();
+        }
+        finally
         {
-            // simulate to event store v3 schema with version fields as int
-            using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-            try
-            {
-                conn.Open();
-                // version as integer in mt_events
-                conn.CreateCommand($"alter table {_schemaName}.mt_events alter column version type int")
-                    .ExecuteNonQuery();
-
-                conn.CreateCommand($"alter table {_schemaName}.mt_events drop column is_archived")
-                    .ExecuteNonQuery();
-
-                conn.CreateCommand($"alter table {_schemaName}.mt_streams drop column is_archived")
-                    .ExecuteNonQuery();
-
-                // version as integer in mt_streams
-                conn.CreateCommand($"alter table {_schemaName}.mt_streams alter column version type int")
-                    .ExecuteNonQuery();
-                conn.CreateCommand($"create function {_schemaName}.mt_append_event(uuid, varchar, varchar, uuid[], varchar[], varchar[], jsonb[]) returns int language plpgsql as $$ begin return 1; end; $$;")
-                    .ExecuteNonQuery();
-            }
-            finally
-            {
-                conn.Close();
-            }
+            conn.Close();
         }
+    }
 
-        private readonly string _schemaName;
+    private readonly string _schemaName;
 
-        public EventStoreSchemaV3ToV4Tests()
-        {
-            _schemaName = $"s_{Guid.NewGuid().ToString().Replace("-", "")}";
-        }
+    public EventStoreSchemaV3ToV4Tests()
+    {
+        _schemaName = $"s_{Guid.NewGuid().ToString().Replace("-", "")}";
     }
 }
