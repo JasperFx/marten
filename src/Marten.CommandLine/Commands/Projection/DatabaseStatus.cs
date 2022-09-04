@@ -1,32 +1,31 @@
 using Baseline;
 using Marten.Events.Daemon;
 
-namespace Marten.CommandLine.Commands.Projection
+namespace Marten.CommandLine.Commands.Projection;
+
+internal class DatabaseStatus
 {
-    internal class DatabaseStatus
+    public string Name { get; }
+    public long HighWaterMark { get; set; }
+
+    public readonly LightweightCache<string, CurrentShardState> Shards =
+        new LightweightCache<string, CurrentShardState>(name => new CurrentShardState(name));
+
+    public DatabaseStatus(string name)
     {
-        public string Name { get; }
-        public long HighWaterMark { get; set; }
+        Name = name;
+    }
 
-        public readonly LightweightCache<string, CurrentShardState> Shards =
-            new LightweightCache<string, CurrentShardState>(name => new CurrentShardState(name));
 
-        public DatabaseStatus(string name)
+    public void ReadState(ShardState state)
+    {
+        if (state.ShardName == ShardState.HighWaterMark)
         {
-            Name = name;
+            HighWaterMark = state.Sequence;
         }
-
-
-        public void ReadState(ShardState state)
+        else
         {
-            if (state.ShardName == ShardState.HighWaterMark)
-            {
-                HighWaterMark = state.Sequence;
-            }
-            else
-            {
-                Shards[state.ShardName].ReadState(state);
-            }
+            Shards[state.ShardName].ReadState(state);
         }
     }
 }
