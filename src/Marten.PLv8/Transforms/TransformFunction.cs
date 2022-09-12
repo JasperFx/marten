@@ -1,9 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Baseline;
 using Weasel.Core;
-using Weasel.Postgresql;
 using Weasel.Postgresql.Functions;
 
 namespace Marten.PLv8.Transforms;
@@ -70,6 +71,48 @@ $$ LANGUAGE plv8 IMMUTABLE STRICT;
         name = name ?? Path.GetFileNameWithoutExtension(file).ToLowerInvariant();
 
         return new TransformFunction(options, name, body);
+    }
+
+    public static TransformFunction ForResource(StoreOptions options, Assembly assembly, string resource, string name = null)
+    {
+        using (var stream = assembly.GetManifestResourceStream(resource))
+        {
+            if (stream == null)
+            {
+                throw new ArgumentException("Invalid resource", nameof(resource));
+            }
+
+            var body = stream.ReadAllText();
+            name = name ?? GenerateNameFromResource(resource).ToLowerInvariant();
+            return new TransformFunction(options, name, body);
+        }
+    }
+
+    public static TransformFunction ForResource(StoreOptions options, Type type, string resource, string name = null)
+    {
+        using (var stream = type.Assembly.GetManifestResourceStream(type, resource))
+        {
+            if (stream == null)
+            {
+                throw new ArgumentException("Invalid resource", nameof(resource));
+            }
+
+            var body = stream.ReadAllText();
+            name = name ?? GenerateNameFromResource(resource).ToLowerInvariant();
+            return new TransformFunction(options, name, body);
+        }
+    }
+
+    private static string GenerateNameFromResource(string resource)
+    {
+        var name = Path.GetFileNameWithoutExtension(resource);
+        var index = name.LastIndexOf('.');
+        if (index != -1)
+        {
+            name = name.Substring(index + 1);
+        }
+
+        return name;
     }
 
     public override string ToString()

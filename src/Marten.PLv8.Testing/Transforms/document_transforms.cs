@@ -112,6 +112,29 @@ public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixtu
     }
 
     [Fact]
+    public void transform_all_documents_in_session()
+    {
+        var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };
+        var user2 = new User { FirstName = "Corey", LastName = "Kaylor" };
+        var user3 = new User { FirstName = "Tim", LastName = "Cools" };
+
+        theStore.BulkInsert(new User[] { user1, user2, user3 });
+
+        using (var session = theStore.OpenSession())
+        {
+            session.Transform(x => x.All<User>("default_username"));
+            session.SaveChanges();
+        }
+
+        using (var session = theStore.QuerySession())
+        {
+            session.Load<User>(user1.Id).UserName.ShouldBe("jeremy.miller");
+            session.Load<User>(user2.Id).UserName.ShouldBe("corey.kaylor");
+            session.Load<User>(user3.Id).UserName.ShouldBe("tim.cools");
+        }
+    }
+
+    [Fact]
     public void transform_for_tenants()
     {
 
@@ -157,6 +180,31 @@ public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixtu
     }
 
     [Fact]
+    public void transform_a_single_document_in_session()
+    {
+        var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };
+        var user2 = new User { FirstName = "Corey", LastName = "Kaylor", UserName = "user2" };
+        var user3 = new User { FirstName = "Tim", LastName = "Cools", UserName = "user3" };
+
+        theStore.BulkInsert(new User[] { user1, user2, user3 });
+
+        using (var session = theStore.OpenSession())
+        {
+            session.Transform(x => x.Document<User>("default_username", user1.Id));
+            session.SaveChanges();
+        }
+
+        using (var session = theStore.QuerySession())
+        {
+            session.Load<User>(user1.Id).UserName.ShouldBe("jeremy.miller");
+
+            // no updates to these
+            session.Load<User>(user2.Id).UserName.ShouldBe("user2");
+            session.Load<User>(user3.Id).UserName.ShouldBe("user3");
+        }
+    }
+
+    [Fact]
     public void transform_with_where_clause()
     {
         var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };
@@ -166,6 +214,31 @@ public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixtu
         theStore.BulkInsert(new User[] { user1, user2, user3 });
 
         theStore.Transform(x => x.Where<User>("default_username", x => x.FirstName == user1.FirstName));
+
+        using (var session = theStore.QuerySession())
+        {
+            session.Load<User>(user1.Id).UserName.ShouldBe("jeremy.miller");
+
+            // no updates to these
+            session.Load<User>(user2.Id).UserName.ShouldBe("user2");
+            session.Load<User>(user3.Id).UserName.ShouldBe("user3");
+        }
+    }
+
+    [Fact]
+    public void transform_with_where_clause_in_session()
+    {
+        var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };
+        var user2 = new User { FirstName = "Corey", LastName = "Kaylor", UserName = "user2" };
+        var user3 = new User { FirstName = "Tim", LastName = "Cools", UserName = "user3" };
+
+        theStore.BulkInsert(new User[] { user1, user2, user3 });
+
+        using (var session = theStore.OpenSession())
+        {
+            session.Transform(x => x.Where<User>("default_username", x => x.FirstName == user1.FirstName));
+            session.SaveChanges();
+        }
 
         using (var session = theStore.QuerySession())
         {

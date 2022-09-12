@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Exceptions;
+using Marten.Internal.Sessions;
 using Marten.PLv8.Transforms;
 
 namespace Marten.PLv8;
@@ -41,6 +42,20 @@ public static class StoreOptionsExtensions
         using var transforms = new DocumentTransforms(s, tenantId);
         apply(transforms);
         transforms.Session.SaveChanges();
+    }
+
+    /// <summary>
+    /// Apply one or more Javascript document transformations within the current session
+    /// </summary>
+    /// <param name="operations"></param>
+    /// <param name="apply"></param>
+    public static void Transform(this IDocumentOperations operations, Action<IDocumentTransforms> apply)
+    {
+        var session = operations.As<DocumentSessionBase>();
+        session.Tenancy.Default.Database.EnsureStorageExists(typeof(TransformSchema));
+
+        using var transforms = new DocumentTransforms(session);
+        apply(transforms);
     }
 
     /// <summary>

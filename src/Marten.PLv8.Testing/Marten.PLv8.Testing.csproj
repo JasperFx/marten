@@ -43,15 +43,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="default_username.js">
+      <None Update="*.js">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="get_fullname.js">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="get_target_float.js">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+      <EmbeddedResource Include="*.js" />
     </ItemGroup>
 
     <ItemGroup>
