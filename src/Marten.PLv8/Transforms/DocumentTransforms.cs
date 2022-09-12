@@ -11,20 +11,25 @@ namespace Marten.PLv8.Transforms;
 
 internal class DocumentTransforms: IDocumentTransforms, IDisposable
 {
-    private readonly DocumentStore _store;
-    private readonly Tenant _tenant;
+    private readonly bool _ownsSession;
 
     public DocumentTransforms(DocumentStore store, Tenant tenant)
     {
-        _store = store;
-        _tenant = tenant;
+        Session = (DocumentSessionBase)store.OpenSession(new SessionOptions{Tenant = tenant, Tracking = DocumentTracking.None});
+        _ownsSession = true;
+    }
 
-        Session = (DocumentSessionBase)_store.OpenSession(new SessionOptions{Tenant = tenant, Tracking = DocumentTracking.None});
+    public DocumentTransforms(DocumentSessionBase session)
+    {
+        Session = session;
     }
 
     public void Dispose()
     {
-        Session?.Dispose();
+        if (_ownsSession)
+        {
+            Session?.Dispose();
+        }
     }
 
     public DocumentSessionBase Session { get; }

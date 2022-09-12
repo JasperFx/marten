@@ -99,6 +99,19 @@ public class TransformFunctionTests : OneOffConfigurationsContext
     }
 
     [Fact]
+    public void create_function_for_resource()
+    {
+        var options = new StoreOptions();
+        var func = TransformFunction.ForResource(options, typeof(TransformFunctionTests).Assembly, "Marten.PLv8.Testing.get_fullname.js");
+
+        func.Name.ShouldBe("get_fullname");
+
+        SpecificationExtensions.ShouldContain(func.Body, "module.exports");
+
+        func.Identifier.Name.ShouldBe("mt_transform_get_fullname");
+    }
+
+    [Fact]
     public void end_to_end_test_using_the_transform()
     {
         var user = new User {FirstName = "Jeremy", LastName = "Miller"};
