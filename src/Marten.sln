@@ -83,6 +83,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OpenTelemetry", "OpenTeleme
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marten.OpenTelemetry", "Marten.OpenTelemetry\Marten.OpenTelemetry.csproj", "{96EFC2D7-4242-45C1-8C39-85875C349822}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenTelemetrySample", "samples\OpenTelemetrySample\OpenTelemetrySample.csproj", "{451E9121-9138-4397-AEC3-2ED8F11CDD87}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -201,6 +203,10 @@ Global
 		{96EFC2D7-4242-45C1-8C39-85875C349822}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{96EFC2D7-4242-45C1-8C39-85875C349822}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{96EFC2D7-4242-45C1-8C39-85875C349822}.Release|Any CPU.Build.0 = Release|Any CPU
+		{451E9121-9138-4397-AEC3-2ED8F11CDD87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{451E9121-9138-4397-AEC3-2ED8F11CDD87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{451E9121-9138-4397-AEC3-2ED8F11CDD87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{451E9121-9138-4397-AEC3-2ED8F11CDD87}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -231,6 +237,7 @@ Global
 		{7B710A53-373B-4A7D-B49E-53C15E6A8CA8} = {79961196-DB50-4AD3-B749-D231799BCF2E}
 		{0962E83F-482B-4316-A8AB-3B714EEEC3AA} = {DA7EC300-12F5-4B80-B5DF-B7B71E344E24}
 		{96EFC2D7-4242-45C1-8C39-85875C349822} = {AC8AB984-414F-4083-BF39-65D62F2FF9EA}
+		{451E9121-9138-4397-AEC3-2ED8F11CDD87} = {79961196-DB50-4AD3-B749-D231799BCF2E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {52B7158F-0A24-47D9-9CF7-3FA94170041A}
