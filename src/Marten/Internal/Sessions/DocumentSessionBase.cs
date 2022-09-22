@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Diagnostics;
+using Marten.Diagnostics.Extensions;
 using Marten.Events;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -349,6 +351,14 @@ namespace Marten.Internal.Sessions
                 {
                     session.Delete(document);
                 }
+            }
+        }
+
+        private void emitDiagnositcs()
+        {
+            foreach (var stream in WorkTracker.Streams)
+            {
+                StreamDiagnosticSource.Instance.SaveStreamChanges(stream, CorrelationId);
             }
         }
     }

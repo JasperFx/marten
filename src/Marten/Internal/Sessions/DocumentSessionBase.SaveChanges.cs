@@ -59,6 +59,8 @@ namespace Marten.Internal.Sessions
 
             resetDirtyChecking();
 
+            emitDiagnositcs();
+
             EjectPatchedTypes(_workTracker);
             Logger.RecordSavedChanges(this, _workTracker);
 
