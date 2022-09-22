@@ -431,6 +431,28 @@ namespace Marten
         }
 
         /// <summary>
+        /// Order by multiple properties in ascending order i.e. "prop1", "prop2"
+        /// or order by multiple properties with their respective sort order i.e. "prop1", "prop2 ASC|asc", "prop3 DESC|desc"
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="properties"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static IBatchedOrderedQueryable<T> OrderBy<T>(this IBatchedQueryable<T> queryable, params string[] properties)
+        {
+            if (properties.Length == 0)
+                throw new ArgumentException($"{nameof(properties)} should at least have one property",
+                    nameof(properties));
+
+            // handle the first order by property
+            var orderedQueryable = queryable.OrderBy(properties.First());
+
+            // handle the rest of the properties
+            return properties.Skip(1).Aggregate(orderedQueryable, (current, prop) => current.OrderBy(prop));
+        }
+
+        /// <summary>
         /// Order by a single property in ascending order
         /// </summary>
         /// <param name="queryable"></param>
