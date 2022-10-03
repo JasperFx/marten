@@ -12,7 +12,6 @@ using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
 using Marten.Services;
 using Weasel.Postgresql;
-using Marten.Util;
 using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
@@ -26,9 +25,9 @@ namespace Marten.Linq.QueryHandlers
 
         public UserSuppliedQueryHandler(IMartenSession session, string sql, object[] parameters)
         {
-            _sql = sql;
+            _sql = sql.TrimStart();
             _parameters = parameters;
-            SqlContainsCustomSelect = _sql.Contains("select", StringComparison.OrdinalIgnoreCase);
+            SqlContainsCustomSelect = _sql.StartsWith("select", StringComparison.OrdinalIgnoreCase);
 
             _selectClause = GetSelectClause(session);
             _selector = (ISelector<T>) _selectClause.BuildSelector(session);
@@ -42,7 +41,7 @@ namespace Marten.Linq.QueryHandlers
             {
                 _selectClause.WriteSelectClause(builder);
 
-                if (_sql.TrimStart().StartsWith("where", StringComparison.OrdinalIgnoreCase))
+                if (_sql.StartsWith("where", StringComparison.OrdinalIgnoreCase))
                 {
                     builder.Append(" ");
                 }
@@ -51,8 +50,6 @@ namespace Marten.Linq.QueryHandlers
                     builder.Append(" where ");
                 }
             }
-
-
 
             var firstParameter = _parameters.FirstOrDefault();
 

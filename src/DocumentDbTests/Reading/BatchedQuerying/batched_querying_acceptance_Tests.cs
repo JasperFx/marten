@@ -169,6 +169,19 @@ public class batched_querying_acceptance_Tests : OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task can_query_with_user_supplied_subquery()
+    {
+        var batch = theSession.CreateBatchQuery();
+
+        var list = batch.Query<User>("order by (select random())");
+
+        await batch.Execute();
+
+        (await list).ShouldContain(x => x.Id == user1.Id);
+        (await list).ShouldContain(x => x.Id == user2.Id);
+    }
+
+    [Fact]
     public async Task can_find_the_first_value()
     {
         var batch = theSession.CreateBatchQuery();
