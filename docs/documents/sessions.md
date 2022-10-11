@@ -5,7 +5,30 @@
 start with one of the session types that can be created from an `IDocumentStore`. The following
 diagram explains the relationship between the different flavors of session and the root store:
 
-![DocumentStore and Session Types](/images/DocumentStore.png)
+```mermaid
+classDiagram
+
+class IDocumentStore
+class IQuerySession
+class QuerySession
+class IDocumentSession
+class DocumentStore
+class IdentityMapDocumentSession
+class LightWeightDocumentSession
+class DirtyCheckingDocumentSession
+
+IDocumentStore --> IQuerySession: Builds
+IDocumentStore --> IDocumentSession: Builds
+
+IQuerySession <|.. QuerySession 
+IQuerySession <|.. IDocumentSession 
+
+IDocumentStore <|.. DocumentStore 
+
+IDocumentSession <|.. IdentityMapDocumentSession 
+IDocumentSession <|.. LightWeightDocumentSession
+IDocumentSession <|.. DirtyCheckingDocumentSession
+```
 
 While there are sections below describing each session in more detail, at a high level the different
 types of sessions are:
