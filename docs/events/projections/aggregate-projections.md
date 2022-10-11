@@ -33,7 +33,21 @@ public class QuestParty
 
 Once again, here's the class diagram of the key projection types inside of Marten, but please note the `SingleStreamAggregation<T>`:
 
-![Projection Class Diagram](/images/Projections.png)
+```mermaid
+classDiagram
+
+CustomAggregation~TDoc, TId~ --|> ProjectionBase
+ProjectionWrapper ..|> IProjectionSource
+ProjectionWrapper --> IProjection
+GeneratedProjection --|> ProjectionBase
+GeneratedProjection ..|> IProjectionSource
+EventProjection --|> GeneratedProjection
+
+GeneratedAggregateProjectionBase~T~ --|> GeneratedProjection
+SingleStreamAggregation~T~ --|> GeneratedAggregateProjectionBase~T~
+MultiStreamAggregation~TDoc, TId~ --|> GeneratedAggregateProjectionBase~T~
+MultiStreamAggregation~TDoc, TId~ --|> IEventSlicer~TDoc, TId~
+```
 
 Marten supports a few different types of aggregated projections:
 
