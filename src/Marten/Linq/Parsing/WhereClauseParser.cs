@@ -191,7 +191,8 @@ namespace Marten.Linq.Parsing
             Any,
             Count,
             Contains,
-            Intersect
+            Intersect,
+            All,
         }
 
         internal class SubQueryFilterParser : RelinqExpressionVisitor
@@ -215,7 +216,10 @@ namespace Marten.Linq.Parsing
                     {
                         case AnyResultOperator _:
                             Usage = SubQueryUsage.Any;
+                            break;
 
+                        case AllResultOperator _:
+                            Usage = SubQueryUsage.All;
                             break;
 
                         case CountResultOperator _:
@@ -243,7 +247,16 @@ namespace Marten.Linq.Parsing
                     }
                 }
 
-                _wheres = expression.QueryModel.BodyClauses.OfType<WhereClause>().ToArray();
+                if (Usage == SubQueryUsage.All)
+                {
+                    _wheres = expression.QueryModel.ResultOperators.OfType<AllResultOperator>()
+                        .Select(o => new WhereClause(o.Predicate))
+                        .ToArray();
+                }
+                else
+                {
+                    _wheres = expression.QueryModel.BodyClauses.OfType<WhereClause>().ToArray();
+                }
             }
 
             public SubQueryUsage Usage { get;  }
@@ -254,6 +267,10 @@ namespace Marten.Linq.Parsing
                 {
                     case SubQueryUsage.Any:
                         return buildWhereForAny(findArrayField());
+
+                    case SubQueryUsage.All:
+                        var arrayField = findArrayField();
+                        return BuildWhereForAll(arrayField);
 
                     case SubQueryUsage.Contains:
                         return buildWhereForContains(findArrayField());
@@ -292,7 +309,7 @@ namespace Marten.Linq.Parsing
             {
                 if (_contains is ConstantExpression c)
                 {
-                    var flattened = new FlattenerStatement(field, _parent._session, _parent._statement);
+                    var flattened = new SubQueryStatement(field.LocatorForFlattenedElements, _parent._session, _parent._statement);
                     var idSelectorStatement = new ContainsIdSelectorStatement(flattened, _parent._session, c);
                     return new WhereCtIdInSubQuery(idSelectorStatement.ExportName, flattened);
                 }
@@ -304,7 +321,7 @@ namespace Marten.Linq.Parsing
             {
                 if (_wheres.Any())
                 {
-                    var flattened = new FlattenerStatement(field, _parent._session, _parent._statement);
+                    var flattened = new SubQueryStatement(field.LocatorForFlattenedElements, _parent._session, _parent._statement);
 
 
                     var itemType = _expression.QueryModel.MainFromClause.ItemType;
@@ -321,6 +338,25 @@ namespace Marten.Linq.Parsing
                 return new CollectionIsNotEmpty(field);
             }
 
+            private ISqlFragment BuildWhereForAll(ArrayField field)
+            {
+                if (!_wheres.Any())
+                {
+                    return new CollectionIsNotEmpty(field);
+                }
+
+                var subQueryStatement = new SubQueryStatement(field.LocatorForElements, _parent._session, _parent._statement);
+                var itemType = _expression.QueryModel.MainFromClause.ItemType;
+                var elementFields =
+                    _parent._session.Options.ChildTypeMappingFor(itemType);
+                var allIdSelectorStatement = new AllIdSelectorStatement(_parent._session, elementFields, subQueryStatement);
+
+                allIdSelectorStatement.WhereClauses.AddRange(_wheres);
+                allIdSelectorStatement.CompileLocal(_parent._session);
+
+                return new WhereCtIdInSubQuery(allIdSelectorStatement.ExportName, subQueryStatement);
+            }
+
             public CountComparisonStatement BuildCountComparisonStatement()
             {
                 if (Usage != SubQueryUsage.Count)
@@ -329,7 +365,7 @@ namespace Marten.Linq.Parsing
                 }
 
                 var field = findArrayField();
-                var flattened = new FlattenerStatement(field, _parent._session, _parent._statement);
+                var flattened = new SubQueryStatement(field.LocatorForFlattenedElements, _parent._session, _parent._statement);
 
                 var elementFields =
                     _parent._session.Options.ChildTypeMappingFor(field.ElementType);

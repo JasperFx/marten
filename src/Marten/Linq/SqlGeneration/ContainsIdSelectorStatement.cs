@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
 using Marten.Internal;
 using Weasel.Postgresql;
-using Marten.Util;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration
@@ -14,7 +13,7 @@ namespace Marten.Linq.SqlGeneration
         private readonly string _from;
         private readonly CommandParameter _parameter;
 
-        public ContainsIdSelectorStatement(FlattenerStatement parent, IMartenSession session, ConstantExpression constant) : base(null)
+        public ContainsIdSelectorStatement(SubQueryStatement parent, IMartenSession session, ConstantExpression constant) : base(null)
         {
             ConvertToCommonTableExpression(session);
             _from = parent.ExportName;

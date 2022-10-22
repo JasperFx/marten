@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Baseline;
 using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
-using Microsoft.CodeAnalysis.FlowAnalysis;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration
@@ -71,7 +69,7 @@ namespace Marten.Linq.SqlGeneration
                     var topLevelWhere = fragments.CombineFragments();
                     foreach (var subQuery in subQueries)
                     {
-                        subQuery.Flattener.Where = topLevelWhere;
+                        subQuery.SubQueryStatement.Where = topLevelWhere;
                     }
                 }
 
