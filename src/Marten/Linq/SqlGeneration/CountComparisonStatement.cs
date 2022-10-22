@@ -3,7 +3,6 @@ using System.Linq.Expressions;
 using Marten.Internal;
 using Marten.Linq.Fields;
 using Weasel.Postgresql;
-using Marten.Util;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration
@@ -14,10 +13,10 @@ namespace Marten.Linq.SqlGeneration
     internal class CountComparisonStatement: JsonStatement, IComparableFragment
     {
         private readonly string _tableName;
-        private readonly FlattenerStatement _flattened;
+        private readonly SubQueryStatement _flattened;
 
         public CountComparisonStatement(IMartenSession session, Type documentType, IFieldMapping fields,
-            FlattenerStatement parent): base(documentType, fields, parent)
+            SubQueryStatement parent): base(documentType, fields, parent)
         {
             ConvertToCommonTableExpression(session);
             parent.InsertAfter(this);

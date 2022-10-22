@@ -1,7 +1,6 @@
 using Marten.Internal;
 using Marten.Linq.Fields;
 using Weasel.Postgresql;
-using Marten.Util;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration
@@ -38,13 +37,13 @@ namespace Marten.Linq.SqlGeneration
     {
         private readonly string _tableName;
 
-        internal WhereCtIdInSubQuery(string tableName, FlattenerStatement flattenerStatement)
+        internal WhereCtIdInSubQuery(string tableName, SubQueryStatement subQueryStatement)
         {
             _tableName = tableName;
-            Flattener = flattenerStatement;
+            SubQueryStatement = subQueryStatement;
         }
 
-        public FlattenerStatement Flattener { get; }
+        public SubQueryStatement SubQueryStatement { get; }
 
         public void Apply(CommandBuilder builder)
         {

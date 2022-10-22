@@ -112,7 +112,7 @@ namespace Marten.Linq.SqlGeneration
         protected abstract void configure(CommandBuilder builder);
 
 
-        protected void writeWhereClause(CommandBuilder sql)
+        protected virtual void writeWhereClause(CommandBuilder sql)
         {
             if (Where != null)
             {

@@ -1,21 +1,23 @@
 using System;
 using Marten.Internal;
-using Marten.Linq.Fields;
 using Weasel.Postgresql;
 
 namespace Marten.Linq.SqlGeneration
 {
-    internal class FlattenerStatement : Statement
+    internal class SubQueryStatement : Statement
     {
-        private readonly ArrayField _field;
+        private readonly string _locatorForElements;
         private readonly string _sourceTable;
 
-        public FlattenerStatement(ArrayField field, IMartenSession session, Statement sourceStatement) : base(null)
+        public SubQueryStatement(string locatorForElements, IMartenSession session, Statement sourceStatement) : base(null)
         {
-            if (sourceStatement.FromObject.IsEmpty()) throw new ArgumentOutOfRangeException("The parent statement has an empty FromObject");
-
-            _sourceTable = sourceStatement.FromObject;
-            _field = field;
+            _sourceTable = sourceStatement.FromObject ?? throw new ArgumentNullException(nameof(sourceStatement));
+            if (sourceStatement.FromObject.IsEmpty())
+            {
+                throw new ArgumentOutOfRangeException(nameof(sourceStatement),
+                    "The source statement should not contain any empty FromObject");
+            }
+            _locatorForElements = locatorForElements ?? throw new ArgumentNullException(nameof(locatorForElements));
 
             ConvertToCommonTableExpression(session);
             sourceStatement.InsertBefore(this);
@@ -26,7 +28,7 @@ namespace Marten.Linq.SqlGeneration
             startCommonTableExpression(sql);
 
             sql.Append("select ctid, ");
-            sql.Append(_field.LocatorForFlattenedElements);
+            sql.Append(_locatorForElements);
             sql.Append(" as data from ");
 
             sql.Append(_sourceTable);
@@ -43,8 +45,6 @@ namespace Marten.Linq.SqlGeneration
             {
                 endCommonTableExpression(sql, " as d");
             }
-
-
         }
     }
 }

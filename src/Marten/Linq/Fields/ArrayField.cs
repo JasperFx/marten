@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Baseline;
@@ -33,24 +32,16 @@ namespace Marten.Linq.Fields
                 PgType = "jsonb";
             }
 
-
-
             TypedLocator = $"CAST({rawLocator} as {PgType})";
-
-
 
             LocatorForIncludedDocumentId =
                 $"CAST(ARRAY(SELECT jsonb_array_elements_text(CAST({rawLocator} as jsonb))) as {innerPgType}[])";
 
-            if (PgType.EqualsIgnoreCase("JSONB"))
-            {
-                LocatorForFlattenedElements = $"unnest(CAST(ARRAY(SELECT jsonb_array_elements(CAST({rawLocator} as jsonb))) as jsonb[]))";
-            }
-            else
-            {
-                LocatorForFlattenedElements = $"unnest({LocatorForIncludedDocumentId})";;
-            }
+            LocatorForElements = PgType.EqualsIgnoreCase("JSONB") ?
+                $"CAST(ARRAY(SELECT jsonb_array_elements(CAST({rawLocator} as jsonb))) as jsonb[])" :
+                LocatorForIncludedDocumentId;
 
+            LocatorForFlattenedElements = $"unnest({LocatorForElements})";
 
         }
 
@@ -73,5 +64,7 @@ namespace Marten.Linq.Fields
         }
 
         public string LocatorForFlattenedElements { get; }
+
+        public string LocatorForElements { get; }
     }
 }
