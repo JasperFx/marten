@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -86,5 +87,133 @@ public class invoking_queryable_all_operation_tests: IntegrationContext
             .ToList();
 
         results.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public void invoking_queryable_all_operation_test5()
+    {
+        theSession.Store(new User
+        {
+            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
+        });
+        theSession.Store(new User
+        {
+            FirstName = "Bill" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
+        });
+        theSession.Store(new User
+        {
+            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F2"}}
+        });
+        theSession.Store(new User
+        {
+            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = default}, new(){ Name = default}}
+        });
+        theSession.SaveChanges();
+
+        var results = theSession.Query<User>()
+            .Where(u => u.Friends.All(f => f.Name == "F1"))
+            .ToList();
+
+        results.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public void invoking_queryable_all_operation_test6()
+    {
+        theSession.Store(new User
+        {
+            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
+        });
+        theSession.Store(new User
+        {
+            FirstName = "Bill" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
+        });
+        theSession.Store(new User
+        {
+            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F2"}}
+        });
+        theSession.Store(new User
+        {
+            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = default}, new(){ Name = default}}
+        });
+        theSession.SaveChanges();
+
+        var results = theSession.Query<User>()
+            .Where(u => u.FirstName == "Joe" && u.Friends.All(f => f.Name == "F1"))
+            .ToList();
+
+        results.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public void invoking_queryable_all_operation_test7()
+    {
+        theSession.Store(new User
+        {
+            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
+        });
+        theSession.Store(new User
+        {
+            FirstName = "Bill" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
+        });
+        theSession.Store(new User
+        {
+            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F2"}}
+        });
+        theSession.Store(new User
+        {
+            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = default}, new(){ Name = default}}
+        });
+        theSession.SaveChanges();
+
+        var results = theSession.Query<User>()
+            .Where(u => u.Friends.All(f => f.Name == null))
+            .ToList();
+
+        results.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public void invoking_queryable_all_operation_test8()
+    {
+        theSession.Store(new User
+        {
+            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
+        });
+        theSession.Store(new User
+        {
+            FirstName = "Bill" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
+        });
+        theSession.Store(new User
+        {
+            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F2"}}
+        });
+        theSession.Store(new User
+        {
+            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            Friends = new List<Friend> { new(){ Name = default}, new(){ Name = default}}
+        });
+        theSession.SaveChanges();
+
+        var results = theSession.Query<User>()
+            .Where(u => u.FirstName == "Bill" && u.Friends.All(f => f.Name == null))
+            .ToList();
+
+        results.Count.ShouldBe(0);
     }
 }

@@ -1,7 +1,6 @@
 using Marten.Internal;
 using Marten.Linq.Fields;
 using Weasel.Postgresql;
-using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
@@ -13,13 +12,8 @@ internal class AllIdSelectorStatement: IdSelectorStatement
 
     protected override void writeWhereClause(CommandBuilder sql)
     {
-        if (Where is not ComparisonFilter comparisonFilter)
-        {
-            return;
-        }
-
         sql.Append(" where ");
-        Where = new AllComparisonFilter(comparisonFilter);
+        Where = new AllComparisionFilter(Where);
         Where.Apply(sql);
     }
 }
