@@ -19,12 +19,19 @@ public class NoSetterDocument
 
 #endregion
 
+public class Friend
+{
+    public string Name { get; set; }
+}
+
 public class User
 {
     public User()
     {
         Id = Guid.NewGuid();
     }
+
+    public List<Friend> Friends { get; set; }
 
     public string[] Roles { get; set; }
 
@@ -116,6 +123,8 @@ public class UserWithReadonlyCollectionWithPrivateSetter
         Collection = collection.ToList();
     }
 }
+
+
 
 public class Post
 {
