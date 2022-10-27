@@ -146,4 +146,26 @@ public class using_optimized_artifact_workflow
         rules.GeneratedNamespace.ShouldBe("Marten.Generated");
         rules.SourceCodeWritingEnabled.ShouldBeFalse();
     }
+
+    [Fact]
+    public void using_optimized_mode_in_production_override_environment_name()
+    {
+        using var host = new HostBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow("Local");
+            })
+            .UseEnvironment("Local")
+            .Start();
+
+        var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
+
+        var rules = store.Options.CreateGenerationRules();
+
+        store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.CreateOrUpdate);
+        store.Options.GeneratedCodeMode.ShouldBe(TypeLoadMode.Auto);
+
+        rules.GeneratedNamespace.ShouldBe("Marten.Generated");
+        rules.SourceCodeWritingEnabled.ShouldBeTrue();
+    }
 }
