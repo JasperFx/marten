@@ -91,11 +91,11 @@ namespace Marten.Events.Daemon.HighWater
                 switch (status)
                 {
                     case HighWaterStatus.Changed:
-                        await markProgress(statistics, _settings.FastPollingTime).ConfigureAwait(false);
+                        await markProgress(statistics, _settings.FastPollingTime, status).ConfigureAwait(false);
                         break;
 
                     case HighWaterStatus.CaughtUp:
-                        await markProgress(statistics, _settings.SlowPollingTime).ConfigureAwait(false);
+                        await markProgress(statistics, _settings.SlowPollingTime, status).ConfigureAwait(false);
                         break;
 
                     case HighWaterStatus.Stale:
@@ -112,9 +112,8 @@ namespace Marten.Events.Daemon.HighWater
 
                         _logger.LogInformation("High Water agent is stale after threshold of {DelayInSeconds} seconds, skipping gap to events marked after {SafeHarborTime}", _settings.StaleSequenceThreshold.TotalSeconds, safeHarborTime);
 
-
                         statistics = await _detector.DetectInSafeZone(_token).ConfigureAwait(false);
-                        await markProgress(statistics, _settings.FastPollingTime).ConfigureAwait(false);
+                        await markProgress(statistics, _settings.FastPollingTime, status).ConfigureAwait(false);
                         break;
                 }
             }
@@ -122,13 +121,22 @@ namespace Marten.Events.Daemon.HighWater
             _logger.LogInformation("HighWaterAgent has detected a cancellation and has stopped polling");
         }
 
-        private async Task markProgress(HighWaterStatistics statistics, TimeSpan delayTime)
+        private async Task markProgress(HighWaterStatistics statistics, TimeSpan delayTime, HighWaterStatus status)
         {
             if (!IsRunning) return;
 
             // don't bother sending updates if the current position is 0
             if (statistics.CurrentMark == 0 || statistics.CurrentMark == _tracker.HighWaterMark)
             {
+                if (status == HighWaterStatus.CaughtUp)
+                {
+                    // Update the current stats if the status is not stale
+                    // This ensures the current stats timestamp is up-to-date, and not just set to the time of the last changed
+                    // Without this, the StaleSequeceThreshold gets applied to the timestamp of the last changed highwatermark
+                    // meaning that a time break in events larger than the StaleSequeceThreshold makes the safeHarbourTime less that the timestamp of the processing statistics
+                    _current = statistics;
+                }
+
                 await Task.Delay(delayTime, _token).ConfigureAwait(false);
                 return;
             }
@@ -139,6 +147,7 @@ namespace Marten.Events.Daemon.HighWater
             }
 
             _current = statistics;
+
             _tracker.MarkHighWater(statistics.CurrentMark);
 
             await Task.Delay(delayTime, _token).ConfigureAwait(false);
