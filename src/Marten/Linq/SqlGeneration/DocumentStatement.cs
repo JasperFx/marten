@@ -26,28 +26,42 @@ namespace Marten.Linq.SqlGeneration
                 return Storage.DefaultWhereFragment();
 
             var parser = new WhereClauseParser(session, this);
-            var parsedWhereClauses = WhereClauses
-                .Select(x => parser.Build(x))
-                .Where(w => w is not IgnoredWhereClauseFragment)
-                .ToArray();
 
-            switch (parsedWhereClauses.Length)
+            ISqlFragment where = null;
+
+            switch (WhereClauses.Count)
             {
                 case 0:
                     return Storage.DefaultWhereFragment();
 
                 case 1:
-                {
-                    var whereClause = parsedWhereClauses[0];
-                    return Storage.FilterDocuments(null, whereClause);
-                }
+                    where = parser.Build(WhereClauses.Single());
+                    if (where is IgnoredWhereClauseFragment)
+                    {
+                        return Storage.DefaultWhereFragment();
+                    }
+                    break;
 
                 default:
-                {
-                    var whereClause = CompoundWhereFragment.And(parsedWhereClauses);
-                    return Storage.FilterDocuments(null, whereClause);
-                }
+                    var wheres = WhereClauses.Select(x => parser.Build(x))
+                        .Where(w => w is not IgnoredWhereClauseFragment)
+                        .ToArray();
+                    if (!wheres.Any())
+                    {
+                        return Storage.DefaultWhereFragment();
+                    }
+                    else if (wheres.Length == 1)
+                    {
+                        where = wheres[0];
+                        break;
+                    }
+                    else
+                    {
+                        where = CompoundWhereFragment.And(wheres);
+                        break;
+                    }
             }
+            return Storage.FilterDocuments(null, where);
         }
 
         public override void CompileLocal(IMartenSession session)
