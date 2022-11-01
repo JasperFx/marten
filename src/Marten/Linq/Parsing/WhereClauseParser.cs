@@ -80,17 +80,18 @@ namespace Marten.Linq.Parsing
             return null;
         }
 
-        // Ignore where clause expressions such as where([x] != null) and where([x] == null)
-        protected bool WhereClauseExpressionShouldBeIgnored(BinaryExpression expression)
+        protected bool BinaryExpressionIsReferenceComparision(BinaryExpression expression)
         {
-            return (expression.NodeType == ExpressionType.Equal || expression.NodeType == ExpressionType.NotEqual)
-                   && expression.Left.NodeType == ExpressionType.Extension
-                   && expression.Right is ConstantExpression {Value: null};
+            var leftOperandType = expression.Left.Type;
+            var rightOperandType = expression.Right.Type;
+            var nodeType = expression.NodeType;
+            return (nodeType == ExpressionType.Equal || nodeType == ExpressionType.NotEqual)
+                   && expression.Method == null && !leftOperandType.IsValueType && !rightOperandType.IsValueType;
         }
 
         protected override Expression VisitBinary(BinaryExpression node)
         {
-            if (WhereClauseExpressionShouldBeIgnored(node))
+            if (BinaryExpressionIsReferenceComparision(node))
             {
                 _holder.Register(new IgnoredWhereClauseFragment());
                 return null;
@@ -108,18 +109,18 @@ namespace Marten.Linq.Parsing
                 case ExpressionType.AndAlso:
                     var leftBinaryExpressionFromAnd = node.Left as BinaryExpression;
                     var rightBinaryExpressionFromAnd = node.Right as BinaryExpression;
-                    if (leftBinaryExpressionFromAnd != null && WhereClauseExpressionShouldBeIgnored(leftBinaryExpressionFromAnd))
+                    if (leftBinaryExpressionFromAnd != null && BinaryExpressionIsReferenceComparision(leftBinaryExpressionFromAnd))
                     {
                         Visit(node.Right);
                         return null;
                     }
-                    else if (rightBinaryExpressionFromAnd != null && WhereClauseExpressionShouldBeIgnored(rightBinaryExpressionFromAnd))
+                    else if (rightBinaryExpressionFromAnd != null && BinaryExpressionIsReferenceComparision(rightBinaryExpressionFromAnd))
                     {
                         Visit(node.Left);
                         return null;
                     }
-                    else if ((leftBinaryExpressionFromAnd != null && WhereClauseExpressionShouldBeIgnored(leftBinaryExpressionFromAnd)) &&
-                             (rightBinaryExpressionFromAnd != null && WhereClauseExpressionShouldBeIgnored(rightBinaryExpressionFromAnd)))
+                    else if ((leftBinaryExpressionFromAnd != null && BinaryExpressionIsReferenceComparision(leftBinaryExpressionFromAnd)) &&
+                             (rightBinaryExpressionFromAnd != null && BinaryExpressionIsReferenceComparision(rightBinaryExpressionFromAnd)))
                     {
                         _holder.Register(new IgnoredWhereClauseFragment());
                         return null;
@@ -132,18 +133,18 @@ namespace Marten.Linq.Parsing
                 case ExpressionType.OrElse:
                     var leftBinaryExpressionFromOr = node.Left as BinaryExpression;
                     var rightBinaryExpressionFromOr = node.Right as BinaryExpression;
-                    if (leftBinaryExpressionFromOr != null && WhereClauseExpressionShouldBeIgnored(leftBinaryExpressionFromOr))
+                    if (leftBinaryExpressionFromOr != null && BinaryExpressionIsReferenceComparision(leftBinaryExpressionFromOr))
                     {
                         Visit(node.Right);
                         return null;
                     }
-                    else if (rightBinaryExpressionFromOr != null && WhereClauseExpressionShouldBeIgnored(rightBinaryExpressionFromOr))
+                    else if (rightBinaryExpressionFromOr != null && BinaryExpressionIsReferenceComparision(rightBinaryExpressionFromOr))
                     {
                         Visit(node.Left);
                         return null;
                     }
-                    else if ((leftBinaryExpressionFromOr != null && WhereClauseExpressionShouldBeIgnored(leftBinaryExpressionFromOr)) &&
-                             (rightBinaryExpressionFromOr != null && WhereClauseExpressionShouldBeIgnored(rightBinaryExpressionFromOr)))
+                    else if ((leftBinaryExpressionFromOr != null && BinaryExpressionIsReferenceComparision(leftBinaryExpressionFromOr)) &&
+                             (rightBinaryExpressionFromOr != null && BinaryExpressionIsReferenceComparision(rightBinaryExpressionFromOr)))
                     {
                         _holder.Register(new IgnoredWhereClauseFragment());
                         return null;
