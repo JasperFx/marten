@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Internal;
 using Marten.Internal.Storage;
-using Marten.Linq.Filters;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
 using Weasel.Postgresql.SqlGeneration;
@@ -22,6 +21,9 @@ namespace Marten.Linq.SqlGeneration
         // TODO -- return IEnumerable<ISqlFragment> instead
         protected override ISqlFragment buildWhereFragment(IMartenSession session)
         {
+            if (WhereClauses.Count == 0)
+                return Storage.DefaultWhereFragment();
+
             var parser = new WhereClauseParser(session, this);
 
             ISqlFragment where = null;
@@ -29,35 +31,22 @@ namespace Marten.Linq.SqlGeneration
             switch (WhereClauses.Count)
             {
                 case 0:
-                    return Storage.DefaultWhereFragment();
+                    where = Storage.DefaultWhereFragment();
+                    break;
 
                 case 1:
                     where = parser.Build(WhereClauses.Single());
-                    if (where is IgnoredWhereClauseFragment)
-                    {
-                        return Storage.DefaultWhereFragment();
-                    }
                     break;
 
                 default:
-                    var wheres = WhereClauses.Select(x => parser.Build(x))
-                        .Where(w => w is not IgnoredWhereClauseFragment)
-                        .ToArray();
-                    if (!wheres.Any())
-                    {
-                        return Storage.DefaultWhereFragment();
-                    }
-                    else if (wheres.Length == 1)
-                    {
-                        where = wheres[0];
-                        break;
-                    }
-                    else
-                    {
-                        where = CompoundWhereFragment.And(wheres);
-                        break;
-                    }
+                    var wheres = WhereClauses.Select(x => parser.Build(x)).ToArray();
+
+                    where = CompoundWhereFragment.And(wheres);
+                    break;
+
+
             }
+
             return Storage.FilterDocuments(null, where);
         }
 
