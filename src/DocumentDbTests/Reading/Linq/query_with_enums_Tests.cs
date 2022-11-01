@@ -1,7 +1,9 @@
 ﻿using System.Linq;
+using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Shouldly;
 using Weasel.Core;
 using Xunit;
 
@@ -195,4 +197,35 @@ public class query_with_enums_Tests : OneOffConfigurationsContext
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
 
+    [Fact]
+    public void use_nullable_enum_values_as_part_of_in_query()
+    {
+        theSession.Store(new Target{NullableEnum = Colors.Green, Number = 1});
+        theSession.Store(new Target{NullableEnum = Colors.Blue, Number = 2});
+        theSession.Store(new Target{NullableEnum = Colors.Red, Number = 3});
+        theSession.Store(new Target{NullableEnum = Colors.Green, Number = 4});
+        theSession.Store(new Target{NullableEnum = null, Number = 5});
+        theSession.SaveChanges();
+
+        var results = theSession.Query<Target>().Where(x => x.NullableEnum.In(null, Colors.Green))
+            .ToList();
+
+        results.Count.ShouldBe(3);
+    }
+
+    [Fact]
+    public void use_nullable_enum_values_as_part_of_notin_query()
+    {
+        theSession.Store(new Target{NullableEnum = Colors.Green, Number = 1});
+        theSession.Store(new Target{NullableEnum = Colors.Blue, Number = 2});
+        theSession.Store(new Target{NullableEnum = Colors.Red, Number = 3});
+        theSession.Store(new Target{NullableEnum = Colors.Green, Number = 4});
+        theSession.Store(new Target{NullableEnum = null, Number = 5});
+        theSession.SaveChanges();
+
+        var results = theSession.Query<Target>().Where(x => !x.NullableEnum.In(null, Colors.Green))
+            .ToList();
+
+        results.Count.ShouldBe(2);
+    }
 }
