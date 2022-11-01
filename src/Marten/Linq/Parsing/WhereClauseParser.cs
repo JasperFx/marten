@@ -84,8 +84,9 @@ namespace Marten.Linq.Parsing
         protected bool WhereClauseExpressionShouldBeIgnored(BinaryExpression expression)
         {
             return (expression.NodeType == ExpressionType.Equal || expression.NodeType == ExpressionType.NotEqual)
-                   && expression.Left.NodeType == ExpressionType.Extension
-                   && expression.Right is ConstantExpression {Value: null};
+                   && expression.Method == null
+                   && expression.Left.NodeType != ExpressionType.MemberAccess
+                   && !expression.Left.Type.IsValueType && !expression.Right.Type.IsValueType;
         }
 
         protected override Expression VisitBinary(BinaryExpression node)
