@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Linq.Expressions;
+using Baseline;
 using Marten.Linq.Fields;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
@@ -13,7 +14,8 @@ namespace Marten.Linq.Parsing.Methods
         public bool Matches(MethodCallExpression expression)
         {
             return (expression.Method.Name == nameof(LinqExtensions.IsOneOf)
-                    || expression.Method.Name == nameof(LinqExtensions.In))
+                    || (expression.Method.Name == nameof(LinqExtensions.In) &&
+                        !expression.Arguments.First().Type.IsGenericEnumerable()))
                    && expression.Method.DeclaringType == typeof(LinqExtensions);
         }
 
