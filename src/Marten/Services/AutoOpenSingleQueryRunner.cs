@@ -19,13 +19,13 @@ namespace Marten.Services
 
         public async Task<T> Query<T>(ISingleQueryHandler<T> handler, CancellationToken cancellation)
         {
-            using var conn = _database.CreateConnection();
+            await using var conn = _database.CreateConnection();
 
             var command = handler.BuildCommand();
             command.Connection = conn;
 
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
-            using var reader = await command.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
+            await using var reader = await command.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
 
             try
             {
@@ -34,6 +34,7 @@ namespace Marten.Services
             finally
             {
                 await reader.CloseAsync().ConfigureAwait(false);
+                await reader.DisposeAsync().ConfigureAwait(false);
             }
         }
 

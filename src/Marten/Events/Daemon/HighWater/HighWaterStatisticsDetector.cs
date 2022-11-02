@@ -9,19 +9,19 @@ namespace Marten.Events.Daemon.HighWater
 {
     internal class HighWaterStatisticsDetector: ISingleQueryHandler<HighWaterStatistics>
     {
-        private readonly NpgsqlCommand _stateDetection;
+        private string _commandText;
 
         public HighWaterStatisticsDetector(EventGraph graph)
         {
-            _stateDetection = new NpgsqlCommand($@"
+            _commandText = $@"
 select last_value from {graph.DatabaseSchemaName}.mt_events_sequence;
 select last_seq_id, last_updated, transaction_timestamp() as timestamp from {graph.DatabaseSchemaName}.mt_event_progression where name = '{ShardState.HighWaterMark}';
-".Trim());
+".Trim();
         }
 
         public NpgsqlCommand BuildCommand()
         {
-            return _stateDetection;
+            return new NpgsqlCommand(_commandText);
         }
 
         public async Task<HighWaterStatistics> HandleAsync(DbDataReader reader, CancellationToken token)
