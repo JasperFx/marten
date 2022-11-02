@@ -42,8 +42,6 @@ public class query_with_IsSubsetOf_Tests : IntegrationContext
         #endregion
     }
 
-
-
     private Target[] _allTargets;
 
     private static Target CreateTarget(params string[] tags)

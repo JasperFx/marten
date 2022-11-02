@@ -13,40 +13,88 @@ namespace DocumentDbTests.Reading.Linq;
 public class query_with_is_one_of_Tests: IntegrationContext
 {
     public static TheoryData<Func<int[], Expression<Func<Target, bool>>>> SupportedIsOneOfWithIntArray =
-        new() { validNumbers => x => x.Number.IsOneOf(validNumbers), validNumbers => x => x.Number.In(validNumbers) };
+        new()
+        {
+            validNumbers => x => x.Number.IsOneOf(validNumbers),
+            validNumbers => x => x.Number.In(validNumbers)
+        };
 
     public static TheoryData<Func<int[], Expression<Func<Target, bool>>>> SupportedNotIsOneOfWithIntArray =
-        new() { validNumbers => x => !x.Number.IsOneOf(validNumbers), validNumbers => x => !x.Number.In(validNumbers) };
+        new()
+        {
+            validNumbers => x => !x.Number.IsOneOf(validNumbers),
+            validNumbers => x => !x.Number.In(validNumbers)
+        };
 
     public static TheoryData<Func<List<int>, Expression<Func<Target, bool>>>> SupportedIsOneOfWithIntList =
-        new() { validNumbers => x => x.Number.IsOneOf(validNumbers), validNumbers => x => x.Number.In(validNumbers) };
+        new()
+        {
+            validNumbers => x => x.Number.IsOneOf(validNumbers),
+            validNumbers => x => x.Number.In(validNumbers)
+        };
 
     public static TheoryData<Func<List<int>, Expression<Func<Target, bool>>>> SupportedNotIsOneOfWithIntList =
-        new() { validNumbers => x => !x.Number.IsOneOf(validNumbers), validNumbers => x => !x.Number.In(validNumbers) };
+        new()
+        {
+            validNumbers => x => !x.Number.IsOneOf(validNumbers),
+            validNumbers => x => !x.Number.In(validNumbers)
+        };
 
     public static TheoryData<Func<Guid[], Expression<Func<Target, bool>>>> SupportedIsOneOfWithGuidArray =
-        new() { validGuids => x => x.OtherGuid.IsOneOf(validGuids), validGuids => x => x.OtherGuid.In(validGuids) };
+        new()
+        {
+            validGuids => x => x.OtherGuid.IsOneOf(validGuids),
+            validGuids => x => x.OtherGuid.In(validGuids)
+        };
 
     public static TheoryData<Func<Guid[], Expression<Func<Target, bool>>>> SupportedNotIsOneOfWithGuidArray =
-        new() { validGuids => x => !x.OtherGuid.IsOneOf(validGuids), validGuids => x => !x.OtherGuid.In(validGuids) };
+        new()
+        {
+            validGuids => x => !x.OtherGuid.IsOneOf(validGuids),
+            validGuids => x => !x.OtherGuid.In(validGuids)
+        };
 
     public static TheoryData<Func<List<Guid>, Expression<Func<Target, bool>>>> SupportedIsOneOfWithGuidList =
-        new() { validGuids => x => x.OtherGuid.IsOneOf(validGuids), validGuids => x => x.OtherGuid.In(validGuids) };
+        new()
+        {
+            validGuids => x => x.OtherGuid.IsOneOf(validGuids),
+            validGuids => x => x.OtherGuid.In(validGuids)
+        };
 
     public static TheoryData<Func<List<Guid>, Expression<Func<Target, bool>>>> SupportedNotIsOneOfWithGuidList =
-        new() { validGuids => x => !x.OtherGuid.IsOneOf(validGuids), validGuids => x => !x.OtherGuid.In(validGuids) };
+        new()
+        {
+            validGuids => x => !x.OtherGuid.IsOneOf(validGuids),
+            validGuids => x => !x.OtherGuid.In(validGuids)
+        };
 
     public static TheoryData<Func<string[], Expression<Func<Target, bool>>>> SupportedIsOneOfWithStringArray =
-        new() { validStrings => x => x.String.IsOneOf(validStrings), validStrings => x => x.String.In(validStrings) };
+        new()
+        {
+            validStrings => x => x.String.IsOneOf(validStrings),
+            validStrings => x => x.String.In(validStrings)
+        };
 
     public static TheoryData<Func<string[], Expression<Func<Target, bool>>>> SupportedNotIsOneOfWithStringArray =
-        new() { validStrings => x => !x.String.IsOneOf(validStrings), validStrings => x => !x.String.In(validStrings) };
+        new()
+        {
+            validStrings => x => !x.String.IsOneOf(validStrings),
+            validStrings => x => !x.String.In(validStrings)
+        };
 
     public static TheoryData<Func<List<string>, Expression<Func<Target, bool>>>> SupportedIsOneOfWithStringList =
-        new() { validStrings => x => x.String.IsOneOf(validStrings), validStrings => x => x.String.In(validStrings) };
+        new()
+        {
+            validStrings => x => x.String.IsOneOf(validStrings),
+            validStrings => x => x.String.In(validStrings)
+        };
 
     public static TheoryData<Func<List<string>, Expression<Func<Target, bool>>>> SupportedNotIsOneOfWithStringList =
-        new() { validStrings => x => !x.String.IsOneOf(validStrings), validStrings => x => !x.String.In(validStrings) };
+        new()
+        {
+            validStrings => x => !x.String.IsOneOf(validStrings),
+            validStrings => x => !x.String.In(validStrings)
+        };
 
     [Theory]
     [MemberData(nameof(SupportedIsOneOfWithIntArray))]
