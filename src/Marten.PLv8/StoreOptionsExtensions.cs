@@ -14,7 +14,7 @@ public static class StoreOptionsExtensions
     /// Add PLV8 related Patch() and Transform() operations to this Marten DocumentStore
     /// </summary>
     /// <param name="options"></param>
-    /// <param name="configure">Optionally add custom JavaScript tranformations</param>
+    /// <param name="configure">Optionally add custom JavaScript transformations</param>
     public static void UseJavascriptTransformsAndPatching(this StoreOptions options, Action<ITransforms> configure = null)
     {
         var schema = new TransformSchema(options);
