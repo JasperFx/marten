@@ -14,7 +14,7 @@ namespace Marten.Linq.Parsing.Methods
     {
         public bool Matches(MethodCallExpression expression)
         {
-            MethodInfo method = expression.Method;
+            var method = expression.Method;
             return IsMartenLinqExtension(method) ||
                    IsISetMethod(method);
         }

@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
@@ -16,8 +15,12 @@ namespace Marten
         /// <param name="variable"></param>
         /// <param name="matches"></param>
         /// <returns></returns>
+        /// <exception cref="NotSupportedException">when called for collection</exception>
         public static bool IsOneOf<T>(this T variable, params T[] matches)
         {
+            if (typeof(T).IsArray || typeof(T).IsGenericEnumerable())
+                throw new NotSupportedException("IsOneOf operator should not be used for collections. Use IsSubsetOf instead.");
+
             return matches.Contains(variable);
         }
 
@@ -40,8 +43,12 @@ namespace Marten
         /// <param name="variable"></param>
         /// <param name="matches"></param>
         /// <returns></returns>
+        /// <exception cref="NotSupportedException">when called for collection</exception>
         public static bool In<T>(this T variable, params T[] matches)
         {
+            if (typeof(T).IsArray || typeof(T).IsGenericEnumerable())
+                throw new NotSupportedException("In operator should not be used for collections. Use IsSubsetOf instead.");
+
             return matches.Contains(variable);
         }
 
