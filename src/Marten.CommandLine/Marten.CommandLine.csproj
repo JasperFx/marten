@@ -34,8 +34,8 @@
         <PackageReference Include="LamarCodeGeneration.Commands" Version="6.1.6" />
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-        <PackageReference Include="Oakton" Version="4.5.1" />
-        <PackageReference Include="Weasel.CommandLine" Version="5.5.0" />
+        <PackageReference Include="Oakton" Version="4.6.3" />
+        <PackageReference Include="Weasel.CommandLine" Version="5.7.3" />
     </ItemGroup>
     <Import Project="../../Analysis.Build.props" />
 </Project>
