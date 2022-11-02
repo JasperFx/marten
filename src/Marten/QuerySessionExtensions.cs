@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline.ImTools;
 
 namespace Marten
 {
@@ -10,6 +11,11 @@ namespace Marten
     {
         private static readonly MethodInfo QueryMethod = typeof(IQuerySession).GetMethod(nameof(IQuerySession.Query), new[] { typeof(string), typeof(object[]) });
         private static readonly MethodInfo QueryMethodAsync = typeof(IQuerySession).GetMethod(nameof(IQuerySession.QueryAsync), new[] { typeof(string), typeof(CancellationToken), typeof(object[]) });
+
+        private static Ref<ImHashMap<Type, MethodInfo>> QueryMethods =
+            Ref.Of(ImHashMap<Type, MethodInfo>.Empty);
+        private static Ref<ImHashMap<Type, MethodInfo>> QueryAsyncMethods =
+            Ref.Of(ImHashMap<Type, MethodInfo>.Empty);
 
         /// <summary>
         /// Query by a user-supplied .Net document type and user-supplied SQL
@@ -19,9 +25,18 @@ namespace Marten
         /// <param name="sql"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        public static IReadOnlyList<object> Query(this IQuerySession session, Type type, string sql, params object[] parameters)
+        public static IReadOnlyList<object> Query(this IQuerySession session, Type type, string sql, params object[] parameters) =>
+            (IReadOnlyList<object>)QueryFor(type).Invoke(session, new object[] { sql, parameters });
+
+        private static MethodInfo QueryFor(Type type)
         {
-            return (IReadOnlyList<object>)QueryMethod.MakeGenericMethod(type).Invoke(session, new object[] { sql, parameters });
+            if (QueryMethods.Value.TryFind(type, out var method))
+                return method;
+
+            method = QueryMethod.MakeGenericMethod(type);
+            QueryMethods.Swap(d => d.AddOrUpdate(type, method));
+
+            return method;
         }
 
         /// <summary>
@@ -35,9 +50,20 @@ namespace Marten
         /// <returns></returns>
         public static async Task<IReadOnlyList<object>> QueryAsync(this IQuerySession session, Type type, string sql, CancellationToken token = default, params object[] parameters)
         {
-            var task = (Task)QueryMethodAsync.MakeGenericMethod(type).Invoke(session, new object[] { sql, token, parameters });
+            var task = (Task)QueryAsyncFor(type).Invoke(session, new object[] { sql, token, parameters });
             await task.ConfigureAwait(false);
-            return (IReadOnlyList<object>)task.GetType().GetProperty("Result").GetValue(task);
+            return (IReadOnlyList<object>)((dynamic)task).Result;
+        }
+
+        private static MethodInfo QueryAsyncFor(Type type)
+        {
+            if (QueryAsyncMethods.Value.TryFind(type, out var method))
+                return method;
+
+            method = QueryMethodAsync.MakeGenericMethod(type);
+            QueryAsyncMethods.Swap(d => d.AddOrUpdate(type, method));
+
+            return method;
         }
     }
 }
