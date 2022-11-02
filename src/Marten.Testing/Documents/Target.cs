@@ -47,6 +47,7 @@ public class Target
         target.AnotherString = _otherStrings[_random.Next(0, 10)];
         target.Number = _random.Next();
         target.AnotherNumber = _random.Next();
+        target.OtherGuid = Guid.NewGuid();
 
         target.Flag = _random.Next(0, 10) > 5;
 
@@ -83,12 +84,14 @@ public class Target
 
             var number = _random.Next(1, 10);
             target.Children = new Target[number];
-            for (int i = 0; i < number; i++)
+            for (var i = 0; i < number; i++)
             {
                 target.Children[i] = Random();
             }
 
             target.StringDict = Enumerable.Range(0, _random.Next(1, 10)).ToDictionary(i => $"key{i}", i => $"value{i}");
+            target.String = _strings[_random.Next(0, 10)];
+            target.OtherGuid = Guid.NewGuid();
         }
 
         return target;
