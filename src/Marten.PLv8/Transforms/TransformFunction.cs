@@ -75,17 +75,15 @@ $$ LANGUAGE plv8 IMMUTABLE STRICT;
 
     public static TransformFunction ForResource(StoreOptions options, Assembly assembly, string resource, string name = null)
     {
-        using (var stream = assembly.GetManifestResourceStream(resource))
+        using var stream = assembly.GetManifestResourceStream(resource);
+        if (stream == null)
         {
-            if (stream == null)
-            {
-                throw new ArgumentException("Invalid resource", nameof(resource));
-            }
-
-            var body = stream.ReadAllText();
-            name = name ?? GenerateNameFromResource(resource).ToLowerInvariant();
-            return new TransformFunction(options, name, body);
+            throw new ArgumentException("Invalid resource", nameof(resource));
         }
+
+        var body = stream.ReadAllText();
+        name = name ?? GenerateNameFromResource(resource).ToLowerInvariant();
+        return new TransformFunction(options, name, body);
     }
 
     public static TransformFunction ForResource(StoreOptions options, Type type, string resource, string name = null)
