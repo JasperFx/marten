@@ -19,7 +19,7 @@ namespace Marten.Internal.CodeGeneration
             _storage = storage;
         }
 
-        public object GetNullableGuid(Guid? value)
+        public object GetNullable<TValue>(TValue? value) where TValue: struct
         {
             return value.HasValue ? value.Value : DBNull.Value;
         }

@@ -110,10 +110,35 @@ public class duplicated_field: OneOffConfigurationsContext
 
             SpecificationExtensions.ShouldNotBeNull(documentFromDb);
             SpecificationExtensions.ShouldBeNull(documentFromDb.NullableDuplicateField);
-            SpecificationExtensions.ShouldBeNull(documentFromDb.NullableDuplicateFieldViaAttribute);
+            SpecificationExtensions.ShouldBeNull(documentFromDb.NullableDateTimeDuplicateFieldViaAttribute);
+            SpecificationExtensions.ShouldBeNull(documentFromDb.NullableIntDuplicateFieldViaAttribute);
         }
     }
 
+    [Fact]
+    public void can_bulk_insert_document_with_duplicated_field_with_null_constraint()
+    {
+        StoreOptions(options =>
+        {
+            options.Advanced.DuplicatedFieldEnumStorage = EnumStorage.AsString;
+
+            // Note: Even though notNull is false by default, setting it to false for the unit test
+            options.Storage.MappingFor(typeof(NullableDuplicateFieldTestDoc))
+                .DuplicateField(nameof(NullableDuplicateFieldTestDoc.NullableDuplicateField), notNull: false);
+        });
+
+        var successModels = Enumerable
+            .Range(1, 10)
+            .Select(i => new NullableDuplicateFieldTestDoc
+            {
+                Id = Guid.NewGuid(),
+                NullableIntDuplicateFieldViaAttribute = i % 3 == 0 ? default(int?) : i
+            })
+            .ToArray();
+
+        var success = () => theStore.BulkInsert(successModels, BulkInsertMode.OverwriteExisting);
+        success.ShouldNotThrow();
+    }
 
     [Fact]
     public void use_the_default_pg_type_for_the_member_type_if_not_overridden()
@@ -345,7 +370,9 @@ public class NullableDuplicateFieldTestDoc
 {
     public Guid Id { get; set; }
     [DuplicateField] // Note: NotNull is false by default hence not set
-    public DateTime? NullableDuplicateFieldViaAttribute { get; set; }
+    public DateTime? NullableDateTimeDuplicateFieldViaAttribute { get; set; }
+    [DuplicateField] // Note: NotNull is false by default hence not set
+    public int? NullableIntDuplicateFieldViaAttribute { get; set; }
     public DateTime? NullableDuplicateField { get; set; }
 }
 
