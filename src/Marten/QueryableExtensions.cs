@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
+using Marten.Services.BatchQuerying;
 using Npgsql;
 #nullable enable
 namespace Marten
@@ -431,6 +431,28 @@ namespace Marten
         }
 
         /// <summary>
+        /// Order by multiple properties in ascending order i.e. "prop1", "prop2"
+        /// or order by multiple properties with their respective sort order i.e. "prop1", "prop2 ASC|asc", "prop3 DESC|desc"
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="properties"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static IBatchedOrderedQueryable<T> OrderBy<T>(this IBatchedQueryable<T> queryable, params string[] properties)
+        {
+            if (properties.Length == 0)
+                throw new ArgumentException($"{nameof(properties)} should at least have one property",
+                    nameof(properties));
+
+            // handle the first order by property
+            var orderedQueryable = queryable.OrderBy(properties.First());
+
+            // handle the rest of the properties
+            return properties.Skip(1).Aggregate(orderedQueryable, (current, prop) => current.OrderBy(prop));
+        }
+
+        /// <summary>
         /// Order by a single property in ascending order
         /// </summary>
         /// <param name="queryable"></param>
@@ -439,24 +461,41 @@ namespace Marten
         /// <returns></returns>
         public static IOrderedQueryable<T> OrderBy<T>(this IQueryable<T> queryable, string property)
         {
+            GetSortProperty(ref property, out var sortOrder);
+            return sortOrder == "desc"
+                ? ApplyOrder(queryable, property, "OrderByDescending")
+                : ApplyOrder(queryable, property, "OrderBy");
+        }
+
+        private static void GetSortProperty(ref string property, out string sortOrder)
+        {
             var propParts = property.Split(' ').Take(2).ToArray();
 
-            string propertyName;
-            string sortOrder;
             if (propParts.Length == 2)
             {
-                propertyName = propParts[0];
+                property = propParts[0];
                 sortOrder = propParts[1].ToLower();
             }
             else
             {
-                propertyName = propParts[0];
+                property = propParts[0];
                 sortOrder = "asc";
             }
+        }
 
+        /// <summary>
+        /// Order by a single property in ascending order
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="property"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static IBatchedOrderedQueryable<T> OrderBy<T>(this IBatchedQueryable<T> queryable, string property)
+        {
+            GetSortProperty(ref property, out var sortOrder);
             return sortOrder == "desc"
-                ? ApplyOrder<T>(queryable, propertyName, "OrderByDescending")
-                : ApplyOrder<T>(queryable, propertyName, "OrderBy");
+                ? ApplyOrder(queryable, property, "OrderByDescending")
+                : ApplyOrder(queryable, property, "OrderBy");
         }
 
         /// <summary>
@@ -468,7 +507,19 @@ namespace Marten
         /// <returns></returns>
         public static IOrderedQueryable<T> OrderByDescending<T>(this IQueryable<T> queryable, string property)
         {
-            return ApplyOrder<T>(queryable, property, "OrderByDescending");
+            return ApplyOrder(queryable, property, "OrderByDescending");
+        }
+
+        /// <summary>
+        /// Order by a single property in descending order
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="property"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static IBatchedOrderedQueryable<T> OrderByDescending<T>(this IBatchedQueryable<T> queryable, string property)
+        {
+            return ApplyOrder(queryable, property, "OrderByDescending");
         }
 
         /// <summary>
@@ -480,7 +531,19 @@ namespace Marten
         /// <returns></returns>
         public static IOrderedQueryable<T> ThenBy<T>(this IOrderedQueryable<T> queryable, string property)
         {
-            return ApplyOrder<T>(queryable, property, "ThenBy");
+            return ApplyOrder(queryable, property, "ThenBy");
+        }
+
+        /// <summary>
+        /// Chain another order by using a single property in ascending order
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="property"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static IBatchedOrderedQueryable<T> ThenBy<T>(this IBatchedOrderedQueryable<T> queryable, string property)
+        {
+            return ApplyOrder(queryable, property, "ThenBy");
         }
 
         /// <summary>
@@ -492,7 +555,19 @@ namespace Marten
         /// <returns></returns>
         public static IOrderedQueryable<T> ThenByDescending<T>(this IOrderedQueryable<T> queryable, string property)
         {
-            return ApplyOrder<T>(queryable, property, "ThenByDescending");
+            return ApplyOrder(queryable, property, "ThenByDescending");
+        }
+
+        /// <summary>
+        /// Chain another order by using a single property in descending order
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="property"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static IBatchedOrderedQueryable<T> ThenByDescending<T>(this IBatchedOrderedQueryable<T> queryable, string property)
+        {
+            return ApplyOrder(queryable, property, "ThenByDescending");
         }
 
         private static IOrderedQueryable<T> ApplyOrder<T>(
@@ -500,35 +575,54 @@ namespace Marten
             string property,
             string methodName)
         {
-            var props = property.Split('.');
-            var type = typeof(T);
-            var arg = Expression.Parameter(type, "x");
-            Expression expr = arg;
-            foreach (var prop in props)
-            {
-                var pi = type.GetProperty(prop);
+            var lambda = CompileOrderBy<T>(property, out var targetType);
+            var result = typeof(Queryable).GetMethods().Single(
+                                              method => method.Name == methodName
+                                                        && method.IsGenericMethodDefinition
+                                                        && method.GetGenericArguments().Length == 2
+                                                        && method.GetParameters().Length == 2)
+                                          .MakeGenericMethod(typeof(T), targetType)
+                                          .Invoke(null, new object[] {queryable, lambda});
+            return (IOrderedQueryable<T>)result;
+        }
 
-                if (pi == null)
-                {
+        private static IBatchedOrderedQueryable<T> ApplyOrder<T>(
+            IBatchedQueryable<T> queryable,
+            string property,
+            string methodName)
+        {
+            var lambda = CompileOrderBy<T>(property, out var targetType);
+            var result = queryable.GetType().GetMethods().Single(
+                                              method => method.Name == methodName
+                                                        && method.IsGenericMethodDefinition
+                                                        && method.GetGenericArguments().Length == 1
+                                                        && method.GetParameters().Length == 1)
+                                          .MakeGenericMethod(targetType)
+                                          .Invoke(queryable, new object[] {lambda});
+            return (IBatchedOrderedQueryable<T>)result;
+        }
+
+        private static LambdaExpression CompileOrderBy<T>(string property, out Type targetType) {
+            var props = property.Split('.');
+            targetType = typeof(T);
+
+            var arg = Expression.Parameter(targetType, "x");
+            Expression expr = arg;
+            foreach (var prop in props) {
+                var pi = targetType.GetProperty(prop);
+
+                if (pi == null) {
                     throw new ArgumentException($"Order by property {prop} not found in type {typeof(T).FullName}", nameof(property));
                 }
 
                 expr = Expression.Property(expr, pi);
-                type = pi.PropertyType;
+                targetType = pi.PropertyType;
             }
 
-            var delegateType = typeof(Func<,>).MakeGenericType(typeof(T), type);
-            var lambda = Expression.Lambda(delegateType, expr, arg);
-
-            var result = typeof(Queryable).GetMethods().Single(
-                    method => method.Name == methodName
-                              && method.IsGenericMethodDefinition
-                              && method.GetGenericArguments().Length == 2
-                              && method.GetParameters().Length == 2)
-                .MakeGenericMethod(typeof(T), type)
-                .Invoke(null, new object[] {queryable, lambda});
-            return (IOrderedQueryable<T>)result;
+            var delegateType = typeof(Func<,>).MakeGenericType(typeof(T), targetType);
+            return Expression.Lambda(delegateType, expr, arg);
         }
+
         #endregion
     }
 }
