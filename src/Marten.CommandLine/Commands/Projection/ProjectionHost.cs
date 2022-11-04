@@ -85,11 +85,11 @@ internal class ProjectionHost: IProjectionHost
                     {
                         if (shardTimeout == null)
                         {
-                            await daemon.RebuildProjection(projectionName, token).ConfigureAwait(true);
+                            await daemon.RebuildProjection(projectionName, token).ConfigureAwait(false);
                         }
                         else
                         {
-                            await daemon.RebuildProjection(projectionName, shardTimeout.Value, token).ConfigureAwait(true);
+                            await daemon.RebuildProjection(projectionName, shardTimeout.Value, token).ConfigureAwait(false);
                         }
                     })
                     .ConfigureAwait(false);
