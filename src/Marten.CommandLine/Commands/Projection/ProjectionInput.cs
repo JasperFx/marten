@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
@@ -32,6 +33,9 @@ public class ProjectionInput: MartenInput
 
     [Description("If specified, only execute against the named Marten database within the specified store(s). Does not apply with only one store")]
     public string DatabaseFlag { get; set; }
+
+    [Description("If specified, use this shard timeout value for daemon")]
+    public TimeSpan? ShardTimeout { get; set; }
 
     internal IList<AsyncProjectionShard> BuildShards(DocumentStore store)
     {

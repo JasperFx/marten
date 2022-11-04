@@ -1,3 +1,4 @@
+using Baseline.Dates;
 using Castle.Core;
 using Marten.CommandLine.Commands.Projection;
 using Marten.Events.Daemon;
@@ -64,7 +65,7 @@ public class ProjectionControllerTests : IProjectionHost
 
     protected readonly List<RebuildRecord> rebuilt = new ();
 
-    Task<RebuildStatus> IProjectionHost.TryRebuildShards(IProjectionDatabase database, IReadOnlyList<AsyncProjectionShard> asyncProjectionShards)
+    Task<RebuildStatus> IProjectionHost.TryRebuildShards(IProjectionDatabase database, IReadOnlyList<AsyncProjectionShard> asyncProjectionShards, TimeSpan? shardTimeout)
     {
         foreach (var shard in asyncProjectionShards)
         {
@@ -318,6 +319,28 @@ public class ProjectionControllerTests : IProjectionHost
         var databases = store.HasDatabases("One", "Two", "Three");
 
         await theController.Execute(new ProjectionInput { RebuildFlag = true });
+
+        var expectedRebuilds = databases.SelectMany(db =>
+        {
+            return shards.Select(shard => new RebuildRecord(store, db, shard));
+        }).ToArray();
+
+        rebuilt.ShouldHaveTheSameElementsAs(expectedRebuilds);
+    }
+
+    [Fact]
+    public async Task rebuilds_all_databases_for_a_single_store_with_shard_timeout()
+    {
+        var store = withStore("Marten", new("Foo:All", ProjectionLifecycle.Async),
+            new("Bar:All", ProjectionLifecycle.Inline));
+
+        var shards = store.Shards;
+
+        var databases = store.HasDatabases("One", "Two", "Three");
+
+        // NOTE: ShardTimeout is set in ProjectInput as a test
+        // but there is no means to assert this value being used by daemon
+        await theController.Execute(new ProjectionInput { RebuildFlag = true, ShardTimeout = 10.Minutes()});
 
         var expectedRebuilds = databases.SelectMany(db =>
         {

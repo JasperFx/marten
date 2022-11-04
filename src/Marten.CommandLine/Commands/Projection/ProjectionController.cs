@@ -78,7 +78,7 @@ public class ProjectionController
                         _view.WriteHeader(database);
                     }
 
-                    var status = await _host.TryRebuildShards(database, shards).ConfigureAwait(false);
+                    var status = await _host.TryRebuildShards(database, shards, input.ShardTimeout).ConfigureAwait(false);
 
                     if (status == RebuildStatus.NoData)
                     {
