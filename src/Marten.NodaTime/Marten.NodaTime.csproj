@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>NodaTime extension for Marten</Description>
-        <VersionPrefix>5.10.1</VersionPrefix>
+        <VersionPrefix>5.11.0</VersionPrefix>
         <TargetFrameworks>netstandard2.0;net5.0;net6.0</TargetFrameworks>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
