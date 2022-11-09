@@ -60,6 +60,7 @@ namespace Marten.Schema
     public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
     {
         private static readonly Regex _aliasSanitizer = new("<|>", RegexOptions.Compiled);
+        private static readonly Type[] _validIdTypes = { typeof(int), typeof(Guid), typeof(long), typeof(string) };
         private readonly Lazy<DocumentSchema> _schema;
 
         private string _alias;
@@ -308,11 +309,15 @@ namespace Marten.Schema
             // 2) IdentityAttribute on field
             // 3) Id Property
             // 4) Id field
-            return GetProperties(documentType).FirstOrDefault(x => x.HasAttribute<IdentityAttribute>())
-                   ?? documentType.GetFields().FirstOrDefault(x => x.HasAttribute<IdentityAttribute>())
-                   ?? (MemberInfo)GetProperties(documentType)
+            var propertiesWithTypeValidForId = GetProperties(documentType)
+                .Where(p => p.PropertyType.IsOneOf(_validIdTypes));
+            var fieldsWithTypeValidForId = documentType.GetFields()
+                .Where(f => f.FieldType.IsOneOf(_validIdTypes));
+            return propertiesWithTypeValidForId.FirstOrDefault(x => x.HasAttribute<IdentityAttribute>())
+                   ?? fieldsWithTypeValidForId.FirstOrDefault(x => x.HasAttribute<IdentityAttribute>())
+                   ?? (MemberInfo)propertiesWithTypeValidForId
                        .FirstOrDefault(x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase))
-                   ?? documentType.GetFields()
+                   ?? fieldsWithTypeValidForId
                        .FirstOrDefault(x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
         }
 
