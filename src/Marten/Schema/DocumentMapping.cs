@@ -132,7 +132,7 @@ namespace Marten.Schema
                 _idMember = value;
 
                 if (_idMember != null && !_idMember.GetMemberType()
-                        .IsOneOf(typeof(int), typeof(Guid), typeof(long), typeof(string)))
+                        .IsOneOf(_validIdTypes))
                 {
                     throw new ArgumentOutOfRangeException(nameof(IdMember),
                         "Id members must be an int, long, Guid, or string");
