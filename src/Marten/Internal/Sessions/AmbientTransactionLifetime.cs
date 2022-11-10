@@ -56,6 +56,7 @@ namespace Marten.Internal.Sessions
 
         public void Apply(NpgsqlCommand command)
         {
+            BeginTransaction();
             command.Connection = Connection;
             command.CommandTimeout = CommandTimeout;
         }
