@@ -59,6 +59,39 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
         session.Connection.State.ShouldBe(ConnectionState.Open);
     }
 
+    [Fact]
+    public void can_query_sync_with_session_enlisted_in_transaction_scope()
+    {
+        using var scope = new TransactionScope();
+        using var session = theStore.OpenSession(SessionOptions.ForCurrentTransaction());
+
+        var aTarget = targets.First();
+
+        var targetFromQuery = session.Query<Target>().Single(x => x.Id == aTarget.Id);
+        targetFromQuery.ShouldBeEquivalentTo(aTarget);
+
+        var targetFromLoad = session.Load<Target>(aTarget.Id);
+        targetFromLoad.ShouldBeEquivalentTo(aTarget);
+
+        scope.Complete();
+    }
+
+    [Fact]
+    public async Task can_query_async_with_session_enlisted_in_transaction_scope()
+    {
+        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+        await using var session = await theStore.OpenSessionAsync(SessionOptions.ForCurrentTransaction());
+
+        var aTarget = targets.First();
+
+        var targetFromQuery = await session.Query<Target>().SingleAsync(x => x.Id == aTarget.Id);
+        targetFromQuery.ShouldBeEquivalentTo(aTarget);
+
+        var targetFromLoad = await session.LoadAsync<Target>(aTarget.Id);
+        targetFromLoad.ShouldBeEquivalentTo(aTarget);
+
+        scope.Complete();
+    }
 
     [Fact]
     public void enlist_in_transaction_scope()
