@@ -129,7 +129,7 @@ public class CompiledTimeline : ICompiledListQuery<TimelineItem>, IQueryPlanning
     public QueryStatistics Statistics { get; } = new QueryStatistics();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_1891_compiled_query_problem.cs#L27-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_implementing_iqueryplanning' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_1891_compiled_query_problem.cs#L26-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_implementing_iqueryplanning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Pay close attention to the `SetUniqueValuesForQueryPlanning()` method. That has absolutely no other purpose but to help Marten
