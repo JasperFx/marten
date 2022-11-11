@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 namespace EventSourcingTests.Examples.TeleHealth;
 
-#if NET6_0_OR_GREATER
 public interface IBoardEvent
 {
     Guid BoardId { get; }
@@ -109,4 +108,3 @@ public class BoardProvider
     public ProviderStatus Status { get; set; }
     public string Name { get; set; }
 }
-#endif

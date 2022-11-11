@@ -7,29 +7,25 @@ namespace CoreTests.Examples;
 
 public class EnvironmentChecks
 {
+    #region sample_use_environment_check_in_hosted_service
 
-#if NET6_0_OR_GREATER
-
-        #region sample_use_environment_check_in_hosted_service
-
-        public static async Task use_environment_check()
-        {
-            using var host = await Host.CreateDefaultBuilder()
-                .ConfigureServices(services =>
+    public static async Task use_environment_check()
+    {
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                // Do this, or your environment check assertion failures below
+                // is just swallowed and logged on startup
+                services.Configure<HostOptions>(options =>
                 {
-                    // Do this, or your environment check assertion failures below
-                    // is just swallowed and logged on startup
-                    services.Configure<HostOptions>(options =>
-                    {
-                        options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.StopHost;
-                    });
+                    options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.StopHost;
+                });
 
-                    services.AddMarten("connection string")
-                        .AssertDatabaseMatchesConfigurationOnStartup();
-                })
-                .StartAsync();
-        }
+                services.AddMarten("connection string")
+                    .AssertDatabaseMatchesConfigurationOnStartup();
+            })
+            .StartAsync();
+    }
 
-        #endregion
-#endif
+    #endregion
 }

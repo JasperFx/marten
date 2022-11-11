@@ -309,7 +309,6 @@ namespace Marten.Events.Daemon
 
             var mark = Tracker.HighWaterMark;
 
-#if NET6_0_OR_GREATER
             // Is the shard count the optimal DoP here?
             await Parallel.ForEachAsync(shards, new ParallelOptions { CancellationToken = token, MaxDegreeOfParallelism = shards.Count },
                 async (shard, cancellationToken) =>
@@ -318,17 +317,6 @@ namespace Marten.Events.Daemon
                 await StartShard(shard, ShardExecutionMode.Rebuild, cancellationToken).ConfigureAwait(false);
                 await Tracker.WaitForShardState(shard.Name, mark, shardTimeout).ConfigureAwait(false);
             }).ConfigureAwait(false);
-#else
-
-            var waiters = shards.Select(async x =>
-            {
-                Tracker.MarkAsRestarted(x);
-                await StartShard(x, ShardExecutionMode.Rebuild, token).ConfigureAwait(false);
-                await Tracker.WaitForShardState(x.Name, mark, shardTimeout).ConfigureAwait(false);
-            }).ToArray();
-
-            await waitForAllShardsToComplete(token, waiters).ConfigureAwait(false);
-#endif
 
             foreach (var shard in shards)
             {
@@ -440,21 +428,9 @@ namespace Marten.Events.Daemon
                         if (parameters.Shard != null) await StopShard(parameters.Shard.ShardName.Identity, ex).ConfigureAwait(false);
                         break;
                     case StopAllShards:
-#if NET6_0_OR_GREATER
                         await Parallel.ForEachAsync(_agents.Keys.ToArray(), _cancellation.Token,
                             async (name, _) => await StopShard(name, ex).ConfigureAwait(false)
                         ).ConfigureAwait(false);
-#else
-                        var tasks = _agents.Keys.ToArray().Select(name =>
-                        {
-                            return Task.Run(async () =>
-                            {
-                                await StopShard(name, ex).ConfigureAwait(false);
-                            }, _cancellation.Token);
-                        });
-
-                        await Task.WhenAll(tasks).ConfigureAwait(false);
-#endif
 
                         Tracker.Publish(
                             new ShardState(ShardName.All, Tracker.HighWaterMark)
@@ -466,21 +442,9 @@ namespace Marten.Events.Daemon
                         if (parameters.Shard != null) await parameters.Shard.Pause(pause.Delay).ConfigureAwait(false);
                         break;
                     case PauseAllShards pauseAll:
-#if NET6_0_OR_GREATER
                         await Parallel.ForEachAsync(_agents.Values.ToArray(), _cancellation.Token,
                                 async (agent, _) => await agent.Pause(pauseAll.Delay).ConfigureAwait(false))
                             .ConfigureAwait(false);
-#else
-                        var tasks2 = _agents.Values.ToArray().Select(agent =>
-                        {
-                            return Task.Run(async () =>
-                            {
-                                await agent.Pause(pauseAll.Delay).ConfigureAwait(false);
-                            }, _cancellation.Token);
-                        });
-
-                        await Task.WhenAll(tasks2).ConfigureAwait(false);
-#endif
                         break;
 
                     case SkipEvent skip:

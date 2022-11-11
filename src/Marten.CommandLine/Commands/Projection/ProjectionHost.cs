@@ -58,7 +58,8 @@ internal class ProjectionHost: IProjectionHost
         _completion.TrySetResult(true);
     }
 
-    public async Task<RebuildStatus> TryRebuildShards(IProjectionDatabase database, IReadOnlyList<AsyncProjectionShard> asyncProjectionShards, TimeSpan? shardTimeout=null)
+    public async Task<RebuildStatus> TryRebuildShards(IProjectionDatabase database,
+        IReadOnlyList<AsyncProjectionShard> asyncProjectionShards, TimeSpan? shardTimeout = null)
     {
         using var daemon = database.BuildDaemon();
         await daemon.StartDaemon().ConfigureAwait(false);
@@ -79,37 +80,20 @@ internal class ProjectionHost: IProjectionHost
 
         var projectionNames = asyncProjectionShards.Select(x => x.Name.ProjectionName).Distinct();
 
-#if NET6_0_OR_GREATER
-            await Parallel.ForEachAsync(projectionNames, _cancellation.Token,
+        await Parallel.ForEachAsync(projectionNames, _cancellation.Token,
                 async (projectionName, token) =>
+                {
+                    if (shardTimeout == null)
                     {
-                        if (shardTimeout == null)
-                        {
-                            await daemon.RebuildProjection(projectionName, token).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            await daemon.RebuildProjection(projectionName, shardTimeout.Value, token).ConfigureAwait(false);
-                        }
-                    })
-                    .ConfigureAwait(false);
+                        await daemon.RebuildProjection(projectionName, token).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await daemon.RebuildProjection(projectionName, shardTimeout.Value, token).ConfigureAwait(false);
+                    }
+                })
+            .ConfigureAwait(false);
 
-#else
-        var tasks = projectionNames
-            .Select(x => Task.Run(async () => {
-                if (shardTimeout == null)
-                {
-                    await daemon.RebuildProjection(x, _cancellation.Token).ConfigureAwait(false);
-                }
-                else
-                {
-                    await daemon.RebuildProjection(x, shardTimeout.Value, _cancellation.Token).ConfigureAwait(false);
-                }
-            }, _cancellation.Token))
-            .ToArray();
-
-        await Task.WhenAll(tasks).ConfigureAwait(false);
-#endif
         await daemon.StopAll().ConfigureAwait(false);
 
         watcher.Stop();

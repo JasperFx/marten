@@ -87,17 +87,10 @@ namespace Marten.Storage
             {
                 await _tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
 
-                using var conn = _tenant.Database.CreateConnection();
+                await using var conn = _tenant.Database.CreateConnection();
                 await conn.OpenAsync(cancellation).ConfigureAwait(false);
 
-#if NETSTANDARD2_0
-                var tx = conn.BeginTransaction();
-
-#else
                 var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
-
-#endif
-
                 try
                 {
                     await bulkInsertDocumentsAsync(documents, batchSize, conn, mode, cancellation).ConfigureAwait(false);
@@ -187,7 +180,7 @@ namespace Marten.Storage
                 .GroupBy(x => x.GetType())
                 .Select(group => typeof(BulkInserter<>).CloseAndBuildAs<IBulkInserter>(group, group.Key))
                 .ToArray();
-        }        
+        }
 
         public async Task BulkInsertDocumentsAsync(IEnumerable<object> documents, BulkInsertMode mode, int batchSize, CancellationToken cancellation)
         {
@@ -196,11 +189,7 @@ namespace Marten.Storage
             using var conn = _tenant.Database.CreateConnection();
 
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
-#if NETSTANDARD2_0
-            var tx = conn.BeginTransaction();
-#else
             var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
-#endif
 
             try
             {

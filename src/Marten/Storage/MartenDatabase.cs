@@ -100,11 +100,7 @@ namespace Marten.Storage
             {
                 var sequences = new SequenceFactory(_options, this);
 
-#if NETSTANDARD2_0
-                generateOrUpdateFeature(typeof(SequenceFactory), sequences, default).GetAwaiter().GetResult();
-#else
                 generateOrUpdateFeature(typeof(SequenceFactory), sequences, default).AsTask().GetAwaiter().GetResult();
-#endif
 
                 return sequences;
             });

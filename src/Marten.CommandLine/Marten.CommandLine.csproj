@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <Description>Command line tooling for Marten</Description>
-        <TargetFrameworks>net5.0;net6.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
         <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
         <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
@@ -32,7 +32,6 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="LamarCodeGeneration.Commands" Version="6.1.6" />
-        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
         <PackageReference Include="Oakton" Version="4.6.3" />
         <PackageReference Include="Weasel.CommandLine" Version="5.7.3" />

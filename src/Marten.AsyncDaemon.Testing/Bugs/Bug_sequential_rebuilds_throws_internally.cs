@@ -1,5 +1,3 @@
-#if NET6_0_OR_GREATER
-
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,7 +12,6 @@ namespace Marten.AsyncDaemon.Testing.Bugs;
 
 public class Bug_sequential_rebuilds_throws_internally: BugIntegrationContext
 {
-
     private readonly ITestOutputHelper _output;
 
     public Bug_sequential_rebuilds_throws_internally(ITestOutputHelper output)
@@ -65,6 +62,7 @@ public class Bug_sequential_rebuilds_throws_internally: BugIntegrationContext
     }
 
     public record CreatedEvent(Guid Id, string Value);
+
     public record UpdatedEvent(Guid Id, string Value);
 
     public record RandomProjection(Guid Id, string Value)
@@ -78,13 +76,8 @@ public class Bug_sequential_rebuilds_throws_internally: BugIntegrationContext
 
             public RandomProjection Apply(UpdatedEvent @event, RandomProjection current)
             {
-                return current with
-                {
-                    Value = @event.Value
-                };
+                return current with { Value = @event.Value };
             }
         }
     }
-
 }
-#endif

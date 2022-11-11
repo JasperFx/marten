@@ -2,47 +2,55 @@ using System;
 using Marten.Schema;
 
 namespace EventSourcingTests.Examples.TeleHealth;
-#if NET6_0_OR_GREATER
-    public record AppointmentRequested(string PatientName);
 
-    public record AppointmentRouted(string BoardName);
+public record AppointmentRequested(string PatientName);
 
-    public record ProviderAssigned(Guid ProviderId);
-    public record ProviderJoined(Guid ProviderId, Guid ShiftId, string BoardId);
+public record AppointmentRouted(string BoardName);
 
-    public record AppointmentScheduled {}
+public record ProviderAssigned(Guid ProviderId);
 
-    public record AppointmentStarted {}
-    public record AppointmentFinished {}
+public record ProviderJoined(Guid ProviderId, Guid ShiftId, string BoardId);
 
-    public record ChartingFinished{}
-    public record ChartingStarted{}
+public record AppointmentScheduled
+{
+}
 
-    public record ProviderReady {}
+public record AppointmentStarted
+{
+}
 
-    public class Appointment
-    {
-        public Guid Id { get; set; }
-    }
+public record AppointmentFinished
+{
+}
 
-    public class ProviderShift
-    {
-        [Identity]
-        public Guid ShiftId { get; set; }
-        public Guid ProviderId { get; set; }
-        public string BoardId { get; set; }
-    }
+public record ChartingFinished
+{
+}
 
-    public enum AppointmentStatus
-    {
-        Requested,
-        Scheduled,
-        Ready,
-        Started,
-    }
+public record ChartingStarted
+{
+}
 
+public record ProviderReady
+{
+}
 
+public class Appointment
+{
+    public Guid Id { get; set; }
+}
 
+public class ProviderShift
+{
+    [Identity] public Guid ShiftId { get; set; }
+    public Guid ProviderId { get; set; }
+    public string BoardId { get; set; }
+}
 
-
-#endif
+public enum AppointmentStatus
+{
+    Requested,
+    Scheduled,
+    Ready,
+    Started,
+}

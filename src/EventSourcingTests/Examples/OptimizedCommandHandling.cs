@@ -8,9 +8,6 @@ using NSubstitute;
 
 namespace EventSourcingTests.Examples;
 
-
-#if NET6_0_OR_GREATER
-
 #region sample_Order_events_for_optimized_command_handling
 
 public record OrderShipped;
@@ -20,8 +17,6 @@ public record OrderReady;
 public record ItemReady(string Name);
 
 #endregion
-
-
 
 #region sample_Order_for_optimized_command_handling
 
@@ -202,6 +197,3 @@ public class ShipOrderHandler
 
     #endregion
 }
-
-
-#endif

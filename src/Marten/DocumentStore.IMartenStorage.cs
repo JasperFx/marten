@@ -44,20 +44,10 @@ namespace Marten
         async Task IMartenStorage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate? @override)
         {
             var databases = await Tenancy.BuildDatabases().ConfigureAwait(false);
-#if NET6_0_OR_GREATER
 
             await Parallel.ForEachAsync(databases,
                     async (d, token) => await d.ApplyAllConfiguredChangesToDatabaseAsync().ConfigureAwait(false))
                 .ConfigureAwait(false);
-#else
-            var tasks = databases.Select(x =>
-            {
-                return Task.Run(() => x.ApplyAllConfiguredChangesToDatabaseAsync());
-
-            }).ToArray();
-
-            await Task.WhenAll(tasks).ConfigureAwait(false);
-#endif
         }
 
         async ValueTask<IReadOnlyList<IMartenDatabase>> IMartenStorage.AllDatabases()

@@ -7,7 +7,7 @@ using Xunit;
 
 namespace EventSourcingTests.Bugs;
 
-public class CodeGenIEventIssue : BugIntegrationContext
+public class CodeGenIEventIssue: BugIntegrationContext
 {
     [Fact]
     public void TestAggregation()
@@ -22,30 +22,27 @@ public class CodeGenIEventIssue : BugIntegrationContext
         session.SaveChanges();
     }
 
-#if NET
-        [Fact]
-        public void TestRecordAggregation()
+    [Fact]
+    public void TestRecordAggregation()
+    {
+        var store = StoreOptions(_ =>
         {
-            var store = StoreOptions(_ =>
-            {
-                _.Projections.Add(new RecordProjection());
-            });
+            _.Projections.Add(new RecordProjection());
+        });
 
-            using var session = store.OpenSession();
-            var id = Guid.NewGuid();
-            session.Events.Append(id, new RecordLogCreated(id));
-            session.Events.Append(id, new RecordLogUpdated(id));
+        using var session = store.OpenSession();
+        var id = Guid.NewGuid();
+        session.Events.Append(id, new RecordLogCreated(id));
+        session.Events.Append(id, new RecordLogUpdated(id));
 
-            session.SaveChanges();
-        }
-
-#endif
+        session.SaveChanges();
+    }
 }
+
 public class FooCreated
 {
     public Guid Id { get; set; }
 }
-
 
 public class Foo
 {
@@ -56,7 +53,6 @@ public class FooAuditLog
 {
     public Guid Id { get; set; }
     public List<string> Changes { get; set; } = new List<string>();
-
 }
 
 public class FooProjection: MultiStreamAggregation<FooAuditLog, Guid>
@@ -72,33 +68,27 @@ public class FooProjection: MultiStreamAggregation<FooAuditLog, Guid>
     }
 }
 
-#if NET
+public interface IRecordLogEvent
+{
+    Guid Id { get; init; }
+}
 
+public record RecordAuditLog(Guid Id, List<string> Changes);
 
-    public interface IRecordLogEvent
+public record RecordLogCreated(Guid Id): IRecordLogEvent;
+
+public record RecordLogUpdated(Guid Id): IRecordLogEvent;
+
+public class RecordProjection: MultiStreamAggregation<RecordAuditLog, Guid>
+{
+    public RecordProjection()
     {
-        Guid Id { get; init; }
+        ProjectionName = nameof(RecordAuditLog);
+        Lifecycle = ProjectionLifecycle.Inline;
+
+        Identity<IRecordLogEvent>(x => x.Id);
+
+        CreateEvent<RecordLogCreated>(x => new RecordAuditLog(x.Id, new List<string>()));
+        ProjectEvent<IEvent<RecordLogUpdated>>((state, ev) => state.Changes.Add($"Log was updated at {ev.Timestamp}"));
     }
-
-    public record RecordAuditLog(Guid Id, List<string> Changes);
-
-    public record RecordLogCreated(Guid Id): IRecordLogEvent;
-
-    public record RecordLogUpdated(Guid Id): IRecordLogEvent;
-
-    public class RecordProjection: MultiStreamAggregation<RecordAuditLog, Guid>
-    {
-        public RecordProjection()
-        {
-            ProjectionName = nameof(RecordAuditLog);
-            Lifecycle = ProjectionLifecycle.Inline;
-
-            Identity<IRecordLogEvent>(x=> x.Id);
-
-            CreateEvent<RecordLogCreated>(x => new RecordAuditLog(x.Id, new List<string>()));
-            ProjectEvent<IEvent<RecordLogUpdated>>((state, ev) => state.Changes.Add($"Log was updated at {ev.Timestamp}"));
-
-        }
-    }
-
-#endif
+}

@@ -226,13 +226,11 @@ END; $$;
 
         public async Task DeleteAllEventDataAsync()
         {
-            using var connection = CreateConnection();
+            await using var connection = CreateConnection();
             await connection.OpenAsync().ConfigureAwait(false);
-#if NET
+
             var tx = await connection.BeginTransactionAsync().ConfigureAwait(false);
-#else
-            var tx = connection.BeginTransaction();
-#endif
+
             var deleteEventDataSql = toDeleteEventDataSql();
             await connection.CreateCommand(deleteEventDataSql, tx).ExecuteNonQueryAsync().ConfigureAwait(false);
             await tx.CommitAsync().ConfigureAwait(false);

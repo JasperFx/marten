@@ -68,12 +68,8 @@ namespace Marten.Schema.Identity
 
         public static Guid Create(Guid value, DateTimeOffset timestamp)
         {
-#if NET5_0_OR_GREATER
             Span<byte> bytes = stackalloc byte[16];
             value.TryWriteBytes(bytes);
-#else
-            var bytes = value.ToByteArray();
-#endif
 
             // Overwrite the first six bytes with unix time
             WriteDateTime(bytes, timestamp);
@@ -82,12 +78,8 @@ namespace Marten.Schema.Identity
 
         public static DateTimeOffset GetTimestamp(Guid comb)
         {
-#if NET5_0_OR_GREATER
             Span<byte> bytes = stackalloc byte[16];
             comb.TryWriteBytes(bytes);
-#else
-            var bytes = comb.ToByteArray();
-#endif
             return BytesToDateTime(bytes);
         }
     }

@@ -10,7 +10,6 @@ using Marten.Testing.Harness;
 using Xunit;
 
 namespace DocumentDbTests.Bugs;
-#if NET
 public class Bug_1891_compiled_query_problem : BugIntegrationContext
 {
     [Fact]
@@ -51,4 +50,3 @@ public class CompiledTimeline : ICompiledListQuery<TimelineItem>, IQueryPlanning
 #endregion
 
 public record TimelineItem(Guid Id, string Event, User Raised);
-#endif

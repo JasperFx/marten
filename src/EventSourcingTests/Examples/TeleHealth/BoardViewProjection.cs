@@ -8,7 +8,6 @@ using Marten.Events.Projections;
 
 namespace EventSourcingTests.Examples.TeleHealth;
 
-#if NET6_0_OR_GREATER
 public class BoardViewProjection: ExperimentalMultiStreamAggregation<BoardView, Guid>
 {
     protected override ValueTask GroupEvents(IEventGrouping<Guid> grouping, IQuerySession session, List<IEvent> events)
@@ -22,7 +21,6 @@ public class BoardViewProjection: ExperimentalMultiStreamAggregation<BoardView, 
     public BoardView Create(BoardOpened opened)
     {
         return new BoardView { Name = opened.Name, Opened = opened.Opened, Date = opened.Date };
-
     }
 
     public void Apply(BoardView view, BoardClosed closed)
@@ -35,8 +33,4 @@ public class BoardViewProjection: ExperimentalMultiStreamAggregation<BoardView, 
     {
         view.Deactivated = finished.Timestamp;
     }
-
-
 }
-
-#endif

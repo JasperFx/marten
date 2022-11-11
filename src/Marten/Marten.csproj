@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>.NET Transactional Document DB and Event Store on PostgreSQL</Description>
-        <TargetFrameworks>netstandard2.0;net5.0;net6.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
         <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
@@ -22,34 +22,12 @@
         <EmbeddedResource Include="Schema\SchemaObjects.sql" />
     </ItemGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-        <PackageReference Include="LamarCodeGeneration" Version="6.1.4" />
-        <PackageReference Include="LamarCompiler" Version="6.1.4" />
-
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.22" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.22" />
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="3.1.22" />
-        <PackageReference Include="System.Collections.Immutable" Version="6.0.0" />
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
-        <PackageReference Include="LamarCodeGeneration" Version="6.1.4" />
-        <PackageReference Include="LamarCompiler" Version="6.1.4" />
-
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <ItemGroup>
         <PackageReference Include="LamarCodeGeneration" Version="6.1.4" />
         <PackageReference Include="LamarCompiler" Version="6.1.4" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
-    </ItemGroup>
-
-    <ItemGroup>
         <PackageReference Include="BaselineTypeDiscovery" Version="1.1.3" />
         <PackageReference Include="FastExpressionCompiler.Internal.src" Version="3.2.2" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />

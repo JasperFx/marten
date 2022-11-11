@@ -62,8 +62,6 @@ namespace Marten.Util
             return totalRead + await _inner.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
         }
 
-
-#if !NETSTANDARD2_0
         public override async ValueTask<int> ReadAsync(Memory<byte> buffer,
             CancellationToken cancellationToken = default)
         {
@@ -103,7 +101,6 @@ namespace Marten.Util
 
             return totalRead + _inner.Read(buffer);
         }
-#endif
 
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback,
             object state)
@@ -153,11 +150,9 @@ namespace Marten.Util
             _inner.Dispose();
         }
 
-#if !NETSTANDARD2_0
         public override ValueTask DisposeAsync()
         {
             return _inner.DisposeAsync();
         }
-#endif
     }
 }

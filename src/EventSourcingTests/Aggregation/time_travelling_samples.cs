@@ -1,5 +1,4 @@
-﻿#if NET
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
@@ -155,4 +154,3 @@ namespace EventSourcingTests.Aggregation
         }
     }
 }
-#endif
