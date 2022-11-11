@@ -181,7 +181,7 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
     protected async Task<Dictionary<Guid, Trip>> LoadAllAggregatesFromDatabase(string tenantId = null)
     {
 
-        if (tenantId.IsNullOrEmpty())
+        if (string.IsNullOrEmpty(tenantId))
         {
             var data = await theSession.Query<Trip>().ToListAsync();
             var dict = data.ToDictionary(x => x.Id);
@@ -189,7 +189,7 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
         }
         else
         {
-            using var session = theStore.LightweightSession(tenantId);
+            await using var session = theStore.LightweightSession(tenantId);
             var data = await session.Query<Trip>().ToListAsync();
             var dict = data.ToDictionary(x => x.Id);
             return dict;

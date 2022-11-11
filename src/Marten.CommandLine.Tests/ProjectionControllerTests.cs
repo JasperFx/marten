@@ -1,5 +1,4 @@
 using Baseline.Dates;
-using Castle.Core;
 using Marten.CommandLine.Commands.Projection;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -95,19 +94,19 @@ public class ProjectionControllerTests : IProjectionHost
 
     public bool DidWaitForExit { get; private set; }
 
-    protected IProjectionStore withStore(string name, params Pair<string, ProjectionLifecycle>[] projections)
+    protected IProjectionStore withStore(string name, params (string, ProjectionLifecycle)[] projections)
     {
         var store = Substitute.For<IProjectionStore>();
         store.Name.Returns(name);
         var shards = projections.Select(pair =>
         {
-            var identifier = pair.First.Split(':');
+            var identifier = pair.Item1.Split(':');
             var projectionName = identifier[0];
 
             var source = Substitute.For<IProjectionSource>();
             source.ProjectionName.Returns(projectionName);
 
-            source.Lifecycle.Returns(pair.Second);
+            source.Lifecycle.Returns(pair.Item2);
             return new AsyncProjectionShard(identifier[1], source, Array.Empty<ISqlFragment>());
         }).ToList();
 
@@ -232,7 +231,7 @@ public class ProjectionControllerTests : IProjectionHost
     public void filter_shards_interactively()
     {
         var store1 = withStore("Marten", new("Foo:First", ProjectionLifecycle.Async),new("Foo:Second", ProjectionLifecycle.Async),
-            new("Bar:First", ProjectionLifecycle.Inline), new("Bar:Second", ProjectionLifecycle.Inline), new Pair<string, ProjectionLifecycle>("Tom:All", ProjectionLifecycle.Async));
+            new("Bar:First", ProjectionLifecycle.Inline), new("Bar:Second", ProjectionLifecycle.Inline), ("Tom:All", ProjectionLifecycle.Async));
 
         theView.SelectProjections(Arg.Is<string[]>(a => a.SequenceEqual(new []{ "Bar", "Foo", "Tom"})))
             .Returns(new string[] { "Bar", "Tom" });
@@ -247,7 +246,7 @@ public class ProjectionControllerTests : IProjectionHost
     public async Task try_to_rebuild_with_no_matching_shards()
     {
         var store1 = withStore("Marten", new("Foo:First", ProjectionLifecycle.Async),new("Foo:Second", ProjectionLifecycle.Async),
-            new("Bar:First", ProjectionLifecycle.Inline), new("Bar:Second", ProjectionLifecycle.Inline), new Pair<string, ProjectionLifecycle>("Tom:All", ProjectionLifecycle.Async));
+            new("Bar:First", ProjectionLifecycle.Inline), new("Bar:Second", ProjectionLifecycle.Inline), ("Tom:All", ProjectionLifecycle.Async));
 
         await theController.Execute(new ProjectionInput { RebuildFlag = true, ProjectionFlag = "NonExistent" });
 
