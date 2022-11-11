@@ -2,15 +2,11 @@
 <Project>
   <PropertyGroup>
     <VersionPrefix>5.11.0</VersionPrefix>
-    <LangVersion>10.0</LangVersion>
+    <LangVersion>11.0</LangVersion>
     <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
     <PackageIconUrl>https://martendb.io/logo.png</PackageIconUrl>
     <PackageProjectUrl>https://martendb.io/</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <NoWarn>1570;1571;1572;1573;1574;1587;1591;1701;1702;1711;1735;0618</NoWarn>
   </PropertyGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <PackageReference Include="IsExternalInit" Version="1.0.2" PrivateAssets="All"/>
-  </ItemGroup>
 </Project>

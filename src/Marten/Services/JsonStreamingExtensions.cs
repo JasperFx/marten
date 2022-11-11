@@ -1,9 +1,7 @@
-using System.Data;
 using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Linq.Selectors;
 using Marten.Util;
 using Npgsql;
 #nullable enable
@@ -27,20 +25,10 @@ namespace Marten.Services
         internal static readonly byte[] RightBracket = Encoding.Default.GetBytes("]");
         internal static readonly byte[] Comma = Encoding.Default.GetBytes(",");
 
-#if NET
         internal static ValueTask WriteBytes(this Stream stream, byte[] bytes, CancellationToken token)
-        #else
-        internal static Task WriteBytes(this Stream stream, byte[] bytes, CancellationToken token)
-#endif
         {
-#if NET
             return stream.WriteAsync(bytes, token);
-#else
-            return stream.WriteAsync(bytes, 0, bytes.Length, token);
-#endif
         }
-
-
 
         internal static async Task<int> StreamMany(this NpgsqlDataReader reader, Stream stream, CancellationToken token)
         {

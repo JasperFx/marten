@@ -20,7 +20,7 @@ Access docs [here](https://martendb.io/) and v3.x docs [here](https://martendb.i
 
 Before getting started you will need the following in your environment:
 
-**1. .NET Core SDK 5.0+ and the .NET Core 3.1 Runtime**
+**1. .NET Core SDK 6.0+**
 
 Available [here](https://dotnet.microsoft.com/download)
 
@@ -59,7 +59,7 @@ See more in [Contribution Guidelines](CONTRIBUTING.md).
 ### Build Commands
 
 | Description                         | Windows Commandline      | PowerShell               | Linux Shell             | DotNet CLI                                         |
-| ----------------------------------- | ------------------------ | ------------------------ |-------------------------| -------------------------------------------------- |
+| ----------------------------------- | ------------------------ | ------------------------ | ----------------------- | -------------------------------------------------- |
 | Run restore, build and test         | `build.cmd`              | `build.ps1`              | `build.sh`              | `dotnet build src\Marten.sln`                      |
 | Run all tests including mocha tests | `build.cmd test`         | `build.ps1 test`         | `build.sh test`         | `dotnet run -p build/build.csproj -- test`         |
 | Run just mocha tests                | `build.cmd mocha`        | `build.ps1 mocha`        | `build.sh mocha`        | `dotnet run -p build/build.csproj -- mocha`        |

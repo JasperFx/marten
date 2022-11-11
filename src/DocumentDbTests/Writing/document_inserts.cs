@@ -30,13 +30,7 @@ public class document_inserts: IntegrationContext
     {
         var docs = new object[]
         {
-            Target.Random(),
-            Target.Random(),
-            Target.Random(),
-            new User(),
-            new User(),
-            new User(),
-            new User()
+            Target.Random(), Target.Random(), Target.Random(), new User(), new User(), new User(), new User()
         };
 
         using (var session = theStore.OpenSession())
@@ -51,26 +45,26 @@ public class document_inserts: IntegrationContext
             query.Query<User>().Count().ShouldBe(4);
         }
     }
-#if NET
-        [Fact]
-        public void can_insert_records()
+
+    [Fact]
+    public void can_insert_records()
+    {
+        var docs = new RecordDocument(Guid.NewGuid(), Guid.NewGuid().ToString());
+
+        using (var session = theStore.LightweightSession())
         {
-            var docs = new RecordDocument(Guid.NewGuid(), Guid.NewGuid().ToString());
-
-            using (var session = theStore.LightweightSession())
-            {
-                session.Store(docs);
-                session.SaveChanges();
-            }
-
-            using (var query = theStore.QuerySession())
-            {
-                query.Query<RecordDocument>().ToList().Count().ShouldBe(1);
-            }
+            session.Store(docs);
+            session.SaveChanges();
         }
 
-        public record RecordDocument(Guid Id, string Name);
-#endif
+        using (var query = theStore.QuerySession())
+        {
+            query.Query<RecordDocument>().ToList().Count().ShouldBe(1);
+        }
+    }
+
+    public record RecordDocument(Guid Id, string Name);
+
 
     [Fact]
     public void insert_sad_path()
@@ -78,11 +72,13 @@ public class document_inserts: IntegrationContext
         var target = Target.Random();
 
         #region sample_sample-document-insertonly
+
         using (var session = theStore.OpenSession())
         {
             session.Insert(target);
             session.SaveChanges();
         }
+
         #endregion
 
         using (var session = theStore.OpenSession())
@@ -95,7 +91,7 @@ public class document_inserts: IntegrationContext
         }
     }
 
-    public document_inserts(DefaultStoreFixture fixture) : base(fixture)
+    public document_inserts(DefaultStoreFixture fixture): base(fixture)
     {
     }
 }

@@ -4,7 +4,6 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-#if NET
 #nullable enable
 namespace EventSourcingTests.Aggregation
 {
@@ -146,4 +145,3 @@ namespace EventSourcingTests.Aggregation
         }
     }
 }
-#endif

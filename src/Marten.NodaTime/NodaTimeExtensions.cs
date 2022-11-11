@@ -58,16 +58,8 @@ public static class NodaTimeExtensions
                 new(NpgsqlDbType.Timestamp,   DbType.DateTime,       "timestamp without time zone", typeof(DateTime), typeof(NpgsqlDateTime), typeof(LocalDateTime)),
 #pragma warning disable 618
                 new(NpgsqlDbType.TimestampTz, DbType.DateTimeOffset, "timestamp with time zone",    typeof(DateTimeOffset), typeof(Instant), typeof(ZonedDateTime)),
-                new(NpgsqlDbType.Date,        DbType.Date,           "date",                        typeof(NpgsqlDate), typeof(LocalDate)
-#if NET6_0_OR_GREATER
-                    , typeof(DateOnly)
-#endif
-                ),
-                new(NpgsqlDbType.Time,        DbType.Time,     "time without time zone", typeof(LocalTime)
-#if NET6_0_OR_GREATER
-                    , typeof(TimeOnly)
-#endif
-                ),
+                new(NpgsqlDbType.Date,        DbType.Date,           "date",                        typeof(NpgsqlDate), typeof(LocalDate) , typeof(DateOnly)),
+                new(NpgsqlDbType.Time,        DbType.Time,     "time without time zone", typeof(LocalTime), typeof(TimeOnly)),
                 new(NpgsqlDbType.TimeTz,      DbType.Object,   "time with time zone", typeof(LocalTime), typeof(LocalTime)),
                 new(NpgsqlDbType.Interval,    DbType.Object,   "interval", typeof(TimeSpan), typeof(NpgsqlTimeSpan), typeof(Period), typeof(Duration)),
 

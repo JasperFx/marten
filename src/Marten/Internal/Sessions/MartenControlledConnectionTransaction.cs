@@ -73,12 +73,8 @@ namespace Marten.Internal.Sessions
         public virtual async ValueTask BeginTransactionAsync(CancellationToken token)
         {
             await EnsureConnectedAsync(token).ConfigureAwait(false);
-#if NET5_0_OR_GREATER
             Transaction ??= await Connection
                 .BeginTransactionAsync(_options.IsolationLevel, token).ConfigureAwait(false);
-            #else
-            Transaction ??= Connection.BeginTransaction(_options.IsolationLevel);
-#endif
         }
 
         public void Commit()

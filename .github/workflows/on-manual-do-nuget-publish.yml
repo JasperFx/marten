@@ -6,7 +6,7 @@ env:
   config: Release
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-  dotnet_core_version: 6.0.100
+  dotnet_core_version: 7.0.x
 
 jobs:
   publish_job:
@@ -16,10 +16,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install .NET 6
+      - name: Install .NET Core 7.0.x
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ env.dotnet_core_version }}
+          dotnet-version: 7.0.x
 
       - name: Run Pack
         run: ./build.sh --no-color pack

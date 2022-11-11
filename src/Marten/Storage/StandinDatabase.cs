@@ -170,17 +170,10 @@ namespace Marten.Storage
             throw new NotImplementedException();
         }
 
-#if NETSTANDARD2_0
-        public Task EnsureStorageExistsAsync(Type featureType, CancellationToken token = default)
-        {
-            throw new NotImplementedException();
-        }
-#else
         public ValueTask EnsureStorageExistsAsync(Type featureType, CancellationToken token = default)
         {
             throw new NotImplementedException();
         }
-#endif
 
         public Task ResetHiloSequenceFloor<T>(long floor)
         {

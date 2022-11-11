@@ -1,15 +1,13 @@
 $ErrorActionPreference = "Stop";
 $version = dotnet --version;
-if ($version.StartsWith("3.1")) {
-    $target_framework="netcoreapp3.1"
-}
-elseif ($version.StartsWith("5.")) {
-    $target_framework="net5.0"
+if ($version.StartsWith("6.")) {
+    $target_framework = "net6.0"
 } 
-elseif ($version.StartsWith("6.")) {
-    $target_framework="net6.0"
-} else {
-    Write-Output "BUILD FAILURE: .NET Core 3.1, .NET 5, .NET 6 SDK required to run build"
+elseif ($version.StartsWith("7.")) {
+    $target_framework = "net7.0"
+}
+else {
+    Write-Output "BUILD FAILURE: .NET 6, .NET 7 SDK required to run build"
     exit 1
 }
 

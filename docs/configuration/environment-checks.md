@@ -29,5 +29,5 @@ public static async Task use_environment_check()
         .StartAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/EnvironmentChecks.cs#L13-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_environment_check_in_hosted_service' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/EnvironmentChecks.cs#L10-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_environment_check_in_hosted_service' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
