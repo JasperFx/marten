@@ -15,10 +15,10 @@ namespace Marten.Schema.Identity.Sequences
         private readonly IMartenDatabase _database;
         private readonly StoreOptions _options;
         private readonly string _entityName;
-        private readonly object _lock = new object();
+        private readonly object _lock = new();
         private readonly HiloSettings _settings;
 
-        private DbObjectName GetNextFunction => new DbObjectName(_options.DatabaseSchemaName, "mt_get_next_hi");
+        private DbObjectName GetNextFunction => new(_options.DatabaseSchemaName, "mt_get_next_hi");
 
         public HiloSequence(IMartenDatabase database, StoreOptions options, string entityName, HiloSettings settings)
         {
@@ -48,7 +48,7 @@ namespace Marten.Schema.Identity.Sequences
             // This guarantees that the hilo row exists
             await AdvanceToNextHi().ConfigureAwait(false);
 
-            using var conn = _database.CreateConnection();
+            await using var conn = _database.CreateConnection();
             await conn.OpenAsync().ConfigureAwait(false);
 
             await conn.CreateCommand(updateSql)
@@ -79,7 +79,7 @@ namespace Marten.Schema.Identity.Sequences
 
         public async Task AdvanceToNextHi()
         {
-            using var conn = (NpgsqlConnection)_database.CreateConnection();
+            await using var conn = _database.CreateConnection();
             await conn.OpenAsync().ConfigureAwait(false);
 
             for (var attempts = 0; attempts < _settings.MaxAdvanceToNextHiAttempts; attempts++)
@@ -134,7 +134,7 @@ namespace Marten.Schema.Identity.Sequences
         {
             // Sproc is expected to return -1 if it's unable to
             // atomically secure the next hi
-            return conn.CreateCommand().CallsSproc(GetNextFunction)
+            return conn.CallFunction(GetNextFunction, "entity")
                 .With("entity", _entityName)
                 .Returns("next", NpgsqlDbType.Bigint);
         }
