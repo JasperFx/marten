@@ -33,7 +33,7 @@ variables:
   config: Release
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-  dotnet_core_version: 6.0.x
+  dotnet_version: 7.x
   node_version: 16.x
   pg_db: marten_testing
   marten_testing_database: "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;Password=Password12!"
@@ -59,7 +59,9 @@ jobs:
       - task: UseDotNet@2
         displayName: Install .Net Core
         inputs:
-          version: $(dotnet_core_version)
+          packageType: sdk
+          version: $(dotnet_version)
+          installationPath: $(Agent.ToolsDirectory)/dotnet
       - task: NodeTool@0
         displayName: Install Node.js
         inputs:
