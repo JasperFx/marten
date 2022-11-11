@@ -4,7 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Baseline;
-using Baseline.ImTools;
+using ImTools;
 using Marten;
 using Marten.Testing.Documents;
 using Xunit;

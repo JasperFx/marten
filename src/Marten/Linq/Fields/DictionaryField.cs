@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
-using Baseline.ImTools;
+using ImTools;
 using Marten.Exceptions;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
