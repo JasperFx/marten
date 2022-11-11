@@ -8,13 +8,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj"/>
-        <ProjectReference Include="..\Marten\Marten.csproj"/>
+        <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
+        <ProjectReference Include="..\Marten\Marten.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="BenchmarkDotNet" Version="0.13.1"/>
+        <PackageReference Include="BenchmarkDotNet" Version="0.13.2" />
     </ItemGroup>
     <ItemGroup>
-        <Folder Include="Benchmarks"/>
+        <Folder Include="Benchmarks" />
     </ItemGroup>
 </Project>

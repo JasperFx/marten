@@ -59,9 +59,8 @@ jobs:
       - task: UseDotNet@2
         displayName: Install .Net Core
         inputs:
-          packageType: sdk
-          version: $(dotnet_version)
-          installationPath: $(Agent.ToolsDirectory)/dotnet
+          packageType: 'sdk'
+          version:  '7.x'
       - task: NodeTool@0
         displayName: Install Node.js
         inputs:
