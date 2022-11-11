@@ -55,13 +55,13 @@ public static class NodaTimeExtensions
             new NpgsqlTypeMapping[] {
                 // Date/time types
 #pragma warning disable 618 // NpgsqlDateTime is obsolete, remove in 7.0
-                new(NpgsqlDbType.Timestamp,   DbType.DateTime,       "timestamp without time zone", typeof(DateTime), typeof(NpgsqlDateTime), typeof(LocalDateTime)),
+                new(NpgsqlDbType.Timestamp,   DbType.DateTime,       "timestamp without time zone", typeof(DateTime), typeof(LocalDateTime)),
 #pragma warning disable 618
                 new(NpgsqlDbType.TimestampTz, DbType.DateTimeOffset, "timestamp with time zone",    typeof(DateTimeOffset), typeof(Instant), typeof(ZonedDateTime)),
-                new(NpgsqlDbType.Date,        DbType.Date,           "date",                        typeof(NpgsqlDate), typeof(LocalDate) , typeof(DateOnly)),
+                new(NpgsqlDbType.Date,        DbType.Date,           "date",                        typeof(LocalDate) , typeof(DateOnly)),
                 new(NpgsqlDbType.Time,        DbType.Time,     "time without time zone", typeof(LocalTime), typeof(TimeOnly)),
                 new(NpgsqlDbType.TimeTz,      DbType.Object,   "time with time zone", typeof(LocalTime), typeof(LocalTime)),
-                new(NpgsqlDbType.Interval,    DbType.Object,   "interval", typeof(TimeSpan), typeof(NpgsqlTimeSpan), typeof(Period), typeof(Duration)),
+                new(NpgsqlDbType.Interval,    DbType.Object,   "interval", typeof(TimeSpan), typeof(Period), typeof(Duration)),
 
                 new(NpgsqlDbType.Array | NpgsqlDbType.Timestamp,   DbType.Object, "timestamp without time zone[]"),
                 new(NpgsqlDbType.Array | NpgsqlDbType.TimestampTz, DbType.Object, "timestamp with time zone[]"),

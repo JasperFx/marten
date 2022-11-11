@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
-using Baseline.ImTools;
+using ImTools;
 using Marten.Schema;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql.Migrations;
