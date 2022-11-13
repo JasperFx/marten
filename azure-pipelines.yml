@@ -71,7 +71,7 @@ jobs:
       postgres: $[ variables['postgresService'] ]
     steps:
       - task: UseDotNet@2
-        displayName: Install .Net Core 7.0.x
+        displayName: Install .NET 7.0.x
         inputs:
           packageType: 'sdk'
           version:  '7.x'
