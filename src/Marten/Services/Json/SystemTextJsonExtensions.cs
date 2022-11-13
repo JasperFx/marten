@@ -10,7 +10,7 @@ using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 // This is all from the STJ source and will be removed at some point, disabling noisy warnings
-#pragma warning disable 
+#pragma warning disable
 
 namespace Marten.Services.Json
 {
@@ -519,7 +519,7 @@ namespace Marten.Services.Json
                     value = dynamicType.Value;
                 }
 
-                JsonSerializer.Serialize<object>(writer, value, options);
+                JsonSerializer.Serialize(writer, value, value.GetType(), options);
             }
 
             private void ReadList(JsonDynamicArray dynamicArray, ref Utf8JsonReader reader, JsonSerializerOptions options)

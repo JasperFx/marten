@@ -10,12 +10,10 @@ namespace DocumentDbTests;
 
 public class duplicate_document_type_alias_detection : OneOffConfigurationsContext
 {
-
     [Fact]
     public void throw_ambigous_alias_exception_when_you_have_duplicate_document_aliases()
     {
         theStore.Options.Providers.StorageFor<User>().ShouldNotBeNull();
-
 
         Exception<AmbiguousDocumentTypeAliasesException>.ShouldBeThrownBy(() =>
         {
@@ -28,6 +26,4 @@ public class duplicate_document_type_alias_detection : OneOffConfigurationsConte
     {
         public int Id { get; set; }
     }
-
-
 }

@@ -43,17 +43,17 @@ public class Bug_2198_querying_against_UTC_DateTime_with_Npgsql : BugIntegration
             _.Schema.For<Target>().Index(x => x.DateOffset);
         });
 
-        theSession.Store(new Target { Number = 1, DateOffset = DateTime.UtcNow.AddMinutes(30) });
-        theSession.Store(new Target { Number = 2, DateOffset = DateTime.UtcNow.AddDays(1) });
-        theSession.Store(new Target { Number = 3, DateOffset = DateTime.UtcNow.AddHours(1) });
-        theSession.Store(new Target { Number = 4, DateOffset = DateTime.UtcNow.AddHours(-2) });
-        theSession.Store(new Target { Number = 5, DateOffset = DateTime.UtcNow.AddHours(-3) });
+        theSession.Store(new Target { Number = 1, DateOffset = DateTimeOffset.UtcNow.AddMinutes(30) });
+        theSession.Store(new Target { Number = 2, DateOffset = DateTimeOffset.UtcNow.AddDays(1) });
+        theSession.Store(new Target { Number = 3, DateOffset = DateTimeOffset.UtcNow.AddHours(1) });
+        theSession.Store(new Target { Number = 4, DateOffset = DateTimeOffset.UtcNow.AddHours(-2) });
+        theSession.Store(new Target { Number = 5, DateOffset = DateTimeOffset.UtcNow.AddHours(-3) });
 
         theSession.SaveChanges();
 
 
         theSession.Query<Target>()
-            .Where(x => x.DateOffset > DateTimeOffset.Now)
+            .Where(x => x.DateOffset > DateTimeOffset.UtcNow)
             .OrderBy(x => x.DateOffset)
             .ToArray()
             .Select(x => x.Number)
