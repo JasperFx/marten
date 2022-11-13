@@ -102,7 +102,6 @@ public class MartenServiceCollectionExtensionsTests
     [Fact]
     public void application_assembly_and_content_directory_from_StoreOptions()
     {
-
         using var host = Host.CreateDefaultBuilder(Array.Empty<string>())
             .ConfigureServices(services =>
             {
