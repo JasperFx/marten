@@ -93,7 +93,7 @@ public class fetching_stream_state: IntegrationContext
 
     protected override Task fixtureSetup()
     {
-        var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
+        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
         var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
         theStreamId = theSession.Events.StartStream<Quest>(joined, departed).Id;
@@ -108,8 +108,8 @@ public class fetching_stream_state: IntegrationContext
         state.Id.ShouldBe(theStreamId);
         state.Version.ShouldBe(2);
         state.AggregateType.ShouldBe(typeof(Quest));
-        state.LastTimestamp.ShouldNotBe(DateTime.MinValue);
-        state.Created.ShouldNotBe(DateTime.MinValue);
+        state.LastTimestamp.ShouldNotBe(DateTimeOffset.MinValue);
+        state.Created.ShouldNotBe(DateTimeOffset.MinValue);
     }
 
     [Fact]
@@ -120,8 +120,8 @@ public class fetching_stream_state: IntegrationContext
         state.Id.ShouldBe(theStreamId);
         state.Version.ShouldBe(2);
         state.AggregateType.ShouldBe(typeof(Quest));
-        state.LastTimestamp.ShouldNotBe(DateTime.MinValue);
-        state.Created.ShouldNotBe(DateTime.MinValue);
+        state.LastTimestamp.ShouldNotBe(DateTimeOffset.MinValue);
+        state.Created.ShouldNotBe(DateTimeOffset.MinValue);
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public class fetching_stream_state: IntegrationContext
         state.Id.ShouldBe(theStreamId);
         state.Version.ShouldBe(2);
         state.AggregateType.ShouldBe(typeof(Quest));
-        state.LastTimestamp.ShouldNotBe(DateTime.MinValue);
+        state.LastTimestamp.ShouldNotBe(DateTimeOffset.MinValue);
     }
 
     [Fact]
