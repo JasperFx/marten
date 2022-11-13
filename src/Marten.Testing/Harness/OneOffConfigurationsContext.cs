@@ -71,13 +71,10 @@ namespace Marten.Testing.Harness
 
             if (cleanAll)
             {
-                using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
-                {
-                    conn.Open();
-                    conn.CreateCommand($"drop schema if exists {_schemaName} cascade")
-                        .ExecuteNonQuery();
-                }
-
+                using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+                conn.Open();
+                conn.CreateCommand($"drop schema if exists {_schemaName} cascade")
+                    .ExecuteNonQuery();
             }
 
             _store = new DocumentStore(options);
@@ -129,10 +126,10 @@ namespace Marten.Testing.Harness
             }
         }
 
-        protected async Task AppendEvent(Guid streamId, params object[] events)
+        protected Task AppendEvent(Guid streamId, params object[] events)
         {
             theSession.Events.Append(streamId, events);
-            await theSession.SaveChangesAsync();
+            return theSession.SaveChangesAsync();
         }
     }
 }
