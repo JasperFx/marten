@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install .NET Core 7.0.x
+      - name: Install .NET 7.0.x
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 7.0.x
