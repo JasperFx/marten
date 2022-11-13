@@ -8,7 +8,7 @@ namespace Marten.Exceptions
     /// Thrown if Marten encounters an exception while trying to deserialize
     /// or upcast a persisted event
     /// </summary>
-    public class EventDeserializationFailureException : Exception
+    public class EventDeserializationFailureException : MartenException
     {
         public EventDeserializationFailureException(long sequence, Exception innerException) : base("Event deserialization error on sequence = " + sequence, innerException)
         {
