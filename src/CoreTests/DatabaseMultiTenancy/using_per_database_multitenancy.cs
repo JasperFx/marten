@@ -101,9 +101,11 @@ public class using_per_database_multitenancy : IAsyncLifetime
         theStore = _host.Services.GetRequiredService<IDocumentStore>();
     }
 
-    public Task DisposeAsync()
+    public async Task DisposeAsync()
     {
-        return _host.StopAsync();
+        await _host.StopAsync();
+        theStore.Dispose();
+        NpgsqlConnection.ClearAllPools();
     }
 
     [Fact]
@@ -116,24 +118,25 @@ public class using_per_database_multitenancy : IAsyncLifetime
     [Fact]
     public async Task creates_databases_from_apply()
     {
-        using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
 
         (await conn.DatabaseExists("database1")).ShouldBeTrue();
         (await conn.DatabaseExists("tenant3")).ShouldBeTrue();
         (await conn.DatabaseExists("tenant4")).ShouldBeTrue();
+        NpgsqlConnection.ClearPool(conn);
 
     }
 
     [Fact]
     public async Task changes_are_applied_to_each_database()
     {
-        var store = _host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
+        using var store = _host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
         var databases = await store.Tenancy.BuildDatabases();
 
         foreach (IMartenDatabase database in databases)
         {
-            using var conn = database.CreateConnection();
+            await using var conn = database.CreateConnection();
             await conn.OpenAsync();
 
             var tables = await conn.ExistingTables();
@@ -145,7 +148,7 @@ public class using_per_database_multitenancy : IAsyncLifetime
     [Fact]
     public async Task can_open_a_session_to_a_different_database()
     {
-        var session =
+        await using var session =
             await theStore.OpenSessionAsync(new SessionOptions
             {
                 TenantId = "tenant1", Tracking = DocumentTracking.None
@@ -165,14 +168,14 @@ public class using_per_database_multitenancy : IAsyncLifetime
         await theStore.BulkInsertDocumentsAsync("tenant3", targets3);
         await theStore.BulkInsertDocumentsAsync("tenant4", targets4);
 
-        using (var query3 = theStore.QuerySession("tenant3"))
+        await using (var query3 = theStore.QuerySession("tenant3"))
         {
             var ids = await query3.Query<Target>().Select(x => x.Id).ToListAsync();
 
             ids.OrderBy(x => x).ShouldHaveTheSameElementsAs(targets3.OrderBy(x => x.Id).Select(x => x.Id).ToList());
         }
 
-        using (var query4 = theStore.QuerySession("tenant4"))
+        await using (var query4 = theStore.QuerySession("tenant4"))
         {
             var ids = await query4.Query<Target>().Select(x => x.Id).ToListAsync();
 
@@ -191,12 +194,12 @@ public class using_per_database_multitenancy : IAsyncLifetime
 
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
-        using (var query3 = theStore.QuerySession("tenant3"))
+        await using (var query3 = theStore.QuerySession("tenant3"))
         {
             (await query3.Query<Target>().AnyAsync()).ShouldBeFalse();
         }
 
-        using (var query4 = theStore.QuerySession("tenant4"))
+        await using (var query4 = theStore.QuerySession("tenant4"))
         {
             (await query4.Query<Target>().AnyAsync()).ShouldBeFalse();
         }
