@@ -112,9 +112,7 @@ internal class MartenBuild
         Target("test-plv8", DependsOn("compile", "compile-plv8"), () =>
             RunTests("Marten.PLv8.Testing"));
 
-
-        // JDM -- I removed test-codegen temporarily during V5 work
-        Target("test", DependsOn("test-base-lib", "test-document-db", "test-event-sourcing", "test-cli"));
+        Target("test", DependsOn("test-base-lib", "test-core", "test-document-db", "test-event-sourcing", "test-cli", "test-codegen"));
 
         Target("test-extension-libs", DependsOn("test-noda-time", "test-plv8", "test-aspnetcore"));
 
@@ -122,12 +120,14 @@ internal class MartenBuild
             Run("dotnet", $"tool install -g MarkdownSnippets.Tool")
         ));
 
-        Target("docs", DependsOn("install", "install-mdsnippets"), () => {
+        Target("docs", DependsOn("install", "install-mdsnippets"), () =>
+        {
             // Run docs site
             Run("npm", "run docs");
         });
 
-        Target("docs-build", DependsOn("install", "install-mdsnippets"), () => {
+        Target("docs-build", DependsOn("install", "install-mdsnippets"), () =>
+        {
             // Run docs site
             Run("npm", "run docs-build");
         });
@@ -139,7 +139,8 @@ internal class MartenBuild
             Run("git", $"clone -b {branchName} https://github.com/jasperfx/marten.git {InitializeDirectory(docTargetDir)}");
         });
 
-        Target("clear-inline-samples", () => {
+        Target("clear-inline-samples", () =>
+        {
             var files = Directory.GetFiles("./docs", "*.md", SearchOption.AllDirectories);
             var pattern = @"<!-- snippet:(.+)-->[\s\S]*?<!-- endSnippet -->";
             var replacePattern = $"<!-- snippet:$1-->{Environment.NewLine}<!-- endSnippet -->";
@@ -148,7 +149,8 @@ internal class MartenBuild
                 // Console.WriteLine(file);
                 var content = File.ReadAllText(file);
 
-                if (!content.Contains("<!-- snippet:")) {
+                if (!content.Contains("<!-- snippet:"))
+                {
                     continue;
                 }
 
@@ -188,12 +190,15 @@ internal class MartenBuild
 
         });
 
-        Target("setup-test-parallelization", () => {
+        Target("setup-test-parallelization", () =>
+        {
             if (string.IsNullOrEmpty(disableTestParallelization))
             {
                 Console.WriteLine("disable_test_parallelization env var not set, this step is ignored.");
                 return;
-            } else {
+            }
+            else
+            {
                 Console.WriteLine($"disable_test_parallelization={disableTestParallelization}");
             }
 
@@ -298,7 +303,7 @@ internal class MartenBuild
     private static string GetFramework()
     {
         var frameworkName = Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName;
-        var version = float.Parse(frameworkName.Split('=')[1].Replace("v",""), InvariantCulture.NumberFormat);
+        var version = float.Parse(frameworkName.Split('=')[1].Replace("v", ""), InvariantCulture.NumberFormat);
 
         return version < 5.0 ? $"netcoreapp{version.ToString("N1", InvariantCulture.NumberFormat)}" : $"net{version.ToString("N1", InvariantCulture.NumberFormat)}";
     }
