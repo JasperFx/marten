@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
   <PropertyGroup>
-    <VersionPrefix>6.0.0-alpha.1</VersionPrefix>
+    <VersionPrefix>6.0.0-alpha.2</VersionPrefix>
     <LangVersion>11.0</LangVersion>
     <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
     <PackageIconUrl>https://martendb.io/logo.png</PackageIconUrl>

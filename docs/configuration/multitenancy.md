@@ -52,7 +52,7 @@ _host = await Host.CreateDefaultBuilder()
             .ApplyAllDatabaseChangesOnStartup();
     }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_static_database_multitenancy.cs#L50-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_multi_tenanted_databases' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_static_database_multitenancy.cs#L49-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_multi_tenanted_databases' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Single Instance Multi-Tenancy
@@ -199,7 +199,7 @@ var state = await database.FetchEventStoreStatistics();
 // Apply all outstanding database changes in just this database
 await database.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_static_database_multitenancy.cs#L188-L209' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_administering_multiple_databases' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_static_database_multitenancy.cs#L187-L208' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_administering_multiple_databases' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 All remaining methods on `IDocumentStore.Advanced` apply to all databases.
