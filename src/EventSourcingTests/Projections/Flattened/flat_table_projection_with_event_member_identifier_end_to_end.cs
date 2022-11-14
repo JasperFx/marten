@@ -34,7 +34,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end : One
     {
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        using var conn = theStore.Storage.Database.CreateConnection();
+        await using var conn = theStore.Storage.Database.CreateConnection();
         await conn.OpenAsync();
 
         var table = await new Table(new DbObjectName(SchemaName, "member_values")).FetchExisting(conn);
@@ -73,7 +73,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end : One
 
     private async Task<Data> findData(string name)
     {
-        using var conn = theStore.Storage.Database.CreateConnection();
+        await using var conn = theStore.Storage.Database.CreateConnection();
         await conn.OpenAsync();
 
         var all = await conn.CreateCommand($"select * from {SchemaName}.member_values where name = :id")
@@ -208,7 +208,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end : One
         theSession.Events.Append(streamId, new ValuesDeleted{Name = "purple"});
         await theSession.SaveChangesAsync();
 
-        using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
         var count = await conn
             .CreateCommand($"select count(*) from {SchemaName}.member_values where name = :id")

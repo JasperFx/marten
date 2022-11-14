@@ -116,7 +116,7 @@ namespace Marten.Storage
             else
             {
                 await _tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
-                using var conn = _tenant.Database.CreateConnection();
+                await using var conn = _tenant.Database.CreateConnection();
                 await conn.OpenAsync(cancellation).ConfigureAwait(false);
                 conn.EnlistTransaction(transaction);
                 await bulkInsertDocumentsAsync(documents, batchSize, conn, mode, cancellation).ConfigureAwait(false);
@@ -186,7 +186,7 @@ namespace Marten.Storage
         {
             var groups = bulkInserters(documents);
 
-            using var conn = _tenant.Database.CreateConnection();
+            await using var conn = _tenant.Database.CreateConnection();
 
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
             var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
@@ -217,7 +217,7 @@ namespace Marten.Storage
             foreach (var type in types)
                 await _tenant.Database.EnsureStorageExistsAsync(type).ConfigureAwait(false);
 
-            using var conn = _tenant.Database.CreateConnection();
+            await using var conn = _tenant.Database.CreateConnection();
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
             conn.EnlistTransaction(transaction);
 

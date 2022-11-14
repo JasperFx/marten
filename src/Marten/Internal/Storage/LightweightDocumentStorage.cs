@@ -69,7 +69,7 @@ namespace Marten.Internal.Storage
             var command = BuildLoadManyCommand(ids, session.TenantId);
             var selector = (ISelector<T>)BuildSelector(session);
 
-            using (var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false))
+            await using (var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false))
             {
                 while (await reader.ReadAsync(token).ConfigureAwait(false))
                 {

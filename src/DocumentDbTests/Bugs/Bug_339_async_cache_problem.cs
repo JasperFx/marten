@@ -13,13 +13,13 @@ public class Bug_339_async_cache_problem: IntegrationContext
     {
         var user1 = new User();
 
-        using (var session1 = theStore.LightweightSession())
+        await using (var session1 = theStore.LightweightSession())
         {
             session1.Store(user1);
             session1.SaveChanges();
         }
 
-        using (var session2 = theStore.DirtyTrackedSession())
+        await using (var session2 = theStore.DirtyTrackedSession())
         {
             var user12 = await session2.LoadAsync<User>(user1.Id);
             var breakThings = await session2.LoadAsync<User>(user1.Id);

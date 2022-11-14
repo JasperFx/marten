@@ -17,7 +17,7 @@ public class DefaultRetryPolicyTests
     [Fact]
     public async Task transient_exception_is_retried()
     {
-        using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
 
         var retryPolicy = DefaultRetryPolicy.Times(1, sleep: x => TimeSpan.FromMilliseconds(20));

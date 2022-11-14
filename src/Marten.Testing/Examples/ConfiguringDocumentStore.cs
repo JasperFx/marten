@@ -37,7 +37,8 @@ public class ConfiguringDocumentStore
         #endregion
 
         #region sample_start_a_query_session
-        using (var session = store.QuerySession())
+
+        await using (var session = store.QuerySession())
         {
             var internalUsers = session
                 .Query<User>().Where(x => x.Internal).ToArray();
@@ -47,7 +48,7 @@ public class ConfiguringDocumentStore
         #region sample_opening_sessions
         // Open a session for querying, loading, and
         // updating documents
-        using (var session = store.LightweightSession())
+        await using (var session = store.LightweightSession())
         {
             var user = new User { FirstName = "Han", LastName = "Solo" };
             session.Store(user);
@@ -57,7 +58,7 @@ public class ConfiguringDocumentStore
 
         // Open a session for querying, loading, and
         // updating documents with a backing "Identity Map"
-        using (var session = store.QuerySession())
+        await using (var session = store.QuerySession())
         {
             var existing = await session
                 .Query<User>()

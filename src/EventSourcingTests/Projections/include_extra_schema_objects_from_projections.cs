@@ -36,7 +36,7 @@ public class include_extra_schema_objects_from_projections : OneOffConfiguration
     {
         var tableName = new DbObjectName("extra", "names");
 
-        using (var conn = theStore.Storage.Database.CreateConnection())
+        await using (var conn = theStore.Storage.Database.CreateConnection())
         {
             await conn.OpenAsync();
 
@@ -45,7 +45,7 @@ public class include_extra_schema_objects_from_projections : OneOffConfiguration
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        using (var conn = theStore.Storage.Database.CreateConnection())
+        await using (var conn = theStore.Storage.Database.CreateConnection())
         {
             await conn.OpenAsync();
 

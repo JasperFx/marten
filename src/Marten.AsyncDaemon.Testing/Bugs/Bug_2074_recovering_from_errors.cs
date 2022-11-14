@@ -31,7 +31,7 @@ public class Bug_2074_recovering_from_errors
                 .Pause(5.Seconds());
         });
 
-        using var provider = services.BuildServiceProvider();
+        await using var provider = services.BuildServiceProvider();
 
         var documentStore = provider.GetRequiredService<IDocumentStore>();
 

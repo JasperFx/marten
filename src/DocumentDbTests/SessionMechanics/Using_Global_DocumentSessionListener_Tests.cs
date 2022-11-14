@@ -66,7 +66,7 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
         {
             store.Advanced.Clean.CompletelyRemoveAll();
 
-            using (var session = store.LightweightSession())
+            await using (var session = store.LightweightSession())
             {
                 session.Store(new User(), new User());
 

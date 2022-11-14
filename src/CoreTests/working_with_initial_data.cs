@@ -282,7 +282,7 @@ public class InitialDataWithQuery: IInitialData
 
     public async Task Populate(IDocumentStore store, CancellationToken cancellation)
     {
-        using var session = store.OpenSession();
+        await using var session = store.OpenSession();
         if (!session.Query<Aggregate1495>().Any())
         {
             session.Store(_initialData);

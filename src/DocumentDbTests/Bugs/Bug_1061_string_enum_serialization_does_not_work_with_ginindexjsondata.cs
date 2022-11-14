@@ -50,13 +50,13 @@ public class Bug_1061_string_enum_serialization_does_not_work_with_ginindexjsond
             });
         });
 
-        using (var session = store2.OpenSession())
+        await using (var session = store2.OpenSession())
         {
             session.Store(new Bug_1061_Class { Id = "one", Enum = Bug_1061_Enum.One });
             await session.SaveChangesAsync();
         }
 
-        using (var session = store2.OpenSession())
+        await using (var session = store2.OpenSession())
         {
             var items = session.Query<Bug_1061_Class>().Where(x => x.Enum == Bug_1061_Enum.One).ToList();
             Assert.Single(items);

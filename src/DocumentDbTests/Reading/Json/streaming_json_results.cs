@@ -999,7 +999,7 @@ public class streaming_json_results : IntegrationContext
         var targets = Target.GenerateRandomData(100).ToArray();
         await theStore.BulkInsertAsync(targets);
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             var actualJson = await query.Query<Target>()
                 .SelectMany(x => x.Children)

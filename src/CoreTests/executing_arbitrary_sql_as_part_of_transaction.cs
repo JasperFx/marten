@@ -15,7 +15,7 @@ public class executing_arbitrary_sql_as_part_of_transaction : OneOffConfiguratio
     [Fact]
     public async Task can_run_extra_sql()
     {
-        using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
         {
             await conn.OpenAsync();
             await conn.RunSql("drop table if exists names cascade");
@@ -41,7 +41,7 @@ public class executing_arbitrary_sql_as_part_of_transaction : OneOffConfiguratio
 
         await theSession.SaveChangesAsync();
 
-        using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
         {
             await conn.OpenAsync();
 

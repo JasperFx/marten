@@ -21,7 +21,7 @@ public class InitialData: IInitialData
 
     public async Task Populate(IDocumentStore store, CancellationToken cancellation)
     {
-        using var session = store.LightweightSession();
+        await using var session = store.LightweightSession();
         // Marten UPSERT will cater for existing records
         session.Store(_initialData);
         await session.SaveChangesAsync();

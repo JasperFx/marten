@@ -56,7 +56,7 @@ namespace Marten.Internal.CodeGeneration
             IEnumerable<T> documents,
             CancellationToken cancellation)
         {
-            using var writer = await conn.BeginBinaryImportAsync(MainLoaderSql(), cancellation).ConfigureAwait(false);
+            await using var writer = await conn.BeginBinaryImportAsync(MainLoaderSql(), cancellation).ConfigureAwait(false);
 
             foreach (var document in documents)
             {
@@ -97,7 +97,7 @@ namespace Marten.Internal.CodeGeneration
             IEnumerable<T> documents,
             CancellationToken cancellation)
         {
-            using var writer = conn.BeginBinaryImport(TempLoaderSql());
+            await using var writer = conn.BeginBinaryImport(TempLoaderSql());
             foreach (var document in documents)
             {
                 await writer.StartRowAsync(cancellation).ConfigureAwait(false);

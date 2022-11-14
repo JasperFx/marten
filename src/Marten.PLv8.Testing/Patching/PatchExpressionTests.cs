@@ -54,7 +54,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     {
 
         var id = Guid.NewGuid();
-        using (var sess = theStore.LightweightSession())
+        await using (var sess = theStore.LightweightSession())
         {
             sess.Store(new Model() { Id = id, Name = "foo" });
             sess.Patch<Model>(id).Set(x => x.Name, "bar");

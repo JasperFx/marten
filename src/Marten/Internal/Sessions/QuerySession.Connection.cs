@@ -125,7 +125,7 @@ namespace Marten.Internal.Sessions
 
         internal async Task<T?> LoadOneAsync<T>(NpgsqlCommand command, ISelector<T> selector, CancellationToken token)
         {
-            using var reader = await ExecuteReaderAsync(command, token).ConfigureAwait(false);
+            await using var reader = await ExecuteReaderAsync(command, token).ConfigureAwait(false);
             if (!await reader.ReadAsync(token).ConfigureAwait(false)) return default;
 
             return await selector.ResolveAsync(reader, token).ConfigureAwait(false);
@@ -133,13 +133,13 @@ namespace Marten.Internal.Sessions
 
         internal async Task<bool> StreamOne(NpgsqlCommand command, Stream stream, CancellationToken token)
         {
-            using var reader = (NpgsqlDataReader)await ExecuteReaderAsync(command, token).ConfigureAwait(false);
+            await using var reader = (NpgsqlDataReader)await ExecuteReaderAsync(command, token).ConfigureAwait(false);
             return (await reader.StreamOne(stream, token).ConfigureAwait(false) == 1);
         }
 
         internal async Task<int> StreamMany(NpgsqlCommand command, Stream stream, CancellationToken token)
         {
-            using var reader = (NpgsqlDataReader)await ExecuteReaderAsync(command, token).ConfigureAwait(false);
+            await using var reader = (NpgsqlDataReader)await ExecuteReaderAsync(command, token).ConfigureAwait(false);
 
             return await reader.StreamMany(stream, token).ConfigureAwait(false);
         }
@@ -148,7 +148,7 @@ namespace Marten.Internal.Sessions
         {
             var cmd = this.BuildCommand(handler);
 
-            using var reader = await ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            await using var reader = await ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
             return await handler.HandleAsync(reader, this, token).ConfigureAwait(false);
         }
 

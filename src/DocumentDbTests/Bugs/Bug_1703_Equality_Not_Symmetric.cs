@@ -47,13 +47,13 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
     {
         var random = Target.Random();
         var theString = random.String;
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Insert(random);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.QuerySession())
+        await using (var session = theStore.QuerySession())
         {
 
             session.Query<Target>()
@@ -77,13 +77,13 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
     {
         var random = Target.Random();
         var theString = random.String;
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Insert(random);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.QuerySession())
+        await using (var session = theStore.QuerySession())
         {
 
             session.Query<Target>()
@@ -106,13 +106,13 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
     {
         var random = Target.Random();
         var theNumber = random.Number;
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Insert(random);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.QuerySession())
+        await using (var session = theStore.QuerySession())
         {
 
             session.Query<Target>()
@@ -134,13 +134,13 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
     {
         var random = Target.Random();
         var theNumber = random.Number;
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Insert(random);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.QuerySession())
+        await using (var session = theStore.QuerySession())
         {
 
             session.Query<Target>()

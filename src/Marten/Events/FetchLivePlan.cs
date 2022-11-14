@@ -43,7 +43,7 @@ namespace Marten.Events
             long version = 0;
             try
             {
-                using var reader = await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
+                await using var reader = await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
                 if (await reader.ReadAsync(cancellation).ConfigureAwait(false))
                 {
                     version = await reader.GetFieldValueAsync<long>(0, cancellation).ConfigureAwait(false);
@@ -88,7 +88,7 @@ namespace Marten.Events
             long version = 0;
             try
             {
-                using var reader = await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
+                await using var reader = await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
                 if (await reader.ReadAsync(cancellation).ConfigureAwait(false))
                 {
                     version = await reader.GetFieldValueAsync<long>(0, cancellation).ConfigureAwait(false);

@@ -101,7 +101,7 @@ public class Bug_490_hierarchy_and_include: BugIntegrationContext
         theSession.Store(activity);
         await theSession.SaveChangesAsync();
 
-        using (var session = theStore.QuerySession())
+        await using (var session = theStore.QuerySession())
         {
             List<Account> accounts = new List<Account>();
             (await session.Query<Activity>()

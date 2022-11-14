@@ -73,9 +73,9 @@ public class SessionOptionsTests : OneOffConfigurationsContext
     [Fact]
     public async System.Threading.Tasks.Task for_transaction()
     {
-        using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync().ConfigureAwait(false);
-        using var tx = await conn.BeginTransactionAsync();
+        await using var tx = await conn.BeginTransactionAsync();
 
         var options = SessionOptions.ForTransaction(tx);
         options.Transaction.ShouldBe(tx);
@@ -100,7 +100,7 @@ public class SessionOptionsTests : OneOffConfigurationsContext
     [Fact]
     public async Task build_from_open_connection()
     {
-        using var connection = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var connection = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await connection.OpenAsync();
         var options = SessionOptions.ForConnection(connection);
         options.Connection.ShouldBe(connection);
@@ -113,9 +113,9 @@ public class SessionOptionsTests : OneOffConfigurationsContext
     [Fact]
     public async System.Threading.Tasks.Task for_transaction_with_ownership()
     {
-        using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync().ConfigureAwait(false);
-        using var tx = await conn.BeginTransactionAsync();
+        await using var tx = await conn.BeginTransactionAsync();
 
         var options = SessionOptions.ForTransaction(tx, true);
         options.Transaction.ShouldBe(tx);
@@ -270,7 +270,7 @@ public class SessionOptionsTests : OneOffConfigurationsContext
 
         var testObject = new FryGuy();
 
-        using (var query = documentStore.OpenSession(options))
+        await using (var query = documentStore.OpenSession(options))
         {
             query.Store(testObject);
             await query.SaveChangesAsync();

@@ -81,7 +81,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
         var stream1 = Guid.NewGuid();
         var stream2 = Guid.NewGuid();
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -98,7 +98,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
         await theStore.Advanced.Clean.DeleteSingleEventStreamAsync(stream1);
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Events.QueryAllRawEvents().ToList().All(x => x.StreamId == stream2)
                 .ShouldBeTrue();
@@ -113,7 +113,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
         var stream1 = Guid.NewGuid();
         var stream2 = Guid.NewGuid();
 
-        using (var session = theStore.LightweightSession("one"))
+        await using (var session = theStore.LightweightSession("one"))
         {
             var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -130,7 +130,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
         await theStore.Advanced.Clean.DeleteSingleEventStreamAsync(stream1, "one");
 
-        using (var session = theStore.LightweightSession("one"))
+        await using (var session = theStore.LightweightSession("one"))
         {
             session.Events.QueryAllRawEvents().ToList().All(x => x.StreamId == stream2)
                 .ShouldBeTrue();

@@ -108,7 +108,7 @@ public class HighWaterDetectorTests: DaemonContext
 
     protected async Task deleteEvents(params long[] ids)
     {
-        using var conn = theStore.CreateConnection();
+        await using var conn = theStore.CreateConnection();
         await conn.OpenAsync();
 
         await conn
@@ -121,7 +121,7 @@ public class HighWaterDetectorTests: DaemonContext
 
     protected async Task makeOldWhereSequenceIsLessThanOrEqualTo(long seqId)
     {
-        using var conn = theStore.CreateConnection();
+        await using var conn = theStore.CreateConnection();
         await conn.OpenAsync();
 
         await conn
@@ -132,7 +132,7 @@ public class HighWaterDetectorTests: DaemonContext
 
     protected async Task makeNewerWhereSequenceIsGreaterThan(long seqId)
     {
-        using var conn = theStore.CreateConnection();
+        await using var conn = theStore.CreateConnection();
         await conn.OpenAsync();
 
         await conn

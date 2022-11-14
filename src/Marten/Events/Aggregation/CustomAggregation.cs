@@ -69,7 +69,7 @@ namespace Marten.Events.Aggregation
         async ValueTask<EventRangeGroup> IAggregationRuntime.GroupEvents(DocumentStore store, IMartenDatabase database, EventRange range,
             CancellationToken cancellationToken)
         {
-            using var session = store.OpenSession(SessionOptions.ForDatabase(database));
+            await using var session = store.OpenSession(SessionOptions.ForDatabase(database));
             var groups = await Slicer.SliceAsyncEvents(session, range.Events).ConfigureAwait(false);
 
             return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);

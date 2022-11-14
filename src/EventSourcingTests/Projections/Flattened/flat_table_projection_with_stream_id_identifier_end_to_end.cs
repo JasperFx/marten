@@ -34,7 +34,7 @@ public class flat_table_projection_with_stream_id_identifier_end_to_end : OneOff
     {
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        using var conn = theStore.Storage.Database.CreateConnection();
+        await using var conn = theStore.Storage.Database.CreateConnection();
         await conn.OpenAsync();
 
         var table = await new Table(new DbObjectName(SchemaName, "values")).FetchExisting(conn);
@@ -69,7 +69,7 @@ public class flat_table_projection_with_stream_id_identifier_end_to_end : OneOff
 
     private async Task<Data> findData(Guid streamId)
     {
-        using var conn = theStore.Storage.Database.CreateConnection();
+        await using var conn = theStore.Storage.Database.CreateConnection();
         await conn.OpenAsync();
 
         var all = await conn.CreateCommand($"select * from {SchemaName}.values where id = :id")
@@ -208,7 +208,7 @@ public class flat_table_projection_with_stream_id_identifier_end_to_end : OneOff
         theSession.Events.Append(streamId, new ValuesDeleted());
         await theSession.SaveChangesAsync();
 
-        using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
         var count = await conn
             .CreateCommand($"select count(*) from {SchemaName}.values where id = :id")

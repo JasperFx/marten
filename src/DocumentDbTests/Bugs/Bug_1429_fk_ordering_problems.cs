@@ -31,7 +31,7 @@ public class Bug_1429_fk_ordering_problems : OneOffConfigurationsContext
         });
 
 
-        using var session = theStore.LightweightSession();
+        await using var session = theStore.LightweightSession();
 
         var doc_a = new DocA
         {

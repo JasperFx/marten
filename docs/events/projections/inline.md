@@ -40,7 +40,7 @@ var store = DocumentStore.For(opts =>
         ProjectionLifecycle.Inline);
 });
 
-using var session = store.LightweightSession();
+await using var session = store.LightweightSession();
 
 var streamId = session.Events
     .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;

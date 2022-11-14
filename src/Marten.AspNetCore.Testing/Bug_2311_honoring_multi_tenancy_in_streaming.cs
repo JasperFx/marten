@@ -23,14 +23,14 @@ public class Bug_2311_honoring_multi_tenancy_in_streaming : IClassFixture<AppFix
         var store = _fixture.Host.Services.GetRequiredService<IDocumentStore>();
         await store.Advanced.Clean.DeleteAllDocumentsAsync();
 
-        using var sessionOne = store.LightweightSession("one");
+        await using var sessionOne = store.LightweightSession("one");
         sessionOne.Store(new Thing{Name = "Thor"});
         sessionOne.Store(new Thing{Name = "Iron Man"});
         sessionOne.Store(new Thing{Name = "Captain America"});
         await sessionOne.SaveChangesAsync();
 
 
-        using var sessionTwo = store.LightweightSession("two");
+        await using var sessionTwo = store.LightweightSession("two");
         sessionTwo.Store(new Thing{Name = "Hawkeye"});
         sessionTwo.Store(new Thing{Name = "Black Widow"});
         await sessionTwo.SaveChangesAsync();

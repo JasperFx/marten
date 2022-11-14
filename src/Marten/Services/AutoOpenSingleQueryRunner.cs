@@ -40,7 +40,7 @@ namespace Marten.Services
 
         public async Task SingleCommit(DbCommand command, CancellationToken cancellation)
         {
-            using var conn = _database.CreateConnection();
+            await using var conn = _database.CreateConnection();
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
 
             command.Connection = conn;

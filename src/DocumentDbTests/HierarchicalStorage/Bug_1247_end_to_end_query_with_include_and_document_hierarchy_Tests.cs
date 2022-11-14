@@ -67,7 +67,7 @@ public class Bug_1247_query_with_include_and_document_hierarchy_Tests: end_to_en
         theSession.Store(issue1, issue2, issue3, issue4);
         theSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             var list = new List<User>();
 

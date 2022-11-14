@@ -53,7 +53,7 @@ public class computed_indexes: OneOffConfigurationsContext
         var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
         table.HasIndex("mt_doc_target_idx_number").ShouldBeTrue();
 
-        using var session = theStore.QuerySession();
+        await using var session = theStore.QuerySession();
         var cmd = session.Query<Target>().Where(x => x.Number == 3)
             .ToCommand();
 
@@ -195,7 +195,7 @@ public class computed_indexes: OneOffConfigurationsContext
 
         var testString = "MiXeD cAsE sTrInG";
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             var item = Target.GenerateRandomData(1).First();
             item.String = testString;
@@ -236,7 +236,7 @@ public class computed_indexes: OneOffConfigurationsContext
     {
         StoreOptions(_ => _.Schema.For<Target>().Index(x => x.StringList));
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             var item = Target.GenerateRandomData(1).First();
             item.StringList.Add("item1");
@@ -263,7 +263,7 @@ public class computed_indexes: OneOffConfigurationsContext
 
         StoreOptions(_ => _.Schema.For<Target>().Index(columns));
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             var item = Target.GenerateRandomData(1).First();
             item.UserId = Guid.NewGuid();

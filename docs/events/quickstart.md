@@ -152,7 +152,7 @@ var store = DocumentStore.For(_ =>
 
 var questId = Guid.NewGuid();
 
-using (var session = store.OpenSession())
+await using (var session = store.OpenSession())
 {
     var started = new QuestStarted { Name = "Destroy the One Ring" };
     var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
@@ -179,7 +179,7 @@ In addition to generic `StartStream<T>`, `IEventStore` has a non-generic `StartS
 <!-- snippet: sample_event-store-start-stream-with-explicit-type -->
 <a id='snippet-sample_event-store-start-stream-with-explicit-type'></a>
 ```cs
-using (var session = store.OpenSession())
+await using (var session = store.OpenSession())
 {
     var started = new QuestStarted { Name = "Destroy the One Ring" };
     var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
@@ -190,7 +190,7 @@ using (var session = store.OpenSession())
     await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L46-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-start-stream-with-explicit-type' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L46-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-start-stream-with-explicit-type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, we would at some point like to see the current state of the quest party
@@ -231,7 +231,7 @@ And next, we'll use a live projection to build an aggregate for a single quest p
 <!-- snippet: sample_events-aggregate-on-the-fly -->
 <a id='snippet-sample_events-aggregate-on-the-fly'></a>
 ```cs
-using (var session = store.OpenSession())
+await using (var session = store.OpenSession())
 {
     // questId is the id of the stream
     var party = session.Events.AggregateStream<QuestParty>(questId);
@@ -244,5 +244,5 @@ using (var session = store.OpenSession())
         .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L84-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L87-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

@@ -80,7 +80,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
         return When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            await using (var session = store.OpenSession(tenantId, DocumentTracking.None))
             {
                 #region sample_start-stream-with-aggregate-type
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
@@ -111,7 +111,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
         return When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            await using (var session = store.OpenSession(tenantId, DocumentTracking.None))
             {
                 #region sample_start-stream-with-aggregate-type
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
@@ -320,14 +320,14 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
         return When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            await using (var session = store.OpenSession(tenantId, DocumentTracking.None))
             {
                 var parties = await session.Query<QuestParty>().ToListAsync();
                 parties.Count.ShouldBeLessThanOrEqualTo(index);
             }
 
             //This SaveChanges will fail with missing method (ro collection configured?)
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            await using (var session = store.OpenSession(tenantId, DocumentTracking.None))
             {
                 var started = new QuestStarted { Name = "Destroy the One Ring" };
                 var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");

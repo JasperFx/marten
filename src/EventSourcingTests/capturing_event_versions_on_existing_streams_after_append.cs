@@ -97,7 +97,7 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
         var logger = new RecordingSessionLogger();
         Guid streamId = Guid.NewGuid();
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Logger = logger;
 
@@ -111,7 +111,7 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
                 .ShouldHaveTheSameElementsAs(1, 2);
         }
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Logger = logger;
 
@@ -125,7 +125,7 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
                 .ShouldHaveTheSameElementsAs(3, 4);
         }
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Logger = logger;
 

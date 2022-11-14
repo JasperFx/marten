@@ -33,7 +33,7 @@ public class Bug_960_drop_index_concurrently_pg_error: BugIntegrationContext
         // cleanup prior to starting
         await store1.Advanced.Clean.CompletelyRemoveAllAsync();
 
-        using (var session = store1.LightweightSession())
+        await using (var session = store1.LightweightSession())
         {
             session.Store(new Important()
             {
@@ -51,7 +51,7 @@ public class Bug_960_drop_index_concurrently_pg_error: BugIntegrationContext
             _.Schema.For<Important>().Index(x => x.Field2);
         });
 
-        using (var session = store2.LightweightSession())
+        await using (var session = store2.LightweightSession())
         {
             await session.Query<Important>()
                 .Where(p => p.Field1 == "some value")

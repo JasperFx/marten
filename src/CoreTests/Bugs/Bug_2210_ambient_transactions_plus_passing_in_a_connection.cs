@@ -54,7 +54,7 @@ public class Bug_2210_ambient_transactions_plus_passing_in_a_connection : BugInt
             lifetime.OwnsConnection.ShouldBeFalse();
             lifetime.Connection.ShouldBe(connection);
 
-            using var session = theStore.OpenSession(options);
+            await using var session = theStore.OpenSession(options);
 
             session.Store(Target.Random());
             await session.SaveChangesAsync();

@@ -245,7 +245,7 @@ namespace EventSourcingTests.SchemaChange
 
             await theStore.EnsureStorageExistsAsync(typeof(StreamAction));
 
-            using (var session = (DocumentSessionBase)theStore.OpenSession())
+            await using (var session = (DocumentSessionBase)theStore.OpenSession())
             {
                 session.Events.Append(taskId, task.DequeueEvents());
                 await session.SaveChangesAsync();
@@ -262,7 +262,7 @@ namespace EventSourcingTests.SchemaChange
                         .EventTypeName = "task_description_updated";
             }))
             {
-                using (var session = store.OpenSession())
+                await using (var session = store.OpenSession())
                 {
                     var taskNew = await session.Events.AggregateStreamAsync<New.Task>(taskId);
 

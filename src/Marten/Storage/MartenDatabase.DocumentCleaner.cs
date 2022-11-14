@@ -296,7 +296,7 @@ END; $$;
                 throw new ArgumentException($"{nameof(streamId)} should  be of type {_options.EventGraph.GetStreamIdType()}", nameof(streamId));
             }
 
-            using var conn = CreateConnection();
+            await using var conn = CreateConnection();
             var streamsWhere = "id = :id";
             var eventsWhere = "stream_id = :id";
 

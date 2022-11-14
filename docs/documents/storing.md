@@ -16,7 +16,7 @@ with a sample that shows storing both a brand new document and a modified docume
 ```cs
 using var store = DocumentStore.For("some connection string");
 
-using var session = store.LightweightSession();
+await using var session = store.LightweightSession();
 
 var newUser = new User
 {
@@ -51,7 +51,7 @@ var issue2 = new Issue();
 var company1 = new Company();
 var company2 = new Company();
 
-using var session = store.LightweightSession();
+await using var session = store.LightweightSession();
 
 session.Store<object>(user1, user2, issue1, issue2, company1, company2);
 await session.SaveChangesAsync();

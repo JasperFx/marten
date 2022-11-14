@@ -13,7 +13,7 @@ public class Bug_705_FetchStreamState_before_AggregateStream: BugIntegrationCont
     {
         Guid id;
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -24,7 +24,7 @@ public class Bug_705_FetchStreamState_before_AggregateStream: BugIntegrationCont
 
         using (var store2 = SeparateStore())
         {
-            using (var session = store2.OpenSession())
+            await using (var session = store2.OpenSession())
             {
                 var state = await session.Events.FetchStreamStateAsync(id);
                 state.Version.ShouldBe(2);

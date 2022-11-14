@@ -210,7 +210,7 @@ public class noda_time_acceptance: OneOffConfigurationsContext
             Name = "test"
         };
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Events.Append(streamId, @event);
             await session.SaveChangesAsync();

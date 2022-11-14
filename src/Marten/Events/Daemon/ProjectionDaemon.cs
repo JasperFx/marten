@@ -360,7 +360,7 @@ namespace Marten.Events.Daemon
             var completion = Task.WhenAll(waiters);
 
             var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-            using (token.Register(state =>
+            await using (token.Register(state =>
                              {
                                  ((TaskCompletionSource<object>)state!).TrySetResult(null!);
                              },

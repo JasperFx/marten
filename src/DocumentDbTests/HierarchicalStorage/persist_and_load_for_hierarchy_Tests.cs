@@ -93,7 +93,7 @@ public class persist_and_load_for_hierarchy_Tests: end_to_end_document_hierarchy
         (await theSession.LoadAsync<User>(admin1.Id)).ShouldBeTheSameAs(admin1);
         (await theSession.LoadAsync<AdminUser>(admin1.Id)).ShouldBeTheSameAs(admin1);
 
-        using (var session = theStore.QuerySession())
+        await using (var session = theStore.QuerySession())
         {
             (await session.LoadAsync<AdminUser>(admin1.Id)).ShouldNotBeTheSameAs(admin1)
                 .ShouldNotBeNull();

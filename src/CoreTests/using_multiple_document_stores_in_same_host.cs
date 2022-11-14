@@ -88,14 +88,14 @@ public class using_multiple_document_stores_in_same_host : IDisposable
     public async Task use_the_generated_store()
     {
         var store = theContainer.GetInstance<IFirstStore>();
-        using var session = store.LightweightSession();
+        await using var session = store.LightweightSession();
 
         var target = Target.Random();
         session.Store(target);
 
         await session.SaveChangesAsync();
 
-        using var query = store.QuerySession();
+        await using var query = store.QuerySession();
         var target2 = await query.LoadAsync<Target>(target.Id);
         target2.ShouldNotBeNull();
     }

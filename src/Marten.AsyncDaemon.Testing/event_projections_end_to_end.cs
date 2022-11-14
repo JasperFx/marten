@@ -108,7 +108,7 @@ public class event_projections_end_to_end : DaemonContext
     {
         foreach (var tenantId in tenants)
         {
-            using (var session = theStore.LightweightSession(tenantId))
+            await using (var session = theStore.LightweightSession(tenantId))
             {
                 await CheckExpectedResults(session);
             }

@@ -77,7 +77,7 @@ public class GapDetectorTest: DaemonContext
 
     protected async Task deleteEvents(params long[] ids)
     {
-        using var conn = theStore.CreateConnection();
+        await using var conn = theStore.CreateConnection();
         await conn.OpenAsync();
 
         await conn

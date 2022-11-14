@@ -56,12 +56,12 @@ public class document_transforms_multi_tenancy : IAsyncLifetime
 
         await theStore.TransformAsync("Purple",x => x.All<MultiTenantUser>("default_username"));
 
-        using (var query = theStore.QuerySession("Purple"))
+        await using (var query = theStore.QuerySession("Purple"))
         {
             query.Load<MultiTenantUser>(user1.Id).UserName.ShouldBe("jeremy.miller");
         }
 
-        using (var query = theStore.QuerySession("Orange"))
+        await using (var query = theStore.QuerySession("Orange"))
         {
             query.Load<MultiTenantUser>(user3.Id).UserName.ShouldBe("NotTransformed");
         }

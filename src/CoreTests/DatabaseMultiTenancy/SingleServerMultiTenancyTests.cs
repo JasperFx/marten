@@ -35,7 +35,7 @@ public class SingleServerMultiTenancyTests : IAsyncLifetime
 
     private async Task DropDatabaseIfExists(string databaseName)
     {
-        using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
 
         await conn.KillIdleSessions(databaseName);
@@ -44,7 +44,7 @@ public class SingleServerMultiTenancyTests : IAsyncLifetime
 
     private async Task<bool> DatabaseExists(string databaseName)
     {
-        using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
 
         return await conn.DatabaseExists(databaseName);

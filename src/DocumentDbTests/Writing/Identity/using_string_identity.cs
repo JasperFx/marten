@@ -36,7 +36,7 @@ public class using_string_identity : IntegrationContext
         theSession.Store(account);
         await theSession.SaveChangesAsync();
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             SpecificationExtensions.ShouldNotBeNull((await session.LoadAsync<Account>("email@server.com")));
 

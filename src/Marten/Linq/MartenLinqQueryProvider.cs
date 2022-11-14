@@ -125,7 +125,7 @@ namespace Marten.Linq
                 var cmd = _session.BuildCommand(handler);
                 _session.TrySetTenantId(cmd);
 
-                using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+                await using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
                 return await handler.StreamJson(stream, reader, token).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -142,7 +142,7 @@ namespace Marten.Linq
             {
                 var cmd = _session.BuildCommand(handler);
 
-                using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+                await using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
                 return await handler.HandleAsync(reader, _session, token).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -184,7 +184,7 @@ namespace Marten.Linq
             var cmd = _session.BuildCommand(statement);
             _session.TrySetTenantId(cmd);
 
-            using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            await using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 yield return await selector.ResolveAsync(reader, token).ConfigureAwait(false);

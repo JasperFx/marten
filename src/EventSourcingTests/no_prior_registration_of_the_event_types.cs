@@ -64,7 +64,7 @@ public class no_prior_registration_of_the_event_types: OneOffConfigurationsConte
     public async Task can_fetch_async_with_guids()
     {
         var stream = Guid.NewGuid();
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Events.StartStream(stream, new MembersJoined(), new MembersDeparted());
             await session.SaveChangesAsync();
@@ -73,7 +73,7 @@ public class no_prior_registration_of_the_event_types: OneOffConfigurationsConte
         // Needs to be an isolated, separate document store to the same db
         using (var store = SeparateStore())
         {
-            using (var session = store.OpenSession())
+            await using (var session = store.OpenSession())
             {
                 var events = await session.Events.FetchStreamAsync(stream);
                 events[0].Data.ShouldBeOfType<MembersJoined>();
@@ -88,7 +88,7 @@ public class no_prior_registration_of_the_event_types: OneOffConfigurationsConte
         StoreOptions(opts => opts.Events.StreamIdentity = StreamIdentity.AsString);
 
         var stream = "Something";
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Events.StartStream(stream, new MembersJoined(), new MembersDeparted());
             await session.SaveChangesAsync();
@@ -102,7 +102,7 @@ public class no_prior_registration_of_the_event_types: OneOffConfigurationsConte
                    _.Connection(ConnectionSource.ConnectionString);
                }))
         {
-            using (var session = store.OpenSession())
+            await using (var session = store.OpenSession())
             {
                 var events = await session.Events.FetchStreamAsync(stream);
                 events[0].Data.ShouldBeOfType<MembersJoined>();

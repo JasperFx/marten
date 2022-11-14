@@ -174,7 +174,7 @@ namespace Marten.Events.Aggregation
                     Tenant = Tenant, Tracking = DocumentTracking.None, AllowAnyTenant = true
                 };
 
-                using var session = (IMartenSession) store.OpenSession(options);
+                await using var session = (IMartenSession) store.OpenSession(options);
                 aggregates = await runtime.Storage
                     .LoadManyAsync(ids, session, token).ConfigureAwait(false);
             }, token).ConfigureAwait(false);

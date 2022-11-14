@@ -55,7 +55,7 @@ public class Bug_1723_inline_projections_get_cut_off : AggregationContext
 
         });
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
         aggregate1.ACount.ShouldBe(21);

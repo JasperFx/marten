@@ -69,7 +69,7 @@ public class Bug_1245_include_plus_full_text_search: BugIntegrationContext
     {
         var term = "content";
         var userDictionary = new Dictionary<Guid, Bug1245User>();
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             for (var i = 0; i < 3; i++)
             {

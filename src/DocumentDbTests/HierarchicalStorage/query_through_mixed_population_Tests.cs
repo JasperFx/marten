@@ -79,7 +79,7 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     [Fact]
     public async Task load_by_id_with_mixed_results_fresh_async()
     {
-        using (var session = theStore.QuerySession())
+        await using (var session = theStore.QuerySession())
         {
             var users = await session.LoadManyAsync<User>(admin1.Id, super1.Id, user1.Id);
 

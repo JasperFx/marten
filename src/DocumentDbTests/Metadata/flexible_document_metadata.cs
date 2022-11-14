@@ -47,7 +47,7 @@ public class when_using_the_user_defined_header_metadata: FlexibleDocumentMetada
         theSession.Store(doc);
         await theSession.SaveChangesAsync();
 
-        using var session = theStore.QuerySession();
+        await using var session = theStore.QuerySession();
 
         var doc2 = await session.LoadAsync<MetadataTarget>(doc.Id);
 
@@ -72,7 +72,7 @@ public class when_mapping_to_the_version_and_others: FlexibleDocumentMetadataCon
         theSession.Store(doc);
         await theSession.SaveChangesAsync();
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var doc2 = await query.LoadAsync<MetadataTarget>(doc.Id);
         doc2.Version.ShouldNotBe(Guid.Empty);
@@ -122,7 +122,7 @@ public class when_mapping_to_the_correlation_tracking : FlexibleDocumentMetadata
         //metadata.CorrelationId.ShouldBe(theSession.CorrelationId);
         //metadata.LastModifiedBy.ShouldBe(theSession.LastModifiedBy);
 
-        using (var session2 = theStore.QuerySession())
+        await using (var session2 = theStore.QuerySession())
         {
             var doc2 = await session2.LoadAsync<MetadataTarget>(doc.Id);
             doc2.CausationId.ShouldBe(theSession.CausationId);
@@ -144,7 +144,7 @@ public class when_mapping_to_the_correlation_tracking : FlexibleDocumentMetadata
 
         metadata.CorrelationId.ShouldBe(theSession.CorrelationId);
 
-        using (var session2 = theStore.QuerySession())
+        await using (var session2 = theStore.QuerySession())
         {
             var doc2 = await session2.LoadAsync<MetadataTarget>(doc.Id);
             doc2.CorrelationId.ShouldBe(theSession.CorrelationId);
@@ -164,7 +164,7 @@ public class when_mapping_to_the_correlation_tracking : FlexibleDocumentMetadata
 
         metadata.LastModifiedBy.ShouldBe(theSession.LastModifiedBy);
 
-        using (var session2 = theStore.QuerySession())
+        await using (var session2 = theStore.QuerySession())
         {
             var doc2 = await session2.LoadAsync<MetadataTarget>(doc.Id);
             doc2.LastModifiedBy.ShouldBe(theSession.LastModifiedBy);
@@ -239,7 +239,7 @@ public abstract class FlexibleDocumentMetadataContext : OneOffConfigurationsCont
         theSession.Store(doc);
         await theSession.SaveChangesAsync();
 
-        using var session = theStore.LightweightSession();
+        await using var session = theStore.LightweightSession();
         var doc2 = await session.LoadAsync<MetadataTarget>(doc.Id);
         doc2.ShouldNotBeNull();
     }
@@ -251,7 +251,7 @@ public abstract class FlexibleDocumentMetadataContext : OneOffConfigurationsCont
         theSession.Insert(doc);
         await theSession.SaveChangesAsync();
 
-        using var session = theStore.LightweightSession();
+        await using var session = theStore.LightweightSession();
         var doc2 = await session.LoadAsync<MetadataTarget>(doc.Id);
         doc2.ShouldNotBeNull();
     }
@@ -267,7 +267,7 @@ public abstract class FlexibleDocumentMetadataContext : OneOffConfigurationsCont
         theSession.Update(doc);
         await theSession.SaveChangesAsync();
 
-        using var session = theStore.LightweightSession();
+        await using var session = theStore.LightweightSession();
         var doc2 = await session.LoadAsync<MetadataTarget>(doc.Id);
         doc2.Name.ShouldBe("different");
     }
@@ -283,7 +283,7 @@ public abstract class FlexibleDocumentMetadataContext : OneOffConfigurationsCont
         theSession.Update(doc);
         await theSession.SaveChangesAsync();
 
-        using var session = theStore.QuerySession();
+        await using var session = theStore.QuerySession();
         var doc2 = await session.LoadAsync<MetadataTarget>(doc.Id);
         doc2.Name.ShouldBe("different");
     }
@@ -291,7 +291,7 @@ public abstract class FlexibleDocumentMetadataContext : OneOffConfigurationsCont
     [Fact]
     public async Task can_save_update_and_load_with_identity_map()
     {
-        using var session = theStore.OpenSession();
+        await using var session = theStore.OpenSession();
 
         var doc = new MetadataTarget();
         session.Store(doc);
@@ -301,7 +301,7 @@ public abstract class FlexibleDocumentMetadataContext : OneOffConfigurationsCont
         session.Update(doc);
         await session.SaveChangesAsync();
 
-        using var session2 = theStore.OpenSession();
+        await using var session2 = theStore.OpenSession();
         var doc2 = await session2.LoadAsync<MetadataTarget>(doc.Id);
         doc2.Name.ShouldBe("different");
     }
@@ -310,7 +310,7 @@ public abstract class FlexibleDocumentMetadataContext : OneOffConfigurationsCont
     public async Task can_save_update_and_load_with_dirty_session()
     {
         var doc = new MetadataTarget();
-        using var session = theStore.DirtyTrackedSession();
+        await using var session = theStore.DirtyTrackedSession();
         session.Store(doc);
         await session.SaveChangesAsync();
 
@@ -318,7 +318,7 @@ public abstract class FlexibleDocumentMetadataContext : OneOffConfigurationsCont
         theSession.Update(doc);
         await theSession.SaveChangesAsync();
 
-        using var session2 = theStore.DirtyTrackedSession();
+        await using var session2 = theStore.DirtyTrackedSession();
         var doc2 = await session2.LoadAsync<MetadataTarget>(doc.Id);
         doc2.Name.ShouldBe("different");
     }

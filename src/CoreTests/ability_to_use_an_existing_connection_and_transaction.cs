@@ -158,7 +158,7 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
     {
         var newTargets = Target.GenerateRandomData(5).ToArray();
 
-        using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
         {
             await conn.OpenAsync();
             var tx = conn.BeginTransaction();
@@ -168,12 +168,12 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
             await cmd.ExecuteNonQueryAsync();
 
             // To prove the isolation here
-            using (var query = theStore.QuerySession())
+            await using (var query = theStore.QuerySession())
             {
                 (await query.Query<Target>().CountAsync()).ShouldBe(100);
             }
 
-            using (var session = theStore.OpenSession(SessionOptions.ForTransaction(tx, true)))
+            await using (var session = theStore.OpenSession(SessionOptions.ForTransaction(tx, true)))
             {
                 session.Store(newTargets);
                 await session.SaveChangesAsync();
@@ -181,7 +181,7 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
         }
 
         // All the old should be gone, then the new put back on top
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             (await query.Query<Target>().CountAsync()).ShouldBe(5);
         }
@@ -229,7 +229,7 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
     {
         var newTargets = Target.GenerateRandomData(5).ToArray();
 
-        using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
         {
             await conn.OpenAsync();
             var tx = conn.BeginTransaction();
@@ -238,14 +238,14 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
             cmd.Transaction = tx;
             await cmd.ExecuteNonQueryAsync();
 
-            using (var session = theStore.OpenSession(SessionOptions.ForTransaction(tx)))
+            await using (var session = theStore.OpenSession(SessionOptions.ForTransaction(tx)))
             {
                 session.Store(newTargets);
                 await session.SaveChangesAsync();
             }
 
             // To prove the isolation here
-            using (var query = theStore.QuerySession())
+            await using (var query = theStore.QuerySession())
             {
                 (await query.Query<Target>().CountAsync()).ShouldBe(100);
             }
@@ -254,7 +254,7 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
         }
 
         // All the old should be gone, then the new put back on top
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             (await query.Query<Target>().CountAsync()).ShouldBe(5);
         }

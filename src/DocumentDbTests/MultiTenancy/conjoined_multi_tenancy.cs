@@ -87,13 +87,13 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
     [Fact]
     public async Task cannot_load_json_by_id_across_tenants_async()
     {
-        using (var red = theStore.QuerySession("Red"))
+        await using (var red = theStore.QuerySession("Red"))
         {
             (await red.Json.FindByIdAsync<Target>(targetRed1.Id)).ShouldNotBeNull();
             (await red.Json.FindByIdAsync<Target>(targetBlue1.Id)).ShouldBeNull();
         }
 
-        using (var blue = theStore.QuerySession("Blue"))
+        await using (var blue = theStore.QuerySession("Blue"))
         {
             (await blue.Json.FindByIdAsync<Target>(targetBlue1.Id)).ShouldNotBeNull();
             (await blue.Json.FindByIdAsync<Target>(targetRed1.Id)).ShouldBeNull();
@@ -104,13 +104,13 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
     [Fact]
     public async Task cannot_load_by_id_across_tenants_async()
     {
-        using (var red = theStore.QuerySession("Red"))
+        await using (var red = theStore.QuerySession("Red"))
         {
             SpecificationExtensions.ShouldNotBeNull(await red.LoadAsync<Target>(targetRed1.Id));
             SpecificationExtensions.ShouldBeNull(await red.LoadAsync<Target>(targetBlue1.Id));
         }
 
-        using (var blue = theStore.QuerySession("Blue"))
+        await using (var blue = theStore.QuerySession("Blue"))
         {
             SpecificationExtensions.ShouldNotBeNull(await blue.LoadAsync<Target>(targetBlue1.Id));
             SpecificationExtensions.ShouldBeNull(await blue.LoadAsync<Target>(targetRed1.Id));
@@ -133,7 +133,7 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
     [Fact]
     public async Task cannot_load_by_many_id_across_tenants_async()
     {
-        using (var red = theStore.QuerySession("Red"))
+        await using (var red = theStore.QuerySession("Red"))
         {
             (await red.LoadManyAsync<Target>(targetRed1.Id, targetRed2.Id)).Count.ShouldBe(2);
             (await red.LoadManyAsync<Target>(targetBlue1.Id, targetBlue1.Id, targetRed1.Id))
@@ -148,13 +148,13 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
     {
         var user = new User {Id = Guid.NewGuid()};
 
-        using (var session = theStore.OpenSession("Red"))
+        await using (var session = theStore.OpenSession("Red"))
         {
             session.Store(user);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.OpenSession("Blue"))
+        await using (var session = theStore.OpenSession("Blue"))
         {
             session.Store(user);
             await session.SaveChangesAsync();
@@ -174,7 +174,7 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
         var delta = new TableDelta(expected, existing);
         delta.Difference.ShouldBe(SchemaPatchDifference.None);
 
-        using (var session = theStore.OpenSession("123"))
+        await using (var session = theStore.OpenSession("123"))
         {
             var target = Target.Random();
             target.Id = guid;
@@ -183,7 +183,7 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.OpenSession("abc"))
+        await using (var session = theStore.OpenSession("abc"))
         {
             var target = Target.Random();
             target.Id = guid;
@@ -192,14 +192,14 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.OpenSession("123"))
+        await using (var session = theStore.OpenSession("123"))
         {
             var target = session.Load<Target>(guid);
             target.ShouldNotBeNull();
             target.String.ShouldBe("123");
         }
 
-        using (var session = theStore.OpenSession("abc"))
+        await using (var session = theStore.OpenSession("abc"))
         {
             var target = session.Load<Target>(guid);
             target.ShouldNotBeNull();
@@ -229,7 +229,7 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
         theStore.BulkInsert("Red", _reds);
         theStore.BulkInsert("Green", _greens);
 
-        using (var query = theStore.QuerySession("Red"))
+        await using (var query = theStore.QuerySession("Red"))
         {
             var batch = query.CreateBatchQuery();
 
@@ -399,7 +399,7 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
         var expected = reds.Concat(greens)
             .Where(x => x.Flag).Select(x => x.Id).OrderBy(x => x).ToArray();
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             #region sample_tenant_is_one_of
             // query data for a selected list of tenants
@@ -422,7 +422,7 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
         await theStore.BulkInsertAsync("Purple", new[] {user2});
 
 
-        using var session = theStore.QuerySession();
+        await using var session = theStore.QuerySession();
 
         (await session.MetadataForAsync(user1))
             .TenantId.ShouldBe("Green");
@@ -516,7 +516,7 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
 
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.ForTenant("Red").Store(reds.AsEnumerable());
             session.ForTenant("Green").Store(greens.AsEnumerable());
@@ -525,17 +525,17 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
             await session.SaveChangesAsync();
         }
 
-        using (var red = theStore.QuerySession("Red"))
+        await using (var red = theStore.QuerySession("Red"))
         {
             red.Query<Target>().Count().ShouldBe(50);
         }
 
-        using (var green = theStore.QuerySession("Green"))
+        await using (var green = theStore.QuerySession("Green"))
         {
             green.Query<Target>().Count().ShouldBe(75);
         }
 
-        using (var blue = theStore.QuerySession("Blue"))
+        await using (var blue = theStore.QuerySession("Blue"))
         {
             blue.Query<Target>().Count().ShouldBe(25);
         }
@@ -587,19 +587,19 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
     {
         var target = new Target {Id = Guid.NewGuid()};
 
-        using (var session = theStore.LightweightSession("Red"))
+        await using (var session = theStore.LightweightSession("Red"))
         {
             session.Store(target);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.LightweightSession("Blue"))
+        await using (var session = theStore.LightweightSession("Blue"))
         {
             session.Store(target);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.ForTenant("Blue").Delete(target);
             await session.SaveChangesAsync();
@@ -619,19 +619,19 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
 
         var target = new Target {Id = Guid.NewGuid()};
 
-        using (var session = theStore.LightweightSession("Red"))
+        await using (var session = theStore.LightweightSession("Red"))
         {
             session.Store(target);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.LightweightSession("Blue"))
+        await using (var session = theStore.LightweightSession("Blue"))
         {
             session.Store(target);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Logger = new TestOutputMartenLogger(_output);
             session.ForTenant("Blue").Delete<Target>(target.Id);
@@ -653,19 +653,19 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
     {
         var target = new IntDoc{Id = 5};
 
-        using (var session = theStore.LightweightSession("Red"))
+        await using (var session = theStore.LightweightSession("Red"))
         {
             session.Store(target);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.LightweightSession("Blue"))
+        await using (var session = theStore.LightweightSession("Blue"))
         {
             session.Store(target);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Logger = new TestOutputMartenLogger(_output);
             session.ForTenant("Blue").Delete<IntDoc>(target.Id);
@@ -684,19 +684,19 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
     {
         var target = new LongDoc{Id = 5};
 
-        using (var session = theStore.LightweightSession("Red"))
+        await using (var session = theStore.LightweightSession("Red"))
         {
             session.Store(target);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.LightweightSession("Blue"))
+        await using (var session = theStore.LightweightSession("Blue"))
         {
             session.Store(target);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Logger = new TestOutputMartenLogger(_output);
             session.ForTenant("Blue").Delete<LongDoc>(target.Id);
@@ -715,19 +715,19 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
     {
         var target = new StringDoc{Id = Guid.NewGuid().ToString()};
 
-        using (var session = theStore.LightweightSession("Red"))
+        await using (var session = theStore.LightweightSession("Red"))
         {
             session.Store(target);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.LightweightSession("Blue"))
+        await using (var session = theStore.LightweightSession("Blue"))
         {
             session.Store(target);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Logger = new TestOutputMartenLogger(_output);
             session.ForTenant("Blue").Delete<StringDoc>(target.Id);

@@ -192,7 +192,7 @@ public class storing_documents : IntegrationContext
         theSession.Store(user);
         await theSession.SaveChangesAsync();
 
-        using (var session2 = theStore.OpenSession())
+        await using (var session2 = theStore.OpenSession())
         {
             session2.ShouldNotBeSameAs(theSession);
 
@@ -266,7 +266,7 @@ public class storing_documents : IntegrationContext
 
         #region sample_load_by_id_array_async
 
-        using (var session = store.OpenSession())
+        await using (var session = store.OpenSession())
         {
             var users = await session.LoadManyAsync<User>(user2.Id, user3.Id, user4.Id);
             users.Count().ShouldBe(3);

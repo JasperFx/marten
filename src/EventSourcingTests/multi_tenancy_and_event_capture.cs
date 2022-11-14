@@ -38,13 +38,13 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        using var queryOne = theStore.QuerySession("one");
+        await using var queryOne = theStore.QuerySession("one");
         var eventsOne = await queryOne.Events.FetchStreamAsync("s1");
         eventsOne[0].Data.ShouldBeOfType<AEvent>();
         eventsOne[1].Data.ShouldBeOfType<BEvent>();
 
 
-        using var queryTwo = theStore.QuerySession("two");
+        await using var queryTwo = theStore.QuerySession("two");
         var eventsTwo = await queryTwo.Events.FetchStreamAsync("s1");
 
         eventsTwo.Count.ShouldBe(3);
@@ -68,13 +68,13 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        using var queryOne = theStore.QuerySession("one");
+        await using var queryOne = theStore.QuerySession("one");
         var eventsOne = await queryOne.Events.FetchStreamAsync(streamId);
         eventsOne[0].Data.ShouldBeOfType<AEvent>();
         eventsOne[1].Data.ShouldBeOfType<BEvent>();
 
 
-        using var queryTwo = theStore.QuerySession("two");
+        await using var queryTwo = theStore.QuerySession("two");
         var eventsTwo = await queryTwo.Events.FetchStreamAsync(streamId);
 
         eventsTwo.Count.ShouldBe(3);
@@ -110,13 +110,13 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         InitStore(tenancyStyle);
 
         Guid stream = Guid.NewGuid();
-        using (var session = theStore.OpenSession("Green"))
+        await using (var session = theStore.OpenSession("Green"))
         {
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.OpenSession("Green"))
+        await using (var session = theStore.OpenSession("Green"))
         {
             var events = await session.Events.FetchStreamAsync(stream);
             foreach (var @event in events)
@@ -156,13 +156,13 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         InitStore(tenancyStyle, StreamIdentity.AsString);
 
         var stream = "SomeStream";
-        using (var session = theStore.OpenSession("Green"))
+        await using (var session = theStore.OpenSession("Green"))
         {
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.OpenSession("Green"))
+        await using (var session = theStore.OpenSession("Green"))
         {
             var events = await session.Events.FetchStreamAsync(stream);
             foreach (var @event in events)

@@ -38,7 +38,7 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
 
         var connectionString = builder.ConnectionString;
 
-        using var dbConn = new NpgsqlConnection(connectionString);
+        await using var dbConn = new NpgsqlConnection(connectionString);
         await dbConn.OpenAsync();
         await dbConn.DropSchema("multi_tenancy");
         await dbConn.DropSchema("mt_events");
@@ -49,7 +49,7 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
 
         var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");
