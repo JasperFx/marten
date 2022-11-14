@@ -49,7 +49,7 @@ class Program
             //     await session.SaveChangesAsync();
             // }
 
-            using (var session = store.OpenSession(SessionOptions.ForCurrentTransaction()))
+            await using (var session = store.OpenSession(SessionOptions.ForCurrentTransaction()))
             {
                 session.Store(parentItem);
                 await session.SaveChangesAsync();
@@ -57,7 +57,7 @@ class Program
 
             showProcessData();
 
-            using (var session = store.OpenSession(SessionOptions.ForCurrentTransaction()))
+            await using (var session = store.OpenSession(SessionOptions.ForCurrentTransaction()))
             {
                 await session.Query<Parent>().FirstOrDefaultAsync(p => p.Children.Any(c => c.Id == Guid.Empty));
             }

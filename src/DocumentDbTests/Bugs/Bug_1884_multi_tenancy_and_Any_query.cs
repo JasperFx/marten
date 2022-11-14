@@ -35,7 +35,7 @@ public class Bug_1884_multi_tenancy_and_Any_query : BugIntegrationContext
         var store = theStore;
 
         // Write some User documents to tenant "tenant1"
-        using (var session = store.OpenSession("tenant1"))
+        await using (var session = store.OpenSession("tenant1"))
         {
             session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
             session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = new string[0] });
@@ -43,7 +43,7 @@ public class Bug_1884_multi_tenancy_and_Any_query : BugIntegrationContext
         }
 
         // Write some User documents to tenant "tenant2"
-        using (var session = store.OpenSession("tenant2"))
+        await using (var session = store.OpenSession("tenant2"))
         {
             session.Store(new User { Id = "u1", UserName = "Frank", Roles = new string[0] });
             session.Store(new User { Id = "u2", UserName = "Jill", Roles = new []{"admin", "user"} });
@@ -56,7 +56,7 @@ public class Bug_1884_multi_tenancy_and_Any_query : BugIntegrationContext
 
         var validRoles = new[] {"admin", "user"};
 
-        using (var query = store.OpenSession("tenant1"))
+        await using (var query = store.OpenSession("tenant1"))
         {
             query.Query<User>()
                 .Where(x => x.Roles.Any(_ => validRoles.Contains(_)) && x.AnyTenant())

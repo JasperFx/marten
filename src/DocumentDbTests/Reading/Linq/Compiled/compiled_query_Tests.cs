@@ -442,7 +442,7 @@ public class when_compiled_queries_are_used_in_multi_tenancy: OneOffConfiguratio
         StoreOptions(opts => opts.Schema.For<User>().MultiTenanted());
 
         var hanOne = new User{UserName = "han"};
-        using (var session = theStore.LightweightSession("one"))
+        await using (var session = theStore.LightweightSession("one"))
         {
             session.Store(hanOne);
             session.Store(new User{UserName = "luke"});
@@ -452,7 +452,7 @@ public class when_compiled_queries_are_used_in_multi_tenancy: OneOffConfiguratio
         }
 
         var hanTwo = new User{UserName = "han"};
-        using (var session = theStore.LightweightSession("two"))
+        await using (var session = theStore.LightweightSession("two"))
         {
 
             session.Store(hanTwo);
@@ -463,7 +463,7 @@ public class when_compiled_queries_are_used_in_multi_tenancy: OneOffConfiguratio
             await session.SaveChangesAsync();
         }
 
-        using var query = theStore.QuerySession("one");
+        await using var query = theStore.QuerySession("one");
         query.Logger = new TestOutputMartenLogger(_output);
         var user = await query.QueryAsync(new UserByUsernameWithFields {UserName = "han"});
         user.Id.ShouldBe(hanOne.Id);

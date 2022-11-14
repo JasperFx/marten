@@ -68,12 +68,12 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         theSession.Store(doc1, doc2, doc3, doc4, doc5);
         await theSession.SaveChangesAsync();
 
-        using var session2 = theStore.LightweightSession();
+        await using var session2 = theStore.LightweightSession();
         session2.Delete(doc1);
         session2.Delete(doc3);
         await session2.SaveChangesAsync();
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
         query.Logger = new TestOutputMartenLogger(_output);
 
         var deleted = await query.Query<SoftDeletedDocument>().Where(x => x.Deleted)
@@ -555,7 +555,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
         theSession.ForTenant("red").HardDelete(doc1);
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var redCount = await query.Query<StringDoc>().Where(x => x.TenantIsOneOf("red"))
             .CountAsync();
@@ -580,7 +580,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
         theSession.ForTenant("red").HardDelete(doc1);
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var redCount = await query.Query<IntDoc>().Where(x => x.TenantIsOneOf("red"))
             .CountAsync();
@@ -605,7 +605,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
         theSession.ForTenant("red").HardDelete(doc1);
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var redCount = await query.Query<LongDoc>().Where(x => x.TenantIsOneOf("red"))
             .CountAsync();
@@ -631,7 +631,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
         theSession.ForTenant("red").HardDelete(doc1);
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var redCount = await query.Query<GuidDoc>().Where(x => x.TenantIsOneOf("red"))
             .CountAsync();

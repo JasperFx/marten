@@ -168,7 +168,7 @@ namespace Marten.Events.Daemon
 
                 _command.CommandText = _builder.ToString();
 
-                using var reader = await session.ExecuteReaderAsync(_command, token).ConfigureAwait(false);
+                await using var reader = await session.ExecuteReaderAsync(_command, token).ConfigureAwait(false);
                 await UpdateBatch.ApplyCallbacksAsync(_operations, reader, exceptions, token).ConfigureAwait(false);
             }
 

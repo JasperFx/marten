@@ -75,7 +75,7 @@ public class using_non_concrete_types_in_projections : AggregationContext
             x.Streams[stream1].A();
         });
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var aggregate = await query.LoadAsync<MyAggregate>(stream1);
         aggregate.ShouldNotBeNull();

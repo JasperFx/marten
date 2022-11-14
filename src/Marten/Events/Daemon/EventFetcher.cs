@@ -100,7 +100,7 @@ namespace Marten.Events.Daemon
                 _floor.Value = range.SequenceFloor;
                 _ceiling.Value = range.SequenceCeiling;
 
-                using var reader = await session.ExecuteReaderAsync(_command, token).ConfigureAwait(false);
+                await using var reader = await session.ExecuteReaderAsync(_command, token).ConfigureAwait(false);
                 while (await reader.ReadAsync(token).ConfigureAwait(false))
                 {
                     await handleEvent(range, token, reader).ConfigureAwait(false);

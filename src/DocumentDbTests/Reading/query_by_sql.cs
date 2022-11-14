@@ -26,7 +26,7 @@ public class query_by_sql: IntegrationContext
         theSession.Store(company);
         await theSession.SaveChangesAsync();
 
-        using var session = theStore.OpenSession();
+        await using var session = theStore.OpenSession();
 
         #region sample_sample-query-type-parameter-overload
         dynamic userFromDb = session.Query(user.GetType(), "where id = ?", user.Id).First();
@@ -40,7 +40,7 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task stream_query_by_one_parameter()
     {
-        using var session = theStore.OpenSession();
+        await using var session = theStore.OpenSession();
         session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
         session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
         session.Store(new User {FirstName = "Max", LastName = "Miller"});
@@ -320,7 +320,7 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
     [Fact]
     public async Task query_with_select_in_query_async()
     {
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             var u = new User {FirstName = "Jeremy", LastName = "Miller"};
             session.Store(u);

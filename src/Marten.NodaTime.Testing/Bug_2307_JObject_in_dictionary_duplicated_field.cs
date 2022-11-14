@@ -37,13 +37,13 @@ public class Bug_2307_JObject_in_dictionary_duplicated_field: BugIntegrationCont
         };
 
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Store(test1);
             await session.SaveChangesAsync(default);
         }
 
-        using (var session = theStore.QuerySession())
+        await using (var session = theStore.QuerySession())
         {
             var instanceFilesTask = await session.Query<TestReadModel>()
                 .Where(x => x.InstanceId == e.Id)

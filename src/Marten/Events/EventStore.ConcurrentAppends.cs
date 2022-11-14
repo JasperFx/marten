@@ -19,7 +19,7 @@ namespace Marten.Events
             long version = 0;
             try
             {
-                using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+                await using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
                 if (await reader.ReadAsync(token).ConfigureAwait(false))
                 {
                     version = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
@@ -72,7 +72,7 @@ namespace Marten.Events
             long version = 0;
             try
             {
-                using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+                await using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
                 if (await reader.ReadAsync(token).ConfigureAwait(false))
                 {
                     version = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);

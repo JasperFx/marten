@@ -99,7 +99,7 @@ And now that we've got a PostgreSQL schema and an `IDocumentStore` variable call
 ```cs
 // Open a session for querying, loading, and
 // updating documents
-using (var session = store.LightweightSession())
+await using (var session = store.LightweightSession())
 {
     var user = new User { FirstName = "Han", LastName = "Solo" };
     session.Store(user);
@@ -109,14 +109,14 @@ using (var session = store.LightweightSession())
 
 // Open a session for querying, loading, and
 // updating documents with a backing "Identity Map"
-using (var session = store.QuerySession())
+await using (var session = store.QuerySession())
 {
     var existing = await session
         .Query<User>()
         .SingleAsync(x => x.FirstName == "Han" && x.LastName == "Solo");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L47-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_sessions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L48-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_sessions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 We can use our document store to create a new `IQuerySession` object just for querying or loading documents from the database:
@@ -124,13 +124,13 @@ We can use our document store to create a new `IQuerySession` object just for qu
 <!-- snippet: sample_start_a_query_session -->
 <a id='snippet-sample_start_a_query_session'></a>
 ```cs
-using (var session = store.QuerySession())
+await using (var session = store.QuerySession())
 {
     var internalUsers = session
         .Query<User>().Where(x => x.Internal).ToArray();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L39-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_query_session' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L39-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_query_session' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For more information on the query support within Marten, check [document querying](/documents/querying/)

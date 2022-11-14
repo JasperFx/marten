@@ -15,7 +15,7 @@ public class fetching_stream_state_before_aggregator_is_registered: IntegrationC
     {
         var streamId = Guid.NewGuid();
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -24,7 +24,7 @@ public class fetching_stream_state_before_aggregator_is_registered: IntegrationC
             await session.SaveChangesAsync();
         }
 
-        using (var query = theStore.OpenSession())
+        await using (var query = theStore.OpenSession())
         {
             var state = await query.Events.FetchStreamStateAsync(streamId);
             var aggregate = await query.Events.AggregateStreamAsync<QuestParty>(streamId);

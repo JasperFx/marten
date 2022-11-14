@@ -37,11 +37,11 @@ select last_value from {_options.Events.DatabaseSchemaName}.mt_events_sequence;
 
             var statistics = new EventStoreStatistics();
 
-            using var conn = CreateConnection();
+            await using var conn = CreateConnection();
 
             await conn.OpenAsync(token).ConfigureAwait(false);
 
-            using var reader = await conn.CreateCommand(sql).ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var reader = await conn.CreateCommand(sql).ExecuteReaderAsync(token).ConfigureAwait(false);
 
             if (await reader.ReadAsync(token).ConfigureAwait(false))
             {

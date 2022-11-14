@@ -171,13 +171,13 @@ public class query_with_select_many : IntegrationContext
         var product2 = new Product {Tags = new[] {"b", "c", "d"}};
         var product3 = new Product {Tags = new[] {"d", "e", "f"}};
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Store(product1, product2, product3);
             await session.SaveChangesAsync();
         }
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             (await query.Query<Product>().SelectMany(x => x.Tags)
                 .CountAsync()).ShouldBe(9);
@@ -191,13 +191,13 @@ public class query_with_select_many : IntegrationContext
         var product2 = new Product { Tags = new[] { "b", "c", "d" } };
         var product3 = new Product { Tags = new[] { "d", "e", "f" } };
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Store(product1, product2, product3);
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             var queryable = query.Query<Product>()
                 .Where(p => p.Tags.Length == 1)
@@ -262,14 +262,14 @@ public class query_with_select_many : IntegrationContext
         var product2 = new ProductWithNumbers {Tags = new[] {2, 3, 4}};
         var product3 = new ProductWithNumbers {Tags = new[] {3, 4, 5}};
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Store(product1, product2, product3);
             await session.SaveChangesAsync();
         }
 
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             var distinct = await query.Query<ProductWithNumbers>().SelectMany(x => x.Tags).Distinct().ToListAsync();
 
@@ -317,7 +317,7 @@ public class query_with_select_many : IntegrationContext
         var product2 = new Product {Tags = new[] {"b", "c", "d"}};
         var product3 = new Product {Tags = new[] {"d", "e", "f"}};
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Store(product1, product2, product3);
 
@@ -327,7 +327,7 @@ public class query_with_select_many : IntegrationContext
             await session.SaveChangesAsync();
         }
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             (await query.Query<Product>().SelectMany(x => x.Tags)
                 .AnyAsync()).ShouldBeTrue();
@@ -506,8 +506,7 @@ public class query_with_select_many : IntegrationContext
         theStore.BulkInsert(targets);
 
 
-
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             var dict = new Dictionary<Guid, User>();
 
@@ -649,7 +648,7 @@ public class query_with_select_many : IntegrationContext
         var targets = Target.GenerateRandomData(1000).ToArray();
         theStore.BulkInsert(targets);
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var actual = await query.Query<Target>()
             .Where(x => x.Color == Colors.Blue)

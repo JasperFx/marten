@@ -48,7 +48,7 @@ public class reset_all_data_usage : OneOffConfigurationsContext
         await theStore.Advanced.ResetAllData();
         #endregion
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             var user = new User { UserName = "five" };
             session.Store(user);
@@ -63,7 +63,7 @@ public class reset_all_data_usage : OneOffConfigurationsContext
 
         await theStore.Advanced.ResetAllData();
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var names = await query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName).ToListAsync();
 

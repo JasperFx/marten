@@ -22,7 +22,7 @@ public class event_store_quickstart
 
         var questId = Guid.NewGuid();
 
-        using (var session = store.OpenSession())
+        await using (var session = store.OpenSession())
         {
             var started = new QuestStarted { Name = "Destroy the One Ring" };
             var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
@@ -44,7 +44,8 @@ public class event_store_quickstart
 
 
         #region sample_event-store-start-stream-with-explicit-type
-        using (var session = store.OpenSession())
+
+        await using (var session = store.OpenSession())
         {
             var started = new QuestStarted { Name = "Destroy the One Ring" };
             var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
@@ -57,7 +58,8 @@ public class event_store_quickstart
         #endregion
 
         #region sample_event-store-start-stream-with-no-type
-        using (var session = store.OpenSession())
+
+        await using (var session = store.OpenSession())
         {
             var started = new QuestStarted { Name = "Destroy the One Ring" };
             var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
@@ -71,7 +73,8 @@ public class event_store_quickstart
         #endregion
 
         #region sample_events-fetching-stream
-        using (var session = store.OpenSession())
+
+        await using (var session = store.OpenSession())
         {
             var events = await session.Events.FetchStreamAsync(questId);
             events.Each(evt =>
@@ -82,7 +85,8 @@ public class event_store_quickstart
         #endregion
 
         #region sample_events-aggregate-on-the-fly
-        using (var session = store.OpenSession())
+
+        await using (var session = store.OpenSession())
         {
             // questId is the id of the stream
             var party = session.Events.AggregateStream<QuestParty>(questId);
@@ -96,7 +100,7 @@ public class event_store_quickstart
         }
         #endregion
 
-        using (var session = store.OpenSession())
+        await using (var session = store.OpenSession())
         {
             var party = session.Load<QuestParty>(questId);
             Console.WriteLine(party);

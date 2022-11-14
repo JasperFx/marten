@@ -142,7 +142,7 @@ public class GithubProject
 
         while (page.Length > 0)
         {
-            using (var session = store.LightweightSession())
+            await using (var session = store.LightweightSession())
             {
                 session.Events.Append(Id, page);
 

@@ -32,7 +32,7 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         theSession.Store(issue1, issue2, issue3);
         await theSession.SaveChangesAsync();
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             User included = null;
             var list = new List<User>();
@@ -578,7 +578,7 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         theSession.Store<object>(user, issue);
         await theSession.SaveChangesAsync();
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             User included = null;
             var issue2 = await query.Query<Issue>()
@@ -607,7 +607,7 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         theSession.Store(issue1, issue2, issue3);
         await theSession.SaveChangesAsync();
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             var list = new List<User>();
 
@@ -634,7 +634,7 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         theSession.Store(issue1, issue2, issue3);
         await theSession.SaveChangesAsync();
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             var list = new List<User>();
 
@@ -663,7 +663,7 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         theSession.Store(issue1, issue2, issue3);
         await theSession.SaveChangesAsync();
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             var list = new List<User>();
 
@@ -692,7 +692,7 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         theSession.Store(issue1, issue2, issue3);
         await theSession.SaveChangesAsync();
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var dict = new Dictionary<Guid, User>();
 
@@ -835,7 +835,7 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             User includedUser = null;
             Bug includedBug = null;

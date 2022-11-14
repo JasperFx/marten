@@ -154,7 +154,7 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
     {
         var actuals = await LoadAllAggregatesFromDatabase(tenantId);
 
-        using var session = theStore.LightweightSession(tenantId);
+        await using var session = theStore.LightweightSession(tenantId);
 
         foreach (var stream in _streams.Where(x => x.TenantId == tenantId))
         {
@@ -206,7 +206,7 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
             {
                 foreach (var stream in @group)
                 {
-                    using (var session = theStore.LightweightSession(@group.Key))
+                    await using (var session = theStore.LightweightSession(@group.Key))
                     {
                         session.Events.StartStream(stream.StreamId, stream.Events);
                         await session.SaveChangesAsync();
@@ -218,7 +218,7 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
         {
             foreach (var stream in _streams)
             {
-                using (var session = theStore.LightweightSession())
+                await using (var session = theStore.LightweightSession())
                 {
                     session.Events.StartStream(stream.StreamId, stream.Events);
                     await session.SaveChangesAsync();
@@ -292,7 +292,7 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
             {
                 while (Streams.Any() && !Streams.All(x => x.IsFinishedPublishing()))
                 {
-                    using (var session = _store.LightweightSession())
+                    await using (var session = _store.LightweightSession())
                     {
                         foreach (var stream in Streams)
                         {

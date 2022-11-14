@@ -25,7 +25,7 @@ public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType: B
         var table = new Table(new DbObjectName(SchemaName, "external_table"));
         table.AddColumn("id", "integer").AsPrimaryKey();
 
-        using var dbConn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var dbConn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await dbConn.OpenAsync();
         await table.Create(dbConn);
 

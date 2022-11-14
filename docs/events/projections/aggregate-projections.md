@@ -500,7 +500,7 @@ internal async Task use_a_self_aggregate()
     var tripId = Guid.NewGuid();
 
     // We'll open a read only query session...
-    using var session = store.QuerySession();
+    await using var session = store.QuerySession();
 
     // And do a live aggregation of the Trip stream
     var trip = await session.Events.AggregateStreamAsync<Trip>(tripId);

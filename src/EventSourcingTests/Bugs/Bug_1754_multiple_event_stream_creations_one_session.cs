@@ -25,7 +25,7 @@ namespace EventSourcingTests.Bugs
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
-            using var session = documentStore.OpenSession();
+            await using var session = documentStore.OpenSession();
 
             var importStream = session.Events.StartStream<DataImportAggregate>("original", new DataImportStartedEvent {ByUser = Guid.NewGuid()});
 
@@ -39,7 +39,7 @@ namespace EventSourcingTests.Bugs
             session.Events.Append("original", new DataImportFinishedEvent {ImportCount = importCount});
             await session.SaveChangesAsync();
 
-            using var querySession = documentStore.QuerySession();
+            await using var querySession = documentStore.QuerySession();
             var importAggregate = await querySession.LoadAsync<DataImportAggregate>(importStream.Key);
             importAggregate.ShouldNotBeNull();
             importAggregate.ImportCount.ShouldBe(importCount);

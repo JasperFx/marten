@@ -182,7 +182,7 @@ var store = DocumentStore.For(_ =>
     _.Serializer(serializer);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L88-L110' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L89-L111' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip INFO
@@ -210,7 +210,7 @@ var store = DocumentStore.For(_ =>
     _.UseDefaultSerialization(enumStorage: EnumStorage.AsString);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L115-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_enum_storage_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L116-L126' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_enum_storage_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Fields Names Casing
@@ -236,7 +236,7 @@ var store = DocumentStore.For(_ =>
     _.UseDefaultSerialization(casing: Casing.CamelCase);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L130-L140' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_camelcase_casing_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L131-L141' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_camelcase_casing_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 <!-- snippet: sample_customize_json_net_snakecase_casing_serialization -->
@@ -251,7 +251,7 @@ var store = DocumentStore.For(_ =>
     _.UseDefaultSerialization(casing: Casing.SnakeCase);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L145-L155' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_casing_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L146-L156' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_casing_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Collection Storage
@@ -281,7 +281,7 @@ var store = DocumentStore.For(_ =>
     _.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L160-L170' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_collectionstorage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L161-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_collectionstorage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Non Public Members Storage
@@ -302,7 +302,7 @@ var store = DocumentStore.For(_ =>
     _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L175-L185' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_nonpublicsetters' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L176-L186' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_nonpublicsetters' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also use other options of `NonPublicMembersStorage`:

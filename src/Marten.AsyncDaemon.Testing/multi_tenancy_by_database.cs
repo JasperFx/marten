@@ -47,7 +47,7 @@ public class multi_tenancy_by_database : IAsyncLifetime
 
         builder.Database = databaseName;
 
-        using var dbConn = new NpgsqlConnection(builder.ConnectionString);
+        await using var dbConn = new NpgsqlConnection(builder.ConnectionString);
         await dbConn.OpenAsync();
         await dbConn.DropSchema("multi_tenancy_daemon");
 
@@ -56,7 +56,7 @@ public class multi_tenancy_by_database : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
 
 
@@ -123,7 +123,7 @@ public class multi_tenancy_by_database : IAsyncLifetime
 
         daemon.Database.Identifier.ShouldBe("database1");
 
-        using var conn = daemon.Database.CreateConnection();
+        await using var conn = daemon.Database.CreateConnection();
         conn.Database.ShouldBe("database1");
     }
 
@@ -144,15 +144,15 @@ public class multi_tenancy_by_database : IAsyncLifetime
     {
         var id = Guid.NewGuid();
 
-        using var session1 = theStore.LightweightSession("tenant1");
+        await using var session1 = theStore.LightweightSession("tenant1");
         session1.Events.Append(id, new AEvent(), new BEvent(), new BEvent());
         await session1.SaveChangesAsync();
 
-        using var session3 = theStore.LightweightSession("tenant3");
+        await using var session3 = theStore.LightweightSession("tenant3");
         session3.Events.Append(id, new AEvent(), new AEvent(), new BEvent(), new BEvent());
         await session3.SaveChangesAsync();
 
-        using var session4 = theStore.LightweightSession("tenant4");
+        await using var session4 = theStore.LightweightSession("tenant4");
         session4.Events.Append(id, new AEvent(), new BEvent(), new BEvent(), new BEvent());
         await session4.SaveChangesAsync();
 

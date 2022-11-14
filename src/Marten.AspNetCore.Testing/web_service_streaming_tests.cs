@@ -48,7 +48,7 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
         var issue = new Issue {Description = "It's bad", Open = true};
 
         var store = theHost.Services.GetRequiredService<IDocumentStore>();
-        using (var session = store.LightweightSession())
+        await using (var session = store.LightweightSession())
         {
             session.Store(issue);
             await session.SaveChangesAsync();
@@ -83,7 +83,7 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
         var issue = new Issue {Description = "It's bad", Open = true};
 
         var store = theHost.Services.GetRequiredService<IDocumentStore>();
-        using (var session = store.LightweightSession())
+        await using (var session = store.LightweightSession())
         {
             session.Store(issue);
             await session.SaveChangesAsync();
@@ -144,7 +144,7 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
         var issue = new Issue {Description = "It's bad", Open = true};
 
         var store = theHost.Services.GetRequiredService<IDocumentStore>();
-        using (var session = store.LightweightSession())
+        await using (var session = store.LightweightSession())
         {
             session.Store(issue);
             await session.SaveChangesAsync();

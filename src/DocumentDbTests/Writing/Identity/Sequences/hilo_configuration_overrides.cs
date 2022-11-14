@@ -28,7 +28,7 @@ public class hilo_configuration_overrides
         await store.Tenancy.Default.Database.ResetHiloSequenceFloor<IntDoc>(2500);
         #endregion
 
-        using var session = store.OpenSession();
+        await using var session = store.OpenSession();
         var doc1 = new IntDoc();
         var doc2 = new IntDoc();
         var doc3 = new IntDoc();

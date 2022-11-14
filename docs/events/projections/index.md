@@ -131,7 +131,7 @@ You can always fetch a stream of events and build an aggregate completely live f
 <!-- snippet: sample_events-aggregate-on-the-fly -->
 <a id='snippet-sample_events-aggregate-on-the-fly'></a>
 ```cs
-using (var session = store.OpenSession())
+await using (var session = store.OpenSession())
 {
     // questId is the id of the stream
     var party = session.Events.AggregateStream<QuestParty>(questId);
@@ -144,7 +144,7 @@ using (var session = store.OpenSession())
         .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L84-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L87-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 There is also a matching asynchronous `AggregateStreamAsync()` mechanism as well. Additionally, you can do stream aggregations in batch queries with

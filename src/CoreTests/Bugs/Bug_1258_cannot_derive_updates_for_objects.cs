@@ -37,7 +37,7 @@ public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
         var issue2 = new IssueForUserWithCustomType { UserId = guyWithCustomType2.Id, Title = "Issue #2" };
         var issue3 = new IssueForUserWithCustomType { UserId = guyWithCustomType2.Id, Title = "Issue #3" };
 
-        using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
         {
             await conn.OpenAsync();
             var sql = @"
@@ -163,19 +163,19 @@ public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Store(guyWithCustomType1, guyWithCustomType2);
             session.Store(issue1, issue2, issue3);
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.QuerySession())
+        await using (var session = theStore.QuerySession())
         {
             session.Load<UserWithCustomType>(guyWithCustomType1.Id).CustomType.ShouldBe("test_cust_type");
         }
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             var userList = new List<UserWithCustomType>();
 
@@ -203,7 +203,7 @@ public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
             _.Schema.For<UserWithCustomType>().GinIndexJsonData();
         });
 
-        using (var query = secondStore.QuerySession())
+        await using (var query = secondStore.QuerySession())
         {
             var userList = new List<UserWithCustomType>();
 

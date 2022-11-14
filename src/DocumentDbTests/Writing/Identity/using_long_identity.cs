@@ -17,7 +17,7 @@ public class using_long_identity : IntegrationContext
         theSession.Store(LongDoc);
         await theSession.SaveChangesAsync();
 
-        using var session = theStore.OpenSession();
+        await using var session = theStore.OpenSession();
         session.Load<LongDoc>(456).ShouldNotBeNull();
 
         session.Load<LongDoc>(222).ShouldBeNull();

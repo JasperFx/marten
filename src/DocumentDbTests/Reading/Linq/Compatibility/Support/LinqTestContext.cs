@@ -104,7 +104,7 @@ public abstract class LinqTestContext<TSelf>
         var index = _descriptions.IndexOf(description);
 
         var testCase = testCases[index];
-        using (var session = store.QuerySession())
+        await using (var session = store.QuerySession())
         {
             await testCase.Compare(session, Fixture.Documents);
         }

@@ -69,7 +69,7 @@ public class StressTester
         while (!stopping.IsCancellationRequested)
         {
             await Task.Delay(250, stopping.Token);
-            using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
             await conn.OpenAsync(stopping.Token);
             var count = (long)(await conn.CreateCommand("select count(*) from pg_stat_activity;")
                 .ExecuteScalarAsync(stopping.Token))!;

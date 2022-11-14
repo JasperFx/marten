@@ -59,7 +59,7 @@ public class appending_events_workflow_specs
     {
         await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
         @case.StartNewStream(new TestOutputMartenLogger(_output));
-        using var query = @case.Store.QuerySession();
+        await using var query = @case.Store.QuerySession();
 
         var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
         var handler = builder.QueryForStream(@case.ToEventStream());
@@ -95,7 +95,7 @@ public class appending_events_workflow_specs
         var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
         var op = builder.InsertStream(stream);
 
-        using var session = @case.Store.LightweightSession();
+        await using var session = @case.Store.LightweightSession();
         session.QueueOperation(op);
 
         await session.SaveChangesAsync();
@@ -114,7 +114,7 @@ public class appending_events_workflow_specs
         var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
         var op = builder.UpdateStreamVersion(stream);
 
-        using var session = @case.Store.LightweightSession();
+        await using var session = @case.Store.LightweightSession();
         session.QueueOperation(op);
 
         session.Logger = new TestOutputMartenLogger(_output);
@@ -139,7 +139,7 @@ public class appending_events_workflow_specs
         var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
         var op = builder.UpdateStreamVersion(stream);
 
-        using var session = @case.Store.LightweightSession();
+        await using var session = @case.Store.LightweightSession();
         session.QueueOperation(op);
 
         await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(() => session.SaveChangesAsync());
@@ -153,7 +153,7 @@ public class appending_events_workflow_specs
         await @case.Store.EnsureStorageExistsAsync(typeof(IEvent));
 
         var operation = new EstablishTombstoneStream(@case.Store.Events, Tenancy.DefaultTenantId);
-        using var session = @case.Store.LightweightSession();
+        await using var session = @case.Store.LightweightSession();
 
         var batch = new UpdateBatch(new []{operation});
         await batch.ApplyChangesAsync((IMartenSession) session, CancellationToken.None);
@@ -177,7 +177,7 @@ public class appending_events_workflow_specs
         await @case.Store.EnsureStorageExistsAsync(typeof(IEvent));
 
         var operation = new EstablishTombstoneStream(@case.Store.Events, Tenancy.DefaultTenantId);
-        using var session = @case.Store.LightweightSession();
+        await using var session = @case.Store.LightweightSession();
 
         var batch = new UpdateBatch(new []{operation});
         await batch.ApplyChangesAsync((IMartenSession) session, CancellationToken.None);
@@ -199,7 +199,7 @@ public class appending_events_workflow_specs
     {
         await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
 
-        using var session = @case.Store.LightweightSession();
+        await using var session = @case.Store.LightweightSession();
 
         if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
@@ -218,7 +218,7 @@ public class appending_events_workflow_specs
             await session.SaveChangesAsync();
         });
 
-        using var session2 = @case.Store.LightweightSession();
+        await using var session2 = @case.Store.LightweightSession();
 
         if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
         {

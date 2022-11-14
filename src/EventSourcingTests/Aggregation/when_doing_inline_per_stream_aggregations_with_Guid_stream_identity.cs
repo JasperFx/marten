@@ -42,7 +42,7 @@ public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity
             x.Streams[stream2].C();
         });
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
         aggregate1.ACount.ShouldBe(4);
@@ -80,7 +80,7 @@ public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity
             x.Streams[stream2].C();
         });
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
         aggregate1.ACount.ShouldBe(4);
@@ -136,7 +136,7 @@ public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity
             x.Streams[stream2].C();
         });
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
         aggregate1.ACount.ShouldBe(4);
@@ -171,7 +171,7 @@ public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity
 
         });
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
         aggregate1.ShouldNotBeNull();
@@ -213,7 +213,7 @@ public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity
 
         });
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
         aggregate1.ShouldBeNull();

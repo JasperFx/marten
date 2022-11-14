@@ -167,7 +167,7 @@ namespace Marten.Events.Daemon
                 var command = handler.BuildCommand();
                 command.Connection = _connection;
 
-                using var reader = await command.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
+                await using var reader = await command.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
 
                 return await handler.HandleAsync(reader, cancellation).ConfigureAwait(false);
             }

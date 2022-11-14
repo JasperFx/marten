@@ -19,7 +19,6 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
     {
         using var host = input.BuildHost();
 
-
         var collections = host.Services.GetServices<ICodeFileCollection>().ToArray();
         foreach (var collection in collections)
         {
@@ -38,11 +37,9 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
             {
                 Console.WriteLine("    * NONE");
             }
-
         }
 
-
-        var store = host.Services.GetRequiredService<IDocumentStore>();
+        using var store = host.Services.GetRequiredService<IDocumentStore>();
         await store.Advanced.Clean.DeleteAllDocumentsAsync();
 
         await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
@@ -54,15 +51,13 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
         await store.BulkInsertDocumentsAsync(targets);
 
         Console.WriteLine("QueryOnly");
-        using (var session1 = store.QuerySession())
+        await using (var session1 = store.QuerySession())
         {
             (await session1.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
-
-
         }
 
         Console.WriteLine("Lightweight");
-        using (var session2 = store.LightweightSession())
+        await using (var session2 = store.LightweightSession())
         {
             (await session2.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
 
@@ -90,7 +85,7 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
         }
 
         Console.WriteLine("IdentityMap");
-        using (var session3 = store.OpenSession())
+        await using (var session3 = store.OpenSession())
         {
             (await session3.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
 
@@ -106,7 +101,7 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
         }
 
         Console.WriteLine("DirtyChecking");
-        using (var session4 = store.OpenSession())
+        await using (var session4 = store.OpenSession())
         {
             (await session4.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
 
@@ -123,7 +118,7 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
         }
 
         Console.WriteLine("Capturing Events");
-        using (var session = store.LightweightSession())
+        await using (var session = store.LightweightSession())
         {
             var streamId = Guid.NewGuid();
             session.Events.Append(streamId, new AEvent(), new BEvent(), new CEvent(), new DEvent());
@@ -137,8 +132,6 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
             var aggregate = await session.LoadAsync<MyAggregate>(streamId);
             aggregate.ShouldNotBeNull();
         }
-
-
 
         ConsoleWriter.Write(ConsoleColor.Green, "All Good!");
 

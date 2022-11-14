@@ -31,7 +31,7 @@ public class document_session_load_already_loaded_document_Tests : IntegrationCo
         theSession.Store(user);
         await theSession.SaveChangesAsync();
 
-        using var session = theStore.OpenSession();
+        await using var session = theStore.OpenSession();
         var first = await session.LoadAsync<User>(user.Id);
         var second = await session.LoadAsync<User>(user.Id);
 

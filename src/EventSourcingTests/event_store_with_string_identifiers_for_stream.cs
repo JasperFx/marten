@@ -88,13 +88,13 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
     [Fact]
     public async Task fetch_state_async()
     {
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Events.Append("First", new MembersJoined(), new MembersJoined());
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             var state = await session.Events.FetchStreamStateAsync("First");
             state.Key.ShouldBe("First");
@@ -105,14 +105,14 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
     [Fact]
     public async Task store_on_multiple_streams_at_a_time()
     {
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Events.Append("First", new MembersJoined(), new MembersJoined());
             session.Events.Append("Second", new MembersJoined(), new MembersJoined(), new MembersJoined());
             await session.SaveChangesAsync();
         }
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             var state = await session.Events.FetchStreamStateAsync("First");
             state.Key.ShouldBe("First");

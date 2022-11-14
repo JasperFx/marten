@@ -10,7 +10,7 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
     {
         using var host = input.BuildHost();
         var store = host.Services.GetRequiredService<IDocumentStore>();
-        using var session = store.LightweightSession();
+        await using var session = store.LightweightSession();
         session.Events.StartStream(Guid.NewGuid().ToString(), new Started());
         await session.SaveChangesAsync();
 

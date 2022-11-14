@@ -54,7 +54,7 @@ public class document_updates: IntegrationContext
     {
         var target = Target.Random();
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             await Exception<NonExistentDocumentException>.ShouldBeThrownByAsync(async () =>
             {

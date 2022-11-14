@@ -17,7 +17,7 @@ public class EventSequenceFetcherTests : OneOffConfigurationsContext
     {
         await theStore.EnsureStorageExistsAsync(typeof(IEvent));
 
-        using var query = (QuerySession)theStore.QuerySession();
+        await using var query = (QuerySession)theStore.QuerySession();
 
         var handler = new EventSequenceFetcher(theStore.Events, 5);
         var sequences = (await query.ExecuteHandlerAsync(handler, CancellationToken.None)).ToList();

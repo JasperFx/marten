@@ -142,7 +142,7 @@ public class query_with_inner_query_with_global_CollectionStorage_WithArray: One
         });
         SetupTestData();
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             var results = await query.Query<TypeWithInnerCollections>()
                 .Where(predicate)

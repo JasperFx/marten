@@ -54,7 +54,7 @@ public class Bug_2073_tenancy_problems
         var daemon = (ProjectionDaemon)store.BuildProjectionDaemon();
         await daemon.StartAllShards();
 
-        using (var session = store.LightweightSession("tenant1"))
+        await using (var session = store.LightweightSession("tenant1"))
         {
             session.Events.Append(Guid.NewGuid().ToString(), new CreateDoc("a", "owner", "content"));
             await session.SaveChangesAsync();

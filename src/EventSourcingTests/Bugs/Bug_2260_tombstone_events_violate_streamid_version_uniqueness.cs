@@ -47,7 +47,7 @@ public class Bug_2260_tombstone_events_violate_streamid_version_uniqueness : Int
             await theSession.SaveChangesAsync();
         });
 
-        using var session = theStore.LightweightSession();
+        await using var session = theStore.LightweightSession();
 
         // Append more events that will fail, to ensure they get tombstone events appended to the event stream
         if (theStore.Events.StreamIdentity == StreamIdentity.AsGuid)

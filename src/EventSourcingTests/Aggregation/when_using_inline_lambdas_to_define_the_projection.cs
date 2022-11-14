@@ -142,7 +142,7 @@ public class when_using_inline_lambdas_to_define_the_projection : AggregationCon
 
         });
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
         aggregate1.ShouldNotBeNull();
@@ -189,7 +189,7 @@ public class when_using_inline_lambdas_to_define_the_projection : AggregationCon
 
         });
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
         aggregate1.ShouldNotBeNull();
@@ -200,7 +200,7 @@ public class when_using_inline_lambdas_to_define_the_projection : AggregationCon
 
         });
 
-        using var query2 = theStore.QuerySession();
+        await using var query2 = theStore.QuerySession();
         var aggregate2 = await query2.LoadAsync<MyAggregate>(stream1);
         aggregate2.ShouldBeNull();
 
@@ -283,7 +283,7 @@ public class when_using_inline_lambdas_to_define_the_projection : AggregationCon
             x.Streams[stream2].Add(new DeleteBasedOnState {StateId = state2.Id});
         });
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         (await query.LoadAsync<MyAggregate>(stream1)).ShouldNotBeNull();
         (await query.LoadAsync<MyAggregate>(stream2)).ShouldBeNull();
@@ -330,7 +330,7 @@ public class when_using_inline_lambdas_to_define_the_projection : AggregationCon
 
         });
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
         aggregate1.ShouldNotBeNull();
@@ -390,7 +390,7 @@ public class when_using_inline_lambdas_to_define_the_projection : AggregationCon
 
         });
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
         aggregate1.ShouldBeNull();
@@ -450,7 +450,7 @@ public class when_using_inline_lambdas_to_define_the_projection : AggregationCon
 
         });
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var aggregate1 = await query.LoadAsync<MyAggregate>(stream1);
         aggregate1.ShouldBeNull();

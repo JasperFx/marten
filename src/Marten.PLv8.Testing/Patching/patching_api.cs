@@ -47,7 +47,7 @@ public class patching_api: OneOffConfigurationsContext
             o.UseJavascriptTransformsAndPatching();
         });
 
-        using (var session = store.LightweightSession())
+        await using (var session = store.LightweightSession())
         {
             session.Patch<Target>(entity.Id).Set(t => t.String, "foo");
             await session.SaveChangesAsync();
@@ -795,7 +795,7 @@ public class patching_api: OneOffConfigurationsContext
         theSession.Patch<Target>(entity.Id).Set(t => t.String, newval);
         await theSession.SaveChangesAsync();
 
-        using var command = theSession.Connection.CreateCommand();
+        await using var command = theSession.Connection.CreateCommand();
         command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
                               $"where data->>'String' = '{newval}' and {field.ColumnName} = '{newval}'";
         var count = (long)(command.ExecuteScalar() ?? 0);
@@ -818,7 +818,7 @@ public class patching_api: OneOffConfigurationsContext
         theSession.Patch<Target>(entity.Id).Set(t => t.String, newval);
         await theSession.SaveChangesAsync();
 
-        using var command = theSession.Connection.CreateCommand();
+        await using var command = theSession.Connection.CreateCommand();
         command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
                               $"where data->>'String' = '{newval}' and {field.ColumnName} = '{newval}'";
         var count = (long)(command.ExecuteScalar() ?? 0);

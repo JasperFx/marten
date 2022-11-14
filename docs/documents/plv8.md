@@ -599,7 +599,7 @@ public async Task can_transform_to_json()
 {
     var user = new User { FirstName = "Eric", LastName = "Berry" };
 
-    using var session = theStore.OpenSession();
+    await using var session = theStore.OpenSession();
     session.Store(user);
     await session.SaveChangesAsync();
 
@@ -629,7 +629,7 @@ public async Task can_transform_to_another_doc()
 {
     var user = new User { FirstName = "Eric", LastName = "Berry" };
 
-    using var session = theStore.OpenSession();
+    await using var session = theStore.OpenSession();
     session.Store(user);
     await session.SaveChangesAsync();
 
@@ -646,7 +646,7 @@ public async Task can_write_many_to_json()
     var user1 = new User { FirstName = "Eric", LastName = "Berry" };
     var user2 = new User { FirstName = "Derrick", LastName = "Johnson" };
 
-    using var session = theStore.OpenSession();
+    await using var session = theStore.OpenSession();
     session.Store(user1, user2);
     await session.SaveChangesAsync();
 

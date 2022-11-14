@@ -61,7 +61,7 @@ public class metadata_marker_interfaces : IntegrationContext
 
         doc1.Version.ShouldNotBe(Guid.Empty);
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
         var doc2 = await query.LoadAsync<MyVersionedDoc>(doc1.Id);
         doc2.Version.ShouldBe(doc1.Version);
     }
@@ -108,7 +108,7 @@ public class metadata_marker_interfaces : IntegrationContext
         doc.CorrelationId.ShouldBe("correlation");
         doc.LastModifiedBy.ShouldBe("me");
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var doc2 = await query.LoadAsync<MyTrackedDoc>(doc.Id);
 

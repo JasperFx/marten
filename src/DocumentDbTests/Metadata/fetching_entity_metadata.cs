@@ -59,7 +59,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
 
         var shop = new CoffeeShop();
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Store(shop);
             await session.SaveChangesAsync();
@@ -68,7 +68,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
             await session.SaveChangesAsync();
         }
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
         var metadata = await query.MetadataForAsync(shop);
 
         metadata.ShouldNotBeNull();

@@ -144,7 +144,7 @@ public class build_aggregate_projection: DaemonContext
 
         await agent.RebuildProjection("Trip", CancellationToken.None);
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
         // Demonstrates that the Trip documents were deleted first
         (await query.LoadAsync<Trip>(trip.Id)).ShouldBeNull();
     }
@@ -236,8 +236,7 @@ public class build_aggregate_projection: DaemonContext
         await waiter2;
 
 
-
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         (await query.LoadAsync<Trip>(notCriticalBreakdownStream)).ShouldNotBeNull();
         (await query.LoadAsync<Trip>(criticalBreakdownStream)).ShouldBeNull();
@@ -267,7 +266,7 @@ public class build_aggregate_projection: DaemonContext
 
         var waiter1 = agent.Tracker.WaitForShardState("Trip:All", initialCount);
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Events.Append(shortTrip.StreamId, shortTrip.Events.ToArray());
             session.Events.Append(longTrip.StreamId, longTrip.Events.ToArray());
@@ -290,8 +289,7 @@ public class build_aggregate_projection: DaemonContext
         await waiter2;
 
 
-
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         (await query.LoadAsync<Trip>(shortTrip.StreamId)).ShouldNotBeNull();
         (await query.LoadAsync<Trip>(longTrip.StreamId)).ShouldBeNull();

@@ -189,7 +189,7 @@ namespace DocumentDbTests.Metadata
             var doc = new DocWithMeta();
             var tenant = "TENANT_A";
 
-            using (var session = theStore.OpenSession(tenant))
+            await using (var session = theStore.OpenSession(tenant))
             {
                 doc.LastModified = DateTime.UtcNow.AddYears(-1);
                 session.Store(doc);
@@ -197,7 +197,7 @@ namespace DocumentDbTests.Metadata
                 await session.SaveChangesAsync();
             }
 
-            using (var session = theStore.OpenSession(tenant))
+            await using (var session = theStore.OpenSession(tenant))
             {
                 session.Query<DocWithMeta>().Count(d => d.TenantId == tenant).ShouldBe(1);
 
@@ -226,7 +226,7 @@ namespace DocumentDbTests.Metadata
 
             await theStore.BulkInsertAsync(tenant, new DocWithMeta[] { doc });
 
-            using var session = theStore.OpenSession(tenant);
+            await using var session = theStore.OpenSession(tenant);
             session.Query<DocWithMeta>().Count(d => d.TenantId == tenant).ShouldBe(1);
 
             var loaded = await session.Query<DocWithMeta>().Where(d => d.Id == doc.Id).FirstOrDefaultAsync();

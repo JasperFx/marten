@@ -52,7 +52,7 @@ namespace Marten.Internal.Sessions
         {
             var cmd = this.BuildCommand(handler);
 
-            using var reader = await ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            await using var reader = await ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
             return await handler.StreamJson(destination, reader, token).ConfigureAwait(false);
         }
 

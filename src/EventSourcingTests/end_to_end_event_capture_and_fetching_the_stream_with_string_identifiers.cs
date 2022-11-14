@@ -216,14 +216,14 @@ public class end_to_end_event_capture_and_fetching_the_stream_with_string_identi
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(QuestPartyWithStringIdentifier));
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             var parties = await session.Query<QuestPartyWithStringIdentifier>().CountAsync();
             parties.ShouldBeLessThanOrEqualTo(0);
         }
 
         //This SaveChanges will fail with missing method (ro collection configured?)
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             var started = new QuestStarted { Name = "Destroy the One Ring" };
             var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");
@@ -244,14 +244,14 @@ public class end_to_end_event_capture_and_fetching_the_stream_with_string_identi
 
         var questId = "Eighth";
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             var parties = await session.Query<QuestPartyWithStringIdentifier>().ToListAsync();
             parties.Count.ShouldBeLessThanOrEqualTo(0);
         }
 
         //This SaveChanges will fail with missing method (ro collection configured?)
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             var started = new QuestStarted { Name = "Destroy the One Ring" };
             var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");

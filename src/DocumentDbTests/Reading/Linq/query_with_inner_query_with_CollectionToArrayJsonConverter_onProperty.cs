@@ -107,7 +107,7 @@ public class query_with_inner_query_with_CollectionToArrayJsonConverter_onProper
     {
         SetupTestData();
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
         query.Logger = new TestOutputMartenLogger(_output);
         var results = await query.Query<TypeWithInnerCollectionsWithJsonConverterAttribute>()
             .Where(predicate)

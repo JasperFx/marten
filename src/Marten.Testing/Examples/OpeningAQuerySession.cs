@@ -15,7 +15,7 @@ public class OpeningAQuerySession
             opts.Connection("some connection string");
         });
 
-        using var session = store.QuerySession();
+        await using var session = store.QuerySession();
 
         var badIssues = await session.Query<Issue>()
             .Where(x => x.Tags.Contains("bad"))

@@ -35,7 +35,7 @@ public class end_to_end_versioned_docs: IntegrationContext
     {
         var doc = new AttVersionedDoc();
 
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Store(doc);
 
@@ -156,7 +156,7 @@ public class end_to_end_versioned_docs: IntegrationContext
     {
         Guid originalVerion = Guid.Empty;
         var doc = new AttVersionedDoc();
-        using (var session = theStore.OpenSession())
+        await using (var session = theStore.OpenSession())
         {
             session.Store(doc);
 

@@ -89,7 +89,7 @@ namespace Marten.Services.BatchQuerying
 
             var command = _parent.BuildCommand(_items.Select(x => x.Handler));
 
-            using var reader = await _parent.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+            await using var reader = await _parent.ExecuteReaderAsync(command, token).ConfigureAwait(false);
             await _items[0].ReadAsync(reader, _parent, token).ConfigureAwait(false);
 
             var others = _items.Skip(1).ToArray();

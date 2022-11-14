@@ -36,7 +36,7 @@ public class multi_stream_aggregation_end_to_end : DaemonContext
         });
 
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Events.Append(user1, new UserCreated {UserId = user1});
             session.Events.Append(user2, new UserCreated {UserId = user2});
@@ -51,7 +51,7 @@ public class multi_stream_aggregation_end_to_end : DaemonContext
         await daemon.Tracker.WaitForShardState("UserIssue:All", 3, 15.Seconds());
 
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Events.Append(issue1, new IssueCreated {UserId = user1, IssueId = issue1});
             await session.SaveChangesAsync();
@@ -61,7 +61,7 @@ public class multi_stream_aggregation_end_to_end : DaemonContext
         // slices which is what causes the loss of information in the projection.
         await daemon.Tracker.WaitForShardState("UserIssue:All", 4, 15.Seconds());
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Events.Append(issue2, new IssueCreated {UserId = user1, IssueId = issue2});
             await session.SaveChangesAsync();
@@ -69,7 +69,7 @@ public class multi_stream_aggregation_end_to_end : DaemonContext
 
         await daemon.Tracker.WaitForShardState("UserIssue:All", 5, 15.Seconds());
 
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Events.Append(issue3, new IssueCreated {UserId = user1, IssueId = issue3});
             await session.SaveChangesAsync();
@@ -77,7 +77,7 @@ public class multi_stream_aggregation_end_to_end : DaemonContext
 
         await daemon.Tracker.WaitForShardState("UserIssue:All", 6, 15.Seconds());
 
-        using (var session = theStore.QuerySession())
+        await using (var session = theStore.QuerySession())
         {
             var doc = await session.LoadAsync<UserIssues>(user1);
             doc.Issues.Count.ShouldBe(3);

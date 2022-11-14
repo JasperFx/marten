@@ -31,7 +31,7 @@ public class DocumentCleanerTests : OneOffConfigurationsContext
 
         await theCleaner.DeleteDocumentsByTypeAsync(typeof(Target));
 
-        using var session = theStore.QuerySession();
+        await using var session = theStore.QuerySession();
         session.Query<Target>().Count().ShouldBe(0);
     }
 
@@ -49,7 +49,7 @@ public class DocumentCleanerTests : OneOffConfigurationsContext
 
         await theCleaner.DeleteAllDocumentsAsync();
 
-        using var session = theStore.QuerySession();
+        await using var session = theStore.QuerySession();
         session.Query<Target>().Count().ShouldBe(0);
         session.Query<User>().Count().ShouldBe(0);
         session.Query<Issue>().Count().ShouldBe(0);
@@ -165,7 +165,7 @@ public class DocumentCleanerTests : OneOffConfigurationsContext
 
         await theCleaner.DeleteDocumentsExceptAsync(typeof(Target), typeof(User));
 
-        using var session = theStore.OpenSession();
+        await using var session = theStore.OpenSession();
         // Not cleaned off
         session.Query<Target>().Count().ShouldBe(2);
         session.Query<User>().Count().ShouldBe(1);
@@ -189,7 +189,7 @@ public class DocumentCleanerTests : OneOffConfigurationsContext
 
         await theCleaner.DeleteDocumentsExceptAsync(typeof(Target), typeof(User));
 
-        using var session = theStore.OpenSession();
+        await using var session = theStore.OpenSession();
         // Not cleaned off
         session.Query<Target>().Count().ShouldBe(2);
         session.Query<User>().Count().ShouldBe(1);

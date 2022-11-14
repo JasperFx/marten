@@ -107,21 +107,21 @@ public class build_aggregate_multiple_projections: DaemonContext
         var truckStreamId = Guid.NewGuid();
 
         //Create car stream - Transaction 1
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream(carStreamId, new CarNamed() { Value = "car-name-1" });
             await session.SaveChangesAsync();
         }
 
         //Create truck stream - Transaction 2
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream(truckStreamId, new TruckNamed() { Value = "truck-name-1" });
             await session.SaveChangesAsync();
         }
 
         //Send TruckNamed Event - Transaction 3
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Events.Append(truckStreamId, new TruckNamed() { Value = "truck-name-2" });
 
@@ -129,7 +129,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         }
 
         //Send CarNamed Event - Transaction 4
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Events.Append(carStreamId, new CarNamed() { Value = "car-name-2" });
             await session.SaveChangesAsync();
@@ -142,7 +142,7 @@ public class build_aggregate_multiple_projections: DaemonContext
 
 
         //Assert results are latest
-        using (var session = theStore.QuerySession())
+        await using (var session = theStore.QuerySession())
         {
             var carName = session.Query<CarView>().FirstOrDefault()?.Name;
             var truckName = session.Query<TruckView>().FirstOrDefault()?.Name;
@@ -165,7 +165,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         }, true);
 
         // create car stream with 1000 events
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             var events = new List<CarNamed>();
 
@@ -209,7 +209,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         }
 
         // assert that the projections have reached max seq_id
-        using (var session = theStore.QuerySession())
+        await using (var session = theStore.QuerySession())
         {
             var waterMark = await GetHighWaterMark();
             var maxSeqId = await GetMaxSeqId();
@@ -233,7 +233,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         }, true);
 
         // create car stream with 1000 events
-        using (var session = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
             var events = new List<CarNamed>();
 
@@ -277,7 +277,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         }
 
         // assert that the projections have reached max seq_id
-        using (var session = theStore.QuerySession())
+        await using (var session = theStore.QuerySession())
         {
             var waterMark = await GetHighWaterMark();
             var maxSeqId = await GetMaxSeqId();
@@ -292,7 +292,7 @@ public class build_aggregate_multiple_projections: DaemonContext
 
     protected async Task deleteEvents(params long[] ids)
     {
-        using var conn = theStore.CreateConnection();
+        await using var conn = theStore.CreateConnection();
         await conn.OpenAsync();
 
         await conn
@@ -303,7 +303,7 @@ public class build_aggregate_multiple_projections: DaemonContext
 
     protected async Task<long> GetHighWaterMark()
     {
-        using var conn = theStore.CreateConnection();
+        await using var conn = theStore.CreateConnection();
         await conn.OpenAsync();
 
         return (long)await conn
@@ -313,7 +313,7 @@ public class build_aggregate_multiple_projections: DaemonContext
 
     protected async Task<long> GetMaxSeqId()
     {
-        using var conn = theStore.CreateConnection();
+        await using var conn = theStore.CreateConnection();
         await conn.OpenAsync();
 
         return (long)await conn
