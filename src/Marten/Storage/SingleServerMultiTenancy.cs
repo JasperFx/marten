@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Baseline;
 using ImTools;
 using Marten.Schema;
 using Weasel.Core.Migrations;
@@ -79,14 +77,14 @@ namespace Marten.Storage
                 databaseName = tenantId;
             }
 
-            var database = await FindOrCreateDatabase(databaseName).ConfigureAwait(false);
+            var database = await base.FindOrCreateDatabase(databaseName).ConfigureAwait(false);
             tenant = new Tenant(tenantId, database);
             _tenants = _tenants.AddOrUpdate(tenantId, tenant);
 
             return tenant;
         }
 
-        async ValueTask<IMartenDatabase> ITenancy.FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
+        public new async ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
         {
             var tenant = await GetTenantAsync(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
             return tenant.Database;
