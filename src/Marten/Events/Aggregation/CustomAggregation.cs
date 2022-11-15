@@ -61,7 +61,7 @@ namespace Marten.Events.Aggregation
             var storage = (IDocumentStorage<TDoc, TId>)martenSession.StorageFor<TDoc>();
             foreach (var slice in slices)
             {
-                slice.Aggregate = await storage.LoadAsync(slice.Id, martenSession, cancellation).ConfigureAwait(false);
+                slice.Aggregate = await storage.LoadAsync(slice.Id, slice.Tenant.TenantId, martenSession, cancellation).ConfigureAwait(false);
                 await ApplyChangesAsync(martenSession, slice, cancellation).ConfigureAwait(false);
             }
         }

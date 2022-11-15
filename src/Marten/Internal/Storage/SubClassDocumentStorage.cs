@@ -212,32 +212,32 @@ namespace Marten.Internal.Storage
             return _parent.DeleteForId(id, tenant);
         }
 
-        public T Load(TId id, IMartenSession session)
+        public T Load(TId id, string tenantId, IMartenSession session)
         {
-            var doc = _parent.Load(id, session);
+            var doc = _parent.Load(id, tenantId, session);
 
             if (doc is T x) return x;
 
             return default;
         }
 
-        public async Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
+        public async Task<T> LoadAsync(TId id, string tenantId, IMartenSession session, CancellationToken token)
         {
-            var doc = await _parent.LoadAsync(id, session, token).ConfigureAwait(false);
+            var doc = await _parent.LoadAsync(id, tenantId, session, token).ConfigureAwait(false);
 
             if (doc is T x) return x;
 
             return default;
         }
 
-        public IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session)
+        public IReadOnlyList<T> LoadMany(TId[] ids, string tenantId, IMartenSession session)
         {
-            return _parent.LoadMany(ids, session).OfType<T>().ToList();
+            return _parent.LoadMany(ids, tenantId, session).OfType<T>().ToList();
         }
 
-        public async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token)
+        public async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, string tenantId, IMartenSession session, CancellationToken token)
         {
-            return (await _parent.LoadManyAsync(ids, session, token).ConfigureAwait(false)).OfType<T>().ToList();
+            return (await _parent.LoadManyAsync(ids, tenantId, session, token).ConfigureAwait(false)).OfType<T>().ToList();
         }
 
         public TId AssignIdentity(T document, string tenantId, IMartenDatabase database)

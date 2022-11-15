@@ -86,24 +86,22 @@ namespace Marten.Internal.Storage
             }
         }
 
-        public sealed override IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session)
+        public sealed override IReadOnlyList<T> LoadMany(TId[] ids, string tenantId, IMartenSession session)
         {
-            var list = preselectLoadedDocuments(ids, session, out var command);
+            var list = preselectLoadedDocuments(ids, tenantId, session, out var command);
             var selector = (ISelector<T>)BuildSelector(session);
 
-            using (var reader = session.ExecuteReader(command))
+            using var reader = session.ExecuteReader(command);
+            while (reader.Read())
             {
-                while (reader.Read())
-                {
-                    var document = selector.Resolve(reader);
-                    list.Add(document);
-                }
+                var document = selector.Resolve(reader);
+                list.Add(document);
             }
 
             return list;
         }
 
-        private List<T> preselectLoadedDocuments(TId[] ids, IMartenSession session, out NpgsqlCommand command)
+        private List<T> preselectLoadedDocuments(TId[] ids, string tenantId, IMartenSession session, out NpgsqlCommand command)
         {
             var list = new List<T>();
 
@@ -138,63 +136,52 @@ namespace Marten.Internal.Storage
                 }
             }
 
-            command = BuildLoadManyCommand(idList.ToArray(), session.TenantId);
+            command = BuildLoadManyCommand(idList.ToArray(), tenantId);
             return list;
         }
 
-        public sealed override async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session,
+        public sealed override async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, string tenantId, IMartenSession session,
             CancellationToken token)
         {
-            var list = preselectLoadedDocuments(ids, session, out var command);
+            var list = preselectLoadedDocuments(ids, tenantId, session, out var command);
             var selector = (ISelector<T>)BuildSelector(session);
 
-            await using (var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false))
+            await using var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                while (await reader.ReadAsync(token).ConfigureAwait(false))
-                {
-                    var document = await selector.ResolveAsync(reader, token).ConfigureAwait(false);
-                    list.Add(document);
-                }
+                var document = await selector.ResolveAsync(reader, token).ConfigureAwait(false);
+                list.Add(document);
             }
 
             return list;
         }
 
-        public sealed override T Load(TId id, IMartenSession session)
+        public sealed override T Load(TId id, string tenantId, IMartenSession session)
         {
-            if (session.ItemMap.TryGetValue(typeof(T), out var items))
-            {
-                if (items is Dictionary<TId, T> d)
-                {
-                    if (d.TryGetValue(id, out var item)) return item;
-                }
-                else
-                {
-                    throw new DocumentIdTypeMismatchException(typeof(T), typeof(TId));
-                }
-            }
+            if (!session.ItemMap.TryGetValue(typeof(T), out var items))
+                return load(id, tenantId, session);
 
-            return load(id, session);
+            if (items is not Dictionary<TId, T> d)
+                throw new DocumentIdTypeMismatchException(typeof(T), typeof(TId));
+
+            if (d.TryGetValue(id, out var item))
+                return item;
+
+            return load(id, tenantId, session);
         }
 
-        public sealed override Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
+        public sealed override Task<T> LoadAsync(TId id, string tenantId, IMartenSession session, CancellationToken token)
         {
-            if (session.ItemMap.TryGetValue(typeof(T), out var items))
-            {
-                if (items is Dictionary<TId, T> d)
-                {
-                    if (d.TryGetValue(id, out var item))
-                    {
-                        return Task.FromResult(item);
-                    }
-                }
-                else
-                {
-                    throw new DocumentIdTypeMismatchException(typeof(T), typeof(TId));
-                }
-            }
+            if (!session.ItemMap.TryGetValue(typeof(T), out var items))
+                return loadAsync(id, tenantId, session, token);
 
-            return loadAsync(id, session, token);
+            if (items is not Dictionary<TId, T> d)
+                throw new DocumentIdTypeMismatchException(typeof(T), typeof(TId));
+
+            if (d.TryGetValue(id, out var item))
+                return Task.FromResult(item);
+
+            return loadAsync(id, tenantId, session, token);
         }
     }
 }

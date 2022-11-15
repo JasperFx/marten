@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
-using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using Marten.Internal.Operations;
 using Marten.Linq.Fields;
@@ -111,11 +110,11 @@ namespace Marten.Internal.Storage
 
         IDeletion DeleteForId(TId id, string tenantId);
 
-        T? Load(TId id, IMartenSession session);
-        Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);
+        T? Load(TId id, string tenantId, IMartenSession session);
+        Task<T?> LoadAsync(TId id, string tenantId, IMartenSession session, CancellationToken token);
 
-        IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session);
-        Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token);
+        IReadOnlyList<T> LoadMany(TId[] ids, string tenantId, IMartenSession session);
+        Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, string tenantId, IMartenSession session, CancellationToken token);
 
 
         TId AssignIdentity(T document, string tenantId, IMartenDatabase database);

@@ -27,54 +27,50 @@ namespace Marten.Internal.Storage
         {
         }
 
-        public sealed override IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session)
+        public sealed override IReadOnlyList<T> LoadMany(TId[] ids, string tenantId, IMartenSession session)
         {
             var list = new List<T>();
 
-            var command = BuildLoadManyCommand(ids, session.TenantId);
+            var command = BuildLoadManyCommand(ids, tenantId);
             var selector = (ISelector<T>)BuildSelector(session);
 
-            using (var reader = session.ExecuteReader(command))
+            using var reader = session.ExecuteReader(command);
+            while (reader.Read())
             {
-                while (reader.Read())
-                {
-                    var document = selector.Resolve(reader);
-                    list.Add(document);
-                }
+                var document = selector.Resolve(reader);
+                list.Add(document);
             }
 
             return list;
         }
 
-        public sealed override async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session,
+        public sealed override async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, string tenantId, IMartenSession session,
             CancellationToken token)
         {
             var list = new List<T>();
 
-            var command = BuildLoadManyCommand(ids, session.TenantId);
+            var command = BuildLoadManyCommand(ids, tenantId);
             var selector = (ISelector<T>)BuildSelector(session);
 
-            await using (var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false))
+            await using var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                while (await reader.ReadAsync(token).ConfigureAwait(false))
-                {
-                    var document = await selector.ResolveAsync(reader, token).ConfigureAwait(false);
-                    list.Add(document);
-                }
+                var document = await selector.ResolveAsync(reader, token).ConfigureAwait(false);
+                list.Add(document);
             }
 
             return list;
         }
 
-        public sealed override T Load(TId id, IMartenSession session)
+        public sealed override T Load(TId id, string tenantId, IMartenSession session)
         {
-            return load(id, session);
+            return load(id, tenantId, session);
         }
 
 
-        public sealed override Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
+        public sealed override Task<T> LoadAsync(TId id, string tenantId, IMartenSession session, CancellationToken token)
         {
-            return loadAsync(id, session, token);
+            return loadAsync(id, tenantId, session, token);
         }
     }
 }

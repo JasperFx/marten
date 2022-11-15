@@ -76,7 +76,7 @@ namespace Marten.Internal.Storage
             _setter = LambdaBuilder.Setter<T, TId>(document.IdMember)!;
 
             DeleteFragment = _mapping.DeleteStyle == DeleteStyle.Remove
-                ? (IOperationFragment) new HardDelete(this)
+                ? new HardDelete(this)
                 : new SoftDelete(this);
 
             HardDeleteFragment = new HardDelete(this);
@@ -303,30 +303,30 @@ namespace Marten.Internal.Storage
         public IFieldMapping Fields { get; }
 
 
-        public abstract T? Load(TId id, IMartenSession session);
-        public abstract Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);
+        public abstract T? Load(TId id, string tenantId, IMartenSession session);
+        public abstract Task<T?> LoadAsync(TId id, string tenantId, IMartenSession session, CancellationToken token);
 
 
-        protected T? load(TId id, IMartenSession session)
+        protected T? load(TId id, string tenantId, IMartenSession session)
         {
-            var command = BuildLoadCommand(id, session.TenantId);
+            var command = BuildLoadCommand(id, tenantId);
             var selector = (ISelector<T>)BuildSelector(session);
 
             // TODO -- eliminate the downcast here!
             return session.As<QuerySession>().LoadOne(command, selector);
         }
 
-        protected Task<T?> loadAsync(TId id, IMartenSession session, CancellationToken token)
+        protected Task<T?> loadAsync(TId id, string tenantId, IMartenSession session, CancellationToken token)
         {
-            var command = BuildLoadCommand(id, session.TenantId);
+            var command = BuildLoadCommand(id, tenantId);
             var selector = (ISelector<T>)BuildSelector(session);
 
             // TODO -- eliminate the downcast here!
             return session.As<QuerySession>().LoadOneAsync(command, selector, token);
         }
 
-        public abstract IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session);
-        public abstract Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token);
+        public abstract IReadOnlyList<T> LoadMany(TId[] ids, string tenantId, IMartenSession session);
+        public abstract Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, string tenantId, IMartenSession session, CancellationToken token);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public abstract TId Identity(T document);

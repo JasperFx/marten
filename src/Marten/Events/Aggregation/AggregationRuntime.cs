@@ -60,7 +60,7 @@ namespace Marten.Events.Aggregation
             var aggregate = slice.Aggregate;
             if (slice.Aggregate == null && lifecycle == ProjectionLifecycle.Inline)
             {
-                aggregate = await Storage.LoadAsync(slice.Id, session, cancellation).ConfigureAwait(false);
+                aggregate = await Storage.LoadAsync(slice.Id, slice.Tenant.TenantId, session, cancellation).ConfigureAwait(false);
             }
 
             // Does the aggregate already exist before the events are applied?

@@ -272,7 +272,7 @@ namespace Marten.Events
                     @event.Id = CombGuidIdGeneration.NewGuid();
                 }
                 @event.Sequence = sequences.Dequeue();
-                @event.TenantId = session.TenantId;
+                @event.TenantId = TenantId ?? session.TenantId;
                 @event.Timestamp = timestamp;
 
                 ProcessMetadata(@event, graph, session);
