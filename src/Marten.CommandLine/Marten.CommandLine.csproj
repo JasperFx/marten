@@ -34,7 +34,7 @@
         <PackageReference Include="LamarCodeGeneration.Commands" Version="6.2.0" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
         <PackageReference Include="Oakton" Version="4.7.0" />
-        <PackageReference Include="Weasel.CommandLine" Version="6.0.0-alpha.2" />
+        <PackageReference Include="Weasel.CommandLine" Version="6.0.0-alpha.3" />
     </ItemGroup>
     <Import Project="../../Analysis.Build.props" />
 </Project>

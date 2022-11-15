@@ -6,7 +6,7 @@
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"
       },
-        "commandLineArgs": "codegen write"
+        "commandLineArgs": "test"
     }
   }
 }
