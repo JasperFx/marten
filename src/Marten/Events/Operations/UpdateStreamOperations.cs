@@ -7,7 +7,8 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Weasel.Postgresql;
-using Marten.Util;
+
+#nullable enable
 
 namespace Marten.Events.Operations
 {
@@ -24,6 +25,7 @@ namespace Marten.Events.Operations
         public abstract void ConfigureCommand(CommandBuilder builder, IMartenSession session);
 
         public Type DocumentType => typeof(IEvent);
+        public string? TenantId => Stream.TenantId;
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {
             if (reader.RecordsAffected != 0) return;

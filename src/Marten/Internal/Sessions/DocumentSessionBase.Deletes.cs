@@ -80,7 +80,7 @@ namespace Marten.Internal.Sessions
             assertNotDisposed();
 
             var documentStorage = StorageFor<T>();
-            var deletion = new Deletion(documentStorage, documentStorage.DeleteFragment);
+            var deletion = new Deletion(documentStorage, documentStorage.DeleteFragment, TenantId);
             deletion.ApplyFiltering(this, expression);
 
             _workTracker.Add(deletion);

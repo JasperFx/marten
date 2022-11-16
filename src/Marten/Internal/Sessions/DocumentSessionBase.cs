@@ -160,7 +160,7 @@ namespace Marten.Internal.Sessions
 
         public void QueueSqlCommand(string sql, params object[] parameterValues)
         {
-            var operation = new ExecuteSqlStorageOperation(sql, parameterValues);
+            var operation = new ExecuteSqlStorageOperation(sql, TenantId, parameterValues);
             QueueOperation(operation);
         }
 

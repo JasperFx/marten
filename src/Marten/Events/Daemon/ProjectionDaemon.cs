@@ -346,7 +346,7 @@ namespace Marten.Events.Daemon
 
             foreach (var shard in shards)
             {
-                session.QueueOperation(new DeleteProjectionProgress(_store.Events, shard.Name.Identity));
+                session.QueueOperation(new DeleteProjectionProgress(_store.Events, shard.Name.Identity, null));
             }
 
             // Rewind previous DeadLetterEvents because you're going to replay them all anyway

@@ -11,6 +11,8 @@ namespace Marten.Internal.Operations
     {
         Type DocumentType { get; }
 
+        string? TenantId { get; }
+
         void Postprocess(DbDataReader reader, IList<Exception> exceptions);
 
         Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token);

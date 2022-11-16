@@ -5,8 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Operations;
-using NpgsqlTypes;
 using Weasel.Postgresql;
+#nullable enable
 
 namespace Marten.Events.Archiving
 {
@@ -15,10 +15,11 @@ namespace Marten.Events.Archiving
         private readonly EventGraph _events;
         private readonly object _streamId;
 
-        public ArchiveStreamOperation(EventGraph events, object streamId)
+        public ArchiveStreamOperation(EventGraph events, object streamId, string? tenantId)
         {
             _events = events;
             _streamId = streamId;
+            TenantId = tenantId;
         }
 
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
@@ -31,6 +32,8 @@ namespace Marten.Events.Archiving
 
 
         public Type DocumentType => typeof(IEvent);
+        public string? TenantId { get; }
+
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {
             // nothing

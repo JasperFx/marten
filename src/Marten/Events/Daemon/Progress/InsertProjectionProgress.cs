@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Weasel.Postgresql;
-using Marten.Util;
 using NpgsqlTypes;
+
+#nullable enable
 
 namespace Marten.Events.Daemon.Progress
 {
@@ -16,10 +17,11 @@ namespace Marten.Events.Daemon.Progress
         private readonly EventGraph _events;
         private readonly EventRange _progress;
 
-        public InsertProjectionProgress(EventGraph events, EventRange progress)
+        public InsertProjectionProgress(EventGraph events, EventRange progress, string? tenantId)
         {
             _events = events;
             _progress = progress;
+            TenantId = tenantId;
         }
 
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
@@ -34,6 +36,8 @@ namespace Marten.Events.Daemon.Progress
         }
 
         public Type DocumentType => typeof(IEvent);
+        public string? TenantId { get; }
+
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {
             // Nothing

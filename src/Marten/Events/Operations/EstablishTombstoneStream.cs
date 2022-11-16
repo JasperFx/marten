@@ -8,9 +8,10 @@ using Marten.Internal.Operations;
 using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Storage;
-using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
+
+#nullable enable
 
 namespace Marten.Events.Operations
 {
@@ -60,6 +61,7 @@ DO NOTHING
                 };
             }
 
+            TenantId = sessionTenantId;
         }
 
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
@@ -70,6 +72,8 @@ DO NOTHING
         }
 
         public Type DocumentType => typeof(IEvent);
+        public string? TenantId { get; }
+
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {
             // Nothing

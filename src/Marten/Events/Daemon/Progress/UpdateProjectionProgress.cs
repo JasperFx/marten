@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Weasel.Postgresql;
-using Marten.Util;
 using NpgsqlTypes;
+
+#nullable enable
 
 namespace Marten.Events.Daemon.Progress
 {
@@ -18,10 +18,11 @@ namespace Marten.Events.Daemon.Progress
         public EventRange Range { get; }
         private readonly EventGraph _events;
 
-        public UpdateProjectionProgress(EventGraph events, EventRange range)
+        public UpdateProjectionProgress(EventGraph events, EventRange range, string? tenantId)
         {
             Range = range;
             _events = events;
+            TenantId = tenantId;
         }
 
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
@@ -38,6 +39,7 @@ namespace Marten.Events.Daemon.Progress
         }
 
         public Type DocumentType => typeof(IEvent);
+        public string? TenantId { get; }
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {
             if (reader.RecordsAffected != 1)

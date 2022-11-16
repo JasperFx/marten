@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Weasel.Postgresql;
-using Marten.Schema;
-using Marten.Util;
 using NpgsqlTypes;
 using Weasel.Core;
+
+#nullable enable
 
 namespace Marten.Events.Operations
 {
@@ -19,11 +19,12 @@ namespace Marten.Events.Operations
         private readonly long _number;
         private readonly DbObjectName _sproc;
 
-        public EventProgressWrite(EventGraph events, string key, long number)
+        public EventProgressWrite(EventGraph events, string key, long number, string? tenantId)
         {
             _sproc = new DbObjectName(events.DatabaseSchemaName, "mt_mark_event_progression");
             _key = key;
             _number = number;
+            TenantId = tenantId;
         }
 
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
@@ -34,6 +35,7 @@ namespace Marten.Events.Operations
         }
 
         public Type DocumentType => typeof(IEvent);
+        public string? TenantId { get; }
 
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {

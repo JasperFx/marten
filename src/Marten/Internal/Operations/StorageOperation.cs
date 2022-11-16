@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline.Exceptions;
@@ -10,10 +9,10 @@ using Marten.Internal.DirtyTracking;
 using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Schema.Identity;
-using Marten.Services;
-using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
+
+#nullable enable
 
 namespace Marten.Internal.Operations
 {
@@ -28,12 +27,13 @@ namespace Marten.Internal.Operations
         private readonly Dictionary<TId, Guid> _versions;
         protected Guid _version = CombGuidIdGeneration.NewGuid();
 
-        public StorageOperation(T document, TId id, Dictionary<TId, Guid> versions, DocumentMapping mapping)
+        public StorageOperation(T document, TId id, Dictionary<TId, Guid> versions, DocumentMapping mapping, string? tenantId)
         {
             _document = document;
             _id = id;
             _versions = versions;
             _tableName = mapping.TableName.Name;
+            TenantId = tenantId;
         }
 
         public object Document => _document;
@@ -56,6 +56,7 @@ namespace Marten.Internal.Operations
         public abstract void ConfigureParameters(NpgsqlParameter[] parameters, T document, IMartenSession session);
 
         public Type DocumentType => typeof(T);
+        public string? TenantId { get; }
 
         public virtual void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {

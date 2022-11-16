@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Storage;
-using Npgsql;
 using Weasel.Postgresql;
+
+#nullable enable
 
 namespace Marten.Internal.Operations
 {
@@ -16,10 +16,11 @@ namespace Marten.Internal.Operations
         private readonly string _commandText;
         private readonly object[] _parameterValues;
 
-        public ExecuteSqlStorageOperation(string commandText, params object[] parameterValues)
+        public ExecuteSqlStorageOperation(string commandText, string? tenantId, params object[] parameterValues)
         {
             _commandText = commandText.TrimEnd(';');
             _parameterValues = parameterValues;
+            TenantId = tenantId;
         }
 
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
@@ -54,6 +55,8 @@ namespace Marten.Internal.Operations
         }
 
         public Type DocumentType => typeof(StorageFeatures);
+        public string? TenantId { get; }
+
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {
             // nothing

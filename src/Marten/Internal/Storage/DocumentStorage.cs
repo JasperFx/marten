@@ -168,14 +168,14 @@ namespace Marten.Internal.Storage
         {
             if (TenancyStyle == TenancyStyle.Conjoined)
             {
-                return new Deletion(this, HardDeleteFragment)
+                return new Deletion(this, HardDeleteFragment, tenant)
                 {
                     Where = CompoundWhereFragment.And(new SpecificTenantFilter(tenant), ByIdFilter(id)),
                     Id = id
                 };
             }
 
-            return new Deletion(this, HardDeleteFragment)
+            return new Deletion(this, HardDeleteFragment, tenant)
             {
                 Where = ByIdFilter(id),
                 Id = id
@@ -264,14 +264,14 @@ namespace Marten.Internal.Storage
         {
             if (TenancyStyle == TenancyStyle.Conjoined)
             {
-                return new Deletion(this, DeleteFragment)
+                return new Deletion(this, DeleteFragment, tenant)
                 {
                     Where = CompoundWhereFragment.And(new SpecificTenantFilter(tenant), ByIdFilter(id)),
                     Id = id
                 };
             }
 
-            return new Deletion(this, DeleteFragment)
+            return new Deletion(this, DeleteFragment, tenant)
             {
                 Where = ByIdFilter(id),
                 Id = id

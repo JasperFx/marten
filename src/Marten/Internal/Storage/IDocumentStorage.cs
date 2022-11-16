@@ -45,7 +45,6 @@ namespace Marten.Internal.Storage
         Type DocumentType { get; }
 
         TenancyStyle TenancyStyle { get; }
-
     }
 
     internal class CreateFromDocumentMapping: Variable

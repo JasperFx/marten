@@ -11,9 +11,9 @@ using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.Parsing;
 using Weasel.Postgresql;
-using Marten.Util;
 using Remotion.Linq.Clauses;
 using Weasel.Postgresql.SqlGeneration;
+#nullable enable
 
 namespace Marten.Linq.SqlGeneration
 {
@@ -21,10 +21,11 @@ namespace Marten.Linq.SqlGeneration
     {
         private readonly IOperationFragment _operation;
 
-        public StatementOperation(IDocumentStorage storage, IOperationFragment operation) : base(storage)
+        public StatementOperation(IDocumentStorage storage, IOperationFragment operation, string? tenantId) : base(storage)
         {
             _operation = operation;
             DocumentType = storage.SourceType;
+            TenantId = tenantId;
         }
 
         protected override void configure(CommandBuilder builder)
@@ -39,6 +40,8 @@ namespace Marten.Linq.SqlGeneration
         }
 
         public Type DocumentType { get; }
+        public string? TenantId { get; }
+
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {
             // Nothing

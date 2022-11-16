@@ -82,9 +82,9 @@ namespace Marten.Events.Daemon
 
         internal IStorageOperation BuildProgressionOperation(EventGraph events)
         {
-            if (SequenceFloor == 0) return new InsertProjectionProgress(events, this);
+            if (SequenceFloor == 0) return new InsertProjectionProgress(events, this, null);
 
-            return new UpdateProjectionProgress(events, this);
+            return new UpdateProjectionProgress(events, this, null);
         }
 
         public void SkipEventSequence(long eventSequence)

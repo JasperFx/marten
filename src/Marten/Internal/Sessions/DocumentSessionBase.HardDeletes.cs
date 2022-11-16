@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using Marten.Exceptions;
@@ -81,7 +80,7 @@ namespace Marten.Internal.Sessions
             assertNotDisposed();
 
             var documentStorage = StorageFor<T>();
-            var deletion = new StatementOperation(documentStorage, documentStorage.HardDeleteFragment);
+            var deletion = new StatementOperation(documentStorage, documentStorage.HardDeleteFragment, TenantId);
             deletion.ApplyFiltering(this, expression);
 
             _workTracker.Add(deletion);
@@ -104,7 +103,7 @@ namespace Marten.Internal.Sessions
             {
                 throw new InvalidOperationException("Un-deleting documents can only be done against document types configured to be soft-deleted");
             }
-            var deletion = new StatementOperation(documentStorage, new UnSoftDelete(documentStorage));
+            var deletion = new StatementOperation(documentStorage, new UnSoftDelete(documentStorage), TenantId);
 
 
             var @where = deletion.ApplyFiltering(this, expression);

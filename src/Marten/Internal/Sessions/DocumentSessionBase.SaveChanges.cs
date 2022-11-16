@@ -174,7 +174,6 @@ namespace Marten.Internal.Sessions
 
         internal async Task ExecuteBatchAsync(IUpdateBatch batch, CancellationToken token)
         {
-
             await BeginTransactionAsync(token).ConfigureAwait(false);
 
             try

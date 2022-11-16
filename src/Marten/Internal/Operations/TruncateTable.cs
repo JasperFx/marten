@@ -4,9 +4,9 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Weasel.Postgresql;
-using Marten.Schema;
-using Marten.Util;
 using Weasel.Core;
+
+#nullable enable
 
 namespace Marten.Internal.Operations
 {
@@ -14,9 +14,10 @@ namespace Marten.Internal.Operations
     {
         private readonly DbObjectName _name;
 
-        public TruncateTable(DbObjectName name)
+        public TruncateTable(DbObjectName name, string? tenantId)
         {
             _name = name;
+            TenantId = tenantId;
         }
 
         public TruncateTable(Type documentType)
@@ -31,6 +32,7 @@ namespace Marten.Internal.Operations
         }
 
         public Type DocumentType { get; }
+        public string? TenantId { get; }
 
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {

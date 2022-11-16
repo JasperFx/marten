@@ -10,7 +10,6 @@ namespace Marten.Storage
         /// <summary>
         /// Multi-tenanted within the same database/schema through a tenant id
         /// </summary>
-        Conjoined,
-
+        Conjoined
     }
 }
