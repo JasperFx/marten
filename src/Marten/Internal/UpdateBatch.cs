@@ -11,16 +11,20 @@ using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Util;
 
+#nullable enable
+
 namespace Marten.Internal
 {
     public class UpdateBatch: IUpdateBatch
     {
         private readonly IList<Exception> _exceptions = new List<Exception>();
         private readonly IReadOnlyList<IStorageOperation> _operations;
+        public string? TenantId { get; }
 
-        public UpdateBatch(IReadOnlyList<IStorageOperation> operations)
+        public UpdateBatch(IReadOnlyList<IStorageOperation> operations, string? tenantId)
         {
             _operations = operations;
+            TenantId = tenantId;
         }
 
         public void ApplyChanges(IMartenSession session)

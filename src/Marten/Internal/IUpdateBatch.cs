@@ -7,6 +7,7 @@ namespace Marten.Internal
 {
     public interface IUpdateBatch
     {
+        string? TenantId { get; }
         void ApplyChanges(IMartenSession session);
         Task ApplyChangesAsync(IMartenSession session, CancellationToken token);
     }

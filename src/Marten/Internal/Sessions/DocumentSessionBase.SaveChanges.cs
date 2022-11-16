@@ -1,13 +1,14 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
+using Marten.Storage;
 using Npgsql;
 using Weasel.Core;
 
-#nullable enable
 namespace Marten.Internal.Sessions
 {
     public abstract partial class DocumentSessionBase
@@ -54,8 +55,12 @@ namespace Marten.Internal.Sessions
                 listener.BeforeSaveChanges(this);
             }
 
-            var batch = new UpdateBatch(_workTracker.AllOperations);
-            ExecuteBatch(batch);
+            var batches = generateUpdateBatches();
+
+            foreach (var batch in batches)
+            {
+                ExecuteBatch(batch);
+            }
 
             resetDirtyChecking();
 
@@ -93,6 +98,7 @@ namespace Marten.Internal.Sessions
 
                 throw;
             }
+
             _workTracker.Sort(Options);
 
             if (Options.AutoCreateSchemaObjects != AutoCreate.None)
@@ -109,9 +115,12 @@ namespace Marten.Internal.Sessions
                 await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
             }
 
-            var batch = new UpdateBatch(_workTracker.AllOperations);
+            var batches = generateUpdateBatches();
 
-            await ExecuteBatchAsync(batch, token).ConfigureAwait(false);
+            foreach (var batch in batches)
+            {
+                await ExecuteBatchAsync(batch, token).ConfigureAwait(false);
+            }
 
             resetDirtyChecking();
 
@@ -127,11 +136,22 @@ namespace Marten.Internal.Sessions
             _workTracker.Reset();
         }
 
+        private IList<UpdateBatch> generateUpdateBatches()
+        {
+            if (Tenancy is DefaultTenancy)
+                return new List<UpdateBatch> { new(_workTracker.AllOperations, null) };
+
+            return _workTracker.AllOperations
+                .GroupBy(op => op.TenantId ?? TenantId)
+                .Select(op => new UpdateBatch(op.ToList(), op.Key))
+                .ToList();
+        }
+
         internal void ExecuteBatch(IUpdateBatch batch)
         {
             try
             {
-                batch.ApplyChanges(this);
+                batch.ApplyChanges(GetCurrentOrTenantSession(batch.TenantId));
                 _retryPolicy.Execute(_connection.Commit);
             }
             catch (Exception)
@@ -178,15 +198,15 @@ namespace Marten.Internal.Sessions
 
             try
             {
-                await batch.ApplyChangesAsync(this, token).ConfigureAwait(false);
+                await batch.ApplyChangesAsync(GetCurrentOrTenantSession(batch.TenantId), token).ConfigureAwait(false);
                 await _retryPolicy.ExecuteAsync(() => _connection.CommitAsync(token), token).ConfigureAwait(false);
-
             }
             catch (Exception)
             {
                 try
                 {
-                    await _retryPolicy.ExecuteAsync(() => _connection.RollbackAsync(token), token).ConfigureAwait(false);
+                    await _retryPolicy.ExecuteAsync(() => _connection.RollbackAsync(token), token)
+                        .ConfigureAwait(false);
                 }
                 catch (RollbackException e)
                 {

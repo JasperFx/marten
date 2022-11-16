@@ -185,12 +185,6 @@ namespace Marten.Internal.CodeGeneration
         {
             var assembly = method.ParentType.ParentAssembly;
 
-            var tenantDeclaration = "";
-            if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
-            {
-                tenantDeclaration = ", tenant";
-            }
-
 
             if (_mapping.IsHierarchy())
             {
@@ -200,8 +194,8 @@ return new {assembly.Namespace}.{operationType.TypeName}
 (
     {{0}}, Identity({{0}}),
     {{1}}.Versions.ForType<{_mapping.DocumentType.FullNameInCode()}, {_mapping.IdType.FullNameInCode()}>(),
-    {{2}}
-    {tenantDeclaration}
+    {{2}},
+    tenant
 );"
                         , new Use(_mapping.DocumentType), Use.Type<IMartenSession>(), Use.Type<DocumentMapping>());
             }
@@ -213,8 +207,8 @@ return new {assembly.Namespace}.{operationType.TypeName}
 (
     {{0}}, Identity({{0}}),
     {{1}}.Versions.ForType<{_mapping.DocumentType.FullNameInCode()}, {_mapping.IdType.FullNameInCode()}>(),
-    {{2}}
-    {tenantDeclaration}
+    {{2}},
+    tenant
 );"
                         , new Use(_mapping.DocumentType), Use.Type<IMartenSession>(), Use.Type<DocumentMapping>());
             }

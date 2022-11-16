@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Baseline;
-using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
@@ -14,14 +13,17 @@ using Marten.Services;
 using Npgsql;
 using Weasel.Core;
 
+#nullable enable
+
 namespace Marten.Events.Daemon
 {
     /// <summary>
     /// Incrementally built batch command for projection updates
     /// </summary>
-    public class ProjectionUpdateBatch : IUpdateBatch, IDisposable, ISessionWorkTracker
+    public class ProjectionUpdateBatch: IUpdateBatch, IDisposable, ISessionWorkTracker
     {
         public EventRange Range { get; }
+        public string TenantId { get; }
         private readonly DaemonSettings _settings;
         private DocumentSessionBase _session;
         private readonly CancellationToken _token;
@@ -31,8 +33,14 @@ namespace Marten.Events.Daemon
 
         private readonly List<Type> _documentTypes = new List<Type>();
 
-        internal ProjectionUpdateBatch(EventGraph events, DaemonSettings settings,
-            DocumentSessionBase session, EventRange range, CancellationToken token, ShardExecutionMode mode)
+        internal ProjectionUpdateBatch(
+            EventGraph events,
+            DaemonSettings settings,
+            DocumentSessionBase session,
+            EventRange range,
+            CancellationToken token,
+            ShardExecutionMode mode
+        )
         {
             Range = range;
             _settings = settings;
@@ -40,7 +48,10 @@ namespace Marten.Events.Daemon
             _token = token;
             _mode = mode;
             Queue = new ActionBlock<IStorageOperation>(processOperation,
-                new ExecutionDataflowBlockOptions {MaxDegreeOfParallelism = 1, EnsureOrdered = true, CancellationToken = token});
+                new ExecutionDataflowBlockOptions
+                {
+                    MaxDegreeOfParallelism = 1, EnsureOrdered = true, CancellationToken = token
+                });
 
             startNewPage(session);
 
@@ -116,7 +127,8 @@ namespace Marten.Events.Daemon
                 var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
                 foreach (var listener in _settings.AsyncListeners)
                 {
-                    await listener.AfterCommitAsync((IDocumentSession)session, unitOfWorkData, _token).ConfigureAwait(false);
+                    await listener.AfterCommitAsync((IDocumentSession)session, unitOfWorkData, _token)
+                        .ConfigureAwait(false);
                 }
             }
         }
@@ -159,7 +171,8 @@ namespace Marten.Events.Daemon
                 UpdateBatch.ApplyCallbacks(_operations, reader, exceptions);
             }
 
-            public async Task ApplyChangesAsync(IList<Exception> exceptions, IMartenSession session, CancellationToken token)
+            public async Task ApplyChangesAsync(IList<Exception> exceptions, IMartenSession session,
+                CancellationToken token)
             {
                 if (Count == 0)
                 {
@@ -321,6 +334,7 @@ namespace Marten.Events.Daemon
             {
                 page.ReleaseSession();
             }
+
             await _session.DisposeAsync().ConfigureAwait(false);
             _session = null;
         }

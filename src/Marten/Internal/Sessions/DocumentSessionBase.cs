@@ -18,7 +18,8 @@ namespace Marten.Internal.Sessions
 
         private Dictionary<string, NestedTenantSession>? _byTenant;
 
-        internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IConnectionLifetime connection): base(store, sessionOptions, connection)
+        internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IConnectionLifetime connection)
+            : base(store, sessionOptions, connection)
         {
             Concurrency = sessionOptions.ConcurrencyChecks;
             _workTracker = new UnitOfWork(this);
@@ -228,7 +229,9 @@ namespace Marten.Internal.Sessions
         /// </summary>
         /// <param name="tenantId"></param>
         /// <returns></returns>
-        public new ITenantOperations ForTenant(string tenantId)
+        public new ITenantOperations ForTenant(string tenantId) => NestedSessionForTenant(tenantId);
+
+        private NestedTenantSession NestedSessionForTenant(string tenantId)
         {
             _byTenant ??= new Dictionary<string, NestedTenantSession>();
 
@@ -243,6 +246,9 @@ namespace Marten.Internal.Sessions
 
             return tenantSession;
         }
+
+        private DocumentSessionBase GetCurrentOrTenantSession(string? tenantId) =>
+            Tenancy is DefaultTenancy ? this : NestedSessionForTenant(tenantId ?? TenantId);
 
         protected internal abstract void ejectById<T>(long id) where T : notnull;
         protected internal abstract void ejectById<T>(int id) where T : notnull;
@@ -315,7 +321,8 @@ namespace Marten.Internal.Sessions
 
         public void EjectPatchedTypes(IUnitOfWork changes)
         {
-            var patchedTypes = changes.Operations().Where(x => x.Role() == OperationRole.Patch).Select(x => x.DocumentType).Distinct().ToArray();
+            var patchedTypes = changes.Operations().Where(x => x.Role() == OperationRole.Patch)
+                .Select(x => x.DocumentType).Distinct().ToArray();
             foreach (var type in patchedTypes) EjectAllOfType(type);
         }
 

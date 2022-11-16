@@ -164,7 +164,8 @@ namespace Marten.Events
 
                 operations.AddRange(tombstones);
 
-                batch = new UpdateBatch(operations);
+                // TODO: Shouldn't we return here also a list of batches grouped by tenants?
+                batch = new UpdateBatch(operations, session.TenantId);
 
                 return true;
             }
