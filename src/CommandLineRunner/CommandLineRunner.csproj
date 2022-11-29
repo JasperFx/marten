@@ -1,10 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
         <UserSecretsId>dotnet-CommandLineRunner-144A5847-CAC2-4DF8-A6D4-C4150BB90A23</UserSecretsId>
         <nullable>enable</nullable>
-        <LangVersion>10</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
