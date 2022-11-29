@@ -3,7 +3,6 @@
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
-        <LangVersion>10</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
