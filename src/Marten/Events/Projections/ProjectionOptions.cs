@@ -72,7 +72,7 @@ public class ProjectionOptions: DaemonSettings
 
 
     /// <summary>
-    ///     Register a projection to the Marten configuration
+    /// Register a projection to the Marten configuration
     /// </summary>
     /// <param name="projection">Value values are Inline/Async, The default is Inline</param>
     /// <param name="lifecycle"></param>
@@ -118,7 +118,7 @@ public class ProjectionOptions: DaemonSettings
     }
 
     /// <summary>
-    ///     Add a projection that will be executed inline
+    /// Add a projection that will be executed inline
     /// </summary>
     /// <param name="projection"></param>
     /// <param name="lifecycle">Optionally override the lifecycle of this projection. The default is Inline</param>
@@ -134,7 +134,7 @@ public class ProjectionOptions: DaemonSettings
     }
 
     /// <summary>
-    ///     Use a "self-aggregating" aggregate of type.
+    /// Use a "self-aggregating" aggregate of type.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="lifecycle">Override the aggregate lifecycle. The default is Inline</param>
@@ -153,11 +153,10 @@ public class ProjectionOptions: DaemonSettings
 
 
     /// <summary>
-    ///     Register an aggregate projection that should be evaluated inline
+    /// Register an aggregate projection that should be evaluated inline
     /// </summary>
     /// <typeparam name="TProjection">Projection type</typeparam>
     /// <param name="lifecycle">Optionally override the ProjectionLifecycle</param>
-    /// <returns>The extended storage configuration for document T</returns>
     public void Add<TProjection>(ProjectionLifecycle? lifecycle = null) where TProjection : GeneratedProjection, new()
     {
         var projection = new TProjection();
@@ -173,12 +172,11 @@ public class ProjectionOptions: DaemonSettings
     }
 
     /// <summary>
-    ///     Register an aggregate projection that should be evaluated inline
+    /// Register an aggregate projection that should be evaluated inline
     /// </summary>
     /// <param name="projection"></param>
     /// <typeparam name="T"></typeparam>
     /// <param name="lifecycle">Optionally override the ProjectionLifecycle</param>
-    /// <returns>The extended storage configuration for document T</returns>
     public void Add<T>(GeneratedAggregateProjectionBase<T> projection, ProjectionLifecycle? lifecycle = null)
     {
         if (lifecycle.HasValue)
