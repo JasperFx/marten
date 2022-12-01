@@ -11,8 +11,8 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
     private const string ExpectedMessage =
         "duplicate key value violates unique constraint \"pk_mt_events_stream_and_version\"";
 
-    private const string StreamId = "<streamid>";
-    private const string Version = "<version>";
+    private const string StreamId = "streamid";
+    private const string Version = "version";
 
     [Obsolete("let's get rid of this")]
     public static readonly EventStreamUnexpectedMaxEventIdExceptionTransform Instance = new();
@@ -28,7 +28,7 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
             return false;
         }
 
-        var postgresException = (PostgresException)original.InnerException;
+        var postgresException = original as PostgresException;
 
         object id = null;
         Type aggregateType = null;
@@ -64,8 +64,8 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
 
     private static bool Matches(Exception e)
     {
-        return e?.InnerException is PostgresException pe
-               && pe.SqlState == PostgresErrorCodes.UniqueViolation
-               && pe.Message.Contains(ExpectedMessage);
+        return e is PostgresException pe
+            && pe.SqlState == PostgresErrorCodes.UniqueViolation
+            && pe.Message.Contains(ExpectedMessage);
     }
 }
