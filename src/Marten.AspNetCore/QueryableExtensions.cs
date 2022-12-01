@@ -10,13 +10,13 @@ namespace Marten.AspNetCore;
 public static class QueryableExtensions
 {
     /// <summary>
-    /// Write the JSON contents of a single document response from the Linq query to the HttpContext response, with status code 200 if found or
+    /// Write the JSON contents of a single document response from the Linq query to the HttpContext response, with status code <paramref name="onFoundStatus"/> if found or
     /// 404 if not found
     /// </summary>
     /// <param name="queryable"></param>
     /// <param name="context"></param>
     /// <param name="contentType"></param>
-    /// <param name="onFoundStatus"></param>
+    /// <param name="onFoundStatus">Defaults to 200</param>
     /// <typeparam name="T"></typeparam>
     public static async Task WriteSingle<T>(this IQueryable<T> queryable, HttpContext context, string contentType = "application/json", int onFoundStatus = 200)
     {
@@ -25,7 +25,7 @@ public static class QueryableExtensions
 
         if (found)
         {
-            context.Response.StatusCode = 200;
+            context.Response.StatusCode = onFoundStatus;
             context.Response.ContentLength = stream.Length;
             context.Response.ContentType = contentType;
 
