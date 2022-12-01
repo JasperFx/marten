@@ -18,5 +18,9 @@ public class EventStreamUnexpectedMaxEventIdException: ConcurrencyException
     {
     }
 
+    public EventStreamUnexpectedMaxEventIdException(string message) : base(message, null, null)
+    {
+    }
+
     public Type AggregateType { get; }
 }
