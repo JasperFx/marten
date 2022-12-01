@@ -28,10 +28,6 @@ var store = DocumentStore.For(storeOptions =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/CamelCasing.cs#L11-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-serialize-to-camelcase' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Disable PLV8
-
-If you don't want PLV8 (required for JavaScript transformations) related items in your database schema, you can disable PLV8 altogether by setting `StoreOptions.PLV8Enabled` to false.
-
 ## More diagnostics data outside of Marten
 
 If you cannot obtain the desired diagnostic data through Marten's [diagnostics](/diagnostics), consider using the [Npgsql logging facilities](https://www.npgsql.org/doc/logging.html), by hooking into `NpgsqlLogManager.Provider`, or by using the [performance counters exposed by Npgsql](https://www.npgsql.org/doc/performance.html).
