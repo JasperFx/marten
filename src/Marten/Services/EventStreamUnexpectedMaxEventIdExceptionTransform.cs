@@ -1,5 +1,6 @@
 using System;
 using System.Text.RegularExpressions;
+using JasperFx.Core;
 using JasperFx.Core.Exceptions;
 using Marten.Exceptions;
 using Npgsql;
@@ -10,6 +11,8 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
 {
     private const string ExpectedMessage =
         "duplicate key value violates unique constraint \"pk_mt_events_stream_and_version\"";
+    private const string DetailsRedactedMessage = "Detail redacted as it may contain sensitive data. " +
+        "Specify 'Include Error Detail' in the connection string to include this information.";
 
     private const string StreamId = "streamid";
     private const string Version = "version";
@@ -35,7 +38,7 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
         var expected = -1;
         var actual = -1;
 
-        if (!string.IsNullOrEmpty(postgresException.Detail))
+        if (!string.IsNullOrEmpty(postgresException.Detail) && !postgresException.Detail.EqualsIgnoreCase(DetailsRedactedMessage))
         {
             var details = EventStreamUniqueExceptionDetailsRegex.Match(postgresException.Detail);
 
@@ -56,9 +59,12 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
                     expected = actual - 1;
                 }
             }
+
+            transformed = new EventStreamUnexpectedMaxEventIdException(id, aggregateType, expected, actual);
+            return true;
         }
 
-        transformed = new EventStreamUnexpectedMaxEventIdException(id, aggregateType, expected, actual);
+        transformed = new EventStreamUnexpectedMaxEventIdException(postgresException.MessageText);
         return true;
     }
 
