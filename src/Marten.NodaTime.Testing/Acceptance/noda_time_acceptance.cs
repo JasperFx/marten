@@ -224,6 +224,42 @@ public class noda_time_acceptance: OneOffConfigurationsContext
     [Theory]
     [InlineData(SerializerType.SystemTextJson)]
     [InlineData(SerializerType.Newtonsoft)]
+    public void can_index_noda_time_types(SerializerType serializerType)
+    {
+        StoreOptions(_ =>
+        {
+            _.UseDefaultSerialization(serializerType: serializerType);
+            _.UseNodaTime();
+            _.Schema.For<TargetWithDates>().Index(x => x.LocalDate);
+        }, true);
+        Should
+            .NotThrow(() => theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(),
+                "Index creation failed for LocalDate");
+
+        StoreOptions(_ =>
+        {
+            _.UseDefaultSerialization(serializerType: serializerType);
+            _.UseNodaTime();
+            _.Schema.For<TargetWithDates>().Index(x => x.LocalDateTime);
+        }, true);
+        Should
+            .NotThrow(() => theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(),
+                "Index creation failed for LocalDateTime");
+
+        StoreOptions(_ =>
+        {
+            _.UseDefaultSerialization(serializerType: serializerType);
+            _.UseNodaTime();
+            _.Schema.For<TargetWithDates>().Index(x => x.InstantUTC);
+        }, true);
+        Should
+            .NotThrow(() => theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(),
+                "Index creation failed for Instant");
+    }
+
+    [Theory]
+    [InlineData(SerializerType.SystemTextJson)]
+    [InlineData(SerializerType.Newtonsoft)]
     public void bug_1276_can_select_instant(SerializerType serializerType)
     {
         StoreOptions(_ => _.UseNodaTime());
