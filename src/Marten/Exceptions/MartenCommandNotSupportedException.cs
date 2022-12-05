@@ -1,111 +1,108 @@
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Baseline.Exceptions;
+using JasperFx.Core.Exceptions;
 using Npgsql;
 
-namespace Marten.Exceptions
+namespace Marten.Exceptions;
+
+/// <summary>
+///     Reasons for feature not being supported
+/// </summary>
+public enum NotSupportedReason
 {
     /// <summary>
-    /// Reasons for feature not being supported
+    ///     Full Text Search needs at least Postgres version 10 - eg. doing PlainTextSearch or using to_tsvector
     /// </summary>
-    public enum NotSupportedReason
-    {
-        /// <summary>
-        /// Full Text Search needs at least Postgres version 10 - eg. doing PlainTextSearch or using to_tsvector
-        /// </summary>
-        FullTextSearchNeedsAtLeastPostgresVersion10 = 1,
+    FullTextSearchNeedsAtLeastPostgresVersion10 = 1,
 
-        /// <summary>
-        /// Web Styles Search needs at least Postgres version 11
-        /// </summary>
-        WebStyleSearchNeedsAtLeastPostgresVersion11 = 2
+    /// <summary>
+    ///     Web Styles Search needs at least Postgres version 11
+    /// </summary>
+    WebStyleSearchNeedsAtLeastPostgresVersion11 = 2
+}
+
+/// <summary>
+///     Informs that feature used in Postgres command is not supported
+/// </summary>
+public class MartenCommandNotSupportedException: MartenCommandException
+{
+    /// <summary>
+    ///     Creates MartenCommandNotSupportedException based on the reason, command and innerException information with
+    ///     formatted message.
+    /// </summary>
+    /// <param name="reason">reason for feature not being supported</param>
+    /// <param name="command">failed Postgres command</param>
+    /// <param name="innerException">internal exception details</param>
+    /// <param name="message">optional additional exception information</param>
+    public MartenCommandNotSupportedException(
+        NotSupportedReason reason,
+        NpgsqlCommand command,
+        Exception innerException,
+        string message = null
+    ): base(command, innerException, message)
+    {
+        Reason = reason;
     }
 
     /// <summary>
-    /// Informs that feature used in Postgres command is not supported
+    ///     Reason for feature not being supported
     /// </summary>
-    public class MartenCommandNotSupportedException: MartenCommandException
+    public NotSupportedReason Reason { get; }
+}
+
+internal class MartenCommandNotSupportedExceptionTransform: IExceptionTransform
+{
+    public bool TryTransform(Exception original, out Exception transformed)
     {
-        /// <summary>
-        /// Reason for feature not being supported
-        /// </summary>
-        public NotSupportedReason Reason { get; }
-
-        /// <summary>
-        ///
-        /// Creates MartenCommandNotSupportedException based on the reason, command and innerException information with formatted message.
-        /// </summary>
-        /// <param name="reason">reason for feature not being supported</param>
-        /// <param name="command">failed Postgres command</param>
-        /// <param name="innerException">internal exception details</param>
-        /// <param name="message">optional additional exception information</param>
-        public MartenCommandNotSupportedException(
-            NotSupportedReason reason,
-            NpgsqlCommand command,
-            Exception innerException,
-            string message = null
-        ) : base(command, innerException, message)
+        if (original is NpgsqlException e)
         {
-            Reason = reason;
-        }
-
-
-    }
-
-    internal class MartenCommandNotSupportedExceptionTransform: IExceptionTransform
-    {
-        public bool TryTransform(Exception original, out Exception transformed)
-        {
-            if (original is NpgsqlException e)
+            var knownCause = KnownNotSupportedExceptionCause.KnownCauses.FirstOrDefault(x => x.Matches(e));
+            if (knownCause != null)
             {
-                var knownCause = KnownNotSupportedExceptionCause.KnownCauses.FirstOrDefault(x => x.Matches(e));
-                if (knownCause != null)
-                {
-                    var command = e.ReadNpgsqlCommand();
+                var command = e.ReadNpgsqlCommand();
 
-                    transformed = new MartenCommandNotSupportedException(knownCause.Reason, command, e, knownCause.Description);
+                transformed =
+                    new MartenCommandNotSupportedException(knownCause.Reason, command, e, knownCause.Description);
 
-                    return true;
-                }
+                return true;
             }
-
-            transformed = null;
-            return false;
         }
+
+        transformed = null;
+        return false;
+    }
+}
+
+internal sealed class KnownNotSupportedExceptionCause
+{
+    internal static readonly KnownNotSupportedExceptionCause ToTsvectorOnJsonb = new(
+        "Full Text Search needs at least Postgres version 10.",
+        NotSupportedReason.FullTextSearchNeedsAtLeastPostgresVersion10,
+        e => e is PostgresException pe && pe.SqlState == PostgresErrorCodes.UndefinedFunction &&
+             new Regex(@"function to_tsvector\((?:regconfig, )?jsonb\) does not exist").IsMatch(pe.Message));
+
+    internal static readonly KnownNotSupportedExceptionCause WebStyleSearch = new(
+        "Full Text Search needs at least Postgres version 10.",
+        NotSupportedReason.WebStyleSearchNeedsAtLeastPostgresVersion11,
+        e => e is PostgresException pe && pe.SqlState == PostgresErrorCodes.UndefinedFunction &&
+             new Regex(@"function websearch_to_tsquery\((?:regconfig, )?text\) does not exist").IsMatch(pe.Message));
+
+    internal static readonly KnownNotSupportedExceptionCause[] KnownCauses = { ToTsvectorOnJsonb, WebStyleSearch };
+    private readonly Func<Exception, bool> match;
+
+    internal KnownNotSupportedExceptionCause(string description, NotSupportedReason reason, Func<Exception, bool> match)
+    {
+        Description = description;
+        Reason = reason;
+        this.match = match;
     }
 
-    internal sealed class KnownNotSupportedExceptionCause
+    internal NotSupportedReason Reason { get; }
+    internal string Description { get; }
+
+    internal bool Matches(Exception e)
     {
-        private readonly Func<Exception, bool> match;
-
-        internal KnownNotSupportedExceptionCause(string description, NotSupportedReason reason, Func<Exception, bool> match)
-        {
-            Description = description;
-            Reason = reason;
-            this.match = match;
-        }
-
-
-
-        internal static readonly KnownNotSupportedExceptionCause ToTsvectorOnJsonb = new KnownNotSupportedExceptionCause("Full Text Search needs at least Postgres version 10.",
-            NotSupportedReason.FullTextSearchNeedsAtLeastPostgresVersion10,
-            e => e is PostgresException pe && pe.SqlState == PostgresErrorCodes.UndefinedFunction &&
-                 new Regex(@"function to_tsvector\((?:regconfig, )?jsonb\) does not exist").IsMatch(pe.Message));
-
-        internal static readonly KnownNotSupportedExceptionCause WebStyleSearch = new KnownNotSupportedExceptionCause("Full Text Search needs at least Postgres version 10.",
-            NotSupportedReason.WebStyleSearchNeedsAtLeastPostgresVersion11,
-            e => e is PostgresException pe && pe.SqlState == PostgresErrorCodes.UndefinedFunction &&
-                 new Regex(@"function websearch_to_tsquery\((?:regconfig, )?text\) does not exist").IsMatch(pe.Message));
-
-        internal static readonly KnownNotSupportedExceptionCause[] KnownCauses = { ToTsvectorOnJsonb, WebStyleSearch };
-
-        internal NotSupportedReason Reason { get; }
-        internal string Description { get; }
-
-        internal bool Matches(Exception e)
-        {
-            return match(e);
-        }
+        return match(e);
     }
 }

@@ -10,56 +10,58 @@ using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.Parsing;
-using Weasel.Postgresql;
-using Marten.Util;
 using Remotion.Linq.Clauses;
+using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Linq.SqlGeneration
+namespace Marten.Linq.SqlGeneration;
+
+internal class StatementOperation: DocumentStatement, IStorageOperation
 {
-    internal class StatementOperation : DocumentStatement, IStorageOperation
+    private readonly IOperationFragment _operation;
+
+    public StatementOperation(IDocumentStorage storage, IOperationFragment operation): base(storage)
     {
-        private readonly IOperationFragment _operation;
+        _operation = operation;
+        DocumentType = storage.SourceType;
+    }
 
-        public StatementOperation(IDocumentStorage storage, IOperationFragment operation) : base(storage)
-        {
-            _operation = operation;
-            DocumentType = storage.SourceType;
-        }
+    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    {
+        configure(builder);
+    }
 
-        protected override void configure(CommandBuilder builder)
-        {
-            _operation.Apply(builder);
-            writeWhereClause(builder);
-        }
+    public Type DocumentType { get; }
 
-        public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
-        {
-            configure(builder);
-        }
+    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
+    {
+        // Nothing
+    }
 
-        public Type DocumentType { get; }
-        public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-        {
-            // Nothing
-        }
+    public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
+    {
+        return Task.CompletedTask;
+    }
 
-        public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
-        {
-            return Task.CompletedTask;
-        }
+    public OperationRole Role()
+    {
+        return _operation.Role();
+    }
 
-        public OperationRole Role() => _operation.Role();
+    protected override void configure(CommandBuilder builder)
+    {
+        _operation.Apply(builder);
+        writeWhereClause(builder);
+    }
 
-        public ISqlFragment ApplyFiltering<T>(DocumentSessionBase session, Expression<Func<T, bool>> expression)
-        {
-            var queryExpression = session.Query<T>().Where(expression).Expression;
-            var model = MartenQueryParser.Flyweight.GetParsedQuery(queryExpression);
-            var where = model.BodyClauses.OfType<WhereClause>().Single();
-            WhereClauses.Add(where);
-            CompileLocal(session);
+    public ISqlFragment ApplyFiltering<T>(DocumentSessionBase session, Expression<Func<T, bool>> expression)
+    {
+        var queryExpression = session.Query<T>().Where(expression).Expression;
+        var model = MartenQueryParser.Flyweight.GetParsedQuery(queryExpression);
+        var where = model.BodyClauses.OfType<WhereClause>().Single();
+        WhereClauses.Add(where);
+        CompileLocal(session);
 
-            return Where;
-        }
+        return Where;
     }
 }

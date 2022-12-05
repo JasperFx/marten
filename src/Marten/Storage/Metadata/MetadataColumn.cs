@@ -5,8 +5,8 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline.Expressions;
-using LamarCodeGeneration;
+using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
@@ -17,122 +17,134 @@ using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using FindMembers = Marten.Linq.Parsing.FindMembers;
 
-namespace Marten.Storage.Metadata
+namespace Marten.Storage.Metadata;
+
+public abstract class MetadataColumn: TableColumn
 {
-
-    public abstract class MetadataColumn : TableColumn
+    protected MetadataColumn(string name, string type, Type dotNetType): base(name, type)
     {
-        public Type DotNetType { get; }
+        DotNetType = dotNetType;
+    }
 
-        protected MetadataColumn(string name, string type, Type dotNetType) : base(name, type)
+    public Type DotNetType { get; }
+
+    public abstract MemberInfo Member { get; set; }
+
+    /// <summary>
+    ///     Is this metadata column enabled?
+    /// </summary>
+    public bool Enabled { get; set; } = true;
+
+    internal abstract Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
+        DbDataReader reader, CancellationToken token);
+
+    internal abstract void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,
+        DbDataReader reader);
+
+    internal virtual void RegisterForLinqSearching(DocumentMapping mapping)
+    {
+        if (!Enabled || Member == null)
         {
-            DotNetType = dotNetType;
+            return;
         }
 
-        internal abstract Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
-            DbDataReader reader, CancellationToken token);
-        internal abstract void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,
-            DbDataReader reader);
 
-        public abstract MemberInfo Member { get; set; }
+        mapping.DuplicateField(new[] { Member }, columnName: Name)
+            .OnlyForSearching = true;
+    }
 
-        /// <summary>
-        /// Is this metadata column enabled?
-        /// </summary>
-        public bool Enabled { get; set; } = true;
+    public bool EnabledWithMember()
+    {
+        return Enabled && Member != null;
+    }
 
-        internal virtual void RegisterForLinqSearching(DocumentMapping mapping)
+    internal virtual UpsertArgument ToArgument()
+    {
+        return new UpsertArgument
         {
-            if (!Enabled || Member == null) return;
+            Arg = "arg_" + Name,
+            Column = Name,
+            DbType = PostgresqlProvider.Instance.ToParameterType(DotNetType),
+            PostgresType = Type,
+            Members = new[] { Member }
+        };
+    }
 
-
-
-            mapping.DuplicateField(new MemberInfo[] {Member}, columnName: Name)
-                .OnlyForSearching = true;
+    protected void setMemberFromReader(GeneratedType generatedType, GeneratedMethod async, GeneratedMethod sync,
+        int index,
+        DocumentMapping mapping)
+    {
+        if (Member == null)
+        {
+            return;
         }
 
-        public bool EnabledWithMember()
+        sync.IfDbReaderValueIsNotNull(index, () =>
         {
-            return Enabled && Member != null;
-        }
+            sync.AssignMemberFromReader(generatedType, index, mapping.DocumentType, Member.Name);
+        });
 
-        internal virtual UpsertArgument ToArgument()
+        async.IfDbReaderValueIsNotNullAsync(index, () =>
         {
-            return new UpsertArgument
+            async.AssignMemberFromReaderAsync(generatedType, index, mapping.DocumentType, Member.Name);
+        });
+    }
+}
+
+internal abstract class MetadataColumn<T>: MetadataColumn
+{
+    private readonly string _memberName;
+    private readonly Action<DocumentMetadata, T> _setter;
+    private MemberInfo _member;
+
+    protected MetadataColumn(string name, Expression<Func<DocumentMetadata, T>> property): base(name,
+        PostgresqlProvider.Instance.GetDatabaseType(typeof(T), EnumStorage.AsInteger), typeof(T))
+    {
+        var member = FindMembers.Determine(property).Last();
+        _memberName = member.Name;
+        _setter = LambdaBuilder.Setter<DocumentMetadata, T>(member);
+    }
+
+    public override MemberInfo Member
+    {
+        get => _member;
+        set
+        {
+            if (value != null)
             {
-                Arg = "arg_" + Name,
-                Column = Name,
-                DbType = PostgresqlProvider.Instance.ToParameterType(DotNetType),
-                PostgresType = Type,
-                Members = new MemberInfo[]{Member}
+                if (value.GetRawMemberType() != typeof(T))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value),
+                        $"The {_memberName} member has to be of type {typeof(T).NameInCode()}");
+                }
 
-            };
-        }
-
-        protected void setMemberFromReader(GeneratedType generatedType, GeneratedMethod async, GeneratedMethod sync, int index,
-            DocumentMapping mapping)
-        {
-            if (Member == null) return;
-
-            sync.IfDbReaderValueIsNotNull(index, () =>
-            {
-                sync.AssignMemberFromReader(generatedType, index, mapping.DocumentType, Member.Name);
-            });
-
-            async.IfDbReaderValueIsNotNullAsync(index, () =>
-            {
-                async.AssignMemberFromReaderAsync(generatedType, index, mapping.DocumentType, Member.Name);
-            });
+                _member = value;
+                Enabled = true;
+            }
         }
     }
 
-    internal abstract class MetadataColumn<T> : MetadataColumn
+    internal override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
+        DbDataReader reader, CancellationToken token)
     {
-        private readonly Action<DocumentMetadata, T> _setter;
-        private MemberInfo _member;
-        private readonly string _memberName;
-
-        protected MetadataColumn(string name, Expression<Func<DocumentMetadata, T>> property) : base(name, PostgresqlProvider.Instance.GetDatabaseType(typeof(T), EnumStorage.AsInteger), typeof(T))
+        if (await reader.IsDBNullAsync(index, token).ConfigureAwait(false))
         {
-            var member = FindMembers.Determine(property).Last();
-            _memberName = member.Name;
-            _setter = LambdaBuilder.Setter<DocumentMetadata, T>(member);
+            return;
         }
 
-        internal override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
-            DbDataReader reader, CancellationToken token)
-        {
-            if (await reader.IsDBNullAsync(index, token).ConfigureAwait(false)) return;
+        var value = await reader.GetFieldValueAsync<T>(index, token).ConfigureAwait(false);
+        _setter(metadata, value);
+    }
 
-            var value = await reader.GetFieldValueAsync<T>(index, token).ConfigureAwait(false);
-            _setter(metadata, value);
+    internal override void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,
+        DbDataReader reader)
+    {
+        if (reader.IsDBNull(index))
+        {
+            return;
         }
 
-        internal override void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,
-            DbDataReader reader)
-        {
-            if (reader.IsDBNull(index)) return;
-
-            var value = reader.GetFieldValue<T>(index);
-            _setter(metadata, value);
-        }
-
-        public override MemberInfo Member
-        {
-            get { return _member; }
-            set
-            {
-                if (value != null)
-                {
-
-                    if (value.GetRawMemberType() != typeof(T))
-                        throw new ArgumentOutOfRangeException(nameof(value),
-                            $"The {_memberName} member has to be of type {typeof(T).NameInCode()}");
-
-                    _member = value;
-                    Enabled = true;
-                }
-            }
-        }
+        var value = reader.GetFieldValue<T>(index);
+        _setter(metadata, value);
     }
 }

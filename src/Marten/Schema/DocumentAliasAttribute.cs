@@ -1,28 +1,25 @@
 using System;
 
-namespace Marten.Schema
+namespace Marten.Schema;
+
+/// <summary>
+///     Used to alter the document type alias with Marten to
+///     avoid naming collisions in the underlying Postgresql
+///     schema from similarly named document
+///     types
+/// </summary>
+[AttributeUsage(AttributeTargets.Class)]
+public class DocumentAliasAttribute: MartenAttribute
 {
-    /// <summary>
-    /// Used to alter the document type alias with Marten to
-    /// avoid naming collisions in the underlying Postgresql
-    /// schema from similarly named document
-    /// types
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Class)]
-    public class DocumentAliasAttribute: MartenAttribute
+    public DocumentAliasAttribute(string alias)
     {
-        private readonly string _alias;
+        Alias = alias;
+    }
 
-        public DocumentAliasAttribute(string alias)
-        {
-            _alias = alias;
-        }
+    public string Alias { get; }
 
-        public override void Modify(DocumentMapping mapping)
-        {
-            mapping.Alias = _alias;
-        }
-
-        public string Alias => _alias;
+    public override void Modify(DocumentMapping mapping)
+    {
+        mapping.Alias = Alias;
     }
 }

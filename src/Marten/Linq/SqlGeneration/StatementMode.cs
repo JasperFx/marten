@@ -1,8 +1,7 @@
-namespace Marten.Linq.SqlGeneration
+namespace Marten.Linq.SqlGeneration;
+
+public enum StatementMode
 {
-    public enum StatementMode
-    {
-        Select,
-        CommonTableExpression
-    }
+    Select,
+    CommonTableExpression
 }

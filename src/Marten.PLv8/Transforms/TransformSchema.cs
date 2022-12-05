@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Baseline;
+using JasperFx.Core;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;

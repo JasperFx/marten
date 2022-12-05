@@ -1,7 +1,5 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
-using Baseline.Dates;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -9,7 +7,8 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Xunit;
 using Bug2177;
-using LamarCodeGeneration;
+using JasperFx.CodeGeneration;
+using JasperFx.Core;
 using Marten;
 using Shouldly;
 

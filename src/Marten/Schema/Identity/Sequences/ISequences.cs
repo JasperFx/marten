@@ -1,15 +1,12 @@
-using System;
-using Marten.Storage;
-using Weasel.Core.Migrations;
-using Weasel.Postgresql;
-
 #nullable enable
-namespace Marten.Schema.Identity.Sequences
-{
-    public interface ISequences: IFeatureSchema
-    {
-        ISequence Hilo(Type documentType, HiloSettings settings);
+using System;
+using Weasel.Core.Migrations;
 
-        ISequence SequenceFor(Type documentType);
-    }
+namespace Marten.Schema.Identity.Sequences;
+
+public interface ISequences: IFeatureSchema
+{
+    ISequence Hilo(Type documentType, HiloSettings settings);
+
+    ISequence SequenceFor(Type documentType);
 }

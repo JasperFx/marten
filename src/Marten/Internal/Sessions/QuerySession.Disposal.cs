@@ -1,43 +1,46 @@
-
+#nullable enable
 using System;
 using System.Threading.Tasks;
 
-#nullable enable
-namespace Marten.Internal.Sessions
+namespace Marten.Internal.Sessions;
+
+public partial class QuerySession
 {
-    public partial class QuerySession
+    private bool _disposed;
+
+    public void Dispose()
     {
-        private bool _disposed;
-
-        public void Dispose()
+        if (_disposed)
         {
-            if (_disposed)
-                return;
-
-            _disposed = true;
-            _connection?.Dispose();
-            GC.SuppressFinalize(this);
+            return;
         }
 
-        public async ValueTask DisposeAsync()
+        _disposed = true;
+        _connection?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
         {
-            if (_disposed)
-                return;
-
-            _disposed = true;
-            if (_connection != null)
-            {
-                await _connection.DisposeAsync().ConfigureAwait(false);
-            }
-
-            GC.SuppressFinalize(this);
+            return;
         }
 
-        protected void assertNotDisposed()
+        _disposed = true;
+        if (_connection != null)
         {
-            if (_disposed)
-                throw new ObjectDisposedException("This session has been disposed");
+            await _connection.DisposeAsync().ConfigureAwait(false);
         }
 
+        GC.SuppressFinalize(this);
+    }
+
+    protected void assertNotDisposed()
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException("This session has been disposed");
+        }
     }
 }

@@ -1,102 +1,106 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using LamarCodeGeneration;
+using JasperFx.CodeGeneration;
 using Marten.Linq.Selectors;
 using Marten.Schema;
-using Marten.Storage;
 
-namespace Marten.Internal.CodeGeneration
+namespace Marten.Internal.CodeGeneration;
+
+public class SelectorBuilder
 {
-    public class SelectorBuilder
+    private readonly DocumentMapping _mapping;
+    private readonly StorageStyle _style;
+
+    public SelectorBuilder(DocumentMapping mapping, StorageStyle style)
     {
-        private readonly DocumentMapping _mapping;
-        private readonly StorageStyle _style;
+        _mapping = mapping;
+        _style = style;
+    }
 
-        public SelectorBuilder(DocumentMapping mapping, StorageStyle style)
+    public GeneratedType BuildType(GeneratedAssembly assembly)
+    {
+        var typeName = _style + _mapping.DocumentType.ToSuffixedTypeName("Selector");
+
+        var baseType = determineBaseType();
+
+        var type = assembly.AddType(typeName, baseType);
+        var interfaceType = typeof(ISelector<>).MakeGenericType(_mapping.DocumentType);
+        type.Implements(interfaceType);
+
+        var sync = type.MethodFor("Resolve");
+        var async = type.MethodFor("ResolveAsync");
+
+        var table = _mapping.Schema.Table;
+        var columns = table.SelectColumns(_style);
+
+        for (var i = 0; i < columns.Length; i++)
         {
-            _mapping = mapping;
-            _style = style;
+            columns[i].GenerateCode(_style, type, async, sync, i, _mapping);
         }
 
-        public GeneratedType BuildType(GeneratedAssembly assembly)
+        generateIdentityMapAndTrackingCode(sync, async, _style);
+
+        sync.Frames.Return(_mapping.DocumentType);
+        if (async.Frames.Any(x => x.IsAsync))
         {
-            var typeName = _style.ToString() + _mapping.DocumentType.ToSuffixedTypeName("Selector");
-
-            var baseType = determineBaseType();
-
-            var type = assembly.AddType(typeName, baseType);
-            var interfaceType = typeof(ISelector<>).MakeGenericType(_mapping.DocumentType);
-            type.Implements(interfaceType);
-
-            var sync = type.MethodFor("Resolve");
-            var async = type.MethodFor("ResolveAsync");
-
-            var table = _mapping.Schema.Table;
-            var columns = table.SelectColumns(_style);
-
-            for (var i = 0; i < columns.Length; i++)
-            {
-                columns[i].GenerateCode(_style, type, async, sync, i, _mapping);
-            }
-
-            generateIdentityMapAndTrackingCode(sync, async, _style);
-
-            sync.Frames.Return(_mapping.DocumentType);
-            if (async.Frames.Any(x => x.IsAsync))
-            {
-                async.Frames.Return(_mapping.DocumentType);
-            }
-            else
-            {
-                async.Frames.Code($"return {typeof(Task).FullNameInCode()}.FromResult(document);");
-            }
-
-            return type;
+            async.Frames.Return(_mapping.DocumentType);
+        }
+        else
+        {
+            async.Frames.Code($"return {typeof(Task).FullNameInCode()}.FromResult(document);");
         }
 
-        private void generateIdentityMapAndTrackingCode(GeneratedMethod sync, GeneratedMethod @async,
-            StorageStyle storageStyle)
+        return type;
+    }
+
+    private void generateIdentityMapAndTrackingCode(GeneratedMethod sync, GeneratedMethod async,
+        StorageStyle storageStyle)
+    {
+        if (storageStyle == StorageStyle.QueryOnly)
         {
-            if (storageStyle == StorageStyle.QueryOnly) return;
-
-            sync.Frames.MarkAsLoaded();
-            async.Frames.MarkAsLoaded();
-
-            if (storageStyle == StorageStyle.Lightweight) return;
-
-            sync.Frames.StoreInIdentityMap(_mapping);
-            async.Frames.StoreInIdentityMap(_mapping);
-
-            if (storageStyle == StorageStyle.DirtyTracking)
-            {
-                sync.Frames.StoreTracker();
-                async.Frames.StoreTracker();
-            }
+            return;
         }
 
-        private Type determineBaseType()
+        sync.Frames.MarkAsLoaded();
+        async.Frames.MarkAsLoaded();
+
+        if (storageStyle == StorageStyle.Lightweight)
         {
-            switch (_style)
-            {
-                case StorageStyle.QueryOnly:
-                    return typeof(DocumentSelectorWithOnlySerializer);
+            return;
+        }
 
-                case StorageStyle.IdentityMap:
-                    return typeof(DocumentSelectorWithIdentityMap<,>)
-                        .MakeGenericType(_mapping.DocumentType, _mapping.IdType);
+        sync.Frames.StoreInIdentityMap(_mapping);
+        async.Frames.StoreInIdentityMap(_mapping);
 
-                case StorageStyle.Lightweight:
-                    return typeof(DocumentSelectorWithVersions<,>)
-                        .MakeGenericType(_mapping.DocumentType, _mapping.IdType);
+        if (storageStyle == StorageStyle.DirtyTracking)
+        {
+            sync.Frames.StoreTracker();
+            async.Frames.StoreTracker();
+        }
+    }
 
-                case StorageStyle.DirtyTracking:
-                    return typeof(DocumentSelectorWithDirtyChecking<,>)
-                        .MakeGenericType(_mapping.DocumentType, _mapping.IdType);
+    private Type determineBaseType()
+    {
+        switch (_style)
+        {
+            case StorageStyle.QueryOnly:
+                return typeof(DocumentSelectorWithOnlySerializer);
 
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            case StorageStyle.IdentityMap:
+                return typeof(DocumentSelectorWithIdentityMap<,>)
+                    .MakeGenericType(_mapping.DocumentType, _mapping.IdType);
+
+            case StorageStyle.Lightweight:
+                return typeof(DocumentSelectorWithVersions<,>)
+                    .MakeGenericType(_mapping.DocumentType, _mapping.IdType);
+
+            case StorageStyle.DirtyTracking:
+                return typeof(DocumentSelectorWithDirtyChecking<,>)
+                    .MakeGenericType(_mapping.DocumentType, _mapping.IdType);
+
+            default:
+                throw new ArgumentOutOfRangeException();
         }
     }
 }

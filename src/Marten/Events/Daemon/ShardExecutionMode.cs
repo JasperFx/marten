@@ -1,8 +1,7 @@
-namespace Marten.Events.Daemon
+namespace Marten.Events.Daemon;
+
+public enum ShardExecutionMode
 {
-    public enum ShardExecutionMode
-    {
-        Continuous,
-        Rebuild
-    }
+    Continuous,
+    Rebuild
 }

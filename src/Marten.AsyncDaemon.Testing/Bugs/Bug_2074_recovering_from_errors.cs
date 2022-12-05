@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Baseline.Dates;
+using JasperFx.Core;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;

@@ -1,30 +1,27 @@
 using System.Linq.Expressions;
 using System.Reflection;
-using Baseline;
-using Marten.Linq.Filters;
-using Marten.Linq.SqlGeneration;
 using NpgsqlTypes;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Linq.Fields
+namespace Marten.Linq.Fields;
+
+public class EnumAsIntegerField: FieldBase
 {
-    public class EnumAsIntegerField : FieldBase
+    public EnumAsIntegerField(string dataLocator, Casing casing, MemberInfo[] members): base(dataLocator, "integer",
+        casing, members)
     {
-        public EnumAsIntegerField(string dataLocator, Casing casing, MemberInfo[] members) : base(dataLocator, "integer", casing, members)
-        {
-            PgType = "integer";
-            TypedLocator = $"CAST({RawLocator} as {PgType})";
-        }
+        PgType = "integer";
+        TypedLocator = $"CAST({RawLocator} as {PgType})";
+    }
 
-        public override string SelectorForDuplication(string pgType)
-        {
-            return $"CAST({RawLocator.Replace("d.", "")} as {PgType})";
-        }
+    public override string SelectorForDuplication(string pgType)
+    {
+        return $"CAST({RawLocator.Replace("d.", "")} as {PgType})";
+    }
 
-        public override ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
-        {
-            var integer = (int)value.Value;
-            return new ComparisonFilter(this, new CommandParameter(integer, NpgsqlDbType.Integer), op);
-        }
+    public override ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
+    {
+        var integer = (int)value.Value;
+        return new ComparisonFilter(this, new CommandParameter(integer, NpgsqlDbType.Integer), op);
     }
 }

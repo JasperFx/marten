@@ -2,38 +2,39 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Exceptions;
 
-namespace Marten.Events.Projections.Flattened
+namespace Marten.Events.Projections.Flattened;
+
+public partial class FlatTableProjection
 {
-    public partial class FlatTableProjection
+    private const string SingleColumnPkRequired = "Flat table projections require a single column primary key";
+
+    private const string EmptyProjection =
+        "Empty flat table projections. Register event handlers by calling the Project<T>() or Delete<T>() methods";
+
+    internal override IEnumerable<string> ValidateConfiguration(StoreOptions options)
     {
-        private const string SingleColumnPkRequired = "Flat table projections require a single column primary key";
+        foreach (var p in quickValidations()) yield return p;
+    }
 
-        private const string EmptyProjection =
-            "Empty flat table projections. Register event handlers by calling the Project<T>() or Delete<T>() methods";
-
-        internal override IEnumerable<string> ValidateConfiguration(StoreOptions options)
+    private IEnumerable<string> quickValidations()
+    {
+        if (Table.PrimaryKeyColumns.Count != 1)
         {
-            foreach (var p in quickValidations()) yield return p;
+            yield return SingleColumnPkRequired;
         }
 
-        private IEnumerable<string> quickValidations()
+        if (!_handlers.Any())
         {
-            if (Table.PrimaryKeyColumns.Count != 1)
-            {
-                yield return SingleColumnPkRequired;
-            }
-
-            if (!_handlers.Any())
-            {
-                yield return EmptyProjection;
-            }
+            yield return EmptyProjection;
         }
+    }
 
-        internal override void AssembleAndAssertValidity()
+    internal override void AssembleAndAssertValidity()
+    {
+        var messages = quickValidations().ToArray();
+        if (messages.Any())
         {
-            var messages = quickValidations().ToArray();
-            if (messages.Any()) throw new InvalidProjectionException(messages);
+            throw new InvalidProjectionException(messages);
         }
-
     }
 }

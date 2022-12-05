@@ -1,12 +1,11 @@
 using Marten.Schema;
 
-namespace Marten
+namespace Marten;
+
+/// <summary>
+///     Represents a pluggable configuration convention for all persisted documents
+/// </summary>
+public interface IDocumentPolicy
 {
-    /// <summary>
-    /// Represents a pluggable configuration convention for all persisted documents
-    /// </summary>
-    public interface IDocumentPolicy
-    {
-        void Apply(DocumentMapping mapping);
-    }
+    void Apply(DocumentMapping mapping);
 }

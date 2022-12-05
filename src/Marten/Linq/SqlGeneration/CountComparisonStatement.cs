@@ -5,55 +5,54 @@ using Marten.Linq.Fields;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Linq.SqlGeneration
+namespace Marten.Linq.SqlGeneration;
+
+/// <summary>
+///     Used when doing a Where(x => x.Children.Count(c => ....) > #) kind of filter
+/// </summary>
+internal class CountComparisonStatement: JsonStatement, IComparableFragment
 {
-    /// <summary>
-    ///     Used when doing a Where(x => x.Children.Count(c => ....) > #) kind of filter
-    /// </summary>
-    internal class CountComparisonStatement: JsonStatement, IComparableFragment
+    private readonly SubQueryStatement _flattened;
+    private readonly string _tableName;
+
+    public CountComparisonStatement(IMartenSession session, Type documentType, IFieldMapping fields,
+        SubQueryStatement parent): base(documentType, fields, parent)
     {
-        private readonly string _tableName;
-        private readonly SubQueryStatement _flattened;
+        ConvertToCommonTableExpression(session);
+        parent.InsertAfter(this);
 
-        public CountComparisonStatement(IMartenSession session, Type documentType, IFieldMapping fields,
-            SubQueryStatement parent): base(documentType, fields, parent)
-        {
-            ConvertToCommonTableExpression(session);
-            parent.InsertAfter(this);
+        _tableName = parent.ExportName;
 
-            _tableName = parent.ExportName;
+        _flattened = parent;
+    }
 
-            _flattened = parent;
-        }
+    protected override bool IsSubQuery => true;
 
-        protected override bool IsSubQuery => true;
+    public string Operator { get; private set; } = "=";
 
-        public string Operator { get; private set; } = "=";
+    public CommandParameter Value { get; private set; }
 
-        public CommandParameter Value { get; private set; }
+    public ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
+    {
+        Value = new CommandParameter(value);
+        Operator = op;
+        return new WhereCtIdInSubQuery(ExportName, _flattened);
+    }
 
-        public ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
-        {
-            Value = new CommandParameter(value);
-            Operator = op;
-            return new WhereCtIdInSubQuery(ExportName, _flattened);
-        }
-
-        protected override void configure(CommandBuilder sql)
-        {
-            startCommonTableExpression(sql);
+    protected override void configure(CommandBuilder sql)
+    {
+        startCommonTableExpression(sql);
 
 
-            sql.Append("select ctid, count(*) as data from ");
-            sql.Append(_tableName);
-            sql.Append(" as d");
-            writeWhereClause(sql);
-            sql.Append(" group by ctid having count(*) ");
-            sql.Append(Operator);
+        sql.Append("select ctid, count(*) as data from ");
+        sql.Append(_tableName);
+        sql.Append(" as d");
+        writeWhereClause(sql);
+        sql.Append(" group by ctid having count(*) ");
+        sql.Append(Operator);
 
-            Value.Apply(sql);
+        Value.Apply(sql);
 
-            endCommonTableExpression(sql);
-        }
+        endCommonTableExpression(sql);
     }
 }

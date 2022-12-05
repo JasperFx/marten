@@ -1,11 +1,9 @@
 using System.Linq.Expressions;
-using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Linq.Fields
+namespace Marten.Linq.Fields;
+
+public interface IComparableFragment
 {
-    public interface IComparableFragment
-    {
-        ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression);
-    }
+    ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression);
 }

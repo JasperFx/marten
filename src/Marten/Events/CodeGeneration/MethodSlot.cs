@@ -2,143 +2,143 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Baseline;
-using LamarCodeGeneration;
-using LamarCodeGeneration.Model;
+using JasperFx.CodeGeneration;
+using JasperFx.CodeGeneration.Model;
+using JasperFx.Core;
+using JasperFx.Core.Reflection;
 
-namespace Marten.Events.CodeGeneration
+namespace Marten.Events.CodeGeneration;
+
+public class MethodSlot
 {
-    public class MethodSlot
+    public static readonly string NoEventType =
+        "No event type can be determined. The argument for the event should be named '@event'";
+
+    private readonly List<string> _errors = new();
+
+    public MethodSlot(MethodInfo method, Type aggregateType)
     {
-        public static readonly string NoEventType =
-            "No event type can be determined. The argument for the event should be named '@event'";
+        Method = method;
+        EventType = method.GetEventType(aggregateType);
+        ReturnType = method.ReturnType;
+        DeclaringType = method.DeclaringType;
+    }
 
-        private readonly List<string> _errors = new List<string>();
+    public MethodSlot(Setter setter, MethodInfo method, Type eventType)
+    {
+        Setter = setter;
+        Method = method;
+        EventType = eventType ?? throw new ArgumentNullException(nameof(eventType));
+        DeclaringType = method.DeclaringType;
+        ReturnType = method.ReturnType;
+        HandlerType = setter.VariableType;
+    }
 
-        public Setter Setter { get; }
-        public MethodBase Method { get; }
-
-        public MethodSlot(MethodInfo method, Type aggregateType)
+    public MethodSlot(ConstructorInfo constructor, Type projectionType, Type aggregateType)
+    {
+        if (constructor.GetParameters().Length > 1)
         {
-            Method = method;
-            EventType = method.GetEventType(aggregateType);
-            ReturnType = method.ReturnType;
-            DeclaringType = method.DeclaringType;
+            throw new ArgumentOutOfRangeException("Only single argument constructor functions can be used here.");
         }
 
-        public Type DeclaringType { get; }
+        var parameterType = constructor.GetParameters().Single().ParameterType;
+        EventType = parameterType.Closes(typeof(Event<>))
+            ? parameterType.GetGenericArguments().Single()
+            : parameterType;
 
-        public Type ReturnType { get; }
+        ReturnType = aggregateType;
+        HandlerType = projectionType;
+        DeclaringType = aggregateType;
+        Method = constructor;
+    }
 
-        public Type HandlerType { get; set; }
+    public Setter Setter { get; }
+    public MethodBase Method { get; }
 
-        public Type EventType { get; }
+    public Type DeclaringType { get; }
 
-        public MethodSlot(Setter setter, MethodInfo method, Type eventType)
+    public Type ReturnType { get; }
+
+    public Type HandlerType { get; set; }
+
+    public Type EventType { get; }
+
+    public IReadOnlyList<string> Errors => _errors;
+    public bool DeclaredByAggregate { get; set; }
+
+    public IEnumerable<Type> ReferencedTypes()
+    {
+        yield return DeclaringType;
+        yield return EventType;
+    }
+
+    public string Signature()
+    {
+        var description =
+            $"{Method.Name}({Method.GetParameters().Select(x => x.ParameterType.NameInCode()).Join(", ")})";
+        if (ReturnType != typeof(void))
         {
-            Setter = setter;
-            Method = method;
-            EventType = eventType ?? throw new ArgumentNullException(nameof(eventType));
-            DeclaringType = method.DeclaringType;
-            ReturnType = method.ReturnType;
-            HandlerType = setter.VariableType;
+            description += $" : {ReturnType.NameInCode()}";
         }
 
-        public MethodSlot(ConstructorInfo constructor, Type projectionType, Type aggregateType)
+        return description;
+    }
+
+    internal void Validate(MethodCollection collection)
+    {
+        if (EventType == null)
         {
-            if (constructor.GetParameters().Length > 1)
-            {
-                throw new ArgumentOutOfRangeException($"Only single argument constructor functions can be used here.");
-            }
-
-            var parameterType = constructor.GetParameters().Single().ParameterType;
-            EventType = parameterType.Closes(typeof(Event<>))
-                ? parameterType.GetGenericArguments().Single()
-                : parameterType;
-
-            ReturnType = aggregateType;
-            HandlerType = projectionType;
-            DeclaringType = aggregateType;
-            Method = constructor;
+            _errors.Add(NoEventType);
+        }
+        else
+        {
+            validateArguments(collection);
         }
 
-        public IEnumerable<Type> ReferencedTypes()
+        if (collection.ValidReturnTypes.Any() && !collection.ValidReturnTypes.Contains(ReturnType))
         {
-            yield return DeclaringType;
-            yield return EventType;
+            var message =
+                $"Return type '{ReturnType.FullNameInCode()}' is invalid. The valid options are {collection.ValidArgumentTypes.Select(x => x.FullNameInCode()).Join(", ")}";
+            AddError(message);
+        }
+    }
+
+    internal void AddError(string error)
+    {
+        _errors.Add(error);
+    }
+
+    private void validateArguments(MethodCollection collection)
+    {
+        var possibleTypes = new List<Type>(collection.ValidArgumentTypes) { EventType, typeof(IEvent) };
+
+        if (EventType != null)
+        {
+            possibleTypes.Add(typeof(IEvent<>).MakeGenericType(EventType));
         }
 
-        public string Signature()
+        if (collection.AggregateType != null)
         {
-            var description =
-                $"{Method.Name}({Method.GetParameters().Select(x => x.ParameterType.NameInCode()).Join(", ")})";
-            if (ReturnType != typeof(void))
-            {
-                description += $" : {ReturnType.NameInCode()}";
-            }
-
-            return description;
+            possibleTypes.Fill(collection.AggregateType);
         }
 
-        public IReadOnlyList<string> Errors => _errors;
-        public bool DeclaredByAggregate { get; set; }
-
-        internal void Validate(MethodCollection collection)
+        foreach (var parameter in Method.GetParameters())
         {
-            if (EventType == null)
+            var type = parameter.ParameterType;
+            if (!possibleTypes.Contains(type))
             {
-                _errors.Add(NoEventType);
-            }
-            else
-            {
-                validateArguments(collection);
-            }
-
-            if (collection.ValidReturnTypes.Any() && !collection.ValidReturnTypes.Contains(ReturnType))
-            {
-                var message =
-                    $"Return type '{ReturnType.FullNameInCode()}' is invalid. The valid options are {collection.ValidArgumentTypes.Select(x => x.FullNameInCode()).Join(", ")}";
-                AddError(message);
-            }
-        }
-
-        internal void AddError(string error)
-        {
-            _errors.Add(error);
-        }
-
-        private void validateArguments(MethodCollection collection)
-        {
-            var possibleTypes = new List<Type>(collection.ValidArgumentTypes) { EventType, typeof(IEvent) };
-
-            if (EventType != null)
-            {
-                possibleTypes.Add(typeof(IEvent<>).MakeGenericType(EventType));
-            }
-
-            if (collection.AggregateType != null)
-            {
-                possibleTypes.Fill(collection.AggregateType);
-            }
-
-            foreach (var parameter in Method.GetParameters())
-            {
-                var type = parameter.ParameterType;
-                if (!possibleTypes.Contains(type))
-                {
-                    _errors.Add(
-                        $"Parameter of type '{type.FullNameInCode()}' is not supported. Valid options are {possibleTypes.Select(x => x.FullNameInCode()).Join(", ")}");
-                }
+                _errors.Add(
+                    $"Parameter of type '{type.FullNameInCode()}' is not supported. Valid options are {possibleTypes.Select(x => x.FullNameInCode()).Join(", ")}");
             }
         }
+    }
 
-        public static MethodSlot InvalidMethodName(MethodInfo methodInfo, string[] methodNames)
-        {
-            var slot = new MethodSlot(methodInfo, null);
-            slot._errors.Add(
-                $"Unrecognized method name '{methodInfo.Name}'. Either mark with [MartenIgnore] or use one of {methodNames.Select(x => $"'{x}'").Join(", ")}");
+    public static MethodSlot InvalidMethodName(MethodInfo methodInfo, string[] methodNames)
+    {
+        var slot = new MethodSlot(methodInfo, null);
+        slot._errors.Add(
+            $"Unrecognized method name '{methodInfo.Name}'. Either mark with [MartenIgnore] or use one of {methodNames.Select(x => $"'{x}'").Join(", ")}");
 
-            return slot;
-        }
+        return slot;
     }
 }

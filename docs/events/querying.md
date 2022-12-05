@@ -44,17 +44,17 @@ The data returned is a list of `IEvent` objects, where each is a strongly-typed 
 public interface IEvent
 {
     /// <summary>
-    /// Unique identifier for the event. Uses a sequential Guid
+    ///     Unique identifier for the event. Uses a sequential Guid
     /// </summary>
     Guid Id { get; set; }
 
     /// <summary>
-    /// The version of the stream this event reflects. The place in the stream.
+    ///     The version of the stream this event reflects. The place in the stream.
     /// </summary>
     long Version { get; set; }
 
     /// <summary>
-    /// The sequential order of this event in the entire event store
+    ///     The sequential order of this event in the entire event store
     /// </summary>
     long Sequence { get; set; }
 
@@ -86,63 +86,62 @@ public interface IEvent
     string TenantId { get; set; }
 
     /// <summary>
-    /// The .Net type of the event body
+    ///     The .Net type of the event body
     /// </summary>
     Type EventType { get; }
 
     /// <summary>
-    /// Marten's type alias string for the Event type
+    ///     Marten's type alias string for the Event type
     /// </summary>
     string EventTypeName { get; set; }
 
     /// <summary>
-    /// Marten's string representation of the event type
-    /// in assembly qualified name
+    ///     Marten's string representation of the event type
+    ///     in assembly qualified name
     /// </summary>
     string DotNetTypeName { get; set; }
 
     /// <summary>
-    /// Optional metadata describing the causation id
+    ///     Optional metadata describing the causation id
     /// </summary>
     string? CausationId { get; set; }
 
     /// <summary>
-    /// Optional metadata describing the correlation id
+    ///     Optional metadata describing the correlation id
     /// </summary>
     string? CorrelationId { get; set; }
 
     /// <summary>
-    /// Optional user defined metadata values. This may be null.
+    ///     Optional user defined metadata values. This may be null.
     /// </summary>
     Dictionary<string, object>? Headers { get; set; }
 
     /// <summary>
-    /// Set an optional user defined metadata value by key
+    ///     Has this event been archived and no longer applicable
+    ///     to projected views
+    /// </summary>
+    bool IsArchived { get; set; }
+
+    /// <summary>
+    ///     Marten's name for the aggregate type that will be persisted
+    ///     to the streams table. This will only be available when running
+    ///     within the Async Daemon
+    /// </summary>
+    public string? AggregateTypeName { get; set; }
+
+    /// <summary>
+    ///     Set an optional user defined metadata value by key
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
     void SetHeader(string key, object value);
 
     /// <summary>
-    /// Get an optional user defined metadata value by key
+    ///     Get an optional user defined metadata value by key
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
     object? GetHeader(string key);
-
-    /// <summary>
-    /// Has this event been archived and no longer applicable
-    /// to projected views
-    /// </summary>
-    bool IsArchived { get; set; }
-
-    /// <summary>
-    /// Marten's name for the aggregate type that will be persisted
-    /// to the streams table. This will only be available when running
-    /// within the Async Daemon
-    /// </summary>
-    public string? AggregateTypeName { get; set; }
-
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Event.cs#L8-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ievent' title='Start of snippet'>anchor</a></sup>

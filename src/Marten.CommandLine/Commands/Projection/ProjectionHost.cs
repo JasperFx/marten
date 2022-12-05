@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline.Dates;
 using Marten.Events.Daemon;
 using Microsoft.Extensions.Hosting;
 

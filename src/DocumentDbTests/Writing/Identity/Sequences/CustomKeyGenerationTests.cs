@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Baseline;
-using LamarCodeGeneration;
-using LamarCodeGeneration.Frames;
+using JasperFx.Core;
+using JasperFx.CodeGeneration;
+using JasperFx.CodeGeneration.Frames;
+using JasperFx.Core.Reflection;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Testing.Harness;

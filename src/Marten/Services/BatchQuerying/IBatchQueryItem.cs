@@ -1,18 +1,17 @@
+#nullable enable
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
-using Marten.Linq;
 using Marten.Linq.QueryHandlers;
-#nullable enable
-namespace Marten.Services.BatchQuerying
+
+namespace Marten.Services.BatchQuerying;
+
+internal interface IBatchQueryItem
 {
-    internal interface IBatchQueryItem
-    {
-        IQueryHandler Handler { get; }
+    IQueryHandler Handler { get; }
 
-        Task ReadAsync(DbDataReader reader, IMartenSession session, CancellationToken token);
+    Task ReadAsync(DbDataReader reader, IMartenSession session, CancellationToken token);
 
-        void Read(DbDataReader reader, IMartenSession session);
-    }
+    void Read(DbDataReader reader, IMartenSession session);
 }

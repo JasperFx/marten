@@ -1,10 +1,10 @@
-using Marten.Internal.Operations;
 #nullable enable
-namespace Marten.Services
+using Marten.Internal.Operations;
+
+namespace Marten.Services;
+
+public interface IDeletion: IStorageOperation, NoDataReturnedCall
 {
-    public interface IDeletion: IStorageOperation, NoDataReturnedCall
-    {
-        object Document { get; set; }
-        object Id { get; set; }
-    }
+    object Document { get; set; }
+    object Id { get; set; }
 }

@@ -1,9 +1,9 @@
-namespace Marten.Linq.SqlGeneration
+namespace Marten.Linq.SqlGeneration;
+
+internal class ScalarSelectManyStringStatement: SelectorStatement
 {
-    internal class ScalarSelectManyStringStatement: SelectorStatement
+    public ScalarSelectManyStringStatement(SelectorStatement parent): base(
+        new ScalarStringSelectClause("data", parent.ExportName), null)
     {
-        public ScalarSelectManyStringStatement(SelectorStatement parent) : base(new ScalarStringSelectClause("data", parent.ExportName), null)
-        {
-        }
     }
 }

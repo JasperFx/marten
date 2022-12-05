@@ -1,32 +1,31 @@
+#nullable enable
 using System;
 using Marten.Schema.Identity.Sequences;
-#nullable enable
-namespace Marten.Schema
+
+namespace Marten.Schema;
+
+/// <summary>
+///     Use to customize the Hilo sequence generation for a single document type
+/// </summary>
+[AttributeUsage(AttributeTargets.Class)]
+public class HiloSequenceAttribute: MartenAttribute
 {
-    /// <summary>
-    /// Use to customize the Hilo sequence generation for a single document type
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Class)]
-    public class HiloSequenceAttribute: MartenAttribute
+    private readonly HiloSettings _settings = new();
+
+    public int MaxLo
     {
-        private readonly HiloSettings _settings = new HiloSettings();
+        set => _settings.MaxLo = value;
+        get => _settings.MaxLo;
+    }
 
-        public int MaxLo
-        {
-            set { _settings.MaxLo = value; }
-            get { return _settings.MaxLo; }
-        }
+    public string? SequenceName
+    {
+        set => _settings.SequenceName = value;
+        get => _settings.SequenceName;
+    }
 
-        public string? SequenceName
-        {
-            set { _settings.SequenceName = value; }
-            get { return _settings.SequenceName; }
-
-        }
-
-        public override void Modify(DocumentMapping mapping)
-        {
-            mapping.HiloSettings = _settings;
-        }
+    public override void Modify(DocumentMapping mapping)
+    {
+        mapping.HiloSettings = _settings;
     }
 }

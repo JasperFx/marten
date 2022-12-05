@@ -1,5 +1,6 @@
 using System;
-using Baseline;
+using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.CodeGeneration;

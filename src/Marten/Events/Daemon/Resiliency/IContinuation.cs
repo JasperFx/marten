@@ -1,10 +1,5 @@
-using System;
-using System.Threading.Tasks;
+namespace Marten.Events.Daemon.Resiliency;
 
-namespace Marten.Events.Daemon.Resiliency
+internal interface IContinuation
 {
-    internal interface IContinuation
-    {
-
-    }
 }

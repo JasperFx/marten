@@ -1,26 +1,24 @@
 using Weasel.Postgresql;
 
-namespace Marten.Events.Archiving
+namespace Marten.Events.Archiving;
+
+internal class IsNotArchivedFilter: IArchiveFilter
 {
-    internal class IsNotArchivedFilter: IArchiveFilter
+    private static readonly string _sql = $"d.{IsArchivedColumn.ColumnName} = FALSE";
+
+    public static readonly IsNotArchivedFilter Instance = new();
+
+    private IsNotArchivedFilter()
     {
-        private static readonly string _sql = $"d.{IsArchivedColumn.ColumnName} = FALSE";
+    }
 
-        public static readonly IsNotArchivedFilter Instance = new IsNotArchivedFilter();
+    public void Apply(CommandBuilder builder)
+    {
+        builder.Append(_sql);
+    }
 
-        private IsNotArchivedFilter()
-        {
-
-        }
-
-        public void Apply(CommandBuilder builder)
-        {
-            builder.Append(_sql);
-        }
-
-        public bool Contains(string sqlText)
-        {
-            return _sql.Contains(sqlText);
-        }
+    public bool Contains(string sqlText)
+    {
+        return _sql.Contains(sqlText);
     }
 }

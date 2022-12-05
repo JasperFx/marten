@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using Baseline.Dates;
-using Marten;
+using JasperFx.Core;
 using Marten.Events.Aggregation;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;

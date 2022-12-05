@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using Baseline.Dates;
+using JasperFx.Core;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
 using Npgsql;

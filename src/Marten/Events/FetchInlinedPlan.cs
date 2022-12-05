@@ -7,113 +7,113 @@ using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
 using Weasel.Postgresql;
 
-namespace Marten.Events
+namespace Marten.Events;
+
+internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class
 {
-    internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class
+    private readonly EventGraph _events;
+    private readonly IEventIdentityStrategy<TId> _identityStrategy;
+    private readonly IDocumentStorage<TDoc, TId> _storage;
+
+    internal FetchInlinedPlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy,
+        IDocumentStorage<TDoc, TId> storage)
     {
-        private readonly EventGraph _events;
-        private readonly IEventIdentityStrategy<TId> _identityStrategy;
-        private readonly IDocumentStorage<TDoc, TId> _storage;
+        _events = events;
+        _identityStrategy = identityStrategy;
+        _storage = storage;
+    }
 
-        internal FetchInlinedPlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy, IDocumentStorage<TDoc, TId> storage)
+    public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate,
+        CancellationToken cancellation = default)
+    {
+        await _identityStrategy.EnsureAggregateStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
+        await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
+
+        if (forUpdate)
         {
-            _events = events;
-            _identityStrategy = identityStrategy;
-            _storage = storage;
+            await session.BeginTransactionAsync(cancellation).ConfigureAwait(false);
         }
 
-        public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate, CancellationToken cancellation = default)
+        var command = _identityStrategy.BuildCommandForReadingVersionForStream(id, forUpdate);
+        var builder = new CommandBuilder(command);
+        builder.Append(";");
+
+        var handler = new LoadByIdHandler<TDoc, TId>(_storage, id);
+        handler.ConfigureCommand(builder, session);
+
+        long version = 0;
+        try
         {
-            await _identityStrategy.EnsureAggregateStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
-            await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
-
-            if (forUpdate)
+            await using var reader =
+                await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
+            if (await reader.ReadAsync(cancellation).ConfigureAwait(false))
             {
-                await session.BeginTransactionAsync(cancellation).ConfigureAwait(false);
+                version = await reader.GetFieldValueAsync<long>(0, cancellation).ConfigureAwait(false);
             }
 
-            var command = _identityStrategy.BuildCommandForReadingVersionForStream(id, forUpdate);
-            var builder = new CommandBuilder(command);
-            builder.Append(";");
+            await reader.NextResultAsync(cancellation).ConfigureAwait(false);
+            var document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
 
-            var handler = new LoadByIdHandler<TDoc, TId>(_storage, id);
-            handler.ConfigureCommand(builder, session);
-
-            long version = 0;
-            try
-            {
-                await using var reader = await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
-                if (await reader.ReadAsync(cancellation).ConfigureAwait(false))
-                {
-                    version = await reader.GetFieldValueAsync<long>(0, cancellation).ConfigureAwait(false);
-                }
-
-                await reader.NextResultAsync(cancellation).ConfigureAwait(false);
-                var document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
-
-                return version == 0
-                    ? _identityStrategy.StartStream<TDoc>(document, session, id, cancellation)
-                    : _identityStrategy.AppendToStream<TDoc>(document, session, id, version, cancellation);
-
-            }
-            catch (Exception e)
-            {
-                if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
-                {
-                    throw new StreamLockedException(id, e.InnerException);
-                }
-
-                throw;
-            }
+            return version == 0
+                ? _identityStrategy.StartStream(document, session, id, cancellation)
+                : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
         }
-
-        public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, long expectedStartingVersion, CancellationToken cancellation = default)
+        catch (Exception e)
         {
-            await _identityStrategy.EnsureAggregateStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
-            await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
-
-            var command = _identityStrategy.BuildCommandForReadingVersionForStream(id, false);
-            var builder = new CommandBuilder(command);
-            builder.Append(";");
-
-            var handler = new LoadByIdHandler<TDoc, TId>(_storage, id);
-            handler.ConfigureCommand(builder, session);
-
-            long version = 0;
-            try
+            if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
             {
-                await using var reader = await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
-                if (await reader.ReadAsync(cancellation).ConfigureAwait(false))
-                {
-                    version = await reader.GetFieldValueAsync<long>(0, cancellation).ConfigureAwait(false);
-                }
-
-                if (expectedStartingVersion != version)
-                {
-                    throw new ConcurrencyException(
-                        $"Expected the existing version to be {expectedStartingVersion}, but was {version}",
-                        typeof(TDoc), id);
-                }
-
-                await reader.NextResultAsync(cancellation).ConfigureAwait(false);
-                var document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
-
-                return version == 0
-                    ? _identityStrategy.StartStream<TDoc>(document, session, id, cancellation)
-                    : _identityStrategy.AppendToStream<TDoc>(document, session, id, version, cancellation);
-
+                throw new StreamLockedException(id, e.InnerException);
             }
-            catch (Exception e)
-            {
-                if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
-                {
-                    throw new StreamLockedException(id, e.InnerException);
-                }
 
-                throw;
-            }
+            throw;
         }
+    }
 
+    public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id,
+        long expectedStartingVersion, CancellationToken cancellation = default)
+    {
+        await _identityStrategy.EnsureAggregateStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
+        await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
 
+        var command = _identityStrategy.BuildCommandForReadingVersionForStream(id, false);
+        var builder = new CommandBuilder(command);
+        builder.Append(";");
+
+        var handler = new LoadByIdHandler<TDoc, TId>(_storage, id);
+        handler.ConfigureCommand(builder, session);
+
+        long version = 0;
+        try
+        {
+            await using var reader =
+                await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
+            if (await reader.ReadAsync(cancellation).ConfigureAwait(false))
+            {
+                version = await reader.GetFieldValueAsync<long>(0, cancellation).ConfigureAwait(false);
+            }
+
+            if (expectedStartingVersion != version)
+            {
+                throw new ConcurrencyException(
+                    $"Expected the existing version to be {expectedStartingVersion}, but was {version}",
+                    typeof(TDoc), id);
+            }
+
+            await reader.NextResultAsync(cancellation).ConfigureAwait(false);
+            var document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+
+            return version == 0
+                ? _identityStrategy.StartStream(document, session, id, cancellation)
+                : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
+        }
+        catch (Exception e)
+        {
+            if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
+            {
+                throw new StreamLockedException(id, e.InnerException);
+            }
+
+            throw;
+        }
     }
 }

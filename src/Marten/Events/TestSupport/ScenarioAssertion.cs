@@ -1,20 +1,19 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Marten.Events.TestSupport
+namespace Marten.Events.TestSupport;
+
+internal class ScenarioAssertion: ScenarioStep
 {
-    internal class ScenarioAssertion: ScenarioStep
+    private readonly Func<IQuerySession, Task> _check;
+
+    public ScenarioAssertion(Func<IQuerySession, Task> check)
     {
-        private readonly Func<IQuerySession, Task> _check;
+        _check = check;
+    }
 
-        public ScenarioAssertion(Func<IQuerySession, Task> check)
-        {
-            _check = check;
-        }
-
-        public override Task Execute(ProjectionScenario scenario)
-        {
-            return _check(scenario.Session);
-        }
+    public override Task Execute(ProjectionScenario scenario)
+    {
+        return _check(scenario.Session);
     }
 }

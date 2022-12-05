@@ -1,9 +1,8 @@
-namespace Marten.Internal.CompiledQueries
+namespace Marten.Internal.CompiledQueries;
+
+internal enum CompiledSourceType
 {
-    internal enum CompiledSourceType
-    {
-        Stateless,
-        Complex,
-        Cloneable
-    }
+    Stateless,
+    Complex,
+    Cloneable
 }

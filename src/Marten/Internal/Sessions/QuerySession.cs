@@ -1,97 +1,97 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
-using Baseline;
+using JasperFx.Core;
 using Marten.Events;
 using Marten.Services;
 using Marten.Storage;
 using Npgsql;
 
-#nullable enable
-namespace Marten.Internal.Sessions
+namespace Marten.Internal.Sessions;
+
+public partial class QuerySession: IMartenSession, IQuerySession
 {
-    public partial class QuerySession: IMartenSession, IQuerySession
+    protected readonly IRetryPolicy _retryPolicy;
+    private readonly DocumentStore _store;
+
+    internal virtual DocumentTracking TrackingMode => DocumentTracking.QueryOnly;
+
+    public ISerializer Serializer { get; }
+
+    public StoreOptions Options { get; }
+    public IQueryEventStore Events { get; }
+
+    protected virtual IQueryEventStore CreateEventStore(DocumentStore store, Tenant tenant)
     {
-        protected readonly IRetryPolicy _retryPolicy;
-        private readonly DocumentStore _store;
+        return new QueryEventStore(this, store, tenant);
+    }
 
-        internal virtual DocumentTracking TrackingMode => DocumentTracking.QueryOnly;
+    public IList<IDocumentSessionListener> Listeners { get; } = new List<IDocumentSessionListener>();
 
-        public ISerializer Serializer { get; }
+    internal SessionOptions SessionOptions { get; }
 
-        public StoreOptions Options { get; }
-        public IQueryEventStore Events { get; }
-
-        protected virtual IQueryEventStore CreateEventStore(DocumentStore store, Tenant tenant)
-        {
-            return new QueryEventStore(this, store, tenant);
-        }
-
-        public IList<IDocumentSessionListener> Listeners { get; } = new List<IDocumentSessionListener>();
-
-        internal SessionOptions SessionOptions { get; }
-
-        /// <summary>
-        ///     Used for code generation
-        /// </summary>
+    /// <summary>
+    ///     Used for code generation
+    /// </summary>
 #nullable disable
 
-        public IMartenDatabase Database { get; protected set; }
+    public IMartenDatabase Database { get; protected set; }
 
-        public string TenantId { get; protected set; }
+    public string TenantId { get; protected set; }
 #nullable enable
 
-        internal QuerySession(DocumentStore store,
-            SessionOptions sessionOptions,
-            IConnectionLifetime connection,
-            Tenant? tenant = default)
+    internal QuerySession(DocumentStore store,
+        SessionOptions sessionOptions,
+        IConnectionLifetime connection,
+        Tenant? tenant = default)
+    {
+        _store = store;
+        TenantId = tenant?.TenantId ?? sessionOptions.Tenant?.TenantId ?? sessionOptions.TenantId;
+        Database = tenant?.Database ?? sessionOptions.Tenant?.Database ??
+            throw new ArgumentNullException(nameof(SessionOptions.Tenant));
+
+        SessionOptions = sessionOptions;
+
+        Listeners.AddRange(store.Options.Listeners);
+
+        if (sessionOptions.Timeout is < 0)
         {
-            _store = store;
-            TenantId = tenant?.TenantId ?? sessionOptions.Tenant?.TenantId ?? sessionOptions.TenantId;
-            Database = tenant?.Database ?? sessionOptions.Tenant?.Database ?? throw new ArgumentNullException(nameof(SessionOptions.Tenant));
-
-            SessionOptions = sessionOptions;
-
-            Listeners.AddRange(store.Options.Listeners);
-
-            if (sessionOptions.Timeout is < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(sessionOptions.Timeout),
-                    "CommandTimeout can't be less than zero");
-            }
-
-            Listeners.AddRange(sessionOptions.Listeners);
-            _providers = sessionOptions.Tenant.Database.Providers ??
-                         throw new ArgumentNullException(nameof(IMartenDatabase.Providers));
-
-            _connection = connection;
-            Serializer = store.Serializer;
-            Options = store.Options;
-
-            _retryPolicy = Options.RetryPolicy();
-
-            Events = CreateEventStore(store, tenant ?? sessionOptions.Tenant);
-
-            Logger = store.Options.Logger().StartSession(this);
+            throw new ArgumentOutOfRangeException(nameof(sessionOptions.Timeout),
+                "CommandTimeout can't be less than zero");
         }
 
-        public ConcurrencyChecks Concurrency { get; protected set; } = ConcurrencyChecks.Enabled;
+        Listeners.AddRange(sessionOptions.Listeners);
+        _providers = sessionOptions.Tenant.Database.Providers ??
+                     throw new ArgumentNullException(nameof(IMartenDatabase.Providers));
 
-        public NpgsqlConnection? Connection
-        {
-            get
-            {
-                _connection.EnsureConnected();
-                return _connection.Connection;
-            }
-        }
+        _connection = connection;
+        Serializer = store.Serializer;
+        Options = store.Options;
 
-        public IMartenSessionLogger Logger
-        {
-            get;
-            set;
-        }
+        _retryPolicy = Options.RetryPolicy();
 
-        public int RequestCount { get; set; }
-        public IDocumentStore DocumentStore => _store;
+        Events = CreateEventStore(store, tenant ?? sessionOptions.Tenant);
+
+        Logger = store.Options.Logger().StartSession(this);
     }
+
+    public ConcurrencyChecks Concurrency { get; protected set; } = ConcurrencyChecks.Enabled;
+
+    public NpgsqlConnection? Connection
+    {
+        get
+        {
+            _connection.EnsureConnected();
+            return _connection.Connection;
+        }
+    }
+
+    public IMartenSessionLogger Logger
+    {
+        get;
+        set;
+    }
+
+    public int RequestCount { get; set; }
+    public IDocumentStore DocumentStore => _store;
 }

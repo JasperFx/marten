@@ -15,7 +15,7 @@ public static DocumentStore For(Action<StoreOptions> configure)
     return new DocumentStore(options);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/DocumentStore.cs#L300-L310' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_documentstore.for' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/DocumentStore.cs#L317-L327' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_documentstore.for' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The major parts of `StoreOptions` are shown in the class diagram below:
@@ -94,7 +94,7 @@ public class OrganizationRegistry: MartenRegistry
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/MartenRegistryTests.cs#L137-L148' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_organizationregistry' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/MartenRegistryTests.cs#L138-L149' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_organizationregistry' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To apply your new `MartenRegistry`, just include it when you bootstrap the `IDocumentStore` as in this example:
@@ -109,7 +109,7 @@ var store = DocumentStore.For(opts =>
     opts.Connection(ConnectionSource.ConnectionString);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/MartenRegistryTests.cs#L170-L179' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_including_a_custom_martenregistry' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/MartenRegistryTests.cs#L171-L180' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_including_a_custom_martenregistry' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that you could happily use multiple `MartenRegistry` classes in larger applications if that is advantageous.
@@ -131,7 +131,7 @@ var store = DocumentStore.For(opts =>
         .For<User>().Duplicate(x => x.UserName);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/MartenRegistryTests.cs#L152-L164' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_storeoptions_schema' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/MartenRegistryTests.cs#L153-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_storeoptions_schema' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Attributes
@@ -145,20 +145,20 @@ you're still in luck. If you write a subclass of the `MartenAttribute` shown bel
 public abstract class MartenAttribute: Attribute
 {
     /// <summary>
-    /// Customize Document storage at the document level
+    ///     Customize Document storage at the document level
     /// </summary>
     /// <param name="mapping"></param>
     public virtual void Modify(DocumentMapping mapping) { }
 
     /// <summary>
-    /// Customize the Document storage for a single member
+    ///     Customize the Document storage for a single member
     /// </summary>
     /// <param name="mapping"></param>
     /// <param name="member"></param>
     public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/MartenAttribute.cs#L10-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_martenattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/MartenAttribute.cs#L12-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_martenattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And decorate either classes or individual field or properties on a document type, your custom attribute will be
@@ -180,7 +180,7 @@ public class GinIndexedAttribute: MartenAttribute
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/GinIndexedAttribute.cs#L9-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ginindexedattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/GinIndexedAttribute.cs#L10-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ginindexedattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Embedding Configuration in Document Types

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using LamarCodeGeneration;
+using JasperFx.CodeGeneration;
 using Marten;
 using Marten.Services;
 using Marten.Storage;

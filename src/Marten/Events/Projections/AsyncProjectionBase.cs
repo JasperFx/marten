@@ -3,17 +3,16 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Marten.Events.Projections
-{
-    // Leave public for codegen!
-    public abstract class AsyncProjectionBase: IProjection
-    {
-        public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
-        {
-            throw new NotSupportedException();
-        }
+namespace Marten.Events.Projections;
 
-        public abstract Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
-            CancellationToken cancellation);
+// Leave public for codegen!
+public abstract class AsyncProjectionBase: IProjection
+{
+    public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
+    {
+        throw new NotSupportedException();
     }
+
+    public abstract Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
+        CancellationToken cancellation);
 }

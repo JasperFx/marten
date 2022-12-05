@@ -6,19 +6,19 @@ To build your own Marten projection, you just need a class that implements the `
 <a id='snippet-sample_iprojection'></a>
 ```cs
 /// <summary>
-/// Interface for all event projections
+///     Interface for all event projections
 /// </summary>
 public interface IProjection
 {
     /// <summary>
-    /// Apply inline projections during synchronous operations
+    ///     Apply inline projections during synchronous operations
     /// </summary>
     /// <param name="operations"></param>
     /// <param name="streams"></param>
     void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams);
 
     /// <summary>
-    /// Apply inline projections during asynchronous operations
+    ///     Apply inline projections during asynchronous operations
     /// </summary>
     /// <param name="operations"></param>
     /// <param name="streams"></param>
@@ -28,7 +28,7 @@ public interface IProjection
         CancellationToken cancellation);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Projections/IProjection.cs#L9-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Projections/IProjection.cs#L8-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `StreamAction` aggregates outstanding events by the event stream, which is how Marten tracks events inside of an `IDocumentSession` that has

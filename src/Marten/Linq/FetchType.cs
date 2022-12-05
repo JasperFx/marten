@@ -1,28 +1,27 @@
-namespace Marten.Linq
+namespace Marten.Linq;
+
+/// <summary>
+///     In basic terms, how is the IQueryable going to be executed?
+/// </summary>
+public enum FetchType
 {
     /// <summary>
-    /// In basic terms, how is the IQueryable going to be executed?
+    ///     First/FirstOrDefault/Single/SingleOrDefault
     /// </summary>
-    public enum FetchType
-    {
-        /// <summary>
-        /// First/FirstOrDefault/Single/SingleOrDefault
-        /// </summary>
-        FetchOne,
+    FetchOne,
 
-        /// <summary>
-        /// Any execution that returns an IEnumerable (ToArray()/ToList()/etc.)
-        /// </summary>
-        FetchMany,
+    /// <summary>
+    ///     Any execution that returns an IEnumerable (ToArray()/ToList()/etc.)
+    /// </summary>
+    FetchMany,
 
-        /// <summary>
-        /// Using IQueryable.Count()
-        /// </summary>
-        Count,
+    /// <summary>
+    ///     Using IQueryable.Count()
+    /// </summary>
+    Count,
 
-        /// <summary>
-        /// Using IQueryable.Any()
-        /// </summary>
-        Any
-    }
+    /// <summary>
+    ///     Using IQueryable.Any()
+    /// </summary>
+    Any
 }

@@ -2,59 +2,64 @@ using System;
 using System.Linq.Expressions;
 using Marten.Linq.Fields;
 using Marten.Linq.Filters;
-using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Linq.Parsing.Methods
+namespace Marten.Linq.Parsing.Methods;
+
+internal enum FullTextSearchFunction
 {
-    internal enum FullTextSearchFunction
+    to_tsquery,
+    plainto_tsquery,
+    phraseto_tsquery,
+    websearch_to_tsquery,
+    mt_ngram_tsvector
+}
+
+internal abstract class FullTextSearchMethodCallParser: IMethodCallParser
+{
+    private readonly string methodName;
+    private readonly FullTextSearchFunction searchFunction;
+
+    protected FullTextSearchMethodCallParser(string methodName, FullTextSearchFunction searchFunction)
     {
-        to_tsquery,
-        plainto_tsquery,
-        phraseto_tsquery,
-        websearch_to_tsquery,
-        mt_ngram_tsvector
+        this.methodName = methodName;
+        this.searchFunction = searchFunction;
     }
 
-    internal abstract class FullTextSearchMethodCallParser: IMethodCallParser
+    public bool Matches(MethodCallExpression expression)
     {
-        private readonly string methodName;
-        private readonly FullTextSearchFunction searchFunction;
+        return expression.Method.Name == methodName
+               && expression.Method.DeclaringType == typeof(LinqExtensions);
+    }
 
-        protected FullTextSearchMethodCallParser(string methodName, FullTextSearchFunction searchFunction)
+    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    {
+        if (expression.Arguments.Count < 2 || expression.Arguments[1].Value() == null)
         {
-            this.methodName = methodName;
-            this.searchFunction = searchFunction;
+            throw new ArgumentException("Search Term needs to be provided", "searchTerm");
         }
 
-        public bool Matches(MethodCallExpression expression)
+        if (expression.Arguments[1].Type != typeof(string))
         {
-            return expression.Method.Name == methodName
-                   && expression.Method.DeclaringType == typeof(LinqExtensions);
+            throw new ArgumentException("Search Term needs to be string", "searchTerm");
         }
 
-        public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+        if (expression.Arguments.Count > 2 && expression.Arguments[2].Type != typeof(string))
         {
-            if (expression.Arguments.Count < 2 || expression.Arguments[1].Value() == null)
-                throw new ArgumentException("Search Term needs to be provided", "searchTerm");
-
-            if (expression.Arguments[1].Type != typeof(string))
-                throw new ArgumentException("Search Term needs to be string", "searchTerm");
-
-            if (expression.Arguments.Count > 2 && expression.Arguments[2].Type != typeof(string))
-                throw new ArgumentException("Reg config needs to be string", "regConfig");
-
-            var searchTerm = (string)expression.Arguments[1].Value();
-
-            var regConfig = expression.Arguments.Count > 2 ?
-                expression.Arguments[2].Value() as string : FullTextIndex.DefaultRegConfig;
-
-            return new FullTextWhereFragment(
-                mapping as DocumentMapping,
-                searchFunction,
-                searchTerm,
-                regConfig);
+            throw new ArgumentException("Reg config needs to be string", "regConfig");
         }
+
+        var searchTerm = (string)expression.Arguments[1].Value();
+
+        var regConfig = expression.Arguments.Count > 2
+            ? expression.Arguments[2].Value() as string
+            : FullTextIndex.DefaultRegConfig;
+
+        return new FullTextWhereFragment(
+            mapping as DocumentMapping,
+            searchFunction,
+            searchTerm,
+            regConfig);
     }
 }

@@ -1,26 +1,25 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Marten.Events.TestSupport
+namespace Marten.Events.TestSupport;
+
+internal class ScenarioAction: ScenarioStep
 {
-    internal class ScenarioAction: ScenarioStep
+    private readonly Action<IEventOperations> _action;
+
+    public ScenarioAction(Action<IEventOperations> action)
     {
-        private readonly Action<IEventOperations> _action;
+        _action = action;
+    }
 
-        public ScenarioAction(Action<IEventOperations> action)
+    public override async Task Execute(ProjectionScenario scenario)
+    {
+        _action(scenario.Session.Events);
+
+        if (scenario.NextStep is ScenarioAssertion)
         {
-            _action = action;
-        }
-
-        public override async Task Execute(ProjectionScenario scenario)
-        {
-            _action(scenario.Session.Events);
-
-            if (scenario.NextStep is ScenarioAssertion)
-            {
-                await scenario.Session.SaveChangesAsync().ConfigureAwait(false);
-                await scenario.WaitForNonStaleData().ConfigureAwait(false);
-            }
+            await scenario.Session.SaveChangesAsync().ConfigureAwait(false);
+            await scenario.WaitForNonStaleData().ConfigureAwait(false);
         }
     }
 }

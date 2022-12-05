@@ -1,139 +1,133 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ImTools;
+using JasperFx.Core;
 using Marten.Schema;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql.Migrations;
 
-namespace Marten.Storage
-{
-    public interface ISingleServerMultiTenancy
-    {
-        /// <summary>
-        /// Use to seed tenant database names for Marten database management
-        /// </summary>
-        /// <param name="tenantIds"></param>
-        /// <returns></returns>
-        ISingleServerMultiTenancy WithTenants(params string[] tenantIds);
+namespace Marten.Storage;
 
-        /// <summary>
-        /// Add the previous tenantIds to the named database
-        /// </summary>
-        /// <param name="databaseName"></param>
-        /// <returns></returns>
-        ISingleServerMultiTenancy InDatabaseNamed(string databaseName);
+public interface ISingleServerMultiTenancy
+{
+    /// <summary>
+    ///     Use to seed tenant database names for Marten database management
+    /// </summary>
+    /// <param name="tenantIds"></param>
+    /// <returns></returns>
+    ISingleServerMultiTenancy WithTenants(params string[] tenantIds);
+
+    /// <summary>
+    ///     Add the previous tenantIds to the named database
+    /// </summary>
+    /// <param name="databaseName"></param>
+    /// <returns></returns>
+    ISingleServerMultiTenancy InDatabaseNamed(string databaseName);
+}
+
+internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDatabase>, ITenancy,
+    ISingleServerMultiTenancy
+{
+    private readonly StoreOptions _options;
+
+    private readonly Dictionary<string, string> _tenantToDatabase = new();
+
+    private Tenant _default;
+    private string[] _lastTenantIds;
+
+    private ImHashMap<string, Tenant> _tenants = ImHashMap<string, Tenant>.Empty;
+
+    public SingleServerMultiTenancy(string masterConnectionString, StoreOptions options): base(masterConnectionString)
+    {
+        _options = options;
+        Cleaner = new CompositeDocumentCleaner(this);
     }
 
-
-    internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDatabase>, ITenancy, ISingleServerMultiTenancy
+    public ISingleServerMultiTenancy WithTenants(params string[] tenantIds)
     {
-        private readonly StoreOptions _options;
+        _lastTenantIds = tenantIds;
 
-        private readonly Dictionary<string, string> _tenantToDatabase = new Dictionary<string, string>();
-        public SingleServerMultiTenancy(string masterConnectionString, StoreOptions options) : base(masterConnectionString)
+        foreach (var tenantId in tenantIds) _tenantToDatabase[tenantId] = tenantId;
+        return this;
+    }
+
+    public ISingleServerMultiTenancy InDatabaseNamed(string databaseName)
+    {
+        foreach (var tenantId in _lastTenantIds) _tenantToDatabase[tenantId] = databaseName;
+
+        return this;
+    }
+
+    public Tenant GetTenant(string tenantId)
+    {
+        if (_tenants.TryFind(tenantId, out var tenant))
         {
-            _options = options;
-            Cleaner = new CompositeDocumentCleaner(this);
-        }
-
-        protected override MartenDatabase buildDatabase(string databaseName, string connectionString)
-        {
-            return new MartenDatabase(_options, new ConnectionFactory(connectionString), databaseName);
-        }
-
-        private ImHashMap<string, Tenant> _tenants = ImHashMap<string, Tenant>.Empty;
-
-        public Tenant GetTenant(string tenantId)
-        {
-            if (_tenants.TryFind(tenantId, out var tenant))
-            {
-                return tenant;
-            }
-
-            if (!_tenantToDatabase.TryGetValue(tenantId, out var databaseName))
-            {
-                databaseName = tenantId;
-            }
-
-            var database = FindOrCreateDatabase(databaseName).AsTask()
-                .GetAwaiter().GetResult();
-
-            tenant = new Tenant(tenantId, database);
-            _tenants = _tenants.AddOrUpdate(tenantId, tenant);
-
             return tenant;
         }
 
-        public async ValueTask<Tenant> GetTenantAsync(string tenantId)
+        if (!_tenantToDatabase.TryGetValue(tenantId, out var databaseName))
         {
-            if (_tenants.TryFind(tenantId, out var tenant))
-            {
-                return tenant;
-            }
+            databaseName = tenantId;
+        }
 
-            if (!_tenantToDatabase.TryGetValue(tenantId, out var databaseName))
-            {
-                databaseName = tenantId;
-            }
+        var database = FindOrCreateDatabase(databaseName).AsTask()
+            .GetAwaiter().GetResult();
 
-            var database = await base.FindOrCreateDatabase(databaseName).ConfigureAwait(false);
-            tenant = new Tenant(tenantId, database);
-            _tenants = _tenants.AddOrUpdate(tenantId, tenant);
+        tenant = new Tenant(tenantId, database);
+        _tenants = _tenants.AddOrUpdate(tenantId, tenant);
 
+        return tenant;
+    }
+
+    public async ValueTask<Tenant> GetTenantAsync(string tenantId)
+    {
+        if (_tenants.TryFind(tenantId, out var tenant))
+        {
             return tenant;
         }
 
-        public new async ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
+        if (!_tenantToDatabase.TryGetValue(tenantId, out var databaseName))
         {
-            var tenant = await GetTenantAsync(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
-            return tenant.Database;
+            databaseName = tenantId;
         }
 
-        private Tenant _default;
-        private string[] _lastTenantIds;
+        var database = await base.FindOrCreateDatabase(databaseName).ConfigureAwait(false);
+        tenant = new Tenant(tenantId, database);
+        _tenants = _tenants.AddOrUpdate(tenantId, tenant);
 
-        public Tenant Default
+        return tenant;
+    }
+
+    public new async ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
+    {
+        var tenant = await GetTenantAsync(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
+        return tenant.Database;
+    }
+
+    public Tenant Default
+    {
+        get
         {
-            get
-            {
-                _default = _default
-                    ??= _tenants.Enumerate().Select(x => x.Value).FirstOrDefault();
+            _default = _default
+                ??= _tenants.Enumerate().Select(x => x.Value).FirstOrDefault();
 
-                return _default;
-            }
+            return _default;
         }
-        public IDocumentCleaner Cleaner { get; }
-        public async ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
-        {
-            // This just guarantees that all databases are built
-            foreach (var tenantId in _tenantToDatabase.Values.Distinct())
-            {
-                await FindOrCreateDatabase(tenantId).ConfigureAwait(false);
-            }
+    }
 
-            return AllDatabases();
-        }
+    public IDocumentCleaner Cleaner { get; }
 
-        public ISingleServerMultiTenancy WithTenants(params string[] tenantIds)
-        {
-            _lastTenantIds = tenantIds;
+    public async ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
+    {
+        // This just guarantees that all databases are built
+        foreach (var tenantId in _tenantToDatabase.Values.Distinct())
+            await FindOrCreateDatabase(tenantId).ConfigureAwait(false);
 
-            foreach (var tenantId in tenantIds)
-            {
-                _tenantToDatabase[tenantId] = tenantId;
-            }
-            return this;
-        }
+        return AllDatabases();
+    }
 
-        public ISingleServerMultiTenancy InDatabaseNamed(string databaseName)
-        {
-            foreach (var tenantId in _lastTenantIds)
-            {
-                _tenantToDatabase[tenantId] = databaseName;
-            }
-
-            return this;
-        }
+    protected override MartenDatabase buildDatabase(string databaseName, string connectionString)
+    {
+        return new MartenDatabase(_options, new ConnectionFactory(connectionString), databaseName);
     }
 }

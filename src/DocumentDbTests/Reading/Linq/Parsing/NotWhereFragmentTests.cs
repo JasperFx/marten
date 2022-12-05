@@ -1,4 +1,5 @@
-using LamarCodeGeneration.Util;
+using JasperFx.CodeGeneration.Util;
+using JasperFx.Core.Reflection;
 using NSubstitute;
 using Shouldly;
 using Weasel.Postgresql.SqlGeneration;

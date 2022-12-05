@@ -1,51 +1,50 @@
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
-using Marten.Util;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Linq.Includes
+namespace Marten.Linq.Includes;
+
+internal class InTempTableWhereFragment: ISqlFragment
 {
-    internal class InTempTableWhereFragment: ISqlFragment
+    private readonly bool _isIdCollection;
+    private readonly IPagedStatement _paging;
+    private readonly string _tempTableColumn;
+    private readonly string _tempTableName;
+
+    public InTempTableWhereFragment(string tempTableName, string tempTableColumn, IPagedStatement paging,
+        bool isIdCollection)
     {
-        private readonly string _tempTableName;
-        private readonly string _tempTableColumn;
-        private readonly IPagedStatement _paging;
-        private readonly bool _isIdCollection;
+        _tempTableName = tempTableName;
+        _tempTableColumn = tempTableColumn;
+        _paging = paging;
+        _isIdCollection = isIdCollection;
+    }
 
-        public InTempTableWhereFragment(string tempTableName, string tempTableColumn, IPagedStatement paging, bool isIdCollection)
+    public void Apply(CommandBuilder builder)
+    {
+        builder.Append("id in (select ");
+        builder.Append(_isIdCollection ? $"unnest({_tempTableColumn})" : _tempTableColumn);
+        builder.Append($" from (select {_tempTableColumn} from ");
+        builder.Append(_tempTableName);
+
+        if (_paging.Offset > 0)
         {
-            _tempTableName = tempTableName;
-            _tempTableColumn = tempTableColumn;
-            _paging = paging;
-            _isIdCollection = isIdCollection;
+            builder.Append(" OFFSET ");
+            builder.Append(_paging.Offset);
         }
 
-        public void Apply(CommandBuilder builder)
+        if (_paging.Limit > 0)
         {
-            builder.Append("id in (select ");
-            builder.Append(_isIdCollection ? $"unnest({_tempTableColumn})" : _tempTableColumn);
-            builder.Append($" from (select {_tempTableColumn} from ");
-            builder.Append(_tempTableName);
-
-            if (_paging.Offset > 0)
-            {
-                builder.Append($" OFFSET ");
-                builder.Append(_paging.Offset);
-            }
-
-            if (_paging.Limit > 0)
-            {
-                builder.Append($" LIMIT ");
-                builder.Append(_paging.Limit);
-            }
-
-            builder.Append($") as {_tempTableName}");
-            builder.Append(")");
+            builder.Append(" LIMIT ");
+            builder.Append(_paging.Limit);
         }
 
-        public bool Contains(string sqlText)
-        {
-            return false;
-        }
+        builder.Append($") as {_tempTableName}");
+        builder.Append(")");
+    }
+
+    public bool Contains(string sqlText)
+    {
+        return false;
     }
 }

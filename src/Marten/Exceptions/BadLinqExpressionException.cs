@@ -1,25 +1,23 @@
 using System;
 
-namespace Marten.Exceptions
-{
+namespace Marten.Exceptions;
 #if SERIALIZE
     [Serializable]
 #endif
 
-    public class BadLinqExpressionException: MartenException
+public class BadLinqExpressionException: MartenException
+{
+    public BadLinqExpressionException(string message, Exception innerException): base(message, innerException)
     {
-        public BadLinqExpressionException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
+    }
 
-        public BadLinqExpressionException(string message) : base(message)
-        {
-        }
+    public BadLinqExpressionException(string message): base(message)
+    {
+    }
 
 #if SERIALIZE
         protected BadLinqExpressionException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
 #endif
-    }
 }

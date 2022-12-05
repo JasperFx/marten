@@ -1,15 +1,11 @@
-using System;
+namespace Marten.Exceptions;
 
-namespace Marten.Exceptions
+public class NonExistentStreamException: MartenException
 {
-    public class NonExistentStreamException: MartenException
+    public NonExistentStreamException(object id): base($"Attempt to append to a nonexistent event stream '{id}'")
     {
-        public object Id { get; }
-
-        public NonExistentStreamException(object id) : base((string)$"Attempt to append to a nonexistent event stream '{id}'")
-        {
-            Id = id;
-        }
-
+        Id = id;
     }
+
+    public object Id { get; }
 }

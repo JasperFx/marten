@@ -1,21 +1,21 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Marten.Exceptions
+namespace Marten.Exceptions;
+
+public sealed class DocumentAlreadyExistsException: MartenException
 {
-    public sealed class DocumentAlreadyExistsException: MartenException
+    public DocumentAlreadyExistsException(Exception inner, Type docType, object id): base(
+        $"Document already exists {docType.FullName}: {id}", inner)
     {
-        public Type DocType { get; }
-        public object Id { get; }
-
-        public DocumentAlreadyExistsException(Exception inner, Type docType, object id) : base((string)$"Document already exists {docType.FullName}: {id}", inner)
-        {
-            DocType = docType;
-            Id = id;
-        }
-
-        public DocumentAlreadyExistsException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
+        DocType = docType;
+        Id = id;
     }
+
+    public DocumentAlreadyExistsException(SerializationInfo info, StreamingContext context): base(info, context)
+    {
+    }
+
+    public Type DocType { get; }
+    public object Id { get; }
 }

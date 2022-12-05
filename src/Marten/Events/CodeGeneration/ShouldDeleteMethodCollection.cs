@@ -2,34 +2,33 @@ using System;
 using System.Linq;
 using Marten.Schema;
 
-namespace Marten.Events.CodeGeneration
+namespace Marten.Events.CodeGeneration;
+
+internal class ShouldDeleteMethodCollection: MethodCollection
 {
-    internal class ShouldDeleteMethodCollection: MethodCollection
+    public static readonly string MethodName = "ShouldDelete";
+
+    public ShouldDeleteMethodCollection(Type projectionType, Type aggregateType): base(MethodName, projectionType,
+        aggregateType)
     {
-        public static readonly string MethodName = "ShouldDelete";
+        _validArgumentTypes.Add(typeof(IQuerySession));
+        _validArgumentTypes.Add(aggregateType);
 
-        public ShouldDeleteMethodCollection(Type projectionType, Type aggregateType): base(MethodName, projectionType,
-            aggregateType)
+        _validReturnTypes.Add(typeof(bool));
+    }
+
+    public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
+        IDocumentMapping aggregateMapping, MethodSlot slot)
+    {
+        return new ShouldDeleteFrame(slot);
+    }
+
+    internal override void validateMethod(MethodSlot method)
+    {
+        if (!method.Method.GetParameters().Any())
         {
-            _validArgumentTypes.Add(typeof(IQuerySession));
-            _validArgumentTypes.Add(aggregateType);
-
-            _validReturnTypes.Add(typeof(bool));
-        }
-
-        public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
-            IDocumentMapping aggregateMapping, MethodSlot slot)
-        {
-            return new ShouldDeleteFrame(slot);
-        }
-
-        internal override void validateMethod(MethodSlot method)
-        {
-            if (!method.Method.GetParameters().Any())
-            {
-                method.AddError(
-                    $"ShouldDelete() requires at least one argument (the event type, the aggregate type, or IQuerySession)");
-            }
+            method.AddError(
+                "ShouldDelete() requires at least one argument (the event type, the aggregate type, or IQuerySession)");
         }
     }
 }

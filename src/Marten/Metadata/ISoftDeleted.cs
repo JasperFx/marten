@@ -1,27 +1,27 @@
-using System;
 #nullable enable
-namespace Marten.Metadata
+using System;
+
+namespace Marten.Metadata;
+
+/// <summary>
+///     Optionally implement this interface on your Marten document
+///     types to opt into "soft delete" mechanics with the deletion
+///     information tracked directly on the documents
+/// </summary>
+
+#region sample_ISoftDeleted
+
+public interface ISoftDeleted
 {
     /// <summary>
-    /// Optionally implement this interface on your Marten document
-    /// types to opt into "soft delete" mechanics with the deletion
-    /// information tracked directly on the documents
+    ///     Has Marten marked this document as soft deleted
     /// </summary>
+    bool Deleted { get; set; }
 
-    #region sample_ISoftDeleted
-
-    public interface ISoftDeleted
-    {
-        /// <summary>
-        /// Has Marten marked this document as soft deleted
-        /// </summary>
-        bool Deleted {get;set;}
-
-        /// <summary>
-        /// When was this document marked as deleted by Marten
-        /// </summary>
-        DateTimeOffset? DeletedAt {get;set;}
-    }
-
-    #endregion
+    /// <summary>
+    ///     When was this document marked as deleted by Marten
+    /// </summary>
+    DateTimeOffset? DeletedAt { get; set; }
 }
+
+#endregion

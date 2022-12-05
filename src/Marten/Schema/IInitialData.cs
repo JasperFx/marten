@@ -1,19 +1,18 @@
+#nullable enable
 using System.Threading;
 using System.Threading.Tasks;
 
-#nullable enable
-namespace Marten.Schema
+namespace Marten.Schema;
+
+/// <summary>
+///     A set of initial data to pre-populate a DocumentStore at startup time
+///     Users will have to be responsible for not duplicating data
+/// </summary>
+public interface IInitialData
 {
     /// <summary>
-    /// A set of initial data to pre-populate a DocumentStore at startup time
-    /// Users will have to be responsible for not duplicating data
+    ///     Apply the data loading
     /// </summary>
-    public interface IInitialData
-    {
-        /// <summary>
-        /// Apply the data loading
-        /// </summary>
-        /// <param name="store"></param>
-        Task Populate(IDocumentStore store, CancellationToken cancellation);
-    }
+    /// <param name="store"></param>
+    Task Populate(IDocumentStore store, CancellationToken cancellation);
 }

@@ -1,38 +1,48 @@
 using System;
-using System.Threading.Tasks;
 
-namespace Marten.Events.Daemon.Resiliency
+namespace Marten.Events.Daemon.Resiliency;
+
+internal class PauseShard: IContinuation
 {
-    internal class PauseShard: IContinuation
+    public PauseShard(TimeSpan delay)
     {
-        public TimeSpan Delay { get; }
+        Delay = delay;
+    }
 
-        public PauseShard(TimeSpan delay)
+    public TimeSpan Delay { get; }
+
+    protected bool Equals(PauseShard other)
+    {
+        return Delay.Equals(other.Delay);
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (ReferenceEquals(null, obj))
         {
-            Delay = delay;
+            return false;
         }
 
-        protected bool Equals(PauseShard other)
+        if (ReferenceEquals(this, obj))
         {
-            return Delay.Equals(other.Delay);
+            return true;
         }
 
-        public override bool Equals(object obj)
+        if (obj.GetType() != GetType())
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((PauseShard) obj);
+            return false;
         }
 
-        public override int GetHashCode()
-        {
-            return Delay.GetHashCode();
-        }
+        return Equals((PauseShard)obj);
+    }
 
-        public override string ToString()
-        {
-            return $"{nameof(Delay)}: {Delay}";
-        }
+    public override int GetHashCode()
+    {
+        return Delay.GetHashCode();
+    }
+
+    public override string ToString()
+    {
+        return $"{nameof(Delay)}: {Delay}";
     }
 }

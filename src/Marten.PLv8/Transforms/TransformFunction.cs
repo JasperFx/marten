@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Baseline;
+using JasperFx.Core;
 using Weasel.Core;
 using Weasel.Postgresql.Functions;
 

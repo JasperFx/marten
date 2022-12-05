@@ -1,12 +1,10 @@
-using System;
+namespace Marten.Exceptions;
 
-namespace Marten.Exceptions
+public class AmbiguousDocumentTypeAliasesException: MartenException
 {
-    public class AmbiguousDocumentTypeAliasesException: MartenException
+    public AmbiguousDocumentTypeAliasesException(string message): base(message)
     {
-        public AmbiguousDocumentTypeAliasesException(string message) : base(message)
-        {
-        }
+    }
 
 #if SERIALIZE
         protected AmbiguousDocumentTypeAliasesException(SerializationInfo info, StreamingContext context)
@@ -14,5 +12,4 @@ namespace Marten.Exceptions
         {
         }
 #endif
-    }
 }

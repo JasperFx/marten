@@ -4,107 +4,109 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
-using Marten.Linq.SqlGeneration;
-using Weasel.Postgresql;
 using Marten.Util;
+using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Linq.Fields
+namespace Marten.Linq.Fields;
+
+public abstract class FieldBase: IField
 {
-    public abstract class FieldBase : IField
+    protected FieldBase(string dataLocator, string pgType, Casing casing, MemberInfo[] members)
     {
-        protected FieldBase(string dataLocator, string pgType, Casing casing, MemberInfo[] members)
+        if (members == null || members.Length == 0)
         {
-            if (members == null || members.Length == 0) throw new ArgumentNullException(nameof(members));
-
-            Members = members;
-
-            lastMember = members.Last();
-
-            FieldType = lastMember.GetMemberType();
-
-            var locator = dataLocator;
-
-            for (int i = 0; i < members.Length - 1; i++)
-            {
-                locator += $" -> '{members[i].Name.FormatCase(casing)}'";
-            }
-
-            parentLocator = locator;
-            lastMemberName = lastMember.Name.FormatCase(casing);
-
-            RawLocator = TypedLocator = $"{parentLocator} ->> '{lastMemberName}'";
-
-            PgType = pgType;
-
-            JSONBLocator = $"CAST({RawLocator} as jsonb)";
+            throw new ArgumentNullException(nameof(members));
         }
 
-        public virtual ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
-        {
-            if (value.Value == null)
-            {
-                return op == "=" ? (ISqlFragment) new IsNullFilter(this) : new IsNotNullFilter(this);
-            }
+        Members = members;
 
-            var def = new CommandParameter(value);
-            return new ComparisonFilter(this, def, op);
+        lastMember = members.Last();
+
+        FieldType = lastMember.GetMemberType();
+
+        var locator = dataLocator;
+
+        for (var i = 0; i < members.Length - 1; i++)
+        {
+            locator += $" -> '{members[i].Name.FormatCase(casing)}'";
         }
 
-        [Obsolete("Try to eliminate this")]
-        public bool ShouldUseContainmentOperator()
+        parentLocator = locator;
+        lastMemberName = lastMember.Name.FormatCase(casing);
+
+        RawLocator = TypedLocator = $"{parentLocator} ->> '{lastMemberName}'";
+
+        PgType = pgType;
+
+        JSONBLocator = $"CAST({RawLocator} as jsonb)";
+    }
+
+    protected string lastMemberName { get; }
+
+    protected string parentLocator { get; }
+
+    protected MemberInfo lastMember { get; }
+
+    public string PgType { get; set; } // settable so it can be overidden by users
+
+    public virtual ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
+    {
+        if (value.Value == null)
         {
-            return PostgresqlProvider.Instance.ContainmentOperatorTypes.Contains(FieldType);
+            return op == "=" ? new IsNullFilter(this) : new IsNotNullFilter(this);
         }
 
-        public abstract string SelectorForDuplication(string pgType);
-        public virtual string ToOrderExpression(Expression expression)
-        {
-            return TypedLocator;
-        }
+        var def = new CommandParameter(value);
+        return new ComparisonFilter(this, def, op);
+    }
 
-        public virtual string LocatorForIncludedDocumentId => TypedLocator;
+    [Obsolete("Try to eliminate this")]
+    public bool ShouldUseContainmentOperator()
+    {
+        return PostgresqlProvider.Instance.ContainmentOperatorTypes.Contains(FieldType);
+    }
 
-        /// <summary>
-        /// Locate the data for this field as JSONB
-        /// </summary>
-        public string JSONBLocator { get; set; }
+    public abstract string SelectorForDuplication(string pgType);
 
-        protected string lastMemberName { get;  }
+    public virtual string ToOrderExpression(Expression expression)
+    {
+        return TypedLocator;
+    }
 
-        protected string parentLocator { get;  }
+    public virtual string LocatorForIncludedDocumentId => TypedLocator;
 
-        protected MemberInfo lastMember { get; }
+    /// <summary>
+    ///     Locate the data for this field as JSONB
+    /// </summary>
+    public string JSONBLocator { get; set; }
 
-        public Type FieldType { get; }
+    public Type FieldType { get; }
 
-        public MemberInfo[] Members { get; }
+    public MemberInfo[] Members { get; }
 
-        public string RawLocator { get; protected set; }
+    public string RawLocator { get; protected set; }
 
-        public string TypedLocator { get; protected set; }
+    public string TypedLocator { get; protected set; }
 
-        public string PgType { get; set; } // settable so it can be overidden by users
+    public virtual object GetValueForCompiledQueryParameter(Expression valueExpression)
+    {
+        return valueExpression.Value();
+    }
 
-        public virtual object GetValueForCompiledQueryParameter(Expression valueExpression)
-        {
-            return valueExpression.Value();
-        }
+    public string LocatorFor(string rootTableAlias)
+    {
+        // Super hokey.
+        return TypedLocator.Replace("d.", rootTableAlias + ".");
+    }
 
-        public string LocatorFor(string rootTableAlias)
-        {
-            // Super hokey.
-            return TypedLocator.Replace("d.", rootTableAlias + ".");
-        }
+    void ISqlFragment.Apply(CommandBuilder builder)
+    {
+        builder.Append(TypedLocator);
+    }
 
-        void ISqlFragment.Apply(CommandBuilder builder)
-        {
-            builder.Append(TypedLocator);
-        }
-
-        bool ISqlFragment.Contains(string sqlText)
-        {
-            return TypedLocator.Contains(sqlText);
-        }
+    bool ISqlFragment.Contains(string sqlText)
+    {
+        return TypedLocator.Contains(sqlText);
     }
 }

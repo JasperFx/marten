@@ -1,11 +1,10 @@
 using System;
 using Marten.Linq.QueryHandlers;
 
-namespace Marten.Internal.CompiledQueries
+namespace Marten.Internal.CompiledQueries;
+
+public interface ICompiledQuerySource
 {
-    public interface ICompiledQuerySource
-    {
-        Type QueryType { get; }
-        IQueryHandler Build(object query, IMartenSession session);
-    }
+    Type QueryType { get; }
+    IQueryHandler Build(object query, IMartenSession session);
 }

@@ -4,78 +4,34 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
-using Baseline.Exceptions;
+using JasperFx.Core.Exceptions;
+using JasperFx.Core.Reflection;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Util;
 
-namespace Marten.Internal
+namespace Marten.Internal;
+
+public class UpdateBatch: IUpdateBatch
 {
-    public class UpdateBatch: IUpdateBatch
+    private readonly IList<Exception> _exceptions = new List<Exception>();
+    private readonly IReadOnlyList<IStorageOperation> _operations;
+
+    public UpdateBatch(IReadOnlyList<IStorageOperation> operations)
     {
-        private readonly IList<Exception> _exceptions = new List<Exception>();
-        private readonly IReadOnlyList<IStorageOperation> _operations;
+        _operations = operations;
+    }
 
-        public UpdateBatch(IReadOnlyList<IStorageOperation> operations)
+    public void ApplyChanges(IMartenSession session)
+    {
+        try
         {
-            _operations = operations;
-        }
-
-        public void ApplyChanges(IMartenSession session)
-        {
-            try
-            {
-                if (_operations.Count < session.Options.UpdateBatchSize)
-                {
-                    var command = session.BuildCommand(_operations);
-                    using var reader = session.ExecuteReader(command);
-                    ApplyCallbacks(_operations, reader, _exceptions);
-                }
-                else
-                {
-                    var count = 0;
-
-                    while (count < _operations.Count)
-                    {
-                        var operations = _operations
-                            .Skip(count)
-                            .Take(session.Options.UpdateBatchSize)
-                            .ToArray();
-
-                        var command = session.BuildCommand(operations);
-                        using var reader = session.ExecuteReader(command);
-                        ApplyCallbacks(operations, reader, _exceptions);
-
-                        count += session.Options.UpdateBatchSize;
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                _operations.OfType<IExceptionTransform>().TransformAndThrow(e);
-            }
-
-            throwExceptionsIfAny();
-        }
-
-        public async Task ApplyChangesAsync(IMartenSession session, CancellationToken token)
-        {
-            // I know this smells to high heaven, but it works
-            await session.As<DocumentSessionBase>().BeginTransactionAsync(token).ConfigureAwait(false);
             if (_operations.Count < session.Options.UpdateBatchSize)
             {
                 var command = session.BuildCommand(_operations);
-                try
-                {
-                    await using var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
-                    await ApplyCallbacksAsync(_operations, reader, _exceptions, token).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    _operations.OfType<IExceptionTransform>().TransformAndThrow(e);
-                }
+                using var reader = session.ExecuteReader(command);
+                ApplyCallbacks(_operations, reader, _exceptions);
             }
             else
             {
@@ -89,106 +45,155 @@ namespace Marten.Internal
                         .ToArray();
 
                     var command = session.BuildCommand(operations);
-                    try
-                    {
-                        await using var reader =
-                            await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
-                        await ApplyCallbacksAsync(operations, reader, _exceptions, token).ConfigureAwait(false);
-                    }
-                    catch (Exception e)
-                    {
-                        _operations.OfType<IExceptionTransform>().TransformAndThrow(e);
-                    }
+                    using var reader = session.ExecuteReader(command);
+                    ApplyCallbacks(operations, reader, _exceptions);
 
                     count += session.Options.UpdateBatchSize;
                 }
             }
-
-            throwExceptionsIfAny();
+        }
+        catch (Exception e)
+        {
+            _operations.OfType<IExceptionTransform>().TransformAndThrow(e);
         }
 
-        private void throwExceptionsIfAny()
+        throwExceptionsIfAny();
+    }
+
+    public async Task ApplyChangesAsync(IMartenSession session, CancellationToken token)
+    {
+        // I know this smells to high heaven, but it works
+        await session.As<DocumentSessionBase>().BeginTransactionAsync(token).ConfigureAwait(false);
+        if (_operations.Count < session.Options.UpdateBatchSize)
         {
-            switch (_exceptions.Count)
+            var command = session.BuildCommand(_operations);
+            try
             {
-                case 0:
-                    return;
+                await using var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+                await ApplyCallbacksAsync(_operations, reader, _exceptions, token).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                _operations.OfType<IExceptionTransform>().TransformAndThrow(e);
+            }
+        }
+        else
+        {
+            var count = 0;
 
-                case 1:
-                    throw _exceptions.Single();
+            while (count < _operations.Count)
+            {
+                var operations = _operations
+                    .Skip(count)
+                    .Take(session.Options.UpdateBatchSize)
+                    .ToArray();
 
-                default:
-                    throw new AggregateException(_exceptions);
+                var command = session.BuildCommand(operations);
+                try
+                {
+                    await using var reader =
+                        await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+                    await ApplyCallbacksAsync(operations, reader, _exceptions, token).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    _operations.OfType<IExceptionTransform>().TransformAndThrow(e);
+                }
+
+                count += session.Options.UpdateBatchSize;
             }
         }
 
-        public static void ApplyCallbacks(IReadOnlyList<IStorageOperation> operations, DbDataReader reader,
-            IList<Exception> exceptions)
+        throwExceptionsIfAny();
+    }
+
+    private void throwExceptionsIfAny()
+    {
+        switch (_exceptions.Count)
         {
-            var first = operations.First();
+            case 0:
+                return;
 
-            if (!(first is NoDataReturnedCall))
+            case 1:
+                throw _exceptions.Single();
+
+            default:
+                throw new AggregateException(_exceptions);
+        }
+    }
+
+    public static void ApplyCallbacks(IReadOnlyList<IStorageOperation> operations, DbDataReader reader,
+        IList<Exception> exceptions)
+    {
+        var first = operations.First();
+
+        if (!(first is NoDataReturnedCall))
+        {
+            first.Postprocess(reader, exceptions);
+            try
             {
-                first.Postprocess(reader, exceptions);
-                try
-                {
-                    reader.NextResult();
-                }
-                catch (Exception e)
-                {
-                    operations.OfType<IExceptionTransform>().TransformAndThrow(e);
-                }
+                reader.NextResult();
             }
-
-            foreach (var operation in operations.Skip(1))
+            catch (Exception e)
             {
-                if (operation is NoDataReturnedCall) continue;
-
-                operation.Postprocess(reader, exceptions);
-
-                try
-                {
-                    reader.NextResult();
-                }
-                catch (Exception e)
-                {
-                    operations.OfType<IExceptionTransform>().TransformAndThrow(e);
-                }
+                operations.OfType<IExceptionTransform>().TransformAndThrow(e);
             }
         }
 
-        public static async Task ApplyCallbacksAsync(IReadOnlyList<IStorageOperation> operations, DbDataReader reader,
-            IList<Exception> exceptions,
-            CancellationToken token)
+        foreach (var operation in operations.Skip(1))
         {
-            var first = operations.First();
-
-            if (!(first is NoDataReturnedCall))
+            if (operation is NoDataReturnedCall)
             {
-                await first.PostprocessAsync(reader, exceptions, token).ConfigureAwait(false);
-                try
-                {
-                    await reader.NextResultAsync(token).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    operations.OfType<IExceptionTransform>().TransformAndThrow(e);
-                }
+                continue;
             }
 
-            foreach (var operation in operations.Skip(1))
-            {
-                if (operation is NoDataReturnedCall) continue;
+            operation.Postprocess(reader, exceptions);
 
-                await operation.PostprocessAsync(reader, exceptions, token).ConfigureAwait(false);
-                try
-                {
-                    await reader.NextResultAsync(token).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    operations.OfType<IExceptionTransform>().TransformAndThrow(e);
-                }
+            try
+            {
+                reader.NextResult();
+            }
+            catch (Exception e)
+            {
+                operations.OfType<IExceptionTransform>().TransformAndThrow(e);
+            }
+        }
+    }
+
+    public static async Task ApplyCallbacksAsync(IReadOnlyList<IStorageOperation> operations, DbDataReader reader,
+        IList<Exception> exceptions,
+        CancellationToken token)
+    {
+        var first = operations.First();
+
+        if (!(first is NoDataReturnedCall))
+        {
+            await first.PostprocessAsync(reader, exceptions, token).ConfigureAwait(false);
+            try
+            {
+                await reader.NextResultAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                operations.OfType<IExceptionTransform>().TransformAndThrow(e);
+            }
+        }
+
+        foreach (var operation in operations.Skip(1))
+        {
+            if (operation is NoDataReturnedCall)
+            {
+                continue;
+            }
+
+            await operation.PostprocessAsync(reader, exceptions, token).ConfigureAwait(false);
+            try
+            {
+                await reader.NextResultAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                operations.OfType<IExceptionTransform>().TransformAndThrow(e);
             }
         }
     }

@@ -5,84 +5,80 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.QueryHandlers;
-using Newtonsoft.Json;
 using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing;
 
-namespace Marten.Linq.Parsing
+namespace Marten.Linq.Parsing;
+
+public class FindMembers: RelinqExpressionVisitor
 {
-    public class FindMembers: RelinqExpressionVisitor
+    public readonly IList<MemberInfo> Members = new List<MemberInfo>();
+
+    public static MemberInfo Member<T>(Expression<Func<T, object>> expression)
     {
-        public static MemberInfo Member<T>(Expression<Func<T, object>> expression)
-        {
-            var finder = new FindMembers();
-            finder.Visit(expression);
+        var finder = new FindMembers();
+        finder.Visit(expression);
 
-            return finder.Members.LastOrDefault();
+        return finder.Members.LastOrDefault();
+    }
+
+    protected override Expression VisitMember(MemberExpression node)
+    {
+        Members.Insert(0, node.Member);
+
+        return base.VisitMember(node);
+    }
+
+    protected override Expression VisitBinary(BinaryExpression node)
+    {
+        throw new ArgumentOutOfRangeException(nameof(node),
+            $"Unsupported operator '{node.NodeType}' in a field member expression");
+    }
+
+
+    protected override Expression VisitMethodCall(MethodCallExpression node)
+    {
+        if (node.Method.Name == "Count" && node.Method.ReturnType == typeof(int))
+        {
+            Members.Insert(0, LinqConstants.ArrayLength);
         }
 
-        public readonly IList<MemberInfo> Members = new List<MemberInfo>();
+        return base.VisitMethodCall(node);
+    }
 
-        protected override Expression VisitMember(MemberExpression node)
+    protected sealed override Expression VisitUnary(UnaryExpression node)
+    {
+        if (node.NodeType == ExpressionType.ArrayLength)
         {
-            Members.Insert(0, node.Member);
-
-            return base.VisitMember(node);
+            Members.Insert(0, LinqConstants.ArrayLength);
         }
 
-        protected override Expression VisitBinary(BinaryExpression node)
-        {
-            throw new ArgumentOutOfRangeException(nameof(node),
-                $"Unsupported operator '{node.NodeType}' in a field member expression");
-        }
+        return base.VisitUnary(node);
+    }
 
+    public static MemberInfo[] Determine(Expression expression)
+    {
+        var visitor = new FindMembers();
 
-        protected override Expression VisitMethodCall(MethodCallExpression node)
+        if (expression is SubQueryExpression subquery)
         {
-            if (node.Method.Name == "Count" && node.Method.ReturnType == typeof(int))
+            visitor.Visit(subquery.QueryModel.MainFromClause.FromExpression);
+            if (subquery.QueryModel.ResultOperators.FirstOrDefault() is CountResultOperator)
             {
-                Members.Insert(0, LinqConstants.ArrayLength);
-            }
-
-            return base.VisitMethodCall(node);
-        }
-
-        protected sealed override Expression VisitUnary(UnaryExpression node)
-        {
-            if (node.NodeType == ExpressionType.ArrayLength)
-            {
-                Members.Insert(0, LinqConstants.ArrayLength);
-            }
-
-            return base.VisitUnary(node);
-        }
-
-        public static MemberInfo[] Determine(Expression expression)
-        {
-            var visitor = new FindMembers();
-
-            if (expression is SubQueryExpression subquery)
-            {
-                visitor.Visit(subquery.QueryModel.MainFromClause.FromExpression);
-                if (subquery.QueryModel.ResultOperators.FirstOrDefault() is CountResultOperator)
-                {
-                    visitor.Members.Add(LinqConstants.ArrayLength);
-                }
-                else
-                {
-                    throw new BadLinqExpressionException($"FindMembers does not understand expression '{expression}'");
-                }
+                visitor.Members.Add(LinqConstants.ArrayLength);
             }
             else
             {
-                visitor.Visit(expression);
+                throw new BadLinqExpressionException($"FindMembers does not understand expression '{expression}'");
             }
-
-
-
-
-            return visitor.Members.ToArray();
         }
+        else
+        {
+            visitor.Visit(expression);
+        }
+
+
+        return visitor.Members.ToArray();
     }
 }

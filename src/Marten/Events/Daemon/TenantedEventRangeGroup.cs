@@ -6,81 +6,80 @@ using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Storage;
 
-namespace Marten.Events.Daemon
+namespace Marten.Events.Daemon;
+
+/// <summary>
+///     Used within the async daemon as a buffer for custom projections
+///     to run events by tenant
+/// </summary>
+internal class TenantedEventRangeGroup: EventRangeGroup
 {
-    /// <summary>
-    /// Used within the async daemon as a buffer for custom projections
-    /// to run events by tenant
-    /// </summary>
-    internal class TenantedEventRangeGroup: EventRangeGroup
+    private readonly IMartenDatabase _daemonDatabase;
+    private readonly IProjection _projection;
+    private readonly DocumentStore _store;
+
+    public TenantedEventRangeGroup(IDocumentStore store, IMartenDatabase daemonDatabase, IProjection projection,
+        EventRange range,
+        CancellationToken shardCancellation): base(range, shardCancellation)
     {
-        private readonly DocumentStore _store;
-        private readonly IMartenDatabase _daemonDatabase;
-        private readonly IProjection _projection;
+        _store = (DocumentStore)store;
+        _daemonDatabase = daemonDatabase;
+        _projection = projection ?? throw new ArgumentNullException(nameof(projection));
 
-        public TenantedEventRangeGroup(IDocumentStore store, IMartenDatabase daemonDatabase, IProjection projection,
-            EventRange range,
-            CancellationToken shardCancellation) : base(range, shardCancellation)
+        buildGroups();
+    }
+
+    public IList<TenantActionGroup> Groups { get; } = new List<TenantActionGroup>();
+
+    private void buildGroups()
+    {
+        var byTenant = Range.Events.GroupBy(x => x.TenantId);
+        foreach (var group in byTenant)
         {
-            _store = (DocumentStore)store;
-            _daemonDatabase = daemonDatabase;
-            _projection = projection ?? throw new ArgumentNullException(nameof(projection));
+            var tenant = new Tenant(group.Key, _daemonDatabase);
 
-            buildGroups();
-        }
-
-        private void buildGroups()
-        {
-            var byTenant = Range.Events.GroupBy(x => x.TenantId);
-            foreach (var group in byTenant)
+            var actions = _store.Events.StreamIdentity switch
             {
-                var tenant = new Tenant(@group.Key, _daemonDatabase);
+                StreamIdentity.AsGuid => group.GroupBy(x => x.StreamId)
+                    .Select(events => StreamAction.For(events.Key, events.ToList())),
 
-                var actions = _store.Events.StreamIdentity switch
-                {
-                    StreamIdentity.AsGuid => @group.GroupBy(x => x.StreamId)
-                        .Select(events => StreamAction.For(events.Key, events.ToList())),
+                StreamIdentity.AsString => group.GroupBy(x => x.StreamKey)
+                    .Select(events => StreamAction.For(events.Key, events.ToList())),
 
-                    StreamIdentity.AsString => @group.GroupBy(x => x.StreamKey)
-                        .Select(events => StreamAction.For(events.Key, events.ToList())),
+                _ => null
+            };
 
-                    _ => null
-                };
-
-                Groups.Add(new TenantActionGroup(tenant, actions));
-            }
+            Groups.Add(new TenantActionGroup(tenant, actions));
         }
+    }
 
-        public override ValueTask SkipEventSequence(long eventSequence, IMartenDatabase database)
-        {
-            Range.SkipEventSequence(eventSequence);
-            Groups.Clear();
-            buildGroups();
-            return default;
-        }
+    public override ValueTask SkipEventSequence(long eventSequence, IMartenDatabase database)
+    {
+        Range.SkipEventSequence(eventSequence);
+        Groups.Clear();
+        buildGroups();
+        return default;
+    }
 
-        public IList<TenantActionGroup> Groups { get; } = new List<TenantActionGroup>();
+    protected override void reset()
+    {
+        // Nothing
+    }
 
-        protected override void reset()
-        {
-            // Nothing
-        }
+    public override void Dispose()
+    {
+        // Nothing
+    }
 
-        public override void Dispose()
-        {
-            // Nothing
-        }
+    public override string ToString()
+    {
+        return $"Tenant Group Range for: {Range}";
+    }
 
-        public override string ToString()
-        {
-            return $"Tenant Group Range for: {Range}";
-        }
-
-        public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch)
-        {
-            return Parallel.ForEachAsync(Groups, Cancellation,
-                async (tenantGroup, token) =>
-                    await tenantGroup.ApplyEvents(batch, _projection, _store, token).ConfigureAwait(false));
-        }
+    public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch)
+    {
+        return Parallel.ForEachAsync(Groups, Cancellation,
+            async (tenantGroup, token) =>
+                await tenantGroup.ApplyEvents(batch, _projection, _store, token).ConfigureAwait(false));
     }
 }

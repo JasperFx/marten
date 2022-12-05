@@ -1,6 +1,6 @@
 ﻿
 using System.Diagnostics;
-using LamarCodeGeneration;
+using JasperFx.CodeGeneration;
 using Marten;
 using Marten.Events;
 using Marten.Events.Daemon.Resiliency;

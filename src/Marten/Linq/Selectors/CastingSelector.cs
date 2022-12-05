@@ -2,25 +2,24 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Marten.Linq.Selectors
+namespace Marten.Linq.Selectors;
+
+internal class CastingSelector<T, TRoot>: ISelector<T> where T : TRoot
 {
-    internal class CastingSelector<T, TRoot>: ISelector<T> where T : TRoot
+    private readonly ISelector<TRoot> _inner;
+
+    public CastingSelector(ISelector<TRoot> inner)
     {
-        private readonly ISelector<TRoot> _inner;
+        _inner = inner;
+    }
 
-        public CastingSelector(ISelector<TRoot> inner)
-        {
-            _inner = inner;
-        }
+    public T Resolve(DbDataReader reader)
+    {
+        return (T)_inner.Resolve(reader);
+    }
 
-        public T Resolve(DbDataReader reader)
-        {
-            return (T) _inner.Resolve(reader);
-        }
-
-        public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
-        {
-            return (T) (await _inner.ResolveAsync(reader, token).ConfigureAwait(false));
-        }
+    public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
+    {
+        return (T)await _inner.ResolveAsync(reader, token).ConfigureAwait(false);
     }
 }

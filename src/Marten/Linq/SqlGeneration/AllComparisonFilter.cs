@@ -6,6 +6,7 @@ using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
+
 public class AllComparisionFilter: ISqlFragment
 {
     private readonly ISqlFragment _nestedFilter;
@@ -24,15 +25,20 @@ public class AllComparisionFilter: ISqlFragment
     {
         switch (_nestedFilter)
         {
-             case ComparisonFilter comparisonFilter:
-                 ApplyUsingComparisonFilter(builder, comparisonFilter);
-                 return;
-             case IsNullFilter isNullFilter:
-                 ApplyUsingIsNullFilter(builder, isNullFilter);
-                 return;
+            case ComparisonFilter comparisonFilter:
+                ApplyUsingComparisonFilter(builder, comparisonFilter);
+                return;
+            case IsNullFilter isNullFilter:
+                ApplyUsingIsNullFilter(builder, isNullFilter);
+                return;
             default:
                 throw new ArgumentOutOfRangeException(nameof(_nestedFilter), "Unsupported type of filter.");
         }
+    }
+
+    public bool Contains(string sqlText)
+    {
+        return _nestedFilter.Contains(sqlText);
     }
 
     private void ApplyUsingComparisonFilter(CommandBuilder builder, ComparisonFilter comparisonFilter)
@@ -55,6 +61,7 @@ public class AllComparisionFilter: ISqlFragment
                     builder.Append(comparisonFilter.Op);
                     builder.Append($" ALL ({leftOperand.RawLocator})");
                 }
+
                 break;
             }
             /*
@@ -62,13 +69,15 @@ public class AllComparisionFilter: ISqlFragment
             */
             case FieldBase leftOperand:
             {
-                var rawLocatorSegments = leftOperand.RawLocator.Split(new []{ "->>" }, StringSplitOptions.RemoveEmptyEntries)
+                var rawLocatorSegments = leftOperand.RawLocator
+                    .Split(new[] { "->>" }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(s => s.Trim())
                     .ToArray();
                 var parentLocator = rawLocatorSegments[0].Replace("d.", "");
                 if (comparisonFilter.Right is CommandParameter { Value: null })
                 {
-                    builder.Append($" true = ALL (select unnest(array(select unnest({parentLocator}) ->> {rawLocatorSegments[1]})) is null)");
+                    builder.Append(
+                        $" true = ALL (select unnest(array(select unnest({parentLocator}) ->> {rawLocatorSegments[1]})) is null)");
                 }
                 else
                 {
@@ -77,6 +86,7 @@ public class AllComparisionFilter: ISqlFragment
                     builder.Append(comparisonFilter.Op);
                     builder.Append($" ALL (array(select unnest({parentLocator}) ->> {rawLocatorSegments[1]}))");
                 }
+
                 break;
             }
             default:
@@ -90,15 +100,15 @@ public class AllComparisionFilter: ISqlFragment
         {
             throw new ArgumentOutOfRangeException(nameof(comparisonFilter.Field), "Unsupported type of field.");
         }
+
         /*
          * Query on nested object
          */
-        var rawLocatorSegments = field.RawLocator.Split(new []{ "->>" }, StringSplitOptions.RemoveEmptyEntries)
+        var rawLocatorSegments = field.RawLocator.Split(new[] { "->>" }, StringSplitOptions.RemoveEmptyEntries)
             .Select(s => s.Trim())
             .ToArray();
         var parentLocator = rawLocatorSegments[0].Replace("d.", "");
-        builder.Append($" true = ALL (select unnest(array(select unnest({parentLocator}) ->> {rawLocatorSegments[1]})) is null)");
+        builder.Append(
+            $" true = ALL (select unnest(array(select unnest({parentLocator}) ->> {rawLocatorSegments[1]})) is null)");
     }
-
-    public bool Contains(string sqlText) => _nestedFilter.Contains(sqlText);
 }

@@ -1,29 +1,28 @@
 using System;
 using System.Collections.Generic;
 
-namespace Marten.Events.Projections
+namespace Marten.Events.Projections;
+
+/// <summary>
+///     When does the fanout rule apply?
+/// </summary>
+public enum FanoutMode
 {
     /// <summary>
-    /// When does the fanout rule apply?
+    ///     Do the "fan out" of events *before* doing any grouping
     /// </summary>
-    public enum FanoutMode
-    {
-        /// <summary>
-        /// Do the "fan out" of events *before* doing any grouping
-        /// </summary>
-        BeforeGrouping,
+    BeforeGrouping,
 
-        /// <summary>
-        /// Do the "fan out" of events *after* grouping
-        /// </summary>
-        AfterGrouping
-    }
+    /// <summary>
+    ///     Do the "fan out" of events *after* grouping
+    /// </summary>
+    AfterGrouping
+}
 
-    public interface IFanOutRule
-    {
-        void Apply(List<IEvent> events);
-        Type OriginatingType { get; }
+public interface IFanOutRule
+{
+    Type OriginatingType { get; }
 
-        FanoutMode Mode { get; }
-    }
+    FanoutMode Mode { get; }
+    void Apply(List<IEvent> events);
 }

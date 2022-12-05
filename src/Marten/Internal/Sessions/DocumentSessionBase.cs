@@ -1,7 +1,9 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Baseline;
+using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -9,347 +11,346 @@ using Marten.Metadata;
 using Marten.Services;
 using Marten.Storage;
 
-#nullable enable
-namespace Marten.Internal.Sessions
+namespace Marten.Internal.Sessions;
+
+public abstract partial class DocumentSessionBase: QuerySession, IDocumentSession
 {
-    public abstract partial class DocumentSessionBase: QuerySession, IDocumentSession
+    internal readonly ISessionWorkTracker _workTracker;
+
+    private Dictionary<string, NestedTenantSession>? _byTenant;
+
+    internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IConnectionLifetime connection):
+        base(store, sessionOptions, connection)
     {
-        internal readonly ISessionWorkTracker _workTracker;
+        Concurrency = sessionOptions.ConcurrencyChecks;
+        _workTracker = new UnitOfWork(this);
+    }
 
-        private Dictionary<string, NestedTenantSession>? _byTenant;
+    internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IConnectionLifetime connection,
+        ISessionWorkTracker workTracker, Tenant? tenant = default): base(store, sessionOptions, connection, tenant)
+    {
+        Concurrency = sessionOptions.ConcurrencyChecks;
+        _workTracker = workTracker;
+    }
 
-        internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IConnectionLifetime connection): base(store, sessionOptions, connection)
+    internal ITenancy Tenancy => DocumentStore.As<DocumentStore>().Tenancy;
+
+    internal ISessionWorkTracker WorkTracker => _workTracker;
+
+    public void EjectAllPendingChanges()
+    {
+        _workTracker.EjectAll();
+        ChangeTrackers.Clear();
+    }
+
+
+    public void Store<T>(IEnumerable<T> entities) where T : notnull
+    {
+        Store(entities?.ToArray()!);
+    }
+
+    public void Store<T>(params T[] entities) where T : notnull
+    {
+        if (entities == null)
         {
-            Concurrency = sessionOptions.ConcurrencyChecks;
-            _workTracker = new UnitOfWork(this);
+            throw new ArgumentNullException(nameof(entities));
         }
 
-        internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IConnectionLifetime connection,
-            ISessionWorkTracker workTracker, Tenant? tenant = default): base(store, sessionOptions, connection, tenant)
+        if (typeof(T).IsGenericEnumerable())
         {
-            Concurrency = sessionOptions.ConcurrencyChecks;
-            _workTracker = workTracker;
+            throw new ArgumentOutOfRangeException(typeof(T).Name,
+                "Do not use IEnumerable<T> here as the document type. Either cast entities to an array instead or use the IEnumerable<T> Store() overload instead.");
         }
 
-        public void EjectAllPendingChanges()
+        store(entities);
+    }
+
+    public void Store<T>(T entity, Guid version) where T : notnull
+    {
+        assertNotDisposed();
+
+        var storage = StorageFor<T>();
+        storage.Store(this, entity, version);
+        var op = storage.Upsert(entity, this, TenantId);
+        _workTracker.Add(op);
+    }
+
+    public void Insert<T>(IEnumerable<T> entities) where T : notnull
+    {
+        Insert(entities.ToArray());
+    }
+
+    public void Insert<T>(params T[] entities) where T : notnull
+    {
+        assertNotDisposed();
+
+        if (entities == null)
         {
-            _workTracker.EjectAll();
-            ChangeTrackers.Clear();
+            throw new ArgumentNullException(nameof(entities));
         }
 
-        internal ITenancy Tenancy => DocumentStore.As<DocumentStore>().Tenancy;
-
-        internal ISessionWorkTracker WorkTracker => _workTracker;
-
-
-        public void Store<T>(IEnumerable<T> entities) where T : notnull
+        if (typeof(T).IsGenericEnumerable())
         {
-            Store(entities?.ToArray()!);
+            throw new ArgumentOutOfRangeException(typeof(T).Name,
+                "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
         }
 
-        public void Store<T>(params T[] entities) where T : notnull
+        if (typeof(T) == typeof(object))
         {
-            if (entities == null)
-            {
-                throw new ArgumentNullException(nameof(entities));
-            }
-
-            if (typeof(T).IsGenericEnumerable())
-            {
-                throw new ArgumentOutOfRangeException(typeof(T).Name,
-                    "Do not use IEnumerable<T> here as the document type. Either cast entities to an array instead or use the IEnumerable<T> Store() overload instead.");
-            }
-
-            store(entities);
+            InsertObjects(entities.OfType<object>());
         }
-
-        public void Store<T>(T entity, Guid version) where T : notnull
+        else
         {
-            assertNotDisposed();
-
             var storage = StorageFor<T>();
-            storage.Store(this, entity, version);
-            var op = storage.Upsert(entity, this, TenantId);
-            _workTracker.Add(op);
-        }
 
-        public void Insert<T>(IEnumerable<T> entities) where T : notnull
-        {
-            Insert(entities.ToArray());
-        }
-
-        public void Insert<T>(params T[] entities) where T : notnull
-        {
-            assertNotDisposed();
-
-            if (entities == null)
+            foreach (var entity in entities)
             {
-                throw new ArgumentNullException(nameof(entities));
-            }
-
-            if (typeof(T).IsGenericEnumerable())
-            {
-                throw new ArgumentOutOfRangeException(typeof(T).Name,
-                    "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
-            }
-
-            if (typeof(T) == typeof(object))
-            {
-                InsertObjects(entities.OfType<object>());
-            }
-            else
-            {
-                var storage = StorageFor<T>();
-
-                foreach (var entity in entities)
-                {
-                    storage.Store(this, entity);
-                    var op = storage.Insert(entity, this, TenantId);
-                    _workTracker.Add(op);
-                }
+                storage.Store(this, entity);
+                var op = storage.Insert(entity, this, TenantId);
+                _workTracker.Add(op);
             }
         }
+    }
 
-        public void Update<T>(IEnumerable<T> entities) where T : notnull
+    public void Update<T>(IEnumerable<T> entities) where T : notnull
+    {
+        Update(entities.ToArray());
+    }
+
+    public void Update<T>(params T[] entities) where T : notnull
+    {
+        assertNotDisposed();
+
+        if (entities == null)
         {
-            Update(entities.ToArray());
+            throw new ArgumentNullException(nameof(entities));
         }
 
-        public void Update<T>(params T[] entities) where T : notnull
+        if (typeof(T).IsGenericEnumerable())
         {
-            assertNotDisposed();
-
-            if (entities == null)
-            {
-                throw new ArgumentNullException(nameof(entities));
-            }
-
-            if (typeof(T).IsGenericEnumerable())
-            {
-                throw new ArgumentOutOfRangeException(typeof(T).Name,
-                    "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
-            }
-
-            if (typeof(T) == typeof(object))
-            {
-                InsertObjects(entities.OfType<object>());
-            }
-            else
-            {
-                var storage = StorageFor<T>();
-
-                foreach (var entity in entities)
-                {
-                    storage.Store(this, entity);
-                    var op = storage.Update(entity, this, TenantId);
-                    _workTracker.Add(op);
-                }
-            }
+            throw new ArgumentOutOfRangeException(typeof(T).Name,
+                "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
         }
 
-        public void InsertObjects(IEnumerable<object> documents)
+        if (typeof(T) == typeof(object))
         {
-            assertNotDisposed();
-
-            documents.Where(x => x != null).GroupBy(x => x.GetType()).Each(group =>
-            {
-                var handler = typeof(InsertHandler<>).CloseAndBuildAs<IObjectHandler>(group.Key);
-                handler.Execute(this, group);
-            });
+            InsertObjects(entities.OfType<object>());
         }
-
-        public void QueueSqlCommand(string sql, params object[] parameterValues)
+        else
         {
-            var operation = new ExecuteSqlStorageOperation(sql, parameterValues);
-            QueueOperation(operation);
-        }
+            var storage = StorageFor<T>();
 
-        public IUnitOfWork PendingChanges => _workTracker;
-
-        public void StoreObjects(IEnumerable<object> documents)
-        {
-            assertNotDisposed();
-
-            var documentsGroupedByType = documents
-                .Where(x => x != null)
-                .GroupBy(x => x.GetType());
-
-            foreach (var group in documentsGroupedByType)
+            foreach (var entity in entities)
             {
-                // Build the right handler for the group type
-                var handler = typeof(StoreHandler<>).CloseAndBuildAs<IObjectHandler>(group.Key);
-                handler.Execute(this, group);
+                storage.Store(this, entity);
+                var op = storage.Update(entity, this, TenantId);
+                _workTracker.Add(op);
             }
         }
+    }
 
-        public new IEventStore Events => (IEventStore)base.Events;
+    public void InsertObjects(IEnumerable<object> documents)
+    {
+        assertNotDisposed();
 
-        protected override IQueryEventStore CreateEventStore(DocumentStore store, Tenant tenant)
-            => new EventStore(this, store, tenant);
-
-
-        public void QueueOperation(IStorageOperation storageOperation)
+        documents.Where(x => x != null).GroupBy(x => x.GetType()).Each(group =>
         {
-            _workTracker.Add(storageOperation);
+            var handler = typeof(InsertHandler<>).CloseAndBuildAs<IObjectHandler>(group.Key);
+            handler.Execute(this, group);
+        });
+    }
+
+    public void QueueSqlCommand(string sql, params object[] parameterValues)
+    {
+        var operation = new ExecuteSqlStorageOperation(sql, parameterValues);
+        QueueOperation(operation);
+    }
+
+    public IUnitOfWork PendingChanges => _workTracker;
+
+    public void StoreObjects(IEnumerable<object> documents)
+    {
+        assertNotDisposed();
+
+        var documentsGroupedByType = documents
+            .Where(x => x != null)
+            .GroupBy(x => x.GetType());
+
+        foreach (var group in documentsGroupedByType)
+        {
+            // Build the right handler for the group type
+            var handler = typeof(StoreHandler<>).CloseAndBuildAs<IObjectHandler>(group.Key);
+            handler.Execute(this, group);
         }
+    }
 
-        public virtual void Eject<T>(T document) where T : notnull
+    public new IEventStore Events => (IEventStore)base.Events;
+
+
+    public void QueueOperation(IStorageOperation storageOperation)
+    {
+        _workTracker.Add(storageOperation);
+    }
+
+    public virtual void Eject<T>(T document) where T : notnull
+    {
+        StorageFor<T>().Eject(this, document);
+        _workTracker.Eject(document);
+
+        ChangeTrackers.RemoveAll(x => ReferenceEquals(document, x.Document));
+    }
+
+    public virtual void EjectAllOfType(Type type)
+    {
+        ItemMap.Remove(type);
+
+        _workTracker.EjectAllOfType(type);
+
+        ChangeTrackers.RemoveAll(x => x.Document.GetType().CanBeCastTo(type));
+    }
+
+    public void SetHeader(string key, object value)
+    {
+        Headers ??= new Dictionary<string, object>();
+
+        Headers[key] = value;
+    }
+
+    public object? GetHeader(string key)
+    {
+        return Headers?.TryGetValue(key, out var value) ?? false ? value : null;
+    }
+
+    /// <summary>
+    ///     Access data from another tenant and apply document or event updates to this
+    ///     IDocumentSession for a separate tenant
+    /// </summary>
+    /// <param name="tenantId"></param>
+    /// <returns></returns>
+    public new ITenantOperations ForTenant(string tenantId)
+    {
+        _byTenant ??= new Dictionary<string, NestedTenantSession>();
+
+        if (_byTenant.TryGetValue(tenantId, out var tenantSession))
         {
-            StorageFor<T>().Eject(this, document);
-            _workTracker.Eject(document);
-
-            ChangeTrackers.RemoveAll(x => ReferenceEquals(document, x.Document));
-        }
-
-        public virtual void EjectAllOfType(Type type)
-        {
-            ItemMap.Remove(type);
-
-            _workTracker.EjectAllOfType(type);
-
-            ChangeTrackers.RemoveAll(x => x.Document.GetType().CanBeCastTo(type));
-        }
-
-        public void SetHeader(string key, object value)
-        {
-            Headers ??= new Dictionary<string, object>();
-
-            Headers[key] = value;
-        }
-
-        public object? GetHeader(string key)
-        {
-            return Headers?.TryGetValue(key, out var value) ?? false ? value : null;
-        }
-
-        /// <summary>
-        ///     Access data from another tenant and apply document or event updates to this
-        ///     IDocumentSession for a separate tenant
-        /// </summary>
-        /// <param name="tenantId"></param>
-        /// <returns></returns>
-        public new ITenantOperations ForTenant(string tenantId)
-        {
-            _byTenant ??= new Dictionary<string, NestedTenantSession>();
-
-            if (_byTenant.TryGetValue(tenantId, out var tenantSession))
-            {
-                return tenantSession;
-            }
-
-            var tenant = new Tenant(tenantId, Database);
-            tenantSession = new NestedTenantSession(this, tenant);
-            _byTenant[tenantId] = tenantSession;
-
             return tenantSession;
         }
 
-        protected internal abstract void ejectById<T>(long id) where T : notnull;
-        protected internal abstract void ejectById<T>(int id) where T : notnull;
-        protected internal abstract void ejectById<T>(Guid id) where T : notnull;
-        protected internal abstract void ejectById<T>(string id) where T : notnull;
+        var tenant = new Tenant(tenantId, Database);
+        tenantSession = new NestedTenantSession(this, tenant);
+        _byTenant[tenantId] = tenantSession;
 
-        protected internal virtual void processChangeTrackers()
+        return tenantSession;
+    }
+
+    protected override IQueryEventStore CreateEventStore(DocumentStore store, Tenant tenant)
+    {
+        return new EventStore(this, store, tenant);
+    }
+
+    protected internal abstract void ejectById<T>(long id) where T : notnull;
+    protected internal abstract void ejectById<T>(int id) where T : notnull;
+    protected internal abstract void ejectById<T>(Guid id) where T : notnull;
+    protected internal abstract void ejectById<T>(string id) where T : notnull;
+
+    protected internal virtual void processChangeTrackers()
+    {
+        // Nothing
+    }
+
+    protected internal virtual void resetDirtyChecking()
+    {
+        // Nothing
+    }
+
+
+    private void store<T>(IEnumerable<T> entities) where T : notnull
+    {
+        assertNotDisposed();
+
+        if (typeof(T) == typeof(object))
         {
-            // Nothing
+            StoreObjects(entities.OfType<object>());
         }
-
-        protected internal virtual void resetDirtyChecking()
+        else
         {
-            // Nothing
-        }
+            var storage = StorageFor<T>();
 
-
-        private void store<T>(IEnumerable<T> entities) where T : notnull
-        {
-            assertNotDisposed();
-
-            if (typeof(T) == typeof(object))
+            if (Concurrency == ConcurrencyChecks.Disabled && storage.UseOptimisticConcurrency)
             {
-                StoreObjects(entities.OfType<object>());
+                foreach (var entity in entities)
+                {
+                    // Put it in the identity map -- if necessary
+                    storage.Store(this, entity);
+
+                    var overwrite = storage.Overwrite(entity, this, TenantId);
+
+                    _workTracker.Add(overwrite);
+                }
             }
             else
             {
-                var storage = StorageFor<T>();
-
-                if (Concurrency == ConcurrencyChecks.Disabled && storage.UseOptimisticConcurrency)
+                foreach (var entity in entities)
                 {
-                    foreach (var entity in entities)
-                    {
-                        // Put it in the identity map -- if necessary
-                        storage.Store(this, entity);
+                    storeEntity(entity, storage);
 
-                        var overwrite = storage.Overwrite(entity, this, TenantId);
+                    var upsert = storage.Upsert(entity, this, TenantId);
 
-                        _workTracker.Add(overwrite);
-                    }
-                }
-                else
-                {
-                    foreach (var entity in entities)
-                    {
-                        storeEntity(entity, storage);
-
-                        var upsert = storage.Upsert(entity, this, TenantId);
-
-                        _workTracker.Add(upsert);
-                    }
+                    _workTracker.Add(upsert);
                 }
             }
         }
+    }
 
-        private void storeEntity<T>(T entity, IDocumentStorage<T> storage) where T : notnull
+    private void storeEntity<T>(T entity, IDocumentStorage<T> storage) where T : notnull
+    {
+        if (entity is IVersioned versioned)
         {
-            if (entity is IVersioned versioned)
+            if (versioned.Version != Guid.Empty)
             {
-                if (versioned.Version != Guid.Empty)
-                {
-                    storage.Store(this, entity, versioned.Version);
-                    return;
-                }
-            }
-
-            // Put it in the identity map -- if necessary
-            storage.Store(this, entity);
-        }
-
-        public void EjectPatchedTypes(IUnitOfWork changes)
-        {
-            var patchedTypes = changes.Operations().Where(x => x.Role() == OperationRole.Patch).Select(x => x.DocumentType).Distinct().ToArray();
-            foreach (var type in patchedTypes) EjectAllOfType(type);
-        }
-
-        internal interface IObjectHandler
-        {
-            void Execute(IDocumentSession session, IEnumerable<object> objects);
-        }
-
-        internal class StoreHandler<T>: IObjectHandler where T : notnull
-        {
-            public void Execute(IDocumentSession session, IEnumerable<object> objects)
-            {
-                // Delegate to the Store<T>() method
-                session.Store(objects.OfType<T>().ToArray());
+                storage.Store(this, entity, versioned.Version);
+                return;
             }
         }
 
-        internal class InsertHandler<T>: IObjectHandler where T : notnull
-        {
-            public void Execute(IDocumentSession session, IEnumerable<object> objects)
-            {
-                session.Insert(objects.OfType<T>().ToArray());
-            }
-        }
+        // Put it in the identity map -- if necessary
+        storage.Store(this, entity);
+    }
 
-        internal class DeleteHandler<T>: IObjectHandler where T : notnull
+    public void EjectPatchedTypes(IUnitOfWork changes)
+    {
+        var patchedTypes = changes.Operations().Where(x => x.Role() == OperationRole.Patch).Select(x => x.DocumentType)
+            .Distinct().ToArray();
+        foreach (var type in patchedTypes) EjectAllOfType(type);
+    }
+
+    internal interface IObjectHandler
+    {
+        void Execute(IDocumentSession session, IEnumerable<object> objects);
+    }
+
+    internal class StoreHandler<T>: IObjectHandler where T : notnull
+    {
+        public void Execute(IDocumentSession session, IEnumerable<object> objects)
         {
-            public void Execute(IDocumentSession session, IEnumerable<object> objects)
-            {
-                foreach (var document in objects.OfType<T>())
-                {
-                    session.Delete(document);
-                }
-            }
+            // Delegate to the Store<T>() method
+            session.Store(objects.OfType<T>().ToArray());
+        }
+    }
+
+    internal class InsertHandler<T>: IObjectHandler where T : notnull
+    {
+        public void Execute(IDocumentSession session, IEnumerable<object> objects)
+        {
+            session.Insert(objects.OfType<T>().ToArray());
+        }
+    }
+
+    internal class DeleteHandler<T>: IObjectHandler where T : notnull
+    {
+        public void Execute(IDocumentSession session, IEnumerable<object> objects)
+        {
+            foreach (var document in objects.OfType<T>()) session.Delete(document);
         }
     }
 }

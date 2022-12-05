@@ -1,5 +1,5 @@
 using System;
-using Baseline;
+using JasperFx.Core;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 

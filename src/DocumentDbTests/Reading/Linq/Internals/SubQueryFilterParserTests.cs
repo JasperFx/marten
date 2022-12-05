@@ -1,7 +1,8 @@
 using System;
 using System.Linq;
 using System.Linq.Expressions;
-using Baseline;
+using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Linq.Parsing;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;

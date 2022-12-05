@@ -1,23 +1,23 @@
-using Baseline;
-using Marten.Schema;
 #nullable enable
-namespace Marten.Metadata
+using JasperFx.Core.Reflection;
+using Marten.Schema;
+
+namespace Marten.Metadata;
+
+internal class SoftDeletedPolicy: IDocumentPolicy
 {
-    internal class SoftDeletedPolicy: IDocumentPolicy
+    public void Apply(DocumentMapping mapping)
     {
-        public void Apply(DocumentMapping mapping)
+        if (mapping.DocumentType.CanBeCastTo<ISoftDeleted>())
         {
-            if (mapping.DocumentType.CanBeCastTo<ISoftDeleted>())
-            {
-                mapping.DeleteStyle = DeleteStyle.SoftDelete;
+            mapping.DeleteStyle = DeleteStyle.SoftDelete;
 
-                mapping.Metadata.IsSoftDeleted.Enabled = true;
-                mapping.Metadata.IsSoftDeleted.Member = mapping.DocumentType.GetProperty(nameof(ISoftDeleted.Deleted));
+            mapping.Metadata.IsSoftDeleted.Enabled = true;
+            mapping.Metadata.IsSoftDeleted.Member = mapping.DocumentType.GetProperty(nameof(ISoftDeleted.Deleted));
 
-                mapping.Metadata.SoftDeletedAt.Enabled = true;
-                mapping.Metadata.SoftDeletedAt.Member =
-                    mapping.DocumentType.GetProperty(nameof(ISoftDeleted.DeletedAt));
-            }
+            mapping.Metadata.SoftDeletedAt.Enabled = true;
+            mapping.Metadata.SoftDeletedAt.Member =
+                mapping.DocumentType.GetProperty(nameof(ISoftDeleted.DeletedAt));
         }
     }
 }

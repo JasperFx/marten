@@ -1,11 +1,10 @@
-namespace Marten.Linq.SqlGeneration
-{
-    internal interface IScalarSelectClause
-    {
-        void ApplyOperator(string op);
-        ISelectClause CloneToDouble();
-        string FieldName { get; }
+namespace Marten.Linq.SqlGeneration;
 
-        ISelectClause CloneToOtherTable(string tableName);
-    }
+internal interface IScalarSelectClause
+{
+    string FieldName { get; }
+    void ApplyOperator(string op);
+    ISelectClause CloneToDouble();
+
+    ISelectClause CloneToOtherTable(string tableName);
 }

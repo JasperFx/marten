@@ -1,10 +1,9 @@
 using System;
 using System.Linq;
-using Baseline.Dates;
+using JasperFx.Core;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
-using Weasel.Postgresql;
 using Xunit;
 
 namespace DocumentDbTests.Bugs;

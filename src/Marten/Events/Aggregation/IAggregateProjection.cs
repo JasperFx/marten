@@ -1,24 +1,24 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using Marten.Events.Projections;
-#nullable enable
-namespace Marten.Events.Aggregation
+
+namespace Marten.Events.Aggregation;
+
+/// <summary>
+///     Internal service within aggregating projections
+/// </summary>
+public interface IAggregateProjection // THIS NEEDS TO REMAIN PUBLIC
 {
-    /// <summary>
-    /// Internal service within aggregating projections
-    /// </summary>
-    public interface IAggregateProjection // THIS NEEDS TO REMAIN PUBLIC
-    {
-        Type AggregateType { get; }
+    Type AggregateType { get; }
 
-        string ProjectionName { get; }
+    string ProjectionName { get; }
 
-        bool MatchesAnyDeleteType(StreamAction action);
-        bool MatchesAnyDeleteType(IEventSlice slice);
+    Type[] AllEventTypes { get; }
 
-        Type[] AllEventTypes { get; }
-        bool AppliesTo(IEnumerable<Type> eventTypes);
+    ProjectionLifecycle Lifecycle { get; }
 
-        ProjectionLifecycle Lifecycle { get; }
-    }
+    bool MatchesAnyDeleteType(StreamAction action);
+    bool MatchesAnyDeleteType(IEventSlice slice);
+    bool AppliesTo(IEnumerable<Type> eventTypes);
 }

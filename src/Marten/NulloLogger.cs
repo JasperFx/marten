@@ -2,30 +2,29 @@ using System;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
-namespace Marten
+namespace Marten;
+
+internal class NulloLogger: ILogger, IDisposable
 {
-    internal class NulloLogger: ILogger, IDisposable
+    public void Dispose()
     {
-        public void Dispose()
-        {
-            // Nothing
-        }
+        // Nothing
+    }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception,
-            Func<TState, Exception, string> formatter)
-        {
-            var message = $"{logLevel}: {formatter(state, exception)}";
-            Debug.WriteLine(message);
-        }
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception,
+        Func<TState, Exception, string> formatter)
+    {
+        var message = $"{logLevel}: {formatter(state, exception)}";
+        Debug.WriteLine(message);
+    }
 
-        public bool IsEnabled(LogLevel logLevel)
-        {
-            return true;
-        }
+    public bool IsEnabled(LogLevel logLevel)
+    {
+        return true;
+    }
 
-        public IDisposable BeginScope<TState>(TState state)
-        {
-            return this;
-        }
+    public IDisposable BeginScope<TState>(TState state)
+    {
+        return this;
     }
 }

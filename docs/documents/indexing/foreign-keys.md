@@ -145,5 +145,5 @@ public class Issue
     public Guid? OtherUserId { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/ForeignKeys/configuring_foreign_key_fields.cs#L67-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_issue-with-fk-attribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/ForeignKeys/configuring_foreign_key_fields.cs#L68-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_issue-with-fk-attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

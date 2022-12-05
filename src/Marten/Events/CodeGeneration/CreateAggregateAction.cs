@@ -1,9 +1,8 @@
-namespace Marten.Events.CodeGeneration
+namespace Marten.Events.CodeGeneration;
+
+public enum CreateAggregateAction
 {
-    public enum CreateAggregateAction
-    {
-        Initialize,
-        Assign,
-        NullCoalesce
-    }
+    Initialize,
+    Assign,
+    NullCoalesce
 }

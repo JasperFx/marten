@@ -1,27 +1,26 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Marten.Exceptions
+namespace Marten.Exceptions;
+
+/// <summary>
+///     Base class for all Marten related exceptions
+/// </summary>
+public class MartenException: Exception
 {
-    /// <summary>
-    /// Base class for all Marten related exceptions
-    /// </summary>
-    public class MartenException : Exception
+    public MartenException()
     {
-        public MartenException()
-        {
-        }
+    }
 
-        protected MartenException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
+    protected MartenException(SerializationInfo info, StreamingContext context): base(info, context)
+    {
+    }
 
-        public MartenException(string message) : base(message)
-        {
-        }
+    public MartenException(string message): base(message)
+    {
+    }
 
-        public MartenException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
+    public MartenException(string message, Exception innerException): base(message, innerException)
+    {
     }
 }

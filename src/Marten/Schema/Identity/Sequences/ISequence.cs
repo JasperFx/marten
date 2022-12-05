@@ -1,16 +1,14 @@
+#nullable enable
 using System.Threading.Tasks;
 
-#nullable enable
-namespace Marten.Schema.Identity.Sequences
+namespace Marten.Schema.Identity.Sequences;
+
+public interface ISequence
 {
-    public interface ISequence
-    {
-        int NextInt();
+    int MaxLo { get; }
+    int NextInt();
 
-        long NextLong();
+    long NextLong();
 
-        int MaxLo { get; }
-
-        Task SetFloor(long floor);
-    }
+    Task SetFloor(long floor);
 }

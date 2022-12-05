@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
-using Baseline;
-using LamarCodeGeneration;
+using JasperFx.Core;
+using JasperFx.CodeGeneration;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;

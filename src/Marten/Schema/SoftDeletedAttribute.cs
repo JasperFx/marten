@@ -1,24 +1,27 @@
-using System;
 #nullable enable
-namespace Marten.Schema
+using System;
+
+namespace Marten.Schema;
+
+/// <summary>
+///     Marks a document type as "soft deleted"
+/// </summary>
+[AttributeUsage(AttributeTargets.Class)]
+public class SoftDeletedAttribute: MartenAttribute
 {
     /// <summary>
-    /// Marks a document type as "soft deleted"
+    ///     Creates an index on deleted documents
     /// </summary>
-    [AttributeUsage(AttributeTargets.Class)]
-    public class SoftDeletedAttribute: MartenAttribute
+    public bool Indexed { get; set; }
+
+    public override void Modify(DocumentMapping mapping)
     {
-        public override void Modify(DocumentMapping mapping)
+        mapping.DeleteStyle = DeleteStyle.SoftDelete;
+        if (!Indexed)
         {
-            mapping.DeleteStyle = DeleteStyle.SoftDelete;
-            if (!Indexed)
-                return;
-            mapping.AddDeletedAtIndex();
+            return;
         }
 
-        /// <summary>
-        /// Creates an index on deleted documents
-        /// </summary>
-        public bool Indexed { get; set; }
+        mapping.AddDeletedAtIndex();
     }
 }

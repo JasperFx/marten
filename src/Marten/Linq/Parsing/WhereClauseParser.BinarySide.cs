@@ -1,52 +1,54 @@
 using System.Linq.Expressions;
 using Marten.Exceptions;
 using Marten.Linq.Fields;
-using Marten.Linq.Filters;
-using Marten.Linq.SqlGeneration;
 using Remotion.Linq.Parsing;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Linq.Parsing
+namespace Marten.Linq.Parsing;
+
+internal partial class WhereClauseParser
 {
-    internal partial class WhereClauseParser
+    internal class BinarySide: RelinqExpressionVisitor
     {
-        internal class BinarySide : RelinqExpressionVisitor
+        public BinarySide(Expression memberExpression)
         {
-            public BinarySide(Expression memberExpression)
+            MemberExpression = memberExpression;
+        }
+
+        public ConstantExpression Constant { get; set; }
+        public IField Field { get; set; }
+        public IComparableFragment Comparable { get; set; }
+
+        public Expression MemberExpression { get; }
+
+        public ISqlFragment CompareTo(BinarySide right, string op)
+        {
+            if (Constant != null)
             {
-                MemberExpression = memberExpression;
+                return right.CompareTo(this, ComparisonFilter.OppositeOperators[op]);
             }
 
-            public ConstantExpression Constant { get; set; }
-            public IField Field { get; set; }
-            public IComparableFragment Comparable { get; set; }
-
-            public Expression MemberExpression { get; }
-
-            public ISqlFragment CompareTo(BinarySide right, string op)
+            if (Comparable != null && right.Constant != null)
             {
-                if (Constant != null)
-                {
-                    return right.CompareTo(this, ComparisonFilter.OppositeOperators[op]);
-                }
+                return Comparable.CreateComparison(op, right.Constant, MemberExpression);
+            }
 
-                if (Comparable != null && right.Constant != null) return Comparable.CreateComparison(op, right.Constant, MemberExpression);
-
-                if (Field == null)
-                    throw new BadLinqExpressionException("Unsupported binary value expression in a Where() clause");
-
-                if (right.Constant != null)
-                {
-                    return Field.CreateComparison(op, right.Constant, MemberExpression);
-                }
-
-                if (right.Field != null)
-                {
-                    return new ComparisonFilter(Field, right.Field, op);
-                }
-
+            if (Field == null)
+            {
                 throw new BadLinqExpressionException("Unsupported binary value expression in a Where() clause");
             }
+
+            if (right.Constant != null)
+            {
+                return Field.CreateComparison(op, right.Constant, MemberExpression);
+            }
+
+            if (right.Field != null)
+            {
+                return new ComparisonFilter(Field, right.Field, op);
+            }
+
+            throw new BadLinqExpressionException("Unsupported binary value expression in a Where() clause");
         }
     }
 }

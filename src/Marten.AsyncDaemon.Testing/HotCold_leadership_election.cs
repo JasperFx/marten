@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline.Dates;
+using JasperFx.Core;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;

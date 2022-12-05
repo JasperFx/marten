@@ -1,32 +1,30 @@
-using System;
-using Baseline;
-using Newtonsoft.Json.Serialization;
-using Npgsql;
 #nullable enable
-namespace Marten.Util
+using JasperFx.Core;
+using Newtonsoft.Json.Serialization;
+
+namespace Marten.Util;
+
+internal static class StringExtensionMethods
 {
-    internal static class StringExtensionMethods
+    private static readonly SnakeCaseNamingStrategy _snakeCaseNamingStrategy = new();
+
+    public static string ToSnakeCase(this string s)
     {
-        private static readonly SnakeCaseNamingStrategy _snakeCaseNamingStrategy = new SnakeCaseNamingStrategy();
+        return _snakeCaseNamingStrategy.GetPropertyName(s, false);
+    }
 
-        public static string ToSnakeCase(this string s)
+    public static string FormatCase(this string s, Casing casing)
+    {
+        switch (casing)
         {
-            return _snakeCaseNamingStrategy.GetPropertyName(s, false);
-        }
+            case Casing.CamelCase:
+                return s.ToCamelCase();
 
-        public static string FormatCase(this string s, Casing casing)
-        {
-            switch (casing)
-            {
-                case Casing.CamelCase:
-                    return s.ToCamelCase();
+            case Casing.SnakeCase:
+                return s.ToSnakeCase();
 
-                case Casing.SnakeCase:
-                    return s.ToSnakeCase();
-
-                default:
-                    return s;
-            }
+            default:
+                return s;
         }
     }
 }

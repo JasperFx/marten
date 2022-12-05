@@ -2,25 +2,24 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Marten.Linq.Selectors
+namespace Marten.Linq.Selectors;
+
+internal class SerializationSelector<T>: ISelector<T>
 {
-    internal class SerializationSelector<T>: ISelector<T>
+    private readonly ISerializer _serializer;
+
+    public SerializationSelector(ISerializer serializer)
     {
-        private readonly ISerializer _serializer;
+        _serializer = serializer;
+    }
 
-        public SerializationSelector(ISerializer serializer)
-        {
-            _serializer = serializer;
-        }
+    public T Resolve(DbDataReader reader)
+    {
+        return _serializer.FromJson<T>(reader, 0);
+    }
 
-        public T Resolve(DbDataReader reader)
-        {
-            return _serializer.FromJson<T>(reader, 0);
-        }
-
-        public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
-        {
-            return await _serializer.FromJsonAsync<T>(reader, 0, token).ConfigureAwait(false);
-        }
+    public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
+    {
+        return await _serializer.FromJsonAsync<T>(reader, 0, token).ConfigureAwait(false);
     }
 }

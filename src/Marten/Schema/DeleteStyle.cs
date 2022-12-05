@@ -1,8 +1,7 @@
-namespace Marten.Schema
+namespace Marten.Schema;
+
+public enum DeleteStyle
 {
-    public enum DeleteStyle
-    {
-        Remove,
-        SoftDelete
-    }
+    Remove,
+    SoftDelete
 }

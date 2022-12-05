@@ -1,125 +1,114 @@
 using System;
-using System.Linq;
 using System.Reflection;
-using LamarCodeGeneration;
-using LamarCodeGeneration.Frames;
+using JasperFx.CodeGeneration;
+using JasperFx.CodeGeneration.Frames;
 using Marten.Exceptions;
-using Marten.Util;
 
-namespace Marten.Events.CodeGeneration
+namespace Marten.Events.CodeGeneration;
+
+internal class AggregateEventProcessingFrame: EventProcessingFrame
 {
-    internal class AggregateEventProcessingFrame: EventProcessingFrame
+    private ApplyMethodCall _apply;
+
+    private Frame _creation;
+    private ShouldDeleteFrame _deletion;
+
+    public AggregateEventProcessingFrame(Type aggregateType, Type eventType): base(true, aggregateType, eventType)
     {
-        public AggregateEventProcessingFrame(Type aggregateType, Type eventType): base(true, aggregateType, eventType)
+    }
+
+    public bool AlwaysDeletes { get; set; }
+
+    public Frame CreationFrame
+    {
+        get => _creation;
+        set
         {
+            if (value is not IEventHandlingFrame)
+            {
+                throw new ArgumentOutOfRangeException(
+                    $"The CreationFrame must implement {nameof(IEventHandlingFrame)}");
+            }
+
+            _inner.Add(value);
+            _creation = value;
+        }
+    }
+
+    public ShouldDeleteFrame Deletion
+    {
+        get => _deletion;
+        set
+        {
+            _deletion = value;
+            _inner.Add(value);
+        }
+    }
+
+    public ApplyMethodCall Apply
+    {
+        get => _apply;
+        set
+        {
+            _apply = value;
+            _inner.Add(value);
+        }
+    }
+
+    public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
+    {
+        writer.Write($"case {SpecificEvent.VariableType.FullNameInCode()} {SpecificEvent.Usage}:");
+
+        writer.IndentionLevel++;
+
+
+        if (AlwaysDeletes)
+        {
+            writer.Write("return null;");
         }
 
-        public bool AlwaysDeletes { get; set; }
+        CreationFrame?.GenerateCode(method, writer);
 
-        private Frame _creation;
-        private ShouldDeleteFrame _deletion;
-        private ApplyMethodCall _apply;
-
-        public Frame CreationFrame
+        if (Apply != null)
         {
-            get
+            if (CreationFrame == null)
             {
-                return _creation;
-            }
-            set
-            {
-                if (value is not IEventHandlingFrame)
+                var defaultConstructor = AggregateType.GetConstructor(
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes,
+                    null);
+
+                if (defaultConstructor?.IsPublic == true)
                 {
-                    throw new ArgumentOutOfRangeException(
-                        $"The CreationFrame must implement {nameof(IEventHandlingFrame)}");
+                    writer.Write($"{Aggregate.Usage} ??= new {AggregateType.FullNameInCode()}();");
                 }
-
-                _inner.Add(value);
-                _creation = value;
-            }
-        }
-
-        public ShouldDeleteFrame Deletion
-        {
-            get
-            {
-                return _deletion;
-            }
-            set
-            {
-                _deletion = value;
-                _inner.Add(value);
-            }
-        }
-
-        public ApplyMethodCall Apply
-        {
-            get
-            {
-                return _apply;
-            }
-            set
-            {
-                _apply = value;
-                _inner.Add(value);
-            }
-        }
-
-        public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
-        {
-            writer.Write($"case {SpecificEvent.VariableType.FullNameInCode()} {SpecificEvent.Usage}:");
-
-            writer.IndentionLevel++;
-
-
-            if (AlwaysDeletes)
-            {
-                writer.Write("return null;");
-            }
-
-            CreationFrame?.GenerateCode(method, writer);
-
-            if (Apply != null)
-            {
-                if (CreationFrame == null)
+                else if (defaultConstructor?.IsPublic == false)
                 {
-                    var defaultConstructor = AggregateType.GetConstructor(
-                        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes,
-                        null);
-
-                    if (defaultConstructor?.IsPublic == true)
-                    {
-                        writer.Write($"{Aggregate.Usage} ??= new {AggregateType.FullNameInCode()}();");
-                    }
-                    else if (defaultConstructor?.IsPublic == false)
-                    {
-                        writer.Write($"{Aggregate.Usage} ??= AggregateBuilder();");
-                    }
-                    else
-                    {
-                        var errorMessage =
-                            $"Projection for {AggregateType.FullName} should either have the Create Method or Constructor for event of type {SpecificEvent.VariableType.FullNameInCode()}, or {AggregateType.FullName} should have a Default Constructor.";
-
-                        writer.Write(
-                            $"if({Aggregate.Usage} == default) throw new {typeof(InvalidProjectionException).FullNameInCode()}(\"{errorMessage}\");");
-                    }
+                    writer.Write($"{Aggregate.Usage} ??= AggregateBuilder();");
                 }
+                else
+                {
+                    var errorMessage =
+                        $"Projection for {AggregateType.FullName} should either have the Create Method or Constructor for event of type {SpecificEvent.VariableType.FullNameInCode()}, or {AggregateType.FullName} should have a Default Constructor.";
 
-                Apply.GenerateCode(method, writer);
+                    writer.Write(
+                        $"if({Aggregate.Usage} == default) throw new {typeof(InvalidProjectionException).FullNameInCode()}(\"{errorMessage}\");");
+                }
             }
 
-            if (Deletion != null)
-            {
-                writer.Write($"if ({Aggregate.Usage} == null) return null;");
-
-                Deletion.GenerateCode(method, writer);
-            }
-
-            writer.Write($"return {Aggregate.Usage};");
-
-            writer.IndentionLevel--;
-
-            Next?.GenerateCode(method, writer);
+            Apply.GenerateCode(method, writer);
         }
+
+        if (Deletion != null)
+        {
+            writer.Write($"if ({Aggregate.Usage} == null) return null;");
+
+            Deletion.GenerateCode(method, writer);
+        }
+
+        writer.Write($"return {Aggregate.Usage};");
+
+        writer.IndentionLevel--;
+
+        Next?.GenerateCode(method, writer);
     }
 }

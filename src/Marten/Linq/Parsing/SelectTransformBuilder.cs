@@ -4,135 +4,136 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Baseline;
+using JasperFx.Core;
 using Marten.Linq.Fields;
 using Remotion.Linq.Parsing;
 
-namespace Marten.Linq.Parsing
+namespace Marten.Linq.Parsing;
+
+internal class SelectTransformBuilder: RelinqExpressionVisitor
 {
-    internal class SelectTransformBuilder: RelinqExpressionVisitor
+    private SelectedField _currentField;
+    private TargetObject _target;
+
+    public SelectTransformBuilder(Expression clause, IFieldMapping fields, ISerializer serializer)
     {
-        private SelectedField _currentField;
-        private TargetObject _target;
+        // ReSharper disable once VirtualMemberCallInConstructor
+        Visit(clause);
+        SelectedFieldExpression = _target.ToSelectField(fields, serializer);
+    }
 
-        public SelectTransformBuilder(Expression clause, IFieldMapping fields, ISerializer serializer)
+    public string SelectedFieldExpression { get; }
+
+    protected override Expression VisitNew(NewExpression expression)
+    {
+        if (_target != null)
         {
-            // ReSharper disable once VirtualMemberCallInConstructor
-            Visit(@clause);
-            SelectedFieldExpression = _target.ToSelectField(fields, serializer);
+            return base.VisitNew(expression);
         }
 
-        public string SelectedFieldExpression { get; }
+        _target = new TargetObject(expression.Type);
 
-        protected override Expression VisitNew(NewExpression expression)
+        var parameters = expression.Constructor.GetParameters();
+
+        for (var i = 0; i < parameters.Length; i++)
         {
-            if (_target != null)
-                return base.VisitNew(expression);
-
-            _target = new TargetObject(expression.Type);
-
-            var parameters = expression.Constructor.GetParameters();
-
-            for (var i = 0; i < parameters.Length; i++)
-            {
-                _currentField = _target.StartBinding(parameters[i].Name);
-                Visit(expression.Arguments[i]);
-            }
-
-            return expression;
+            _currentField = _target.StartBinding(parameters[i].Name);
+            Visit(expression.Arguments[i]);
         }
 
-        protected override Expression VisitMember(MemberExpression node)
+        return expression;
+    }
+
+    protected override Expression VisitMember(MemberExpression node)
+    {
+        _currentField.Add(node.Member);
+        return base.VisitMember(node);
+    }
+
+    protected override MemberBinding VisitMemberBinding(MemberBinding node)
+    {
+        _currentField = _target.StartBinding(node.Member.Name);
+
+        return base.VisitMemberBinding(node);
+    }
+
+
+    public class TargetObject
+    {
+        private readonly IList<SetterBinding> _setters = new List<SetterBinding>();
+
+        public TargetObject(Type type)
         {
-            _currentField.Add(node.Member);
-            return base.VisitMember(node);
+            Type = type;
         }
 
-        protected override MemberBinding VisitMemberBinding(MemberBinding node)
-        {
-            _currentField = _target.StartBinding(node.Member.Name);
+        public Type Type { get; }
 
-            return base.VisitMemberBinding(node);
+        public SelectedField StartBinding(string bindingName)
+        {
+            var setter = new SetterBinding(bindingName);
+            _setters.Add(setter);
+
+            return setter.Field;
         }
 
-
-        public class TargetObject
+        public string ToSelectField(IFieldMapping fields, ISerializer serializer)
         {
-            private readonly IList<SetterBinding> _setters = new List<SetterBinding>();
+            var jsonBuildObjectArgs = _setters.Select(x => x.ToJsonBuildObjectPair(fields, serializer)).Join(", ");
+            return $"jsonb_build_object({jsonBuildObjectArgs})";
+        }
 
-            public TargetObject(Type type)
+        private class SetterBinding
+        {
+            public SetterBinding(string name)
             {
-                Type = type;
+                Name = name;
             }
 
-            public Type Type { get; }
+            private string Name { get; }
+            public SelectedField Field { get; } = new();
 
-            public SelectedField StartBinding(string bindingName)
+            public string ToJsonBuildObjectPair(IFieldMapping mapping, ISerializer serializer)
             {
-                var setter = new SetterBinding(bindingName);
-                _setters.Add(setter);
+                var field = mapping.FieldFor(Field.ToArray());
+                var locator = serializer.ValueCasting == ValueCasting.Relaxed
+                    ? field.RawLocator ?? field.TypedLocator
+                    : field.TypedLocator;
 
-                return setter.Field;
-            }
-
-            public string ToSelectField(IFieldMapping fields, ISerializer serializer)
-            {
-                var jsonBuildObjectArgs = _setters.Select(x => x.ToJsonBuildObjectPair(fields, serializer)).Join(", ");
-                return $"jsonb_build_object({jsonBuildObjectArgs})";
-            }
-
-            private class SetterBinding
-            {
-                public SetterBinding(string name)
+                if (field is DictionaryField)
                 {
-                    Name = name;
+                    // DictionaryField.RawLocator does not have cast to JSONB so TypedLocator is used
+                    locator = field.TypedLocator;
                 }
 
-                private string Name { get; }
-                public SelectedField Field { get; } = new SelectedField();
-
-                public string ToJsonBuildObjectPair(IFieldMapping mapping, ISerializer serializer)
+                if (field.FieldType.IsClass && field.FieldType != typeof(string) && field.FieldType != typeof(decimal))
                 {
-                    var field = mapping.FieldFor(Field.ToArray());
-                    var locator = serializer.ValueCasting == ValueCasting.Relaxed
-                        ? field.RawLocator ?? field.TypedLocator
-                        : field.TypedLocator;
-
-                    if (field is DictionaryField)
-                    {
-                        // DictionaryField.RawLocator does not have cast to JSONB so TypedLocator is used
-                        locator = field.TypedLocator;
-                    }
-
-                    if (field.FieldType.IsClass && field.FieldType != typeof(string) && field.FieldType != typeof(decimal))
-                    {
-                        // If the field is a class, we need to cast it to JSONB otherwise it will be serialized to plain string and fail to deserialize later on
-                        locator = field.JSONBLocator;
-                    }
-
-                    return $"'{Name}', {locator}";
+                    // If the field is a class, we need to cast it to JSONB otherwise it will be serialized to plain string and fail to deserialize later on
+                    locator = field.JSONBLocator;
                 }
+
+                return $"'{Name}', {locator}";
             }
         }
+    }
 
-        public class SelectedField: IEnumerable<MemberInfo>
+    public class SelectedField: IEnumerable<MemberInfo>
+    {
+        private readonly Stack<MemberInfo> _members = new();
+
+        IEnumerator IEnumerable.GetEnumerator()
         {
-            private readonly Stack<MemberInfo> _members = new Stack<MemberInfo>();
+            return GetEnumerator();
+        }
 
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                return GetEnumerator();
-            }
+        public IEnumerator<MemberInfo> GetEnumerator()
+        {
+            return _members.GetEnumerator();
+        }
 
-            public IEnumerator<MemberInfo> GetEnumerator()
-            {
-                return _members.GetEnumerator();
-            }
-
-            public void Add(MemberInfo member)
-            {
-                _members.Push(member);
-            }
+        public void Add(MemberInfo member)
+        {
+            _members.Push(member);
         }
     }
 }

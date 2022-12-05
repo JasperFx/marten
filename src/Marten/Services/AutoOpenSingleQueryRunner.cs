@@ -1,51 +1,48 @@
-using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Internal;
 using Marten.Storage;
 
-namespace Marten.Services
+namespace Marten.Services;
+
+internal class AutoOpenSingleQueryRunner: ISingleQueryRunner
 {
-    internal class AutoOpenSingleQueryRunner : ISingleQueryRunner
+    private readonly IMartenDatabase _database;
+
+    public AutoOpenSingleQueryRunner(IMartenDatabase database)
     {
-        private readonly IMartenDatabase _database;
+        _database = database;
+    }
 
-        public AutoOpenSingleQueryRunner(IMartenDatabase database)
+
+    public async Task<T> Query<T>(ISingleQueryHandler<T> handler, CancellationToken cancellation)
+    {
+        await using var conn = _database.CreateConnection();
+
+        var command = handler.BuildCommand();
+        command.Connection = conn;
+
+        await conn.OpenAsync(cancellation).ConfigureAwait(false);
+        await using var reader = await command.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
+
+        try
         {
-            _database = database;
+            return await handler.HandleAsync(reader, cancellation).ConfigureAwait(false);
         }
-
-
-        public async Task<T> Query<T>(ISingleQueryHandler<T> handler, CancellationToken cancellation)
+        finally
         {
-            await using var conn = _database.CreateConnection();
-
-            var command = handler.BuildCommand();
-            command.Connection = conn;
-
-            await conn.OpenAsync(cancellation).ConfigureAwait(false);
-            await using var reader = await command.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
-
-            try
-            {
-                return await handler.HandleAsync(reader, cancellation).ConfigureAwait(false);
-            }
-            finally
-            {
-                await reader.CloseAsync().ConfigureAwait(false);
-                await reader.DisposeAsync().ConfigureAwait(false);
-            }
+            await reader.CloseAsync().ConfigureAwait(false);
+            await reader.DisposeAsync().ConfigureAwait(false);
         }
+    }
 
-        public async Task SingleCommit(DbCommand command, CancellationToken cancellation)
-        {
-            await using var conn = _database.CreateConnection();
-            await conn.OpenAsync(cancellation).ConfigureAwait(false);
+    public async Task SingleCommit(DbCommand command, CancellationToken cancellation)
+    {
+        await using var conn = _database.CreateConnection();
+        await conn.OpenAsync(cancellation).ConfigureAwait(false);
 
-            command.Connection = conn;
+        command.Connection = conn;
 
-            await command.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
-        }
+        await command.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
     }
 }

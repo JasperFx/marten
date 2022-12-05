@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Baseline.Dates;
+using JasperFx.Core;
 using Marten;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Weasel.Core;
-using Weasel.Postgresql;
 
 namespace MemoryUsageChecker;
 

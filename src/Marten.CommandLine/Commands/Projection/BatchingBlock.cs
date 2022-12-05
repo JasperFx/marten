@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Baseline.Dates;
+using JasperFx.Core;
 
 namespace Marten.CommandLine.Commands.Projection;
 

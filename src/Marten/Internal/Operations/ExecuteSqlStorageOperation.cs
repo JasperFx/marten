@@ -1,72 +1,67 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Storage;
-using Npgsql;
 using Weasel.Postgresql;
 
-namespace Marten.Internal.Operations
+namespace Marten.Internal.Operations;
+
+internal class ExecuteSqlStorageOperation: IStorageOperation, NoDataReturnedCall
 {
-    internal class ExecuteSqlStorageOperation: IStorageOperation, NoDataReturnedCall
+    private readonly string _commandText;
+    private readonly object[] _parameterValues;
+
+    public ExecuteSqlStorageOperation(string commandText, params object[] parameterValues)
     {
-        private readonly string _commandText;
-        private readonly object[] _parameterValues;
+        _commandText = commandText.TrimEnd(';');
+        _parameterValues = parameterValues;
+    }
 
-        public ExecuteSqlStorageOperation(string commandText, params object[] parameterValues)
+    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    {
+        var parameters = builder.AppendWithParameters(_commandText);
+        if (parameters.Length != _parameterValues.Length)
         {
-            _commandText = commandText.TrimEnd(';');
-            _parameterValues = parameterValues;
+            throw new InvalidOperationException(
+                $"Wrong number of parameter values to SQL '{_commandText}', got {_parameterValues.Length} parameters");
         }
 
-        public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+        for (var i = 0; i < parameters.Length; i++)
         {
-            var parameters = builder.AppendWithParameters(_commandText);
-            if (parameters.Length != _parameterValues.Length)
+            if (_parameterValues[i] == null)
             {
-                throw new InvalidOperationException(
-                    $"Wrong number of parameter values to SQL '{_commandText}', got {_parameterValues.Length} parameters");
+                parameters[i].Value = DBNull.Value;
             }
-
-            for (var i = 0; i < parameters.Length; i++)
+            else
             {
-                if (_parameterValues[i] == null)
+                var dbType = PostgresqlProvider.Instance.TryGetDbType(_parameterValues[i].GetType());
+                if (dbType != null)
                 {
-                    parameters[i].Value = DBNull.Value;
-                }
-                else
-                {
-                    var dbType = PostgresqlProvider.Instance.TryGetDbType(_parameterValues[i].GetType());
-                    if (dbType != null)
-                    {
-                        parameters[i].NpgsqlDbType = dbType.Value;
-                    }
-
-                    parameters[i].Value = _parameterValues[i];
+                    parameters[i].NpgsqlDbType = dbType.Value;
                 }
 
-
-
+                parameters[i].Value = _parameterValues[i];
             }
         }
+    }
 
-        public Type DocumentType => typeof(StorageFeatures);
-        public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-        {
-            // nothing
-        }
+    public Type DocumentType => typeof(StorageFeatures);
 
-        public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
-        {
-            return Task.CompletedTask;
-        }
+    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
+    {
+        // nothing
+    }
 
-        public OperationRole Role()
-        {
-            return OperationRole.Other;
-        }
+    public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
+    {
+        return Task.CompletedTask;
+    }
+
+    public OperationRole Role()
+    {
+        return OperationRole.Other;
     }
 }

@@ -1,28 +1,26 @@
-
+#nullable enable
 using System.Collections.Generic;
 using Marten.Storage;
 
-#nullable enable
-namespace Marten.Internal.Sessions
+namespace Marten.Internal.Sessions;
+
+public partial class QuerySession
 {
-    public partial class QuerySession
+    private Dictionary<string, NestedTenantQuerySession>? _byTenant;
+
+    public ITenantQueryOperations ForTenant(string tenantId)
     {
-        private Dictionary<string, NestedTenantQuerySession>? _byTenant;
+        _byTenant ??= new Dictionary<string, NestedTenantQuerySession>();
 
-        public ITenantQueryOperations ForTenant(string tenantId)
+        if (_byTenant.TryGetValue(tenantId, out var tenantSession))
         {
-            _byTenant ??= new Dictionary<string, NestedTenantQuerySession>();
-
-            if (_byTenant.TryGetValue(tenantId, out var tenantSession))
-            {
-                return tenantSession;
-            }
-
-            var tenant = new Tenant(tenantId, Database);
-            tenantSession = new NestedTenantQuerySession(this, tenant);
-            _byTenant[tenantId] = tenantSession;
-
             return tenantSession;
         }
+
+        var tenant = new Tenant(tenantId, Database);
+        tenantSession = new NestedTenantQuerySession(this, tenant);
+        _byTenant[tenantId] = tenantSession;
+
+        return tenantSession;
     }
 }

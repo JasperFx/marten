@@ -1,10 +1,9 @@
-namespace Marten.Internal.CodeGeneration
+namespace Marten.Internal.CodeGeneration;
+
+public enum StorageStyle
 {
-    public enum StorageStyle
-    {
-        QueryOnly,
-        Lightweight,
-        IdentityMap,
-        DirtyTracking
-    }
+    QueryOnly,
+    Lightweight,
+    IdentityMap,
+    DirtyTracking
 }

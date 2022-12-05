@@ -1,4 +1,5 @@
-namespace Marten.Events.Daemon.Resiliency
+namespace Marten.Events.Daemon.Resiliency;
+
+internal class DoNothing: IContinuation
 {
-    internal class DoNothing : IContinuation{}
 }

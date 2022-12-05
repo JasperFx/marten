@@ -238,15 +238,15 @@ service that implements the `IConfigureMarten` interface into the underlying IoC
 <a id='snippet-sample_iconfiguremarten'></a>
 ```cs
 /// <summary>
-/// Mechanism to register additional Marten configuration that is applied after AddMarten()
-/// configuration, but before DocumentStore is initialized
+///     Mechanism to register additional Marten configuration that is applied after AddMarten()
+///     configuration, but before DocumentStore is initialized
 /// </summary>
 public interface IConfigureMarten
 {
     void Configure(IServiceProvider services, StoreOptions options);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L699-L710' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L719-L730' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You could alternatively implement a custom `IConfigureMarten` class like so:

@@ -61,6 +61,7 @@ public class NonStandardDoc
     public string Name;
 }
 ```
+
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/using_natural_identity_keys.cs#L72-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_identityattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -71,7 +72,7 @@ The identity property or field can also be configured through `StoreOptions` by 
 ```cs
 storeOptions.Schema.For<OverriddenIdDoc>().Identity(x => x.Name);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/using_natural_identity_keys.cs#L56-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-override-id-fluent-interance' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/using_natural_identity_keys.cs#L57-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-override-id-fluent-interance' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Guid Identifiers
@@ -94,7 +95,7 @@ options.Policies.ForAllDocuments(m =>
     }
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CombGuidIdGenerationTests.cs#L45-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-global-sequentialguid' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CombGuidIdGenerationTests.cs#L46-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-global-sequentialguid' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 It is also possible use the SequentialGuid id generation algorithm for a specific document type.
@@ -104,7 +105,7 @@ It is also possible use the SequentialGuid id generation algorithm for a specifi
 ```cs
 options.Schema.For<UserWithGuid>().IdStrategy(new CombGuidIdGeneration());
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CombGuidIdGenerationTests.cs#L78-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-sequentialguid' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CombGuidIdGenerationTests.cs#L79-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-sequentialguid' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Sequential Identifiers with Hilo
@@ -123,7 +124,7 @@ var store = DocumentStore.For(_ =>
     _.DatabaseSchemaName = "sequences";
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/hilo_configuration_overrides.cs#L62-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-global-hilo-defaults' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/hilo_configuration_overrides.cs#L63-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-global-hilo-defaults' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 It's also possible to use one sequence with multiple document types by specifying the same "sequence name".
@@ -139,7 +140,7 @@ var store = DocumentStore.For(_ =>
     _.DatabaseSchemaName = "sequences";
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/hilo_configuration_overrides.cs#L148-L156' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-global-hilo-defaults-sequencename' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/hilo_configuration_overrides.cs#L149-L157' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-global-hilo-defaults-sequencename' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To override the Hilo configuration for a specific document type, you can decorate the document type with the `[HiloSequence]` attribute
@@ -154,7 +155,7 @@ public class OverriddenHiloDoc
     public int Id { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/hilo_configuration_overrides.cs#L186-L192' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_overriding-hilo-with-attribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/hilo_configuration_overrides.cs#L187-L193' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_overriding-hilo-with-attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also use the `MartenRegistry` fluent interface to override the Hilo configuration for a document type as in this example:
@@ -173,7 +174,7 @@ var store = DocumentStore.For(_ =>
     _.DatabaseSchemaName = "sequences";
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/hilo_configuration_overrides.cs#L78-L89' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_overriding-hilo-with-marten-registry' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/hilo_configuration_overrides.cs#L79-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_overriding-hilo-with-marten-registry' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Set the HiLo Identifier Floor
@@ -193,7 +194,7 @@ var store = DocumentStore.For(opts =>
 // type to 2500
 await store.Tenancy.Default.Database.ResetHiloSequenceFloor<IntDoc>(2500);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/hilo_configuration_overrides.cs#L19-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_resethilosequencefloor' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/hilo_configuration_overrides.cs#L20-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_resethilosequencefloor' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This functionality was added specifically to aid in importing data from an existing data source. Do note that this functionality simply guarantees
@@ -265,7 +266,7 @@ public class CustomIdGeneration : IIdGeneration
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L15-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-id-generation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L16-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-id-generation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Build()` method should return the actual `IdGenerator<T>` for the document type, where `T` is the type of the Id field.
@@ -285,7 +286,7 @@ options.Policies.ForAllDocuments(m =>
     }
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L38-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-global-custom' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L39-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-global-custom' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 It is also possible define a custom id generation algorithm for a specific document type.
@@ -295,5 +296,5 @@ It is also possible define a custom id generation algorithm for a specific docum
 ```cs
 options.Schema.For<UserWithString>().IdStrategy(new CustomIdGeneration());
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L69-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-custom' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L70-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-custom' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

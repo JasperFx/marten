@@ -1,40 +1,38 @@
 using System;
-using System.Linq;
 using System.Reflection;
-using LamarCodeGeneration.Frames;
+using JasperFx.CodeGeneration.Frames;
 
-namespace Marten.Events.CodeGeneration
+namespace Marten.Events.CodeGeneration;
+
+internal class ApplyMethodCall: MethodCall, IEventHandlingFrame
 {
-    internal class ApplyMethodCall: MethodCall, IEventHandlingFrame
+    public ApplyMethodCall(Type handlerType, string methodName, Type aggregateType): base(handlerType, methodName)
     {
-        public ApplyMethodCall(Type handlerType, string methodName, Type aggregateType): base(handlerType, methodName)
+        EventType = Method.GetEventType(aggregateType);
+    }
+
+    public ApplyMethodCall(MethodSlot slot): base(slot.HandlerType, (MethodInfo)slot.Method)
+    {
+        EventType = slot.EventType;
+        if (slot.Setter != null)
         {
-            EventType = Method.GetEventType(aggregateType);
+            Target = slot.Setter;
         }
+    }
 
-        public ApplyMethodCall(MethodSlot slot): base(slot.HandlerType, (MethodInfo)slot.Method)
+    public Type EventType { get; }
+
+    public void Configure(EventProcessingFrame parent)
+    {
+        // Replace any arguments to IEvent<T>
+        TrySetArgument(parent.SpecificEvent);
+
+        // Replace any arguments to the specific T event type
+        TrySetArgument(parent.DataOnly);
+
+        if (ReturnType == parent.AggregateType)
         {
-            EventType = slot.EventType;
-            if (slot.Setter != null)
-            {
-                Target = slot.Setter;
-            }
-        }
-
-        public Type EventType { get; }
-
-        public void Configure(EventProcessingFrame parent)
-        {
-            // Replace any arguments to IEvent<T>
-            TrySetArgument(parent.SpecificEvent);
-
-            // Replace any arguments to the specific T event type
-            TrySetArgument(parent.DataOnly);
-
-            if (ReturnType == parent.AggregateType)
-            {
-                AssignResultTo(parent.Aggregate);
-            }
+            AssignResultTo(parent.Aggregate);
         }
     }
 }

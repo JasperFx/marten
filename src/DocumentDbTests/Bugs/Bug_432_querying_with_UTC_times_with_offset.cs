@@ -1,11 +1,9 @@
 using System;
 using System.Linq;
-using Baseline;
-using Baseline.Dates;
+using JasperFx.Core;
 using Marten;
 using Weasel.Postgresql;
 using Marten.Testing.Harness;
-using Marten.Util;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;

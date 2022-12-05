@@ -2,79 +2,75 @@ using System;
 using System.Collections.Generic;
 using Marten.Exceptions;
 
-namespace Marten.Internal
+namespace Marten.Internal;
+
+public class VersionTracker
 {
-    public class VersionTracker
+    private readonly Dictionary<Type, object> _byType = new();
+
+    public Dictionary<TId, Guid> ForType<TDoc, TId>()
     {
-        private readonly Dictionary<Type, object> _byType
-            = new Dictionary<Type, object>();
-
-        public Dictionary<TId, Guid> ForType<TDoc, TId>()
+        if (_byType.TryGetValue(typeof(TDoc), out var item))
         {
-            if (_byType.TryGetValue(typeof(TDoc), out var item))
+            if (item is Dictionary<TId, Guid> d)
             {
-                if (item is Dictionary<TId, Guid> d)
-                {
-                    return d;
-                }
-
-                throw new DocumentIdTypeMismatchException(typeof(TDoc), typeof(TId));
+                return d;
             }
 
-            var dict = new Dictionary<TId, Guid>();
-            _byType[typeof(TDoc)] = dict;
-
-            return dict;
+            throw new DocumentIdTypeMismatchException(typeof(TDoc), typeof(TId));
         }
 
-        public Guid? VersionFor<TDoc, TId>(TId id)
-        {
-            if (_byType.TryGetValue(typeof(TDoc), out var item))
-            {
-                if (item is Dictionary<TId, Guid> dict)
-                {
-                    if (dict.TryGetValue(id, out var version))
-                    {
-                        return version;
-                    }
-                }
+        var dict = new Dictionary<TId, Guid>();
+        _byType[typeof(TDoc)] = dict;
 
-                return null;
+        return dict;
+    }
+
+    public Guid? VersionFor<TDoc, TId>(TId id)
+    {
+        if (_byType.TryGetValue(typeof(TDoc), out var item))
+        {
+            if (item is Dictionary<TId, Guid> dict)
+            {
+                if (dict.TryGetValue(id, out var version))
+                {
+                    return version;
+                }
             }
 
             return null;
         }
 
-        public void StoreVersion<TDoc, TId>(TId id, Guid guid)
+        return null;
+    }
+
+    public void StoreVersion<TDoc, TId>(TId id, Guid guid)
+    {
+        if (_byType.TryGetValue(typeof(TDoc), out var item))
         {
-            if (_byType.TryGetValue(typeof(TDoc), out var item))
+            if (item is Dictionary<TId, Guid> d)
             {
-                if (item is Dictionary<TId, Guid> d)
-                {
-                    d[id] = guid;
-                }
-                else
-                {
-                    throw new DocumentIdTypeMismatchException(typeof(TDoc), typeof(TId));
-                }
-
-
+                d[id] = guid;
             }
             else
             {
-                var dict = new Dictionary<TId, Guid> {[id] = guid};
-                _byType.Add(typeof(TDoc), dict);
+                throw new DocumentIdTypeMismatchException(typeof(TDoc), typeof(TId));
             }
         }
-
-        public void ClearVersion<TDoc, TId>(TId id)
+        else
         {
-            if (_byType.TryGetValue(typeof(TDoc), out var item))
+            var dict = new Dictionary<TId, Guid> { [id] = guid };
+            _byType.Add(typeof(TDoc), dict);
+        }
+    }
+
+    public void ClearVersion<TDoc, TId>(TId id)
+    {
+        if (_byType.TryGetValue(typeof(TDoc), out var item))
+        {
+            if (item is Dictionary<TId, Guid> dict)
             {
-                if (item is Dictionary<TId, Guid> dict)
-                {
-                    dict.Remove(id);
-                }
+                dict.Remove(id);
             }
         }
     }

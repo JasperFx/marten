@@ -35,15 +35,15 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="LamarCodeGeneration" Version="6.2.0" />
-        <PackageReference Include="LamarCompiler" Version="6.2.0" />
-        <PackageReference Include="BaselineTypeDiscovery" Version="2.0.0" />
-        <PackageReference Include="FastExpressionCompiler.Internal.src" Version="3.3.3" />
+        <PackageReference Include="JasperFx.Core" Version="0.9.7" />
+        <PackageReference Include="JasperFx.TypeDiscovery" Version="0.9.4" />
+        <PackageReference Include="JasperFx.CodeGeneration" Version="0.9.3" />
+        <PackageReference Include="JasperFx.RuntimeCompiler" Version="0.9.3" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
         <PackageReference Include="Npgsql.Json.NET" Version="[7.0.0,8.0.0)" />
         <PackageReference Include="Remotion.Linq" Version="2.2.0" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" Version="7.0.0" />
-        <PackageReference Include="Weasel.Postgresql" Version="6.0.0-alpha.3" />
+        <PackageReference Include="Weasel.Postgresql" Version="6.0.0-alpha.5" />
         <PackageReference Include="System.Text.Json" Version="7.0.0" />
     </ItemGroup>
 

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Baseline;
+using JasperFx.Core;
 using Spectre.Console;
 
 namespace EventPublisher;

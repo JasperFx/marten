@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Baseline;
+using JasperFx.Core;
 using EventSourcingTests.Projections;
 using EventSourcingTests.Utils;
-using LamarCodeGeneration;
+using JasperFx.CodeGeneration;
 using Marten;
 using Marten.Storage;
 using Marten.Testing.Harness;

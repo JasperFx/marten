@@ -2,68 +2,67 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
-using LamarCodeGeneration;
-using LamarCodeGeneration.Frames;
-using LamarCodeGeneration.Model;
+using JasperFx.CodeGeneration;
+using JasperFx.CodeGeneration.Frames;
+using JasperFx.CodeGeneration.Model;
 
-namespace Marten.Events.CodeGeneration
+namespace Marten.Events.CodeGeneration;
+
+internal class DefaultAggregateConstruction: SyncFrame
 {
-    internal class DefaultAggregateConstruction: SyncFrame
+    private readonly ConstructorInfo _constructor;
+    private readonly Type _returnType;
+    private readonly Setter _setter;
+    private Variable _event;
+
+    public DefaultAggregateConstruction(Type returnType, GeneratedType generatedType)
     {
-        private readonly Type _returnType;
-        private Variable _event;
-        private readonly Setter _setter;
-        private readonly ConstructorInfo _constructor;
+        _returnType = returnType;
 
-        public DefaultAggregateConstruction(Type returnType, GeneratedType generatedType)
+        _constructor = returnType.GetConstructor(
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes, null);
+
+        if (_constructor != null && !_constructor.IsPublic)
         {
-            _returnType = returnType;
+            var ctor = Expression.New(_constructor);
+            var lambda = Expression.Lambda(ctor);
+            var func = lambda.Compile();
+            _setter = new Setter(func.GetType(), "AggregateBuilder") { InitialValue = func };
+            generatedType.Setters.Add(_setter);
+        }
+    }
 
-            _constructor = returnType.GetConstructor(
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes, null);
+    public IfStyle IfStyle { get; set; } = IfStyle.Else;
 
-            if (_constructor != null && !_constructor.IsPublic)
-            {
-                var ctor = Expression.New(_constructor);
-                var lambda = Expression.Lambda(ctor);
-                var func = lambda.Compile();
-                _setter = new Setter(func.GetType(), "AggregateBuilder") { InitialValue = func };
-                generatedType.Setters.Add(_setter);
-            }
+    public string AdditionalNoConstructorExceptionDetails { get; set; } = string.Empty;
+
+    public override IEnumerable<Variable> FindVariables(IMethodVariables chain)
+    {
+        _event = chain.FindVariable(typeof(IEvent));
+        yield return _event;
+    }
+
+    public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
+    {
+        IfStyle.Open(writer, null);
+
+        if (_constructor == null)
+        {
+            writer.WriteLine(
+                $"throw new {typeof(InvalidOperationException).FullNameInCode()}($\"There is no default constructor for {_returnType.FullNameInCode()}{AdditionalNoConstructorExceptionDetails}.\");"
+            );
+        }
+        else if (_setter != null)
+        {
+            writer.WriteLine("return AggregateBuilder();");
+        }
+        else
+        {
+            writer.WriteLine($"return new {_returnType.FullNameInCode()}();");
         }
 
-        public IfStyle IfStyle { get; set; } = IfStyle.Else;
+        IfStyle.Close(writer);
 
-        public string AdditionalNoConstructorExceptionDetails { get; set; } = string.Empty;
-
-        public override IEnumerable<Variable> FindVariables(IMethodVariables chain)
-        {
-            _event = chain.FindVariable(typeof(IEvent));
-            yield return _event;
-        }
-
-        public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
-        {
-            IfStyle.Open(writer, null);
-
-            if (_constructor == null)
-            {
-                writer.WriteLine(
-                    $"throw new {typeof(InvalidOperationException).FullNameInCode()}($\"There is no default constructor for {_returnType.FullNameInCode()}{AdditionalNoConstructorExceptionDetails}.\");"
-                );
-            }
-            else if (_setter != null)
-            {
-                writer.WriteLine("return AggregateBuilder();");
-            }
-            else
-            {
-                writer.WriteLine($"return new {_returnType.FullNameInCode()}();");
-            }
-
-            IfStyle.Close(writer);
-
-            Next?.GenerateCode(method, writer);
-        }
+        Next?.GenerateCode(method, writer);
     }
 }

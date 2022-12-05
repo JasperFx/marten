@@ -1,5 +1,5 @@
 using System;
-using Baseline.Dates;
+using JasperFx.Core;
 using Marten.Events.Daemon.HighWater;
 using Shouldly;
 using Xunit;

@@ -1,37 +1,38 @@
-using LamarCodeGeneration;
+using JasperFx.CodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
-using Weasel.Postgresql.Tables;
 
-namespace Marten.Storage.Metadata
+namespace Marten.Storage.Metadata;
+
+internal class DocumentTypeColumn: MetadataColumn<string>, ISelectableColumn
 {
-    internal class DocumentTypeColumn: MetadataColumn<string>, ISelectableColumn
+    public DocumentTypeColumn(DocumentMapping mapping): base(SchemaConstants.DocumentTypeColumn, x => x.DocumentType)
     {
-        public DocumentTypeColumn(DocumentMapping mapping) : base(SchemaConstants.DocumentTypeColumn, x => x.DocumentType)
+        DefaultExpression = $"'{mapping.AliasFor(mapping.DocumentType)}'";
+    }
+
+    public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async,
+        GeneratedMethod sync, int index,
+        DocumentMapping mapping)
+    {
+        var variableName = "docType";
+        var memberType = typeof(string);
+
+        if (Member == null)
         {
-            DefaultExpression = $"'{mapping.AliasFor(mapping.DocumentType)}'";
+            return;
         }
 
-        public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async,
-            GeneratedMethod sync, int index,
-            DocumentMapping mapping)
-        {
-            var variableName = "docType";
-            var memberType = typeof(string);
+        sync.Frames.Code($"var {variableName} = reader.GetFieldValue<{memberType.FullNameInCode()}>({index});");
+        async.Frames.CodeAsync(
+            $"var {variableName} = await reader.GetFieldValueAsync<{memberType.FullNameInCode()}>({index}, token);");
 
-            if (Member == null) return;
+        sync.Frames.SetMemberValue(Member, variableName, mapping.DocumentType, generatedType);
+        async.Frames.SetMemberValue(Member, variableName, mapping.DocumentType, generatedType);
+    }
 
-            sync.Frames.Code($"var {variableName} = reader.GetFieldValue<{memberType.FullNameInCode()}>({index});");
-            async.Frames.CodeAsync($"var {variableName} = await reader.GetFieldValueAsync<{memberType.FullNameInCode()}>({index}, token);");
-
-            sync.Frames.SetMemberValue(Member, variableName, mapping.DocumentType, generatedType);
-            async.Frames.SetMemberValue(Member, variableName, mapping.DocumentType, generatedType);
-        }
-
-        public bool ShouldSelect(DocumentMapping mapping, StorageStyle storageStyle)
-        {
-            return true;
-        }
-
+    public bool ShouldSelect(DocumentMapping mapping, StorageStyle storageStyle)
+    {
+        return true;
     }
 }

@@ -94,21 +94,21 @@ public DateTimeOffset Timestamp { get; set; }
 public string TenantId { get; set; } = Tenancy.DefaultTenantId;
 
 /// <summary>
-/// Optional metadata describing the causation id
+///     Optional metadata describing the causation id
 /// </summary>
 public string? CausationId { get; set; }
 
 /// <summary>
-/// Optional metadata describing the correlation id
+///     Optional metadata describing the correlation id
 /// </summary>
 public string? CorrelationId { get; set; }
 
 /// <summary>
-/// This is meant to be lazy created, and can be null
+///     This is meant to be lazy created, and can be null
 /// </summary>
 public Dictionary<string, object>? Headers { get; set; }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Event.cs#L132-L182' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_metadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Event.cs#L183-L235' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The full event data is available on `EventStream` and `IEvent` objects immediately after committing a transaction that involves event capture. See [diagnostics and instrumentation](/diagnostics) for more information on capturing event data in the instrumentation hooks.

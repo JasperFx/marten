@@ -3,98 +3,134 @@ using System;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
+using JasperFx.Core;
 using Marten.Services;
 using Npgsql;
 
-namespace Marten.Internal.Sessions
+namespace Marten.Internal.Sessions;
+
+internal class MartenControlledConnectionTransaction: IConnectionLifetime
 {
-    internal class MartenControlledConnectionTransaction: IConnectionLifetime
+    protected readonly SessionOptions _options;
+
+
+    public MartenControlledConnectionTransaction(SessionOptions options)
     {
-        protected readonly SessionOptions _options;
+        _options = options;
+        Connection = _options.Connection;
+    }
 
+    public int CommandTimeout => _options.Timeout ?? Connection?.CommandTimeout ?? 30;
+    public NpgsqlTransaction? Transaction { get; protected set; }
 
-        public MartenControlledConnectionTransaction(SessionOptions options)
+    public async ValueTask DisposeAsync()
+    {
+        if (Transaction != null)
         {
-            _options = options;
-            Connection = _options.Connection;
+            await Transaction.DisposeAsync().ConfigureAwait(false);
         }
 
-        public int CommandTimeout => _options.Timeout ?? Connection?.CommandTimeout ?? 30;
-
-        public async ValueTask DisposeAsync()
+        if (Connection != null)
         {
-            if (Transaction != null)
-            {
-                await Transaction.DisposeAsync().ConfigureAwait(false);
-            }
+            await Connection.DisposeAsync().ConfigureAwait(false);
+        }
+    }
 
-            if (Connection != null)
-            {
-                await Connection.DisposeAsync().ConfigureAwait(false);
-            }
+    public void Dispose()
+    {
+        Transaction?.SafeDispose();
+        Connection?.SafeDispose();
+    }
 
+    public virtual void Apply(NpgsqlCommand command)
+    {
+        EnsureConnected();
+
+        command.Connection = Connection;
+        command.Transaction = Transaction;
+        command.CommandTimeout = CommandTimeout;
+    }
+
+    public virtual void BeginTransaction()
+    {
+        EnsureConnected();
+        if (Transaction == null)
+        {
+            Transaction = Connection.BeginTransaction(_options.IsolationLevel);
+        }
+    }
+
+    // TODO -- this should be ValueTask
+    public virtual async Task ApplyAsync(NpgsqlCommand command, CancellationToken token)
+    {
+        await EnsureConnectedAsync(token).ConfigureAwait(false);
+
+        command.Connection = Connection;
+        command.Transaction = Transaction;
+        command.CommandTimeout = CommandTimeout;
+    }
+
+    public virtual async ValueTask BeginTransactionAsync(CancellationToken token)
+    {
+        await EnsureConnectedAsync(token).ConfigureAwait(false);
+        Transaction ??= await Connection
+            .BeginTransactionAsync(_options.IsolationLevel, token).ConfigureAwait(false);
+    }
+
+    public void Commit()
+    {
+        if (Transaction == null)
+        {
+            throw new InvalidOperationException("Trying to commit a transaction that was never started");
         }
 
-        public void Dispose()
+        Transaction.Commit();
+        Transaction.Dispose();
+        Transaction = null;
+
+        Connection?.Close();
+        Connection = null;
+    }
+
+    public async Task CommitAsync(CancellationToken token)
+    {
+        if (Transaction == null)
         {
-            Transaction?.SafeDispose();
-            Connection?.SafeDispose();
+            throw new InvalidOperationException("Trying to commit a transaction that was never started");
         }
 
-        public virtual void Apply(NpgsqlCommand command)
-        {
-            EnsureConnected();
+        await Transaction.CommitAsync(token).ConfigureAwait(false);
+        await Transaction.DisposeAsync().ConfigureAwait(false);
+        Transaction = null;
 
-            command.Connection = Connection;
-            command.Transaction = Transaction;
-            command.CommandTimeout = CommandTimeout;
+        if (Connection != null)
+        {
+            await Connection.CloseAsync().ConfigureAwait(false);
+            await Connection.DisposeAsync().ConfigureAwait(false);
         }
 
-        public virtual void BeginTransaction()
-        {
-            EnsureConnected();
-            if (Transaction == null)
-            {
-                Transaction = Connection.BeginTransaction(_options.IsolationLevel);
-            }
-        }
+        Connection = null;
+    }
 
-        // TODO -- this should be ValueTask
-        public virtual async Task ApplyAsync(NpgsqlCommand command, CancellationToken token)
+    public void Rollback()
+    {
+        if (Transaction != null)
         {
-            await EnsureConnectedAsync(token).ConfigureAwait(false);
-
-            command.Connection = Connection;
-            command.Transaction = Transaction;
-            command.CommandTimeout = CommandTimeout;
-        }
-
-        public virtual async ValueTask BeginTransactionAsync(CancellationToken token)
-        {
-            await EnsureConnectedAsync(token).ConfigureAwait(false);
-            Transaction ??= await Connection
-                .BeginTransactionAsync(_options.IsolationLevel, token).ConfigureAwait(false);
-        }
-
-        public void Commit()
-        {
-            if (Transaction == null)
-                throw new InvalidOperationException("Trying to commit a transaction that was never started");
-            Transaction.Commit();
+            Transaction.Rollback();
             Transaction.Dispose();
             Transaction = null;
 
             Connection?.Close();
+            Connection?.Dispose();
             Connection = null;
         }
+    }
 
-        public async Task CommitAsync(CancellationToken token)
+    public async Task RollbackAsync(CancellationToken token)
+    {
+        if (Transaction != null)
         {
-            if (Transaction == null)
-                throw new InvalidOperationException("Trying to commit a transaction that was never started");
-
-            await Transaction.CommitAsync(token).ConfigureAwait(false);
+            await Transaction.RollbackAsync(token).ConfigureAwait(false);
             await Transaction.DisposeAsync().ConfigureAwait(false);
             Transaction = null;
 
@@ -106,70 +142,37 @@ namespace Marten.Internal.Sessions
 
             Connection = null;
         }
+    }
 
-        public void Rollback()
+    public NpgsqlConnection? Connection { get; protected set; }
+
+    public void EnsureConnected()
+    {
+        if (Connection == null)
         {
-            if (Transaction != null)
-            {
-                Transaction.Rollback();
-                Transaction.Dispose();
-                Transaction = null;
-
-                Connection?.Close();
-                Connection?.Dispose();
-                Connection = null;
-            }
-        }
-
-        public async Task RollbackAsync(CancellationToken token)
-        {
-            if (Transaction != null)
-            {
-                await Transaction.RollbackAsync(token).ConfigureAwait(false);
-                await Transaction.DisposeAsync().ConfigureAwait(false);
-                Transaction = null;
-
-                if (Connection != null)
-                {
-                    await Connection.CloseAsync().ConfigureAwait(false);
-                    await Connection.DisposeAsync().ConfigureAwait(false);
-                }
-
-                Connection = null;
-            }
-        }
-
-        public NpgsqlConnection? Connection { get; protected set; }
-        public NpgsqlTransaction? Transaction { get; protected set; }
-
-        public void EnsureConnected()
-        {
-            if (Connection == null)
-            {
 #pragma warning disable CS8602
-                Connection = _options.Tenant.Database.CreateConnection();
+            Connection = _options.Tenant.Database.CreateConnection();
 #pragma warning restore CS8602
-            }
-
-            if (Connection.State == ConnectionState.Closed)
-            {
-                Connection.Open();
-            }
         }
 
-        public async ValueTask EnsureConnectedAsync(CancellationToken token)
+        if (Connection.State == ConnectionState.Closed)
         {
-            if (Connection == null)
-            {
-#pragma warning disable CS8602
-                Connection = _options.Tenant.Database.CreateConnection();
-#pragma warning restore CS8602
-            }
+            Connection.Open();
+        }
+    }
 
-            if (Connection.State == ConnectionState.Closed)
-            {
-                await Connection.OpenAsync(token).ConfigureAwait(false);
-            }
+    public async ValueTask EnsureConnectedAsync(CancellationToken token)
+    {
+        if (Connection == null)
+        {
+#pragma warning disable CS8602
+            Connection = _options.Tenant.Database.CreateConnection();
+#pragma warning restore CS8602
+        }
+
+        if (Connection.State == ConnectionState.Closed)
+        {
+            await Connection.OpenAsync(token).ConfigureAwait(false);
         }
     }
 }

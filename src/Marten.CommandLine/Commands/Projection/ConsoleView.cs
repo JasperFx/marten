@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
-using Baseline;
-using LamarCodeGeneration;
+using JasperFx.Core;
+using JasperFx.CodeGeneration;
 using Spectre.Console;
 
 namespace Marten.CommandLine.Commands.Projection;

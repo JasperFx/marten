@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Baseline;
+using JasperFx.Core;
 using CoreTests.Diagnostics;
 using Marten;
 using Marten.Testing.Documents;

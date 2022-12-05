@@ -1,21 +1,17 @@
-using Weasel.Postgresql;
-using Marten.Schema;
-using Marten.Storage;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;
 
-namespace Marten.Events.Schema
-{
-    internal class EventProgressionTable: Table
-    {
-        public EventProgressionTable(string schemaName) : base(new DbObjectName(schemaName, "mt_event_progression"))
-        {
-            AddColumn<string>("name").AsPrimaryKey();
-            AddColumn("last_seq_id", "bigint").AllowNulls();
-            AddColumn("last_updated", "timestamp with time zone")
-                .DefaultValueByExpression("(transaction_timestamp())");
+namespace Marten.Events.Schema;
 
-            PrimaryKeyName = "pk_mt_event_progression";
-        }
+internal class EventProgressionTable: Table
+{
+    public EventProgressionTable(string schemaName): base(new DbObjectName(schemaName, "mt_event_progression"))
+    {
+        AddColumn<string>("name").AsPrimaryKey();
+        AddColumn("last_seq_id", "bigint").AllowNulls();
+        AddColumn("last_updated", "timestamp with time zone")
+            .DefaultValueByExpression("(transaction_timestamp())");
+
+        PrimaryKeyName = "pk_mt_event_progression";
     }
 }

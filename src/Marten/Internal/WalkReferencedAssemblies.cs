@@ -2,36 +2,31 @@
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace Marten.Internal
+namespace Marten.Internal;
+
+public static class WalkReferencedAssemblies
 {
-    public static class WalkReferencedAssemblies
+    public static IEnumerable<Assembly> ForTypes(params Type[] types)
     {
-        public static IEnumerable<Assembly> ForTypes(params Type[] types)
+        var stack = new Stack<Type>();
+
+        foreach (var type in types)
         {
-            var stack = new Stack<Type>();
+            stack.Push(type);
 
-            foreach (var type in types)
+            while (stack.Count > 0)
             {
-                stack.Push(type);
+                var current = stack.Pop();
+                yield return current.Assembly;
 
-                while (stack.Count > 0)
+                if (!current.IsGenericType || current.IsGenericTypeDefinition)
                 {
-                    var current = stack.Pop();
-                    yield return current.Assembly;
-
-                    if (!current.IsGenericType || current.IsGenericTypeDefinition)
-                    {
-                        continue;
-                    }
-
-                    var typeArguments = current.GetGenericArguments();
-                    foreach (var typeArgument in typeArguments)
-                    {
-                        stack.Push(typeArgument);
-                    }
+                    continue;
                 }
+
+                var typeArguments = current.GetGenericArguments();
+                foreach (var typeArgument in typeArguments) stack.Push(typeArgument);
             }
         }
-
     }
 }

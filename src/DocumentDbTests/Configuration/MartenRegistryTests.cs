@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
-using Baseline;
+using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Linq.Fields;
 using Marten.Schema;

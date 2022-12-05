@@ -3,139 +3,48 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
-using Weasel.Postgresql;
-using Marten.Schema.BulkLoading;
-using Marten.Util;
-using Npgsql;
 using System.Transactions;
+using JasperFx.Core.Reflection;
+using Marten.Schema.BulkLoading;
+using Npgsql;
+using Weasel.Postgresql;
 
-namespace Marten.Storage
+namespace Marten.Storage;
+
+internal class BulkInsertion: IDisposable
 {
-    internal class BulkInsertion: IDisposable
+    private readonly Tenant _tenant;
+
+    public BulkInsertion(Tenant tenant, StoreOptions options)
     {
-        private readonly Tenant _tenant;
+        _tenant = tenant;
+        Serializer = options.Serializer();
+    }
 
-        public BulkInsertion(Tenant tenant, StoreOptions options)
+    public ISerializer Serializer { get; }
+
+    public void Dispose()
+    {
+    }
+
+    public void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+        int batchSize = 1000)
+    {
+        if (typeof(T) == typeof(object))
         {
-            _tenant = tenant;
-            Serializer = options.Serializer();
+            BulkInsertDocuments(documents.OfType<object>(), mode);
         }
-
-        public ISerializer Serializer { get; }
-
-        public void Dispose()
+        else
         {
-        }
-
-        public void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-            int batchSize = 1000)
-        {
-            if (typeof(T) == typeof(object))
-            {
-                BulkInsertDocuments(documents.OfType<object>(), mode);
-            }
-            else
-            {
-                _tenant.Database.EnsureStorageExists(typeof(T));
-
-                using var conn = _tenant.Database.CreateConnection();
-                conn.Open();
-                var tx = conn.BeginTransaction();
-
-                try
-                {
-                    bulkInsertDocuments(documents, batchSize, conn, mode);
-
-                    tx.Commit();
-                }
-                catch (Exception)
-                {
-                    tx.Rollback();
-                    throw;
-                }
-            }
-        }
-
-        public void BulkInsertEnlistTransaction<T>(IReadOnlyCollection<T> documents,
-            Transaction transaction,
-            BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-            int batchSize = 1000)
-        {
-            if (typeof(T) == typeof(object))
-            {
-                BulkInsertDocumentsEnlistTransaction(documents.OfType<object>(), transaction, mode);
-            }
-            else
-            {
-                _tenant.Database.EnsureStorageExists(typeof(T));
-
-                using var conn = _tenant.Database.CreateConnection();
-                conn.Open();
-                conn.EnlistTransaction(transaction);
-                bulkInsertDocuments(documents, batchSize, conn, mode);
-            }
-        }
-
-        public async Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode, int batchSize, CancellationToken cancellation)
-        {
-            if (typeof(T) == typeof(object))
-            {
-                await BulkInsertDocumentsAsync(documents.OfType<object>(), mode, batchSize, cancellation).ConfigureAwait(false);
-            }
-            else
-            {
-                await _tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
-
-                await using var conn = _tenant.Database.CreateConnection();
-                await conn.OpenAsync(cancellation).ConfigureAwait(false);
-
-                var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
-                try
-                {
-                    await bulkInsertDocumentsAsync(documents, batchSize, conn, mode, cancellation).ConfigureAwait(false);
-
-                    await tx.CommitAsync(cancellation).ConfigureAwait(false);
-                }
-                catch (Exception)
-                {
-                    await tx.RollbackAsync(cancellation).ConfigureAwait(false);
-                    throw;
-                }
-            }
-        }
-
-        public async Task BulkInsertEnlistTransactionAsync<T>(IReadOnlyCollection<T> documents, Transaction transaction,
-            BulkInsertMode mode, int batchSize, CancellationToken cancellation)
-        {
-            if (typeof(T) == typeof(object))
-            {
-                await BulkInsertDocumentsEnlistTransactionAsync(documents.OfType<object>(), transaction, mode, batchSize,
-                                                                cancellation).ConfigureAwait(false);
-            }
-            else
-            {
-                await _tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
-                await using var conn = _tenant.Database.CreateConnection();
-                await conn.OpenAsync(cancellation).ConfigureAwait(false);
-                conn.EnlistTransaction(transaction);
-                await bulkInsertDocumentsAsync(documents, batchSize, conn, mode, cancellation).ConfigureAwait(false);
-            }
-        }
-
-        public void BulkInsertDocuments(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-            int batchSize = 1000)
-        {
-            var groups = bulkInserters(documents);
+            _tenant.Database.EnsureStorageExists(typeof(T));
 
             using var conn = _tenant.Database.CreateConnection();
-
             conn.Open();
             var tx = conn.BeginTransaction();
 
             try
             {
-                foreach (var group in groups) @group.BulkInsert(batchSize, conn, this, mode);
+                bulkInsertDocuments(documents, batchSize, conn, mode);
 
                 tx.Commit();
             }
@@ -145,58 +54,47 @@ namespace Marten.Storage
                 throw;
             }
         }
+    }
 
-        public void BulkInsertDocumentsEnlistTransaction(IEnumerable<object> documents,
-            Transaction transaction,
-            BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-            int batchSize = 1000)
+    public void BulkInsertEnlistTransaction<T>(IReadOnlyCollection<T> documents,
+        Transaction transaction,
+        BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+        int batchSize = 1000)
+    {
+        if (typeof(T) == typeof(object))
         {
-            var groups = bulkInserters(documents);
-            var types = documentTypes(documents);
-
-            // this needs to be done before open connection
-            foreach (var type in types)
-                _tenant.Database.EnsureStorageExists(type);
+            BulkInsertDocumentsEnlistTransaction(documents.OfType<object>(), transaction, mode);
+        }
+        else
+        {
+            _tenant.Database.EnsureStorageExists(typeof(T));
 
             using var conn = _tenant.Database.CreateConnection();
             conn.Open();
             conn.EnlistTransaction(transaction);
-
-            foreach (var group in groups)
-                @group.BulkInsert(batchSize, conn, this, mode);
+            bulkInsertDocuments(documents, batchSize, conn, mode);
         }
+    }
 
-        private static Type[] documentTypes(IEnumerable<object> documents)
+    public async Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode, int batchSize,
+        CancellationToken cancellation)
+    {
+        if (typeof(T) == typeof(object))
         {
-            return documents.Where(x => x != null)
-                            .GroupBy(x => x.GetType())
-                            .Select(x => x.Key)
-                            .ToArray();
+            await BulkInsertDocumentsAsync(documents.OfType<object>(), mode, batchSize, cancellation)
+                .ConfigureAwait(false);
         }
-
-        private static IBulkInserter[] bulkInserters(IEnumerable<object> documents)
+        else
         {
-            return documents.Where(x => x != null)
-                .GroupBy(x => x.GetType())
-                .Select(group => typeof(BulkInserter<>).CloseAndBuildAs<IBulkInserter>(group, group.Key))
-                .ToArray();
-        }
-
-        public async Task BulkInsertDocumentsAsync(IEnumerable<object> documents, BulkInsertMode mode, int batchSize, CancellationToken cancellation)
-        {
-            var groups = bulkInserters(documents);
+            await _tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
 
             await using var conn = _tenant.Database.CreateConnection();
-
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
-            var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
 
+            var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
             try
             {
-                foreach (var group in groups)
-                {
-                    await @group.BulkInsertAsync(batchSize, conn, this, mode, cancellation).ConfigureAwait(false);
-                }
+                await bulkInsertDocumentsAsync(documents, batchSize, conn, mode, cancellation).ConfigureAwait(false);
 
                 await tx.CommitAsync(cancellation).ConfigureAwait(false);
             }
@@ -206,180 +104,288 @@ namespace Marten.Storage
                 throw;
             }
         }
+    }
 
-        public async Task BulkInsertDocumentsEnlistTransactionAsync(IEnumerable<object> documents, Transaction transaction,
-            BulkInsertMode mode, int batchSize, CancellationToken cancellation)
+    public async Task BulkInsertEnlistTransactionAsync<T>(IReadOnlyCollection<T> documents, Transaction transaction,
+        BulkInsertMode mode, int batchSize, CancellationToken cancellation)
+    {
+        if (typeof(T) == typeof(object))
         {
-            var groups = bulkInserters(documents);
-            var types = documentTypes(documents);
-
-            // this needs to be done before open connection
-            foreach (var type in types)
-                await _tenant.Database.EnsureStorageExistsAsync(type).ConfigureAwait(false);
-
+            await BulkInsertDocumentsEnlistTransactionAsync(documents.OfType<object>(), transaction, mode, batchSize,
+                cancellation).ConfigureAwait(false);
+        }
+        else
+        {
+            await _tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
             await using var conn = _tenant.Database.CreateConnection();
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
             conn.EnlistTransaction(transaction);
+            await bulkInsertDocumentsAsync(documents, batchSize, conn, mode, cancellation).ConfigureAwait(false);
+        }
+    }
 
+    public void BulkInsertDocuments(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+        int batchSize = 1000)
+    {
+        var groups = bulkInserters(documents);
+
+        using var conn = _tenant.Database.CreateConnection();
+
+        conn.Open();
+        var tx = conn.BeginTransaction();
+
+        try
+        {
+            foreach (var group in groups) group.BulkInsert(batchSize, conn, this, mode);
+
+            tx.Commit();
+        }
+        catch (Exception)
+        {
+            tx.Rollback();
+            throw;
+        }
+    }
+
+    public void BulkInsertDocumentsEnlistTransaction(IEnumerable<object> documents,
+        Transaction transaction,
+        BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+        int batchSize = 1000)
+    {
+        var groups = bulkInserters(documents);
+        var types = documentTypes(documents);
+
+        // this needs to be done before open connection
+        foreach (var type in types)
+            _tenant.Database.EnsureStorageExists(type);
+
+        using var conn = _tenant.Database.CreateConnection();
+        conn.Open();
+        conn.EnlistTransaction(transaction);
+
+        foreach (var group in groups)
+            group.BulkInsert(batchSize, conn, this, mode);
+    }
+
+    private static Type[] documentTypes(IEnumerable<object> documents)
+    {
+        return documents.Where(x => x != null)
+            .GroupBy(x => x.GetType())
+            .Select(x => x.Key)
+            .ToArray();
+    }
+
+    private static IBulkInserter[] bulkInserters(IEnumerable<object> documents)
+    {
+        return documents.Where(x => x != null)
+            .GroupBy(x => x.GetType())
+            .Select(group => typeof(BulkInserter<>).CloseAndBuildAs<IBulkInserter>(group, group.Key))
+            .ToArray();
+    }
+
+    public async Task BulkInsertDocumentsAsync(IEnumerable<object> documents, BulkInsertMode mode, int batchSize,
+        CancellationToken cancellation)
+    {
+        var groups = bulkInserters(documents);
+
+        await using var conn = _tenant.Database.CreateConnection();
+
+        await conn.OpenAsync(cancellation).ConfigureAwait(false);
+        var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
+
+        try
+        {
             foreach (var group in groups)
-            {
-                await @group.BulkInsertAsync(batchSize, conn, this, mode, cancellation).ConfigureAwait(false);
-            }
+                await group.BulkInsertAsync(batchSize, conn, this, mode, cancellation).ConfigureAwait(false);
+
+            await tx.CommitAsync(cancellation).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            await tx.RollbackAsync(cancellation).ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    public async Task BulkInsertDocumentsEnlistTransactionAsync(IEnumerable<object> documents, Transaction transaction,
+        BulkInsertMode mode, int batchSize, CancellationToken cancellation)
+    {
+        var groups = bulkInserters(documents);
+        var types = documentTypes(documents);
+
+        // this needs to be done before open connection
+        foreach (var type in types)
+            await _tenant.Database.EnsureStorageExistsAsync(type).ConfigureAwait(false);
+
+        await using var conn = _tenant.Database.CreateConnection();
+        await conn.OpenAsync(cancellation).ConfigureAwait(false);
+        conn.EnlistTransaction(transaction);
+
+        foreach (var group in groups)
+            await group.BulkInsertAsync(batchSize, conn, this, mode, cancellation).ConfigureAwait(false);
+    }
+
+    private void bulkInsertDocuments<T>(IReadOnlyCollection<T> documents, int batchSize, NpgsqlConnection conn,
+        BulkInsertMode mode)
+    {
+        var provider = _tenant.Database.Providers.StorageFor<T>();
+        var loader = provider.BulkLoader;
+
+        if (mode != BulkInsertMode.InsertsOnly)
+        {
+            var sql = loader.CreateTempTableForCopying();
+            conn.CreateCommand(sql).ExecuteNonQuery();
         }
 
-        private void bulkInsertDocuments<T>(IReadOnlyCollection<T> documents, int batchSize, NpgsqlConnection conn,
-            BulkInsertMode mode)
+        if (documents.Count <= batchSize)
         {
-            var provider = _tenant.Database.Providers.StorageFor<T>();
-            var loader = provider.BulkLoader;
+            loadDocuments(documents, loader, mode, conn);
+        }
+        else
+        {
+            var batch = new List<T>(batchSize);
 
-            if (mode != BulkInsertMode.InsertsOnly)
+            foreach (var document in documents)
             {
-                var sql = loader.CreateTempTableForCopying();
-                conn.CreateCommand(sql).ExecuteNonQuery();
-            }
+                batch.Add(document);
 
-            if (documents.Count <= batchSize)
-            {
-                loadDocuments(documents, loader, mode, conn);
-            }
-            else
-            {
-                var batch = new List<T>(batchSize);
-
-                foreach (var document in documents)
+                if (batch.Count < batchSize)
                 {
-                    batch.Add(document);
-
-                    if (batch.Count < batchSize) continue;
-
-                    loadDocuments(batch, loader, mode, conn);
-                    batch.Clear();
+                    continue;
                 }
 
                 loadDocuments(batch, loader, mode, conn);
+                batch.Clear();
             }
 
-            if (mode == BulkInsertMode.IgnoreDuplicates)
-            {
-                var copy = loader.CopyNewDocumentsFromTempTable();
-
-                conn.CreateCommand(copy).ExecuteNonQuery();
-            }
-            else if (mode == BulkInsertMode.OverwriteExisting)
-            {
-                var overwrite = loader.OverwriteDuplicatesFromTempTable();
-                var copy = loader.CopyNewDocumentsFromTempTable();
-
-                conn.CreateCommand(overwrite + ";" + copy).ExecuteNonQuery();
-            }
+            loadDocuments(batch, loader, mode, conn);
         }
 
-        private async Task bulkInsertDocumentsAsync<T>(IReadOnlyCollection<T> documents, int batchSize, NpgsqlConnection conn, BulkInsertMode mode, CancellationToken cancellation)
+        if (mode == BulkInsertMode.IgnoreDuplicates)
         {
-            var provider = _tenant.Database.Providers.StorageFor<T>();
-            var loader = provider.BulkLoader;
+            var copy = loader.CopyNewDocumentsFromTempTable();
 
-            if (mode != BulkInsertMode.InsertsOnly)
-            {
-                var sql = loader.CreateTempTableForCopying();
-                await conn.CreateCommand(sql).ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
-            }
+            conn.CreateCommand(copy).ExecuteNonQuery();
+        }
+        else if (mode == BulkInsertMode.OverwriteExisting)
+        {
+            var overwrite = loader.OverwriteDuplicatesFromTempTable();
+            var copy = loader.CopyNewDocumentsFromTempTable();
 
-            if (documents.Count <= batchSize)
-            {
-                await loadDocumentsAsync(documents, loader, mode, conn, cancellation).ConfigureAwait(false);
-            }
-            else
-            {
-                var batch = new List<T>(batchSize);
+            conn.CreateCommand(overwrite + ";" + copy).ExecuteNonQuery();
+        }
+    }
 
-                foreach (var document in documents)
+    private async Task bulkInsertDocumentsAsync<T>(IReadOnlyCollection<T> documents, int batchSize,
+        NpgsqlConnection conn, BulkInsertMode mode, CancellationToken cancellation)
+    {
+        var provider = _tenant.Database.Providers.StorageFor<T>();
+        var loader = provider.BulkLoader;
+
+        if (mode != BulkInsertMode.InsertsOnly)
+        {
+            var sql = loader.CreateTempTableForCopying();
+            await conn.CreateCommand(sql).ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
+        }
+
+        if (documents.Count <= batchSize)
+        {
+            await loadDocumentsAsync(documents, loader, mode, conn, cancellation).ConfigureAwait(false);
+        }
+        else
+        {
+            var batch = new List<T>(batchSize);
+
+            foreach (var document in documents)
+            {
+                batch.Add(document);
+
+                if (batch.Count < batchSize)
                 {
-                    batch.Add(document);
-
-                    if (batch.Count < batchSize) continue;
-
-                    await loadDocumentsAsync(batch, loader, mode, conn, cancellation).ConfigureAwait(false);
-                    batch.Clear();
+                    continue;
                 }
 
                 await loadDocumentsAsync(batch, loader, mode, conn, cancellation).ConfigureAwait(false);
+                batch.Clear();
             }
 
-            if (mode == BulkInsertMode.IgnoreDuplicates)
-            {
-                var copy = loader.CopyNewDocumentsFromTempTable();
-
-                await conn.CreateCommand(copy).ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
-            }
-            else if (mode == BulkInsertMode.OverwriteExisting)
-            {
-                var overwrite = loader.OverwriteDuplicatesFromTempTable();
-                var copy = loader.CopyNewDocumentsFromTempTable();
-
-                await conn.CreateCommand(overwrite + ";" + copy)
-                    .ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
-            }
+            await loadDocumentsAsync(batch, loader, mode, conn, cancellation).ConfigureAwait(false);
         }
 
-        private void loadDocuments<T>(IEnumerable<T> documents, IBulkLoader<T> loader, BulkInsertMode mode,
-            NpgsqlConnection conn)
+        if (mode == BulkInsertMode.IgnoreDuplicates)
         {
-            if (mode == BulkInsertMode.InsertsOnly)
-            {
-                loader.Load(_tenant, Serializer, conn, documents);
-            }
-            else
-            {
-                loader.LoadIntoTempTable(_tenant, Serializer, conn, documents);
-            }
-        }
+            var copy = loader.CopyNewDocumentsFromTempTable();
 
-        private async Task loadDocumentsAsync<T>(IReadOnlyCollection<T> documents, IBulkLoader<T> loader, BulkInsertMode mode, NpgsqlConnection conn, CancellationToken cancellation)
+            await conn.CreateCommand(copy).ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
+        }
+        else if (mode == BulkInsertMode.OverwriteExisting)
         {
-            if (mode == BulkInsertMode.InsertsOnly)
-            {
-                await loader.LoadAsync(_tenant, Serializer, conn, documents, cancellation).ConfigureAwait(false);
-            }
-            else
-            {
-                await loader.LoadIntoTempTableAsync(_tenant, Serializer, conn, documents, cancellation).ConfigureAwait(false);
-            }
-        }
+            var overwrite = loader.OverwriteDuplicatesFromTempTable();
+            var copy = loader.CopyNewDocumentsFromTempTable();
 
-        internal interface IBulkInserter
+            await conn.CreateCommand(overwrite + ";" + copy)
+                .ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
+        }
+    }
+
+    private void loadDocuments<T>(IEnumerable<T> documents, IBulkLoader<T> loader, BulkInsertMode mode,
+        NpgsqlConnection conn)
+    {
+        if (mode == BulkInsertMode.InsertsOnly)
         {
-            void BulkInsert(int batchSize, NpgsqlConnection connection, BulkInsertion parent, BulkInsertMode mode);
-            Task BulkInsertAsync(int batchSize, NpgsqlConnection conn, BulkInsertion bulkInsertion, BulkInsertMode mode, CancellationToken cancellation);
+            loader.Load(_tenant, Serializer, conn, documents);
         }
-
-        internal class BulkInserter<T>: IBulkInserter
+        else
         {
-            private readonly T[] _documents;
+            loader.LoadIntoTempTable(_tenant, Serializer, conn, documents);
+        }
+    }
 
-            public BulkInserter(IEnumerable<object> documents)
-            {
-                _documents = documents.OfType<T>().ToArray();
-            }
+    private async Task loadDocumentsAsync<T>(IReadOnlyCollection<T> documents, IBulkLoader<T> loader,
+        BulkInsertMode mode, NpgsqlConnection conn, CancellationToken cancellation)
+    {
+        if (mode == BulkInsertMode.InsertsOnly)
+        {
+            await loader.LoadAsync(_tenant, Serializer, conn, documents, cancellation).ConfigureAwait(false);
+        }
+        else
+        {
+            await loader.LoadIntoTempTableAsync(_tenant, Serializer, conn, documents, cancellation)
+                .ConfigureAwait(false);
+        }
+    }
 
-            public void BulkInsert(int batchSize, NpgsqlConnection connection, BulkInsertion parent,
-                BulkInsertMode mode)
-            {
-                parent._tenant.Database.EnsureStorageExists(typeof(T));
-                parent.bulkInsertDocuments(_documents, batchSize, connection, mode);
-            }
+    internal interface IBulkInserter
+    {
+        void BulkInsert(int batchSize, NpgsqlConnection connection, BulkInsertion parent, BulkInsertMode mode);
 
-            public async Task BulkInsertAsync(int batchSize, NpgsqlConnection conn, BulkInsertion parent, BulkInsertMode mode,
-                CancellationToken cancellation)
-            {
-                await parent._tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
-                await parent.bulkInsertDocumentsAsync(_documents, batchSize, conn, mode, cancellation).ConfigureAwait(false);
-            }
+        Task BulkInsertAsync(int batchSize, NpgsqlConnection conn, BulkInsertion bulkInsertion, BulkInsertMode mode,
+            CancellationToken cancellation);
+    }
+
+    internal class BulkInserter<T>: IBulkInserter
+    {
+        private readonly T[] _documents;
+
+        public BulkInserter(IEnumerable<object> documents)
+        {
+            _documents = documents.OfType<T>().ToArray();
         }
 
+        public void BulkInsert(int batchSize, NpgsqlConnection connection, BulkInsertion parent,
+            BulkInsertMode mode)
+        {
+            parent._tenant.Database.EnsureStorageExists(typeof(T));
+            parent.bulkInsertDocuments(_documents, batchSize, connection, mode);
+        }
 
-
-
+        public async Task BulkInsertAsync(int batchSize, NpgsqlConnection conn, BulkInsertion parent,
+            BulkInsertMode mode,
+            CancellationToken cancellation)
+        {
+            await parent._tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
+            await parent.bulkInsertDocumentsAsync(_documents, batchSize, conn, mode, cancellation)
+                .ConfigureAwait(false);
+        }
     }
 }

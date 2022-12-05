@@ -1,22 +1,21 @@
-namespace Marten
+namespace Marten;
+
+internal class DefaultSessionFactory: ISessionFactory
 {
-    internal class DefaultSessionFactory: ISessionFactory
+    private readonly IDocumentStore _store;
+
+    public DefaultSessionFactory(IDocumentStore store)
     {
-        private readonly IDocumentStore _store;
+        _store = store;
+    }
 
-        public DefaultSessionFactory(IDocumentStore store)
-        {
-            _store = store;
-        }
+    public IQuerySession QuerySession()
+    {
+        return _store.QuerySession();
+    }
 
-        public IQuerySession QuerySession()
-        {
-            return _store.QuerySession();
-        }
-
-        public IDocumentSession OpenSession()
-        {
-            return _store.OpenSession();
-        }
+    public IDocumentSession OpenSession()
+    {
+        return _store.OpenSession();
     }
 }

@@ -1,19 +1,18 @@
 #nullable enable
-namespace Marten.Events
+namespace Marten.Events;
+
+/// <summary>
+///     Specify the identity strategy for event streams
+/// </summary>
+public enum StreamIdentity
 {
     /// <summary>
-    /// Specify the identity strategy for event streams
+    ///     Streams should be identified by Guid
     /// </summary>
-    public enum StreamIdentity
-    {
-        /// <summary>
-        /// Streams should be identified by Guid
-        /// </summary>
-        AsGuid,
+    AsGuid,
 
-        /// <summary>
-        /// Streams should be identified by a user supplied string
-        /// </summary>
-        AsString
-    }
+    /// <summary>
+    ///     Streams should be identified by a user supplied string
+    /// </summary>
+    AsString
 }
