@@ -18,7 +18,8 @@ public static class QueryableExtensions
     /// <param name="contentType"></param>
     /// <param name="onFoundStatus">Defaults to 200</param>
     /// <typeparam name="T"></typeparam>
-    public static async Task WriteSingle<T>(this IQueryable<T> queryable, HttpContext context, string contentType = "application/json", int onFoundStatus = 200)
+    public static async Task WriteSingle<T>(this IQueryable<T> queryable, HttpContext context,
+        string contentType = "application/json", int onFoundStatus = 200)
     {
         var stream = new MemoryStream();
         var found = await queryable.StreamJsonFirstOrDefault(stream, context.RequestAborted).ConfigureAwait(false);
@@ -45,14 +46,15 @@ public static class QueryableExtensions
     /// <param name="queryable"></param>
     /// <param name="context"></param>
     /// <param name="contentType"></param>
+    /// <param name="onFoundStatus">Defaults to 200</param>
     /// <typeparam name="T"></typeparam>
     public static async Task WriteArray<T>(this IQueryable<T> queryable, HttpContext context,
-        string contentType = "application/json")
+        string contentType = "application/json", int onFoundStatus = 200)
     {
         var stream = new MemoryStream();
         await queryable.StreamJsonArray(stream, context.RequestAborted).ConfigureAwait(false);
 
-        context.Response.StatusCode = 200;
+        context.Response.StatusCode = onFoundStatus;
         context.Response.ContentLength = stream.Length;
         context.Response.ContentType = contentType;
 
@@ -67,14 +69,16 @@ public static class QueryableExtensions
     /// <param name="id"></param>
     /// <param name="context"></param>
     /// <param name="contentType"></param>
+    /// <param name="onFoundStatus">Defaults to 200</param>
     /// <typeparam name="T"></typeparam>
-    public static async Task WriteById<T>(this IJsonLoader json, string id, HttpContext context, string contentType = "application/json") where T : class
+    public static async Task WriteById<T>(this IJsonLoader json, string id, HttpContext context,
+        string contentType = "application/json", int onFoundStatus = 200) where T : class
     {
         var stream = new MemoryStream();
         var found = await json.StreamById<T>(id, stream).ConfigureAwait(false);
         if (found)
         {
-            context.Response.StatusCode = 200;
+            context.Response.StatusCode = onFoundStatus;
             context.Response.ContentLength = stream.Length;
             context.Response.ContentType = contentType;
 
@@ -95,14 +99,16 @@ public static class QueryableExtensions
     /// <param name="id"></param>
     /// <param name="context"></param>
     /// <param name="contentType"></param>
+    /// <param name="onFoundStatus">Defaults to 200</param>
     /// <typeparam name="T"></typeparam>
-    public static async Task WriteById<T>(this IJsonLoader json, Guid id, HttpContext context, string contentType = "application/json") where T : class
+    public static async Task WriteById<T>(this IJsonLoader json, Guid id, HttpContext context,
+        string contentType = "application/json", int onFoundStatus = 200) where T : class
     {
         var stream = new MemoryStream();
         var found = await json.StreamById<T>(id, stream).ConfigureAwait(false);
         if (found)
         {
-            context.Response.StatusCode = 200;
+            context.Response.StatusCode = onFoundStatus;
             context.Response.ContentLength = stream.Length;
             context.Response.ContentType = contentType;
 
@@ -123,14 +129,16 @@ public static class QueryableExtensions
     /// <param name="id"></param>
     /// <param name="context"></param>
     /// <param name="contentType"></param>
+    /// <param name="onFoundStatus">Defaults to 200</param>
     /// <typeparam name="T"></typeparam>
-    public static async Task WriteById<T>(this IJsonLoader json, int id, HttpContext context, string contentType = "application/json") where T : class
+    public static async Task WriteById<T>(this IJsonLoader json, int id, HttpContext context,
+        string contentType = "application/json", int onFoundStatus = 200) where T : class
     {
         var stream = new MemoryStream();
         var found = await json.StreamById<T>(id, stream).ConfigureAwait(false);
         if (found)
         {
-            context.Response.StatusCode = 200;
+            context.Response.StatusCode = onFoundStatus;
             context.Response.ContentLength = stream.Length;
             context.Response.ContentType = contentType;
 
@@ -151,14 +159,16 @@ public static class QueryableExtensions
     /// <param name="id"></param>
     /// <param name="context"></param>
     /// <param name="contentType"></param>
+    /// <param name="onFoundStatus">Defaults to 200</param>
     /// <typeparam name="T"></typeparam>
-    public static async Task WriteById<T>(this IJsonLoader json, long id, HttpContext context, string contentType = "application/json") where T : class
+    public static async Task WriteById<T>(this IJsonLoader json, long id, HttpContext context,
+        string contentType = "application/json", int onFoundStatus = 200) where T : class
     {
         var stream = new MemoryStream();
         var found = await json.StreamById<T>(id, stream).ConfigureAwait(false);
         if (found)
         {
-            context.Response.StatusCode = 200;
+            context.Response.StatusCode = onFoundStatus;
             context.Response.ContentLength = stream.Length;
             context.Response.ContentType = contentType;
 
@@ -180,15 +190,17 @@ public static class QueryableExtensions
     /// <param name="query"></param>
     /// <param name="context"></param>
     /// <param name="contentType"></param>
+    /// <param name="onFoundStatus">Defaults to 200</param>
     /// <typeparam name="TDoc"></typeparam>
     /// <typeparam name="TOut"></typeparam>
-    public static async Task WriteOne<TDoc, TOut>(this IQuerySession session, ICompiledQuery<TDoc, TOut> query, HttpContext context, string contentType = "application/json")
+    public static async Task WriteOne<TDoc, TOut>(this IQuerySession session, ICompiledQuery<TDoc, TOut> query, HttpContext context,
+        string contentType = "application/json", int onFoundStatus = 200)
     {
         var stream = new MemoryStream();
         var found = await session.StreamJsonOne(query, stream, context.RequestAborted).ConfigureAwait(false);
         if (found)
         {
-            context.Response.StatusCode = 200;
+            context.Response.StatusCode = onFoundStatus;
             context.Response.ContentLength = stream.Length;
             context.Response.ContentType = contentType;
 
@@ -210,14 +222,16 @@ public static class QueryableExtensions
     /// <param name="query"></param>
     /// <param name="context"></param>
     /// <param name="contentType"></param>
+    /// <param name="onFoundStatus">Defaults to 200</param>
     /// <typeparam name="TDoc"></typeparam>
     /// <typeparam name="TOut"></typeparam>
-    public static async Task WriteArray<TDoc, TOut>(this IQuerySession session, ICompiledQuery<TDoc, TOut> query, HttpContext context, string contentType = "application/json")
+    public static async Task WriteArray<TDoc, TOut>(this IQuerySession session, ICompiledQuery<TDoc, TOut> query, HttpContext context,
+        string contentType = "application/json", int onFoundStatus = 200)
     {
         var stream = new MemoryStream();
         await session.StreamJsonMany(query, stream, context.RequestAborted).ConfigureAwait(false);
 
-        context.Response.StatusCode = 200;
+        context.Response.StatusCode = onFoundStatus;
         context.Response.ContentLength = stream.Length;
         context.Response.ContentType = contentType;
 
