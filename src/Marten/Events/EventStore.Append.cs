@@ -1,4 +1,6 @@
 
+using Marten.Diagnostics;
+using Marten.Diagnostics.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +18,9 @@ namespace Marten.Events
 
         public StreamAction Append(Guid stream, params object[] events)
         {
-            return _store.Events.Append(_session, stream, events);
+            var eventStream = _store.Events.Append(_session, stream, events);
+            StreamDiagnosticSource.Instance.AppendStream(eventStream, _session.CorrelationId);
+            return eventStream;
         }
 
         public StreamAction Append(string stream, IEnumerable<object> events)

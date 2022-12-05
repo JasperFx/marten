@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Marten.Diagnostics;
+using Marten.Diagnostics.Extensions;
 using Marten.Schema.Identity;
 
 #nullable enable
@@ -27,7 +29,7 @@ namespace Marten.Events
         {
             var stream = _store.Events.StartStream(_session, id, events);
             stream.AggregateType = aggregateType;
-
+            StreamDiagnosticSource.Instance.StartStream(stream, _session.CorrelationId);
             return stream;
         }
 

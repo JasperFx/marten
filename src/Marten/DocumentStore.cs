@@ -57,7 +57,7 @@ namespace Marten
 
             Advanced = new AdvancedOperations(this);
 
-            Diagnostics = new Diagnostics(this);
+            Diagnostics = new Services.Diagnostics(this);
 
             _lightweightCompiledQueries = new CompiledQueryCollection(DocumentTracking.None, this);
             _identityMapCompiledQueries = new CompiledQueryCollection(DocumentTracking.IdentityOnly, this);
