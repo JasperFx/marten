@@ -1,6 +1,5 @@
 using System;
-using Baseline.Dates;
-using EventSourcingTests.Aggregation;
+using JasperFx.Core;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;

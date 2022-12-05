@@ -2,98 +2,99 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Marten.Events.Daemon
+namespace Marten.Events.Daemon;
+
+/// <summary>
+///     Helps control the "pull-based" event loading in an individual projection shard
+/// </summary>
+internal class ProjectionController
 {
-    /// <summary>
-    /// Helps control the "pull-based" event loading in an individual projection shard
-    /// </summary>
-    internal class ProjectionController
+    private readonly IShardAgent _agent;
+
+    private readonly Queue<EventRange> _inFlight = new();
+    private readonly AsyncOptions _options;
+    private readonly ShardName _shardName;
+
+
+    public ProjectionController(ShardName shardName, IShardAgent agent, AsyncOptions options)
     {
-        private readonly ShardName _shardName;
-        private readonly IShardAgent _agent;
-        private readonly AsyncOptions _options;
+        _shardName = shardName;
+        _agent = agent;
+        _options = options ?? new AsyncOptions();
+    }
 
-        private readonly Queue<EventRange> _inFlight = new Queue<EventRange>();
+    public int InFlightCount => _inFlight.Sum(x => x.Size);
 
+    public long LastEnqueued { get; private set; }
 
-        public ProjectionController(ShardName shardName, IShardAgent agent, AsyncOptions options)
+    public long LastCommitted { get; private set; }
+
+    public long HighWaterMark { get; private set; }
+
+    public void MarkHighWater(long sequence)
+    {
+        // Ignore the high water mark if it's lower than
+        // already encountered. Not sure how that could happen,
+        // but still be ready for that.
+        if (sequence <= HighWaterMark)
         {
-            _shardName = shardName;
-            _agent = agent;
-            _options = options ?? new AsyncOptions();
+            return;
         }
 
-        public int InFlightCount => _inFlight.Sum(x => x.Size);
+        HighWaterMark = sequence;
 
-        public void MarkHighWater(long sequence)
+        enqueueNewEventRanges();
+    }
+
+    public void Start(long highWaterMark, long lastCommitted)
+    {
+        if (lastCommitted > highWaterMark)
         {
-            // Ignore the high water mark if it's lower than
-            // already encountered. Not sure how that could happen,
-            // but still be ready for that.
-            if (sequence <= HighWaterMark) return;
+            throw new InvalidOperationException(
+                $"The last committed number ({lastCommitted}) cannot be higher than the high water mark ({highWaterMark})");
+        }
 
-            HighWaterMark = sequence;
+        HighWaterMark = highWaterMark;
+        LastCommitted = LastEnqueued = lastCommitted;
 
+
+        if (HighWaterMark > 0)
+        {
             enqueueNewEventRanges();
         }
+    }
 
-        public void Start(long highWaterMark, long lastCommitted)
+    private void enqueueNewEventRanges()
+    {
+        while (HighWaterMark > LastEnqueued && InFlightCount < _options.MaximumHopperSize)
         {
-            if (lastCommitted > highWaterMark)
+            var floor = LastEnqueued;
+            var ceiling = LastEnqueued + _options.BatchSize;
+            if (ceiling > HighWaterMark)
             {
-                throw new InvalidOperationException(
-                    $"The last committed number ({lastCommitted}) cannot be higher than the high water mark ({highWaterMark})");
+                ceiling = HighWaterMark;
             }
 
-            HighWaterMark = highWaterMark;
-            LastCommitted = LastEnqueued = lastCommitted;
-
-
-
-            if (HighWaterMark > 0)
-            {
-                enqueueNewEventRanges();
-            }
+            startRange(floor, ceiling);
         }
+    }
 
-        private void enqueueNewEventRanges()
+    private void startRange(long floor, long ceiling)
+    {
+        var range = new EventRange(_shardName, floor, ceiling);
+        LastEnqueued = range.SequenceCeiling;
+        _inFlight.Enqueue(range);
+        _agent.StartRange(range);
+    }
+
+    public void EventRangeUpdated(EventRange range)
+    {
+        LastCommitted = range.SequenceCeiling;
+        if (Equals(range, _inFlight.Peek()))
         {
-            while (HighWaterMark > LastEnqueued && InFlightCount < _options.MaximumHopperSize)
-            {
-                var floor = LastEnqueued;
-                var ceiling = LastEnqueued + _options.BatchSize;
-                if (ceiling > HighWaterMark)
-                {
-                    ceiling = HighWaterMark;
-                }
-
-                startRange(floor, ceiling);
-            }
+            _inFlight.Dequeue();
         }
 
-        private void startRange(long floor, long ceiling)
-        {
-            var range = new EventRange(_shardName, floor, ceiling);
-            LastEnqueued = range.SequenceCeiling;
-            _inFlight.Enqueue(range);
-            _agent.StartRange(range);
-        }
-
-        public long LastEnqueued { get; private set; }
-
-        public long LastCommitted { get; private set; }
-
-        public long HighWaterMark { get; private set; }
-
-        public void EventRangeUpdated(EventRange range)
-        {
-            LastCommitted = range.SequenceCeiling;
-            if (Equals(range, _inFlight.Peek()))
-            {
-                _inFlight.Dequeue();
-            }
-
-            enqueueNewEventRanges();
-        }
+        enqueueNewEventRanges();
     }
 }

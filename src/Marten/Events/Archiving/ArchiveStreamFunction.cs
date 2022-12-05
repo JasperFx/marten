@@ -1,28 +1,27 @@
 using System.IO;
 using Weasel.Core;
-using Weasel.Postgresql;
 using Weasel.Postgresql.Functions;
 
-namespace Marten.Events.Archiving
+namespace Marten.Events.Archiving;
+
+internal class ArchiveStreamFunction: Function
 {
-    internal class ArchiveStreamFunction : Function
+    internal const string Name = "mt_archive_stream";
+
+    private readonly EventGraph _events;
+
+    public ArchiveStreamFunction(EventGraph events): base(new DbObjectName(events.DatabaseSchemaName, Name))
     {
-        internal const string Name = "mt_archive_stream";
+        _events = events;
+    }
 
-        private readonly EventGraph _events;
+    public override void WriteCreateStatement(Migrator rules, TextWriter writer)
+    {
+        var argList = _events.StreamIdentity == StreamIdentity.AsGuid
+            ? "streamid uuid"
+            : "streamid varchar";
 
-        public ArchiveStreamFunction(EventGraph events) : base(new DbObjectName(events.DatabaseSchemaName, Name))
-        {
-            _events = events;
-        }
-
-        public override void WriteCreateStatement(Migrator rules, TextWriter writer)
-        {
-            var argList = _events.StreamIdentity == StreamIdentity.AsGuid
-                ? "streamid uuid"
-                : "streamid varchar";
-
-            writer.WriteLine($@"
+        writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {_events.DatabaseSchemaName}.{Name}({argList}) RETURNS VOID LANGUAGE plpgsql AS
 $function$
 BEGIN
@@ -31,6 +30,5 @@ BEGIN
 END;
 $function$;
 ");
-        }
     }
 }

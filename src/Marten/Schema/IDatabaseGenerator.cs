@@ -1,10 +1,10 @@
+#nullable enable
 using System;
 using Marten.Storage;
-#nullable enable
-namespace Marten.Schema
+
+namespace Marten.Schema;
+
+public interface IDatabaseGenerator
 {
-    public interface IDatabaseGenerator
-    {
-        void CreateDatabases(ITenancy tenancy, Action<IDatabaseCreationExpressions> configure);
-    }
+    void CreateDatabases(ITenancy tenancy, Action<IDatabaseCreationExpressions> configure);
 }

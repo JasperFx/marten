@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Baseline;
+using JasperFx.Core;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 

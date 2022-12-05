@@ -6,7 +6,8 @@ namespace Marten.Linq.SqlGeneration;
 
 internal class AllIdSelectorStatement: IdSelectorStatement
 {
-    public AllIdSelectorStatement(IMartenSession session, IFieldMapping fields, Statement parent): base(session, fields, parent)
+    public AllIdSelectorStatement(IMartenSession session, IFieldMapping fields, Statement parent): base(session, fields,
+        parent)
     {
     }
 

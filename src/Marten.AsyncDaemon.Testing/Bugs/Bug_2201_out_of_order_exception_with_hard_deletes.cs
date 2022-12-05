@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Baseline.Dates;
 using Bug2177;
+using JasperFx.Core;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;

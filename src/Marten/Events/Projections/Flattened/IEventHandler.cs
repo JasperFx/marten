@@ -4,15 +4,14 @@ using Marten.Events.CodeGeneration;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;
 
-namespace Marten.Events.Projections.Flattened
+namespace Marten.Events.Projections.Flattened;
+
+internal interface IEventHandler
 {
-    internal interface IEventHandler
-    {
-        Type EventType { get; }
-        IEventHandlingFrame BuildFrame(EventGraph events, Table table);
+    Type EventType { get; }
+    IEventHandlingFrame BuildFrame(EventGraph events, Table table);
 
-        bool AssertValid(EventGraph events, out string? message);
+    bool AssertValid(EventGraph events, out string? message);
 
-        IEnumerable<ISchemaObject> BuildObjects(EventGraph events, Table table);
-    }
+    IEnumerable<ISchemaObject> BuildObjects(EventGraph events, Table table);
 }

@@ -2,125 +2,123 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Baseline;
-using Baseline.Dates;
+using JasperFx.Core;
 using Marten.Events.Daemon;
 
-namespace Marten.Events.TestSupport
+namespace Marten.Events.TestSupport;
+
+public partial class ProjectionScenario: IEventOperations
 {
-    public partial class ProjectionScenario: IEventOperations
+    private readonly Queue<ScenarioStep> _steps = new();
+    private readonly DocumentStore _store;
+
+
+    public ProjectionScenario(DocumentStore store)
     {
-        private readonly Queue<ScenarioStep> _steps = new();
-        private readonly DocumentStore _store;
+        _store = store;
+    }
 
+    internal IProjectionDaemon Daemon { get; private set; }
 
-        public ProjectionScenario(DocumentStore store)
+    internal ScenarioStep NextStep => _steps.Any() ? _steps.Peek() : null;
+
+    internal IDocumentSession Session { get; private set; }
+
+    /// <summary>
+    ///     Disable the scenario from "cleaning" out any existing
+    ///     event and projected document data before running the scenario
+    /// </summary>
+    public bool DoNotDeleteExistingData { get; set; }
+
+    /// <summary>
+    ///     Opt into applying this scenario to a specific tenant id in the
+    ///     case of using multi-tenancy of any kind
+    /// </summary>
+    public string TenantId { get; set; }
+
+    internal Task WaitForNonStaleData()
+    {
+        if (Daemon == null)
         {
-            _store = store;
+            return Task.CompletedTask;
         }
 
-        internal IProjectionDaemon Daemon { get; private set; }
+        return Daemon.WaitForNonStaleData(30.Seconds());
+    }
 
-        internal ScenarioStep NextStep => _steps.Any() ? _steps.Peek() : null;
 
-        internal IDocumentSession Session { get; private set; }
+    private ScenarioStep action(Action<IEventOperations> action)
+    {
+        var step = new ScenarioAction(action);
+        _steps.Enqueue(step);
 
-        /// <summary>
-        ///     Disable the scenario from "cleaning" out any existing
-        ///     event and projected document data before running the scenario
-        /// </summary>
-        public bool DoNotDeleteExistingData { get; set; }
+        return step;
+    }
 
-        /// <summary>
-        /// Opt into applying this scenario to a specific tenant id in the
-        /// case of using multi-tenancy of any kind
-        /// </summary>
-        public string TenantId { get; set; }
+    private ScenarioStep assertion(Func<IQuerySession, Task> check)
+    {
+        var step = new ScenarioAssertion(check);
+        _steps.Enqueue(step);
 
-        internal Task WaitForNonStaleData()
+        return step;
+    }
+
+    internal async Task Execute()
+    {
+        if (!DoNotDeleteExistingData)
         {
-            if (Daemon == null)
-            {
-                return Task.CompletedTask;
-            }
-
-            return Daemon.WaitForNonStaleData(30.Seconds());
+            await _store.Advanced.Clean.DeleteAllEventDataAsync().ConfigureAwait(false);
+            foreach (var storageType in
+                     _store.Options.Projections.All.SelectMany(x => x.Options.StorageTypes))
+                await _store.Advanced.Clean.DeleteDocumentsByTypeAsync(storageType).ConfigureAwait(false);
         }
 
-
-        private ScenarioStep action(Action<IEventOperations> action)
+        if (_store.Options.Projections.HasAnyAsyncProjections())
         {
-            var step = new ScenarioAction(action);
-            _steps.Enqueue(step);
-
-            return step;
+            Daemon = await _store.BuildProjectionDaemonAsync(TenantId).ConfigureAwait(false);
+            await Daemon.StartAllShards().ConfigureAwait(false);
         }
 
-        private ScenarioStep assertion(Func<IQuerySession, Task> check)
+        Session = TenantId.IsNotEmpty() ? _store.LightweightSession(TenantId) : _store.LightweightSession();
+
+        try
         {
-            var step = new ScenarioAssertion(check);
-            _steps.Enqueue(step);
+            var exceptions = new List<Exception>();
+            var number = 0;
+            var descriptions = new List<string>();
 
-            return step;
-        }
-
-        internal async Task Execute()
-        {
-            if (!DoNotDeleteExistingData)
+            while (_steps.Any())
             {
-                await _store.Advanced.Clean.DeleteAllEventDataAsync().ConfigureAwait(false);
-                foreach (var storageType in
-                    _store.Options.Projections.All.SelectMany(x => x.Options.StorageTypes))
-                    await _store.Advanced.Clean.DeleteDocumentsByTypeAsync(storageType).ConfigureAwait(false);
-            }
+                number++;
+                var step = _steps.Dequeue();
 
-            if (_store.Options.Projections.HasAnyAsyncProjections())
-            {
-                Daemon = await _store.BuildProjectionDaemonAsync(TenantId).ConfigureAwait(false);
-                await Daemon.StartAllShards().ConfigureAwait(false);
-            }
-
-            Session = TenantId.IsNotEmpty() ? _store.LightweightSession(TenantId) : _store.LightweightSession();
-
-            try
-            {
-                var exceptions = new List<Exception>();
-                var number = 0;
-                var descriptions = new List<string>();
-
-                while (_steps.Any())
+                try
                 {
-                    number++;
-                    var step = _steps.Dequeue();
-
-                    try
-                    {
-                        await step.Execute(this).ConfigureAwait(false);
-                        descriptions.Add($"{number.ToString().PadLeft(3)}. {step.Description}");
-                    }
-                    catch (Exception e)
-                    {
-                        descriptions.Add($"FAILED: {number.ToString().PadLeft(3)}. {step.Description}");
-                        descriptions.Add(e.ToString());
-                        exceptions.Add(e);
-                    }
+                    await step.Execute(this).ConfigureAwait(false);
+                    descriptions.Add($"{number.ToString().PadLeft(3)}. {step.Description}");
                 }
-
-                if (exceptions.Any())
+                catch (Exception e)
                 {
-                    throw new ProjectionScenarioException(descriptions, exceptions);
+                    descriptions.Add($"FAILED: {number.ToString().PadLeft(3)}. {step.Description}");
+                    descriptions.Add(e.ToString());
+                    exceptions.Add(e);
                 }
             }
-            finally
-            {
-                if (Daemon != null)
-                {
-                    await Daemon.StopAll().ConfigureAwait(false);
-                    Daemon.SafeDispose();
-                }
 
-                Session?.SafeDispose();
+            if (exceptions.Any())
+            {
+                throw new ProjectionScenarioException(descriptions, exceptions);
             }
+        }
+        finally
+        {
+            if (Daemon != null)
+            {
+                await Daemon.StopAll().ConfigureAwait(false);
+                Daemon.SafeDispose();
+            }
+
+            Session?.SafeDispose();
         }
     }
 }

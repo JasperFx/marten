@@ -1,79 +1,80 @@
 using System;
-using Baseline;
+using JasperFx.Core;
 using Marten.Internal;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Weasel.Postgresql;
-using Marten.Util;
 
-namespace Marten.Linq.SqlGeneration
+namespace Marten.Linq.SqlGeneration;
+
+internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause
 {
-    internal class DataSelectClause<T> : ISelectClause, IScalarSelectClause
+    public DataSelectClause(string from)
     {
-        public DataSelectClause(string from)
+        FromObject = from;
+    }
+
+    public DataSelectClause(string from, string field)
+    {
+        FromObject = from;
+        FieldName = field;
+    }
+
+    public string FieldName { get; set; } = "d.data";
+
+    public ISelectClause CloneToOtherTable(string tableName)
+    {
+        return new DataSelectClause<T>(tableName, FieldName);
+    }
+
+    public void ApplyOperator(string op)
+    {
+        FieldName = $"{op}({FieldName})";
+    }
+
+    public ISelectClause CloneToDouble()
+    {
+        return new DataSelectClause<double>(FromObject, FieldName);
+    }
+
+    public Type SelectedType => typeof(T);
+
+    public string FromObject { get; }
+
+    public void WriteSelectClause(CommandBuilder sql)
+    {
+        if (FieldName.IsNotEmpty())
         {
-            FromObject = from;
+            sql.Append("select ");
+            sql.Append(FieldName);
+            sql.Append(" as data from ");
         }
 
-        public DataSelectClause(string from, string field)
-        {
-            FromObject = from;
-            FieldName = field;
-        }
+        sql.Append(FromObject);
+        sql.Append(" as d");
+    }
 
-        public Type SelectedType => typeof(T);
+    public string[] SelectFields()
+    {
+        return new[] { FieldName };
+    }
 
-        public string FieldName { get; set; } = "d.data";
-        public ISelectClause CloneToOtherTable(string tableName)
-        {
-            return new DataSelectClause<T>(tableName, FieldName);
-        }
+    public ISelector BuildSelector(IMartenSession session)
+    {
+        return new SerializationSelector<T>(session.Serializer);
+    }
 
-        public string FromObject { get; }
-        public void WriteSelectClause(CommandBuilder sql)
-        {
-            if (FieldName.IsNotEmpty())
-            {
-                sql.Append("select ");
-                sql.Append(FieldName);
-                sql.Append(" as data from ");
-            }
-            sql.Append(FromObject);
-            sql.Append(" as d");
-        }
+    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, Statement statement,
+        Statement currentStatement)
+    {
+        var selector = new SerializationSelector<T>(session.Serializer);
 
-        public string[] SelectFields()
-        {
-            return new string[] {FieldName};
-        }
+        return LinqHandlerBuilder.BuildHandler<T, TResult>(selector, statement);
+    }
 
-        public ISelector BuildSelector(IMartenSession session)
-        {
-            return new SerializationSelector<T>(session.Serializer);
-        }
-
-        public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, Statement statement,
-            Statement currentStatement)
-        {
-            var selector = new SerializationSelector<T>(session.Serializer);
-
-            return LinqHandlerBuilder.BuildHandler<T, TResult>(selector, statement);
-        }
-
-        public ISelectClause UseStatistics(QueryStatistics statistics)
-        {
-            return new StatsSelectClause<T>(this, statistics);
-        }
-
-        public void ApplyOperator(string op)
-        {
-            FieldName = $"{op}({FieldName})";
-        }
-
-        public ISelectClause CloneToDouble()
-        {
-            return new DataSelectClause<double>(FromObject, FieldName);
-        }
+    public ISelectClause UseStatistics(QueryStatistics statistics)
+    {
+        return new StatsSelectClause<T>(this, statistics);
     }
 }

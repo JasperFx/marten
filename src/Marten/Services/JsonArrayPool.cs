@@ -2,27 +2,29 @@ using System;
 using System.Buffers;
 using Newtonsoft.Json;
 
-namespace Marten.Services
+namespace Marten.Services;
+
+internal class JsonArrayPool<T>: IArrayPool<T>
 {
-    internal class JsonArrayPool<T> : IArrayPool<T>
+    private readonly ArrayPool<T> _inner;
+
+    public JsonArrayPool(ArrayPool<T> inner)
     {
-        private readonly ArrayPool<T> _inner;
+        _inner = inner ?? throw new ArgumentNullException(nameof(inner));
+    }
 
-        public JsonArrayPool(ArrayPool<T> inner)
+    public T[] Rent(int minimumLength)
+    {
+        return _inner.Rent(minimumLength);
+    }
+
+    public void Return(T[] array)
+    {
+        if (array == null)
         {
-            _inner = inner ?? throw new ArgumentNullException(nameof(inner));
+            throw new ArgumentNullException(nameof(array));
         }
 
-        public T[] Rent(int minimumLength)
-        {
-            return _inner.Rent(minimumLength);
-        }
-
-        public void Return(T[] array)
-        {
-            if (array == null) throw new ArgumentNullException(nameof(array));
-
-            _inner.Return(array);
-        }
+        _inner.Return(array);
     }
 }

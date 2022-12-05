@@ -1,7 +1,7 @@
-using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Events.Archiving
+namespace Marten.Events.Archiving;
+
+internal interface IArchiveFilter: ISqlFragment
 {
-    internal interface IArchiveFilter : ISqlFragment{}
 }

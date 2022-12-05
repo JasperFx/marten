@@ -1,7 +1,8 @@
 using System.Threading.Tasks;
-using Baseline;
+using JasperFx.Core;
 using Lamar;
-using LamarCodeGeneration;
+using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;

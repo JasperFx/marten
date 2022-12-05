@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
-using LamarCodeGeneration;
+using JasperFx.CodeGeneration;
 using Marten;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Testing.Documents;
@@ -10,6 +10,7 @@ using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Oakton;
 using Shouldly;
+using Spectre.Console;
 
 namespace CommandLineRunner;
 
@@ -133,7 +134,7 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
             aggregate.ShouldNotBeNull();
         }
 
-        ConsoleWriter.Write(ConsoleColor.Green, "All Good!");
+        AnsiConsole.Write("[green]All Good![/]");
 
         return true;
     }

@@ -7,41 +7,44 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Weasel.Postgresql;
-using Marten.Util;
 
-namespace Marten.Events.Operations
+namespace Marten.Events.Operations;
+
+// Leave public for codegen!
+public abstract class UpdateStreamVersion: IStorageOperation
 {
-    // Leave public for codegen!
-    public abstract class UpdateStreamVersion : IStorageOperation
+    public UpdateStreamVersion(StreamAction stream)
     {
-        public StreamAction Stream { get; }
+        Stream = stream;
+    }
 
-        public UpdateStreamVersion(StreamAction stream)
+    public StreamAction Stream { get; }
+
+    public abstract void ConfigureCommand(CommandBuilder builder, IMartenSession session);
+
+    public Type DocumentType => typeof(IEvent);
+
+    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
+    {
+        if (reader.RecordsAffected != 0)
         {
-            Stream = stream;
+            return;
         }
 
-        public abstract void ConfigureCommand(CommandBuilder builder, IMartenSession session);
+        var ex = new EventStreamUnexpectedMaxEventIdException(Stream.Key ?? (object)Stream.Id, Stream.AggregateType,
+            Stream.ExpectedVersionOnServer.Value, -1);
+        exceptions.Add(ex);
+    }
 
-        public Type DocumentType => typeof(IEvent);
-        public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-        {
-            if (reader.RecordsAffected != 0) return;
+    public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
+    {
+        Postprocess(reader, exceptions);
 
-            var ex = new EventStreamUnexpectedMaxEventIdException(Stream.Key ?? (object)Stream.Id, Stream.AggregateType, Stream.ExpectedVersionOnServer.Value, -1);
-            exceptions.Add(ex);
-        }
+        return Task.CompletedTask;
+    }
 
-        public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
-        {
-            Postprocess(reader, exceptions);
-
-            return Task.CompletedTask;
-        }
-
-        public OperationRole Role()
-        {
-            return OperationRole.Events;
-        }
+    public OperationRole Role()
+    {
+        return OperationRole.Events;
     }
 }

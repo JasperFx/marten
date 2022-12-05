@@ -1,34 +1,30 @@
-using Marten.Linq.SqlGeneration;
-using Weasel.Postgresql;
-using Marten.Storage;
 using Marten.Storage.Metadata;
-using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Linq.Filters
+namespace Marten.Linq.Filters;
+
+internal class TenantIsOneOfWhereFragment: ISqlFragment, ITenantWhereFragment
 {
-    internal class TenantIsOneOfWhereFragment: ISqlFragment, ITenantWhereFragment
+    private static readonly string _filter = $"{TenantIdColumn.Name} = ANY(:?)";
+
+    private readonly string[] _values;
+
+    public TenantIsOneOfWhereFragment(string[] values)
     {
-        private static readonly string _filter = $"{TenantIdColumn.Name} = ANY(:?)";
+        _values = values;
+    }
 
-        private readonly string[] _values;
+    public void Apply(CommandBuilder builder)
+    {
+        var param = builder.AddParameter(_values);
+        param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
+        builder.Append(_filter.Replace("?", param.ParameterName));
+    }
 
-        public TenantIsOneOfWhereFragment(string[] values)
-        {
-            _values = values;
-        }
-
-        public void Apply(CommandBuilder builder)
-        {
-            var param = builder.AddParameter(_values);
-            param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
-            builder.Append(_filter.Replace("?", param.ParameterName));
-        }
-
-        public bool Contains(string sqlText)
-        {
-            return _filter.Contains(sqlText);
-        }
+    public bool Contains(string sqlText)
+    {
+        return _filter.Contains(sqlText);
     }
 }

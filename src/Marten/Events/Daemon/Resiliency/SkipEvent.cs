@@ -1,11 +1,6 @@
-namespace Marten.Events.Daemon.Resiliency
-{
-    internal class SkipEvent: IContinuation
-    {
-        public SkipEvent()
-        {
-        }
+namespace Marten.Events.Daemon.Resiliency;
 
-        public IEvent Event { get; set; }
-    }
+internal class SkipEvent: IContinuation
+{
+    public IEvent Event { get; set; }
 }

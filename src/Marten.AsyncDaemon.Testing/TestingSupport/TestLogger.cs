@@ -1,6 +1,6 @@
 using System;
 using System.Diagnostics;
-using LamarCodeGeneration;
+using JasperFx.CodeGeneration;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 

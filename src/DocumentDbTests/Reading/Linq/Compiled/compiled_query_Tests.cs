@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Baseline;
+using JasperFx.Core;
 using Marten;
 using Marten.Linq;
 using Marten.Testing.Documents;

@@ -1,9 +1,8 @@
-namespace Marten.Events.Projections.Flattened
+namespace Marten.Events.Projections.Flattened;
+
+internal enum ColumnMapType
 {
-    internal enum ColumnMapType
-    {
-        Value,
-        Increment,
-        Decrement
-    }
+    Value,
+    Increment,
+    Decrement
 }

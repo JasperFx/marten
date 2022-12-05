@@ -1,7 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
+using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.PLv8.Transforms;

@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using Baseline.Dates;
+using JasperFx.Core;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Exceptions;

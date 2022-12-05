@@ -18,7 +18,7 @@ Marten has a facility for listening and even intercepting document persistence e
 public interface IChangeListener
 {
     /// <summary>
-    /// After an IDocumentSession is committed
+    ///     After an IDocumentSession is committed
     /// </summary>
     /// <param name="session"></param>
     /// <param name="commit"></param>
@@ -28,21 +28,21 @@ public interface IChangeListener
 }
 
 /// <summary>
-/// Used to listen to and intercept operations within an IDocumentSession.SaveChanges()/SaveChangesAsync()
-/// operation
+///     Used to listen to and intercept operations within an IDocumentSession.SaveChanges()/SaveChangesAsync()
+///     operation
 /// </summary>
-public interface IDocumentSessionListener : IChangeListener
+public interface IDocumentSessionListener: IChangeListener
 {
     /// <summary>
-    /// Called just after IDocumentSession.SaveChanges() is called, but before
-    /// any database calls are made
+    ///     Called just after IDocumentSession.SaveChanges() is called, but before
+    ///     any database calls are made
     /// </summary>
     /// <param name="session"></param>
     void BeforeSaveChanges(IDocumentSession session);
 
     /// <summary>
-    /// Called just after IDocumentSession.SaveChanges() is called,
-    /// but before any database calls are made
+    ///     Called just after IDocumentSession.SaveChanges() is called,
+    ///     but before any database calls are made
     /// </summary>
     /// <param name="session"></param>
     /// <param name="token"></param>
@@ -50,25 +50,25 @@ public interface IDocumentSessionListener : IChangeListener
     Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token);
 
     /// <summary>
-    /// After an IDocumentSession is committed
+    ///     After an IDocumentSession is committed
     /// </summary>
     /// <param name="session"></param>
     /// <param name="commit"></param>
     void AfterCommit(IDocumentSession session, IChangeSet commit);
 
     /// <summary>
-    /// Called after a document is loaded
+    ///     Called after a document is loaded
     /// </summary>
     void DocumentLoaded(object id, object document);
 
     /// <summary>
-    /// Called after a document is explicitly added to a session
-    /// as a staged insert or update
+    ///     Called after a document is explicitly added to a session
+    ///     as a staged insert or update
     /// </summary>
     void DocumentAddedForStorage(object id, object document);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IDocumentSessionListener.cs#L7-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_idocumentsessionlistener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IDocumentSessionListener.cs#L8-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_idocumentsessionlistener' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can build and inject your own listeners by adding them to the `StoreOptions` object you use to configure a `DocumentStore`:
@@ -209,60 +209,59 @@ Marten v0.8 comes with a new mechanism to plug in custom logging to the `IDocume
 <a id='snippet-sample_imartenlogger'></a>
 ```cs
 /// <summary>
-/// Records command usage, schema changes, and sessions within Marten
+///     Records command usage, schema changes, and sessions within Marten
 /// </summary>
 public interface IMartenLogger
 {
     /// <summary>
-    /// Called when the session is initialized
+    ///     Called when the session is initialized
     /// </summary>
     /// <param name="session"></param>
     /// <returns></returns>
     IMartenSessionLogger StartSession(IQuerySession session);
 
     /// <summary>
-    /// Capture any DDL executed at runtime by Marten
+    ///     Capture any DDL executed at runtime by Marten
     /// </summary>
     /// <param name="sql"></param>
     void SchemaChange(string sql);
 }
 
 /// <summary>
-/// Use to create custom logging within an IQuerySession or IDocumentSession
+///     Use to create custom logging within an IQuerySession or IDocumentSession
 /// </summary>
 public interface IMartenSessionLogger
 {
     /// <summary>
-    /// Log a command that executed successfully
+    ///     Log a command that executed successfully
     /// </summary>
     /// <param name="command"></param>
     void LogSuccess(NpgsqlCommand command);
 
     /// <summary>
-    /// Log a command that failed
+    ///     Log a command that failed
     /// </summary>
     /// <param name="command"></param>
     /// <param name="ex"></param>
     void LogFailure(NpgsqlCommand command, Exception ex);
 
     /// <summary>
-    /// Called immediately after committing an IDocumentSession
-    /// through SaveChanges() or SaveChangesAsync()
+    ///     Called immediately after committing an IDocumentSession
+    ///     through SaveChanges() or SaveChangesAsync()
     /// </summary>
     /// <param name="session"></param>
     /// <param name="commit"></param>
     void RecordSavedChanges(IDocumentSession session, IChangeSet commit);
 
     /// <summary>
-    /// Called just before a command is to be executed. Use this to create
-    /// performance logging of Marten operations
+    ///     Called just before a command is to be executed. Use this to create
+    ///     performance logging of Marten operations
     /// </summary>
     /// <param name="command"></param>
     public void OnBeforeExecute(NpgsqlCommand command);
-
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L9-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_imartenlogger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L10-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_imartenlogger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To apply these logging abstractions, you can either plug your own `IMartenLogger` into the `StoreOptions` object and allow that default logger to create the individual session loggers:
@@ -315,9 +314,7 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
     {
         Console.WriteLine(command.CommandText);
         foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
-        {
             Console.WriteLine($"  {p.ParameterName}: {p.Value}");
-        }
     }
 
     public void LogFailure(NpgsqlCommand command, Exception ex)
@@ -327,9 +324,7 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
         Console.WriteLine("Postgresql command failed!");
         Console.WriteLine(command.CommandText);
         foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
-        {
             Console.WriteLine($"  {p.ParameterName}: {p.Value}");
-        }
         Console.WriteLine(ex);
     }
 
@@ -349,7 +344,7 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L68-L123' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_consolemartenlogger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L68-L120' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_consolemartenlogger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Accessing Diagnostics

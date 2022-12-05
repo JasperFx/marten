@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using Baseline;
+using JasperFx.Core;
 using Marten.PLv8.Transforms;
 using Marten.Testing;
 using Marten.Testing.Documents;

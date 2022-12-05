@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using LamarCodeGeneration;
+using JasperFx.CodeGeneration;
 using Marten;
 using Marten.AsyncDaemon.Testing;
 using Marten.AsyncDaemon.Testing.TestingSupport;

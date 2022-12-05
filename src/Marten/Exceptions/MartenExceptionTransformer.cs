@@ -1,54 +1,53 @@
 using System;
-using Baseline.Exceptions;
+using JasperFx.Core.Exceptions;
 using Marten.Services;
 using Npgsql;
 
-namespace Marten.Exceptions
+namespace Marten.Exceptions;
+
+[Obsolete("Replace w/ JasperFx.Core version")]
+internal static class MartenExceptionTransformer
 {
-    // TODO -- mo0ve this to Baseline. Too generic to be here.
-    internal static class MartenExceptionTransformer
+    private static readonly ExceptionTransforms _transforms = new ExceptionTransforms();
+
+    static MartenExceptionTransformer()
     {
-        private static readonly ExceptionTransforms _transforms = new ExceptionTransforms();
+        _transforms.AddTransform<EventStreamUnexpectedMaxEventIdExceptionTransform>();
+        _transforms.AddTransform<MartenCommandNotSupportedExceptionTransform>();
+        _transforms.AddTransform<UtcDateTimeUsageExceptionTransform>();
+        _transforms.AddTransform<DateTimeUsageExceptionTransform>();
 
-        internal static NpgsqlCommand ReadNpgsqlCommand(this Exception ex)
-        {
-            return ex.Data.Contains(nameof(NpgsqlCommand))
-                ? (NpgsqlCommand) ex.Data[nameof(NpgsqlCommand)]
-                : null;
-        }
+        _transforms.IfExceptionIs<PostgresException>()
+            .If(e => e.SqlState == PostgresErrorCodes.SerializationFailure)
+            .ThenTransformTo(e => throw new ConcurrentUpdateException(e));
 
-        static MartenExceptionTransformer()
-        {
-            _transforms.AddTransform<EventStreamUnexpectedMaxEventIdExceptionTransform>();
-            _transforms.AddTransform<MartenCommandNotSupportedExceptionTransform>();
-            _transforms.AddTransform<UtcDateTimeUsageExceptionTransform>();
-            _transforms.AddTransform<DateTimeUsageExceptionTransform>();
-
-            _transforms.IfExceptionIs<PostgresException>()
-                .If(e => e.SqlState == PostgresErrorCodes.SerializationFailure)
-                .ThenTransformTo(e => throw new ConcurrentUpdateException(e));
-
-            _transforms.IfExceptionIs<NpgsqlException>()
-                .TransformTo(e =>
-                {
-                    var command = e.ReadNpgsqlCommand();
-                    return new MartenCommandException(command, e);
-                });
-        }
-
-        internal static void WrapAndThrow(NpgsqlCommand command, Exception exception)
-        {
-            if (command != null)
+        _transforms.IfExceptionIs<NpgsqlException>()
+            .TransformTo(e =>
             {
-                exception.Data[nameof(NpgsqlCommand)] = command;
-            }
+                var command = e.ReadNpgsqlCommand();
+                return new MartenCommandException(command, e);
+            });
+    }
 
-            _transforms.TransformAndThrow(exception);
-        }
+    internal static NpgsqlCommand ReadNpgsqlCommand(this Exception ex)
+    {
+        return ex.Data.Contains(nameof(NpgsqlCommand))
+            ? (NpgsqlCommand)ex.Data[nameof(NpgsqlCommand)]
+            : null;
+    }
 
-        internal static void WrapAndThrow(Exception exception)
+    internal static void WrapAndThrow(NpgsqlCommand command, Exception exception)
+    {
+        if (command != null)
         {
-            _transforms.TransformAndThrow(exception);
+            exception.Data[nameof(NpgsqlCommand)] = command;
         }
+
+        _transforms.TransformAndThrow(exception);
+    }
+
+    internal static void WrapAndThrow(Exception exception)
+    {
+        _transforms.TransformAndThrow(exception);
     }
 }

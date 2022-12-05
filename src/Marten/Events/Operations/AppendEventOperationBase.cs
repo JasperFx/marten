@@ -6,43 +6,42 @@ using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Weasel.Postgresql;
-using Marten.Util;
 
-namespace Marten.Events.Operations
+namespace Marten.Events.Operations;
+
+// Leave public for codegen!
+public abstract class AppendEventOperationBase: IStorageOperation
 {
-    // Leave public for codegen!
-    public abstract class AppendEventOperationBase : IStorageOperation
+    public AppendEventOperationBase(StreamAction stream, IEvent e)
     {
-        public StreamAction Stream { get; }
-        public IEvent Event { get; }
+        Stream = stream;
+        Event = e;
+    }
 
-        public AppendEventOperationBase(StreamAction stream, IEvent e)
-        {
-            Stream = stream;
-            Event = e;
-        }
+    public StreamAction Stream { get; }
+    public IEvent Event { get; }
 
-        public override string ToString()
-        {
-            return $"Insert Event to Stream {Stream.Key ?? Stream.Id.ToString()}, Version {Event.Version}";
-        }
+    public abstract void ConfigureCommand(CommandBuilder builder, IMartenSession session);
 
-        public abstract void ConfigureCommand(CommandBuilder builder, IMartenSession session);
+    public Type DocumentType => typeof(IEvent);
 
-        public Type DocumentType => typeof(IEvent);
-        public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-        {
-            // Nothing
-        }
+    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
+    {
+        // Nothing
+    }
 
-        public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
-        {
-            return Task.CompletedTask;
-        }
+    public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
+    {
+        return Task.CompletedTask;
+    }
 
-        public OperationRole Role()
-        {
-            return OperationRole.Events;
-        }
+    public OperationRole Role()
+    {
+        return OperationRole.Events;
+    }
+
+    public override string ToString()
+    {
+        return $"Insert Event to Stream {Stream.Key ?? Stream.Id.ToString()}, Version {Event.Version}";
     }
 }

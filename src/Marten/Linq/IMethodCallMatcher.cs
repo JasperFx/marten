@@ -1,15 +1,14 @@
 using System.Linq.Expressions;
 using Remotion.Linq.Clauses;
 
-namespace Marten.Linq
+namespace Marten.Linq;
+
+/// <summary>
+///     Extension point to Marten's Linq support to add custom MethodInfo handling
+///     in the query creation
+/// </summary>
+internal interface IMethodCallMatcher
 {
-    /// <summary>
-    /// Extension point to Marten's Linq support to add custom MethodInfo handling
-    /// in the query creation
-    /// </summary>
-    internal interface IMethodCallMatcher
-    {
-        bool TryMatch(MethodCallExpression expression, ExpressionVisitor selectorVisitor,
-            out ResultOperatorBase op);
-    }
+    bool TryMatch(MethodCallExpression expression, ExpressionVisitor selectorVisitor,
+        out ResultOperatorBase op);
 }

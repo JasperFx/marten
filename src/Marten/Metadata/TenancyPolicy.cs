@@ -1,19 +1,19 @@
-using Baseline;
+#nullable enable
+using JasperFx.Core.Reflection;
 using Marten.Schema;
 using Marten.Storage;
-#nullable enable
-namespace Marten.Metadata
+
+namespace Marten.Metadata;
+
+internal class TenancyPolicy: IDocumentPolicy
 {
-    internal class TenancyPolicy: IDocumentPolicy
+    public void Apply(DocumentMapping mapping)
     {
-        public void Apply(DocumentMapping mapping)
+        if (mapping.DocumentType.CanBeCastTo<ITenanted>())
         {
-            if (mapping.DocumentType.CanBeCastTo<ITenanted>())
-            {
-                mapping.TenancyStyle = TenancyStyle.Conjoined;
-                mapping.Metadata.TenantId.Enabled = true;
-                mapping.Metadata.TenantId.Member = mapping.DocumentType.GetProperty(nameof(ITenanted.TenantId));
-            }
+            mapping.TenancyStyle = TenancyStyle.Conjoined;
+            mapping.Metadata.TenantId.Enabled = true;
+            mapping.Metadata.TenantId.Member = mapping.DocumentType.GetProperty(nameof(ITenanted.TenantId));
         }
     }
 }

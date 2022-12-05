@@ -1,17 +1,17 @@
-using Npgsql;
 #nullable enable
-namespace Marten
+using Npgsql;
+
+namespace Marten;
+
+/// <summary>
+///     Factory interface to customize the construction of an NpgsqlConnection
+///     to the Postgresql database
+/// </summary>
+public interface IConnectionFactory
 {
     /// <summary>
-    ///     Factory interface to customize the construction of an NpgsqlConnection
-    ///     to the Postgresql database
+    ///     Create a new, isolated connection to the Postgresql database
     /// </summary>
-    public interface IConnectionFactory
-    {
-        /// <summary>
-        ///     Create a new, isolated connection to the Postgresql database
-        /// </summary>
-        /// <returns></returns>
-        NpgsqlConnection Create();
-    }
+    /// <returns></returns>
+    NpgsqlConnection Create();
 }

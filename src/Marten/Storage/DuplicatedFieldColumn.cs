@@ -1,30 +1,29 @@
 using Marten.Linq.Fields;
 using Weasel.Postgresql.Tables;
 
-namespace Marten.Storage
+namespace Marten.Storage;
+
+internal class DuplicatedFieldColumn: TableColumn
 {
-    internal class DuplicatedFieldColumn: TableColumn
+    private const string NullConstraint = "NULL";
+    private const string NotNullConstraint = "NOT NULL";
+    private readonly DuplicatedField _field;
+
+
+    public DuplicatedFieldColumn(DuplicatedField field): base(field.ColumnName, field.PgType)
     {
-        private readonly DuplicatedField _field;
-        private const string NullConstraint = "NULL";
-        private const string NotNullConstraint = "NOT NULL";
+        AllowNulls = !field.NotNull;
 
+        _field = field;
+    }
 
-        public DuplicatedFieldColumn(DuplicatedField field) : base(field.ColumnName, field.PgType)
-        {
-            AllowNulls = !field.NotNull;
+    public override string AddColumnSql(Table table)
+    {
+        return $"{base.AddColumnSql(table)}update {table.Identifier} set {_field.UpdateSqlFragment()};";
+    }
 
-            _field = field;
-        }
-
-        public override string AddColumnSql(Table table)
-        {
-            return $"{base.AddColumnSql(table)}update {table.Identifier} set {_field.UpdateSqlFragment()};";
-        }
-
-        public override string AlterColumnTypeSql(Table table, TableColumn changeActual)
-        {
-            return $"alter table {table.Identifier} drop column {Name};{AddColumnSql(table)}";
-        }
+    public override string AlterColumnTypeSql(Table table, TableColumn changeActual)
+    {
+        return $"alter table {table.Identifier} drop column {Name};{AddColumnSql(table)}";
     }
 }

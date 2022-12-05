@@ -1,14 +1,13 @@
-namespace Marten.Schema
-{
-    public class ColumnValue
-    {
-        public ColumnValue(string column, string functionValue)
-        {
-            Column = column;
-            FunctionValue = functionValue;
-        }
+namespace Marten.Schema;
 
-        public string Column { get; }
-        public string FunctionValue { get; }
+public class ColumnValue
+{
+    public ColumnValue(string column, string functionValue)
+    {
+        Column = column;
+        FunctionValue = functionValue;
     }
+
+    public string Column { get; }
+    public string FunctionValue { get; }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
-using Baseline;
+using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Testing.Harness;

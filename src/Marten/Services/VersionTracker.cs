@@ -1,52 +1,54 @@
 using System;
 using System.Collections.Generic;
 
-namespace Marten.Services
+namespace Marten.Services;
+
+/// <summary>
+///     Used internally by Marten to track document versions
+/// </summary>
+public class VersionTracker
 {
-    /// <summary>
-    /// Used internally by Marten to track document versions
-    /// </summary>
-    public class VersionTracker
+    private readonly IDictionary<Type, IDictionary<object, Guid>> _versions =
+        new Dictionary<Type, IDictionary<object, Guid>>();
+
+    public void Store<T>(object id, Guid version)
     {
-        private readonly IDictionary<Type, IDictionary<object, Guid>> _versions = new Dictionary<Type, IDictionary<object, Guid>>();
+        var documentType = typeof(T);
 
-        public void Store<T>(object id, Guid version)
+        Store(documentType, id, version);
+    }
+
+    public void Store(Type documentType, object id, Guid version)
+    {
+        if (!_versions.TryGetValue(documentType, out var dict))
         {
-            var documentType = typeof(T);
-
-            Store(documentType, id, version);
+            dict = new Dictionary<object, Guid>();
+            _versions.Add(documentType, dict);
         }
 
-        public void Store(Type documentType, object id, Guid version)
+        if (dict.ContainsKey(id))
         {
-            if (!_versions.TryGetValue(documentType, out var dict))
-            {
-                dict = new Dictionary<object, Guid>();
-                _versions.Add(documentType, dict);
-            }
+            dict[id] = version;
+        }
+        else
+        {
+            dict.Add(id, version);
+        }
+    }
 
-            if (dict.ContainsKey(id))
-            {
-                dict[id] = version;
-            }
-            else
-            {
-                dict.Add(id, version);
-            }
+    public Guid? Version<T>(object id)
+    {
+        if (!_versions.TryGetValue(typeof(T), out var dict))
+        {
+            return null;
         }
 
-        public Guid? Version<T>(object id)
-        {
-            if (!_versions.TryGetValue(typeof(T), out var dict))
-                return null;
+        dict.TryGetValue(id, out var guid);
+        return guid;
+    }
 
-            dict.TryGetValue(id, out var guid);
-            return guid;
-        }
-
-        public void ClearAll()
-        {
-            _versions.Clear();
-        }
+    public void ClearAll()
+    {
+        _versions.Clear();
     }
 }

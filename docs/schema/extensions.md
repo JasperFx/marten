@@ -70,7 +70,7 @@ StoreOptions(opts =>
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L46-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschematable' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L47-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschematable' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Function
@@ -100,7 +100,7 @@ $f$  language sql immutable;
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L96-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemafunction' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L97-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemafunction' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Sequence
@@ -122,7 +122,7 @@ StoreOptions(opts =>
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L130-L142' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemasequence' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L131-L143' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemasequence' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Extension
@@ -145,5 +145,5 @@ StoreOptions(opts =>
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L71-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemaextension' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L72-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemaextension' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

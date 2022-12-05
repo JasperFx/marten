@@ -1,5 +1,5 @@
 using System;
-using LamarCodeGeneration;
+using JasperFx.CodeGeneration;
 using Marten.Events.Projections;
 using Marten.Schema;
 using Marten.Testing.Harness;

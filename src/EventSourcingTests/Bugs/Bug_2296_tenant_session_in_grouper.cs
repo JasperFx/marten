@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Baseline.Dates;
+using JasperFx.Core;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;

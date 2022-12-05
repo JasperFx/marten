@@ -1,17 +1,17 @@
+#nullable enable
 using System;
 using Marten.Storage;
-#nullable enable
-namespace Marten.Schema
+
+namespace Marten.Schema;
+
+/// <summary>
+///     Directs Marten to store this document type with conjoined multi-tenancy
+/// </summary>
+[AttributeUsage(AttributeTargets.Class)]
+public class MultiTenantedAttribute: MartenAttribute
 {
-    /// <summary>
-    /// Directs Marten to store this document type with conjoined multi-tenancy
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Class)]
-    public class MultiTenantedAttribute: MartenAttribute
+    public override void Modify(DocumentMapping mapping)
     {
-        public override void Modify(DocumentMapping mapping)
-        {
-            mapping.TenancyStyle = TenancyStyle.Conjoined;
-        }
+        mapping.TenancyStyle = TenancyStyle.Conjoined;
     }
 }

@@ -1,4 +1,4 @@
-﻿using LamarCodeGeneration;
+﻿using JasperFx.CodeGeneration;
 using Marten;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Testing.Documents;

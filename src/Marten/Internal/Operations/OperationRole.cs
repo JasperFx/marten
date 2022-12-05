@@ -1,13 +1,12 @@
-namespace Marten.Internal.Operations
+namespace Marten.Internal.Operations;
+
+public enum OperationRole
 {
-    public enum OperationRole
-    {
-        Upsert,
-        Insert,
-        Update,
-        Deletion,
-        Patch,
-        Other,
-        Events
-    }
+    Upsert,
+    Insert,
+    Update,
+    Deletion,
+    Patch,
+    Other,
+    Events
 }

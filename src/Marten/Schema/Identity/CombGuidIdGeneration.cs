@@ -1,86 +1,95 @@
+#nullable enable
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using LamarCodeGeneration;
-using LamarCodeGeneration.Frames;
-#nullable enable
-namespace Marten.Schema.Identity
+using JasperFx.CodeGeneration;
+using JasperFx.CodeGeneration.Frames;
+
+namespace Marten.Schema.Identity;
+
+/// <summary>
+///     Comb Guid Id Generation. More info http://www.informit.com/articles/article.aspx?p=25862
+/// </summary>
+public class CombGuidIdGeneration: IIdGeneration
 {
-    /// <summary>
-    ///     Comb Guid Id Generation. More info http://www.informit.com/articles/article.aspx?p=25862
-    /// </summary>
-    public class CombGuidIdGeneration: IIdGeneration
+    private const int NumDateBytes = 6;
+
+    public IEnumerable<Type> KeyTypes { get; } = new[] { typeof(Guid) };
+
+    public bool RequiresSequences { get; } = false;
+
+    public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
     {
-        private const int NumDateBytes = 6;
+        var document = new Use(mapping.DocumentType);
+        method.Frames.Code(
+            $"if ({{0}}.{mapping.IdMember.Name} == Guid.Empty) _setter({{0}}, {typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid());",
+            document);
+        method.Frames.Code($"return {{0}}.{mapping.IdMember.Name};", document);
+    }
 
-        public IEnumerable<Type> KeyTypes { get; } = new[] { typeof(Guid) };
+    /*
+        FROM: https://github.com/richardtallent/RT.Comb/blob/master/RT.Comb/RT.CombByteOrder.Comb.cs
 
-        public bool RequiresSequences { get; } = false;
-        public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
-        {
-            var document = new Use(mapping.DocumentType);
-            method.Frames.Code($"if ({{0}}.{mapping.IdMember.Name} == Guid.Empty) _setter({{0}}, {typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid());", document);
-            method.Frames.Code($"return {{0}}.{mapping.IdMember.Name};", document);
-        }
+        Copyright 2015 Richard S. Tallent, II
+        Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+        (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge,
+        publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to
+        do so, subject to the following conditions:
+        The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+        MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+        LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+        CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+    */
 
-        /*
-            FROM: https://github.com/richardtallent/RT.Comb/blob/master/RT.Comb/RT.CombByteOrder.Comb.cs
+    /// <summary>
+    ///     Returns a new Guid COMB, consisting of a random Guid combined with the provided timestamp.
+    /// </summary>
+    public static Guid NewGuid(DateTimeOffset timestamp)
+    {
+        return Create(Guid.NewGuid(), timestamp);
+    }
 
-            Copyright 2015 Richard S. Tallent, II
-            Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
-            (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge,
-            publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to
-            do so, subject to the following conditions:
-            The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-            MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-            LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-            CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-        */
+    public static Guid NewGuid()
+    {
+        return Create(Guid.NewGuid(), DateTimeOffset.UtcNow);
+    }
 
-        /// <summary>
-        ///     Returns a new Guid COMB, consisting of a random Guid combined with the provided timestamp.
-        /// </summary>
-        public static Guid NewGuid(DateTimeOffset timestamp) => Create(Guid.NewGuid(), timestamp);
+    private static void WriteDateTime(Span<byte> destination, DateTimeOffset timestamp)
+    {
+        var unixTime = timestamp.ToUnixTimeMilliseconds();
+        Span<byte> unixTimeBytes = stackalloc byte[8];
+        BinaryPrimitives.WriteInt64LittleEndian(unixTimeBytes, unixTime);
 
-        public static Guid NewGuid() => Create(Guid.NewGuid(), DateTimeOffset.UtcNow);
+        unixTimeBytes.Slice(2, 4).CopyTo(destination);
+        unixTimeBytes.Slice(0, 2).CopyTo(destination.Slice(4));
+    }
 
-        private static void WriteDateTime(Span<byte> destination, DateTimeOffset timestamp)
-        {
-            var unixTime = timestamp.ToUnixTimeMilliseconds();
-            Span<byte> unixTimeBytes = stackalloc byte[8];
-            BinaryPrimitives.WriteInt64LittleEndian(unixTimeBytes, unixTime);
+    private static DateTimeOffset BytesToDateTime(ReadOnlySpan<byte> value)
+    {
+        Span<byte> unixTimeBytes = stackalloc byte[8];
+        value.Slice(4, 2).CopyTo(unixTimeBytes);
+        value.Slice(0, 4).CopyTo(unixTimeBytes.Slice(2));
+        unixTimeBytes.Slice(6).Clear();
+        var unixTime = BinaryPrimitives.ReadInt64LittleEndian(unixTimeBytes);
 
-            unixTimeBytes.Slice(2, 4).CopyTo(destination);
-            unixTimeBytes.Slice(0, 2).CopyTo(destination.Slice(4));
-        }
+        return DateTimeOffset.FromUnixTimeMilliseconds(unixTime);
+    }
 
-        private static DateTimeOffset BytesToDateTime(ReadOnlySpan<byte> value)
-        {
-            Span<byte> unixTimeBytes = stackalloc byte[8];
-            value.Slice(4, 2).CopyTo(unixTimeBytes);
-            value.Slice(0, 4).CopyTo(unixTimeBytes.Slice(2));
-            unixTimeBytes.Slice(6).Clear();
-            var unixTime = BinaryPrimitives.ReadInt64LittleEndian(unixTimeBytes);
+    public static Guid Create(Guid value, DateTimeOffset timestamp)
+    {
+        Span<byte> bytes = stackalloc byte[16];
+        value.TryWriteBytes(bytes);
 
-            return DateTimeOffset.FromUnixTimeMilliseconds(unixTime);
-        }
+        // Overwrite the first six bytes with unix time
+        WriteDateTime(bytes, timestamp);
+        return new Guid(bytes);
+    }
 
-        public static Guid Create(Guid value, DateTimeOffset timestamp)
-        {
-            Span<byte> bytes = stackalloc byte[16];
-            value.TryWriteBytes(bytes);
-
-            // Overwrite the first six bytes with unix time
-            WriteDateTime(bytes, timestamp);
-            return new Guid(bytes);
-        }
-
-        public static DateTimeOffset GetTimestamp(Guid comb)
-        {
-            Span<byte> bytes = stackalloc byte[16];
-            comb.TryWriteBytes(bytes);
-            return BytesToDateTime(bytes);
-        }
+    public static DateTimeOffset GetTimestamp(Guid comb)
+    {
+        Span<byte> bytes = stackalloc byte[16];
+        comb.TryWriteBytes(bytes);
+        return BytesToDateTime(bytes);
     }
 }

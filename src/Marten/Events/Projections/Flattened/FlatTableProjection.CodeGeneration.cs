@@ -1,51 +1,50 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using Baseline;
-using LamarCodeGeneration;
+using JasperFx.CodeGeneration;
+using JasperFx.Core;
 using Marten.Events.CodeGeneration;
 
-namespace Marten.Events.Projections.Flattened
+namespace Marten.Events.Projections.Flattened;
+
+public partial class FlatTableProjection
 {
-    public partial class FlatTableProjection
+    private readonly Lazy<IProjection> _generatedProjection;
+    private Type? _generatedType;
+    private GeneratedType _projectionType;
+
+
+    protected override void assembleTypes(GeneratedAssembly assembly, StoreOptions options)
     {
-        private GeneratedType _projectionType;
-        private Type? _generatedType;
-        private readonly Lazy<IProjection> _generatedProjection;
+        assembly.Rules.Assemblies.Add(GetType().Assembly);
+        assembly.Rules.Assemblies.AddRange(_handlers.Select(x => x.EventType.Assembly).Distinct());
 
+        var baseType = typeof(SyncEventProjectionBase);
+        _projectionType = assembly.AddType(_inlineTypeName, baseType);
 
-        protected override void assembleTypes(GeneratedAssembly assembly, StoreOptions options)
-        {
-            assembly.Rules.Assemblies.Add(GetType().Assembly);
-            assembly.Rules.Assemblies.AddRange(_handlers.Select(x => x.EventType.Assembly).Distinct());
+        var method = _projectionType.MethodFor(nameof(SyncEventProjectionBase.ApplyEvent));
 
-            var baseType = typeof(SyncEventProjectionBase);
-            _projectionType = assembly.AddType(_inlineTypeName, baseType);
+        readSchema(options.EventGraph);
+        var frames = _handlers
+            .Select(x => new EventProcessingFrame(null, x.BuildFrame(options.EventGraph, Table))).ToList();
 
-            var method = _projectionType.MethodFor(nameof(SyncEventProjectionBase.ApplyEvent));
+        var eventStatement = new EventTypePatternMatchFrame(frames);
+        method.Frames.Add(eventStatement);
+    }
 
-            readSchema(options.EventGraph);
-            var frames = _handlers
-                .Select(x => new EventProcessingFrame(null, x.BuildFrame(options.EventGraph, Table))).ToList();
+    protected override bool tryAttachTypes(Assembly assembly, StoreOptions options)
+    {
+        _generatedType = assembly.GetExportedTypes().FirstOrDefault(x => x.Name == _inlineTypeName);
+        return _generatedType != null;
+    }
 
-            var eventStatement = new EventTypePatternMatchFrame(frames);
-            method.Frames.Add(eventStatement);
-        }
+    protected override IProjection buildProjectionObject(DocumentStore store)
+    {
+        return _generatedProjection.Value;
+    }
 
-        protected override bool tryAttachTypes(Assembly assembly, StoreOptions options)
-        {
-            _generatedType = assembly.GetExportedTypes().FirstOrDefault(x => x.Name == _inlineTypeName);
-            return _generatedType != null;
-        }
-
-        protected override IProjection buildProjectionObject(DocumentStore store)
-        {
-            return _generatedProjection.Value;
-        }
-
-        protected override bool needsSettersGenerated()
-        {
-            return false;
-        }
+    protected override bool needsSettersGenerated()
+    {
+        return false;
     }
 }

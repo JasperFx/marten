@@ -1,4 +1,5 @@
-﻿using Baseline;
+﻿using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Schema;
 using Marten.Testing.Documents;

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
-using ImTools;
+using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Events.Schema;
@@ -17,342 +17,353 @@ using NpgsqlTypes;
 using Weasel.Core;
 using static Marten.Events.EventMappingExtensions;
 
-namespace Marten.Events
+namespace Marten.Events;
+
+public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
 {
-    public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
+    private readonly Cache<Type, string> _aggregateNameByType =
+        new(type => type.Name.ToTableAlias());
+
+    private readonly Cache<string, Type> _aggregateTypeByName;
+
+    private readonly Cache<string, EventMapping> _byEventName = new();
+
+    private readonly Cache<Type, EventMapping> _events = new();
+
+    private readonly Lazy<IProjection[]> _inlineProjections;
+
+    private readonly Ref<ImHashMap<string, Type>> _nameToType = Ref.Of(ImHashMap<string, Type>.Empty);
+
+    private string _databaseSchemaName;
+
+    private DocumentStore _store;
+    private StreamIdentity _streamIdentity = StreamIdentity.AsGuid;
+
+    internal EventGraph(StoreOptions options)
     {
-        private readonly Cache<Type, string> _aggregateNameByType =
-            new(type => type.Name.ToTableAlias());
-
-        private readonly Cache<string, Type> _aggregateTypeByName;
-
-        private readonly Cache<string, EventMapping> _byEventName = new();
-
-        private readonly Cache<Type, EventMapping> _events = new();
-
-        private readonly Lazy<IProjection[]> _inlineProjections;
-
-        private readonly Ref<ImHashMap<string, Type>> _nameToType = Ref.Of(ImHashMap<string, Type>.Empty);
-
-        private string _databaseSchemaName;
-
-        private DocumentStore _store;
-        private StreamIdentity _streamIdentity = StreamIdentity.AsGuid;
-
-        internal EventGraph(StoreOptions options)
+        StreamIdentity = StreamIdentity.AsGuid;
+        Options = options;
+        _events.OnMissing = eventType =>
         {
-            StreamIdentity = StreamIdentity.AsGuid;
-            Options = options;
-            _events.OnMissing = eventType =>
-            {
-                var mapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
-                Options.Storage.AddMapping(mapping);
+            var mapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
+            Options.Storage.AddMapping(mapping);
 
-                return mapping;
-            };
+            return mapping;
+        };
 
-            _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
+        _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
 
-            _inlineProjections = new Lazy<IProjection[]>(() => options.Projections.BuildInlineProjections(_store));
+        _inlineProjections = new Lazy<IProjection[]>(() => options.Projections.BuildInlineProjections(_store));
 
-            _aggregateTypeByName = new Cache<string, Type>(findAggregateType);
+        _aggregateTypeByName = new Cache<string, Type>(findAggregateType);
+    }
+
+    internal NpgsqlDbType StreamIdDbType { get; private set; }
+
+    /// <summary>
+    ///     Whether a "for update" (row exclusive lock) should be used when selecting out the event version to use from the
+    ///     streams table
+    /// </summary>
+    /// <remarks>
+    ///     Not using this can result in race conditions in a concurrent environment that lead to
+    ///     event version mismatches between the event and stream version numbers
+    /// </remarks>
+    [Obsolete("This is no longer used!")]
+    public bool UseAppendEventForUpdateLock { get; set; } = false;
+
+    internal StoreOptions Options { get; }
+
+    internal DbObjectName Table => new(DatabaseSchemaName, "mt_events");
+
+    internal EventMetadataCollection Metadata { get; } = new();
+
+    /// <summary>
+    ///     Configure whether event streams are identified with Guid or strings
+    /// </summary>
+    public StreamIdentity StreamIdentity
+    {
+        get => _streamIdentity;
+        set
+        {
+            _streamIdentity = value;
+            StreamIdDbType = value == StreamIdentity.AsGuid ? NpgsqlDbType.Uuid : NpgsqlDbType.Varchar;
         }
+    }
 
-        internal NpgsqlDbType StreamIdDbType { get; private set; }
+    /// <summary>
+    ///     Configure the event sourcing storage for multi-tenancy
+    /// </summary>
+    public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
 
-        /// <summary>
-        ///     Whether a "for update" (row exclusive lock) should be used when selecting out the event version to use from the
-        ///     streams table
-        /// </summary>
-        /// <remarks>
-        ///     Not using this can result in race conditions in a concurrent environment that lead to
-        ///     event version mismatches between the event and stream version numbers
-        /// </remarks>
-        [Obsolete("This is no longer used!")]
-        public bool UseAppendEventForUpdateLock { get; set; } = false;
+    /// <summary>
+    ///     Configure the meta data required to be stored for events. By default meta data fields are disabled
+    /// </summary>
+    public MetadataConfig MetadataConfig => new(Metadata);
 
-        internal StoreOptions Options { get; }
+    /// <summary>
+    ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
+    ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
+    ///     the event type. It can also be used for the event namespace migration.
+    /// </summary>
+    /// <typeparam name="TEvent"></typeparam>
+    /// <returns>Event store options, to allow fluent definition</returns>
+    public IEventStoreOptions AddEventType<TEvent>()
+    {
+        AddEventType(typeof(TEvent));
+        return this;
+    }
 
-        internal DbObjectName Table => new(DatabaseSchemaName, "mt_events");
+    /// <summary>
+    ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
+    ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
+    ///     the event type
+    /// </summary>
+    /// <param name="eventType"></param>
+    public void AddEventType(Type eventType)
+    {
+        _events.FillDefault(eventType);
+    }
 
-        internal EventMetadataCollection Metadata { get; } = new();
+    /// <summary>
+    ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
+    ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
+    ///     the event type
+    /// </summary>
+    /// <param name="types"></param>
+    public void AddEventTypes(IEnumerable<Type> types)
+    {
+        types.Each(AddEventType);
+    }
 
-        /// <summary>
-        ///     Configure whether event streams are identified with Guid or strings
-        /// </summary>
-        public StreamIdentity StreamIdentity
+    public void MapEventType<TEvent>(string eventTypeName) where TEvent : class
+    {
+        MapEventType(typeof(TEvent), eventTypeName);
+    }
+
+    public void MapEventType(Type eventType, string eventTypeName)
+    {
+        var eventMapping = EventMappingFor(eventType);
+        eventMapping.EventTypeName = eventTypeName;
+    }
+
+    public IEventStoreOptions Upcast<TEvent>(
+        string eventTypeName,
+        JsonTransformation jsonTransformation = null
+    ) where TEvent : class
+    {
+        return Upcast(typeof(TEvent), eventTypeName, jsonTransformation);
+    }
+
+    public IEventStoreOptions Upcast(
+        Type eventType,
+        string eventTypeName,
+        JsonTransformation jsonTransformation = null
+    )
+    {
+        var eventMapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
+        eventMapping.EventTypeName = eventTypeName;
+        eventMapping.JsonTransformation(jsonTransformation);
+
+        _byEventName.Fill(eventTypeName, eventMapping);
+
+        return this;
+    }
+
+    public IEventStoreOptions Upcast<TOldEvent, TEvent>(
+        string eventTypeName,
+        Func<TOldEvent, TEvent> upcast
+    ) where TOldEvent : class where TEvent : class
+    {
+        return Upcast(typeof(TEvent), eventTypeName, JsonTransformations.Upcast(upcast));
+    }
+
+    public IEventStoreOptions Upcast<TOldEvent, TEvent>(
+        Func<TOldEvent, TEvent> upcast
+    ) where TOldEvent : class where TEvent : class
+    {
+        return Upcast(typeof(TEvent), GetEventTypeName<TOldEvent>(), JsonTransformations.Upcast(upcast));
+    }
+
+    public IEventStoreOptions Upcast<TOldEvent, TEvent>(
+        string eventTypeName,
+        Func<TOldEvent, CancellationToken, Task<TEvent>> upcastAsync
+    ) where TOldEvent : class where TEvent : class
+    {
+        return Upcast(typeof(TEvent), eventTypeName, JsonTransformations.Upcast(upcastAsync));
+    }
+
+    public IEventStoreOptions Upcast<TOldEvent, TEvent>(
+        Func<TOldEvent, CancellationToken, Task<TEvent>> upcastAsync
+    ) where TOldEvent : class where TEvent : class
+    {
+        return Upcast(typeof(TEvent), GetEventTypeName<TOldEvent>(), JsonTransformations.Upcast(upcastAsync));
+    }
+
+    public IEventStoreOptions Upcast(params IEventUpcaster[] upcasters)
+    {
+        foreach (var upcaster in upcasters)
         {
-            get => _streamIdentity;
-            set
-            {
-                _streamIdentity = value;
-                StreamIdDbType = value == StreamIdentity.AsGuid ? NpgsqlDbType.Uuid : NpgsqlDbType.Varchar;
-            }
-        }
-
-        /// <summary>
-        ///     Configure the event sourcing storage for multi-tenancy
-        /// </summary>
-        public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
-
-        /// <summary>
-        ///     Configure the meta data required to be stored for events. By default meta data fields are disabled
-        /// </summary>
-        public MetadataConfig MetadataConfig => new(Metadata);
-
-        /// <summary>
-        /// Register an event type with Marten. This isn't strictly necessary for normal usage,
-        /// but can help Marten with asynchronous projections where Marten hasn't yet encountered
-        /// the event type. It can also be used for the event namespace migration.
-        /// </summary>
-        /// <typeparam name="TEvent"></typeparam>
-        /// <returns>Event store options, to allow fluent definition</returns>
-        public IEventStoreOptions AddEventType<TEvent>()
-        {
-            AddEventType(typeof(TEvent));
-            return this;
-        }
-
-        /// <summary>
-        ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
-        ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
-        ///     the event type
-        /// </summary>
-        /// <param name="eventType"></param>
-        public void AddEventType(Type eventType)
-        {
-            _events.FillDefault(eventType);
-        }
-
-        /// <summary>
-        ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
-        ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
-        ///     the event type
-        /// </summary>
-        /// <param name="types"></param>
-        public void AddEventTypes(IEnumerable<Type> types)
-        {
-            types.Each(AddEventType);
-        }
-
-        public void MapEventType<TEvent>(string eventTypeName) where TEvent : class =>
-            MapEventType(typeof(TEvent), eventTypeName);
-
-        public void MapEventType(Type eventType, string eventTypeName)
-        {
-            var eventMapping = EventMappingFor(eventType);
-            eventMapping.EventTypeName = eventTypeName;
-        }
-
-        public IEventStoreOptions Upcast<TEvent>(
-            string eventTypeName,
-            JsonTransformation jsonTransformation = null
-        ) where TEvent : class =>
-            Upcast(typeof(TEvent), eventTypeName, jsonTransformation);
-
-        public IEventStoreOptions Upcast(
-            Type eventType,
-            string eventTypeName,
-            JsonTransformation jsonTransformation = null
-        )
-        {
-            var eventMapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
-            eventMapping.EventTypeName = eventTypeName;
-            eventMapping.JsonTransformation(jsonTransformation);
-
-            _byEventName.Fill(eventTypeName, eventMapping);
-
-            return this;
-        }
-
-        public IEventStoreOptions Upcast<TOldEvent, TEvent>(
-            string eventTypeName,
-            Func<TOldEvent, TEvent> upcast
-        ) where TOldEvent : class where TEvent : class =>
-            Upcast(typeof(TEvent), eventTypeName, JsonTransformations.Upcast(upcast));
-
-        public IEventStoreOptions Upcast<TOldEvent, TEvent>(
-            Func<TOldEvent, TEvent> upcast
-        ) where TOldEvent : class where TEvent : class =>
-            Upcast(typeof(TEvent), GetEventTypeName<TOldEvent>(), JsonTransformations.Upcast(upcast));
-
-        public IEventStoreOptions Upcast<TOldEvent, TEvent>(
-            string eventTypeName,
-            Func<TOldEvent, CancellationToken, Task<TEvent>> upcastAsync
-        ) where TOldEvent : class where TEvent : class =>
-            Upcast(typeof(TEvent), eventTypeName, JsonTransformations.Upcast(upcastAsync));
-
-        public IEventStoreOptions Upcast<TOldEvent, TEvent>(
-            Func<TOldEvent, CancellationToken, Task<TEvent>> upcastAsync
-        ) where TOldEvent : class where TEvent : class  =>
-            Upcast(typeof(TEvent), GetEventTypeName<TOldEvent>(), JsonTransformations.Upcast(upcastAsync));
-
-        public IEventStoreOptions Upcast(params IEventUpcaster[] upcasters)
-        {
-            foreach (var upcaster in upcasters)
-            {
-                Upcast(
-                    upcaster.EventType,
-                    upcaster.EventTypeName,
-                    new JsonTransformation(upcaster.FromDbDataReader, upcaster.FromDbDataReaderAsync)
-                );
-            }
-
-            return this;
-        }
-
-        public IEventStoreOptions Upcast<TUpcaster>() where TUpcaster : IEventUpcaster, new()
-        {
-            var upcaster = new TUpcaster();
-
             Upcast(
                 upcaster.EventType,
                 upcaster.EventTypeName,
                 new JsonTransformation(upcaster.FromDbDataReader, upcaster.FromDbDataReaderAsync)
             );
-
-            return this;
         }
 
-        /// <summary>
-        ///     Override the database schema name for event related tables. By default this
-        ///     is the same schema as the document storage
-        /// </summary>
-        public string DatabaseSchemaName
+        return this;
+    }
+
+    public IEventStoreOptions Upcast<TUpcaster>() where TUpcaster : IEventUpcaster, new()
+    {
+        var upcaster = new TUpcaster();
+
+        Upcast(
+            upcaster.EventType,
+            upcaster.EventTypeName,
+            new JsonTransformation(upcaster.FromDbDataReader, upcaster.FromDbDataReaderAsync)
+        );
+
+        return this;
+    }
+
+    /// <summary>
+    ///     Override the database schema name for event related tables. By default this
+    ///     is the same schema as the document storage
+    /// </summary>
+    public string DatabaseSchemaName
+    {
+        get => _databaseSchemaName ?? Options.DatabaseSchemaName;
+        set => _databaseSchemaName = value.ToLowerInvariant();
+    }
+
+    IReadOnlyDaemonSettings IReadOnlyEventStoreOptions.Daemon => _store.Options.Projections;
+
+    IReadOnlyList<IReadOnlyProjectionData> IReadOnlyEventStoreOptions.Projections()
+    {
+        return Options.Projections.All.OfType<IReadOnlyProjectionData>().ToList();
+    }
+
+    public IReadOnlyList<IEventType> AllKnownEventTypes()
+    {
+        return _events.OfType<IEventType>().ToList();
+    }
+
+    IReadonlyMetadataConfig IReadOnlyEventStoreOptions.MetadataConfig => MetadataConfig;
+
+    private Type findAggregateType(string name)
+    {
+        foreach (var aggregateType in Options.Projections.AllAggregateTypes())
         {
-            get => _databaseSchemaName ?? Options.DatabaseSchemaName;
-            set => _databaseSchemaName = value.ToLowerInvariant();
-        }
-
-        IReadOnlyDaemonSettings IReadOnlyEventStoreOptions.Daemon => _store.Options.Projections;
-
-        IReadOnlyList<IReadOnlyProjectionData> IReadOnlyEventStoreOptions.Projections()
-        {
-            return Options.Projections.All.OfType<IReadOnlyProjectionData>().ToList();
-        }
-
-        public IReadOnlyList<IEventType> AllKnownEventTypes()
-        {
-            return _events.OfType<IEventType>().ToList();
-        }
-
-        IReadonlyMetadataConfig IReadOnlyEventStoreOptions.MetadataConfig => MetadataConfig;
-
-        private Type findAggregateType(string name)
-        {
-            foreach (var aggregateType in Options.Projections.AllAggregateTypes())
+            var possibleName = _aggregateNameByType[aggregateType];
+            if (name.EqualsIgnoreCase(possibleName))
             {
-                var possibleName = _aggregateNameByType[aggregateType];
-                if (name.EqualsIgnoreCase(possibleName))
-                {
-                    return aggregateType;
-                }
+                return aggregateType;
+            }
+        }
+
+        return null;
+    }
+
+    internal EventMapping EventMappingFor(Type eventType)
+    {
+        return _events[eventType];
+    }
+
+    internal EventMapping EventMappingFor<T>() where T : class
+    {
+        return EventMappingFor(typeof(T));
+    }
+
+    internal IEnumerable<EventMapping> AllEvents()
+    {
+        return _events;
+    }
+
+    internal EventMapping EventMappingFor(string eventType)
+    {
+        return _byEventName[eventType];
+    }
+
+    internal bool IsActive(StoreOptions options)
+    {
+        return _events.Any() || Options.Projections.All.Any();
+    }
+
+    internal Type AggregateTypeFor(string aggregateTypeName)
+    {
+        return _aggregateTypeByName[aggregateTypeName];
+    }
+
+    internal string AggregateAliasFor(Type aggregateType)
+    {
+        var alias = _aggregateNameByType[aggregateType];
+
+        _aggregateTypeByName.Fill(alias, aggregateType);
+
+        return alias;
+    }
+
+    internal string GetStreamIdDBType()
+    {
+        return StreamIdentity == StreamIdentity.AsGuid ? "uuid" : "varchar";
+    }
+
+    internal Type GetStreamIdType()
+    {
+        return StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
+    }
+
+    internal Type TypeForDotNetName(string assemblyQualifiedName)
+    {
+        if (!_nameToType.Value.TryFind(assemblyQualifiedName, out var value))
+        {
+            value = Type.GetType(assemblyQualifiedName);
+            if (value == null)
+            {
+                throw new UnknownEventTypeException($"Unable to load event type '{assemblyQualifiedName}'.");
             }
 
-            return null;
+            _nameToType.Swap(n => n.AddOrUpdate(assemblyQualifiedName, value));
         }
 
-        internal EventMapping EventMappingFor(Type eventType)
+        return value;
+    }
+
+    internal IEventStorage EnsureAsStringStorage(IMartenSession session)
+    {
+        if (StreamIdentity == StreamIdentity.AsGuid)
         {
-            return _events[eventType];
+            throw new InvalidOperationException(
+                "This Marten event store is configured to identify streams with Guids");
         }
 
-        internal EventMapping EventMappingFor<T>() where T : class
+        return session.EventStorage();
+    }
+
+    internal IEventStorage EnsureAsGuidStorage(IMartenSession session)
+    {
+        if (StreamIdentity == StreamIdentity.AsString)
         {
-            return EventMappingFor(typeof(T));
+            throw new InvalidOperationException(
+                "This Marten event store is configured to identify streams with strings");
         }
 
-        internal IEnumerable<EventMapping> AllEvents()
+        return session.EventStorage();
+    }
+
+    internal IEvent BuildEvent(object eventData)
+    {
+        if (eventData == null)
         {
-            return _events;
+            throw new ArgumentNullException(nameof(eventData));
         }
 
-        internal EventMapping EventMappingFor(string eventType)
-        {
-            return _byEventName[eventType];
-        }
+        var mapping = EventMappingFor(eventData.GetType());
+        return mapping.Wrap(eventData);
+    }
 
-        internal bool IsActive(StoreOptions options)
-        {
-            return _events.Any() || Options.Projections.All.Any();
-        }
-
-        internal Type AggregateTypeFor(string aggregateTypeName)
-        {
-            return _aggregateTypeByName[aggregateTypeName];
-        }
-
-        internal string AggregateAliasFor(Type aggregateType)
-        {
-            var alias = _aggregateNameByType[aggregateType];
-
-            _aggregateTypeByName.Fill(alias, aggregateType);
-
-            return alias;
-        }
-
-        internal string GetStreamIdDBType()
-        {
-            return StreamIdentity == StreamIdentity.AsGuid ? "uuid" : "varchar";
-        }
-
-        internal Type GetStreamIdType()
-        {
-            return StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
-        }
-
-        internal Type TypeForDotNetName(string assemblyQualifiedName)
-        {
-            if (!_nameToType.Value.TryFind(assemblyQualifiedName, out var value))
-            {
-                value = Type.GetType(assemblyQualifiedName);
-                if (value == null)
-                {
-                    throw new UnknownEventTypeException($"Unable to load event type '{assemblyQualifiedName}'.");
-                }
-
-                _nameToType.Swap(n => n.AddOrUpdate(assemblyQualifiedName, value));
-            }
-
-            return value;
-        }
-
-        internal IEventStorage EnsureAsStringStorage(IMartenSession session)
-        {
-            if (StreamIdentity == StreamIdentity.AsGuid)
-            {
-                throw new InvalidOperationException(
-                    "This Marten event store is configured to identify streams with Guids");
-            }
-
-            return session.EventStorage();
-        }
-
-        internal IEventStorage EnsureAsGuidStorage(IMartenSession session)
-        {
-            if (StreamIdentity == StreamIdentity.AsString)
-            {
-                throw new InvalidOperationException(
-                    "This Marten event store is configured to identify streams with strings");
-            }
-
-            return session.EventStorage();
-        }
-
-        internal IEvent BuildEvent(object eventData)
-        {
-            if (eventData == null)
-            {
-                throw new ArgumentNullException(nameof(eventData));
-            }
-
-            var mapping = EventMappingFor(eventData.GetType());
-            return mapping.Wrap(eventData);
-        }
-
-        internal void AssertValidity(DocumentStore store)
-        {
-            _store = store;
-        }
+    internal void AssertValidity(DocumentStore store)
+    {
+        _store = store;
     }
 }

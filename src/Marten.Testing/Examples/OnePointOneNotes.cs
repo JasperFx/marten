@@ -1,5 +1,5 @@
 using System.Linq;
-using LamarCodeGeneration.Util;
+using JasperFx.CodeGeneration.Util;
 using Marten.Testing.Documents;
 
 namespace Marten.Testing.Examples;

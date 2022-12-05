@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Oakton;
+using Spectre.Console;
 
 [assembly: OaktonCommandAssembly]
 
@@ -18,11 +19,6 @@ public class MartenInput : NetCoreInput
         _log.WriteLine(text);
     }
 
-    public void WriteLine(ConsoleColor color, string text)
-    {
-        ConsoleWriter.Write(color, text);
-        _log.WriteLine(text);
-    }
 
     public void WriteLogFileIfRequested()
     {
@@ -37,6 +33,6 @@ public class MartenInput : NetCoreInput
             writer.Flush();
         }
 
-        ConsoleWriter.Write(ConsoleColor.Green, "Wrote a log file to " + LogFlag);
+        AnsiConsole.Write($"[green]Wrote a log file to {LogFlag}[/]");
     }
 }

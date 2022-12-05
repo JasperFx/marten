@@ -1,21 +1,19 @@
+namespace Marten.Storage;
 
-namespace Marten.Storage
+public class Tenant
 {
-    public class Tenant
+    public Tenant(string tenantId, IMartenDatabase inner)
     {
-        public Tenant(string tenantId, IMartenDatabase inner)
-        {
-            Database = inner;
-            TenantId = tenantId;
-        }
+        Database = inner;
+        TenantId = tenantId;
+    }
 
-        public string TenantId { get; }
+    public string TenantId { get; }
 
-        public IMartenDatabase Database { get; }
+    public IMartenDatabase Database { get; }
 
-        public static Tenant ForDatabase(IMartenDatabase database)
-        {
-            return new Tenant(Tenancy.DefaultTenantId, database);
-        }
+    public static Tenant ForDatabase(IMartenDatabase database)
+    {
+        return new Tenant(Tenancy.DefaultTenantId, database);
     }
 }

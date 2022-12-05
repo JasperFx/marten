@@ -1,45 +1,39 @@
 using System;
-using System.Text;
-using Baseline;
 using Marten.Storage;
 using Marten.Storage.Metadata;
-using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 
-namespace Marten.Schema
+namespace Marten.Schema;
+
+public class DocumentForeignKey: ForeignKey
 {
-    public class DocumentForeignKey : ForeignKey
+    public DocumentForeignKey(
+        string columnName,
+        DocumentMapping parent,
+        DocumentMapping reference
+    ): base(toKeyName(parent, reference, columnName))
     {
-        private static string toKeyName(DocumentMapping parent, DocumentMapping reference, string columnName)
+        ReferenceDocumentType = reference.DocumentType;
+
+        LinkedTable = reference.TableName;
+
+        if (parent.TenancyStyle == TenancyStyle.Conjoined && reference?.TenancyStyle == TenancyStyle.Conjoined)
         {
-            return $"{parent.TableName.Name}_{columnName}{(parent.TenancyStyle == TenancyStyle.Conjoined && reference?.TenancyStyle == TenancyStyle.Conjoined ? "_tenant_id" : "")}_fkey";
+            ColumnNames = new[] { columnName, TenantIdColumn.Name };
+            LinkedNames = new[] { "id", TenantIdColumn.Name };
         }
-
-        public DocumentForeignKey(
-            string columnName,
-            DocumentMapping parent,
-            DocumentMapping reference
-        ) : base(toKeyName(parent, reference, columnName))
+        else
         {
-            ReferenceDocumentType = reference.DocumentType;
-
-            LinkedTable = reference.TableName;
-
-            if (parent.TenancyStyle == TenancyStyle.Conjoined && reference?.TenancyStyle == TenancyStyle.Conjoined)
-            {
-                ColumnNames = new[] {columnName, TenantIdColumn.Name};
-                LinkedNames = new[] {"id", TenantIdColumn.Name};
-            }
-            else
-            {
-                ColumnNames = new[] {columnName};
-                LinkedNames = new[] {"id"};
-            }
+            ColumnNames = new[] { columnName };
+            LinkedNames = new[] { "id" };
         }
-
-        public Type ReferenceDocumentType { get; }
     }
 
+    public Type ReferenceDocumentType { get; }
 
-
+    private static string toKeyName(DocumentMapping parent, DocumentMapping reference, string columnName)
+    {
+        return
+            $"{parent.TableName.Name}_{columnName}{(parent.TenancyStyle == TenancyStyle.Conjoined && reference?.TenancyStyle == TenancyStyle.Conjoined ? "_tenant_id" : "")}_fkey";
+    }
 }

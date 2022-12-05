@@ -3,71 +3,80 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using Weasel.Postgresql;
-using Marten.Schema;
-using Marten.Util;
 using Weasel.Core;
+using Weasel.Postgresql;
 
-namespace Marten.Internal.Operations
+namespace Marten.Internal.Operations;
+
+internal class TruncateTable: IStorageOperation
 {
-    internal class TruncateTable: IStorageOperation
+    private readonly DbObjectName _name;
+
+    public TruncateTable(DbObjectName name)
     {
-        private readonly DbObjectName _name;
+        _name = name;
+    }
 
-        public TruncateTable(DbObjectName name)
+    public TruncateTable(Type documentType)
+    {
+        DocumentType = documentType;
+    }
+
+    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    {
+        var name = _name ?? session.StorageFor(DocumentType).TableName;
+        builder.Append($"truncate table {name} CASCADE");
+    }
+
+    public Type DocumentType { get; }
+
+    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
+    {
+        // nothing
+    }
+
+    public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
+    {
+        return Task.CompletedTask;
+    }
+
+    public OperationRole Role()
+    {
+        return OperationRole.Other;
+    }
+
+    protected bool Equals(TruncateTable other)
+    {
+        return Equals(DocumentType, other.DocumentType);
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (ReferenceEquals(null, obj))
         {
-            _name = name;
+            return false;
         }
 
-        public TruncateTable(Type documentType)
+        if (ReferenceEquals(this, obj))
         {
-            DocumentType = documentType;
+            return true;
         }
 
-        public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+        if (obj.GetType() != GetType())
         {
-            var name = _name ?? session.StorageFor(DocumentType).TableName;
-            builder.Append($"truncate table {name} CASCADE");
+            return false;
         }
 
-        public Type DocumentType { get; }
+        return Equals((TruncateTable)obj);
+    }
 
-        public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-        {
-            // nothing
-        }
+    public override int GetHashCode()
+    {
+        return DocumentType != null ? DocumentType.GetHashCode() : 0;
+    }
 
-        public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
-        {
-            return Task.CompletedTask;
-        }
-
-        public OperationRole Role()
-        {
-            return OperationRole.Other;
-        }
-
-        protected bool Equals(TruncateTable other)
-        {
-            return Equals(DocumentType, other.DocumentType);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != GetType()) return false;
-            return Equals((TruncateTable) obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return (DocumentType != null ? DocumentType.GetHashCode() : 0);
-        }
-
-        public override string ToString()
-        {
-            return $"Truncate data for: {DocumentType}";
-        }
+    public override string ToString()
+    {
+        return $"Truncate data for: {DocumentType}";
     }
 }

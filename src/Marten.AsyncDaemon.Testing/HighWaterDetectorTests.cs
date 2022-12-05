@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline.Dates;
+using JasperFx.Core;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events;
 using Marten.Events.Daemon.HighWater;

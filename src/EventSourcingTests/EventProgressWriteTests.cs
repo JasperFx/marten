@@ -1,4 +1,5 @@
-using Baseline;
+using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Events.Operations;
 using Marten.Testing.Harness;

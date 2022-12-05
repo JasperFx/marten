@@ -2,68 +2,67 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Marten.Events.Daemon
+namespace Marten.Events.Daemon;
+
+/// <summary>
+///     Used mostly by tests to listen for expected shard events or progress
+/// </summary>
+internal class ShardStatusWatcher: IObserver<ShardState>
 {
-    /// <summary>
-    /// Used mostly by tests to listen for expected shard events or progress
-    /// </summary>
-    internal class ShardStatusWatcher: IObserver<ShardState>
+    private readonly TaskCompletionSource<ShardState> _completion;
+    private readonly Func<ShardState, bool> _condition;
+    private readonly IDisposable _unsubscribe;
+
+    public ShardStatusWatcher(ShardStateTracker tracker, ShardState expected, TimeSpan timeout)
     {
-        private readonly IDisposable _unsubscribe;
-        private readonly Func<ShardState, bool> _condition;
-        private readonly TaskCompletionSource<ShardState> _completion;
+        _condition = x => x.ShardName == expected.ShardName && x.Sequence >= expected.Sequence;
+        _completion = new TaskCompletionSource<ShardState>();
 
-        public ShardStatusWatcher(ShardStateTracker tracker, ShardState expected, TimeSpan timeout)
+
+        var timeout1 = new CancellationTokenSource(timeout);
+        timeout1.Token.Register(() =>
         {
-            _condition = x => x.ShardName == expected.ShardName && x.Sequence >= expected.Sequence;
-            _completion = new TaskCompletionSource<ShardState>();
+            _completion.TrySetException(new TimeoutException(
+                $"Shard {expected.ShardName} did not reach sequence number {expected.Sequence} in the time allowed"));
+        });
+
+        _unsubscribe = tracker.Subscribe(this);
+    }
+
+    public ShardStatusWatcher(string description, Func<ShardState, bool> condition, ShardStateTracker tracker,
+        TimeSpan timeout)
+    {
+        _condition = condition;
+        _completion = new TaskCompletionSource<ShardState>();
 
 
-            var timeout1 = new CancellationTokenSource(timeout);
-            timeout1.Token.Register(() =>
-            {
-                _completion.TrySetException(new TimeoutException(
-                    $"Shard {expected.ShardName} did not reach sequence number {expected.Sequence} in the time allowed"));
-            });
-
-            _unsubscribe = tracker.Subscribe(this);
-        }
-
-        public ShardStatusWatcher(string description, Func<ShardState, bool> condition, ShardStateTracker tracker, TimeSpan timeout)
+        var timeout1 = new CancellationTokenSource(timeout);
+        timeout1.Token.Register(() =>
         {
-            _condition = condition;
-            _completion = new TaskCompletionSource<ShardState>();
+            _completion.TrySetException(new TimeoutException(
+                $"{description} was not detected in the time allowed"));
+        });
 
+        _unsubscribe = tracker.Subscribe(this);
+    }
 
-            var timeout1 = new CancellationTokenSource(timeout);
-            timeout1.Token.Register(() =>
-            {
-                _completion.TrySetException(new TimeoutException(
-                    $"{description} was not detected in the time allowed"));
-            });
+    public Task<ShardState> Task => _completion.Task;
 
-            _unsubscribe = tracker.Subscribe(this);
-        }
+    public void OnCompleted()
+    {
+    }
 
-        public Task<ShardState> Task => _completion.Task;
+    public void OnError(Exception error)
+    {
+        _completion.SetException(error);
+    }
 
-        public void OnCompleted()
+    public void OnNext(ShardState value)
+    {
+        if (_condition(value))
         {
-
-        }
-
-        public void OnError(Exception error)
-        {
-            _completion.SetException(error);
-        }
-
-        public void OnNext(ShardState value)
-        {
-            if (_condition(value))
-            {
-                _completion.SetResult(value);
-                _unsubscribe.Dispose();
-            }
+            _completion.SetResult(value);
+            _unsubscribe.Dispose();
         }
     }
 }

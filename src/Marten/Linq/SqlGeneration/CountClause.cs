@@ -7,76 +7,75 @@ using Marten.Internal;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Weasel.Postgresql;
-using Marten.Util;
 
-namespace Marten.Linq.SqlGeneration
+namespace Marten.Linq.SqlGeneration;
+
+public class CountClause<T>: ISelectClause, IQueryHandler<T>
 {
-    public class CountClause<T> : ISelectClause, IQueryHandler<T>
+    private Statement _topStatement;
+
+    public CountClause(string from)
     {
-        private Statement _topStatement;
+        FromObject = from;
+    }
 
-        public CountClause(string from)
-        {
-            FromObject = from;
-        }
+    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    {
+        _topStatement.Configure(builder);
+    }
 
-        public Type SelectedType => typeof(T);
+    public T Handle(DbDataReader reader, IMartenSession session)
+    {
+        var hasNext = reader.Read();
+        return hasNext && !reader.IsDBNull(0)
+            ? reader.GetFieldValue<T>(0)
+            : default;
+    }
 
-        public string FromObject { get; }
-        public void WriteSelectClause(CommandBuilder sql)
-        {
-            sql.Append("select count(*) as number");
-            sql.Append(" from ");
-            sql.Append(FromObject);
-            sql.Append(" as d");
-        }
+    public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+    {
+        var hasNext = await reader.ReadAsync(token).ConfigureAwait(false);
+        return hasNext && !await reader.IsDBNullAsync(0, token).ConfigureAwait(false)
+            ? await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false)
+            : default;
+    }
 
-        public string[] SelectFields()
-        {
-            throw new NotSupportedException();
-        }
+    public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+    {
+        throw new NotSupportedException();
+    }
 
-        public ISelector BuildSelector(IMartenSession session)
-        {
-            throw new NotSupportedException();
-        }
+    public Type SelectedType => typeof(T);
 
-        public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, Statement topStatement,
-            Statement currentStatement)
-        {
-            _topStatement = topStatement;
-            return (IQueryHandler<TResult>) this;
-        }
+    public string FromObject { get; }
 
-        public ISelectClause UseStatistics(QueryStatistics statistics)
-        {
-            throw new NotSupportedException("QueryStatistics are not valid with a Count()/CountAsync() query");
-        }
+    public void WriteSelectClause(CommandBuilder sql)
+    {
+        sql.Append("select count(*) as number");
+        sql.Append(" from ");
+        sql.Append(FromObject);
+        sql.Append(" as d");
+    }
 
-        public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
-        {
-            _topStatement.Configure(builder);
-        }
+    public string[] SelectFields()
+    {
+        throw new NotSupportedException();
+    }
 
-        public T Handle(DbDataReader reader, IMartenSession session)
-        {
-            var hasNext = reader.Read();
-            return hasNext && !reader.IsDBNull(0)
-                ? reader.GetFieldValue<T>(0)
-                : default;
-        }
+    public ISelector BuildSelector(IMartenSession session)
+    {
+        throw new NotSupportedException();
+    }
 
-        public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
-        {
-            var hasNext = await reader.ReadAsync(token).ConfigureAwait(false);
-            return hasNext && !await reader.IsDBNullAsync(0, token).ConfigureAwait(false)
-                ? await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false)
-                : default;
-        }
+    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, Statement topStatement,
+        Statement currentStatement)
+    {
+        _topStatement = topStatement;
+        return (IQueryHandler<TResult>)this;
+    }
 
-        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
-        {
-            throw new NotSupportedException();
-        }
+    public ISelectClause UseStatistics(QueryStatistics statistics)
+    {
+        throw new NotSupportedException("QueryStatistics are not valid with a Count()/CountAsync() query");
     }
 }

@@ -1,11 +1,9 @@
 using System.Collections.Generic;
-using Baseline;
 using Marten.Events.Aggregation;
 
-namespace Marten.Events.Projections
+namespace Marten.Events.Projections;
+
+internal interface IGrouper<TId>
 {
-    internal interface IGrouper<TId>
-    {
-        void Apply(IEnumerable<IEvent> events, ITenantSliceGroup<TId> grouping);
-    }
+    void Apply(IEnumerable<IEvent> events, ITenantSliceGroup<TId> grouping);
 }

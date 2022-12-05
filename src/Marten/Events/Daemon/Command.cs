@@ -1,44 +1,43 @@
-namespace Marten.Events.Daemon
+namespace Marten.Events.Daemon;
+
+internal class Command
 {
-    internal class Command
+    internal long HighWaterMark;
+    internal long LastCommitted;
+    internal EventRange Range;
+
+    internal CommandType Type;
+
+    internal static Command Completed(EventRange range)
     {
-        internal EventRange Range;
-        internal long HighWaterMark;
-        internal long LastCommitted;
+        return new Command { Range = range, Type = CommandType.RangeCompleted };
+    }
 
-        internal CommandType Type;
+    internal static Command HighWaterMarkUpdated(long sequence)
+    {
+        return new Command { HighWaterMark = sequence, Type = CommandType.HighWater };
+    }
 
-        internal static Command Completed(EventRange range)
+    internal static Command Started(long highWater, long lastCommitted)
+    {
+        return new Command { HighWaterMark = highWater, LastCommitted = lastCommitted };
+    }
+
+    internal void Apply(ProjectionController controller)
+    {
+        switch (Type)
         {
-            return new Command {Range = range, Type = CommandType.RangeCompleted};
-        }
+            case CommandType.HighWater:
+                controller.MarkHighWater(HighWaterMark);
+                break;
 
-        internal static Command HighWaterMarkUpdated(long sequence)
-        {
-            return new Command {HighWaterMark = sequence, Type = CommandType.HighWater};
-        }
+            case CommandType.RangeCompleted:
+                controller.EventRangeUpdated(Range);
+                break;
 
-        internal static Command Started(long highWater, long lastCommitted)
-        {
-            return new Command {HighWaterMark = highWater, LastCommitted = lastCommitted};
-        }
-
-        internal void Apply(ProjectionController controller)
-        {
-            switch (Type)
-            {
-                case CommandType.HighWater:
-                    controller.MarkHighWater(HighWaterMark);
-                    break;
-
-                case CommandType.RangeCompleted:
-                    controller.EventRangeUpdated(Range);
-                    break;
-
-                case CommandType.Start:
-                    controller.Start(HighWaterMark, LastCommitted);
-                    break;
-            }
+            case CommandType.Start:
+                controller.Start(HighWaterMark, LastCommitted);
+                break;
         }
     }
 }

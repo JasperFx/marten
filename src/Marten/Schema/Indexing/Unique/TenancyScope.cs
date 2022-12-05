@@ -1,16 +1,15 @@
 #nullable enable
-namespace Marten.Schema.Indexing.Unique
-{
-    public enum TenancyScope
-    {
-        /// <summary>
-        /// The uniqueness of this index should be global for all tenants
-        /// </summary>
-        Global,
+namespace Marten.Schema.Indexing.Unique;
 
-        /// <summary>
-        /// The uniqueness of this index should be within one tenant
-        /// </summary>
-        PerTenant
-    }
+public enum TenancyScope
+{
+    /// <summary>
+    ///     The uniqueness of this index should be global for all tenants
+    /// </summary>
+    Global,
+
+    /// <summary>
+    ///     The uniqueness of this index should be within one tenant
+    /// </summary>
+    PerTenant
 }

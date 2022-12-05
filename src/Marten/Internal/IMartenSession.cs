@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -10,89 +11,88 @@ using Marten.Services;
 using Marten.Storage;
 using Npgsql;
 
-#nullable enable
-namespace Marten.Internal
+namespace Marten.Internal;
+
+public interface IMartenSession: IDisposable, IAsyncDisposable
 {
-    public interface IMartenSession: IDisposable, IAsyncDisposable
-    {
-        ISerializer Serializer { get; }
-        Dictionary<Type, object> ItemMap { get; }
-        string TenantId { get; }
-        IMartenDatabase Database {get;}
+    ISerializer Serializer { get; }
+    Dictionary<Type, object> ItemMap { get; }
+    string TenantId { get; }
+    IMartenDatabase Database { get; }
 
-        VersionTracker Versions { get; }
+    VersionTracker Versions { get; }
 
-        StoreOptions Options { get; }
+    StoreOptions Options { get; }
 
-        IList<IChangeTracker> ChangeTrackers { get; }
-        IDocumentStorage StorageFor(Type documentType);
+    IList<IChangeTracker> ChangeTrackers { get; }
+
+    /// <summary>
+    ///     Override whether or not this session honors optimistic concurrency checks
+    /// </summary>
+    ConcurrencyChecks Concurrency { get; }
+
+    /// <summary>
+    ///     Optional metadata describing the causation id for this
+    ///     unit of work
+    /// </summary>
+    string? CausationId { get; set; }
+
+    /// <summary>
+    ///     Optional metadata describing the correlation id for this
+    ///     unit of work
+    /// </summary>
+    string? CorrelationId { get; set; }
+
+    /// <summary>
+    ///     Optional metadata describing the user name or
+    ///     process name for this unit of work
+    /// </summary>
+    string? LastModifiedBy { get; set; }
+
+    /// <summary>
+    ///     Optional metadata values. This may be null.
+    /// </summary>
+    Dictionary<string, object>? Headers { get; }
+
+    IDocumentStorage StorageFor(Type documentType);
 
 
-        void MarkAsAddedForStorage(object id, object document);
+    void MarkAsAddedForStorage(object id, object document);
 
-        void MarkAsDocumentLoaded(object id, object document);
-        IDocumentStorage<T> StorageFor<T>() where T : notnull;
+    void MarkAsDocumentLoaded(object id, object document);
+    IDocumentStorage<T> StorageFor<T>() where T : notnull;
 
-        IEventStorage EventStorage();
+    IEventStorage EventStorage();
 
-        /// <summary>
-        /// Override whether or not this session honors optimistic concurrency checks
-        /// </summary>
-        ConcurrencyChecks Concurrency { get; }
+    string NextTempTableName();
 
-        string NextTempTableName();
+    /// <summary>
+    ///     Execute a single command against the database with this session's connection
+    /// </summary>
+    /// <param name="cmd"></param>
+    /// <returns></returns>
+    int Execute(NpgsqlCommand cmd);
 
-        /// <summary>
-        /// Optional metadata describing the causation id for this
-        /// unit of work
-        /// </summary>
-        string? CausationId { get; set; }
+    /// <summary>
+    ///     Execute a single command against the database with this session's connection
+    /// </summary>
+    /// <param name="command"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new());
 
-        /// <summary>
-        /// Optional metadata describing the correlation id for this
-        /// unit of work
-        /// </summary>
-        string? CorrelationId { get; set; }
+    /// <summary>
+    ///     Execute a single command against the database with this session's connection and return the results
+    /// </summary>
+    /// <param name="command"></param>
+    /// <returns></returns>
+    DbDataReader ExecuteReader(NpgsqlCommand command);
 
-        /// <summary>
-        /// Optional metadata describing the user name or
-        /// process name for this unit of work
-        /// </summary>
-        string? LastModifiedBy { get; set; }
-
-        /// <summary>
-        /// Optional metadata values. This may be null.
-        /// </summary>
-        Dictionary<string, object>? Headers { get; }
-
-        /// <summary>
-        /// Execute a single command against the database with this session's connection
-        /// </summary>
-        /// <param name="cmd"></param>
-        /// <returns></returns>
-        int Execute(NpgsqlCommand cmd);
-
-        /// <summary>
-        /// Execute a single command against the database with this session's connection
-        /// </summary>
-        /// <param name="command"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new CancellationToken());
-
-        /// <summary>
-        /// Execute a single command against the database with this session's connection and return the results
-        /// </summary>
-        /// <param name="command"></param>
-        /// <returns></returns>
-        DbDataReader ExecuteReader(NpgsqlCommand command);
-
-        /// <summary>
-        /// Execute a single command against the database with this session's connection and return the results
-        /// </summary>
-        /// <param name="command"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default);
-    }
+    /// <summary>
+    ///     Execute a single command against the database with this session's connection and return the results
+    /// </summary>
+    /// <param name="command"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default);
 }

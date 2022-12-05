@@ -4,37 +4,36 @@ using System.Reflection;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Parsing.Structure.IntermediateModel;
 
-namespace Marten.Linq.Operators
+namespace Marten.Linq.Operators;
+
+internal class StatsExpressionNode: ResultOperatorExpressionNodeBase
 {
-    internal class StatsExpressionNode: ResultOperatorExpressionNodeBase
+    public static MethodInfo[] SupportedMethods =
+        typeof(IMartenQueryable<>).GetMethods().Where(m => m.Name == nameof(IMartenQueryable<string>.Stats)).ToArray();
+
+    public StatsExpressionNode(
+        MethodCallExpressionParseInfo parseInfo, LambdaExpression stats)
+        : base(parseInfo, null, null)
     {
-        public LambdaExpression Stats { get; set; }
+        Stats = stats;
+    }
 
-        public static MethodInfo[] SupportedMethods =
-            typeof(IMartenQueryable<>).GetMethods().Where(m => m.Name == nameof(IMartenQueryable<string>.Stats)).ToArray();
+    public LambdaExpression Stats { get; set; }
 
-        public StatsExpressionNode(
-            MethodCallExpressionParseInfo parseInfo, LambdaExpression stats)
-            : base(parseInfo, null, null)
-        {
-            Stats = stats;
-        }
+    protected override ResultOperatorBase CreateResultOperator(
+        ClauseGenerationContext clauseGenerationContext)
+    {
+        return new StatsResultOperator(Stats);
+    }
 
-        protected override ResultOperatorBase CreateResultOperator(
-            ClauseGenerationContext clauseGenerationContext)
-        {
-            return new StatsResultOperator(Stats);
-        }
-
-        public override Expression Resolve(
-            ParameterExpression inputParameter,
-            Expression expressionToBeResolved,
-            ClauseGenerationContext clauseGenerationContext)
-        {
-            return Source.Resolve(
-                inputParameter,
-                expressionToBeResolved,
-                clauseGenerationContext);
-        }
+    public override Expression Resolve(
+        ParameterExpression inputParameter,
+        Expression expressionToBeResolved,
+        ClauseGenerationContext clauseGenerationContext)
+    {
+        return Source.Resolve(
+            inputParameter,
+            expressionToBeResolved,
+            clauseGenerationContext);
     }
 }

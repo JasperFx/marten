@@ -2,19 +2,17 @@ using System;
 using Marten.Internal;
 using Marten.Linq.SqlGeneration;
 
-namespace Marten.Linq.Includes
+namespace Marten.Linq.Includes;
+
+internal interface IIncludePlan
 {
-    internal interface IIncludePlan
-    {
-        IIncludeReader BuildReader(IMartenSession session);
+    string IdAlias { get; }
+    string TempTableSelector { get; }
+    int Index { set; }
+    string ExpressionName { get; }
 
-        string IdAlias { get; }
-        string TempTableSelector { get; }
-        bool IsIdCollection();
-        int Index { set; }
-        string ExpressionName { get; }
-        Statement BuildStatement(string tempTableName, IPagedStatement paging);
-
-        Type DocumentType { get; }
-    }
+    Type DocumentType { get; }
+    IIncludeReader BuildReader(IMartenSession session);
+    bool IsIdCollection();
+    Statement BuildStatement(string tempTableName, IPagedStatement paging);
 }

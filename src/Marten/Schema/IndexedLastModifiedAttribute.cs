@@ -1,16 +1,16 @@
-using System;
 #nullable enable
-namespace Marten.Schema
+using System;
+
+namespace Marten.Schema;
+
+/// <summary>
+///     Creates an index on the predefined Last Modified column
+/// </summary>
+[AttributeUsage(AttributeTargets.Class)]
+public class IndexedLastModifiedAttribute: MartenAttribute
 {
-    /// <summary>
-    /// Creates an index on the predefined Last Modified column
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Class)]
-    public class IndexedLastModifiedAttribute: MartenAttribute
+    public override void Modify(DocumentMapping mapping)
     {
-        public override void Modify(DocumentMapping mapping)
-        {
-            mapping.AddLastModifiedIndex();
-        }
+        mapping.AddLastModifiedIndex();
     }
 }

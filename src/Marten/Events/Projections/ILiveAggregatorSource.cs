@@ -1,7 +1,6 @@
-namespace Marten.Events.Projections
+namespace Marten.Events.Projections;
+
+internal interface ILiveAggregatorSource<T>
 {
-    internal interface ILiveAggregatorSource<T>
-    {
-        ILiveAggregator<T> Build(StoreOptions options);
-    }
+    ILiveAggregator<T> Build(StoreOptions options);
 }

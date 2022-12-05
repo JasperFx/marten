@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Baseline;
+using JasperFx.Core;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Linq.Fields;
@@ -14,373 +14,370 @@ using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Linq.Parsing
+namespace Marten.Linq.Parsing;
+
+internal partial class WhereClauseParser: RelinqExpressionVisitor, IWhereFragmentHolder
 {
-
-
-    internal partial class WhereClauseParser : RelinqExpressionVisitor, IWhereFragmentHolder
+    private static readonly IDictionary<ExpressionType, string> _operators = new Dictionary<ExpressionType, string>
     {
-        private static readonly IDictionary<ExpressionType, string> _operators = new Dictionary<ExpressionType, string>
+        { ExpressionType.Equal, "=" },
+        { ExpressionType.NotEqual, "!=" },
+        { ExpressionType.GreaterThan, ">" },
+        { ExpressionType.GreaterThanOrEqual, ">=" },
+        { ExpressionType.LessThan, "<" },
+        { ExpressionType.LessThanOrEqual, "<=" }
+    };
+
+
+    private readonly IMartenSession _session;
+    private readonly Statement _statement;
+    private IWhereFragmentHolder _holder;
+
+    public WhereClauseParser(IMartenSession session, Statement statement)
+    {
+        _session = session;
+        _statement = statement;
+        _holder = this;
+    }
+
+    public ISqlFragment Where { get; private set; }
+    public bool InSubQuery { get; set; }
+
+    void IWhereFragmentHolder.Register(ISqlFragment fragment)
+    {
+        Where = fragment;
+    }
+
+    public ISqlFragment Build(WhereClause clause)
+    {
+        _holder = this;
+        Where = null;
+
+        Visit(clause.Predicate);
+
+        if (Where == null)
         {
-            {ExpressionType.Equal, "="},
-            {ExpressionType.NotEqual, "!="},
-            {ExpressionType.GreaterThan, ">"},
-            {ExpressionType.GreaterThanOrEqual, ">="},
-            {ExpressionType.LessThan, "<"},
-            {ExpressionType.LessThanOrEqual, "<="}
-        };
-
-
-        private readonly IMartenSession _session;
-        private readonly Statement _statement;
-        private IWhereFragmentHolder _holder;
-
-        public WhereClauseParser(IMartenSession session, Statement statement)
-        {
-            _session = session;
-            _statement = statement;
-            _holder = this;
+            throw new BadLinqExpressionException($"Unsupported Where clause: '{clause.Predicate}'");
         }
 
-        public ISqlFragment Build(WhereClause clause)
+        return Where;
+    }
+
+    protected override Expression VisitSubQuery(SubQueryExpression expression)
+    {
+        var parser = new SubQueryFilterParser(this, expression);
+        var where = parser.BuildWhereFragment();
+        _holder.Register(where);
+
+        return null;
+    }
+
+    protected override Expression VisitMethodCall(MethodCallExpression node)
+    {
+        var where = _session.Options.Linq.BuildWhereFragment(_statement.Fields, node, _session.Serializer);
+        _holder.Register(where);
+
+        return null;
+    }
+
+
+    protected override Expression VisitBinary(BinaryExpression node)
+    {
+        if (_operators.TryGetValue(node.NodeType, out var op))
         {
-            _holder = this;
-            Where = null;
-
-            Visit(clause.Predicate);
-
-            if (Where == null)
-            {
-                throw new BadLinqExpressionException($"Unsupported Where clause: '{clause.Predicate}'");
-            }
-
-            return Where;
-        }
-
-        public ISqlFragment Where { get; private set; }
-        public bool InSubQuery { get; set; }
-
-        void IWhereFragmentHolder.Register(ISqlFragment fragment)
-        {
-            Where = fragment;
-        }
-
-        protected override Expression VisitSubQuery(SubQueryExpression expression)
-        {
-            var parser = new SubQueryFilterParser(this, expression);
-            var where = parser.BuildWhereFragment();
-            _holder.Register(where);
+            var binary = new BinaryExpressionVisitor(this);
+            _holder.Register(binary.BuildWhereFragment(node, op));
 
             return null;
         }
 
-        protected override Expression VisitMethodCall(MethodCallExpression node)
+        switch (node.NodeType)
         {
-            var where = _session.Options.Linq.BuildWhereFragment(_statement.Fields, node, _session.Serializer);
-            _holder.Register(where);
+            case ExpressionType.AndAlso:
+                buildCompoundWhereFragment(node, "and");
+                break;
 
-            return null;
+            case ExpressionType.OrElse:
+                buildCompoundWhereFragment(node, "or");
+                break;
+
+            default:
+                throw new BadLinqExpressionException(
+                    $"Unsupported expression type '{node.NodeType}' in binary expression");
         }
 
 
-        protected override Expression VisitBinary(BinaryExpression node)
-        {
-            if (_operators.TryGetValue(node.NodeType, out var op))
-            {
-                var binary = new BinaryExpressionVisitor(this);
-                _holder.Register(binary.BuildWhereFragment(node, op));
+        return null;
+    }
 
-                return null;
-            }
+    private void buildCompoundWhereFragment(BinaryExpression node, string separator)
+    {
+        var original = _holder;
 
-            switch (node.NodeType)
-            {
-                case ExpressionType.AndAlso:
-                    buildCompoundWhereFragment(node, "and");
-                    break;
+        var compound = CompoundWhereFragment.For(separator);
+        _holder.Register(compound);
 
-                case ExpressionType.OrElse:
-                    buildCompoundWhereFragment(node, "or");
-                    break;
+        _holder = compound;
 
-                default:
-                    throw new BadLinqExpressionException($"Unsupported expression type '{node.NodeType}' in binary expression");
-            }
+        Visit(node.Left);
 
+        _holder = compound;
 
-            return null;
-        }
+        Visit(node.Right);
 
-        private void buildCompoundWhereFragment(BinaryExpression node, string separator)
+        _holder = original;
+    }
+
+    protected override Expression VisitUnary(UnaryExpression node)
+    {
+        if (node.NodeType == ExpressionType.Not)
         {
             var original = _holder;
 
-            var compound =  CompoundWhereFragment.For(separator);
-            _holder.Register(compound);
+            if (original is IReversibleWhereFragment r)
+            {
+                _holder.Register(r.Reverse());
+                return Visit(node.Operand);
+            }
 
-            _holder = compound;
-
-            Visit(node.Left);
-
-            _holder = compound;
-
-            Visit(node.Right);
+            _holder = new NotWhereFragment(original);
+            var returnValue = Visit(node.Operand);
 
             _holder = original;
+
+            return returnValue;
         }
 
-        protected override Expression VisitUnary(UnaryExpression node)
+        return base.VisitUnary(node);
+    }
+
+    protected override Expression VisitMember(MemberExpression node)
+    {
+        if (node.Type == typeof(bool))
         {
-            if (node.NodeType == ExpressionType.Not)
+            var field = _statement.Fields.FieldFor(node);
+            _holder.Register(new BooleanFieldIsTrue(field));
+            return null;
+        }
+
+        return base.VisitMember(node);
+    }
+
+    protected override Expression VisitConstant(ConstantExpression node)
+    {
+        if (node.Type == typeof(bool))
+        {
+            if (InSubQuery)
             {
-                var original = _holder;
-
-                if (original is IReversibleWhereFragment r)
-                {
-                    _holder.Register(r.Reverse());
-                    return Visit(node.Operand);
-                }
-                else
-                {
-                    _holder = new NotWhereFragment(original);
-                    var returnValue = Visit(node.Operand);
-
-                    _holder = original;
-
-                    return returnValue;
-                }
-
-
-
-
+                throw new BadLinqExpressionException("Unsupported Where() clause in a sub-collection expression");
             }
 
-            return base.VisitUnary(node);
+            _holder.Register(new WhereFragment(node.Value.ToString().ToLower()));
         }
 
-        protected override Expression VisitMember(MemberExpression node)
-        {
-            if (node.Type == typeof(bool))
-            {
-                var field = _statement.Fields.FieldFor(node);
-                _holder.Register(new BooleanFieldIsTrue(field));
-                return null;
-            }
-
-            return base.VisitMember(node);
-        }
-
-        protected override Expression VisitConstant(ConstantExpression node)
-        {
-            if ((node.Type == typeof(bool)))
-            {
-                if (InSubQuery)
-                {
-                    throw new BadLinqExpressionException("Unsupported Where() clause in a sub-collection expression");
-                }
-
-                _holder.Register(new WhereFragment(node.Value.ToString().ToLower()));
-            }
-
-            return base.VisitConstant(node);
-        }
+        return base.VisitConstant(node);
+    }
 
 
-        internal enum SubQueryUsage
-        {
-            Any,
-            Count,
-            Contains,
-            Intersect,
-            All,
-        }
+    internal enum SubQueryUsage
+    {
+        Any,
+        Count,
+        Contains,
+        Intersect,
+        All
+    }
 
-        internal class SubQueryFilterParser : RelinqExpressionVisitor
-        {
-            private readonly WhereClauseParser _parent;
-            private readonly SubQueryExpression _expression;
+    internal class SubQueryFilterParser: RelinqExpressionVisitor
+    {
+        private readonly Expression _contains;
+        private readonly SubQueryExpression _expression;
+        private readonly WhereClauseParser _parent;
+        private readonly WhereClause[] _wheres;
 #pragma warning disable 414
-            private bool _isDistinct;
+        private bool _isDistinct;
 #pragma warning restore 414
-            private readonly WhereClause[] _wheres;
-            private readonly Expression _contains;
 
-            public SubQueryFilterParser(WhereClauseParser parent, SubQueryExpression expression)
+        public SubQueryFilterParser(WhereClauseParser parent, SubQueryExpression expression)
+        {
+            _parent = parent;
+            _expression = expression;
+
+            foreach (var @operator in expression.QueryModel.ResultOperators)
             {
-                _parent = parent;
-                _expression = expression;
-
-                foreach (var @operator in expression.QueryModel.ResultOperators)
+                switch (@operator)
                 {
-                    switch (@operator)
-                    {
-                        case AnyResultOperator _:
-                            Usage = SubQueryUsage.Any;
-                            break;
+                    case AnyResultOperator _:
+                        Usage = SubQueryUsage.Any;
+                        break;
 
-                        case AllResultOperator _:
-                            Usage = SubQueryUsage.All;
-                            break;
+                    case AllResultOperator _:
+                        Usage = SubQueryUsage.All;
+                        break;
 
-                        case CountResultOperator _:
-                            Usage = SubQueryUsage.Count;
-                            break;
+                    case CountResultOperator _:
+                        Usage = SubQueryUsage.Count;
+                        break;
 
-                        case LongCountResultOperator _:
-                            Usage = SubQueryUsage.Count;
-                            break;
+                    case LongCountResultOperator _:
+                        Usage = SubQueryUsage.Count;
+                        break;
 
-                        case DistinctResultOperator _:
-                            _isDistinct = true;
-                            break;
+                    case DistinctResultOperator _:
+                        _isDistinct = true;
+                        break;
 
-                        case ContainsResultOperator op:
-                            Usage = op.Item is QuerySourceReferenceExpression
-                                ? SubQueryUsage.Intersect
-                                : SubQueryUsage.Contains;
+                    case ContainsResultOperator op:
+                        Usage = op.Item is QuerySourceReferenceExpression
+                            ? SubQueryUsage.Intersect
+                            : SubQueryUsage.Contains;
 
-                            _contains = op.Item;
-                            break;
-
-                        default:
-                            throw new BadLinqExpressionException($"Invalid result operator {@operator} in sub query '{expression}'");
-                    }
-                }
-
-                if (Usage == SubQueryUsage.All)
-                {
-                    _wheres = expression.QueryModel.ResultOperators.OfType<AllResultOperator>()
-                        .Select(o => new WhereClause(o.Predicate))
-                        .ToArray();
-                }
-                else
-                {
-                    _wheres = expression.QueryModel.BodyClauses.OfType<WhereClause>().ToArray();
-                }
-            }
-
-            public SubQueryUsage Usage { get;  }
-
-            public ISqlFragment BuildWhereFragment()
-            {
-                switch (Usage)
-                {
-                    case SubQueryUsage.Any:
-                        return buildWhereForAny(findArrayField());
-
-                    case SubQueryUsage.All:
-                        var arrayField = findArrayField();
-                        return BuildWhereForAll(arrayField);
-
-                    case SubQueryUsage.Contains:
-                        return buildWhereForContains(findArrayField());
-
-                    case SubQueryUsage.Intersect:
-                        return new WhereInArrayFilter("data", (ConstantExpression)_expression.QueryModel.MainFromClause.FromExpression);
+                        _contains = op.Item;
+                        break;
 
                     default:
-                        throw new NotSupportedException();
+                        throw new BadLinqExpressionException(
+                            $"Invalid result operator {@operator} in sub query '{expression}'");
                 }
             }
 
-            private ArrayField findArrayField()
+            if (Usage == SubQueryUsage.All)
             {
-                ArrayField field;
-                try
+                _wheres = expression.QueryModel.ResultOperators.OfType<AllResultOperator>()
+                    .Select(o => new WhereClause(o.Predicate))
+                    .ToArray();
+            }
+            else
+            {
+                _wheres = expression.QueryModel.BodyClauses.OfType<WhereClause>().ToArray();
+            }
+        }
+
+        public SubQueryUsage Usage { get; }
+
+        public ISqlFragment BuildWhereFragment()
+        {
+            switch (Usage)
+            {
+                case SubQueryUsage.Any:
+                    return buildWhereForAny(findArrayField());
+
+                case SubQueryUsage.All:
+                    var arrayField = findArrayField();
+                    return BuildWhereForAll(arrayField);
+
+                case SubQueryUsage.Contains:
+                    return buildWhereForContains(findArrayField());
+
+                case SubQueryUsage.Intersect:
+                    return new WhereInArrayFilter("data",
+                        (ConstantExpression)_expression.QueryModel.MainFromClause.FromExpression);
+
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
+        private ArrayField findArrayField()
+        {
+            ArrayField field;
+            try
+            {
+                var fetchedField =
+                    _parent._statement.Fields.FieldFor(_expression.QueryModel.MainFromClause.FromExpression);
+
+                if (fetchedField is DuplicatedField duplicatedField)
                 {
-                    var fetchedField = _parent._statement.Fields.FieldFor(_expression.QueryModel.MainFromClause.FromExpression);
-
-                    if (fetchedField is DuplicatedField duplicatedField)
-                    {
-                        fetchedField = duplicatedField.InnerField;
-                    }
-
-                    field = (ArrayField) fetchedField;
-                }
-                catch (Exception e)
-                {
-                    throw new BadLinqExpressionException("The sub query is not sourced from a supported collection type", e);
+                    fetchedField = duplicatedField.InnerField;
                 }
 
-                return field;
+                field = (ArrayField)fetchedField;
+            }
+            catch (Exception e)
+            {
+                throw new BadLinqExpressionException("The sub query is not sourced from a supported collection type",
+                    e);
             }
 
-            private ISqlFragment buildWhereForContains(ArrayField field)
-            {
-                if (_contains is ConstantExpression c)
-                {
-                    var flattened = new SubQueryStatement(field.LocatorForFlattenedElements, _parent._session, _parent._statement);
-                    var idSelectorStatement = new ContainsIdSelectorStatement(flattened, _parent._session, c);
-                    return new WhereCtIdInSubQuery(idSelectorStatement.ExportName, flattened);
-                }
+            return field;
+        }
 
-                throw new NotSupportedException();
+        private ISqlFragment buildWhereForContains(ArrayField field)
+        {
+            if (_contains is ConstantExpression c)
+            {
+                var flattened = new SubQueryStatement(field.LocatorForFlattenedElements, _parent._session,
+                    _parent._statement);
+                var idSelectorStatement = new ContainsIdSelectorStatement(flattened, _parent._session, c);
+                return new WhereCtIdInSubQuery(idSelectorStatement.ExportName, flattened);
             }
 
-            private ISqlFragment buildWhereForAny(ArrayField field)
+            throw new NotSupportedException();
+        }
+
+        private ISqlFragment buildWhereForAny(ArrayField field)
+        {
+            if (_wheres.Any())
             {
-                if (_wheres.Any())
-                {
-                    var flattened = new SubQueryStatement(field.LocatorForFlattenedElements, _parent._session, _parent._statement);
+                var flattened = new SubQueryStatement(field.LocatorForFlattenedElements, _parent._session,
+                    _parent._statement);
 
 
-                    var itemType = _expression.QueryModel.MainFromClause.ItemType;
-                    var elementFields =
-                        _parent._session.Options.ChildTypeMappingFor(itemType);
-
-                    var idSelectorStatement = new IdSelectorStatement(_parent._session, elementFields, flattened);
-                    idSelectorStatement.WhereClauses.AddRange(_wheres);
-                    idSelectorStatement.CompileLocal(_parent._session);
-
-                    return new WhereCtIdInSubQuery(idSelectorStatement.ExportName, flattened);
-                }
-
-                return new CollectionIsNotEmpty(field);
-            }
-
-            private ISqlFragment BuildWhereForAll(ArrayField field)
-            {
-                if (!_wheres.Any())
-                {
-                    return new CollectionIsNotEmpty(field);
-                }
-
-                var subQueryStatement = new SubQueryStatement(field.LocatorForElements, _parent._session, _parent._statement);
                 var itemType = _expression.QueryModel.MainFromClause.ItemType;
                 var elementFields =
                     _parent._session.Options.ChildTypeMappingFor(itemType);
-                var allIdSelectorStatement = new AllIdSelectorStatement(_parent._session, elementFields, subQueryStatement);
 
-                allIdSelectorStatement.WhereClauses.AddRange(_wheres);
-                allIdSelectorStatement.CompileLocal(_parent._session);
+                var idSelectorStatement = new IdSelectorStatement(_parent._session, elementFields, flattened);
+                idSelectorStatement.WhereClauses.AddRange(_wheres);
+                idSelectorStatement.CompileLocal(_parent._session);
 
-                return new WhereCtIdInSubQuery(allIdSelectorStatement.ExportName, subQueryStatement);
+                return new WhereCtIdInSubQuery(idSelectorStatement.ExportName, flattened);
             }
 
-            public CountComparisonStatement BuildCountComparisonStatement()
-            {
-                if (Usage != SubQueryUsage.Count)
-                {
-                    throw new BadLinqExpressionException("Invalid comparison");
-                }
-
-                var field = findArrayField();
-                var flattened = new SubQueryStatement(field.LocatorForFlattenedElements, _parent._session, _parent._statement);
-
-                var elementFields =
-                    _parent._session.Options.ChildTypeMappingFor(field.ElementType);
-                var statement = new CountComparisonStatement(_parent._session, field.ElementType, elementFields, flattened);
-                if (_wheres.Any())
-                {
-                    statement.WhereClauses.AddRange(_wheres);
-                    statement.CompileLocal(_parent._session);
-                }
-
-                return statement;
-            }
-
+            return new CollectionIsNotEmpty(field);
         }
 
+        private ISqlFragment BuildWhereForAll(ArrayField field)
+        {
+            if (!_wheres.Any())
+            {
+                return new CollectionIsNotEmpty(field);
+            }
 
+            var subQueryStatement =
+                new SubQueryStatement(field.LocatorForElements, _parent._session, _parent._statement);
+            var itemType = _expression.QueryModel.MainFromClause.ItemType;
+            var elementFields =
+                _parent._session.Options.ChildTypeMappingFor(itemType);
+            var allIdSelectorStatement = new AllIdSelectorStatement(_parent._session, elementFields, subQueryStatement);
+
+            allIdSelectorStatement.WhereClauses.AddRange(_wheres);
+            allIdSelectorStatement.CompileLocal(_parent._session);
+
+            return new WhereCtIdInSubQuery(allIdSelectorStatement.ExportName, subQueryStatement);
+        }
+
+        public CountComparisonStatement BuildCountComparisonStatement()
+        {
+            if (Usage != SubQueryUsage.Count)
+            {
+                throw new BadLinqExpressionException("Invalid comparison");
+            }
+
+            var field = findArrayField();
+            var flattened =
+                new SubQueryStatement(field.LocatorForFlattenedElements, _parent._session, _parent._statement);
+
+            var elementFields =
+                _parent._session.Options.ChildTypeMappingFor(field.ElementType);
+            var statement = new CountComparisonStatement(_parent._session, field.ElementType, elementFields, flattened);
+            if (_wheres.Any())
+            {
+                statement.WhereClauses.AddRange(_wheres);
+                statement.CompileLocal(_parent._session);
+            }
+
+            return statement;
+        }
     }
 }

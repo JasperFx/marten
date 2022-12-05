@@ -1,42 +1,41 @@
 using Marten.Internal.Operations;
 using Newtonsoft.Json.Linq;
 
-namespace Marten.Internal.DirtyTracking
+namespace Marten.Internal.DirtyTracking;
+
+public class ChangeTracker<T>: IChangeTracker
 {
-    public class ChangeTracker<T>: IChangeTracker
+    private readonly T _document;
+    private string _json;
+
+    public ChangeTracker(IMartenSession session, T document)
     {
-        private string _json;
-        private readonly T _document;
+        _document = document;
+        _json = session.Serializer.ToCleanJson(document);
+    }
 
-        public ChangeTracker(IMartenSession session, T document)
+    public object Document => _document;
+
+    public bool DetectChanges(IMartenSession session, out IStorageOperation operation)
+    {
+        var newJson = session.Serializer.ToCleanJson(_document);
+        if (JToken.DeepEquals(JObject.Parse(_json), JObject.Parse(newJson)))
         {
-            _document = document;
-            _json = session.Serializer.ToCleanJson(document);
+            operation = null;
+            return false;
         }
 
-        public object Document => _document;
+        operation = session
+            .Database
+            .Providers.StorageFor<T>()
+            .DirtyTracking
+            .Upsert(_document, session, session.TenantId);
 
-        public bool DetectChanges(IMartenSession session, out IStorageOperation operation)
-        {
-            var newJson = session.Serializer.ToCleanJson(_document);
-            if (JToken.DeepEquals(JObject.Parse(_json), JObject.Parse(newJson)))
-            {
-                operation = null;
-                return false;
-            }
+        return true;
+    }
 
-            operation = session
-                .Database
-                .Providers.StorageFor<T>()
-                .DirtyTracking
-                .Upsert(_document, session, session.TenantId);
-
-            return true;
-        }
-
-        public void Reset(IMartenSession session)
-        {
-            _json = session.Serializer.ToCleanJson(_document);
-        }
+    public void Reset(IMartenSession session)
+    {
+        _json = session.Serializer.ToCleanJson(_document);
     }
 }

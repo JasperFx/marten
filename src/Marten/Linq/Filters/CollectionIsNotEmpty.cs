@@ -1,37 +1,34 @@
 using Marten.Linq.Fields;
-using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
-using Marten.Util;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Linq.Filters
+namespace Marten.Linq.Filters;
+
+internal class CollectionIsNotEmpty: IReversibleWhereFragment
 {
-    internal class CollectionIsNotEmpty: IReversibleWhereFragment
+    private readonly ArrayField _field;
+
+    public CollectionIsNotEmpty(ArrayField field)
     {
-        private readonly ArrayField _field;
+        _field = field;
+    }
 
-        public CollectionIsNotEmpty(ArrayField field)
-        {
-            _field = field;
-        }
+    public void Apply(CommandBuilder builder)
+    {
+        builder.Append("(");
+        builder.Append(_field.RawLocator);
+        builder.Append(" is not null and jsonb_array_length(");
+        builder.Append(_field.RawLocator);
+        builder.Append(") > 0)");
+    }
 
-        public void Apply(CommandBuilder builder)
-        {
-            builder.Append("(");
-            builder.Append(_field.RawLocator);
-            builder.Append(" is not null and jsonb_array_length(");
-            builder.Append(_field.RawLocator);
-            builder.Append(") > 0)");
-        }
+    public bool Contains(string sqlText)
+    {
+        return false;
+    }
 
-        public bool Contains(string sqlText)
-        {
-            return false;
-        }
-
-        public ISqlFragment Reverse()
-        {
-            return new CollectionIsEmpty(_field);
-        }
+    public ISqlFragment Reverse()
+    {
+        return new CollectionIsEmpty(_field);
     }
 }

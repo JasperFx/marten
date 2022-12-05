@@ -6,61 +6,59 @@ using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Linq.QueryHandlers;
 using Weasel.Postgresql;
-using Marten.Util;
 
-namespace Marten.Linq.Includes
+namespace Marten.Linq.Includes;
+
+internal interface IIncludeQueryHandler<T>
 {
-    internal interface IIncludeQueryHandler<T>
+    IQueryHandler<T> Inner { get; }
+}
+
+/// <summary>
+///     Used internally to process Include() operations
+///     in the Linq support
+/// </summary>
+public class IncludeQueryHandler<T>: IQueryHandler<T>, IIncludeQueryHandler<T>
+{
+    private readonly IIncludeReader[] _readers;
+
+    public IncludeQueryHandler(IQueryHandler<T> inner, IIncludeReader[] readers)
     {
-        IQueryHandler<T> Inner { get; }
+        Inner = inner;
+        _readers = readers;
     }
 
-    /// <summary>
-    /// Used internally to process Include() operations
-    /// in the Linq support
-    /// </summary>
-    public class IncludeQueryHandler<T>: IQueryHandler<T>, IIncludeQueryHandler<T>
+    public IQueryHandler<T> Inner { get; }
+
+    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
     {
-        private readonly IIncludeReader[] _readers;
+        Inner.ConfigureCommand(builder, session);
+    }
 
-        public IncludeQueryHandler(IQueryHandler<T> inner, IIncludeReader[] readers)
+    public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+    {
+        throw new NotSupportedException("JSON streaming is not supported in combination with Include() operations");
+    }
+
+    public T Handle(DbDataReader reader, IMartenSession session)
+    {
+        foreach (var includeReader in _readers)
         {
-            Inner = inner;
-            _readers = readers;
+            includeReader.Read(reader);
+            reader.NextResult();
         }
 
-        public IQueryHandler<T> Inner { get; }
+        return Inner.Handle(reader, session);
+    }
 
-        public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+    {
+        foreach (var includeReader in _readers)
         {
-            Inner.ConfigureCommand(builder, session);
+            await includeReader.ReadAsync(reader, token).ConfigureAwait(false);
+            await reader.NextResultAsync(token).ConfigureAwait(false);
         }
 
-        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
-        {
-            throw new NotSupportedException("JSON streaming is not supported in combination with Include() operations");
-        }
-
-        public T Handle(DbDataReader reader, IMartenSession session)
-        {
-            foreach (var includeReader in _readers)
-            {
-                includeReader.Read(reader);
-                reader.NextResult();
-            }
-
-            return Inner.Handle(reader, session);
-        }
-
-        public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
-        {
-            foreach (var includeReader in _readers)
-            {
-                await includeReader.ReadAsync(reader, token).ConfigureAwait(false);
-                await reader.NextResultAsync(token).ConfigureAwait(false);
-            }
-
-            return await Inner.HandleAsync(reader, session, token).ConfigureAwait(false);
-        }
+        return await Inner.HandleAsync(reader, session, token).ConfigureAwait(false);
     }
 }

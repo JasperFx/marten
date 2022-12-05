@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
+using JasperFx.Core;
 using Marten.Testing.Harness;
 using Weasel.Core;
 using Weasel.Postgresql;

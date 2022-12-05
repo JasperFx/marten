@@ -1,103 +1,103 @@
+#nullable enable
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-#nullable enable
-namespace Marten.Events.Daemon
+
+namespace Marten.Events.Daemon;
+
+/// <summary>
+///     Starts, stops, and manages any running asynchronous projections
+/// </summary>
+public interface IProjectionDaemon: IDisposable
 {
     /// <summary>
-    /// Starts, stops, and manages any running asynchronous projections
+    ///     Observable tracking of projection shard events
     /// </summary>
-    public interface IProjectionDaemon : IDisposable
-    {
-        /// <summary>
-        /// Rebuilds a single projection by projection name inline.
-        /// Will timeout if a shard takes longer than 5 minutes.
-        /// </summary>
-        /// <param name="projectionName"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        Task RebuildProjection(string projectionName, CancellationToken token);
+    ShardStateTracker Tracker { get; }
+
+    /// <summary>
+    ///     Rebuilds a single projection by projection name inline.
+    ///     Will timeout if a shard takes longer than 5 minutes.
+    /// </summary>
+    /// <param name="projectionName"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task RebuildProjection(string projectionName, CancellationToken token);
 
 
-        /// <summary>
-        /// Rebuilds a single projection by projection type inline.
-        /// Will timeout if a shard takes longer than 5 minutes.
-        /// </summary>
-        /// <typeparam name="TView">Projection view type</typeparam>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        Task RebuildProjection<TView>(CancellationToken token);
+    /// <summary>
+    ///     Rebuilds a single projection by projection type inline.
+    ///     Will timeout if a shard takes longer than 5 minutes.
+    /// </summary>
+    /// <typeparam name="TView">Projection view type</typeparam>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task RebuildProjection<TView>(CancellationToken token);
 
-        /// <summary>
-        /// Rebuilds a single projection by projection name inline
-        /// </summary>
-        /// <param name="projectionName"></param>
-        /// <param name="shardTimeout"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        Task RebuildProjection(string projectionName, TimeSpan shardTimeout, CancellationToken token);
-
-
-        /// <summary>
-        /// Rebuilds a single projection by projection type inline
-        /// </summary>
-        /// <typeparam name="TView">Projection view type</typeparam>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        Task RebuildProjection<TView>(TimeSpan shardTimeout, CancellationToken token);
-
-        /// <summary>
-        /// Starts a single projection shard by name
-        /// </summary>
-        /// <param name="shardName"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        Task StartShard(string shardName, CancellationToken token);
-
-        /// <summary>
-        /// Stops a single projection shard by name
-        /// </summary>
-        /// <param name="shardName"></param>
-        /// <param name="ex"></param>
-        /// <returns></returns>
-        Task StopShard(string shardName, Exception? ex = null);
-
-        /// <summary>
-        /// Starts all known projections shards
-        /// </summary>
-        /// <returns></returns>
-        Task StartAllShards();
-
-        /// <summary>
-        /// Stops all known projection shards
-        /// </summary>
-        /// <returns></returns>
-        Task StopAll();
-
-        /// <summary>
-        /// Observable tracking of projection shard events
-        /// </summary>
-        ShardStateTracker Tracker { get; }
-
-        /// <summary>
-        /// Starts the daemon high water detection. This is called
-        /// automatically by any of the Start***() or Rebuild****()
-        /// methods
-        /// </summary>
-        /// <returns></returns>
-        Task StartDaemon();
+    /// <summary>
+    ///     Rebuilds a single projection by projection name inline
+    /// </summary>
+    /// <param name="projectionName"></param>
+    /// <param name="shardTimeout"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task RebuildProjection(string projectionName, TimeSpan shardTimeout, CancellationToken token);
 
 
-        /// <summary>
-        /// Use with caution! This will try to wait for all projections to "catch up" to the currently
-        /// known farthest known sequence of the event store
-        /// </summary>
-        /// <param name="timeout"></param>
-        /// <returns></returns>
-        Task WaitForNonStaleData(TimeSpan timeout);
+    /// <summary>
+    ///     Rebuilds a single projection by projection type inline
+    /// </summary>
+    /// <typeparam name="TView">Projection view type</typeparam>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task RebuildProjection<TView>(TimeSpan shardTimeout, CancellationToken token);
 
-        Task PauseHighWaterAgent();
+    /// <summary>
+    ///     Starts a single projection shard by name
+    /// </summary>
+    /// <param name="shardName"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task StartShard(string shardName, CancellationToken token);
 
-        long HighWaterMark();
-    }
+    /// <summary>
+    ///     Stops a single projection shard by name
+    /// </summary>
+    /// <param name="shardName"></param>
+    /// <param name="ex"></param>
+    /// <returns></returns>
+    Task StopShard(string shardName, Exception? ex = null);
+
+    /// <summary>
+    ///     Starts all known projections shards
+    /// </summary>
+    /// <returns></returns>
+    Task StartAllShards();
+
+    /// <summary>
+    ///     Stops all known projection shards
+    /// </summary>
+    /// <returns></returns>
+    Task StopAll();
+
+    /// <summary>
+    ///     Starts the daemon high water detection. This is called
+    ///     automatically by any of the Start***() or Rebuild****()
+    ///     methods
+    /// </summary>
+    /// <returns></returns>
+    Task StartDaemon();
+
+
+    /// <summary>
+    ///     Use with caution! This will try to wait for all projections to "catch up" to the currently
+    ///     known farthest known sequence of the event store
+    /// </summary>
+    /// <param name="timeout"></param>
+    /// <returns></returns>
+    Task WaitForNonStaleData(TimeSpan timeout);
+
+    Task PauseHighWaterAgent();
+
+    long HighWaterMark();
 }

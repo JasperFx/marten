@@ -9,14 +9,14 @@ implements the traditional [IQueryable](https://msdn.microsoft.com/en-us/library
 <a id='snippet-sample_querying_with_linq'></a>
 ```cs
 /// <summary>
-/// Use Linq operators to query the documents
-/// stored in Postgresql
+///     Use Linq operators to query the documents
+///     stored in Postgresql
 /// </summary>
 /// <typeparam name="T"></typeparam>
 /// <returns></returns>
 IMartenQueryable<T> Query<T>();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IQuerySession.cs#L92-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_with_linq' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IQuerySession.cs#L136-L146' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_with_linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To query for all documents of a type - not that you would do this very often outside of testing - use the `Query<T>()` method like this:

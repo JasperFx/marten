@@ -1,122 +1,123 @@
 using System;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
-using Baseline;
-using LamarCodeGeneration;
-using LamarCodeGeneration.Frames;
-using LamarCodeGeneration.Model;
+using JasperFx.CodeGeneration;
+using JasperFx.CodeGeneration.Frames;
+using JasperFx.CodeGeneration.Model;
+using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Internal.CodeGeneration;
-using Marten.Services;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
 
-namespace Marten.Schema.Arguments
+namespace Marten.Schema.Arguments;
+
+// Public for code generation, just let it go.
+public class UpsertArgument
 {
-    // Public for code generation, just let it go.
-    public class UpsertArgument
+    protected static readonly MethodInfo writeMethod =
+        typeof(NpgsqlBinaryImporter).GetMethods().FirstOrDefault(x =>
+            x.Name == "Write" && x.GetParameters().Length == 2 &&
+            x.GetParameters()[0].ParameterType.IsGenericParameter &&
+            x.GetParameters()[1].ParameterType == typeof(NpgsqlDbType));
+
+    private MemberInfo[] _members;
+    private string _postgresType;
+    public string Arg { get; set; }
+
+    public string PostgresType
     {
-        protected static readonly MethodInfo writeMethod =
-            typeof(NpgsqlBinaryImporter).GetMethods().FirstOrDefault(x => x.Name == "Write" && x.GetParameters().Length == 2 && x.GetParameters()[0].ParameterType.IsGenericParameter && x.GetParameters()[1].ParameterType == typeof(NpgsqlTypes.NpgsqlDbType));
-
-        private MemberInfo[] _members;
-        private string _postgresType;
-        public string Arg { get; set; }
-
-        public string PostgresType
+        get => _postgresType;
+        set
         {
-            get => _postgresType;
-            set
+            if (value == null)
             {
-                if (value == null)
-                {
-                    throw new ArgumentNullException();
-                }
-
-                _postgresType = value.Contains("(")
-                    ? value.Split('(')[0].Trim()
-                    : value;
+                throw new ArgumentNullException();
             }
+
+            _postgresType = value.Contains("(")
+                ? value.Split('(')[0].Trim()
+                : value;
         }
+    }
 
-        public string Column { get; set; }
+    public string Column { get; set; }
 
-        public MemberInfo[] Members
+    public MemberInfo[] Members
+    {
+        get => _members;
+        set
         {
-            get => _members;
-            set
+            _members = value;
+            if (value != null)
             {
-                _members = value;
-                if (value != null)
+                DbType = PostgresqlProvider.Instance.ToParameterType(value.Last().GetMemberType());
+
+
+                if (_members.Length == 1)
                 {
-                    DbType = PostgresqlProvider.Instance.ToParameterType(value.Last().GetMemberType());
-
-
-                    if (_members.Length == 1)
+                    DotNetType = _members.Last().GetRawMemberType();
+                }
+                else
+                {
+                    var rawType = _members.LastOrDefault().GetRawMemberType();
+                    if (!rawType.IsClass && !rawType.IsNullable())
                     {
-                        DotNetType = _members.Last().GetRawMemberType();
+                        DotNetType = typeof(Nullable<>).MakeGenericType(rawType);
                     }
                     else
                     {
-                        var rawType = _members.LastOrDefault().GetRawMemberType();
-                        if (!rawType.IsClass && !rawType.IsNullable())
-                        {
-                            DotNetType = typeof(Nullable<>).MakeGenericType(rawType);
-                        }
-                        else
-                        {
-                            DotNetType = rawType;
-                        }
+                        DotNetType = rawType;
                     }
                 }
-
-
             }
         }
+    }
 
-        public Type DotNetType { get; private set; }
+    public Type DotNetType { get; private set; }
 
-        public NpgsqlDbType DbType { get; set; }
+    public NpgsqlDbType DbType { get; set; }
 
-        public string ArgumentDeclaration()
+    public string ArgumentDeclaration()
+    {
+        return $"{Arg} {PostgresType}";
+    }
+
+    public virtual void GenerateCodeToModifyDocument(GeneratedMethod method, GeneratedType type, int i,
+        Argument parameters,
+        DocumentMapping mapping, StoreOptions options)
+    {
+        // Nothing
+    }
+
+    public virtual void GenerateCodeToSetDbParameterValue(GeneratedMethod method, GeneratedType type, int i,
+        Argument parameters,
+        DocumentMapping mapping, StoreOptions options)
+    {
+        var memberPath = _members.Select(x => x.Name).Join("?.");
+
+        if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
         {
-            return $"{Arg} {PostgresType}";
+            writeEnumerationValues(method, i, parameters, options, memberPath);
         }
-
-        public virtual void GenerateCodeToModifyDocument(GeneratedMethod method, GeneratedType type, int i,
-            Argument parameters,
-            DocumentMapping mapping, StoreOptions options)
+        else
         {
-            // Nothing
-        }
+            var rawMemberType = _members.Last().GetRawMemberType();
 
-        public virtual void GenerateCodeToSetDbParameterValue(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
-            DocumentMapping mapping, StoreOptions options)
-        {
-            var memberPath = _members.Select(x => x.Name).Join("?.");
 
-            if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
+            var dbTypeString = rawMemberType.IsArray
+                ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
+                : Constant.ForEnum(DbType).Usage;
+
+            method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {dbTypeString};");
+
+            if (rawMemberType.IsClass || rawMemberType.IsNullable() || _members.Length > 1)
             {
-                writeEnumerationValues(method, i, parameters, options, memberPath);
-            }
-            else
-            {
-                var rawMemberType = _members.Last().GetRawMemberType();
-
-
-                var dbTypeString = rawMemberType.IsArray
-                    ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
-                    : Constant.ForEnum(DbType).Usage;
-
-                method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {dbTypeString};");
-
-                if (rawMemberType.IsClass || rawMemberType.IsNullable() || _members.Length > 1)
-                {
-                    method.Frames.Code($@"
+                method.Frames.Code($@"
 BLOCK:if (document.{memberPath} != null)
 {parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = document.{memberPath};
 END
@@ -124,165 +125,166 @@ BLOCK:else
 {parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = {typeof(DBNull).FullNameInCode()}.{nameof(DBNull.Value)};
 END
 ");
-
-                }
-                else
-                {
-                    method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = document.{memberPath};");
-                }
+            }
+            else
+            {
+                method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = document.{memberPath};");
             }
         }
+    }
 
-        private void writeEnumerationValues(GeneratedMethod method, int i, Argument parameters, StoreOptions options,
-            string memberPath)
+    private void writeEnumerationValues(GeneratedMethod method, int i, Argument parameters, StoreOptions options,
+        string memberPath)
+    {
+        if (options.Advanced.DuplicatedFieldEnumStorage == EnumStorage.AsInteger)
         {
-            if (options.Advanced.DuplicatedFieldEnumStorage == EnumStorage.AsInteger)
-            {
-                if (DotNetType.IsNullable())
-                {
-                    method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};",
-                        NpgsqlDbType.Integer);
-                    method.Frames.Code(
-                        $"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = document.{memberPath} == null ? (object){typeof(DBNull).FullNameInCode()}.Value : (object)((int)document.{memberPath});");
-                }
-                else
-                {
-                    method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};",
-                        NpgsqlDbType.Integer);
-                    method.Frames.Code(
-                        $"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = (int)document.{memberPath};");
-                }
-            }
-            else if (DotNetType.IsNullable())
+            if (DotNetType.IsNullable())
             {
                 method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};",
-                    NpgsqlDbType.Varchar);
+                    NpgsqlDbType.Integer);
                 method.Frames.Code(
-                    $"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = (document.{memberPath} ).ToString();");
+                    $"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = document.{memberPath} == null ? (object){typeof(DBNull).FullNameInCode()}.Value : (object)((int)document.{memberPath});");
             }
             else
             {
                 method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};",
-                    NpgsqlDbType.Varchar);
+                    NpgsqlDbType.Integer);
                 method.Frames.Code(
-                    $"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = document.{memberPath}.ToString();");
+                    $"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = (int)document.{memberPath};");
             }
         }
-
-        public virtual void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
+        else if (DotNetType.IsNullable())
         {
-            var rawMemberType = _members.Last().GetRawMemberType();
+            method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};",
+                NpgsqlDbType.Varchar);
+            method.Frames.Code(
+                $"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = (document.{memberPath} ).ToString();");
+        }
+        else
+        {
+            method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};",
+                NpgsqlDbType.Varchar);
+            method.Frames.Code(
+                $"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = document.{memberPath}.ToString();");
+        }
+    }
+
+    public virtual void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
+    {
+        var rawMemberType = _members.Last().GetRawMemberType();
 
 
-            var dbTypeString = rawMemberType.IsArray
-                ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
-                : Constant.ForEnum(DbType).Usage;
+        var dbTypeString = rawMemberType.IsArray
+            ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
+            : Constant.ForEnum(DbType).Usage;
 
 
-            var memberPath = _members.Select(x => x.Name).Join("?.");
-            if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
+        var memberPath = _members.Select(x => x.Name).Join("?.");
+        if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
+        {
+            var isDeep = _members.Length > 0;
+            var memberType = _members.Last().GetMemberType();
+            var isNullable = memberType.IsNullable();
+
+            var enumType = isNullable ? memberType.GetGenericArguments()[0] : memberType;
+
+            var accessor = memberPath;
+
+            if (DbType == NpgsqlDbType.Integer)
             {
-                var isDeep = _members.Length > 0;
-                var memberType = _members.Last().GetMemberType();
-                var isNullable = memberType.IsNullable();
-
-                var enumType = isNullable ? memberType.GetGenericArguments()[0] : memberType;
-
-                var accessor = memberPath;
-
-                if (DbType == NpgsqlDbType.Integer)
+                if (isNullable || isDeep)
                 {
-                    if (isNullable || isDeep)
-                    {
-                        accessor =
-                            $"{nameof(BulkLoader<string, int>.GetEnumIntValue)}<{enumType.FullNameInCode()}>(document.{memberPath})";
-                    }
-
-                    load.Frames.Code($"writer.Write({accessor}, {{0}});", NpgsqlDbType.Integer);
+                    accessor =
+                        $"{nameof(BulkLoader<string, int>.GetEnumIntValue)}<{enumType.FullNameInCode()}>(document.{memberPath})";
                 }
-                else
-                {
-                    if (isNullable || isDeep)
-                    {
-                        accessor =
-                            $"GetEnumStringValue<{enumType.FullNameInCode()}>(document.{memberPath})";
-                    }
 
-                    load.Frames.Code($"writer.Write({accessor}, {{0}});", NpgsqlDbType.Varchar);
-                }
-            }
-            else if (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsValueType)
-            {
-                var valueType = DotNetType.GetGenericArguments()[0];
-                var accessor = $"GetNullable<{valueType}>(document.{memberPath})";
-                var npgsqlType = NpgsqlTypeMapper.Mappings.First(t => t.ClrTypes.Contains(valueType)).NpgsqlDbType;
-                load.Frames.Code($"writer.Write({accessor}, {{0}});", npgsqlType);
+                load.Frames.Code($"writer.Write({accessor}, {{0}});", NpgsqlDbType.Integer);
             }
             else
             {
-                load.Frames.Code($"writer.Write(document.{memberPath}, {dbTypeString});");
-            }
+                if (isNullable || isDeep)
+                {
+                    accessor =
+                        $"GetEnumStringValue<{enumType.FullNameInCode()}>(document.{memberPath})";
+                }
 
+                load.Frames.Code($"writer.Write({accessor}, {{0}});", NpgsqlDbType.Varchar);
+            }
         }
-
-
-        public virtual void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
+        else if (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsValueType)
         {
-            var rawMemberType = _members.Last().GetRawMemberType();
+            var valueType = DotNetType.GetGenericArguments()[0];
+            var accessor = $"GetNullable<{valueType}>(document.{memberPath})";
+            var npgsqlType = NpgsqlTypeMapper.Mappings.First(t => t.ClrTypes.Contains(valueType)).NpgsqlDbType;
+            load.Frames.Code($"writer.Write({accessor}, {{0}});", npgsqlType);
+        }
+        else
+        {
+            load.Frames.Code($"writer.Write(document.{memberPath}, {dbTypeString});");
+        }
+    }
 
 
-            var dbTypeString = rawMemberType.IsArray
-                ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
-                : Constant.ForEnum(DbType).Usage;
+    public virtual void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
+    {
+        var rawMemberType = _members.Last().GetRawMemberType();
 
 
-            var memberPath = _members.Select(x => x.Name).Join("?.");
+        var dbTypeString = rawMemberType.IsArray
+            ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
+            : Constant.ForEnum(DbType).Usage;
 
-            if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
+
+        var memberPath = _members.Select(x => x.Name).Join("?.");
+
+        if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
+        {
+            var isDeep = _members.Length > 0;
+            var memberType = _members.Last().GetMemberType();
+            var isNullable = memberType.IsNullable();
+
+            var enumType = isNullable ? memberType.GetGenericArguments()[0] : memberType;
+            var accessor = memberPath;
+
+            if (DbType == NpgsqlDbType.Integer)
             {
-                var isDeep = _members.Length > 0;
-                var memberType = _members.Last().GetMemberType();
-                var isNullable = memberType.IsNullable();
-
-                var enumType = isNullable ? memberType.GetGenericArguments()[0] : memberType;
-                var accessor = memberPath;
-
-                if (DbType == NpgsqlDbType.Integer)
+                if (isNullable || isDeep)
                 {
-                    if (isNullable || isDeep)
-                    {
-                        accessor =
-                            $"{nameof(BulkLoader<string, int>.GetEnumIntValue)}<{enumType.FullNameInCode()}>(document.{memberPath})";
-                    }
-
-                    load.Frames.CodeAsync($"await writer.WriteAsync({accessor}, {{0}}, {{1}});", NpgsqlDbType.Integer, Use.Type<CancellationToken>());
+                    accessor =
+                        $"{nameof(BulkLoader<string, int>.GetEnumIntValue)}<{enumType.FullNameInCode()}>(document.{memberPath})";
                 }
-                else
-                {
-                    if (isNullable || isDeep)
-                    {
-                        accessor =
-                            $"GetEnumStringValue<{enumType.FullNameInCode()}>(document.{memberPath})";
-                    }
-                    else
-                    {
-                        accessor = $"document.{memberPath}.ToString()";
-                    }
 
-                    load.Frames.CodeAsync($"await writer.WriteAsync({accessor}, {{0}}, {{1}});", NpgsqlDbType.Varchar, Use.Type<CancellationToken>());
-                }
-            }
-            else if (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsValueType)
-            {
-                var valueType = DotNetType.GetGenericArguments()[0];
-                var accessor = $"GetNullable<{valueType}>(document.{memberPath})";
-                var npgsqlType = NpgsqlTypeMapper.Mappings.First(t => t.ClrTypes.Contains(valueType)).NpgsqlDbType;
-                load.Frames.CodeAsync($"await writer.WriteAsync({accessor}, {{0}}, {{1}});", npgsqlType, Use.Type<CancellationToken>());
+                load.Frames.CodeAsync($"await writer.WriteAsync({accessor}, {{0}}, {{1}});", NpgsqlDbType.Integer,
+                    Use.Type<CancellationToken>());
             }
             else
             {
-                load.Frames.CodeAsync($"await writer.WriteAsync(document.{memberPath}, {dbTypeString}, {{0}});", Use.Type<CancellationToken>());
+                if (isNullable || isDeep)
+                {
+                    accessor =
+                        $"GetEnumStringValue<{enumType.FullNameInCode()}>(document.{memberPath})";
+                }
+                else
+                {
+                    accessor = $"document.{memberPath}.ToString()";
+                }
+
+                load.Frames.CodeAsync($"await writer.WriteAsync({accessor}, {{0}}, {{1}});", NpgsqlDbType.Varchar,
+                    Use.Type<CancellationToken>());
             }
+        }
+        else if (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsValueType)
+        {
+            var valueType = DotNetType.GetGenericArguments()[0];
+            var accessor = $"GetNullable<{valueType}>(document.{memberPath})";
+            var npgsqlType = NpgsqlTypeMapper.Mappings.First(t => t.ClrTypes.Contains(valueType)).NpgsqlDbType;
+            load.Frames.CodeAsync($"await writer.WriteAsync({accessor}, {{0}}, {{1}});", npgsqlType,
+                Use.Type<CancellationToken>());
+        }
+        else
+        {
+            load.Frames.CodeAsync($"await writer.WriteAsync(document.{memberPath}, {dbTypeString}, {{0}});",
+                Use.Type<CancellationToken>());
         }
     }
 }

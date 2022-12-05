@@ -4,36 +4,35 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq.Selectors;
 
-namespace Marten.Linq.Includes
+namespace Marten.Linq.Includes;
+
+internal class IncludeReader<T>: IIncludeReader
 {
-    internal class IncludeReader<T>: IIncludeReader
+    private readonly Action<T> _callback;
+    private readonly ISelector<T> _selector;
+
+    public IncludeReader(Action<T> callback, ISelector<T> selector)
     {
-        private readonly Action<T> _callback;
-        private readonly ISelector<T> _selector;
+        _callback = callback;
+        _selector = selector;
+    }
 
-        public IncludeReader(Action<T> callback, ISelector<T> selector)
+
+    public void Read(DbDataReader reader)
+    {
+        while (reader.Read())
         {
-            _callback = callback;
-            _selector = selector;
+            var item = _selector.Resolve(reader);
+            _callback(item);
         }
+    }
 
-
-        public void Read(DbDataReader reader)
+    public async Task ReadAsync(DbDataReader reader, CancellationToken token)
+    {
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
-            while (reader.Read())
-            {
-                var item = _selector.Resolve(reader);
-                _callback(item);
-            }
-        }
-
-        public async Task ReadAsync(DbDataReader reader, CancellationToken token)
-        {
-            while (await reader.ReadAsync(token).ConfigureAwait(false))
-            {
-                var item = await _selector.ResolveAsync(reader, token).ConfigureAwait(false);
-                _callback(item);
-            }
+            var item = await _selector.ResolveAsync(reader, token).ConfigureAwait(false);
+            _callback(item);
         }
     }
 }

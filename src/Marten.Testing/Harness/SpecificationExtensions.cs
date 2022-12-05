@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Baseline;
+using JasperFx.Core;
 using Weasel.Postgresql;
 using Marten.Schema;
 using Newtonsoft.Json.Linq;

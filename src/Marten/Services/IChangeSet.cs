@@ -1,18 +1,18 @@
+#nullable enable
 using System.Collections.Generic;
 using Marten.Events;
-#nullable enable
-namespace Marten.Services
+
+namespace Marten.Services;
+
+public interface IChangeSet
 {
-    public interface IChangeSet
-    {
-        IEnumerable<object> Updated { get; }
-        IEnumerable<object> Inserted { get; }
-        IEnumerable<IDeletion> Deleted { get; }
+    IEnumerable<object> Updated { get; }
+    IEnumerable<object> Inserted { get; }
+    IEnumerable<IDeletion> Deleted { get; }
 
-        IEnumerable<IEvent> GetEvents();
+    IEnumerable<IEvent> GetEvents();
 
-        IEnumerable<StreamAction> GetStreams();
+    IEnumerable<StreamAction> GetStreams();
 
-        IChangeSet Clone();
-    }
+    IChangeSet Clone();
 }

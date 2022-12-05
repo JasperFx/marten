@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Baseline.Dates;
 using Marten.Events.Daemon;
 
 namespace Marten.CommandLine.Commands.Projection;

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using LamarCodeGeneration;
-using LamarCodeGeneration.Frames;
+using JasperFx.CodeGeneration;
+using JasperFx.CodeGeneration.Frames;
 using Marten.Schema;
 using Marten.Schema.Identity;
 

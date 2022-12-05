@@ -1,69 +1,67 @@
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
-using Marten.Linq.Filters;
-using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
-using Marten.Util;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Linq.Fields
+namespace Marten.Linq.Fields;
+
+/// <summary>
+///     Represents a literal field in a sub query that selects a simple or primitive type
+/// </summary>
+public class SimpleDataField: IField
 {
-    /// <summary>
-    /// Represents a literal field in a sub query that selects a simple or primitive type
-    /// </summary>
-    public class SimpleDataField : IField
+    public SimpleDataField(Type sourceType)
     {
-        public SimpleDataField(Type sourceType)
-        {
-            FieldType = sourceType;
-        }
+        FieldType = sourceType;
+    }
 
-        public MemberInfo[] Members => new MemberInfo[0];
-        public string TypedLocator => "data";
-        public string RawLocator => "data";
-        public object GetValueForCompiledQueryParameter(Expression valueExpression)
-        {
-            throw new NotSupportedException();
-        }
+    public MemberInfo[] Members => new MemberInfo[0];
+    public string TypedLocator => "data";
+    public string RawLocator => "data";
 
-        public Type FieldType { get; }
+    public object GetValueForCompiledQueryParameter(Expression valueExpression)
+    {
+        throw new NotSupportedException();
+    }
 
-        public string JSONBLocator => "data";
-        public string LocatorForIncludedDocumentId => throw new NotSupportedException();
-        public string LocatorFor(string rootTableAlias)
-        {
-            throw new NotSupportedException();
-        }
+    public Type FieldType { get; }
 
-        public bool ShouldUseContainmentOperator()
-        {
-            return false;
-        }
+    public string JSONBLocator => "data";
+    public string LocatorForIncludedDocumentId => throw new NotSupportedException();
 
-        public string SelectorForDuplication(string pgType)
-        {
-            throw new NotSupportedException();
-        }
+    public string LocatorFor(string rootTableAlias)
+    {
+        throw new NotSupportedException();
+    }
 
-        public ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
-        {
-            return new ComparisonFilter(this, new CommandParameter(value), op);
-        }
+    public bool ShouldUseContainmentOperator()
+    {
+        return false;
+    }
 
-        void ISqlFragment.Apply(CommandBuilder builder)
-        {
-            builder.Append(TypedLocator);
-        }
+    public string SelectorForDuplication(string pgType)
+    {
+        throw new NotSupportedException();
+    }
 
-        bool ISqlFragment.Contains(string sqlText)
-        {
-            return TypedLocator.Contains(sqlText);
-        }
+    public ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
+    {
+        return new ComparisonFilter(this, new CommandParameter(value), op);
+    }
 
-        public string ToOrderExpression(Expression expression)
-        {
-            return TypedLocator;
-        }
+    void ISqlFragment.Apply(CommandBuilder builder)
+    {
+        builder.Append(TypedLocator);
+    }
+
+    bool ISqlFragment.Contains(string sqlText)
+    {
+        return TypedLocator.Contains(sqlText);
+    }
+
+    public string ToOrderExpression(Expression expression)
+    {
+        return TypedLocator;
     }
 }

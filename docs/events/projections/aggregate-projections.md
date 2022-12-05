@@ -535,7 +535,7 @@ public class OrderAggregate
     public bool HasShipped { get; private set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/AggregateVersioningTests.cs#L77-L92' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_orderaggregate_with_version' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/AggregateVersioningTests.cs#L78-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_orderaggregate_with_version' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Notice the `Version` property of that document above. Using a naming convention (we'll talk about how to go around the convention in just a second),

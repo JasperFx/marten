@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using LamarCodeGeneration;
-using LamarCodeGeneration.Util;
+using JasperFx.CodeGeneration;
+using JasperFx.CodeGeneration.Util;
 using Marten.Events;
 using Npgsql;
 using Weasel.Core;

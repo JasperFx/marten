@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Baseline;
-using LamarCodeGeneration;
+using JasperFx.Core;
+using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten;
 using Marten.CommandLine.Commands.Projection;
 using Marten.Events.Daemon;

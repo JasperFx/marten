@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Baseline;
+using JasperFx.Core;
 using EventSourcingTests.Projections;
 using Marten;
 using Marten.Testing.Harness;

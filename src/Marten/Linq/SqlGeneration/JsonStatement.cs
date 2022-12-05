@@ -1,40 +1,42 @@
 using System;
-using Baseline;
+using JasperFx.Core.Reflection;
 using Marten.Linq.Fields;
 using Marten.Linq.Includes;
 
-namespace Marten.Linq.SqlGeneration
+namespace Marten.Linq.SqlGeneration;
+
+internal class JsonStatement: SelectorStatement
 {
-    internal class JsonStatement : SelectorStatement
-    {
-        public JsonStatement(Type documentType, IFieldMapping fields, Statement parent) : base(typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(parent.ExportName,
+    public JsonStatement(Type documentType, IFieldMapping fields, Statement parent): base(
+        typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(parent.ExportName,
             documentType), fields)
+    {
+    }
+
+    private JsonStatement(ISelectClause selectClause, IFieldMapping fields): base(selectClause, fields)
+    {
+    }
+
+
+    public override SelectorStatement UseAsEndOfTempTableAndClone(
+        IncludeIdentitySelectorStatement includeIdentitySelectorStatement)
+    {
+        includeIdentitySelectorStatement.IncludeDataInTempTable = true;
+
+        var clone = new JsonStatement(SelectClause, Fields)
         {
+            SelectClause =
+                SelectClause.As<IScalarSelectClause>()
+                    .CloneToOtherTable(includeIdentitySelectorStatement.ExportName),
+            Orderings = Orderings,
+            Mode = StatementMode.Select,
+            ExportName = ExportName
+        };
 
-        }
+        SelectClause = includeIdentitySelectorStatement;
 
-        private JsonStatement(ISelectClause selectClause, IFieldMapping fields) : base(selectClause, fields)
-        {
-        }
+        Limit = Offset = 0;
 
-
-        public override SelectorStatement UseAsEndOfTempTableAndClone(IncludeIdentitySelectorStatement includeIdentitySelectorStatement)
-        {
-            includeIdentitySelectorStatement.IncludeDataInTempTable = true;
-
-            var clone = new JsonStatement(SelectClause, Fields)
-            {
-                SelectClause = SelectClause.As<IScalarSelectClause>().CloneToOtherTable(includeIdentitySelectorStatement.ExportName),
-                Orderings = Orderings,
-                Mode = StatementMode.Select,
-                ExportName = ExportName
-            };
-
-            SelectClause = includeIdentitySelectorStatement;
-
-            Limit = Offset = 0;
-
-            return clone;
-        }
+        return clone;
     }
 }

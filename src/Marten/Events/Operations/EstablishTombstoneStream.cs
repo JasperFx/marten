@@ -5,85 +5,83 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Operations;
-using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Storage;
-using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
+using Weasel.Postgresql;
 
-namespace Marten.Events.Operations
+namespace Marten.Events.Operations;
+
+[DocumentAlias("tombstone")]
+internal class Tombstone
 {
-    [DocumentAlias("tombstone")]
-    internal class Tombstone
+    public static readonly string Name = "tombstone";
+}
+
+internal class EstablishTombstoneStream: IStorageOperation
+{
+    public static readonly string StreamKey = "mt_tombstone";
+    public static readonly Guid StreamId = Guid.NewGuid();
+    private readonly Action<NpgsqlParameter> _configureParameter;
+    private readonly string _sessionTenantId;
+
+    private readonly string _sql;
+
+    public EstablishTombstoneStream(EventGraph events, string sessionTenantId)
     {
-        public static readonly string Name = "tombstone";
-    }
+        _sessionTenantId = sessionTenantId;
+        var pkFields = events.TenancyStyle == TenancyStyle.Conjoined
+            ? "id, tenant_id"
+            : "id";
 
-    internal class EstablishTombstoneStream : IStorageOperation
-    {
-        private readonly string _sessionTenantId;
-        public static readonly string StreamKey = "mt_tombstone";
-        public static readonly Guid StreamId = Guid.NewGuid();
-
-        private string _sql;
-        private readonly Action<NpgsqlParameter> _configureParameter;
-
-        public EstablishTombstoneStream(EventGraph events, string sessionTenantId)
-        {
-            _sessionTenantId = sessionTenantId;
-            var pkFields = events.TenancyStyle == TenancyStyle.Conjoined
-                ? "id, tenant_id"
-                : "id";
-
-            _sql = $@"
+        _sql = $@"
 insert into {events.DatabaseSchemaName}.mt_streams (id, tenant_id, version)
 values (?, ?, 0)
 ON CONFLICT ({pkFields})
 DO NOTHING
 ";
 
-            if (events.StreamIdentity == StreamIdentity.AsGuid)
+        if (events.StreamIdentity == StreamIdentity.AsGuid)
+        {
+            _configureParameter = p =>
             {
-                _configureParameter = p =>
-                {
-                    p.Value = StreamId;
-                    p.NpgsqlDbType = NpgsqlDbType.Uuid;
-                };
-            }
-            else
+                p.Value = StreamId;
+                p.NpgsqlDbType = NpgsqlDbType.Uuid;
+            };
+        }
+        else
+        {
+            _configureParameter = p =>
             {
-                _configureParameter = p =>
-                {
-                    p.Value = StreamKey;
-                    p.NpgsqlDbType = NpgsqlDbType.Varchar;
-                };
-            }
-
+                p.Value = StreamKey;
+                p.NpgsqlDbType = NpgsqlDbType.Varchar;
+            };
         }
+    }
 
-        public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
-        {
-            var parameters = builder.AppendWithParameters(_sql);
-            _configureParameter(parameters[0]);
-            parameters[1].Value = _sessionTenantId;
-        }
+    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    {
+        var parameters = builder.AppendWithParameters(_sql);
+        _configureParameter(parameters[0]);
+        parameters[1].Value = _sessionTenantId;
+    }
 
-        public Type DocumentType => typeof(IEvent);
-        public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-        {
-            // Nothing
-        }
+    public Type DocumentType => typeof(IEvent);
 
-        public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
-        {
-            // Nothing
-            return Task.CompletedTask;
-        }
+    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
+    {
+        // Nothing
+    }
 
-        public OperationRole Role()
-        {
-            return OperationRole.Events;
-        }
+    public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
+    {
+        // Nothing
+        return Task.CompletedTask;
+    }
+
+    public OperationRole Role()
+    {
+        return OperationRole.Events;
     }
 }

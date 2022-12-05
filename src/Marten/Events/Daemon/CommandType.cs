@@ -1,9 +1,8 @@
-namespace Marten.Events.Daemon
+namespace Marten.Events.Daemon;
+
+internal enum CommandType
 {
-    internal enum CommandType
-    {
-        Start,
-        HighWater,
-        RangeCompleted
-    }
+    Start,
+    HighWater,
+    RangeCompleted
 }

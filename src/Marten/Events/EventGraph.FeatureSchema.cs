@@ -12,70 +12,57 @@ using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Functions;
 
-namespace Marten.Events
+namespace Marten.Events;
+
+public partial class EventGraph: IFeatureSchema
 {
-    public partial class EventGraph : IFeatureSchema
+    internal DbObjectName ProgressionTable => new(DatabaseSchemaName, "mt_event_progression");
+    internal DbObjectName StreamsTable => new(DatabaseSchemaName, "mt_streams");
+
+
+    IEnumerable<Type> IFeatureSchema.DependentTypes()
     {
+        yield return typeof(DeadLetterEvent);
+    }
 
-        internal DbObjectName ProgressionTable => new DbObjectName(DatabaseSchemaName, "mt_event_progression");
-        internal DbObjectName StreamsTable => new DbObjectName(DatabaseSchemaName, "mt_streams");
+    ISchemaObject[] IFeatureSchema.Objects => createAllSchemaObjects().ToArray();
 
+    Type IFeatureSchema.StorageType => typeof(EventGraph);
+    string IFeatureSchema.Identifier { get; } = "eventstore";
+    Migrator IFeatureSchema.Migrator => Options.Advanced.Migrator;
 
-        IEnumerable<Type> IFeatureSchema.DependentTypes()
+    void IFeatureSchema.WritePermissions(Migrator rules, TextWriter writer)
+    {
+        // Nothing
+    }
+
+    private IEnumerable<ISchemaObject> createAllSchemaObjects()
+    {
+        yield return new StreamsTable(this);
+        var eventsTable = new EventsTable(this);
+        yield return eventsTable;
+
+        #region sample_using-sequence
+
+        var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequence"))
         {
-            yield return typeof(DeadLetterEvent);
-        }
+            Owner = eventsTable.Identifier, OwnerColumn = "seq_id"
+        };
 
-        ISchemaObject[] IFeatureSchema.Objects
+        #endregion
+
+        yield return sequence;
+
+        yield return new EventProgressionTable(DatabaseSchemaName);
+
+        yield return new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint");
+        yield return Function.ForRemoval(new DbObjectName(DatabaseSchemaName, "mt_append_event"));
+        yield return new ArchiveStreamFunction(this);
+
+        foreach (var schemaSource in Options.Projections.All.OfType<IProjectionSchemaSource>())
         {
-            get
-            {
-                return createAllSchemaObjects().ToArray();
-            }
+            var objects = schemaSource.CreateSchemaObjects(this);
+            foreach (var schemaObject in objects) yield return schemaObject;
         }
-
-        private IEnumerable<ISchemaObject> createAllSchemaObjects()
-        {
-            yield return new StreamsTable(this);
-            var eventsTable = new EventsTable(this);
-            yield return eventsTable;
-
-            #region sample_using-sequence
-            var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequence"))
-            {
-                Owner = eventsTable.Identifier,
-                OwnerColumn = "seq_id"
-            };
-            #endregion
-
-            yield return sequence;
-
-            yield return new EventProgressionTable(DatabaseSchemaName);
-
-            yield return new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint");
-            yield return Function.ForRemoval(new DbObjectName(DatabaseSchemaName, "mt_append_event"));
-            yield return new ArchiveStreamFunction(this);
-
-            foreach (var schemaSource in Options.Projections.All.OfType<IProjectionSchemaSource>())
-            {
-                var objects = schemaSource.CreateSchemaObjects(this);
-                foreach (var schemaObject in objects)
-                {
-                    yield return schemaObject;
-                }
-            }
-        }
-
-        Type IFeatureSchema.StorageType => typeof(EventGraph);
-        string IFeatureSchema.Identifier { get; } = "eventstore";
-        Migrator IFeatureSchema.Migrator => Options.Advanced.Migrator;
-
-        void IFeatureSchema.WritePermissions(Migrator rules, TextWriter writer)
-        {
-            // Nothing
-        }
-
-
-
     }
 }

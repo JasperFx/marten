@@ -1,21 +1,20 @@
-namespace Marten.Schema
+namespace Marten.Schema;
+
+public class ForeignKeyConstraint
 {
-    public class ForeignKeyConstraint
+    public ForeignKeyConstraint(string name, string schema, string tableName)
     {
-        public ForeignKeyConstraint(string name, string schema, string tableName)
-        {
-            Name = name;
-            Schema = schema;
-            TableName = tableName;
-        }
+        Name = name;
+        Schema = schema;
+        TableName = tableName;
+    }
 
-        public string Name { get; }
-        public string Schema { get; }
-        public string TableName { get; }
+    public string Name { get; }
+    public string Schema { get; }
+    public string TableName { get; }
 
-        public override string ToString()
-        {
-            return $"{nameof(Name)}: {Name}, {nameof(Schema)}: {Schema}, {nameof(TableName)}: {TableName}";
-        }
+    public override string ToString()
+    {
+        return $"{nameof(Name)}: {Name}, {nameof(Schema)}: {Schema}, {nameof(TableName)}: {TableName}";
     }
 }

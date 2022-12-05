@@ -3,131 +3,147 @@ using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
 
-namespace Marten
+namespace Marten;
+
+/// <summary>
+///     Default retry policy, which accounts for <see cref="NpgsqlException.IsTransient" />.
+/// </summary>
+/// <remarks>
+///     Based on example https://martendb.io/documentation/documents/advanced/retrypolicy/ by Joona-Pekka Kokko.
+/// </remarks>
+public sealed class DefaultRetryPolicy: IRetryPolicy
 {
-    /// <summary>
-    /// Default retry policy, which accounts for <see cref="NpgsqlException.IsTransient"/>.
-    /// </summary>
-    /// <remarks>
-    /// Based on example https://martendb.io/documentation/documents/advanced/retrypolicy/ by Joona-Pekka Kokko.
-    /// </remarks>
-    public sealed class DefaultRetryPolicy: IRetryPolicy
+    private static readonly Func<Exception, bool> DefaultFilter = x =>
+        x is NpgsqlException npgsqlException && npgsqlException.IsTransient;
+
+    private static readonly Func<int, TimeSpan> DefaultSleep = x => TimeSpan.FromSeconds(x);
+    private readonly Func<Exception, bool> _filter;
+    private readonly int _maxRetryCount;
+    private readonly Func<int, TimeSpan> _sleep;
+
+    private DefaultRetryPolicy(int maxRetryCount, Func<Exception, bool> filter, Func<int, TimeSpan> sleep)
     {
-        private readonly int _maxRetryCount;
-        private readonly Func<Exception, bool> _filter;
-        private readonly Func<int, TimeSpan> _sleep;
+        _maxRetryCount = maxRetryCount;
+        _filter = filter ?? DefaultFilter;
+        _sleep = sleep ?? DefaultSleep;
+    }
 
-        private static readonly Func<Exception, bool> DefaultFilter = x => x is NpgsqlException npgsqlException && npgsqlException.IsTransient;
-        private static readonly Func<int, TimeSpan> DefaultSleep = x => TimeSpan.FromSeconds(x);
-
-        private DefaultRetryPolicy(int maxRetryCount, Func<Exception, bool> filter, Func<int, TimeSpan> sleep)
+    void IRetryPolicy.Execute(Action operation)
+    {
+        Try(() =>
         {
-            _maxRetryCount = maxRetryCount;
-            _filter = filter ?? DefaultFilter;
-            _sleep = sleep ?? DefaultSleep;
-        }
+            operation();
+            return 0;
+        });
+    }
 
-        /// <summary>
-        /// Initializes a retry policy that will retry once after failure that matches the filter.
-        /// </summary>
-        /// <param name="filter">Optional filter when to apply, default to checking for <see cref="NpgsqlException.IsTransient"/></param>
-        /// <param name="sleep">Optional sleep after exception, gets retry number 1-N as parameter, defaults to sleeping retry number seconds</param>
-        /// <returns>The configured retry policy.</returns>
-        public static IRetryPolicy Once(Func<Exception, bool> filter = null, Func<int, TimeSpan> sleep = null)
-        {
-            return new DefaultRetryPolicy(1, filter, sleep);
-        }
+    TResult IRetryPolicy.Execute<TResult>(Func<TResult> operation)
+    {
+        return Try(operation);
+    }
 
-        /// <summary>
-        /// Initializes a retry policy that will retry twice after failure that matches the filter.
-        /// </summary>
-        /// <param name="filter">Optional filter when to apply, default to checking for <see cref="NpgsqlException.IsTransient"/></param>
-        /// <param name="sleep">Optional sleep after exception, gets retry number 1-N as parameter, defaults to sleeping retry number seconds</param>
-        /// <returns>The configured retry policy.</returns>
-        public static IRetryPolicy Twice(Func<Exception, bool> filter = null, Func<int, TimeSpan> sleep = null)
-        {
-            return new DefaultRetryPolicy(2, filter, sleep);
-        }
+    Task IRetryPolicy.ExecuteAsync(Func<Task> operation, CancellationToken cancellationToken)
+    {
+        return TryAsync(operation, cancellationToken);
+    }
 
-        /// <summary>
-        /// Initializes a retry policy that will retry given amount of times after failure.
-        /// </summary>
-        /// <param name="maxRetryCount">How many times the operation will be retried on failure that matches the filter.</param>
-        /// <param name="filter">Optional filter when to apply, default to checking for <see cref="NpgsqlException.IsTransient"/></param>
-        /// <param name="sleep">Optional sleep after exception, gets retry number 1-N as parameter, defaults to sleeping retry number seconds</param>
-        /// <returns>The configured retry policy.</returns>
-        public static IRetryPolicy Times(int maxRetryCount, Func<Exception, bool> filter = null, Func<int, TimeSpan> sleep = null)
-        {
-            return new DefaultRetryPolicy(maxRetryCount, filter, sleep);
-        }
+    Task<TResult> IRetryPolicy.ExecuteAsync<TResult>(Func<Task<TResult>> operation, CancellationToken cancellationToken)
+    {
+        return TryAsync(operation, cancellationToken);
+    }
 
-        void IRetryPolicy.Execute(Action operation)
+    /// <summary>
+    ///     Initializes a retry policy that will retry once after failure that matches the filter.
+    /// </summary>
+    /// <param name="filter">
+    ///     Optional filter when to apply, default to checking for <see cref="NpgsqlException.IsTransient" />
+    /// </param>
+    /// <param name="sleep">
+    ///     Optional sleep after exception, gets retry number 1-N as parameter, defaults to sleeping retry
+    ///     number seconds
+    /// </param>
+    /// <returns>The configured retry policy.</returns>
+    public static IRetryPolicy Once(Func<Exception, bool> filter = null, Func<int, TimeSpan> sleep = null)
+    {
+        return new DefaultRetryPolicy(1, filter, sleep);
+    }
+
+    /// <summary>
+    ///     Initializes a retry policy that will retry twice after failure that matches the filter.
+    /// </summary>
+    /// <param name="filter">
+    ///     Optional filter when to apply, default to checking for <see cref="NpgsqlException.IsTransient" />
+    /// </param>
+    /// <param name="sleep">
+    ///     Optional sleep after exception, gets retry number 1-N as parameter, defaults to sleeping retry
+    ///     number seconds
+    /// </param>
+    /// <returns>The configured retry policy.</returns>
+    public static IRetryPolicy Twice(Func<Exception, bool> filter = null, Func<int, TimeSpan> sleep = null)
+    {
+        return new DefaultRetryPolicy(2, filter, sleep);
+    }
+
+    /// <summary>
+    ///     Initializes a retry policy that will retry given amount of times after failure.
+    /// </summary>
+    /// <param name="maxRetryCount">How many times the operation will be retried on failure that matches the filter.</param>
+    /// <param name="filter">
+    ///     Optional filter when to apply, default to checking for <see cref="NpgsqlException.IsTransient" />
+    /// </param>
+    /// <param name="sleep">
+    ///     Optional sleep after exception, gets retry number 1-N as parameter, defaults to sleeping retry
+    ///     number seconds
+    /// </param>
+    /// <returns>The configured retry policy.</returns>
+    public static IRetryPolicy Times(int maxRetryCount, Func<Exception, bool> filter = null,
+        Func<int, TimeSpan> sleep = null)
+    {
+        return new DefaultRetryPolicy(maxRetryCount, filter, sleep);
+    }
+
+    private TResult Try<TResult>(Func<TResult> operation)
+    {
+        for (var tries = 0;;)
         {
-            Try(() =>
+            try
             {
-                operation();
-                return 0;
-            });
-        }
-
-        TResult IRetryPolicy.Execute<TResult>(Func<TResult> operation)
-        {
-            return Try(operation);
-        }
-
-        Task IRetryPolicy.ExecuteAsync(Func<Task> operation, CancellationToken cancellationToken)
-        {
-            return TryAsync(operation, cancellationToken);
-        }
-
-        Task<TResult> IRetryPolicy.ExecuteAsync<TResult>(Func<Task<TResult>> operation, CancellationToken cancellationToken)
-        {
-            return TryAsync(operation, cancellationToken);
-        }
-
-        private TResult Try<TResult>(Func<TResult> operation)
-        {
-            for (var tries = 0;;)
+                return operation();
+            }
+            catch (Exception e) when (tries++ < _maxRetryCount && _filter(e))
             {
-                try
-                {
-                    return operation();
-                }
-                catch (Exception e) when (tries++ < _maxRetryCount && _filter(e))
-                {
-                    Thread.Sleep(_sleep(tries));
-                }
+                Thread.Sleep(_sleep(tries));
             }
         }
+    }
 
-        private async Task TryAsync(Func<Task> operation, CancellationToken token)
+    private async Task TryAsync(Func<Task> operation, CancellationToken token)
+    {
+        for (var tries = 0;; token.ThrowIfCancellationRequested())
         {
-            for (var tries = 0;; token.ThrowIfCancellationRequested())
+            try
             {
-                try
-                {
-                    await operation().ConfigureAwait(false);
-                    return;
-                }
-                catch (Exception e) when (tries++ < _maxRetryCount && _filter(e))
-                {
-                    await Task.Delay(_sleep(tries), token).ConfigureAwait(false);
-                }
+                await operation().ConfigureAwait(false);
+                return;
+            }
+            catch (Exception e) when (tries++ < _maxRetryCount && _filter(e))
+            {
+                await Task.Delay(_sleep(tries), token).ConfigureAwait(false);
             }
         }
+    }
 
-        private async Task<T> TryAsync<T>(Func<Task<T>> operation, CancellationToken token)
+    private async Task<T> TryAsync<T>(Func<Task<T>> operation, CancellationToken token)
+    {
+        for (var tries = 0;; token.ThrowIfCancellationRequested())
         {
-            for (var tries = 0;; token.ThrowIfCancellationRequested())
+            try
             {
-                try
-                {
-                    return await operation().ConfigureAwait(false);
-                }
-                catch (Exception e) when (tries++ < _maxRetryCount && _filter(e))
-                {
-                    await Task.Delay(_sleep(tries), token).ConfigureAwait(false);
-                }
+                return await operation().ConfigureAwait(false);
+            }
+            catch (Exception e) when (tries++ < _maxRetryCount && _filter(e))
+            {
+                await Task.Delay(_sleep(tries), token).ConfigureAwait(false);
             }
         }
     }

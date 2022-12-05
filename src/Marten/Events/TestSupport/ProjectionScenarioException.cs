@@ -1,18 +1,17 @@
 using System;
 using System.Collections.Generic;
-using Baseline;
+using JasperFx.Core;
 
-namespace Marten.Events.TestSupport
+namespace Marten.Events.TestSupport;
+
+/// <summary>
+///     Thrown when a ProjectionScenario fails
+/// </summary>
+public class ProjectionScenarioException: AggregateException
 {
-    /// <summary>
-    ///     Thrown when a ProjectionScenario fails
-    /// </summary>
-    public class ProjectionScenarioException: AggregateException
+    public ProjectionScenarioException(List<string> descriptions, List<Exception> exceptions): base(
+        $"Event Projection Scenario Failure{Environment.NewLine}{descriptions.Join(Environment.NewLine)}",
+        exceptions)
     {
-        public ProjectionScenarioException(List<string> descriptions, List<Exception> exceptions): base(
-            $"Event Projection Scenario Failure{Environment.NewLine}{descriptions.Join(Environment.NewLine)}",
-            exceptions)
-        {
-        }
     }
 }

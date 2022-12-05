@@ -1,11 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline.Dates;
+using JasperFx.Core;
 using Marten;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Microsoft.Extensions.Hosting;

@@ -1,19 +1,17 @@
-using LamarCodeGeneration.Model;
+using JasperFx.CodeGeneration.Model;
 using Weasel.Postgresql.Tables;
 
-namespace Marten.Events.Projections.Flattened
+namespace Marten.Events.Projections.Flattened;
+
+internal interface IColumnMap
 {
-    internal interface IColumnMap
-    {
-        Table.ColumnExpression ResolveColumn(Table table);
+    string ColumnName { get; }
 
-        string ColumnName { get; }
+    bool RequiresInput { get; }
+    Table.ColumnExpression ResolveColumn(Table table);
 
-        string UpdateFieldSql(Table table);
+    string UpdateFieldSql(Table table);
+    string ToInsertExpression(Table table);
 
-        bool RequiresInput { get; }
-        string ToInsertExpression(Table table);
-
-        string ToValueAccessorCode(Variable eventVariable);
-    }
+    string ToValueAccessorCode(Variable eventVariable);
 }

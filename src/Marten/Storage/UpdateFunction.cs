@@ -2,28 +2,28 @@ using System;
 using System.IO;
 using Marten.Schema;
 
-namespace Marten.Storage
+namespace Marten.Storage;
+
+internal class UpdateFunction: UpsertFunction
 {
-    internal class UpdateFunction: UpsertFunction
+    public UpdateFunction(DocumentMapping mapping): base(mapping, mapping.UpdateFunction)
     {
-        public UpdateFunction(DocumentMapping mapping) : base(mapping, mapping.UpdateFunction)
-        {
-        }
+    }
 
-        protected override void writeFunction(TextWriter writer, string argList, string securityDeclaration,
-            string inserts, string valueList,
-            string updates)
-        {
-            var statement = updates.Contains("where")
-                ? $"UPDATE {_tableName} SET {updates} and id = docId;"
-                : $"UPDATE {_tableName} SET {updates} where id = docId;";
+    protected override void writeFunction(TextWriter writer, string argList, string securityDeclaration,
+        string inserts, string valueList,
+        string updates)
+    {
+        var statement = updates.Contains("where")
+            ? $"UPDATE {_tableName} SET {updates} and id = docId;"
+            : $"UPDATE {_tableName} SET {updates} where id = docId;";
 
-            if (_mapping.Metadata.Version.Enabled)
-            {
-                writer.WriteLine($@"
+        if (_mapping.Metadata.Version.Enabled)
+        {
+            writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {
-                        securityDeclaration
-                    } AS $function$
+    securityDeclaration
+} AS $function$
 DECLARE
   final_version uuid;
 BEGIN
@@ -34,13 +34,13 @@ BEGIN
 END;
 $function$;
 ");
-            }
-            else
-            {
-                writer.WriteLine($@"
+        }
+        else
+        {
+            writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {
-                        securityDeclaration
-                    } AS $function$
+    securityDeclaration
+} AS $function$
 DECLARE
   final_version uuid;
 BEGIN
@@ -50,7 +50,6 @@ BEGIN
 END;
 $function$;
 ");
-            }
         }
     }
 }

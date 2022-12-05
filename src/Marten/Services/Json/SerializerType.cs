@@ -1,9 +1,8 @@
 #nullable enable
-namespace Marten.Services.Json
+namespace Marten.Services.Json;
+
+public enum SerializerType
 {
-    public enum SerializerType
-    {
-        Newtonsoft,
-        SystemTextJson
-    }
+    Newtonsoft,
+    SystemTextJson
 }

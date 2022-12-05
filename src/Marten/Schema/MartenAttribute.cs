@@ -1,28 +1,30 @@
+#nullable enable
 using System;
 using System.Reflection;
-#nullable enable
-namespace Marten.Schema
+
+namespace Marten.Schema;
+
+/// <summary>
+///     Base type of an Attribute that can be extended to add per field/property
+///     or per document type customization to the document storage
+/// </summary>
+
+#region sample_MartenAttribute
+
+public abstract class MartenAttribute: Attribute
 {
     /// <summary>
-    /// Base type of an Attribute that can be extended to add per field/property
-    /// or per document type customization to the document storage
+    ///     Customize Document storage at the document level
     /// </summary>
-    #region sample_MartenAttribute
-    public abstract class MartenAttribute: Attribute
-    {
-        /// <summary>
-        /// Customize Document storage at the document level
-        /// </summary>
-        /// <param name="mapping"></param>
-        public virtual void Modify(DocumentMapping mapping) { }
+    /// <param name="mapping"></param>
+    public virtual void Modify(DocumentMapping mapping) { }
 
-        /// <summary>
-        /// Customize the Document storage for a single member
-        /// </summary>
-        /// <param name="mapping"></param>
-        /// <param name="member"></param>
-        public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }
-    }
-
-    #endregion
+    /// <summary>
+    ///     Customize the Document storage for a single member
+    /// </summary>
+    /// <param name="mapping"></param>
+    /// <param name="member"></param>
+    public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }
 }
+
+#endregion

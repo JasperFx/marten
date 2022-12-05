@@ -1,64 +1,65 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
-using Weasel.Postgresql;
-using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Postgresql;
 
-namespace Marten.Events.Daemon.Progress
+namespace Marten.Events.Daemon.Progress;
+
+internal class UpdateProjectionProgress: IStorageOperation
 {
-    internal class UpdateProjectionProgress: IStorageOperation
+    private readonly EventGraph _events;
+
+    public UpdateProjectionProgress(EventGraph events, EventRange range)
     {
-        public EventRange Range { get; }
-        private readonly EventGraph _events;
+        Range = range;
+        _events = events;
+    }
 
-        public UpdateProjectionProgress(EventGraph events, EventRange range)
+    public EventRange Range { get; }
+
+    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    {
+        var parameters =
+            builder.AppendWithParameters(
+                $"update {_events.ProgressionTable} set last_seq_id = ? where name = ? and last_seq_id = ?");
+
+        parameters[0].Value = Range.SequenceCeiling;
+        parameters[0].NpgsqlDbType = NpgsqlDbType.Bigint;
+        parameters[1].Value = Range.ShardName.Identity;
+        parameters[1].NpgsqlDbType = NpgsqlDbType.Varchar;
+        parameters[2].Value = Range.SequenceFloor;
+        parameters[2].NpgsqlDbType = NpgsqlDbType.Bigint;
+    }
+
+    public Type DocumentType => typeof(IEvent);
+
+    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
+    {
+        if (reader.RecordsAffected != 1)
         {
-            Range = range;
-            _events = events;
+            throw new ProgressionProgressOutOfOrderException(Range.ShardName);
+        }
+    }
+
+    public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
+    {
+        if (reader.RecordsAffected ==
+            0) // There's some weird quirks of the combined statements where this could be erroneously 2
+        {
+            throw new ProgressionProgressOutOfOrderException(Range.ShardName);
         }
 
-        public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
-        {
-            var parameters =
-                builder.AppendWithParameters($"update {_events.ProgressionTable} set last_seq_id = ? where name = ? and last_seq_id = ?");
+        return Task.CompletedTask;
+    }
 
-            parameters[0].Value = Range.SequenceCeiling;
-            parameters[0].NpgsqlDbType = NpgsqlDbType.Bigint;
-            parameters[1].Value = Range.ShardName.Identity;
-            parameters[1].NpgsqlDbType = NpgsqlDbType.Varchar;
-            parameters[2].Value = Range.SequenceFloor;
-            parameters[2].NpgsqlDbType = NpgsqlDbType.Bigint;
-        }
-
-        public Type DocumentType => typeof(IEvent);
-        public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-        {
-            if (reader.RecordsAffected != 1)
-            {
-                throw new ProgressionProgressOutOfOrderException(Range.ShardName);
-            }
-        }
-
-        public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
-        {
-            if (reader.RecordsAffected == 0) // There's some weird quirks of the combined statements where this could be erroneously 2
-            {
-                throw new ProgressionProgressOutOfOrderException(Range.ShardName);
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public OperationRole Role()
-        {
-            return OperationRole.Events;
-        }
+    public OperationRole Role()
+    {
+        return OperationRole.Events;
     }
 }

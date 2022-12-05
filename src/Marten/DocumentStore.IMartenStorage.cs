@@ -1,71 +1,69 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Marten.Events.Daemon;
 using Marten.Storage;
 using Weasel.Core;
 
-namespace Marten
+namespace Marten;
+
+public partial class DocumentStore: IMartenStorage
 {
-    public partial class DocumentStore : IMartenStorage
+    public IMartenStorage Storage => this;
+
+    string[] IMartenStorage.AllSchemaNames()
     {
-        private MartenDatabase nulloDatabase()
-        {
-            return new MartenDatabase(Options, new ConnectionFactory(string.Empty), "NULLO");
-        }
+        return nulloDatabase().AllSchemaNames();
+    }
 
-        public IMartenStorage Storage => this;
+    IEnumerable<ISchemaObject> IMartenStorage.AllObjects()
+    {
+        return nulloDatabase().AllObjects();
+    }
 
-        string[] IMartenStorage.AllSchemaNames()
-        {
-            return nulloDatabase().AllSchemaNames();
-        }
+    string IMartenStorage.ToDatabaseScript()
+    {
+        return nulloDatabase().ToDatabaseScript();
+    }
 
-        IEnumerable<ISchemaObject> IMartenStorage.AllObjects()
-        {
-            return nulloDatabase().AllObjects();
-        }
+    Task IMartenStorage.WriteCreationScriptToFile(string filename)
+    {
+        return nulloDatabase().WriteCreationScriptToFile(filename);
+    }
 
-        string IMartenStorage.ToDatabaseScript()
-        {
-            return nulloDatabase().ToDatabaseScript();
-        }
+    Task IMartenStorage.WriteScriptsByType(string directory)
+    {
+        return nulloDatabase().WriteCreationScriptToFile(directory);
+    }
 
-        Task IMartenStorage.WriteCreationScriptToFile(string filename)
-        {
-            return nulloDatabase().WriteCreationScriptToFile(filename);
-        }
+    async Task IMartenStorage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate? @override)
+    {
+        var databases = await Tenancy.BuildDatabases().ConfigureAwait(false);
 
-        Task IMartenStorage.WriteScriptsByType(string directory)
-        {
-            return nulloDatabase().WriteCreationScriptToFile(directory);
-        }
+        await Parallel.ForEachAsync(databases,
+                async (d, token) => await d.ApplyAllConfiguredChangesToDatabaseAsync().ConfigureAwait(false))
+            .ConfigureAwait(false);
+    }
 
-        async Task IMartenStorage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate? @override)
-        {
-            var databases = await Tenancy.BuildDatabases().ConfigureAwait(false);
+    async ValueTask<IReadOnlyList<IMartenDatabase>> IMartenStorage.AllDatabases()
+    {
+        var databases = await Tenancy.BuildDatabases().ConfigureAwait(false);
+        return databases.OfType<IMartenDatabase>().ToList();
+    }
 
-            await Parallel.ForEachAsync(databases,
-                    async (d, token) => await d.ApplyAllConfiguredChangesToDatabaseAsync().ConfigureAwait(false))
-                .ConfigureAwait(false);
-        }
+    Task<SchemaMigration> IMartenStorage.CreateMigrationAsync()
+    {
+        return Tenancy.Default.Database.CreateMigrationAsync();
+    }
 
-        async ValueTask<IReadOnlyList<IMartenDatabase>> IMartenStorage.AllDatabases()
-        {
-            var databases = await Tenancy.BuildDatabases().ConfigureAwait(false);
-            return databases.OfType<IMartenDatabase>().ToList();
-        }
+    IMartenDatabase IMartenStorage.Database => Tenancy.Default.Database;
 
-        Task<SchemaMigration> IMartenStorage.CreateMigrationAsync()
-        {
-            return Tenancy.Default.Database.CreateMigrationAsync();
-        }
+    ValueTask<IMartenDatabase> IMartenStorage.FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
+    {
+        return Tenancy.FindOrCreateDatabase(tenantIdOrDatabaseIdentifier);
+    }
 
-        IMartenDatabase IMartenStorage.Database => Tenancy.Default.Database;
-
-        ValueTask<IMartenDatabase> IMartenStorage.FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
-        {
-            return Tenancy.FindOrCreateDatabase(tenantIdOrDatabaseIdentifier);
-        }
+    private MartenDatabase nulloDatabase()
+    {
+        return new MartenDatabase(Options, new ConnectionFactory(string.Empty), "NULLO");
     }
 }
