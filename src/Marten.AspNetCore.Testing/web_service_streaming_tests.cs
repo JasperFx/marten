@@ -42,8 +42,11 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
         theHost = fixture.Host;
     }
 
-    [Fact]
-    public async Task stream_a_single_document_hit()
+    [Theory]
+    [InlineData(null)]
+    [InlineData(200)]
+    [InlineData(201)]
+    public async Task stream_a_single_document_hit(int? onFoundStatus)
     {
         var issue = new Issue {Description = "It's bad", Open = true};
 
@@ -56,8 +59,13 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
 
         var result = await theHost.Scenario(s =>
         {
-            s.Get.Url($"/issue/{issue.Id}");
-            s.StatusCodeShouldBeOk();
+            var sendExpression = s.Get.Url($"/issue/{issue.Id}");
+            if (onFoundStatus.HasValue)
+            {
+                sendExpression.QueryString("sc", onFoundStatus.ToString());
+            }
+
+            s.StatusCodeShouldBe(onFoundStatus ?? 200);
             s.ContentTypeShouldBe("application/json");
         });
 
@@ -77,8 +85,11 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
     }
 
 
-    [Fact]
-    public async Task stream_a_single_document_hit_2()
+    [Theory]
+    [InlineData(null)]
+    [InlineData(200)]
+    [InlineData(201)]
+    public async Task stream_a_single_document_hit_2(int? onFoundStatus)
     {
         var issue = new Issue {Description = "It's bad", Open = true};
 
@@ -91,8 +102,13 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
 
         var result = await theHost.Scenario(s =>
         {
-            s.Get.Url($"/issue2/{issue.Id}");
-            s.StatusCodeShouldBeOk();
+            var sendExpression = s.Get.Url($"/issue2/{issue.Id}");
+            if (onFoundStatus.HasValue)
+            {
+                sendExpression.QueryString("sc", onFoundStatus.ToString());
+            }
+
+            s.StatusCodeShouldBe(onFoundStatus ?? 200);
             s.ContentTypeShouldBe("application/json");
         });
 
@@ -111,8 +127,11 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
         });
     }
 
-    [Fact]
-    public async Task stream_an_array_of_documents()
+    [Theory]
+    [InlineData(null)]
+    [InlineData(200)]
+    [InlineData(201)]            
+    public async Task stream_an_array_of_documents(int? onFoundStatus)
     {
         var store = theHost.Services.GetRequiredService<IDocumentStore>();
         await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Issue));
@@ -127,8 +146,13 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
 
         var result = await theHost.Scenario(s =>
         {
-            s.Get.Url("/issue/open");
-            s.StatusCodeShouldBeOk();
+            var sendExpression = s.Get.Url("/issue/open");
+            if (onFoundStatus.HasValue)
+            {
+                sendExpression.QueryString("sc", onFoundStatus.ToString());
+            }
+
+            s.StatusCodeShouldBe(onFoundStatus ?? 200);
             s.ContentTypeShouldBe("application/json");
 
         });
@@ -138,8 +162,11 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
     }
 
 
-    [Fact]
-    public async Task stream_a_single_document_hit_with_compiled_query()
+    [Theory]
+    [InlineData(null)]
+    [InlineData(200)]
+    [InlineData(201)]
+    public async Task stream_a_single_document_hit_with_compiled_query(int? onFoundStatus)
     {
         var issue = new Issue {Description = "It's bad", Open = true};
 
@@ -152,8 +179,13 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
 
         var result = await theHost.Scenario(s =>
         {
-            s.Get.Url($"/issue3/{issue.Id}");
-            s.StatusCodeShouldBeOk();
+            var sendExpression = s.Get.Url($"/issue3/{issue.Id}");
+            if (onFoundStatus.HasValue)
+            {
+                sendExpression.QueryString("sc", onFoundStatus.ToString());
+            }
+
+            s.StatusCodeShouldBe(onFoundStatus ?? 200);
             s.ContentTypeShouldBe("application/json");
         });
 
@@ -172,8 +204,11 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
         });
     }
 
-    [Fact]
-    public async Task stream_an_array_of_documents_with_compiled_query()
+    [Theory]
+    [InlineData(null)]
+    [InlineData(200)]
+    [InlineData(201)]
+    public async Task stream_an_array_of_documents_with_compiled_query(int? onFoundStatus)
     {
         var store = theHost.Services.GetRequiredService<IDocumentStore>();
         await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Issue));
@@ -188,8 +223,13 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
 
         var result = await theHost.Scenario(s =>
         {
-            s.Get.Url("/issue2/open");
-            s.StatusCodeShouldBeOk();
+            var sendExpression = s.Get.Url("/issue2/open");
+            if (onFoundStatus.HasValue)
+            {
+                sendExpression.QueryString("sc", onFoundStatus.ToString());
+            }
+
+            s.StatusCodeShouldBe(onFoundStatus ?? 200);
             s.ContentTypeShouldBe("application/json");
 
         });
