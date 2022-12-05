@@ -39,13 +39,17 @@ namespace IssueService.Controllers
         #region sample_write_single_document_by_id_to_httpresponse
 
         [HttpGet("/issue/{issueId}")]
-        public Task Get(Guid issueId, [FromServices] IQuerySession session)
+        public Task Get(Guid issueId, [FromServices] IQuerySession session, [FromQuery] string? sc = null)
         {
             // This "streams" the raw JSON to the HttpResponse
             // w/o ever having to read the full JSON string or
             // deserialize/serialize within the HTTP request
-            return session.Json
-                .WriteById<Issue>(issueId, HttpContext);
+            return sc is null
+                ? session.Json
+                    .WriteById<Issue>(issueId, HttpContext)
+                : session.Json
+                    .WriteById<Issue>(issueId, HttpContext, onFoundStatus: int.Parse(sc));
+
         }
 
         #endregion
@@ -53,10 +57,13 @@ namespace IssueService.Controllers
         #region sample_use_linq_to_write_single_document_to_httpcontext
 
         [HttpGet("/issue2/{issueId}")]
-        public Task Get2(Guid issueId, [FromServices] IQuerySession session)
+        public Task Get2(Guid issueId, [FromServices] IQuerySession session, [FromQuery] string? sc = null)
         {
-            return session.Query<Issue>().Where(x => x.Id == issueId)
-                .WriteSingle(HttpContext);
+            return sc is null
+                ? session.Query<Issue>().Where(x => x.Id == issueId)
+                    .WriteSingle(HttpContext)
+                : session.Query<Issue>().Where(x => x.Id == issueId)
+                    .WriteSingle(HttpContext, onFoundStatus: int.Parse(sc));
         }
 
         #endregion
@@ -64,10 +71,13 @@ namespace IssueService.Controllers
         #region sample_write_single_document_to_httpcontext_with_compiled_query
 
         [HttpGet("/issue3/{issueId}")]
-        public Task Get3(Guid issueId, [FromServices] IQuerySession session)
+        public Task Get3(Guid issueId, [FromServices] IQuerySession session, [FromQuery] string? sc = null)
         {
-            return session.Query<Issue>().Where(x => x.Id == issueId)
-                .WriteSingle(HttpContext);
+            return sc is null
+                ? session.Query<Issue>().Where(x => x.Id == issueId)
+                    .WriteSingle(HttpContext)
+                : session.Query<Issue>().Where(x => x.Id == issueId)
+                    .WriteSingle(HttpContext, onFoundStatus: int.Parse(sc));
         }
 
         #endregion
@@ -76,14 +86,16 @@ namespace IssueService.Controllers
         #region sample_writing_multiple_documents_to_httpcontext
 
         [HttpGet("/issue/open")]
-        public Task OpenIssues([FromServices] IQuerySession session)
+        public Task OpenIssues([FromServices] IQuerySession session, [FromQuery] string? sc = null)
         {
             // This "streams" the raw JSON to the HttpResponse
             // w/o ever having to read the full JSON string or
             // deserialize/serialize within the HTTP request
-            return session.Query<Issue>()
-                .Where(x => x.Open)
-                .WriteArray(HttpContext);
+            return sc is null
+                ? session.Query<Issue>().Where(x => x.Open)
+                    .WriteArray(HttpContext)
+                : session.Query<Issue>().Where(x => x.Open)
+                    .WriteArray(HttpContext, onFoundStatus: int.Parse(sc));
         }
 
         #endregion
@@ -91,9 +103,11 @@ namespace IssueService.Controllers
         #region sample_using_compiled_query_with_json_streaming
 
         [HttpGet("/issue2/open")]
-        public Task OpenIssues2([FromServices] IQuerySession session)
+        public Task OpenIssues2([FromServices] IQuerySession session, [FromQuery] string? sc = null)
         {
-            return session.WriteArray(new OpenIssues(), HttpContext);
+            return sc is null
+                ? session.WriteArray(new OpenIssues(), HttpContext)
+                : session.WriteArray(new OpenIssues(), HttpContext, onFoundStatus: int.Parse(sc));
         }
 
         #endregion
