@@ -44,6 +44,7 @@ public class UnitOfWorkBlogSamples: IntegrationContext
             // I'm just writing out the Sql executed here
             var sql = logger.Commands.Single().CommandText;
             var directory = Path.Combine(AppContext.BaseDirectory, "bin", "unitofwork.sql");
+            FileSystem.CreateDirectoryIfNotExists(directory);
 
             File.WriteAllText(directory, sql);
         }
