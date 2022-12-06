@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Reflection;
+using JasperFx.Core.Reflection;
 using Marten.Util;
 
 namespace Marten.Schema;

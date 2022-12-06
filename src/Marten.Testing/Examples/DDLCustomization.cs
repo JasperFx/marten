@@ -55,8 +55,6 @@ public class DDLCustomization
             // application
             _.Advanced.Migrator.ReadTemplates("templates");
 
-            // Or just sweep the base directory of your application
-            _.Advanced.Migrator.ReadTemplates();
         });
         #endregion
     }

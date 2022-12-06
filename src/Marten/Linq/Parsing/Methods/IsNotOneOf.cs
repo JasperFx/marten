@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Linq.Expressions;
+using JasperFx.Core.Reflection;
 using Marten.Linq.Fields;
 using Marten.Util;
 using Weasel.Postgresql.SqlGeneration;

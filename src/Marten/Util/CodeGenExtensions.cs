@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace Marten.Util;
 
-// TODO -- move this to LamarCodeGeneration itself
+// TODO -- move this to JasperFx.CodeGeneration itself
 public static class CodeGenExtensions
 {
     public static Type FindPreGeneratedType(this Assembly assembly, string @namespace, string typeName)

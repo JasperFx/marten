@@ -16,8 +16,6 @@ public class EventActions
     [GlobalSetup]
     public void Setup()
     {
-        var fileSystem = new FileSystem();
-
         var folder = AppContext.BaseDirectory;
         while (!folder.EndsWith("src"))
         {
@@ -26,7 +24,7 @@ public class EventActions
 
         folder = folder.AppendPath("Marten.Testing", "CodeTracker");
 
-        var files = fileSystem.FindFiles(folder, FileSet.Shallow("*.json"));
+        var files = FileSystem.FindFiles(folder, FileSet.Shallow("*.json"));
 
         AllProjects = new Dictionary<Guid, GithubProject>();
         foreach (var file in files)

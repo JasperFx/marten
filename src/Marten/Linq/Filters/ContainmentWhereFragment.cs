@@ -5,11 +5,12 @@ using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core;
 using Marten.Linq.Parsing;
-using Marten.Util;
+using JasperFx.Core.Reflection;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
+using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Linq.Filters;
 

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using JasperFx.Core.Reflection;
 using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
 using Marten.Util;

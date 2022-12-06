@@ -6,6 +6,7 @@ using System.Reflection;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Events.CodeGeneration;
 using Marten.Util;
 using Weasel.Postgresql.Tables;

@@ -6,12 +6,13 @@ using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using Marten.Internal.CodeGeneration;
 using Marten.Linq.Parsing;
-using Marten.Util;
+using JasperFx.Core.Reflection;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
+using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Events.Schema;
 

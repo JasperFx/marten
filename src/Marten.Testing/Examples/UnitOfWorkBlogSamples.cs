@@ -45,8 +45,7 @@ public class UnitOfWorkBlogSamples: IntegrationContext
             var sql = logger.Commands.Single().CommandText;
             var directory = Path.Combine(AppContext.BaseDirectory, "bin", "unitofwork.sql");
 
-            new FileSystem()
-                .WriteStringToFile(directory, sql);
+            File.WriteAllText(directory, sql);
         }
     }
 
