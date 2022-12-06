@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using JasperFx.Core;
@@ -43,10 +44,7 @@ public class UnitOfWorkBlogSamples: IntegrationContext
 
             // I'm just writing out the Sql executed here
             var sql = logger.Commands.Single().CommandText;
-            var directory = Path.Combine(AppContext.BaseDirectory, "bin", "unitofwork.sql");
-            FileSystem.CreateDirectoryIfNotExists(directory);
-
-            File.WriteAllText(directory, sql);
+            Debug.WriteLine(sql);
         }
     }
 
