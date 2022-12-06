@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Storage.Metadata;

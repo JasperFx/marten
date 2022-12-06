@@ -76,7 +76,7 @@ public abstract class LinqTestContext<TSelf>
 
         var list = new List<string>();
 
-        new FileSystem().ReadTextFile(codefile, line =>
+        FileSystem.ReadTextFile(codefile, line =>
         {
             line = line.Trim();
 

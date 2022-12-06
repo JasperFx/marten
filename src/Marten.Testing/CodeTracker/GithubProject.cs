@@ -25,7 +25,7 @@ public class GithubProject
             TypeNameHandling = TypeNameHandling.All
         };
 
-        var json = new FileSystem().ReadStringFromFile(file);
+        var json = File.ReadAllText(file);
 
         return serializer.Deserialize<GithubProject>(new JsonTextReader(new StringReader(json)));
     }

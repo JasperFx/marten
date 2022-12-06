@@ -67,7 +67,7 @@ $$ LANGUAGE plv8 IMMUTABLE STRICT;
 
     public static TransformFunction ForFile(StoreOptions options, string file, string name = null)
     {
-        var body = new FileSystem().ReadStringFromFile(file);
+        var body = File.ReadAllText(file);
         name = name ?? Path.GetFileNameWithoutExtension(file).ToLowerInvariant();
 
         return new TransformFunction(options, name, body);

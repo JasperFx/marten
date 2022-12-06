@@ -18,42 +18,10 @@ internal static class ReflectionExtensions
         return member.Name.ToTableAlias();
     }
 
+
     public static string ToTableAlias(this string name)
     {
         return name.SplitPascalCase().ToLower().Replace(" ", "_");
     }
 
-    public static Type GetMemberType(this MemberInfo member)
-    {
-        Type rawType = null;
-
-        if (member is FieldInfo)
-        {
-            rawType = member.As<FieldInfo>().FieldType;
-        }
-
-        if (member is PropertyInfo)
-        {
-            rawType = member.As<PropertyInfo>().PropertyType;
-        }
-
-        return rawType.IsNullable() ? rawType.GetInnerTypeFromNullable() : rawType;
-    }
-
-    public static Type GetRawMemberType(this MemberInfo member)
-    {
-        Type rawType = null;
-
-        if (member is FieldInfo)
-        {
-            rawType = member.As<FieldInfo>().FieldType;
-        }
-
-        if (member is PropertyInfo)
-        {
-            rawType = member.As<PropertyInfo>().PropertyType;
-        }
-
-        return rawType;
-    }
 }

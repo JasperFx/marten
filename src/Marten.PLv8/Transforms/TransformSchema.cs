@@ -57,7 +57,7 @@ internal class TransformSchema: ITransforms, IFeatureSchema
             directory = AppContext.BaseDirectory.AppendPath(directory);
         }
 
-        new FileSystem().FindFiles(directory, FileSet.Deep("*.js")).Each(file =>
+        FileSystem.FindFiles(directory, FileSet.Deep("*.js")).Each(file =>
         {
             LoadFile(file);
         });

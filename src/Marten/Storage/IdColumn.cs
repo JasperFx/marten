@@ -1,4 +1,5 @@
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Util;

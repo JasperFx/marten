@@ -132,11 +132,9 @@ var store = DocumentStore.For(_ =>
     // application
     _.Advanced.Migrator.ReadTemplates("templates");
 
-    // Or just sweep the base directory of your application
-    _.Advanced.Migrator.ReadTemplates();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DDLCustomization.cs#L50-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_ddl_templates' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DDLCustomization.cs#L50-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_ddl_templates' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 **Do note that the `ReadTemplates()` methods only do a shallow search through the given directory and do not consider child directories.
@@ -154,7 +152,7 @@ var store = DocumentStore.For(_ =>
     _.Schema.For<User>().DdlTemplate("readonly");
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DDLCustomization.cs#L66-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_ddl_template_by_fi' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DDLCustomization.cs#L64-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_ddl_template_by_fi' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also decorate document types with the `[DdlTemplate("name")]` attribute shown below:
