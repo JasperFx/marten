@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using JasperFx.CodeGeneration.Model;
 using Weasel.Postgresql.Tables;

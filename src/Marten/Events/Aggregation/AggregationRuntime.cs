@@ -93,21 +93,14 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         {
             Storage.SetIdentity(aggregate, slice.Id);
             Versioning.TrySetVersion(aggregate, slice.Events().LastOrDefault());
+            session.QueueOperation(Storage.Upsert(aggregate, session, slice.Tenant.TenantId));
         }
-
-        // Delete the aggregate *if* it existed prior to these events
-        if (aggregate == null)
+        else if (exists)
         {
-            if (exists)
-            {
-                var operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
-                session.QueueOperation(operation);
-            }
-
-            return;
+            // Delete the aggregate *if* it existed prior to these events
+            var operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
+            session.QueueOperation(operation);
         }
-
-        session.QueueOperation(Storage.Upsert(aggregate, session, slice.Tenant.TenantId));
     }
 
     public IAggregateVersioning Versioning { get; set; }

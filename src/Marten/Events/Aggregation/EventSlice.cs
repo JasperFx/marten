@@ -61,9 +61,9 @@ public class EventSlice<TDoc, TId>: IEventSlice, IComparer<IEvent>
 
     public int Count => _events.Count;
 
-    int IComparer<IEvent>.Compare(IEvent x, IEvent y)
+    int IComparer<IEvent>.Compare(IEvent? x, IEvent? y)
     {
-        return x.Sequence.CompareTo(y.Sequence);
+        return x?.Sequence.CompareTo(y?.Sequence) ?? -1;
     }
 
     /// <summary>

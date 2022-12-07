@@ -11,8 +11,9 @@ using JasperFx.Core.Reflection;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
 using Marten.Schema;
-using Marten.Util;
 using FindMembers = Marten.Linq.Parsing.FindMembers;
+
+#nullable enable
 
 namespace Marten.Events.Aggregation;
 
@@ -31,18 +32,18 @@ public enum AggregationScope
 
 public interface IAggregateVersioning
 {
-    public MemberInfo VersionMember
+    public MemberInfo? VersionMember
     {
         get;
     }
 
-    void TrySetVersion(object aggregate, IEvent lastEvent);
+    void TrySetVersion(object aggregate, IEvent? lastEvent);
     long GetVersion(object aggregate);
 }
 
-public interface IAggregateVersioning<T>
+public interface IAggregateVersioning<in T>
 {
-    void TrySetVersion(T aggregate, IEvent lastEvent);
+    void TrySetVersion(T aggregate, IEvent? lastEvent);
 }
 
 internal class AggregateVersioning<T>: IAggregateVersioning, IAggregateVersioning<T>, ILiveAggregator<T>
@@ -68,24 +69,20 @@ internal class AggregateVersioning<T>: IAggregateVersioning, IAggregateVersionin
             .OfType<MemberInfo>();
 
         var members = props.Concat(fields);
-        // ReSharper disable once PossibleMultipleEnumeration
-        VersionMember = members.FirstOrDefault(x => x.HasAttribute<VersionAttribute>());
-        // ReSharper disable once PossibleMultipleEnumeration
-        VersionMember ??= members.FirstOrDefault(x =>
-            x.Name.EqualsIgnoreCase("version") && !x.HasAttribute<MartenIgnoreAttribute>());
+
+        VersionMember = members.FirstOrDefault(x =>
+            x.HasAttribute<VersionAttribute>()
+            || (x.Name.EqualsIgnoreCase("version") && !x.HasAttribute<MartenIgnoreAttribute>())
+        );
     }
 
-    public ILiveAggregator<T> Inner { get; set; }
+    public ILiveAggregator<T>? Inner { get; set; }
 
-    public MemberInfo VersionMember
-    {
-        get;
-        private set;
-    }
+    public MemberInfo? VersionMember { get; private set; }
 
-    void IAggregateVersioning.TrySetVersion(object aggregate, IEvent lastEvent)
+    void IAggregateVersioning.TrySetVersion(object aggregate, IEvent? lastEvent)
     {
-        if (aggregate == null || lastEvent == null)
+        if (lastEvent == null)
         {
             return;
         }
@@ -98,7 +95,7 @@ internal class AggregateVersioning<T>: IAggregateVersioning, IAggregateVersionin
         return GetVersion((T)aggregate);
     }
 
-    public void TrySetVersion(T aggregate, IEvent lastEvent)
+    public void TrySetVersion(T aggregate, IEvent? lastEvent)
     {
         if (aggregate == null || lastEvent == null)
         {
@@ -177,7 +174,7 @@ internal class AggregateVersioning<T>: IAggregateVersioning, IAggregateVersionin
         VersionMember = FindMembers.Determine(expression).Single();
     }
 
-    public long GetVersion(T aggregate)
+    private long GetVersion(T aggregate)
     {
         if (VersionMember is PropertyInfo prop)
         {
