@@ -224,7 +224,7 @@ internal class ProjectionDaemon: IProjectionDaemon
         if (typeof(TView).CanBeCastTo(typeof(ProjectionBase)) && typeof(TView).HasDefaultConstructor())
         {
             var projection = (ProjectionBase)Activator.CreateInstance(typeof(TView))!;
-            return RebuildProjection(projection.ProjectionName, token);
+            return RebuildProjection(projection.ProjectionName, shardTimeout, token);
         }
 
         return RebuildProjection(typeof(TView).Name, shardTimeout, token);
