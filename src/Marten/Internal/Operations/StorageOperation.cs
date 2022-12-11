@@ -118,15 +118,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
     protected async Task postprocessUpdateAsync(DbDataReader reader, IList<Exception> exceptions,
         CancellationToken token)
     {
-        if (!await reader.ReadAsync(token).ConfigureAwait(false))
-        {
-            exceptions.Add(new NonExistentDocumentException(typeof(T), _id));
-        }
-
-        ;
-
-        var isNull = await reader.IsDBNullAsync(0, token).ConfigureAwait(false);
-        if (isNull)
+        if (!await reader.ReadAsync(token).ConfigureAwait(false) || await reader.IsDBNullAsync(0, token).ConfigureAwait(false))
         {
             exceptions.Add(new NonExistentDocumentException(typeof(T), _id));
         }
