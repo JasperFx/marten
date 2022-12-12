@@ -29,7 +29,7 @@ public class ProjectionController
                 ? input.ShardTimeoutFlag.ToTime()
                 : null;
         }
-        catch (FormatException)
+        catch (Exception)
         {
             _view.DisplayInvalidShardTimeoutValue();
             return false;
