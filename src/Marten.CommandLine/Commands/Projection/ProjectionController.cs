@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
+using Oakton.Internal.Conversion;
 
 namespace Marten.CommandLine.Commands.Projection;
 
@@ -21,6 +22,19 @@ public class ProjectionController
 
     public async Task<bool> Execute(ProjectionInput input)
     {
+        TimeSpan? shardTimeout = null;
+        try
+        {
+            shardTimeout = !string.IsNullOrEmpty(input.ShardTimeoutFlag)
+                ? input.ShardTimeoutFlag.ToTime()
+                : null;
+        }
+        catch (FormatException)
+        {
+            _view.DisplayInvalidShardTimeoutValue();
+            return false;
+        }
+
         var stores = FilterStores(input);
         if (stores.IsEmpty())
         {
@@ -78,7 +92,7 @@ public class ProjectionController
                         _view.WriteHeader(database);
                     }
 
-                    var status = await _host.TryRebuildShards(database, shards, input.ShardTimeout).ConfigureAwait(false);
+                    var status = await _host.TryRebuildShards(database, shards, shardTimeout).ConfigureAwait(false);
 
                     if (status == RebuildStatus.NoData)
                     {

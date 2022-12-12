@@ -14,4 +14,5 @@ public interface IConsoleView
     void WriteHeader(IProjectionDatabase database);
     string[] SelectDatabases(string[] databaseNames);
     void DisplayRebuildIsComplete();
+    void DisplayInvalidShardTimeoutValue();
 }

@@ -35,7 +35,8 @@ public class ProjectionInput: MartenInput
     public string DatabaseFlag { get; set; }
 
     [Description("If specified, use this shard timeout value for daemon")]
-    public TimeSpan? ShardTimeout { get; set; }
+    [FlagAlias("shard-timeout", 't')]
+    public string ShardTimeoutFlag { get; set; }
 
     internal IList<AsyncProjectionShard> BuildShards(DocumentStore store)
     {

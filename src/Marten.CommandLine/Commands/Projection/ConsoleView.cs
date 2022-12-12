@@ -53,6 +53,11 @@ internal class ConsoleView: IConsoleView
         AnsiConsole.WriteLine();
     }
 
+    public void DisplayInvalidShardTimeoutValue()
+    {
+        AnsiConsole.Markup("[red]Invalid Shard Timeout.[/]");
+    }
+
     public string[] SelectStores(string[] storeNames)
     {
         return AnsiConsole.Prompt(new MultiSelectionPrompt<string>()
