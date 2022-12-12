@@ -27,6 +27,11 @@ public class executing_arbitrary_sql_as_part_of_transaction : OneOffConfiguratio
             table.AddColumn<string>("name").AsPrimaryKey();
 
             opts.Storage.ExtendedSchemaObjects.Add(table);
+
+            table = new Table("data");
+            table.AddColumn("raw_value", "jsonb");
+
+            opts.Storage.ExtendedSchemaObjects.Add(table);
         });
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
@@ -37,6 +42,8 @@ public class executing_arbitrary_sql_as_part_of_transaction : OneOffConfiguratio
         theSession.Store(Target.Random());
         theSession.QueueSqlCommand("insert into names (name) values ('Oskar')");
         theSession.Store(Target.Random());
+        var json = "{ \"answer\": 42 }";
+        theSession.QueueSqlCommand("insert into data (raw_value) values (?::jsonb)", json);
         #endregion
 
         await theSession.SaveChangesAsync();
