@@ -339,7 +339,7 @@ public class ProjectionControllerTests : IProjectionHost
 
         // NOTE: ShardTimeout is set in ProjectInput as a test
         // but there is no means to assert this value being used by daemon
-        await theController.Execute(new ProjectionInput { RebuildFlag = true, ShardTimeout = 10.Minutes()});
+        await theController.Execute(new ProjectionInput { RebuildFlag = true, ShardTimeoutFlag = 10.Minutes()});
 
         var expectedRebuilds = databases.SelectMany(db =>
         {
