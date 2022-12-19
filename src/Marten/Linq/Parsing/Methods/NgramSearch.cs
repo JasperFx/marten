@@ -20,6 +20,6 @@ public class NgramSearch: IMethodCallParser
         var locator = mapping.FieldFor(members).RawLocator;
         var values = expression.Arguments.Last().Value();
 
-        return new WhereFragment($"mt_grams_vector({locator}) @@ mt_grams_query(?)", values);
+        return new WhereFragment($"{mapping.DatabaseSchemaName}.mt_grams_vector({locator}) @@ {mapping.DatabaseSchemaName}.mt_grams_query(?)", values);
     }
 }
