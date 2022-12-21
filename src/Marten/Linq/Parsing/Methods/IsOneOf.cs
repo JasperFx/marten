@@ -17,7 +17,7 @@ internal class IsOneOf: IMethodCallParser
                && expression.Method.DeclaringType == typeof(LinqExtensions);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         var members = FindMembers.Determine(expression);
 
@@ -26,7 +26,7 @@ internal class IsOneOf: IMethodCallParser
 
         if (members.Last().GetMemberType().IsEnum)
         {
-            return new EnumIsOneOfWhereFragment(values, serializer.EnumStorage, locator);
+            return new EnumIsOneOfWhereFragment(values, options.Serializer().EnumStorage, locator);
         }
 
         return new WhereFragment($"{locator} = ANY(?)", values);

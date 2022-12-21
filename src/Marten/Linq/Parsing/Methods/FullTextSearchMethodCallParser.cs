@@ -33,7 +33,7 @@ internal abstract class FullTextSearchMethodCallParser: IMethodCallParser
                && expression.Method.DeclaringType == typeof(LinqExtensions);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         if (expression.Arguments.Count < 2 || expression.Arguments[1].Value() == null)
         {

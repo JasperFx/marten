@@ -15,7 +15,7 @@ internal class TenantIsOneOf: IMethodCallParser
                && expression.Method.DeclaringType == typeof(LinqExtensions);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         var values = expression.Arguments.Last().Value().As<string[]>();
         return new TenantIsOneOfWhereFragment(values);

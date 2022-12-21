@@ -56,8 +56,9 @@ internal class SimpleEqualsParser: IMethodCallParser
                expression.Method.Name.Equals("Equals", StringComparison.Ordinal);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
+        var serializer = options.Serializer();
         var field = GetField(mapping, expression);
         var locator = field.TypedLocator;
 

@@ -17,12 +17,12 @@ internal class IsSupersetOf: IMethodCallParser
                IsISetMethod(method);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         var locator = mapping.FieldFor(expression).JSONBLocator;
         var values = expression.Arguments.Last().Value();
 
-        var json = serializer.ToJson(values);
+        var json = options.Serializer().ToJson(values);
         return new CustomizableWhereFragment($"{locator} @> ?", "?", new CommandParameter(json, NpgsqlDbType.Jsonb));
     }
 

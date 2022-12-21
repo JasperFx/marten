@@ -27,7 +27,6 @@ public interface IFieldMapping
     IField FieldFor(IEnumerable<MemberInfo> members);
     IField FieldFor(MemberInfo member);
     public IField FieldFor(string memberName);
-    public string DatabaseSchemaName { get;  }
 }
 
 public class FieldMapping: IFieldMapping
@@ -48,8 +47,6 @@ public class FieldMapping: IFieldMapping
 
     public PropertySearching PropertySearching { get; set; } = PropertySearching.JSON_Locator_Only;
     public DeleteStyle DeleteStyle { get; set; } = DeleteStyle.Remove;
-
-    public string DatabaseSchemaName => _options.DatabaseSchemaName;
 
     public IField FieldFor(Expression expression)
     {

@@ -20,7 +20,7 @@ internal class DeletedBeforeParser: IMethodCallParser
         return Equals(expression.Method, _method);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         if (mapping.DeleteStyle != DeleteStyle.SoftDelete)
         {

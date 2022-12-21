@@ -104,7 +104,7 @@ public class LinqParsing: IReadOnlyLinqParsing
 
 
     internal ISqlFragment BuildWhereFragment(IFieldMapping mapping, MethodCallExpression expression,
-        ISerializer serializer)
+        IReadOnlyStoreOptions options)
     {
         var parser = FindMethodParser(expression);
 
@@ -114,7 +114,7 @@ public class LinqParsing: IReadOnlyLinqParsing
                 $"Marten does not (yet) support Linq queries using the {expression.Method.DeclaringType.FullName}.{expression.Method.Name}() method");
         }
 
-        return parser.Parse(mapping, serializer, expression);
+        return parser.Parse(mapping, options, expression);
     }
 
     internal IMethodCallParser FindMethodParser(MethodCallExpression expression)

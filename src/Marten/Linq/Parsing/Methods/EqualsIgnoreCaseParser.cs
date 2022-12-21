@@ -15,7 +15,7 @@ internal class EqualsIgnoreCaseParser: IMethodCallParser
                && expression.Method.DeclaringType == typeof(StringExtensions);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         var locator = mapping.FieldFor(expression).RawLocator;
         var value = expression.Arguments.Last().Value();

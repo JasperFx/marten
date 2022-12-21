@@ -92,7 +92,7 @@ public class IsBlue: IMethodCallParser
         return expression.Method.Name == nameof(CustomExtensions.IsBlue);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         var locator = mapping.FieldFor(new MemberInfo[] {_property}).TypedLocator;
 
