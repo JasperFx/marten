@@ -2,13 +2,12 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
-using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace DocumentDbTests.Indexes;
 
-public class NgramSearchTests : OneOffConfigurationsContext
+public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsContext
 {
 
     public sealed class User
@@ -28,7 +27,7 @@ public class NgramSearchTests : OneOffConfigurationsContext
     {
         var store = DocumentStore.For(_ =>
         {
-            _.Connection(ConnectionSource.ConnectionString);
+            _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
 
             // This creates
             _.Schema.For<User>().Index(x => x.UserName);
@@ -58,7 +57,7 @@ public class NgramSearchTests : OneOffConfigurationsContext
 
         result.ShouldNotBeNull();
         result.ShouldHaveSingleItem();
-        // result[0].UserName.ShouldContain(term);
+        result[0].UserName.ShouldContain(term);
     }
 
     [Fact]
@@ -66,7 +65,7 @@ public class NgramSearchTests : OneOffConfigurationsContext
     {
         var store = DocumentStore.For(_ =>
         {
-            _.Connection(ConnectionSource.ConnectionString);
+            _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
 
             _.DatabaseSchemaName = "ngram_test";
 
@@ -98,6 +97,6 @@ public class NgramSearchTests : OneOffConfigurationsContext
 
         result.ShouldNotBeNull();
         result.ShouldHaveSingleItem();
-        // result[0].UserName.ShouldContain(term);
+        result[0].UserName.ShouldContain(term);
     }
 }
