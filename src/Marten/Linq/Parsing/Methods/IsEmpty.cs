@@ -12,7 +12,7 @@ internal class IsEmpty: IMethodCallParser
                && expression.Method.DeclaringType == typeof(LinqExtensions);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         var field = mapping.FieldFor(expression);
 

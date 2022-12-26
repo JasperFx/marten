@@ -17,7 +17,7 @@ internal class AnyTenant: WhereFragment, IMethodCallParser, ITenantWhereFragment
                && expression.Method.DeclaringType == typeof(LinqExtensions);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         return this;
     }

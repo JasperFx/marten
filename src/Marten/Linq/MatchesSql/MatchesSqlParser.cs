@@ -22,7 +22,7 @@ public class MatchesSqlParser: IMethodCallParser
         return Equals(expression.Method, _sqlMethod) || Equals(expression.Method, _fragmentMethod);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         if (expression.Method.Equals(_sqlMethod))
         {

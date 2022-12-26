@@ -16,13 +16,13 @@ public class DictionaryExpressions: IMethodCallParser
                || IsDictionaryContainsKey(expression.Method);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         var fieldlocator = mapping.FieldFor(expression).TypedLocator;
 
         if (IsCollectionContainsWithStringKey(expression.Method))
         {
-            return QueryFromICollectionContains(expression, fieldlocator, serializer);
+            return QueryFromICollectionContains(expression, fieldlocator, options.Serializer());
         }
 
         if (IsDictionaryContainsKey(expression.Method))

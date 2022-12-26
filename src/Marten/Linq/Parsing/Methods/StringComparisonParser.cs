@@ -24,7 +24,7 @@ internal abstract class StringComparisonParser: IMethodCallParser
         return _supportedMethods.Any(m => AreMethodsEqual(m, expression.Method));
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         var locator = GetLocator(mapping, expression);
 

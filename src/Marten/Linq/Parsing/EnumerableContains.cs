@@ -19,10 +19,10 @@ public class EnumerableContains: IMethodCallParser
                expression.Arguments.Single().IsValueExpression();
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         var value = expression.Arguments.Single().Value();
-        return ContainmentWhereFragment.SimpleArrayContains(FindMembers.Determine(expression.Object), serializer,
+        return ContainmentWhereFragment.SimpleArrayContains(FindMembers.Determine(expression.Object), options.Serializer(),
             expression.Object, value);
     }
 

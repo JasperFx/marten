@@ -13,13 +13,13 @@ public class NgramSearch: IMethodCallParser
                && expression.Method.DeclaringType == typeof(LinqExtensions);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         var members = FindMembers.Determine(expression);
 
         var locator = mapping.FieldFor(members).RawLocator;
         var values = expression.Arguments.Last().Value();
 
-        return new WhereFragment($"mt_grams_vector({locator}) @@ mt_grams_query(?)", values);
+        return new WhereFragment($"{options.DatabaseSchemaName}.mt_grams_vector({locator}) @@ {options.DatabaseSchemaName}.mt_grams_query(?)", values);
     }
 }

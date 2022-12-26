@@ -19,7 +19,7 @@ internal class MaybeArchivedMethodCallParser: IMethodCallParser
         return expression.Method == _method;
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         return _whereFragment;
     }

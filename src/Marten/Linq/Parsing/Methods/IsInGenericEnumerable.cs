@@ -16,7 +16,7 @@ internal class IsInGenericEnumerable: IMethodCallParser
                !expression.Arguments.Single().IsValueExpression();
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
     {
         var locator = mapping.FieldFor(expression).TypedLocator;
         var values = expression.Object.Value();

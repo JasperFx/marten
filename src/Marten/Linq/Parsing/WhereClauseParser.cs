@@ -74,7 +74,7 @@ internal partial class WhereClauseParser: RelinqExpressionVisitor, IWhereFragmen
 
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
-        var where = _session.Options.Linq.BuildWhereFragment(_statement.Fields, node, _session.Serializer);
+        var where = _session.Options.Linq.BuildWhereFragment(_statement.Fields, node, _session.Options);
         _holder.Register(where);
 
         return null;

@@ -31,7 +31,7 @@ public interface IMethodCallParser
     /// <param name="serializer"></param>
     /// <param name="expression"></param>
     /// <returns></returns>
-    ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression);
+    ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression);
 }
 
 #endregion

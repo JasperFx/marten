@@ -5,6 +5,6 @@ OR REPLACE FUNCTION {databaseSchema}.mt_grams_vector(text)
         IMMUTABLE STRICT
 AS $function$
 BEGIN
-RETURN (SELECT array_to_string(mt_grams_array($1), ' ') ::tsvector);
+RETURN (SELECT array_to_string({databaseSchema}.mt_grams_array($1), ' ') ::tsvector);
 END
 $function$;

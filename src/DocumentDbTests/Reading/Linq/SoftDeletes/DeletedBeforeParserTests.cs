@@ -16,10 +16,12 @@ public class DeletedBeforeParserTests
     private readonly DocumentMapping _mapping;
     private readonly MethodCallExpression _expression;
     private readonly DeletedBeforeParser _parser;
+    private readonly StoreOptions _options;
 
     public DeletedBeforeParserTests()
     {
-        _mapping = new DocumentMapping(typeof(object), new StoreOptions()) { DeleteStyle = DeleteStyle.SoftDelete };
+        _options = new StoreOptions();
+        _mapping = new DocumentMapping(typeof(object), _options) { DeleteStyle = DeleteStyle.SoftDelete };
         _expression = Expression.Call(typeof(SoftDeletedExtensions).GetMethod(nameof(SoftDeletedExtensions.DeletedBefore)),
             Expression.Parameter(typeof(object)),
             Expression.Constant(DateTimeOffset.UtcNow));
@@ -29,7 +31,7 @@ public class DeletedBeforeParserTests
     [Fact]
     public void WhereFragmentContainsExpectedExpression()
     {
-        var result = _parser.Parse(_mapping, new JsonNetSerializer(), _expression);
+        var result = _parser.Parse(_mapping, _options, _expression);
 
         var builder = new CommandBuilder(new NpgsqlCommand());
 
@@ -42,6 +44,6 @@ public class DeletedBeforeParserTests
     {
         _mapping.DeleteStyle = DeleteStyle.Remove;
 
-        Exception<NotSupportedException>.ShouldBeThrownBy(() => _parser.Parse(_mapping, new JsonNetSerializer(), _expression));
+        Exception<NotSupportedException>.ShouldBeThrownBy(() => _parser.Parse(_mapping, _options, _expression));
     }
 }
