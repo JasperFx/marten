@@ -122,6 +122,8 @@ public class noda_time_acceptance: OneOffConfigurationsContext
             _.UseDefaultSerialization(serializerType: serializerType);
             _.UseNodaTime();
             _.DatabaseSchemaName = "NodaTime";
+            _.Schema.For<TargetWithDates>()
+                .Duplicate(x => x.NullableLocalDate);
         }, true);
 
         theStore.Advanced.Clean.CompletelyRemoveAll();
