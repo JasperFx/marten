@@ -148,7 +148,6 @@ internal class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner, IDispos
 
             _logger.LogError(e, "Error trying to attain the async daemon lock for database {Database}",
                 _database.Identifier);
-            return false;
         }
 
         if (gotLock)
