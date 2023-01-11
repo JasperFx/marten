@@ -8,7 +8,7 @@ public partial class QuerySession
 {
     private bool _disposed;
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         if (_disposed)
         {
@@ -20,7 +20,7 @@ public partial class QuerySession
         GC.SuppressFinalize(this);
     }
 
-    public async ValueTask DisposeAsync()
+    public virtual async ValueTask DisposeAsync()
     {
         if (_disposed)
         {
