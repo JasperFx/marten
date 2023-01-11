@@ -323,5 +323,13 @@ var result = await session
     .Where(x => x.UserName.NgramSearch(term))
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L47-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L51-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_ngram_search-1'></a>
+```cs
+var result = await session
+    .Query<User>()
+    .Where(x => x.UserName.NgramSearch(term))
+    .ToListAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L91-L96' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
