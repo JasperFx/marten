@@ -47,4 +47,22 @@ public class incorrect_method_parsing : IntegrationContext
         var items2 = await theSession.Query<MyDocument>().Where(x => x.Actions.Contains(internalguid)).ToListAsync();
         Assert.Equal(1, items2.Count);
     }
+
+
+    [Fact]
+    public async Task correct_parser_should_be_picked_for_given_where_clause_scenario_3()
+    {
+        var guids = new List<Guid>() { Guid.NewGuid(), Guid.NewGuid() };
+        var internalguid = Guid.NewGuid();
+        theSession.Store(new MyDocument(guids[0], new List<Guid>() { internalguid }));
+        await theSession.SaveChangesAsync();
+
+        // EnumerableContains added to _methodParsing hashmap
+        var items2 = await theSession.Query<MyDocument>().Where(x => x.Actions.Contains(internalguid)).ToListAsync();
+        Assert.Equal(1, items2.Count);
+
+        // IsInGenericEnumerable should be used here, but EnumerableContains is picked instead
+        var items = await theSession.Query<MyDocument>().Where(x => guids.Contains(x.Id)).ToListAsync();
+        Assert.Equal(1, items.Count);
+    }
 }
