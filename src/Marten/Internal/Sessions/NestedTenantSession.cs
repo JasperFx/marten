@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Internal.Storage;
 using Marten.Storage;
@@ -54,5 +55,16 @@ internal class NestedTenantSession: DocumentSessionBase, ITenantOperations
     protected internal override IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider)
     {
         return _parent.selectStorage(provider);
+    }
+
+    public override void Dispose()
+    {
+        // NOTHING
+    }
+
+    public override ValueTask DisposeAsync()
+    {
+        // Do nothing!
+        return ValueTask.CompletedTask;
     }
 }
