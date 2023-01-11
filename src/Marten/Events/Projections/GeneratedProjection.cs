@@ -99,7 +99,11 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
 
         if (needsSettersGenerated())
         {
-            assembleTypes(new GeneratedAssembly(rules), store.Options);
+            var generatedAssembly = new GeneratedAssembly(rules);
+            assembleTypes(generatedAssembly, store.Options);
+
+            // This will force it to create any setters or dynamic funcs
+            generatedAssembly.GenerateCode();
         }
 
         _hasGenerated = true;
