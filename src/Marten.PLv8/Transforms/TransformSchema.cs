@@ -12,9 +12,10 @@ namespace Marten.PLv8.Transforms;
 internal class TransformSchema: ITransforms, IFeatureSchema
 {
     public const string PatchDoc = "patch_doc";
+    private readonly object _lock = new();
 
-    private readonly IDictionary<string, TransformFunction> _functions
-        = new Dictionary<string, TransformFunction>();
+    private readonly Ref<ImHashMap<string, TransformFunction>> _functions
+        = Ref.Of(ImHashMap<string, TransformFunction>.Empty);
 
     private readonly StoreOptions _options;
 
@@ -76,59 +77,55 @@ internal class TransformSchema: ITransforms, IFeatureSchema
 
     public TransformFunction For(string name)
     {
-        if (!_functions.TryGetValue(name, out var function))
-        {
-            if (name == PatchDoc)
-            {
-                return loadPatchDoc();
-            }
+        if (_functions.Value.TryFind(name, out var function))
+            return function;
 
+        if (name != PatchDoc)
             throw new ArgumentOutOfRangeException(nameof(name), $"Unknown Transform Name '{name}'");
-        }
 
-        return function;
+        return loadPatchDoc();
     }
 
     public IEnumerable<TransformFunction> AllFunctions()
     {
-        return _functions.Values;
+        return _functions.Value.Enumerate().Select(x => x.Value);
     }
 
     private void AddFunction(TransformFunction function)
     {
-        if (!_functions.ContainsKey(function.Name))
-        {
-            _functions.Add(function.Name, function);
-        }
-    }
-
-    public bool IsActive(StoreOptions options)
-    {
-        return true;
+        _functions.Swap(d => d.AddOrKeep(function.Name, function));
     }
 
     private IEnumerable<ISchemaObject> schemaObjects()
     {
-        if (!_functions.ContainsKey(PatchDoc))
-        {
-            loadPatchDoc();
-        }
+        loadPatchDoc();
 
         yield return new Extension("PLV8");
 
-        foreach (var function in _functions.Values) yield return function;
+        foreach (var function in AllFunctions()) yield return function;
     }
 
     private TransformFunction loadPatchDoc()
     {
-        var stream = GetType().Assembly.GetManifestResourceStream("Marten.PLv8.mt_patching.js");
-        var js = stream.ReadAllText().Replace("{databaseSchema}", _options.DatabaseSchemaName);
+        if (_functions.Value.TryFind(PatchDoc, out var existingFunction))
+        {
+            return existingFunction;
+        }
 
-        var patching = new TransformFunction(_options, PatchDoc, js);
-        patching.OtherArgs.Add("patch");
+        lock (_lock)
+        {
+            if (_functions.Value.TryFind(PatchDoc, out var current))
+                return current;
 
-        Load(patching);
+            var stream = GetType().Assembly.GetManifestResourceStream("Marten.PLv8.mt_patching.js");
+            var js = stream.ReadAllText().Replace("{databaseSchema}", _options.DatabaseSchemaName);
 
-        return patching;
+            var patching = new TransformFunction(_options, PatchDoc, js);
+            patching.OtherArgs.Add("patch");
+
+            Load(patching);
+
+            return patching;
+        }
     }
 }

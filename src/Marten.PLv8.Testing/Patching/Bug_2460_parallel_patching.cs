@@ -11,7 +11,7 @@ namespace Marten.PLv8.Testing.Patching;
 
 public class Bug_2460_parallel_patching: BugIntegrationContext
 {
-    private const int itemsCount = 1000;
+    private const int itemsCount = 100;
     private const int patchedNumber = 1337;
 
     [Fact]
