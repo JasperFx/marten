@@ -23,8 +23,6 @@ public class PatchExpressionTests : OneOffConfigurationsContext
 {
     private readonly PatchExpression<Target> _expression;
 
-
-
     public PatchExpressionTests()
     {
         StoreOptions(x => x.UseJavascriptTransformsAndPatching());
@@ -52,7 +50,6 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     [Fact]
     public async Task Patch_And_Load_Should_Return_Non_Stale_Result()
     {
-
         var id = Guid.NewGuid();
         await using (var sess = theStore.LightweightSession())
         {
@@ -69,8 +66,6 @@ public class PatchExpressionTests : OneOffConfigurationsContext
         public Guid Id { get; set; }
         public string Name { get; set; }
     }
-
-
 
     [Fact]
     public void builds_patch_for_set_name()
