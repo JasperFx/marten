@@ -161,47 +161,87 @@ public partial class DocumentStore: IDocumentStore
 
     public IDiagnostics Diagnostics { get; }
 
-    public IDocumentSession OpenSession(SessionOptions options)
-    {
-        return openSession(options);
-    }
+    public IDocumentSession OpenSession(SessionOptions options) =>
+        openSession(options);
 
-    public IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
-    {
-        return openSession(new SessionOptions { Tracking = tracking, IsolationLevel = isolationLevel });
-    }
+    public IDocumentSession OpenSession(
+        DocumentTracking tracking = DocumentTracking.IdentityOnly,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
+    ) =>
+        openSession(new SessionOptions { Tracking = tracking, IsolationLevel = isolationLevel });
 
-    public IDocumentSession OpenSession(string tenantId, DocumentTracking tracking = DocumentTracking.IdentityOnly,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
-    {
-        return openSession(new SessionOptions
-        {
-            Tracking = tracking, IsolationLevel = isolationLevel, TenantId = tenantId
-        });
-    }
+    public IDocumentSession OpenSession(
+        string tenantId,
+        DocumentTracking tracking = DocumentTracking.IdentityOnly,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
+    ) =>
+        openSession(new SessionOptions { Tracking = tracking, IsolationLevel = isolationLevel, TenantId = tenantId });
 
-    public IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
-    {
-        return OpenSession(DocumentTracking.DirtyTracking, isolationLevel);
-    }
+    public IDocumentSession IdentitySession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted) =>
+        OpenSession(DocumentTracking.IdentityOnly, isolationLevel);
 
-    public IDocumentSession DirtyTrackedSession(string tenantId,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
-    {
-        return OpenSession(tenantId, DocumentTracking.DirtyTracking, isolationLevel);
-    }
+    public IDocumentSession IdentitySession(
+        string tenantId,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
+    ) =>
+        OpenSession(tenantId, DocumentTracking.IdentityOnly, isolationLevel);
 
-    public IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
-    {
-        return OpenSession(DocumentTracking.None, isolationLevel);
-    }
+    public Task<IDocumentSession> IdentitySessionAsync(
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+        CancellationToken cancellation = default
+    ) =>
+        OpenSessionAsync(DocumentTracking.IdentityOnly, isolationLevel, cancellation);
 
-    public IDocumentSession LightweightSession(string tenantId,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
-    {
-        return OpenSession(tenantId, DocumentTracking.None, isolationLevel);
-    }
+    public Task<IDocumentSession> IdentitySessionAsync(
+        string tenantId,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+        CancellationToken cancellation = default
+    ) =>
+        OpenSessionAsync(tenantId, DocumentTracking.IdentityOnly, isolationLevel, cancellation);
+
+    public IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted) =>
+        OpenSession(DocumentTracking.DirtyTracking, isolationLevel);
+
+    public IDocumentSession DirtyTrackedSession(
+        string tenantId,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
+    ) =>
+        OpenSession(tenantId, DocumentTracking.DirtyTracking, isolationLevel);
+
+    public Task<IDocumentSession> DirtyTrackedSessionAsync(
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+        CancellationToken cancellation = default
+    ) =>
+        OpenSessionAsync(DocumentTracking.DirtyTracking, isolationLevel, cancellation);
+
+    public Task<IDocumentSession> DirtyTrackedSessionAsync(
+        string tenantId,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+        CancellationToken cancellation = default
+    ) =>
+        OpenSessionAsync(tenantId, DocumentTracking.DirtyTracking, isolationLevel, cancellation);
+
+    public IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted) =>
+        OpenSession(DocumentTracking.None, isolationLevel);
+
+    public IDocumentSession LightweightSession(
+        string tenantId,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
+    ) =>
+        OpenSession(tenantId, DocumentTracking.None, isolationLevel);
+
+    public Task<IDocumentSession> LightweightSessionAsync(
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+        CancellationToken cancellation = default
+    ) =>
+        OpenSessionAsync(DocumentTracking.None, isolationLevel, cancellation);
+
+    public Task<IDocumentSession> LightweightSessionAsync(
+        string tenantId,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+        CancellationToken cancellation = default
+    ) =>
+        OpenSessionAsync(tenantId, DocumentTracking.None, isolationLevel, cancellation);
 
     public IQuerySession QuerySession(SessionOptions options)
     {
@@ -210,21 +250,31 @@ public partial class DocumentStore: IDocumentStore
         return new QuerySession(this, options, connection);
     }
 
-    public IQuerySession QuerySession()
+    public IQuerySession QuerySession() =>
+        QuerySession(Marten.Storage.Tenancy.DefaultTenantId);
+
+    public IQuerySession QuerySession(string tenantId) =>
+        QuerySession(new SessionOptions { TenantId = tenantId });
+
+    public async Task<IQuerySession> QuerySessionAsync(
+        SessionOptions options,
+        CancellationToken cancellation = default
+    )
     {
-        return QuerySession(Marten.Storage.Tenancy.DefaultTenantId);
+        var connection = await options.InitializeAsync(this, CommandRunnerMode.ReadOnly, cancellation)
+            .ConfigureAwait(false);
+
+        return new QuerySession(this, options, connection);
     }
 
-    public IQuerySession QuerySession(string tenantId)
-    {
-        var options = new SessionOptions { TenantId = tenantId };
+    public Task<IQuerySession> QuerySessionAsync(CancellationToken cancellation = default) =>
+        QuerySessionAsync(Marten.Storage.Tenancy.DefaultTenantId, cancellation);
 
-        var connection = options.Initialize(this, CommandRunnerMode.ReadOnly);
-
-        var session = new QuerySession(this, options, connection);
-
-        return session;
-    }
+    public Task<IQuerySession> QuerySessionAsync(
+        string tenantId,
+        CancellationToken cancellation = default
+    ) =>
+        QuerySessionAsync(new SessionOptions { TenantId = tenantId }, cancellation);
 
     public IProjectionDaemon BuildProjectionDaemon(string? tenantIdOrDatabaseIdentifier = null, ILogger? logger = null)
     {
@@ -276,6 +326,23 @@ public partial class DocumentStore: IDocumentStore
 
         return session;
     }
+
+
+    public Task<IDocumentSession> OpenSessionAsync(
+        DocumentTracking tracking = DocumentTracking.IdentityOnly,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+        CancellationToken token = default
+    ) =>
+        OpenSessionAsync(new SessionOptions { Tracking = tracking, IsolationLevel = isolationLevel }, token);
+
+    public Task<IDocumentSession> OpenSessionAsync(
+        string tenantId,
+        DocumentTracking tracking = DocumentTracking.IdentityOnly,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+        CancellationToken token = default
+    ) =>
+        OpenSessionAsync(
+            new SessionOptions { Tracking = tracking, IsolationLevel = isolationLevel, TenantId = tenantId }, token);
 
     /// <summary>
     ///     Quick way to stand up a DocumentStore to the given database connection
