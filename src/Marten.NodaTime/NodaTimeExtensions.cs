@@ -8,7 +8,7 @@ using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
-namespace Marten.NodaTime;
+namespace Marten.NodaTimeExtensions;
 
 public static class NodaTimeExtensions
 {
