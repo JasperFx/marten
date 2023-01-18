@@ -154,7 +154,7 @@ services.AddMarten(opts =>
     // database changes on application startup
     .ApplyAllDatabaseChangesOnStartup();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L164-L177' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_applyalldatabasechangesonstartup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L165-L178' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_applyalldatabasechangesonstartup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the option above, Marten is calling the same functionality within an `IHostedService` background task.

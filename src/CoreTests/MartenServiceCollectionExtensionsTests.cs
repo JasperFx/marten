@@ -10,6 +10,7 @@ using Marten;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Services;
+using Marten.Sessions;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
