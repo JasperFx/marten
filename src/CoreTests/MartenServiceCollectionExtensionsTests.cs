@@ -318,7 +318,7 @@ public class MartenServiceCollectionExtensionsTests
         public IDocumentSession OpenSession()
         {
             BuiltSession = true;
-            return _store.OpenSession();
+            return _store.IdentitySession();
         }
 
         public bool BuiltSession { get; set; }

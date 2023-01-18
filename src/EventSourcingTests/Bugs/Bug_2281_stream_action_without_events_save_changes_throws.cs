@@ -82,7 +82,7 @@ namespace EventSourcingTests.Bugs
 
         private static async Task<Guid> CreateEntityForTest(IDocumentStore documentStore, string name, int status)
         {
-            await using var session = documentStore.OpenSession();
+            await using var session = await documentStore.LightweightSessionAsync();
             var stream = session.Events.StartStream<TestEntity>(new CreateEntityEvent
             {
                 Name = name,

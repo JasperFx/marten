@@ -604,7 +604,7 @@ public static class MartenServiceCollectionExtensions
         ///     IDocumentStore.IdentitySession();
         /// </summary>
         /// <returns></returns>
-        public MartenConfigurationExpression UseIdentitySession() =>
+        public MartenConfigurationExpression UseIdentitySessions() =>
             BuildSessionsWith<IdentitySessionFactory>();
 
         /// <summary>
@@ -612,7 +612,7 @@ public static class MartenServiceCollectionExtensions
         ///     IDocumentStore.DirtyTrackedSession();
         /// </summary>
         /// <returns></returns>
-        public MartenConfigurationExpression UseDirtyTrackedSession() =>
+        public MartenConfigurationExpression UseDirtyTrackedSessions() =>
             BuildSessionsWith<DirtyTrackedSessionFactory>();
 
         /// <summary>

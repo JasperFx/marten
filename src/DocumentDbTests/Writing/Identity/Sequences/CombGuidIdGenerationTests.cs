@@ -106,21 +106,17 @@ public class CombGuidIdGenerationTests : OneOffConfigurationsContext
         return id.ToString();
     }
 
-    private UserWithGuid[] GetUsers(IDocumentStore documentStore)
+    private static UserWithGuid[] GetUsers(IDocumentStore documentStore)
     {
-        using (var session = documentStore.QuerySession())
-        {
-            return session.Query<UserWithGuid>().ToArray();
-        }
+        using var session = documentStore.QuerySession();
+        return session.Query<UserWithGuid>().ToArray();
     }
 
     private static void StoreUser(IDocumentStore documentStore, string lastName)
     {
-        using (var session = documentStore.OpenSession())
-        {
-            session.Store(new UserWithGuid { LastName = lastName });
-            session.SaveChanges();
-        }
+        using var session = documentStore.IdentitySession();
+        session.Store(new UserWithGuid { LastName = lastName });
+        session.SaveChanges();
     }
 
 

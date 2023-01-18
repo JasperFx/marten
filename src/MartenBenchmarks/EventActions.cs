@@ -39,11 +39,9 @@ public class EventActions
     [Benchmark]
     public void AppendEvents()
     {
-        var events = AllProjects.SelectMany(x => x.Value.Events).Take(1000).ToArray();
-        using (var session = BenchmarkStore.Store.OpenSession())
-        {
-            session.Events.Append(Guid.NewGuid(), events);
-            session.SaveChanges();
-        }
+        var events = AllProjects.SelectMany(x => x.Value.Events).Take(1000).Cast<object>().ToArray();
+        using var session = BenchmarkStore.Store.LightweightSession();
+        session.Events.Append(Guid.NewGuid(), events);
+        session.SaveChanges();
     }
 }

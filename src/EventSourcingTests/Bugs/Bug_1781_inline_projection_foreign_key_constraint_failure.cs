@@ -51,14 +51,14 @@ namespace EventSourcingTests.Bugs
             const string importStreamKey = "original";
             const string dataItemStreamKey = "other";
 
-            await using (var session = documentStore.OpenSession())
+            await using (var session = await documentStore.LightweightSessionAsync())
             {
                 session.Events.StartStream<DataImportAggregate>(importStreamKey, new DataImportStartedEvent {ByUser = createdByUser});
                 session.Events.StartStream<DataItemAggregate>(dataItemStreamKey, new CreateDataItemEvent {ImportId = importStreamKey, Name = "Data item"});
                 await session.SaveChangesAsync();
             }
 
-            await using (var session = documentStore.QuerySession())
+            await using (var session = await documentStore.QuerySessionAsync())
             {
                 var importAggregate = await session.LoadAsync<DataImportAggregate>(importStreamKey);
                 importAggregate.ShouldNotBeNull();
@@ -69,14 +69,14 @@ namespace EventSourcingTests.Bugs
                 dataItemAggregate.ImportId.ShouldBe(importStreamKey);
             }
 
-            await using (var session = documentStore.OpenSession())
+            await using (var session = await documentStore.LightweightSessionAsync())
             {
                 session.Events.Append(dataItemStreamKey, new DeleteDataItemEvent());
                 session.Events.Append(importStreamKey, new DeleteImportEvent());
                 await session.SaveChangesAsync();
             }
 
-            await using (var session = documentStore.QuerySession())
+            await using (var session = await documentStore.QuerySessionAsync())
             {
                 var importAggregate = await session.LoadAsync<DataImportAggregate>(importStreamKey);
                 importAggregate.ShouldBeNull();

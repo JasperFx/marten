@@ -55,7 +55,7 @@ public class WarehouseRepository
 
     public WarehouseProductReadModel Get(Guid id)
     {
-        using var session = this.documentStore.OpenSession();
+        using var session = documentStore.QuerySession();
 
         var doc = session.Query<WarehouseProductReadModel>()
             .SingleOrDefault(x => x.Id == id);
@@ -74,9 +74,9 @@ public class WarehouseProductProjection: SingleStreamAggregation<WarehouseProduc
 {
     public WarehouseProductProjection()
     {
-        this.ProjectEvent<ProductShipped>(this.Apply);
-        this.ProjectEvent<ProductReceived>(this.Apply);
-        this.ProjectEvent<InventoryAdjusted>(this.Apply);
+        ProjectEvent<ProductShipped>(Apply);
+        ProjectEvent<ProductReceived>(Apply);
+        ProjectEvent<InventoryAdjusted>(Apply);
     }
 
 
@@ -103,20 +103,20 @@ public class WarehouseProductWriteModel
 
     public void Apply(ProductShipped evnt)
     {
-        this.Id = evnt.Id;
-        this.QuantityOnHand -= evnt.Quantity;
+        Id = evnt.Id;
+        QuantityOnHand -= evnt.Quantity;
     }
 
     public void Apply(ProductReceived evnt)
     {
-        this.Id = evnt.Id;
-        this.QuantityOnHand += evnt.Quantity;
+        Id = evnt.Id;
+        QuantityOnHand += evnt.Quantity;
     }
 
     public void Apply(InventoryAdjusted evnt)
     {
-        this.Id = evnt.Id;
-        this.QuantityOnHand += evnt.Quantity;
+        Id = evnt.Id;
+        QuantityOnHand += evnt.Quantity;
     }
 }
 
@@ -133,41 +133,39 @@ public class WarehouseProductHandler
 
     public void ShipProduct(int quantity)
     {
-        using var session = this.documentStore.OpenSession();
+        using var session = documentStore.LightweightSession();
 
-        var warehouseProduct = session.Events.AggregateStream<WarehouseProductWriteModel>(this.id);
+        var warehouseProduct = session.Events.AggregateStream<WarehouseProductWriteModel>(id);
 
-        if (quantity > warehouseProduct.QuantityOnHand)
+        if (quantity > warehouseProduct?.QuantityOnHand)
         {
             throw new InvalidDomainException("Ah... we don't have enough product to ship?");
         }
 
-        session.Events.Append(this.id, new ProductShipped(this.id, quantity, DateTime.UtcNow));
+        session.Events.Append(id, new ProductShipped(id, quantity, DateTime.UtcNow));
         session.SaveChanges();
     }
 
     public void ReceiveProduct(int quantity)
     {
-        using var session = this.documentStore.OpenSession();
+        using var session = documentStore.LightweightSession();
 
-        var warehouseProduct = session.Events.AggregateStream<WarehouseProductWriteModel>(this.id);
-
-        session.Events.Append(this.id, new ProductReceived(this.id, quantity, DateTime.UtcNow));
+        session.Events.Append(id, new ProductReceived(id, quantity, DateTime.UtcNow));
         session.SaveChanges();
     }
 
     public void AdjustInventory(int quantity, string reason)
     {
-        using var session = this.documentStore.OpenSession();
+        using var session = documentStore.LightweightSession();
 
-        var warehouseProduct = session.Events.AggregateStream<WarehouseProductWriteModel>(this.id);
+        var warehouseProduct = session.Events.AggregateStream<WarehouseProductWriteModel>(id);
 
-        if (warehouseProduct.QuantityOnHand + quantity < 0)
+        if (warehouseProduct?.QuantityOnHand + quantity < 0)
         {
             throw new InvalidDomainException("Cannot adjust to a negative quantity on hand.");
         }
 
-        session.Events.Append(this.id, new InventoryAdjusted(this.id, quantity, reason, DateTime.UtcNow));
+        session.Events.Append(id, new InventoryAdjusted(id, quantity, reason, DateTime.UtcNow));
         session.SaveChanges();
     }
 }

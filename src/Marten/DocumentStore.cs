@@ -161,8 +161,11 @@ public partial class DocumentStore: IDocumentStore
 
     public IDiagnostics Diagnostics { get; }
 
-    public IDocumentSession OpenSession(SessionOptions options) =>
-        openSession(options);
+    public IDocumentSession OpenSession(SessionOptions options)
+    {
+        options.Tracking = DocumentTracking.IdentityOnly;
+        return openSession(options);
+    }
 
     public IDocumentSession OpenSession(
         DocumentTracking tracking = DocumentTracking.IdentityOnly,
@@ -178,70 +181,121 @@ public partial class DocumentStore: IDocumentStore
         openSession(new SessionOptions { Tracking = tracking, IsolationLevel = isolationLevel, TenantId = tenantId });
 
     public IDocumentSession IdentitySession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted) =>
-        OpenSession(DocumentTracking.IdentityOnly, isolationLevel);
+        IdentitySession(new SessionOptions { IsolationLevel = isolationLevel });
 
     public IDocumentSession IdentitySession(
         string tenantId,
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
     ) =>
-        OpenSession(tenantId, DocumentTracking.IdentityOnly, isolationLevel);
+        IdentitySession(new SessionOptions { IsolationLevel = isolationLevel, TenantId = tenantId });
+
+    public IDocumentSession IdentitySession(SessionOptions options)
+    {
+        options.Tracking = DocumentTracking.IdentityOnly;
+        return openSession(options);
+    }
 
     public Task<IDocumentSession> IdentitySessionAsync(
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
         CancellationToken cancellation = default
     ) =>
-        OpenSessionAsync(DocumentTracking.IdentityOnly, isolationLevel, cancellation);
+        IdentitySessionAsync(
+            new SessionOptions { IsolationLevel = isolationLevel },
+            cancellation
+        );
 
     public Task<IDocumentSession> IdentitySessionAsync(
         string tenantId,
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
         CancellationToken cancellation = default
     ) =>
-        OpenSessionAsync(tenantId, DocumentTracking.IdentityOnly, isolationLevel, cancellation);
+        IdentitySessionAsync(
+            new SessionOptions { IsolationLevel = isolationLevel, TenantId = tenantId },
+            cancellation
+        );
+
+    public Task<IDocumentSession> IdentitySessionAsync(
+        SessionOptions options,
+        CancellationToken cancellation = default
+    )
+    {
+        options.Tracking = DocumentTracking.IdentityOnly;
+        return OpenSessionAsync(options, cancellation);
+    }
 
     public IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted) =>
-        OpenSession(DocumentTracking.DirtyTracking, isolationLevel);
+        DirtyTrackedSession(new SessionOptions { IsolationLevel = isolationLevel });
 
     public IDocumentSession DirtyTrackedSession(
         string tenantId,
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
     ) =>
-        OpenSession(tenantId, DocumentTracking.DirtyTracking, isolationLevel);
+        DirtyTrackedSession(new SessionOptions { IsolationLevel = isolationLevel, TenantId = tenantId});
+
+    public IDocumentSession DirtyTrackedSession(SessionOptions options)
+    {
+        options.Tracking = DocumentTracking.DirtyTracking;
+        return openSession(options);
+    }
 
     public Task<IDocumentSession> DirtyTrackedSessionAsync(
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
         CancellationToken cancellation = default
     ) =>
-        OpenSessionAsync(DocumentTracking.DirtyTracking, isolationLevel, cancellation);
+        DirtyTrackedSessionAsync(new SessionOptions { IsolationLevel = isolationLevel }, cancellation);
 
     public Task<IDocumentSession> DirtyTrackedSessionAsync(
         string tenantId,
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
         CancellationToken cancellation = default
     ) =>
-        OpenSessionAsync(tenantId, DocumentTracking.DirtyTracking, isolationLevel, cancellation);
+        DirtyTrackedSessionAsync(new SessionOptions { IsolationLevel = isolationLevel, TenantId = tenantId}, cancellation);
+
+    public Task<IDocumentSession> DirtyTrackedSessionAsync(
+        SessionOptions options,
+        CancellationToken cancellation = default
+    )
+    {
+        options.Tracking = DocumentTracking.None;
+        return OpenSessionAsync(options, cancellation);
+    }
 
     public IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted) =>
-        OpenSession(DocumentTracking.None, isolationLevel);
+        LightweightSession(new SessionOptions { IsolationLevel = isolationLevel});
 
     public IDocumentSession LightweightSession(
         string tenantId,
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
     ) =>
-        OpenSession(tenantId, DocumentTracking.None, isolationLevel);
+        LightweightSession(new SessionOptions { IsolationLevel = isolationLevel, TenantId = tenantId});
+
+    public IDocumentSession LightweightSession(SessionOptions options)
+    {
+        options.Tracking = DocumentTracking.None;
+        return openSession(options);
+    }
 
     public Task<IDocumentSession> LightweightSessionAsync(
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
         CancellationToken cancellation = default
     ) =>
-        OpenSessionAsync(DocumentTracking.None, isolationLevel, cancellation);
+        LightweightSessionAsync(new SessionOptions { IsolationLevel = isolationLevel}, cancellation);
 
     public Task<IDocumentSession> LightweightSessionAsync(
         string tenantId,
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
         CancellationToken cancellation = default
     ) =>
-        OpenSessionAsync(tenantId, DocumentTracking.None, isolationLevel, cancellation);
+        LightweightSessionAsync(new SessionOptions { IsolationLevel = isolationLevel, TenantId = tenantId}, cancellation);
+
+    public Task<IDocumentSession> LightweightSessionAsync(
+        SessionOptions options,
+        CancellationToken cancellation = default
+    )
+    {
+        options.Tracking = DocumentTracking.None;
+        return OpenSessionAsync(options, cancellation);
+    }
 
     public IQuerySession QuerySession(SessionOptions options)
     {
