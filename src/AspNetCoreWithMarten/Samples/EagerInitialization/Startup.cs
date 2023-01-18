@@ -26,7 +26,7 @@ public class Startup
             // See https://martendb.io/configuration/optimized_artifact_workflow.html
             .OptimizeArtifactWorkflow()
             // Spin up the DocumentStore right this second!
-            .InitializeStore();
+            .InitializeWith();
     }
 
     // And other methods we don't care about here...

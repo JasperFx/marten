@@ -12,6 +12,7 @@ using Marten.Events.Daemon.Resiliency;
 using Marten.Internal;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Sessions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -595,11 +596,24 @@ public static class MartenServiceCollectionExtensions
         ///     IDocumentStore.LightweightSession();
         /// </summary>
         /// <returns></returns>
-        public MartenConfigurationExpression UseLightweightSessions()
-        {
+        public MartenConfigurationExpression UseLightweightSessions() =>
             BuildSessionsWith<LightweightSessionFactory>();
-            return this;
-        }
+
+        /// <summary>
+        ///     Use identity sessions by default for the injected IDocumentSession objects. Equivalent to
+        ///     IDocumentStore.IdentitySession();
+        /// </summary>
+        /// <returns></returns>
+        public MartenConfigurationExpression UseIdentitySession() =>
+            BuildSessionsWith<IdentitySessionFactory>();
+
+        /// <summary>
+        ///     Use dirty-tracked sessions by default for the injected IDocumentSession objects. Equivalent to
+        ///     IDocumentStore.DirtyTrackedSession();
+        /// </summary>
+        /// <returns></returns>
+        public MartenConfigurationExpression UseDirtyTrackedSession() =>
+            BuildSessionsWith<DirtyTrackedSessionFactory>();
 
         /// <summary>
         ///     Eagerly build the application's DocumentStore during application
@@ -627,10 +641,8 @@ public static class MartenServiceCollectionExtensions
         ///     Adds the optimized artifact workflow to this store. TODO -- LINK TO DOCS
         /// </summary>
         /// <returns></returns>
-        public MartenConfigurationExpression OptimizeArtifactWorkflow()
-        {
-            return OptimizeArtifactWorkflow(TypeLoadMode.Auto);
-        }
+        public MartenConfigurationExpression OptimizeArtifactWorkflow() =>
+            OptimizeArtifactWorkflow(TypeLoadMode.Auto);
 
         /// <summary>
         ///     Adds the optimized artifact workflow to this store with ability to override the TypeLoadMode in "Production" mode.
@@ -651,10 +663,8 @@ public static class MartenServiceCollectionExtensions
         /// </summary>
         /// <param name="developmentEnvironment"></param>
         /// <returns></returns>
-        public MartenConfigurationExpression OptimizeArtifactWorkflow(string developmentEnvironment)
-        {
-            return OptimizeArtifactWorkflow(TypeLoadMode.Auto, developmentEnvironment);
-        }
+        public MartenConfigurationExpression OptimizeArtifactWorkflow(string developmentEnvironment) =>
+            OptimizeArtifactWorkflow(TypeLoadMode.Auto, developmentEnvironment);
 
         /// <summary>
         ///     Adds the optimized artifact workflow to this store with ability to override the TypeLoadMode in "Production" mode.
@@ -671,7 +681,6 @@ public static class MartenServiceCollectionExtensions
 
             return this;
         }
-
 
         /// <summary>
         ///     Adds initial data sets to the Marten store and ensures that they will be
