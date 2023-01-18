@@ -12,6 +12,7 @@
         <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <nullable>enable</nullable>
+        <RootNamespace>Marten.NodaTimeExtensions</RootNamespace>
     </PropertyGroup>
 
     <!--SourceLink specific settings-->
