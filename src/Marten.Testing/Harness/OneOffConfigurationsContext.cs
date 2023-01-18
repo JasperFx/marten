@@ -42,8 +42,7 @@ namespace Marten.Testing.Harness
         {
             var options = new StoreOptions
             {
-                DatabaseSchemaName = SchemaName,
-
+                DatabaseSchemaName = SchemaName
             };
 
             options.Connection(ConnectionSource.ConnectionString);
@@ -90,7 +89,7 @@ namespace Marten.Testing.Harness
             {
                 if (_store == null)
                 {
-                    StoreOptions(x => {});
+                    StoreOptions(_ => {});
                 }
 
                 return _store;
@@ -101,11 +100,11 @@ namespace Marten.Testing.Harness
         {
             get
             {
-                if (_session == null)
-                {
-                    _session = theStore.OpenSession(DocumentTracking);
-                    _disposables.Add(_session);
-                }
+                if (_session != null)
+                    return _session;
+
+                _session = theStore.OpenSession(DocumentTracking);
+                _disposables.Add(_session);
 
                 return _session;
             }
@@ -115,8 +114,6 @@ namespace Marten.Testing.Harness
         /// Sets the default DocumentTracking for this context. Default is "None"
         /// </summary>
         protected DocumentTracking DocumentTracking { get; set; } = DocumentTracking.None;
-
-
 
         public void Dispose()
         {
