@@ -20,10 +20,8 @@ public class DocumentActions
     [Benchmark]
     public void InsertDocuments()
     {
-        using (var session = BenchmarkStore.Store.OpenSession())
-        {
-            session.Store(Docs);
-            session.SaveChanges();
-        }
+        using var session = BenchmarkStore.Store.LightweightSession();
+        session.Store(Docs);
+        session.SaveChanges();
     }
 }

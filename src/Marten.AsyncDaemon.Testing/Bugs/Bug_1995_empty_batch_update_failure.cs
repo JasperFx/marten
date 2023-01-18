@@ -28,7 +28,7 @@ public class Bug_1995_empty_batch_update_failure : BugIntegrationContext
     {
         await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
-        await using (var session = documentStore.OpenSession())
+        await using (var session = await documentStore.LightweightSessionAsync())
         {
             for (var i = 0; i < 499; i++)
             {
@@ -39,7 +39,7 @@ public class Bug_1995_empty_batch_update_failure : BugIntegrationContext
             await session.SaveChangesAsync();
         }
 
-        using var daemon = documentStore.BuildProjectionDaemon();
+        using var daemon = await documentStore.BuildProjectionDaemonAsync();
         await daemon.RebuildProjection<IssueAggregate>(default);
     }
 }

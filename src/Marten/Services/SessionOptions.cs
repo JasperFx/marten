@@ -24,9 +24,18 @@ public sealed class SessionOptions
     internal Tenant? Tenant { get; set; }
 
     /// <summary>
-    ///     Default to DocumentTracking.IdentityOnly
+    /// Define the type of session you'd like to open.
+    /// We recommend using lightweight session by default.<br/>
+    /// Read more in documentation: https://martendb.io/documents/sessions.html.
     /// </summary>
-    public DocumentTracking Tracking { get; set; } = DocumentTracking.IdentityOnly;
+    [Obsolete(
+        """
+        Opening a session without explicitly providing desired type may be dropped in next Marten version.
+        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
+        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
+        """
+    )]
+    public DocumentTracking Tracking { get; set; }
 
     /// <summary>
     ///     If not specified, sessions default to Npgsql command timeout (30 seconds)

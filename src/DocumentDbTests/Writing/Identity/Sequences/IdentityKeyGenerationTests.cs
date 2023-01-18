@@ -56,21 +56,17 @@ public class IdentityKeyGenerationTests : OneOffConfigurationsContext
         return users.Single(user => user.LastName == user1).Id;
     }
 
-    private UserWithString[] GetUsers(IDocumentStore documentStore)
+    private static UserWithString[] GetUsers(IDocumentStore documentStore)
     {
-        using (var session = documentStore.QuerySession())
-        {
-            return session.Query<UserWithString>().ToArray();
-        }
+        using var session = documentStore.QuerySession();
+        return session.Query<UserWithString>().ToArray();
     }
 
     private static void StoreUser(IDocumentStore documentStore, string lastName)
     {
-        using (var session = documentStore.OpenSession())
-        {
-            session.Store(new UserWithString { LastName = lastName});
-            session.SaveChanges();
-        }
+        using var session = documentStore.IdentitySession();
+        session.Store(new UserWithString { LastName = lastName});
+        session.SaveChanges();
     }
 
 }

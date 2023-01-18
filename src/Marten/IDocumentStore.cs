@@ -123,8 +123,17 @@ public interface IDocumentStore: IDisposable
     /// </summary>
     /// <param name="tracking"></param>
     /// <returns></returns>
-    IDocumentSession OpenSession(DocumentTracking tracking = DocumentTracking.IdentityOnly,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+    [Obsolete(
+        """
+        Opening a session without explicitly providing desired type may be dropped in next Marten version.
+        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
+        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
+        """
+    )]
+    IDocumentSession OpenSession(
+        DocumentTracking tracking = DocumentTracking.IdentityOnly,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
+    );
 
     /// <summary>
     ///     Open a new IDocumentSession with the supplied DocumentTracking.
@@ -132,14 +141,31 @@ public interface IDocumentStore: IDisposable
     /// </summary>
     /// <param name="tracking"></param>
     /// <returns></returns>
-    IDocumentSession OpenSession(string tenantId, DocumentTracking tracking = DocumentTracking.IdentityOnly,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+    [Obsolete(
+        """
+        Opening a session without explicitly providing desired type may be dropped in next Marten version.
+        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
+        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
+        """
+    )]
+    IDocumentSession OpenSession(
+        string tenantId,
+        DocumentTracking tracking = DocumentTracking.IdentityOnly,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
+    );
 
     /// <summary>
     ///     Open a new IDocumentSession with the supplied options
     /// </summary>
     /// <param name="options">Additional options for session</param>
     /// <returns></returns>
+    [Obsolete(
+        """
+        Opening a session without explicitly providing desired type may be dropped in next Marten version.
+        Use explicit method like `LightweightSessionAsync`, `IdentitySessionAsync` or `DirtyTrackedSessionAsync`.
+        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
+        """
+    )]
     IDocumentSession OpenSession(SessionOptions options);
 
     /// <summary>
@@ -150,6 +176,13 @@ public interface IDocumentStore: IDisposable
     /// <param name="options"></param>
     /// <param name="token"></param>
     /// <returns></returns>
+    [Obsolete(
+        """
+        Opening a session without explicitly providing desired type may be dropped in next Marten version.
+        Use explicit method like `LightweightSessionAsync`, `IdentitySessionAsync` or `DirtyTrackedSessionAsync`.
+        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
+        """
+    )]
     Task<IDocumentSession> OpenSessionAsync(SessionOptions options, CancellationToken token = default);
 
     /// <summary>
@@ -164,21 +197,45 @@ public interface IDocumentStore: IDisposable
     ///     or automatic dirty checking
     /// </summary>
     /// <returns></returns>
-    IDocumentSession LightweightSession(string tenantId, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+    IDocumentSession LightweightSession(
+        string tenantId,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
+    );
 
     /// <summary>
     ///     Convenience method to create a new "lightweight" IDocumentSession with no IdentityMap
     ///     or automatic dirty checking
     /// </summary>
     /// <returns></returns>
-    Task<IDocumentSession> LightweightSessionAsync(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken token = default);
+    IDocumentSession LightweightSession(SessionOptions options);
 
     /// <summary>
     ///     Convenience method to create a new "lightweight" IDocumentSession with no IdentityMap
     ///     or automatic dirty checking
     /// </summary>
     /// <returns></returns>
-    Task<IDocumentSession> LightweightSessionAsync(string tenantId, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken token = default);
+    Task<IDocumentSession> LightweightSessionAsync(
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+        CancellationToken token = default
+    );
+
+    /// <summary>
+    ///     Convenience method to create a new "lightweight" IDocumentSession with no IdentityMap
+    ///     or automatic dirty checking
+    /// </summary>
+    /// <returns></returns>
+    Task<IDocumentSession> LightweightSessionAsync(
+        string tenantId,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+        CancellationToken token = default
+    );
+
+    /// <summary>
+    ///     Convenience method to create a new "lightweight" IDocumentSession with no IdentityMap
+    ///     or automatic dirty checking
+    /// </summary>
+    /// <returns></returns>
+    Task<IDocumentSession> LightweightSessionAsync(SessionOptions options, CancellationToken token = default);
 
     /// <summary>
     ///     Convenience method to create an IDocumentSession with IdentityMap but without automatic
@@ -192,21 +249,45 @@ public interface IDocumentStore: IDisposable
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
-    IDocumentSession IdentitySession(string tenantId, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+    IDocumentSession IdentitySession(
+        string tenantId,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
+    );
 
     /// <summary>
     ///     Convenience method to create an IDocumentSession with IdentityMap but without automatic
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
-    Task<IDocumentSession> IdentitySessionAsync(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken token = default);
+    IDocumentSession IdentitySession(SessionOptions options);
 
     /// <summary>
     ///     Convenience method to create an IDocumentSession with IdentityMap but without automatic
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
-    Task<IDocumentSession> IdentitySessionAsync(string tenantId, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken token = default);
+    Task<IDocumentSession> IdentitySessionAsync(
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+        CancellationToken token = default
+    );
+
+    /// <summary>
+    ///     Convenience method to create an IDocumentSession with IdentityMap but without automatic
+    ///     dirty checking
+    /// </summary>
+    /// <returns></returns>
+    Task<IDocumentSession> IdentitySessionAsync(
+        string tenantId,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+        CancellationToken token = default
+    );
+
+    /// <summary>
+    ///     Convenience method to create an IDocumentSession with IdentityMap but without automatic
+    ///     dirty checking
+    /// </summary>
+    /// <returns></returns>
+    Task<IDocumentSession> IdentitySessionAsync(SessionOptions options, CancellationToken token = default);
 
     /// <summary>
     ///     Convenience method to create an IDocumentSession with both IdentityMap and automatic
@@ -220,21 +301,44 @@ public interface IDocumentStore: IDisposable
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
-    IDocumentSession DirtyTrackedSession(string tenantId, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+    IDocumentSession DirtyTrackedSession(
+        string tenantId,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
 
     /// <summary>
     ///     Convenience method to create an IDocumentSession with both IdentityMap and automatic
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
-    Task<IDocumentSession> DirtyTrackedSessionAsync(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken token = default);
+    IDocumentSession DirtyTrackedSession(SessionOptions options);
 
     /// <summary>
     ///     Convenience method to create an IDocumentSession with both IdentityMap and automatic
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
-    Task<IDocumentSession> DirtyTrackedSessionAsync(string tenantId, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken token = default);
+    Task<IDocumentSession> DirtyTrackedSessionAsync(
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+        CancellationToken token = default
+    );
+
+    /// <summary>
+    ///     Convenience method to create an IDocumentSession with both IdentityMap and automatic
+    ///     dirty checking
+    /// </summary>
+    /// <returns></returns>
+    Task<IDocumentSession> DirtyTrackedSessionAsync(
+        string tenantId,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+        CancellationToken token = default
+    );
+
+    /// <summary>
+    ///     Convenience method to create an IDocumentSession with both IdentityMap and automatic
+    ///     dirty checking
+    /// </summary>
+    /// <returns></returns>
+    Task<IDocumentSession> DirtyTrackedSessionAsync(SessionOptions options, CancellationToken token = default);
 
     /// <summary>
     ///     Opens a read-only IQuerySession to the current document store for efficient

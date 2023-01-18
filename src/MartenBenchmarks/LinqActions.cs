@@ -6,7 +6,6 @@ using JasperFx.Core;
 using BenchmarkDotNet.Attributes;
 using Marten;
 using Marten.Linq;
-using Marten.Testing;
 using Marten.Testing.Documents;
 
 namespace MartenBenchmarks;
@@ -29,31 +28,25 @@ public class LinqActions
     [Benchmark]
     public void CreateLinqCommand()
     {
-        using (var session = BenchmarkStore.Store.OpenSession())
-        {
-            var cmd = session.Query<Target>().Where(x => x.Flag && x.Color == Colors.Blue)
-                .OrderBy(x => x.Date)
-                .Skip(5).Take(10).ToCommand();
-        }
+        using var session = BenchmarkStore.Store.QuerySession();
+        var cmd = session.Query<Target>().Where(x => x.Flag && x.Color == Colors.Blue)
+            .OrderBy(x => x.Date)
+            .Skip(5).Take(10).ToCommand();
     }
 
     [Benchmark]
     public void RunLinqQuery()
     {
-        using (var query = BenchmarkStore.Store.OpenSession())
-        {
-            var docs = query.Query<Target>().Where(x => x.Color == Colors.Green)
-                .ToList();
-        }
+        using var query = BenchmarkStore.Store.QuerySession();
+        var docs = query.Query<Target>().Where(x => x.Color == Colors.Green)
+            .ToList();
     }
 
     [Benchmark]
     public void CompiledQueries()
     {
-        using (var query = BenchmarkStore.Store.OpenSession())
-        {
-            var docs = query.Query(new BlueTargets());
-        }
+        using var query = BenchmarkStore.Store.QuerySession();
+        var docs = query.Query(new BlueTargets());
     }
 }
 

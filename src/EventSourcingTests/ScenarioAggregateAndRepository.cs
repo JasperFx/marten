@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Exceptions;
@@ -17,7 +18,7 @@ public class ScenarioAggregateAndRepository:
     StoreContext<StringIdentifiedStreamsFixture>,
     IAsyncLifetime
 {
-    public ScenarioAggregateAndRepository(StringIdentifiedStreamsFixture fixture) : base(fixture)
+    public ScenarioAggregateAndRepository(StringIdentifiedStreamsFixture fixture): base(fixture)
     {
     }
 
@@ -33,85 +34,92 @@ public class ScenarioAggregateAndRepository:
     }
 
     [Fact]
-    public void CanStoreAndHydrateAggregate()
+    public async Task CanStoreAndHydrateAggregate()
     {
         var invoice = CreateInvoice();
 
         #region sample_scenario-aggregate-storeandreadinvoice
+
         var repository = new AggregateRepository(theStore);
 
-        repository.Store(invoice);
+        await repository.StoreAsync(invoice);
 
-        var invoiceFromRepository = repository.Load<Invoice>(invoice.Id);
+        var invoiceFromRepository = await repository.LoadAsync<Invoice>(invoice.Id);
 
         Assert.Equal(invoice.ToString(), invoiceFromRepository.ToString());
         Assert.Equal(invoice.Total, invoiceFromRepository.Total);
+
         #endregion
     }
 
     [Fact]
-    public void CanStoreAndHydrateAggregatePreviousVersion()
+    public async Task CanStoreAndHydrateAggregatePreviousVersion()
     {
         var repository = new AggregateRepository(theStore);
 
         var invoice = CreateInvoice();
 
-        repository.Store(invoice);
+        await repository.StoreAsync(invoice);
 
         #region sample_scenario-aggregate-versionedload
-        var invoiceFromRepository = repository.Load<Invoice>(invoice.Id, 2);
+
+        var invoiceFromRepository = await repository.LoadAsync<Invoice>(invoice.Id, 2);
 
         Assert.Equal(124, invoiceFromRepository.Total);
+
         #endregion
     }
 
     [Fact]
-    public void CanGuardVersion()
+    public async Task CanGuardVersion()
     {
         var repository = new AggregateRepository(theStore);
 
         #region sample_scenario-aggregate-conflict
+
         var invoice = CreateInvoice();
         var invoiceWithSameIdentity = CreateInvoice();
 
-        repository.Store(invoice);
+        await repository.StoreAsync(invoice);
 
-        Assert.Throws<EventStreamUnexpectedMaxEventIdException>(() =>
-        {
-            repository.Store(invoiceWithSameIdentity);
-        });
+        await Assert.ThrowsAsync<EventStreamUnexpectedMaxEventIdException>(() =>
+            repository.StoreAsync(invoiceWithSameIdentity)
+        );
+
         #endregion
     }
 
     [Fact]
-    public void CanRetrieveVersion()
+    public async Task CanRetrieveVersion()
     {
         var repository = new AggregateRepository(theStore);
 
         var invoice = CreateInvoice();
         invoice.Version.ShouldBe(3);
-        repository.Store(invoice);
+        await repository.StoreAsync(invoice);
 
         // Assert version was incremented properly
-        var invoiceFromRepository = repository.Load<Invoice>(invoice.Id);
+        var invoiceFromRepository = await repository.LoadAsync<Invoice>(invoice.Id);
         invoiceFromRepository.Version.ShouldBe(3);
 
         // Update aggregate
         invoiceFromRepository.AddLine(100, 23, "Some nice product with 23% VAT");
-        repository.Store(invoiceFromRepository);
+        await repository.StoreAsync(invoiceFromRepository);
 
         // Assert version was incremented properly
-        invoiceFromRepository = repository.Load<Invoice>(invoice.Id);
+        invoiceFromRepository = await repository.LoadAsync<Invoice>(invoice.Id);
         invoiceFromRepository.Version.ShouldBe(4);
     }
 
     private static Invoice CreateInvoice()
     {
         #region sample_scenario-aggregate-createinvoice
+
         var invoice = new Invoice(42);
 
         invoice.AddLine(100, 24, "Joo Janta 200 Super-Chromatic Peril Sensitive Sunglasses");
         invoice.AddLine(200, 16, "Happy Vertical People Transporter");
+
         #endregion
 
         return invoice;
@@ -119,6 +127,7 @@ public class ScenarioAggregateAndRepository:
 }
 
 #region sample_scenario-aggregate-invoice
+
 public sealed class Invoice: AggregateBase
 {
     public Invoice(int invoiceNumber)
@@ -193,6 +202,7 @@ public sealed class Invoice: AggregateBase
 #endregion
 
 #region sample_scenario-aggregate-events
+
 public sealed class InvoiceCreated
 {
     public int InvoiceNumber { get; }
@@ -220,6 +230,7 @@ public sealed class LineItemAdded
 #endregion
 
 #region sample_scenario-aggregate-base
+
 // Infrastructure to capture modifications to state in events
 public abstract class AggregateBase
 {
@@ -231,8 +242,7 @@ public abstract class AggregateBase
     public long Version { get; set; }
 
     // JsonIgnore - for making sure that it won't be stored in inline projection
-    [JsonIgnore]
-    private readonly List<object> _uncommittedEvents = new List<object>();
+    [JsonIgnore] private readonly List<object> _uncommittedEvents = new List<object>();
 
     // Get the deltas, i.e. events that make up the state, not yet persisted
     public IEnumerable<object> GetUncommittedEvents()
@@ -256,6 +266,7 @@ public abstract class AggregateBase
 #endregion
 
 #region sample_scenario-aggregate-repository
+
 public sealed class AggregateRepository
 {
     private readonly IDocumentStore store;
@@ -265,26 +276,26 @@ public sealed class AggregateRepository
         this.store = store;
     }
 
-    public void Store(AggregateBase aggregate)
+    public async Task StoreAsync(AggregateBase aggregate, CancellationToken ct = default)
     {
-        using (var session = store.OpenSession())
-        {
-            // Take non-persisted events, push them to the event stream, indexed by the aggregate ID
-            var events = aggregate.GetUncommittedEvents().ToArray();
-            session.Events.Append(aggregate.Id, aggregate.Version, events);
-            session.SaveChanges();
-        }
+        await using var session = await store.LightweightSessionAsync(token: ct);
+        // Take non-persisted events, push them to the event stream, indexed by the aggregate ID
+        var events = aggregate.GetUncommittedEvents().ToArray();
+        session.Events.Append(aggregate.Id, aggregate.Version, events);
+        await session.SaveChangesAsync(ct);
         // Once successfully persisted, clear events from list of uncommitted events
         aggregate.ClearUncommittedEvents();
     }
 
-    public T Load<T>(string id, int? version = null) where T : AggregateBase
+    public async Task<T> LoadAsync<T>(
+        string id,
+        int? version = null,
+        CancellationToken ct = default
+    ) where T : AggregateBase
     {
-        using (var session = store.LightweightSession())
-        {
-            var aggregate = session.Events.AggregateStream<T>(id, version ?? 0);
-            return aggregate ?? throw new InvalidOperationException($"No aggregate by id {id}.");
-        }
+        await using var session = await store.LightweightSessionAsync(token: ct);
+        var aggregate = await session.Events.AggregateStreamAsync<T>(id, version ?? 0, token: ct);
+        return aggregate ?? throw new InvalidOperationException($"No aggregate by id {id}.");
     }
 }
 

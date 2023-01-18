@@ -52,13 +52,13 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
         await store.BulkInsertDocumentsAsync(targets);
 
         Console.WriteLine("QueryOnly");
-        await using (var session1 = store.QuerySession())
+        await using (var session1 = await store.QuerySessionAsync())
         {
             (await session1.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
         }
 
         Console.WriteLine("Lightweight");
-        await using (var session2 = store.LightweightSession())
+        await using (var session2 = await store.LightweightSessionAsync())
         {
             (await session2.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
 
@@ -76,8 +76,6 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
 
             await session2.SaveChangesAsync();
 
-
-
             // Just a smoke test
             await session2.QueryAsync(new FindUserByAllTheThings
             {
@@ -86,7 +84,7 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
         }
 
         Console.WriteLine("IdentityMap");
-        await using (var session3 = store.OpenSession())
+        await using (var session3 = await store.IdentitySessionAsync())
         {
             (await session3.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
 
@@ -102,7 +100,7 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
         }
 
         Console.WriteLine("DirtyChecking");
-        await using (var session4 = store.OpenSession())
+        await using (var session4 = await store.DirtyTrackedSessionAsync())
         {
             (await session4.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
 
@@ -119,7 +117,7 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
         }
 
         Console.WriteLine("Capturing Events");
-        await using (var session = store.LightweightSession())
+        await using (var session = await store.LightweightSessionAsync())
         {
             var streamId = Guid.NewGuid();
             session.Events.Append(streamId, new AEvent(), new BEvent(), new CEvent(), new DEvent());

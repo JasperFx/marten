@@ -45,7 +45,7 @@ public class Bug_2074_recovering_from_errors
 
         var id = Guid.NewGuid();
         var events = Enumerable.Range(0, 1000).Select(x => new IssueCountIncremented(id)).ToList();
-        await using (var session = documentStore.OpenSession())
+        await using (var session = await documentStore.LightweightSessionAsync())
         {
             session.Events.Append(id, events);
             await session.SaveChangesAsync();

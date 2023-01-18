@@ -20,8 +20,7 @@ public abstract class AggregateBase
     public long Version { get; set; }
 
     // JsonIgnore - for making sure that it won't be stored in inline projection
-    [JsonIgnore]
-    private readonly List<object> _uncommittedEvents = new List<object>();
+    [JsonIgnore] private readonly List<object> _uncommittedEvents = new List<object>();
 
     // Get the deltas, i.e. events that make up the state, not yet persisted
     public IEnumerable<object> GetUncommittedEvents()
@@ -42,7 +41,7 @@ public abstract class AggregateBase
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L222-L256' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-base' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L232-L266' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-base' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 With the first piece of infrastructure implemented, two events to capture state changes of an invoice are introduced. Namely, creation of an invoice, accompanied by an invoice number, and addition of lines to an invoice:
@@ -74,7 +73,7 @@ public sealed class LineItemAdded
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L195-L220' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L204-L230' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 With the events in place to present the deltas of an invoice, an aggregate is implemented, using the infrastructure presented above, to create and replay state from the described events.
@@ -153,7 +152,7 @@ public sealed class Invoice: AggregateBase
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L121-L193' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-invoice' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L129-L202' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-invoice' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The implemented invoice protects its state by not exposing mutable data, while enforcing its contracts through argument validation. Once an applicable state modification is introduced, either through the constructor (which numbers our invoice and captures that in an event) or the `Invoice.AddLine` method, a respective event capturing that data is recorded.
@@ -172,30 +171,30 @@ public sealed class AggregateRepository
         this.store = store;
     }
 
-    public void Store(AggregateBase aggregate)
+    public async Task StoreAsync(AggregateBase aggregate, CancellationToken ct = default)
     {
-        using (var session = store.OpenSession())
-        {
-            // Take non-persisted events, push them to the event stream, indexed by the aggregate ID
-            var events = aggregate.GetUncommittedEvents().ToArray();
-            session.Events.Append(aggregate.Id, aggregate.Version, events);
-            session.SaveChanges();
-        }
+        await using var session = await store.LightweightSessionAsync(token: ct);
+        // Take non-persisted events, push them to the event stream, indexed by the aggregate ID
+        var events = aggregate.GetUncommittedEvents().ToArray();
+        session.Events.Append(aggregate.Id, aggregate.Version, events);
+        await session.SaveChangesAsync(ct);
         // Once successfully persisted, clear events from list of uncommitted events
         aggregate.ClearUncommittedEvents();
     }
 
-    public T Load<T>(string id, int? version = null) where T : AggregateBase
+    public async Task<T> LoadAsync<T>(
+        string id,
+        int? version = null,
+        CancellationToken ct = default
+    ) where T : AggregateBase
     {
-        using (var session = store.LightweightSession())
-        {
-            var aggregate = session.Events.AggregateStream<T>(id, version ?? 0);
-            return aggregate ?? throw new InvalidOperationException($"No aggregate by id {id}.");
-        }
+        await using var session = await store.LightweightSessionAsync(token: ct);
+        var aggregate = await session.Events.AggregateStreamAsync<T>(id, version ?? 0, token: ct);
+        return aggregate ?? throw new InvalidOperationException($"No aggregate by id {id}.");
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L258-L291' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-repository' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L268-L302' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-repository' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 With the last infrastructure component in place, versioned invoices can now be created, persisted and hydrated through Marten. For this purpose, first an invoice is created:
@@ -208,7 +207,7 @@ var invoice = new Invoice(42);
 invoice.AddLine(100, 24, "Joo Janta 200 Super-Chromatic Peril Sensitive Sunglasses");
 invoice.AddLine(200, 16, "Happy Vertical People Transporter");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L110-L115' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-createinvoice' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L116-L123' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-createinvoice' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Then, with an instantiated & configured Document Store (in this case with string as event stream identity) a repository is bootstrapped. The newly created invoice is then passed to the repository, which pushes the deltas to the database and clears them from the to-be-committed list of changes. Once persisted, the invoice data is replayed from the database and verified to match the data of the original item.
@@ -218,14 +217,14 @@ Then, with an instantiated & configured Document Store (in this case with string
 ```cs
 var repository = new AggregateRepository(theStore);
 
-repository.Store(invoice);
+await repository.StoreAsync(invoice);
 
-var invoiceFromRepository = repository.Load<Invoice>(invoice.Id);
+var invoiceFromRepository = await repository.LoadAsync<Invoice>(invoice.Id);
 
 Assert.Equal(invoice.ToString(), invoiceFromRepository.ToString());
 Assert.Equal(invoice.Total, invoiceFromRepository.Total);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L40-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-storeandreadinvoice' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L41-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-storeandreadinvoice' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 With this infrastructure in place and the ability to model change as events, it is also possible to replay back any previous state of the object. For example, it is possible to see what the invoice looked with only the first line added:
@@ -233,11 +232,11 @@ With this infrastructure in place and the ability to model change as events, it 
 <!-- snippet: sample_scenario-aggregate-versionedload -->
 <a id='snippet-sample_scenario-aggregate-versionedload'></a>
 ```cs
-var invoiceFromRepository = repository.Load<Invoice>(invoice.Id, 2);
+var invoiceFromRepository = await repository.LoadAsync<Invoice>(invoice.Id, 2);
 
 Assert.Equal(124, invoiceFromRepository.Total);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L61-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-versionedload' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L64-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-versionedload' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Lastly, to prevent our invoice from getting into a conflicted state, the version attribute of the item is used to assert that the state of the object has not changed between replaying its state and introducing new deltas:
@@ -248,12 +247,11 @@ Lastly, to prevent our invoice from getting into a conflicted state, the version
 var invoice = CreateInvoice();
 var invoiceWithSameIdentity = CreateInvoice();
 
-repository.Store(invoice);
+await repository.StoreAsync(invoice);
 
-Assert.Throws<EventStreamUnexpectedMaxEventIdException>(() =>
-{
-    repository.Store(invoiceWithSameIdentity);
-});
+await Assert.ThrowsAsync<EventStreamUnexpectedMaxEventIdException>(() =>
+    repository.StoreAsync(invoiceWithSameIdentity)
+);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L73-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-conflict' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L78-L89' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-conflict' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
