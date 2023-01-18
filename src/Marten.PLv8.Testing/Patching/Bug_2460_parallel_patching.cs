@@ -11,7 +11,7 @@ namespace Marten.PLv8.Testing.Patching;
 
 public class Bug_2460_parallel_patching: BugIntegrationContext
 {
-    private const int itemsCount = 100;
+    private const int itemsCount = 1000;
     private const int patchedNumber = 1337;
 
     [Fact]
@@ -20,21 +20,21 @@ public class Bug_2460_parallel_patching: BugIntegrationContext
         using var store = SeparateStore(_ =>
             _.UseJavascriptTransformsAndPatching()
         );
+        await store.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        var items = new List<Item>();
+        // Delete old items
+        await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(ItemForPatching));
+
+        var items = new List<ItemForPatching>();
 
         // Seed items
         await using (var session = store.LightweightSession())
         {
-            // Delete old items
-            session.DeleteWhere<Item>(_ => true);
-            await session.SaveChangesAsync();
-
             // Create new items
             for (var i = 0; i < itemsCount; i++)
             {
                 var id = Guid.NewGuid();
-                var item = new Item { Id = id, Number = i };
+                var item = new ItemForPatching { Id = id, Number = i };
                 items.Add(item);
                 session.Store(item);
             }
@@ -45,7 +45,7 @@ public class Bug_2460_parallel_patching: BugIntegrationContext
         // Check count
         await using (var querySession = store.QuerySession())
         {
-            var count = await querySession.Query<Item>().CountAsync();
+            var count = await querySession.Query<ItemForPatching>().CountAsync();
             count.ShouldBe(itemsCount);
         }
 
@@ -55,7 +55,7 @@ public class Bug_2460_parallel_patching: BugIntegrationContext
         // Check count after update
         await using (var querySession = store.QuerySession())
         {
-            var count = await querySession.Query<Item>().Where(x => x.Number == patchedNumber).CountAsync();
+            var count = await querySession.Query<ItemForPatching>().Where(x => x.Number == patchedNumber).CountAsync();
             count.ShouldBe(itemsCount);
         }
     }
@@ -64,13 +64,13 @@ public class Bug_2460_parallel_patching: BugIntegrationContext
     {
         await Task.Delay(100);
         await using var session = store.LightweightSession();
-        session.Patch<Item>(itemId).Set(x => x.Number, patchedNumber);
+        session.Patch<ItemForPatching>(itemId).Set(x => x.Number, patchedNumber);
         await session.SaveChangesAsync();
     }
+}
 
-    public class Item
-    {
-        public Guid Id { get; set; }
-        public int Number { get; set; }
-    }
+public class ItemForPatching
+{
+    public Guid Id { get; set; }
+    public int Number { get; set; }
 }
