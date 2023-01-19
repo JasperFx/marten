@@ -100,7 +100,7 @@ public class MartenServiceCollectionExtensionsTests
         rules.GeneratedCodeOutputPath.ShouldBe(store.Options.GeneratedCodeOutputPath);
     }
 
-    [Fact(Skip = "TODO: double-check if assertion is correct by Jeremy")]
+    [Fact]
     public void application_assembly_and_content_directory_from_StoreOptions()
     {
         using var host = Host.CreateDefaultBuilder(Array.Empty<string>())
@@ -117,7 +117,7 @@ public class MartenServiceCollectionExtensionsTests
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
         store.Options.ApplicationAssembly.ShouldBe(GetType().Assembly);
         var projectPath = AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory();
-        var expectedGeneratedCodeOutputPath = projectPath.ToFullPath();
+        var expectedGeneratedCodeOutputPath = projectPath.ToFullPath().AppendPath("Internal", "Generated");
         store.Options.GeneratedCodeOutputPath.ShouldBe(expectedGeneratedCodeOutputPath);
     }
 
