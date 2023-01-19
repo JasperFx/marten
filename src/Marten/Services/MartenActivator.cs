@@ -1,6 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using Marten.Schema;
+using Marten.Storage;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -64,6 +66,12 @@ internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        if (Store.Options.CreateDatabases != null)
+        {
+            var databaseGenerator = new DatabaseGenerator();
+            await databaseGenerator.CreateDatabasesAsync(Store.Tenancy, Store.Options.CreateDatabases).ConfigureAwait(false);
+        }
+
         if (Store.Options.ShouldApplyChangesOnStartup)
         {
             var databases = Store.Tenancy.BuildDatabases().ConfigureAwait(false);
