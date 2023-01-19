@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using Marten.Storage;
 using Npgsql;
 using Weasel.Postgresql;
 
 namespace Marten.Schema;
 
-public sealed class DatabaseGenerator: IDatabaseCreationExpressions, IDatabaseGenerator
+public sealed class DatabaseGenerator: IDatabaseCreationExpressions
 {
     private readonly Dictionary<string, TenantDatabaseCreationExpressions> _configurationPerTenant = new();
     private string _maintenanceDbConnectionString;
@@ -27,25 +28,20 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions, IDatabaseGe
         return configurator;
     }
 
-    public void CreateDatabases(ITenancy tenancy, Action<IDatabaseCreationExpressions> configure)
+    public async Task CreateDatabasesAsync(ITenancy tenancy, Action<IDatabaseCreationExpressions> configure)
     {
         configure(this);
 
         foreach (var tenantConfig in _configurationPerTenant)
         {
-            var tenant = tenancy.GetTenant(tenantConfig.Key);
+            var tenant = await tenancy.GetTenantAsync(tenantConfig.Key).ConfigureAwait(false);
             var config = tenantConfig.Value;
 
-            CreateDb(tenant, config);
-
-            if (config.CreatePLV8Extension)
-            {
-                CreatePlv8Extension(tenant);
-            }
+            await createDbAsync(tenant, config).ConfigureAwait(false);
         }
     }
 
-    private void CreateDb(Tenant tenant, TenantDatabaseCreationExpressions config)
+    private async Task createDbAsync(Tenant tenant, TenantDatabaseCreationExpressions config)
     {
         string catalog;
         var maintenanceDb = _maintenanceDbConnectionString;
@@ -62,50 +58,49 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions, IDatabaseGe
             }
 
             var noExistingDb = config.CheckAgainstCatalog
-                ? new Func<bool>(() => IsNotInPgDatabase(catalog, maintenanceDb))
-                : () => CannotConnectDueToInvalidCatalog(t);
+                ? new Func<Task<bool>>(() => IsNotInPgDatabase(catalog, maintenanceDb))
+                : () => cannotConnectDueToInvalidCatalog(t);
 
-            if (noExistingDb())
+            if (await noExistingDb().ConfigureAwait(false))
             {
-                CreateDb(catalog, config, false, maintenanceDb);
+                await CreateDbAsync(catalog, config, false, maintenanceDb).ConfigureAwait(false);
                 return;
             }
         }
 
         if (config.DropExistingDatabase)
         {
-            CreateDb(catalog, config, true, maintenanceDb);
+            await CreateDbAsync(catalog, config, true, maintenanceDb).ConfigureAwait(false);
         }
     }
 
-    private bool IsNotInPgDatabase(string catalog, string maintenanceDb)
+    private async Task<bool> IsNotInPgDatabase(string catalog, string maintenanceDb)
     {
-        using (var connection = new NpgsqlConnection(maintenanceDb))
-        using (var cmd = connection.CreateCommand("SELECT datname FROM pg_database where datname = @catalog"))
+        var connection = new NpgsqlConnection(maintenanceDb);
+        await using var _ = connection.ConfigureAwait(false);
+        var cmd = connection.CreateCommand("SELECT datname FROM pg_database where datname = @catalog");
+        await using var __ = cmd.ConfigureAwait(false);
+        cmd.AddNamedParameter("catalog", catalog);
+
+        await connection.OpenAsync().ConfigureAwait(false);
+
+        try
         {
-            cmd.AddNamedParameter("catalog", catalog);
-
-            connection.Open();
-
-            try
-            {
-                var m = cmd.ExecuteScalar();
-                return m == null;
-            }
-            finally
-            {
-                connection.Close();
-                connection.Dispose();
-            }
+            var m = await cmd.ExecuteScalarAsync().ConfigureAwait(false);
+            return m == null;
+        }
+        finally
+        {
+            await connection.CloseAsync().ConfigureAwait(false);
         }
     }
 
-    private bool CannotConnectDueToInvalidCatalog(NpgsqlConnection t)
+    private static async Task<bool> cannotConnectDueToInvalidCatalog(NpgsqlConnection t)
     {
         try
         {
-            t.Open();
-            t.Close();
+            await t.OpenAsync().ConfigureAwait(false);
+            await t.CloseAsync().ConfigureAwait(false);
         }
         // INVALID CATALOG NAME (https://www.postgresql.org/docs/current/static/errcodes-appendix.html)
         catch (PostgresException e) when (e.SqlState == "3D000")
@@ -116,7 +111,7 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions, IDatabaseGe
         return false;
     }
 
-    private void CreateDb(string catalog, TenantDatabaseCreationExpressions config, bool dropExisting,
+    private async Task CreateDbAsync(string catalog, TenantDatabaseCreationExpressions config, bool dropExisting,
         string maintenanceDb)
     {
         var cmdText = string.Empty;
@@ -132,33 +127,20 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions, IDatabaseGe
             cmdText += $"DROP DATABASE IF EXISTS \"{catalog}\";";
         }
 
-        using (var connection = new NpgsqlConnection(maintenanceDb))
-        using (var cmd = connection.CreateCommand(cmdText))
+        var connection = new NpgsqlConnection(maintenanceDb);
+        await using var _ = connection.ConfigureAwait(false);
+        var cmd = connection.CreateCommand(cmdText);
+        await using var __ = cmd.ConfigureAwait(false);
+        cmd.CommandText += $"CREATE DATABASE \"{catalog}\" WITH" + config;
+        await connection.OpenAsync().ConfigureAwait(false);
+        try
         {
-            cmd.CommandText += $"CREATE DATABASE \"{catalog}\" WITH" + config;
-            connection.Open();
-            try
-            {
-                cmd.ExecuteNonQuery();
-                config.OnDbCreated?.Invoke(connection);
-            }
-            finally
-            {
-                connection.Close();
-                connection.Dispose();
-            }
+            await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+            config.OnDbCreated?.Invoke(connection);
         }
-    }
-
-    [Obsolete("Should be in Weasel now")]
-    private static void CreatePlv8Extension(Tenant tenant)
-    {
-        using (var connection = tenant.Database.CreateConnection())
-        using (var cmd = connection.CreateCommand("CREATE EXTENSION IF NOT EXISTS plv8"))
+        finally
         {
-            connection.Open();
-            cmd.ExecuteNonQuery();
-            connection.Close();
+            await connection.CloseAsync().ConfigureAwait(false);
         }
     }
 
@@ -169,7 +151,6 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions, IDatabaseGe
         public bool CheckAgainstCatalog { get; private set; }
         public bool KillConnections { get; private set; }
         public Action<NpgsqlConnection> OnDbCreated { get; private set; }
-        public bool CreatePLV8Extension { get; private set; }
 
         public ITenantDatabaseCreationExpressions DropExisting(bool killConnections = false)
         {
@@ -223,12 +204,6 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions, IDatabaseGe
         public ITenantDatabaseCreationExpressions OnDatabaseCreated(Action<NpgsqlConnection> onDbCreated)
         {
             OnDbCreated = onDbCreated;
-            return this;
-        }
-
-        public ITenantDatabaseCreationExpressions CreatePLV8()
-        {
-            CreatePLV8Extension = true;
             return this;
         }
 

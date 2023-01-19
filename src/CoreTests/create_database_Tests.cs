@@ -108,7 +108,6 @@ public class create_database_Tests : IDisposable
                        c.MaintenanceDatabase(ConnectionSource.ConnectionString);
                        c.ForTenant()
                            .CheckAgainstPgDatabase()
-                           .CreatePLV8()
                            .WithOwner("postgres");
                    });
 

@@ -47,12 +47,6 @@ public partial class DocumentStore: IDocumentStore
             d.Initialize();
         }
 
-        if (options.CreateDatabases != null)
-        {
-            IDatabaseGenerator databaseGenerator = new DatabaseGenerator();
-            databaseGenerator.CreateDatabases(Tenancy, options.CreateDatabases);
-        }
-
         StorageFeatures.PostProcessConfiguration();
         Events.AssertValidity(this);
         Options.Projections.AssertValidity(this);
