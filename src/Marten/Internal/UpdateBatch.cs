@@ -136,7 +136,12 @@ public class UpdateBatch: IUpdateBatch
             }
             catch (Exception e)
             {
-                operations.OfType<IExceptionTransform>().TransformAndThrow(e);
+                if (first is IExceptionTransform t && t.TryTransform(e, out var transformed))
+                {
+                    throw transformed;
+                }
+
+                throw;
             }
         }
 
@@ -155,7 +160,12 @@ public class UpdateBatch: IUpdateBatch
             }
             catch (Exception e)
             {
-                operations.OfType<IExceptionTransform>().TransformAndThrow(e);
+                if (operation is IExceptionTransform t && t.TryTransform(e, out var transformed))
+                {
+                    throw transformed;
+                }
+
+                throw;
             }
         }
     }
@@ -175,7 +185,12 @@ public class UpdateBatch: IUpdateBatch
             }
             catch (Exception e)
             {
-                operations.OfType<IExceptionTransform>().TransformAndThrow(e);
+                if (first is IExceptionTransform t && t.TryTransform(e, out var transformed))
+                {
+                    throw transformed;
+                }
+
+                throw;
             }
         }
 
@@ -193,7 +208,12 @@ public class UpdateBatch: IUpdateBatch
             }
             catch (Exception e)
             {
-                operations.OfType<IExceptionTransform>().TransformAndThrow(e);
+                if (operation is IExceptionTransform t && t.TryTransform(e, out var transformed))
+                {
+                    throw transformed;
+                }
+
+                throw;
             }
         }
     }

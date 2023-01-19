@@ -36,6 +36,35 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     }
 
     [Fact]
+    public async Task fetch_new_stream_for_writing_Guid_identifier_exception_handling()
+    {
+        StoreOptions(opts => opts.Projections.SelfAggregate<SimpleAggregate>(ProjectionLifecycle.Inline));
+
+        var streamId = Guid.NewGuid();
+
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        stream.Aggregate.ShouldBeNull();
+        stream.CurrentVersion.ShouldBe(0);
+
+        stream.AppendOne(new AEvent());
+        stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
+        stream.AppendMany(new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        var sameStream = theSession.Events.StartStream(streamId, new AEvent());
+        await Exception<ExistingStreamIdCollisionException>.ShouldBeThrownByAsync(async () =>
+        {
+            await theSession.SaveChangesAsync();
+        });
+
+        var document = await theSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(3);
+        document.CCount.ShouldBe(2);
+    }
+
+    [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier()
     {
         StoreOptions(opts => opts.Projections.SelfAggregate<SimpleAggregate>(ProjectionLifecycle.Inline));
