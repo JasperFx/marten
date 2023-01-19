@@ -44,18 +44,30 @@ public abstract class InsertStreamBase: IStorageOperation, IExceptionTransform
         return $"InsertStream: {Stream.Key ?? Stream.Id.ToString()}";
     }
 
+    private static bool matches(Exception e)
+    {
+        return e.Message.Contains("23505: duplicate key value violates unique constraint") &&
+               e.Message.Contains("streams");
+    }
+
     public bool TryTransform(Exception original, out Exception transformed)
     {
         if (original is MartenCommandException mce)
         {
             if (mce.InnerException != null &&
-                mce.InnerException.Message.Contains("23505: duplicate key value violates unique constraint") &&
-                mce.InnerException.Message.Contains("streams"))
+                matches(mce.InnerException))
             {
                 transformed =
                     new ExistingStreamIdCollisionException((object)Stream.Key ?? Stream.Id, Stream.AggregateType);
                 return true;
             }
+        }
+
+        if (matches(original))
+        {
+            transformed =
+                new ExistingStreamIdCollisionException((object)Stream.Key ?? Stream.Id, Stream.AggregateType);
+            return true;
         }
 
         transformed = original;
