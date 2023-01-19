@@ -88,14 +88,14 @@ public class using_static_database_multitenancy: IAsyncLifetime
     }
 
 
-    [Fact(Skip = "TODO revisit this test. Skipped as it's also failing randomly on CI")]
+    [Fact]
     public void default_tenant_usage_is_disabled()
     {
         theStore.Options.Advanced
             .DefaultTenantUsageEnabled.ShouldBeFalse();
     }
 
-    [Fact(Skip = "TODO revisit this test. Skipped as it's also failing randomly on CI")]
+    [Fact]
     public async Task creates_databases_from_apply()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
@@ -106,7 +106,7 @@ public class using_static_database_multitenancy: IAsyncLifetime
         (await conn.DatabaseExists("tenant4")).ShouldBeTrue();
     }
 
-    [Fact(Skip = "TODO revisit this test. Skipped as it's also failing randomly on CI")]
+    [Fact]
     public async Task changes_are_applied_to_each_database()
     {
         using var store = _host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
@@ -123,7 +123,7 @@ public class using_static_database_multitenancy: IAsyncLifetime
         }
     }
 
-    [Fact(Skip = "TODO revisit this test. Skipped as it's also failing randomly on CI")]
+    [Fact]
     public async Task can_open_a_session_to_a_different_database()
     {
         await using var session =
@@ -135,7 +135,7 @@ public class using_static_database_multitenancy: IAsyncLifetime
         session.Connection.Database.ShouldBe("database1");
     }
 
-    [Fact(Skip = "TODO revisit this test. Skipped as it's also failing randomly on CI")]
+    [Fact]
     public async Task can_use_bulk_inserts()
     {
         var targets3 = Target.GenerateRandomData(100).ToArray();
@@ -161,7 +161,7 @@ public class using_static_database_multitenancy: IAsyncLifetime
         }
     }
 
-    [Fact(Skip = "TODO revisit this test. Skipped as it's also failing randomly on CI")]
+    [Fact]
     public async Task clean_crosses_the_tenanted_databases()
     {
         var targets3 = Target.GenerateRandomData(100).ToArray();
