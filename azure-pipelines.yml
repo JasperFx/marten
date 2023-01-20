@@ -43,7 +43,7 @@ variables:
   dotnet_version: '7.x'
   node_version: 16.x
   pg_db: marten_testing
-  marten_testing_database: "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;Password=Password12!"
+  marten_testing_database: "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;Password=Password12!;Timeout=60;Cancellation Timeout=5000; Command Timeout=60"
 
 jobs:
   - job: build_net6

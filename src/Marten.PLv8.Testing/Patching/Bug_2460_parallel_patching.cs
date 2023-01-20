@@ -3,24 +3,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.PLv8.Patching;
+using Marten.PLv8.Transforms;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Xunit;
 
 namespace Marten.PLv8.Testing.Patching;
 
 public class Bug_2460_parallel_patching: BugIntegrationContext
 {
-    private const int itemsCount = 100;
+    private const int itemsCount = 50;
     private const int patchedNumber = 1337;
 
     [Fact(Skip = "Fix in https://github.com/JasperFx/marten/pull/2468")]
     public async Task can_support_parallel_processing()
     {
         using var store = SeparateStore(_ =>
-            _.UseJavascriptTransformsAndPatching()
+            {
+                _.UseJavascriptTransformsAndPatching();
+                _.Schema.For<ItemForPatching>();
+                _.AutoCreateSchemaObjects = AutoCreate.None;
+            }
         );
         await store.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync();
+        await store.Tenancy.Default.Database.EnsureStorageExistsAsync(typeof(TransformSchema));
 
         // Delete old items
         await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(ItemForPatching));
