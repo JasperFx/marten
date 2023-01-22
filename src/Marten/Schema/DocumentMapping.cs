@@ -118,14 +118,14 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
         get => _idMember;
         set
         {
-            _idMember = value;
-
-            if (_idMember != null && !_idMember.GetMemberType()
+            if (value != null && !value.GetMemberType()
                     .IsOneOf(_validIdTypes))
             {
                 throw new ArgumentOutOfRangeException(nameof(IdMember),
                     "Id members must be an int, long, Guid, or string");
             }
+
+            _idMember = value;
 
             if (_idMember != null)
             {
