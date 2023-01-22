@@ -1,6 +1,8 @@
 using Marten.Testing.Harness;
 using Shouldly;
 using System;
+using System.Linq;
+using Marten.Schema;
 using Xunit;
 
 namespace DocumentDbTests.Bugs;
@@ -13,6 +15,19 @@ public class Bug_2327_using_identity_extension_on_class_with_invalid_type_id_fie
         Action action = () => StoreOptions(storeOptions =>
             storeOptions.Schema.For<OverriddenIdWithInvalidTypeIdField>().Identity(x => x.DocumentId));
         action.ShouldNotThrow();
+    }
+
+    [Fact]
+    public void should_not_set_id_member_property_when_new_value_has_invalid_type()
+    {
+        var mapping = DocumentMapping.For<OverriddenIdWithInvalidTypeIdField>();
+        var fieldWithInvalidTypeForId = typeof(OverriddenIdWithInvalidTypeIdField)
+            .GetMember(nameof(OverriddenIdWithInvalidTypeIdField.Id)).First();
+
+        Action action = () => mapping.IdMember = fieldWithInvalidTypeForId;
+
+        action.ShouldThrow<ArgumentOutOfRangeException>();
+        mapping.IdMember.ShouldNotBe(fieldWithInvalidTypeForId);
     }
 
     public class OverriddenIdWithInvalidTypeIdField
