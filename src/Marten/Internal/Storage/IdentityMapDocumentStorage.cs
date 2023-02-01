@@ -50,7 +50,7 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
             {
                 if (d.TryGetValue(id, out var existing))
                 {
-                    if (!ReferenceEquals(existing, document))
+                    if (document is not IEquatable<T> && !ReferenceEquals(existing, document))
                     {
                         throw new InvalidOperationException(
                             $"Document '{typeof(T).FullNameInCode()}' with same Id already added to the session.");
