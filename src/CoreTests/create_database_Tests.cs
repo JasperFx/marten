@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Marten;
+using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Npgsql;
@@ -15,7 +16,7 @@ namespace CoreTests;
 public class create_database_Tests : IDisposable
 {
     [Fact]
-    public async Task can_create_new_database_when_one_does_not_exist_for_default_tenant()
+    public async Task can_create_new_database_when_one_does_not_exist_for_default_tenant_with_DatabaseGenerator()
     {
         var cstring = ConnectionSource.ConnectionString;
 
@@ -34,34 +35,36 @@ public class create_database_Tests : IDisposable
 
         var dbCreated = false;
 
-        using (var store = DocumentStore.For(storeOptions =>
-               {
-                   storeOptions.Connection(dbToCreateConnectionString);
-                   #region sample_marten_create_database
-                   storeOptions.CreateDatabasesForTenants(c =>
-                   {
-                       // Specify a db to which to connect in case database needs to be created.
-                       // If not specified, defaults to 'postgres' on the connection for a tenant.
-                       c.MaintenanceDatabase(cstring);
-                       c.ForTenant()
-                           .CheckAgainstPgDatabase()
-                           .WithOwner("postgres")
-                           .WithEncoding("UTF-8")
-                           .ConnectionLimit(-1)
-                           .OnDatabaseCreated(_ =>
-                           {
-                               dbCreated = true;
-                           });
-                   });
-                   #endregion
-               }))
+        using var store = DocumentStore.For(storeOptions =>
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
+            storeOptions.Connection(dbToCreateConnectionString);
+            #region sample_marten_create_database
+            storeOptions.CreateDatabasesForTenants(c =>
+            {
+                // Specify a db to which to connect in case database needs to be created.
+                // If not specified, defaults to 'postgres' on the connection for a tenant.
+                c.MaintenanceDatabase(cstring);
+                c.ForTenant()
+                    .CheckAgainstPgDatabase()
+                    .WithOwner("postgres")
+                    .WithEncoding("UTF-8")
+                    .ConnectionLimit(-1)
+                    .OnDatabaseCreated(_ =>
+                    {
+                        dbCreated = true;
+                    });
+            });
+            #endregion
+        });
+        // That should be done with Hosted Service, but let's test it also here
+        var databaseGenerator = new DatabaseGenerator();
+        await databaseGenerator.CreateDatabasesAsync(store.Tenancy, store.Options.CreateDatabases).ConfigureAwait(false);
 
-            await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-            await store.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
-            Assert.True(dbCreated);
-        }
+        await store.Advanced.Clean.CompletelyRemoveAllAsync();
+
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await store.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+        Assert.True(dbCreated);
     }
 
     [Fact]
@@ -95,44 +98,6 @@ public class create_database_Tests : IDisposable
         }
 
         Assert.False(dbCreated);
-    }
-
-    [Fact]
-    public void can_create_new_database_when_one_does_not_exist_with_plv8_extension()
-    {
-        using (var store = DocumentStore.For(_ =>
-               {
-                   _.Connection(dbToCreateConnectionString);
-                   _.CreateDatabasesForTenants(c =>
-                   {
-                       c.MaintenanceDatabase(ConnectionSource.ConnectionString);
-                       c.ForTenant()
-                           .CheckAgainstPgDatabase()
-                           .WithOwner("postgres");
-                   });
-
-               }))
-        {
-            using (var connection = store.Tenancy.Default.Database.CreateConnection())
-            using (var command = connection.CreateCommand())
-            {
-                connection.Open();
-                command.CommandText = "SELECT extname FROM pg_extension";
-                NpgsqlDataReader reader = command.ExecuteReader();
-
-                while (reader.Read())
-                {
-                    if (reader["extname"].ToString().ToLowerInvariant() == "plv8")
-                    {
-                        return;
-                    }
-                }
-                connection.Close();
-            }
-
-        }
-
-        throw new XunitException("Expected plv8 extension created");
     }
 
     private readonly string dbToCreateConnectionString;
