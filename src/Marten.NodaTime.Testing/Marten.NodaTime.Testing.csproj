@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
-        <RootNamespace>Marten.NodaTimeExtensions.Testing</RootNamespace>
+        <RootNamespace>Marten.NodaTimePlugin.Testing</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
