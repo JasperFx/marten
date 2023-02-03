@@ -11,7 +11,7 @@ using Xunit;
 
 namespace CoreTests.DatabaseMultiTenancy;
 
-[Collection("multi-tenancy")]
+[CollectionDefinition("multi-tenancy", DisableParallelization = true)]
 public class SingleServerMultiTenancyTests : IAsyncLifetime
 {
     private SingleServerMultiTenancy theTenancy;
