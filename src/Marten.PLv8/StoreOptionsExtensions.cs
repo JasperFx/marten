@@ -6,6 +6,7 @@ using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.PLv8.Transforms;
+using Weasel.Postgresql;
 
 namespace Marten.PLv8;
 
@@ -16,11 +17,18 @@ public static class StoreOptionsExtensions
     /// </summary>
     /// <param name="options"></param>
     /// <param name="configure">Optionally add custom JavaScript transformations</param>
-    public static void UseJavascriptTransformsAndPatching(this StoreOptions options, Action<ITransforms> configure = null)
+    public static void UseJavascriptTransformsAndPatching(
+        this StoreOptions options,
+        Action<ITransforms> configure = null,
+        bool createPlv8 = false
+    )
     {
         var schema = new TransformSchema(options);
         configure?.Invoke(schema);
         options.Storage.Add(schema);
+
+        if (createPlv8)
+            options.Storage.ExtendedSchemaObjects.Add(new Extension("plv8"));
     }
 
     /// <summary>
@@ -66,7 +74,8 @@ public static class StoreOptionsExtensions
     /// <param name="apply"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    public static async Task TransformAsync(this IDocumentStore store, Action<IDocumentTransforms> apply, CancellationToken token = default)
+    public static async Task TransformAsync(this IDocumentStore store, Action<IDocumentTransforms> apply,
+        CancellationToken token = default)
     {
         var s = store.As<DocumentStore>();
         if (!s.Options.Advanced.DefaultTenantUsageEnabled)
@@ -108,7 +117,8 @@ public static class StoreOptionsExtensions
     /// <param name="apply"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    public static async Task TransformAsync(this IDocumentStore store, string tenantId, Action<IDocumentTransforms> apply, CancellationToken token = default)
+    public static async Task TransformAsync(this IDocumentStore store, string tenantId,
+        Action<IDocumentTransforms> apply, CancellationToken token = default)
     {
         var s = store.As<DocumentStore>();
 
