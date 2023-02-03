@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.NodaTimeExtensions.Testing.TestData;
+using Marten.NodaTimePlugin.Testing.TestData;
 using Marten.Services.Json;
 using Marten.Testing.Harness;
 using NodaTime;
@@ -13,7 +13,7 @@ using Shouldly;
 using Weasel.Core;
 using Xunit;
 
-namespace Marten.NodaTimeExtensions.Testing.Acceptance;
+namespace Marten.NodaTimePlugin.Testing.Acceptance;
 
 public class MonsterSlayed
 {

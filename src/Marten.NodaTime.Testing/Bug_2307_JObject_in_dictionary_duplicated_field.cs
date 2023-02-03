@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
-using Marten.NodaTimeExtensions;
+using Marten.NodaTimePlugin;
 using Marten.Testing.Harness;
 using Newtonsoft.Json.Linq;
 using NodaTime;

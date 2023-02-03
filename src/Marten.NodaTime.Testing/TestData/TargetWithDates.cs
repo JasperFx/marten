@@ -1,7 +1,7 @@
 using System;
 using NodaTime;
 
-namespace Marten.NodaTimeExtensions.Testing.TestData;
+namespace Marten.NodaTimePlugin.Testing.TestData;
 
 public class TargetWithDates: IEquatable<TargetWithDates>
 {
