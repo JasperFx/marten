@@ -1,8 +1,10 @@
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using CoreTests.Diagnostics;
+using CoreTests.Util;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -36,13 +38,12 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
 
         var connectionString = builder.ConnectionString;
 
-        await using var dbConn = new NpgsqlConnection(connectionString);
-        await dbConn.OpenAsync();
-        await dbConn.DropSchema("multi_tenancy");
-        await dbConn.DropSchema("mt_events");
+        await SchemaUtils.DropSchema(connectionString, "multi_tenancy");
+        await SchemaUtils.DropSchema(connectionString, "mt_events");
 
         return connectionString;
     }
+
 
 
     public async Task InitializeAsync()
