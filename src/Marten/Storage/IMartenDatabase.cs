@@ -70,7 +70,7 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     /// </summary>
     /// <param name="database"></param>
     /// <returns></returns>
-    public Task<IReadOnlyList<DbObjectName>> SchemaTables();
+    public Task<IReadOnlyList<DbObjectName>> SchemaTables(CancellationToken ct = default);
 
     /// <summary>
     ///     Fetch the current size of the event store tables, including the current value

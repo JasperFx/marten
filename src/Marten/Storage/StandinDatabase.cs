@@ -36,7 +36,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public Task<SchemaMigration> CreateMigrationAsync(IFeatureSchema group)
+    public Task<SchemaMigration> CreateMigrationAsync(IFeatureSchema group, CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }
@@ -46,32 +46,36 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public Task WriteCreationScriptToFile(string filename)
+    public Task WriteCreationScriptToFileAsync(string filename, CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task WriteScriptsByType(string directory)
+    public Task WriteScriptsByTypeAsync(string directory, CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task<SchemaMigration> CreateMigrationAsync()
+    public Task<SchemaMigration> CreateMigrationAsync(CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task<SchemaPatchDifference> ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate? @override = null)
+    public Task<SchemaPatchDifference> ApplyAllConfiguredChangesToDatabaseAsync(
+        AutoCreate? @override = null,
+        ReconnectionOptions? reconnectionOptions = null,
+        CancellationToken ct = default
+    )
     {
         throw new NotImplementedException();
     }
 
-    public Task AssertDatabaseMatchesConfigurationAsync()
+    public Task AssertDatabaseMatchesConfigurationAsync(CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task AssertConnectivity()
+    public Task AssertConnectivityAsync(CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }
@@ -199,7 +203,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public Task<IReadOnlyList<DbObjectName>> SchemaTables()
+    public Task<IReadOnlyList<DbObjectName>> SchemaTables(CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }
