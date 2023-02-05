@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,14 +10,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Shouldly;
-using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
 using Xunit;
 
 namespace CoreTests.DatabaseMultiTenancy;
 
-[Collection("multi-tenancy")]
+[CollectionDefinition("multi-tenancy", DisableParallelization = true)]
 public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
 {
     private IHost _host;
