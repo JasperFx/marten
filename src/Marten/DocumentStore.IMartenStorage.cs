@@ -27,12 +27,12 @@ public partial class DocumentStore: IMartenStorage
 
     Task IMartenStorage.WriteCreationScriptToFile(string filename)
     {
-        return nulloDatabase().WriteCreationScriptToFile(filename);
+        return nulloDatabase().WriteCreationScriptToFileAsync(filename);
     }
 
     Task IMartenStorage.WriteScriptsByType(string directory)
     {
-        return nulloDatabase().WriteCreationScriptToFile(directory);
+        return nulloDatabase().WriteCreationScriptToFileAsync(directory);
     }
 
     async Task IMartenStorage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate? @override)

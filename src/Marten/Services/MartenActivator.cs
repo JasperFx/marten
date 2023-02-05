@@ -31,37 +31,35 @@ internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
 
     public DocumentStore Store { get; }
 
-    public async Task<bool> TryAttainLock(NpgsqlConnection conn)
+    public async Task<AttainLockResult> TryAttainLock(NpgsqlConnection conn, CancellationToken ct = default)
     {
-        if (await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId).ConfigureAwait(false))
-        {
-            return true;
-        }
+        var result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct)
+            .ConfigureAwait(false);
 
-        await Task.Delay(50).ConfigureAwait(false);
-        if (await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId).ConfigureAwait(false))
-        {
-            return true;
-        }
+        if (result.Succeeded || result.ShouldReconnect)
+            return result;
 
-        await Task.Delay(100).ConfigureAwait(false);
-        if (await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId).ConfigureAwait(false))
-        {
-            return true;
-        }
+        await Task.Delay(50, ct).ConfigureAwait(false);
+        result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct).ConfigureAwait(false);
 
-        await Task.Delay(250).ConfigureAwait(false);
-        if (await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId).ConfigureAwait(false))
-        {
-            return true;
-        }
+        if (result.Succeeded || result.ShouldReconnect)
+            return result;
 
-        return false;
+        await Task.Delay(100, ct).ConfigureAwait(false);
+        result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct).ConfigureAwait(false);
+
+        if (result.Succeeded || result.ShouldReconnect)
+            return result;
+
+        await Task.Delay(250, ct).ConfigureAwait(false);
+        result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct).ConfigureAwait(false);
+
+        return result;
     }
 
-    public Task ReleaseLock(NpgsqlConnection conn)
+    public Task ReleaseLock(NpgsqlConnection conn, CancellationToken ct = default)
     {
-        return conn.ReleaseGlobalLock(Store.Options.ApplyChangesLockId);
+        return conn.ReleaseGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct);
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -69,14 +67,15 @@ internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
         if (Store.Options.CreateDatabases != null)
         {
             var databaseGenerator = new DatabaseGenerator();
-            await databaseGenerator.CreateDatabasesAsync(Store.Tenancy, Store.Options.CreateDatabases).ConfigureAwait(false);
+            await databaseGenerator.CreateDatabasesAsync(Store.Tenancy, Store.Options.CreateDatabases)
+                .ConfigureAwait(false);
         }
 
         if (Store.Options.ShouldApplyChangesOnStartup)
         {
             var databases = Store.Tenancy.BuildDatabases().ConfigureAwait(false);
             foreach (PostgresqlDatabase database in await databases)
-                await database.ApplyAllConfiguredChangesToDatabaseAsync(this, AutoCreate.CreateOrUpdate)
+                await database.ApplyAllConfiguredChangesToDatabaseAsync(this, AutoCreate.CreateOrUpdate, ct: cancellationToken)
                     .ConfigureAwait(false);
         }
 
@@ -84,7 +83,7 @@ internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
         {
             var databases = Store.Tenancy.BuildDatabases().ConfigureAwait(false);
             foreach (var database in await databases)
-                await database.AssertDatabaseMatchesConfigurationAsync().ConfigureAwait(false);
+                await database.AssertDatabaseMatchesConfigurationAsync(cancellationToken).ConfigureAwait(false);
         }
 
         foreach (var initialData in Store.Options.InitialData)

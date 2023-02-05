@@ -34,7 +34,7 @@
         <PackageReference Include="JasperFx.CodeGeneration.Commands" Version="1.0.1" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
         <PackageReference Include="Oakton" Version="6.0.0" />
-        <PackageReference Include="Weasel.CommandLine" Version="6.0.0-alpha.6" />
+        <PackageReference Include="Weasel.CommandLine" Version="6.0.0-alpha.8" />
     </ItemGroup>
     <Import Project="../../Analysis.Build.props" />
 </Project>
