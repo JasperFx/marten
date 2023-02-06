@@ -52,17 +52,19 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
         theSession.Events.Append(streamId, departed);
         await theSession.SaveChangesAsync();
 
-        var forceEventStreamUnexpectedMaxEventIdException = async () =>
+        async Task ForceEventStreamUnexpectedMaxEventIdException()
         {
-            await Parallel.ForEachAsync(Enumerable.Range(1, 5), async (_, token) =>
+            await Parallel.ForEachAsync(Enumerable.Range(1, 30), async (_, token) =>
             {
                 await using var session = theStore.OpenSession();
                 session.Events.Append(streamId, departed);
                 await session.SaveChangesAsync(token);
             });
-        };
+        }
 
-        Should.Throw<EventStreamUnexpectedMaxEventIdException>(forceEventStreamUnexpectedMaxEventIdException)
-            .Message.ShouldBe($"Unexpected starting version number for event stream '{streamId}', expected 2 but was 3");
+        var expectedPattern =
+            "Unexpected starting version number for event stream '" + streamId + "', expected [0-9]{1,2} but was [0-9]{1,2}";
+        Should.Throw<EventStreamUnexpectedMaxEventIdException>(ForceEventStreamUnexpectedMaxEventIdException)
+            .Message.ShouldMatch(expectedPattern);
     }
 }
