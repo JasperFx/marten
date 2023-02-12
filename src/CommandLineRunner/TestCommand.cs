@@ -52,13 +52,13 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
         await store.BulkInsertDocumentsAsync(targets);
 
         Console.WriteLine("QueryOnly");
-        await using (var session1 = await store.QuerySessionAsync())
+        await using (var session1 = store.QuerySession())
         {
             (await session1.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
         }
 
         Console.WriteLine("Lightweight");
-        await using (var session2 = await store.LightweightSessionAsync())
+        await using (var session2 = store.LightweightSession())
         {
             (await session2.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
 
@@ -84,7 +84,7 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
         }
 
         Console.WriteLine("IdentityMap");
-        await using (var session3 = await store.IdentitySessionAsync())
+        await using (var session3 = store.IdentitySession())
         {
             (await session3.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
 
@@ -100,10 +100,9 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
         }
 
         Console.WriteLine("DirtyChecking");
-        await using (var session4 = await store.DirtyTrackedSessionAsync())
+        await using (var session4 = store.DirtyTrackedSession())
         {
             (await session4.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
-
 
             var target = Target.Random();
             session4.Store(target);
@@ -117,7 +116,7 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
         }
 
         Console.WriteLine("Capturing Events");
-        await using (var session = await store.LightweightSessionAsync())
+        await using (var session = store.LightweightSession())
         {
             var streamId = Guid.NewGuid();
             session.Events.Append(streamId, new AEvent(), new BEvent(), new CEvent(), new DEvent());
