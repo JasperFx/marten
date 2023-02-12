@@ -214,7 +214,11 @@ public static class MartenServiceCollectionExtensions
         });
 
         // This can be overridden by the expression following
-        services.AddSingleton<ISessionFactory, DefaultSessionFactory>();
+        services.AddSingleton<ISessionFactory, DefaultSessionFactory>(sp =>
+        {
+            var logger = sp.GetService<ILogger<DefaultSessionFactory>>() ?? new NullLogger<DefaultSessionFactory>();
+            return new DefaultSessionFactory(sp.GetRequiredService<IDocumentStore>(), logger);
+        });
 
         services.AddScoped(s => s.GetRequiredService<ISessionFactory>().QuerySession());
         services.AddScoped(s => s.GetRequiredService<ISessionFactory>().OpenSession());

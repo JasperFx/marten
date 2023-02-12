@@ -96,7 +96,7 @@ public class noda_time_acceptance: OneOffConfigurationsContext
 
         var testDoc = TargetWithDates.Generate();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Insert(testDoc);
             session.SaveChanges();
@@ -133,7 +133,7 @@ public class noda_time_acceptance: OneOffConfigurationsContext
         var instantUTC = Instant.FromDateTimeUtc(dateTime.ToUniversalTime());
         var testDoc = TargetWithDates.Generate(dateTime);
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Insert(testDoc);
             session.SaveChanges();
@@ -212,15 +212,13 @@ public class noda_time_acceptance: OneOffConfigurationsContext
             Name = "test"
         };
 
-        await using (var session = theStore.OpenSession())
-        {
-            session.Events.Append(streamId, @event);
-            await session.SaveChangesAsync();
+        await using var session = theStore.LightweightSession();
+        session.Events.Append(streamId, @event);
+        await session.SaveChangesAsync();
 
-            var streamState = session.Events.FetchStreamState(streamId);
-            var streamState2 = await session.Events.FetchStreamStateAsync(streamId);
-            var streamState3 = session.Events.FetchStream(streamId, timestamp: startDate);
-        }
+        var streamState = await session.Events.FetchStreamStateAsync(streamId);
+        var streamState2 = await session.Events.FetchStreamStateAsync(streamId);
+        var streamState3 = await session.Events.FetchStreamAsync(streamId, timestamp: startDate);
     }
 
     [Theory]
@@ -234,7 +232,7 @@ public class noda_time_acceptance: OneOffConfigurationsContext
         var instantUTC = Instant.FromDateTimeUtc(dateTime.ToUniversalTime());
         var testDoc = TargetWithDates.Generate(dateTime);
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Insert(testDoc);
             session.SaveChanges();

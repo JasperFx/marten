@@ -120,13 +120,13 @@ public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixtu
 
         theStore.BulkInsert(new User[] { user1, user2, user3 });
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Transform(x => x.All<User>("default_username"));
             session.SaveChanges();
         }
 
-        using (var session = theStore.QuerySession())
+        using (var session = theStore.LightweightSession())
         {
             session.Load<User>(user1.Id).UserName.ShouldBe("jeremy.miller");
             session.Load<User>(user2.Id).UserName.ShouldBe("corey.kaylor");
@@ -186,9 +186,9 @@ public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixtu
         var user2 = new User { FirstName = "Corey", LastName = "Kaylor", UserName = "user2" };
         var user3 = new User { FirstName = "Tim", LastName = "Cools", UserName = "user3" };
 
-        theStore.BulkInsert(new User[] { user1, user2, user3 });
+        theStore.BulkInsert(new[] { user1, user2, user3 });
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Transform(x => x.Document<User>("default_username", user1.Id));
             session.SaveChanges();
@@ -234,7 +234,7 @@ public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixtu
 
         theStore.BulkInsert(new User[] { user1, user2, user3 });
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Transform(x => x.Where<User>("default_username", x => x.FirstName == user1.FirstName));
             session.SaveChanges();
