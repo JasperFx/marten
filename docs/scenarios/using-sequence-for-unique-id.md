@@ -81,7 +81,7 @@ Now, when creating and persisting such types, we first query the database for a 
 ```cs
 var matter = theStore.StorageFeatures.FindFeature(typeof(MatterId)).Objects.OfType<Sequence>().Single();
 
-await using var session = theStore.OpenSession();
+await using var session = theStore.LightweightSession();
 // Generate a new, unique identifier
 var nextMatter = session.NextInSequence(matter);
 

@@ -52,7 +52,7 @@ public class ScenarioUsingSequenceForUniqueId : OneOffConfigurationsContext
         #region sample_scenario-usingsequenceforuniqueid-querymatter
         var matter = theStore.StorageFeatures.FindFeature(typeof(MatterId)).Objects.OfType<Sequence>().Single();
 
-        await using var session = theStore.OpenSession();
+        await using var session = theStore.LightweightSession();
         // Generate a new, unique identifier
         var nextMatter = session.NextInSequence(matter);
 

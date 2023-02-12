@@ -11,16 +11,14 @@ namespace DocumentDbTests.Bugs
         [Fact]
         public void can_select_from_the_same_table()
         {
-            using (var session = theStore.OpenSession())
-            {
-                var product1 = new Area1.Product { Name = "Paper", Price = 10 };
-                session.Store(product1);
-                session.SaveChanges();
+            using var session = theStore.LightweightSession();
+            var product1 = new Area1.Product { Name = "Paper", Price = 10 };
+            session.Store(product1);
+            session.SaveChanges();
 
-                var product2 = session.Load<Area2.Product>(product1.Id);
+            var product2 = session.Load<Area2.Product>(product1.Id);
 
-                product2.Name.ShouldBe(product1.Name);
-            }
+            product2.Name.ShouldBe(product1.Name);
         }
 
         #endregion

@@ -17,7 +17,7 @@ var joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = 
 var slayed1 = new MonsterSlayed { Name = "Troll" };
 var slayed2 = new MonsterSlayed { Name = "Dragon" };
 
-using (var session = theStore.OpenSession())
+using (var session = theStore.LightweightSession())
 {
     session.Events.StartStream<Quest>(started.Name,started, joined, slayed1, slayed2);
     session.SaveChanges();
@@ -62,7 +62,7 @@ Lastly, we want trolls (`MonsterSlayed`) removed from our stream. However, the s
 <!-- snippet: sample_scenario-copyandtransformstream-transform -->
 <a id='snippet-sample_scenario-copyandtransformstream-transform'></a>
 ```cs
-using (var session = theStore.OpenSession())
+using (var session = theStore.LightweightSession())
 {
     var events = session.Events.FetchStream(started.Name);
 

@@ -13,7 +13,7 @@ public class document_inserts: IntegrationContext
     [Fact]
     public void can_insert_all_new_documents()
     {
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Insert(Target.GenerateRandomData(99).ToArray());
             session.SaveChanges();
@@ -33,7 +33,7 @@ public class document_inserts: IntegrationContext
             Target.Random(), Target.Random(), Target.Random(), new User(), new User(), new User(), new User()
         };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.InsertObjects(docs);
             session.SaveChanges();
@@ -73,7 +73,7 @@ public class document_inserts: IntegrationContext
 
         #region sample_sample-document-insertonly
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Insert(target);
             session.SaveChanges();
@@ -81,7 +81,7 @@ public class document_inserts: IntegrationContext
 
         #endregion
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             Exception<DocumentAlreadyExistsException>.ShouldBeThrownBy(() =>
             {

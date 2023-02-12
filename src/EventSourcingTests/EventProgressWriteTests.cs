@@ -19,7 +19,7 @@ public class EventProgressWriteTests: IntegrationContext
     [Fact]
     public void can_register_progress_initial()
     {
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             var events = theStore.Events;
             session.QueueOperation(new EventProgressWrite(events, "summary", 111));
@@ -37,7 +37,7 @@ public class EventProgressWriteTests: IntegrationContext
     [Fact]
     public void can_register_subsequent_progress()
     {
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             var events = theStore.Events;
 

@@ -119,7 +119,7 @@ public class query_with_inner_query_with_CollectionToArrayJsonConverter_onProper
 
     private void SetupTestData()
     {
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         session.Store(TestData);
         session.SaveChanges();
     }

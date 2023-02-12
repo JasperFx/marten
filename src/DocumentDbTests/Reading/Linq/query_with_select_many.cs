@@ -26,7 +26,7 @@ public class query_with_select_many : IntegrationContext
         var product2 = new Product {Tags = new[] {"b", "c", "d"}};
         var product3 = new Product {Tags = new[] {"d", "e", "f"}};
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
             session.SaveChanges();
@@ -52,7 +52,7 @@ public class query_with_select_many : IntegrationContext
         var product2 = new ProductWithList { Tags = new List<string> { "b", "c", "d" } };
         var product3 = new ProductWithList { Tags = new List<string> { "d", "e", "f" } };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
             session.SaveChanges();
@@ -66,7 +66,6 @@ public class query_with_select_many : IntegrationContext
                 .Distinct()
                 .Count()
                 .ShouldBe(6);
-
         }
     }
 
@@ -77,7 +76,7 @@ public class query_with_select_many : IntegrationContext
         var product2 = new ProductWithList { Tags = new List<string> { "b", "c", "d" } };
         var product3 = new ProductWithList { Tags = new List<string> { "d", "e", "f" } };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
             session.SaveChanges();
@@ -91,7 +90,6 @@ public class query_with_select_many : IntegrationContext
                 .Distinct()
                 .LongCount()
                 .ShouldBe(6L);
-
         }
     }
 
@@ -103,7 +101,7 @@ public class query_with_select_many : IntegrationContext
         var product2 = new ProductWithList { Tags = new List<string> { "b", "c", "d" } };
         var product3 = new ProductWithList { Tags = new List<string> { "d", "e", "f" } };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
             session.SaveChanges();
@@ -128,7 +126,7 @@ public class query_with_select_many : IntegrationContext
         var product2 = new Product {Tags = new[] {"b", "c", "d"}};
         var product3 = new Product {Tags = new[] {"d", "e", "f"}};
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
             session.SaveChanges();
@@ -148,7 +146,7 @@ public class query_with_select_many : IntegrationContext
         var product2 = new Product { Tags = new[] { "b", "c", "d" } };
         var product3 = new Product { Tags = new[] { "d", "e", "f" } };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
             session.SaveChanges();
@@ -171,7 +169,7 @@ public class query_with_select_many : IntegrationContext
         var product2 = new Product {Tags = new[] {"b", "c", "d"}};
         var product3 = new Product {Tags = new[] {"d", "e", "f"}};
 
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
             await session.SaveChangesAsync();
@@ -191,10 +189,10 @@ public class query_with_select_many : IntegrationContext
         var product2 = new Product { Tags = new[] { "b", "c", "d" } };
         var product3 = new Product { Tags = new[] { "d", "e", "f" } };
 
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         await using (var query = theStore.QuerySession())
@@ -215,8 +213,7 @@ public class query_with_select_many : IntegrationContext
 
         SpecificationExtensions.ShouldBeGreaterThan(expectedCount, 0);
 
-
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(targets);
             session.SaveChanges();
@@ -236,12 +233,11 @@ public class query_with_select_many : IntegrationContext
         var product2 = new ProductWithNumbers {Tags = new[] {2, 3, 4}};
         var product3 = new ProductWithNumbers {Tags = new[] {3, 4, 5}};
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
             session.SaveChanges();
         }
-
 
         using (var query = theStore.QuerySession())
         {
@@ -262,12 +258,11 @@ public class query_with_select_many : IntegrationContext
         var product2 = new ProductWithNumbers {Tags = new[] {2, 3, 4}};
         var product3 = new ProductWithNumbers {Tags = new[] {3, 4, 5}};
 
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
             await session.SaveChangesAsync();
         }
-
 
         await using (var query = theStore.QuerySession())
         {
@@ -288,7 +283,7 @@ public class query_with_select_many : IntegrationContext
         var product2 = new Product {Tags = new[] {"b", "c", "d"}};
         var product3 = new Product {Tags = new[] {"d", "e", "f"}};
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
 
@@ -317,7 +312,7 @@ public class query_with_select_many : IntegrationContext
         var product2 = new Product {Tags = new[] {"b", "c", "d"}};
         var product3 = new Product {Tags = new[] {"d", "e", "f"}};
 
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
 
@@ -344,15 +339,13 @@ public class query_with_select_many : IntegrationContext
         var targets = Target.GenerateRandomData(1000).ToArray();
         theStore.BulkInsert(targets);
 
-        using (var query = theStore.QuerySession())
-        {
-            var expected = targets.SelectMany(x => x.Children).Where(x => x.Flag).Select(x => x.Id).OrderBy(x => x).ToList();
-            expected.Any().ShouldBeTrue();
+        using var query = theStore.QuerySession();
+        var expected = targets.SelectMany(x => x.Children).Where(x => x.Flag).Select(x => x.Id).OrderBy(x => x).ToList();
+        expected.Any().ShouldBeTrue();
 
-            var results = query.Query<Target>().SelectMany(x => x.Children).Where(x => x.Flag).ToList();
+        var results = query.Query<Target>().SelectMany(x => x.Children).Where(x => x.Flag).ToList();
 
-            results.Select(x => x.Id).OrderBy(x => x).ShouldHaveTheSameElementsAs(expected);
-        }
+        results.Select(x => x.Id).OrderBy(x => x).ShouldHaveTheSameElementsAs(expected);
     }
 
     [Fact]
@@ -361,15 +354,13 @@ public class query_with_select_many : IntegrationContext
         var targets = Target.GenerateRandomData(1000).ToArray();
         theStore.BulkInsert(targets);
 
-        using (var query = theStore.QuerySession())
-        {
-            var expected = targets.SelectMany(x => x.Children).Where(x => x.Flag).Select(x => x.Id).OrderBy(x => x).ToList();
-            expected.Any().ShouldBeTrue();
+        using var query = theStore.QuerySession();
+        var expected = targets.SelectMany(x => x.Children).Where(x => x.Flag).Select(x => x.Id).OrderBy(x => x).ToList();
+        expected.Any().ShouldBeTrue();
 
-            var results = query.Query<Target>().SelectMany(x => x.Children).Where(x => x.Flag).OrderBy(x => x.Id).ToList();
+        var results = query.Query<Target>().SelectMany(x => x.Children).Where(x => x.Flag).OrderBy(x => x.Id).ToList();
 
-            results.Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
-        }
+        results.Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
     }
 
     [Fact]
@@ -378,32 +369,30 @@ public class query_with_select_many : IntegrationContext
         var targets = Target.GenerateRandomData(1000).ToArray();
         theStore.BulkInsert(targets);
 
-        using (var query = theStore.QuerySession())
-        {
-            var expected = targets
-                .SelectMany(x => x.Children)
-                .Where(x => x.Flag)
-                .OrderBy(x => x.Id)
-                .Skip(20)
-                .Take(15)
-                .Select(x => x.Id)
-                .ToList();
+        using var query = theStore.QuerySession();
+        var expected = targets
+            .SelectMany(x => x.Children)
+            .Where(x => x.Flag)
+            .OrderBy(x => x.Id)
+            .Skip(20)
+            .Take(15)
+            .Select(x => x.Id)
+            .ToList();
 
 
-            expected.Any().ShouldBeTrue();
+        expected.Any().ShouldBeTrue();
 
-            #region sample_using-select-many
-            var results = query.Query<Target>()
-                .SelectMany(x => x.Children)
-                .Where(x => x.Flag)
-                .OrderBy(x => x.Id)
-                .Skip(20)
-                .Take(15)
-                .ToList();
-            #endregion
+        #region sample_using-select-many
+        var results = query.Query<Target>()
+            .SelectMany(x => x.Children)
+            .Where(x => x.Flag)
+            .OrderBy(x => x.Id)
+            .Skip(20)
+            .Take(15)
+            .ToList();
+        #endregion
 
-            results.Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
-        }
+        results.Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
     }
 
 
@@ -414,24 +403,22 @@ public class query_with_select_many : IntegrationContext
         var targets = Target.GenerateRandomData(1000).ToArray();
         theStore.BulkInsert(targets);
 
-        using (var query = theStore.QuerySession())
-        {
-            QueryStatistics stats = null;
+        using var query = theStore.LightweightSession();
+        QueryStatistics stats;
 
-            var actual = query.Query<Target>()
-                .Stats(out stats)
-                .SelectMany(x => x.Children)
-                .Where(x => x.Flag)
-                .OrderBy(x => x.Id)
-                .Take(10).ToList();
+        var actual = query.Query<Target>()
+            .Stats(out stats)
+            .SelectMany(x => x.Children)
+            .Where(x => x.Flag)
+            .OrderBy(x => x.Id)
+            .Take(10).ToList();
 
-            var expectedCount = targets
-                .SelectMany(x => x.Children)
-                .Where(x => x.Flag)
-                .OrderBy(x => x.Id).LongCount();
+        var expectedCount = targets
+            .SelectMany(x => x.Children)
+            .Where(x => x.Flag)
+            .OrderBy(x => x.Id).LongCount();
 
-            stats.TotalResults.ShouldBe(expectedCount);
-        }
+        stats.TotalResults.ShouldBe(expectedCount);
     }
 
     [Fact]
@@ -460,23 +447,18 @@ public class query_with_select_many : IntegrationContext
 
         theStore.BulkInsert(targets);
 
+        using var query = theStore.LightweightSession();
+        var dict = new Dictionary<Guid, User>();
 
+        var results = query.Query<Target>()
+            .SelectMany(x => x.Children)
+            .Include(x => x.UserId, dict)
+            .ToList();
 
-        using (var query = theStore.QuerySession())
-        {
-            var dict = new Dictionary<Guid, User>();
+        dict.Count.ShouldBe(2);
 
-            var results = query.Query<Target>()
-                .SelectMany(x => x.Children)
-                .Include(x => x.UserId, dict)
-                .ToList();
-
-            dict.Count.ShouldBe(2);
-
-            dict.ContainsKey(user1.Id).ShouldBeTrue();
-            dict.ContainsKey(user2.Id).ShouldBeTrue();
-
-        }
+        dict.ContainsKey(user1.Id).ShouldBeTrue();
+        dict.ContainsKey(user2.Id).ShouldBeTrue();
     }
 
     [Fact]
@@ -486,7 +468,7 @@ public class query_with_select_many : IntegrationContext
         var user2 = new User();
         var user3 = new User();
 
-        theStore.BulkInsert(new [] {user1, user2, user3});
+        await theStore.BulkInsertAsync(new [] {user1, user2, user3});
 
         var targets = Target.GenerateRandomData(1000).ToArray();
 
@@ -503,24 +485,20 @@ public class query_with_select_many : IntegrationContext
             }
         }
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
+        await using var query = theStore.LightweightSession();
+        var dict = new Dictionary<Guid, User>();
 
-        await using (var query = theStore.QuerySession())
-        {
-            var dict = new Dictionary<Guid, User>();
+        var results = await query.Query<Target>()
+            .SelectMany(x => x.Children)
+            .Include(x => x.UserId, dict)
+            .ToListAsync();
 
-            var results = await query.Query<Target>()
-                .SelectMany(x => x.Children)
-                .Include(x => x.UserId, dict)
-                .ToListAsync();
+        dict.Count.ShouldBe(2);
 
-            dict.Count.ShouldBe(2);
-
-            dict.ContainsKey(user1.Id).ShouldBeTrue();
-            dict.ContainsKey(user2.Id).ShouldBeTrue();
-
-        }
+        dict.ContainsKey(user1.Id).ShouldBeTrue();
+        dict.ContainsKey(user2.Id).ShouldBeTrue();
     }
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
@@ -529,38 +507,28 @@ public class query_with_select_many : IntegrationContext
         var targets = Target.GenerateRandomData(100).ToArray();
         theStore.BulkInsert(targets);
 
-        using (var query = theStore.QuerySession())
-        {
-            var actual = query.Query<Target>()
-                .SelectMany(x => x.Children)
-                .Where(x => x.Color == Colors.Green)
-                .Select(x => new {Id = x.Id, Shade = x.Color})
-                .ToList();
+        using var query = theStore.QuerySession();
+        var actual = query.Query<Target>()
+            .SelectMany(x => x.Children)
+            .Where(x => x.Color == Colors.Green)
+            .Select(x => new {Id = x.Id, Shade = x.Color})
+            .ToList();
 
-            var expected = targets
-                .SelectMany(x => x.Children).Count(x => x.Color == Colors.Green);
+        var expected = targets
+            .SelectMany(x => x.Children).Count(x => x.Color == Colors.Green);
 
-            actual.Count.ShouldBe(expected);
+        actual.Count.ShouldBe(expected);
 
-            actual.Each(x => x.Shade.ShouldBe(Colors.Green));
-        }
+        actual.Each(x => x.Shade.ShouldBe(Colors.Green));
     }
-
-
-
-
-
 
     [Fact]
     public void Bug_665()
     {
-        using (var session = theStore.OpenSession())
-        {
-            QueryStatistics stats = null;
-            var attributes = session.Query<Product>().Stats(out stats).SelectMany(x => x.Attributes)
-                .Select(x => x.Attribute.Name).Distinct();
-
-        }
+        using var session = theStore.QuerySession();
+        QueryStatistics stats = null;
+        var attributes = session.Query<Product>().Stats(out stats).SelectMany(x => x.Attributes)
+            .Select(x => x.Attribute.Name).Distinct();
     }
 
     [Fact]

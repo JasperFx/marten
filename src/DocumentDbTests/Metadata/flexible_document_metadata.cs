@@ -291,7 +291,7 @@ public abstract class FlexibleDocumentMetadataContext : OneOffConfigurationsCont
     [Fact]
     public async Task can_save_update_and_load_with_identity_map()
     {
-        await using var session = theStore.OpenSession();
+        await using var session = theStore.IdentitySession();
 
         var doc = new MetadataTarget();
         session.Store(doc);
@@ -301,7 +301,7 @@ public abstract class FlexibleDocumentMetadataContext : OneOffConfigurationsCont
         session.Update(doc);
         await session.SaveChangesAsync();
 
-        await using var session2 = theStore.OpenSession();
+        await using var session2 = theStore.IdentitySession();
         var doc2 = await session2.LoadAsync<MetadataTarget>(doc.Id);
         doc2.Name.ShouldBe("different");
     }

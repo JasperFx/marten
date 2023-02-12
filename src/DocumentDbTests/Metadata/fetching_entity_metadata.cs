@@ -25,7 +25,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
     {
         var shop = new CoffeeShop();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(shop);
             session.SaveChanges();
@@ -43,8 +43,6 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
             metadata.Deleted.ShouldBeFalse();
             metadata.DeletedAt.ShouldBeNull();
         }
-
-
     }
 
     #endregion
@@ -59,7 +57,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
 
         var shop = new CoffeeShop();
 
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Store(shop);
             await session.SaveChangesAsync();

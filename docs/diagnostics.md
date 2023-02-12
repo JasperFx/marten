@@ -282,7 +282,7 @@ You can also directly apply a session logger to any `IQuerySession` or `IDocumen
 <!-- snippet: sample_plugging-in-session-logger -->
 <a id='snippet-sample_plugging-in-session-logger'></a>
 ```cs
-using var session = store.OpenSession();
+using var session = store.LightweightSession();
 // Replace the logger for only this one session
 session.Logger = new RecordingLogger();
 ```

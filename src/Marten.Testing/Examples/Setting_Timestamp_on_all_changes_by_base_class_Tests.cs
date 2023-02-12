@@ -26,7 +26,7 @@ public class Setting_Timestamp_on_all_changes_by_base_class_Tests
             var doc2s = new Doc2[] { new Doc2(), new Doc2(), };
             var doc3s = new Doc3[] { new Doc3(), new Doc3(), };
 
-            using (var session = store.OpenSession())
+            using (var session = store.LightweightSession())
             {
                 session.Store(doc1s);
                 session.Store(doc2s);

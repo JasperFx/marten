@@ -27,7 +27,7 @@ public class Bug_2289_tombstone_events_violate_seq_id_uniqueness : IntegrationCo
 
         theSession.Events.Append(stream, 2, departed);
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             var joined3 = new MembersJoined { Members = new[] { "Egwene" } };
             var departed3 = new MembersDeparted { Members = new[] { "Perrin" } };

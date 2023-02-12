@@ -30,9 +30,9 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
     }
 
 
-    #region sample_passing-in-existing-connections-and-transactions
     public void samples(IDocumentStore store, NpgsqlConnection connection, NpgsqlTransaction transaction)
     {
+        #region sample_passing-in-existing-connections-and-transactions
         // Use an existing connection, but Marten still controls the transaction lifecycle
         var session1 = store.OpenSession(SessionOptions.ForConnection(connection));
 
@@ -43,14 +43,12 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
         var session3 = store.OpenSession(SessionOptions.ForTransaction(transaction));
 
         // Enlist in the current, ambient transaction scope
-        using (var scope = new TransactionScope())
-        {
-            var session4 = store.OpenSession(SessionOptions.ForCurrentTransaction());
-        }
+        using var scope = new TransactionScope();
+        var session4 = store.OpenSession(SessionOptions.ForCurrentTransaction());
 
+        #endregion
     }
 
-    #endregion
 
     [Fact]
     public void can_open_serializable_sync()

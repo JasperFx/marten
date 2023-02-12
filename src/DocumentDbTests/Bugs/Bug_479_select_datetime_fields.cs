@@ -23,15 +23,13 @@ public class Bug_479_select_datetime_fields: BugIntegrationContext
             DateTime = DateTime.Today
         };
 
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(doc);
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        session.Store(doc);
+        session.SaveChanges();
 
-            var date = session.Query<DocWithDates>().Where(x => x.Id == doc.Id).Select(x => new { Date = x.DateTime }).Single();
+        var date = session.Query<DocWithDates>().Where(x => x.Id == doc.Id).Select(x => new { Date = x.DateTime }).Single();
 
-            date.Date.ShouldBe(doc.DateTime);
-        }
+        date.Date.ShouldBe(doc.DateTime);
     }
 
     [Fact]
@@ -42,15 +40,13 @@ public class Bug_479_select_datetime_fields: BugIntegrationContext
             DateTimeOffset = new DateTimeOffset(2016, 8, 15, 18, 0, 0, 0.Hours())
         };
 
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(doc);
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        session.Store(doc);
+        session.SaveChanges();
 
-            var date = session.Query<DocWithDates>().Where(x => x.Id == doc.Id).Select(x => new { Date = x.DateTimeOffset }).Single();
+        var date = session.Query<DocWithDates>().Where(x => x.Id == doc.Id).Select(x => new { Date = x.DateTimeOffset }).Single();
 
-            date.Date.ShouldBe(doc.DateTimeOffset);
-        }
+        date.Date.ShouldBe(doc.DateTimeOffset);
     }
 
     public class DocWithDates

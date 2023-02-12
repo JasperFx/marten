@@ -17,7 +17,7 @@ public class document_session_load_already_loaded_document_Tests : IntegrationCo
         theSession.Store(user);
         theSession.SaveChanges();
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.IdentitySession();
         var first = session.Load<User>(user.Id);
         var second = session.Load<User>(user.Id);
 
@@ -31,14 +31,12 @@ public class document_session_load_already_loaded_document_Tests : IntegrationCo
         theSession.Store(user);
         await theSession.SaveChangesAsync();
 
-        await using var session = theStore.OpenSession();
+        await using var session = theStore.IdentitySession();
         var first = await session.LoadAsync<User>(user.Id);
         var second = await session.LoadAsync<User>(user.Id);
 
         first.ShouldBeSameAs(second);
     }
-
-
 
     public document_session_load_already_loaded_document_Tests(DefaultStoreFixture fixture) : base(fixture)
     {

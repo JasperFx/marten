@@ -24,7 +24,7 @@ public class Bug_634_include_against_soft_deleted_docs: BugIntegrationContext
             AssigneeId = user.Id
         };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(user);
             session.Store(issue);
@@ -53,14 +53,14 @@ public class Bug_634_include_against_soft_deleted_docs: BugIntegrationContext
             AssigneeId = user.Id
         };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(user);
             session.Store(issue);
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Delete(user);
             session.SaveChanges();

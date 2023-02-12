@@ -155,11 +155,9 @@ public class query_with_inner_query_with_global_CollectionStorage_WithArray: One
 
     private void SetupTestData()
     {
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(TestData);
-            session.SaveChanges();
-        }
+        using var session = theStore.LightweightSession();
+        session.Store(TestData);
+        session.SaveChanges();
     }
 
     public query_with_inner_query_with_global_CollectionStorage_WithArray()

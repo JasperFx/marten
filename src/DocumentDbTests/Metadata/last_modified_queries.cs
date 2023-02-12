@@ -56,27 +56,25 @@ public class last_modified_queries: IntegrationContext
         var user3 = new User { UserName = "baz" };
         var user4 = new User { UserName = "jack" };
 
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(user1, user2, user3, user4);
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        session.Store(user1, user2, user3, user4);
+        session.SaveChanges();
 
-            var epoch = session.MetadataFor(user4).LastModified;
-            session.Store(user3, user4);
-            session.SaveChanges();
+        var epoch = session.MetadataFor(user4).LastModified;
+        session.Store(user3, user4);
+        session.SaveChanges();
 
-            // no where clause
-            session.Query<User>().Where(x => x.ModifiedSince(epoch))
-                .OrderBy(x => x.UserName).Select(x => x.UserName)
-                .ToList().ShouldHaveTheSameElementsAs("baz", "jack");
+        // no where clause
+        session.Query<User>().Where(x => x.ModifiedSince(epoch))
+            .OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToList().ShouldHaveTheSameElementsAs("baz", "jack");
 
-            // with a where clause
-            session.Query<User>().Where(x => x.UserName != "baz" && x.ModifiedSince(epoch))
-                .OrderBy(x => x.UserName)
-                .ToList()
-                .Select(x => x.UserName)
-                .Single().ShouldBe("jack");
-        }
+        // with a where clause
+        session.Query<User>().Where(x => x.UserName != "baz" && x.ModifiedSince(epoch))
+            .OrderBy(x => x.UserName)
+            .ToList()
+            .Select(x => x.UserName)
+            .Single().ShouldBe("jack");
     }
 
     [Fact]
@@ -87,27 +85,25 @@ public class last_modified_queries: IntegrationContext
         var user3 = new User { UserName = "baz" };
         var user4 = new User { UserName = "jack" };
 
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(user1, user2, user3, user4);
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        session.Store(user1, user2, user3, user4);
+        session.SaveChanges();
 
-            session.Store(user3, user4);
-            session.SaveChanges();
+        session.Store(user3, user4);
+        session.SaveChanges();
 
-            var epoch = session.MetadataFor(user4).LastModified;
+        var epoch = session.MetadataFor(user4).LastModified;
 
-            // no where clause
-            session.Query<User>().Where(x => x.ModifiedBefore(epoch)).OrderBy(x => x.UserName).Select(x => x.UserName)
-                .ToList().ShouldHaveTheSameElementsAs("bar", "foo");
+        // no where clause
+        session.Query<User>().Where(x => x.ModifiedBefore(epoch)).OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToList().ShouldHaveTheSameElementsAs("bar", "foo");
 
-            // with a where clause
-            session.Query<User>().Where(x => x.UserName != "bar" && x.ModifiedBefore(epoch))
-                .OrderBy(x => x.UserName)
-                .ToList()
-                .Select(x => x.UserName)
-                .Single().ShouldBe("foo");
-        }
+        // with a where clause
+        session.Query<User>().Where(x => x.UserName != "bar" && x.ModifiedBefore(epoch))
+            .OrderBy(x => x.UserName)
+            .ToList()
+            .Select(x => x.UserName)
+            .Single().ShouldBe("foo");
     }
 
     public last_modified_queries(DefaultStoreFixture fixture) : base(fixture)

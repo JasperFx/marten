@@ -198,7 +198,7 @@ public class full_text_index: OneOffConfigurationsContext
         });
         IReadOnlyList<User> result;
 
-        using (var session = store.OpenSession())
+        using (var session = store.LightweightSession())
         {
             session.Store(new User { FirstName = "Jeremy", LastName = "Miller", UserName = "jmiller" });
             session.Store(new User { FirstName = "Lindsey", LastName = "Miller", UserName = "lmiller" });
@@ -224,14 +224,14 @@ public class full_text_index: OneOffConfigurationsContext
 
         var expectedId = Guid.NewGuid();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.QuerySession())
         {
             #region sample_search_in_query_sample
             var posts = session.Query<BlogPost>()
@@ -251,14 +251,14 @@ public class full_text_index: OneOffConfigurationsContext
 
         var expectedId = Guid.NewGuid();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.QuerySession())
         {
             #region sample_plain_search_in_query_sample
             var posts = session.Query<BlogPost>()
@@ -278,14 +278,14 @@ public class full_text_index: OneOffConfigurationsContext
 
         var expectedId = Guid.NewGuid();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.QuerySession())
         {
             #region sample_phrase_search_in_query_sample
             var posts = session.Query<BlogPost>()
@@ -305,14 +305,14 @@ public class full_text_index: OneOffConfigurationsContext
 
         var expectedId = Guid.NewGuid();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.QuerySession())
         {
             #region sample_web_search_in_query_sample
             var posts = session.Query<BlogPost>()
@@ -332,7 +332,7 @@ public class full_text_index: OneOffConfigurationsContext
 
         var expectedId = Guid.NewGuid();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter", Category = "LifeStyle" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "somefilter", Category = "Other" });
@@ -340,7 +340,7 @@ public class full_text_index: OneOffConfigurationsContext
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.QuerySession())
         {
             #region sample_text_search_combined_with_other_query_sample
             var posts = session.Query<BlogPost>()
@@ -361,14 +361,14 @@ public class full_text_index: OneOffConfigurationsContext
 
         var expectedId = Guid.NewGuid();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "somefilter" });
             session.Store(new BlogPost { Id = expectedId, ItalianText = "somefilter" });
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.QuerySession())
         {
             #region sample_text_search_with_non_default_regConfig_sample
             var posts = session.Query<BlogPost>()
@@ -405,28 +405,26 @@ public class full_text_index: OneOffConfigurationsContext
 
         const string searchFilter = "Lindsey";
 
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(new User { FirstName = searchFilter, LastName = "Miller", UserName = "lmiller" });
-            session.Store(new User { FirstName = "Frank", LastName = searchFilter, UserName = "fzombo" });
+        using var session = theStore.LightweightSession();
+        session.Store(new User { FirstName = searchFilter, LastName = "Miller", UserName = "lmiller" });
+        session.Store(new User { FirstName = "Frank", LastName = searchFilter, UserName = "fzombo" });
 
-            session.Store(new User { FirstName = "Jeremy", LastName = "Miller", UserName = "jmiller" });
-            session.Store(new User { FirstName = "Max", LastName = "Miller", UserName = "mmiller" });
-            session.Store(new User { FirstName = "Somebody", LastName = "Somewher", UserName = "somebody" });
-            session.SaveChanges();
+        session.Store(new User { FirstName = "Jeremy", LastName = "Miller", UserName = "jmiller" });
+        session.Store(new User { FirstName = "Max", LastName = "Miller", UserName = "mmiller" });
+        session.Store(new User { FirstName = "Somebody", LastName = "Somewher", UserName = "somebody" });
+        session.SaveChanges();
 
-            var italianResults = session.Search<User>(searchFilter, italianRegConfig);
+        var italianResults = session.Search<User>(searchFilter, italianRegConfig);
 
-            italianResults.Count.ShouldBe(1);
-            SpecificationExtensions.ShouldContain(italianResults, u => u.FirstName == searchFilter);
-            italianResults.ShouldNotContain(u => u.LastName == searchFilter);
+        italianResults.Count.ShouldBe(1);
+        SpecificationExtensions.ShouldContain(italianResults, u => u.FirstName == searchFilter);
+        italianResults.ShouldNotContain(u => u.LastName == searchFilter);
 
-            var frenchResults = session.Search<User>(searchFilter, frenchRegConfig);
+        var frenchResults = session.Search<User>(searchFilter, frenchRegConfig);
 
-            frenchResults.Count.ShouldBe(1);
-            frenchResults.ShouldNotContain(u => u.FirstName == searchFilter);
-            SpecificationExtensions.ShouldContain(frenchResults, u => u.LastName == searchFilter);
-        }
+        frenchResults.Count.ShouldBe(1);
+        frenchResults.ShouldNotContain(u => u.FirstName == searchFilter);
+        SpecificationExtensions.ShouldContain(frenchResults, u => u.LastName == searchFilter);
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -473,22 +471,20 @@ public class full_text_index: OneOffConfigurationsContext
 
         const string searchFilter = "Lindsey";
 
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(new User { FirstName = searchFilter, LastName = "Miller", UserName = "lmiller" });
-            session.Store(new User { FirstName = "Frank", LastName = searchFilter, UserName = "fzombo" });
+        using var session = theStore.LightweightSession();
+        session.Store(new User { FirstName = searchFilter, LastName = "Miller", UserName = "lmiller" });
+        session.Store(new User { FirstName = "Frank", LastName = searchFilter, UserName = "fzombo" });
 
-            session.Store(new User { FirstName = "Jeremy", LastName = "Miller", UserName = "jmiller" });
-            session.Store(new User { FirstName = "Max", LastName = "Miller", UserName = "mmiller" });
-            session.Store(new User { FirstName = "Somebody", LastName = "Somewher", UserName = "somebody" });
-            session.SaveChanges();
+        session.Store(new User { FirstName = "Jeremy", LastName = "Miller", UserName = "jmiller" });
+        session.Store(new User { FirstName = "Max", LastName = "Miller", UserName = "mmiller" });
+        session.Store(new User { FirstName = "Somebody", LastName = "Somewher", UserName = "somebody" });
+        session.SaveChanges();
 
-            var results = session.Search<User>(searchFilter);
+        var results = session.Search<User>(searchFilter);
 
-            results.Count.ShouldBe(2);
-            SpecificationExtensions.ShouldContain(results, u => u.FirstName == searchFilter);
-            SpecificationExtensions.ShouldContain(results, u => u.LastName == searchFilter);
-        }
+        results.Count.ShouldBe(2);
+        SpecificationExtensions.ShouldContain(results, u => u.FirstName == searchFilter);
+        SpecificationExtensions.ShouldContain(results, u => u.LastName == searchFilter);
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]

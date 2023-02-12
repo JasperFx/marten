@@ -17,7 +17,7 @@ public class using_long_identity : IntegrationContext
         theSession.Store(LongDoc);
         await theSession.SaveChangesAsync();
 
-        await using var session = theStore.OpenSession();
+        await using var session = theStore.LightweightSession();
         session.Load<LongDoc>(456).ShouldNotBeNull();
 
         session.Load<LongDoc>(222).ShouldBeNull();
@@ -48,13 +48,13 @@ public class using_long_identity : IntegrationContext
         theSession.Store(LongDoc);
         theSession.SaveChanges();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Delete<LongDoc>((int) LongDoc.Id);
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.QuerySession())
         {
             SpecificationExtensions.ShouldBeNull(session.Load<LongDoc>(LongDoc.Id));
         }
@@ -70,10 +70,8 @@ public class using_long_identity : IntegrationContext
         theSession.Store(new LongDoc{Id = 7});
         theSession.SaveChanges();
 
-        using (var session = theStore.OpenSession())
-        {
-            session.LoadMany<LongDoc>(4, 5, 6).Count().ShouldBe(3);
-        }
+        using var session = theStore.QuerySession();
+        session.LoadMany<LongDoc>(4, 5, 6).Count().ShouldBe(3);
     }
 
     public using_long_identity(DefaultStoreFixture fixture) : base(fixture)

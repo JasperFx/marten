@@ -24,20 +24,16 @@ public class query_through_mixed_population_multi_tenanted: OneOffConfigurations
 
     private void loadData()
     {
-        using (var session = theStore.OpenSession("tenant_1"))
-        {
-            session.Store(new User(), new AdminUser());
-            session.SaveChanges();
-        }
+        using var session = theStore.LightweightSession("tenant_1");
+        session.Store(new User(), new AdminUser());
+        session.SaveChanges();
     }
 
     [Fact]
     public void query_tenanted_data_with_any_tenant_predicate()
     {
-        using (var session = theStore.OpenSession())
-        {
-            var users = session.Query<AdminUser>().Where(u => LinqExtensions.AnyTenant<AdminUser>(u)).ToArray();
-            users.Length.ShouldBeGreaterThan(0);
-        }
+        using var session = theStore.QuerySession();
+        var users = session.Query<AdminUser>().Where(u => LinqExtensions.AnyTenant<AdminUser>(u)).ToArray();
+        users.Length.ShouldBeGreaterThan(0);
     }
 }

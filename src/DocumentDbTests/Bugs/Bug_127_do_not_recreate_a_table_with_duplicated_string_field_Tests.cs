@@ -21,7 +21,7 @@ public class Bug_127_do_not_recreate_a_table_with_duplicated_string_field_Tests 
 
         store1.Advanced.Clean.CompletelyRemoveAll();
 
-        using (var session1 = store1.OpenSession())
+        using (var session1 = store1.LightweightSession())
         {
             session1.Store(new Team { Name = "Warriors" });
             session1.Store(new Team { Name = "Spurs" });

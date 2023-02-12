@@ -30,13 +30,11 @@ public class BoolNotVisitorTests : OneOffConfigurationsContext
         theSession.Store(docWithFlagFalse);
         theSession.SaveChanges();
 
-        using (var s = theStore.OpenSession())
-        {
-            var items = s.Query<TestClass>().Where(x => !x.Flag).ToList();
+        using var s = theStore.QuerySession();
+        var items = s.Query<TestClass>().Where(x => !x.Flag).ToList();
 
-            Assert.Single(items);
-            Assert.Equal(docWithFlagFalse.Id, items[0].Id);
-        }
+        Assert.Single(items);
+        Assert.Equal(docWithFlagFalse.Id, items[0].Id);
     }
 
     [Fact]
@@ -56,7 +54,7 @@ public class BoolNotVisitorTests : OneOffConfigurationsContext
         theSession.Store(docWithFlagFalse);
         theSession.SaveChanges();
 
-        using (var s = theStore.OpenSession())
+        using (var s = theStore.QuerySession())
         {
             var items = s.Query<TestClass>().Where(x => !x.Flag).ToList();
 

@@ -36,7 +36,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
 
         theSession.Events.Append(stream, 2, departed);
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             var joined3 = new MembersJoined { Members = new[] { "Egwene" } };
             var departed3 = new MembersDeparted { Members = new[] { "Perrin" } };
@@ -47,7 +47,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
 
         Assert.Throws<EventStreamUnexpectedMaxEventIdException>(() => theSession.SaveChanges());
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             var state = session.Events.FetchStreamState(stream);
 
@@ -91,7 +91,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
 
         theSession.Events.Append(stream, 2, departed);
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             var joined3 = new MembersJoined { Members = new[] { "Egwene" } };
             var departed3 = new MembersDeparted { Members = new[] { "Perrin" } };
@@ -102,7 +102,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
 
         Assert.Throws<EventStreamUnexpectedMaxEventIdException>(() => theSession.SaveChanges());
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             var state = session.Events.FetchStreamState(stream);
 

@@ -25,7 +25,7 @@ public class foreign_keys: OneOffConfigurationsContext
         ConfigureForeignKeyWithCascadingDeletes(CascadeAction.Restrict);
 
         var user = new User();
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(user);
             session.SaveChanges();
@@ -45,11 +45,9 @@ public class foreign_keys: OneOffConfigurationsContext
 
         Should.Throw<Marten.Exceptions.MartenCommandException>(() =>
         {
-            using (var session = theStore.OpenSession())
-            {
-                session.Insert(issue);
-                session.SaveChanges();
-            }
+            using var session = theStore.LightweightSession();
+            session.Insert(issue);
+            session.SaveChanges();
         });
     }
 
@@ -62,7 +60,7 @@ public class foreign_keys: OneOffConfigurationsContext
         var otherUser = new User();
         var issue = new Issue { AssigneeId = user.Id };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(user, otherUser);
             session.Store(issue);
@@ -83,7 +81,7 @@ public class foreign_keys: OneOffConfigurationsContext
         var otherUser = new User();
         var issue = new Issue { AssigneeId = user.Id };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(user, otherUser);
             session.Store(issue);
@@ -104,7 +102,7 @@ public class foreign_keys: OneOffConfigurationsContext
         var otherUser = new User();
         var issue = new Issue { AssigneeId = user.Id };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(user, otherUser);
             session.Store(issue);
@@ -115,7 +113,7 @@ public class foreign_keys: OneOffConfigurationsContext
 
         Should.Throw<Marten.Exceptions.MartenCommandException>(() =>
         {
-            using (var session = theStore.OpenSession())
+            using (var session = theStore.LightweightSession())
             {
                 session.Update(issue);
                 session.SaveChanges();
@@ -131,14 +129,14 @@ public class foreign_keys: OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(user);
             session.Store(issue);
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Delete(issue);
             session.SaveChanges();
@@ -159,14 +157,14 @@ public class foreign_keys: OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(user);
             session.Store(issue);
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Delete(user);
             session.SaveChanges();
@@ -187,7 +185,7 @@ public class foreign_keys: OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(user);
             session.Store(issue);
@@ -196,7 +194,7 @@ public class foreign_keys: OneOffConfigurationsContext
 
         Should.Throw<Marten.Exceptions.MartenCommandException>(() =>
         {
-            using (var session = theStore.OpenSession())
+            using (var session = theStore.LightweightSession())
             {
                 session.Delete(user);
                 session.SaveChanges();
@@ -220,7 +218,7 @@ public class foreign_keys: OneOffConfigurationsContext
 
     private void ShouldProperlySave(Issue issue)
     {
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(issue);
             session.SaveChanges();
@@ -245,7 +243,7 @@ public class foreign_keys: OneOffConfigurationsContext
         var issue = new Issue();
         var user = new User();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(user);
             session.Store(issue);
@@ -254,7 +252,7 @@ public class foreign_keys: OneOffConfigurationsContext
 
         issue.AssigneeId = user.Id;
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(issue);
             session.SaveChanges();
@@ -262,7 +260,7 @@ public class foreign_keys: OneOffConfigurationsContext
 
         issue.AssigneeId = null;
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(issue);
             session.SaveChanges();
@@ -283,7 +281,7 @@ public class foreign_keys: OneOffConfigurationsContext
 
         issue.AssigneeId = user.Id;
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(user);
             session.Store(issue);
@@ -292,7 +290,7 @@ public class foreign_keys: OneOffConfigurationsContext
 
         Exception<Marten.Exceptions.MartenCommandException>.ShouldBeThrownBy(() =>
         {
-            using (var session = theStore.OpenSession())
+            using (var session = theStore.LightweightSession())
             {
                 session.Delete(user);
                 session.SaveChanges();
@@ -309,7 +307,7 @@ public class foreign_keys: OneOffConfigurationsContext
                 .ForeignKey<User>(x => x.AssigneeId);
         });
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(new Issue());
             session.SaveChanges();
@@ -330,13 +328,11 @@ public class foreign_keys: OneOffConfigurationsContext
 
         issue.AssigneeId = user.Id;
 
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(issue);
-            session.Store(user);
+        using var session = theStore.LightweightSession();
+        session.Store(issue);
+        session.Store(user);
 
-            session.SaveChanges();
-        }
+        session.SaveChanges();
     }
 
     [Fact]

@@ -37,7 +37,7 @@ public class using_natural_identity_keys: IntegrationContext
     {
         var doc = new NonStandardDoc { Name = "somebody" };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(doc);
             session.SaveChanges();

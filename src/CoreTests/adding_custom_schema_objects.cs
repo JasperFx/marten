@@ -84,7 +84,7 @@ public class adding_custom_schema_objects : OneOffConfigurationsContext
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
         #endregion
 
-        var session = theStore.OpenSession();
+        var session = theStore.QuerySession();
 
         var result = await session.QueryAsync<bool>("select unaccent('Æ') = 'AE';");
 
@@ -116,7 +116,7 @@ $f$  language sql immutable;
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
         #endregion
 
-        var session = theStore.OpenSession();
+        var session = theStore.QuerySession();
 
         var match = await session.QueryAsync<string>("select iif(1 = 1, 'value matches'::text, 'no match'::text);");
         var noMatch = await session.QueryAsync<string>("select iif(1 = 2, 'value matches'::text, 'no match'::text);");
@@ -142,7 +142,7 @@ $f$  language sql immutable;
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
         #endregion
 
-        var session = theStore.OpenSession();
+        var session = theStore.QuerySession();
 
         var value = await session.QueryAsync<int>("select nextval('banana_seq')");
         var valueAgain = await session.QueryAsync<int>("select nextval('banana_seq')");

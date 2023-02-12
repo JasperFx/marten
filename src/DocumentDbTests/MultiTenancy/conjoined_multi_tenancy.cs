@@ -516,7 +516,7 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
 
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.ForTenant("Red").Store(reds.AsEnumerable());
             session.ForTenant("Green").Store(greens.AsEnumerable());
@@ -551,7 +551,7 @@ public class conjoined_multi_tenancy : StoreContext<MultiTenancyFixture>, IClass
 
         theStore.Advanced.Clean.DeleteAllDocuments();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.ForTenant("Red").Store(reds);
             session.ForTenant("Green").Store( greens);

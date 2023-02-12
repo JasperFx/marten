@@ -91,11 +91,9 @@ public class create_database_Tests : IDisposable
 
         store.Advanced.Clean.CompletelyRemoveAll();
 
-        using (var session = store.OpenSession())
-        {
-            session.Store(user1);
-            session.SaveChanges();
-        }
+        using var session = store.LightweightSession();
+        session.Store(user1);
+        session.SaveChanges();
 
         Assert.False(dbCreated);
     }

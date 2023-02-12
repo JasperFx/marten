@@ -12,14 +12,14 @@ public class Bug_673_multiple_version_assertions: IntegrationContext
     {
         var streamId = Guid.NewGuid();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Events.Append(streamId, new WhateverEvent(), new WhateverEvent());
 
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             var state = session.Events.FetchStreamState(streamId);
             // ... do some stuff
@@ -38,14 +38,14 @@ public class Bug_673_multiple_version_assertions: IntegrationContext
         UseStreamIdentity(StreamIdentity.AsString);
         var streamId = Guid.NewGuid().ToString();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Events.Append(streamId, new WhateverEvent(), new WhateverEvent());
 
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             var state = session.Events.FetchStreamState(streamId);
             // ... do some stuff

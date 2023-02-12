@@ -20,7 +20,7 @@ public class query_with_biginteger_tests : IntegrationContext
             options.Schema.For<BigIntegerObject>();
         });
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(new BigIntegerObject
             {
@@ -40,7 +40,7 @@ public class query_with_biginteger_tests : IntegrationContext
             session.SaveChanges();
         }
 
-        using (var session = theStore.LightweightSession())
+        using (var session = theStore.QuerySession())
         {
             var findSmallerThanMedium = session.Query<BigIntegerObject>().Single(x => x.Value < MediumNumber);
 

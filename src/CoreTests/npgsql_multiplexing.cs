@@ -22,7 +22,7 @@ public class npgsql_multiplexing : OneOffConfigurationsContext
 
         await theStore.Advanced.Clean.CompletelyRemoveAsync(typeof(Target));
 
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Insert(Target.GenerateRandomData(99).ToArray());
             await session.SaveChangesAsync();

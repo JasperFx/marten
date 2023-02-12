@@ -29,7 +29,7 @@ public class hilo_configuration_overrides
         await store.Tenancy.Default.Database.ResetHiloSequenceFloor<IntDoc>(2500);
         #endregion
 
-        await using var session = store.OpenSession();
+        await using var session = store.LightweightSession();
         var doc1 = new IntDoc();
         var doc2 = new IntDoc();
         var doc3 = new IntDoc();
@@ -155,23 +155,22 @@ public class hilo_configuration_overrides
             _.DatabaseSchemaName = "sequences";
         });
         #endregion
-        using (var session = store.OpenSession())
-        {
-            var doc1 = new IntDoc();
-            var doc2 = new Int2Doc();
-            var doc3 = new IntDoc();
-            var doc4 = new Int2Doc();
 
-            session.Store(doc1);
-            session.Store(doc2);
-            session.Store(doc3);
-            session.Store(doc4);
+        using var session = store.LightweightSession();
+        var doc1 = new IntDoc();
+        var doc2 = new Int2Doc();
+        var doc3 = new IntDoc();
+        var doc4 = new Int2Doc();
 
-            doc1.Id.ShouldBeGreaterThanOrEqualTo(1);
-            doc2.Id.ShouldBe(doc1.Id + 1);
-            doc3.Id.ShouldBe(doc2.Id + 1);
-            doc4.Id.ShouldBe(doc3.Id + 1);
-        }
+        session.Store(doc1);
+        session.Store(doc2);
+        session.Store(doc3);
+        session.Store(doc4);
+
+        doc1.Id.ShouldBeGreaterThanOrEqualTo(1);
+        doc2.Id.ShouldBe(doc1.Id + 1);
+        doc3.Id.ShouldBe(doc2.Id + 1);
+        doc4.Id.ShouldBe(doc3.Id + 1);
     }
 
 

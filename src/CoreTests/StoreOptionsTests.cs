@@ -152,7 +152,7 @@ public class StoreOptionsTests
 
         #region sample_plugging-in-session-logger
 
-        using var session = store.OpenSession();
+        using var session = store.LightweightSession();
         // Replace the logger for only this one session
         session.Logger = new RecordingLogger();
 

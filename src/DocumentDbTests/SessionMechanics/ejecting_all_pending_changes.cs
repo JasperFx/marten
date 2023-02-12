@@ -13,10 +13,10 @@ public class ejecting_all_pending_changes : IntegrationContext
     {
     }
 
-    #region sample_ejecting_all_document_changes
     [Fact]
     public void will_clear_all_document_changes()
     {
+        #region sample_ejecting_all_document_changes
         theSession.Store(Target.Random());
         theSession.Insert(Target.Random());
         theSession.Update(Target.Random());
@@ -26,8 +26,8 @@ public class ejecting_all_pending_changes : IntegrationContext
         theSession.EjectAllPendingChanges();
 
         theSession.PendingChanges.Operations().Any().ShouldBeFalse();
+        #endregion
     }
-    #endregion
 
     public class AEvent{}
     public class BEvent{}

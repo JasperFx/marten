@@ -111,7 +111,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
     private async Task AppendEventsInV1Schema(Guid shoppingCartId, Guid clientId, Guid productId,
         int initialQuantity)
     {
-        await using var session = theStore.OpenSession();
+        await using var session = theStore.LightweightSession();
         session.Events.Append(shoppingCartId,
             new V1.ShoppingCartOpened(shoppingCartId, clientId));
         session.Events.Append(shoppingCartId,
@@ -137,7 +137,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
             configureV2Upcasters(options);
         });
         {
-            await using var session = storeV2.OpenSession();
+            await using var session = storeV2.LightweightSession();
 
             ////////////////////////////////////////////////////////
             // 2.2. Append Event with V2 schema
@@ -216,7 +216,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
             configureV3Upcasters(options);
         });
         {
-            await using var session = storeV3.OpenSession();
+            await using var session = storeV3.LightweightSession();
 
             ////////////////////////////////////////////////////////
             // 3.2. Append Event with V3 schema
@@ -297,7 +297,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
             configureV2Upcasters(options);
         });
         {
-            await using var session = storeV2.OpenSession();
+            await using var session = storeV2.LightweightSession();
 
             ////////////////////////////////////////////////////////
             // 2.2. Append Event with V2 schema
@@ -375,7 +375,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
             configureV3Upcasters(options);
         });
         {
-            await using var session = storeV3.OpenSession();
+            await using var session = storeV3.LightweightSession();
 
             ////////////////////////////////////////////////////////
             // 3.2. Append Event with V3 schema

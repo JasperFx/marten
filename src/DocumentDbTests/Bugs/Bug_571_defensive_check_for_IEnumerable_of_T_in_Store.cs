@@ -13,10 +13,8 @@ public class Bug_571_defensive_check_for_IEnumerable_of_T_in_Store: IntegrationC
     [Fact]
     public void not_too_tight_in_the_validation()
     {
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(new DocHolder());
-        }
+        using var session = theStore.LightweightSession();
+        session.Store(new DocHolder());
     }
 
     public Bug_571_defensive_check_for_IEnumerable_of_T_in_Store(DefaultStoreFixture fixture) : base(fixture)

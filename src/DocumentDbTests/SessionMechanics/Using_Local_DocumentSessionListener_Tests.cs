@@ -30,7 +30,7 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
         {
             store.Advanced.Clean.CompletelyRemoveAll();
 
-            using (var session = store.OpenSession(new SessionOptions { Listeners = { stub1, stub2 } }))
+            using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
                 session.Store(new User(), new User());
 
@@ -60,7 +60,7 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
 
         await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
-        await using (var session = store.OpenSession(new SessionOptions { Listeners = { stub1, stub2 } }))
+        await using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
         {
             session.Store(new User(), new User());
 
@@ -88,7 +88,7 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
         {
             store.Advanced.Clean.CompletelyRemoveAll();
 
-            using (var session = store.OpenSession(new SessionOptions { Listeners = { stub1, stub2 } }))
+            using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
                 var user1 = new User { Id = Guid.NewGuid() };
                 var user2 = new User { Id = Guid.NewGuid() };
@@ -118,7 +118,7 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
         {
             store.Advanced.Clean.CompletelyRemoveAll();
 
-            using (var session = store.OpenSession(new SessionOptions { Listeners = { stub1, stub2 } }))
+            using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
                 var user1 = new User { Id = Guid.NewGuid() };
                 var user2 = new User { Id = Guid.NewGuid() };
@@ -151,13 +151,13 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
 
-            using (var session = store.OpenSession())
+            using (var session = store.LightweightSession())
             {
                 session.StoreObjects(new[] { user1, user2 });
                 session.SaveChanges();
             }
 
-            using (var session = store.OpenSession(new SessionOptions { Listeners = { stub1, stub2 } }))
+            using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
                 var user = session.Load<User>(user1.Id);
 
@@ -184,13 +184,13 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
 
-            using (var session = store.OpenSession())
+            using (var session = store.LightweightSession())
             {
                 session.StoreObjects(new[] { user1, user2 });
                 session.SaveChanges();
             }
 
-            using (var session = store.OpenSession(new SessionOptions { Listeners = { stub1, stub2 } }))
+            using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
                 var users = session.Query<User>().ToList();
 
@@ -217,7 +217,7 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
         {
             store.Advanced.Clean.CompletelyRemoveAll();
 
-            using (var session = store.OpenSession(new SessionOptions { Tracking = DocumentTracking.DirtyTracking, Listeners = { stub1, stub2 }}))
+            using (var session = store.LightweightSession(new SessionOptions { Tracking = DocumentTracking.DirtyTracking, Listeners = { stub1, stub2 }}))
             {
                 var user1 = new User { Id = Guid.NewGuid() };
                 var user2 = new User { Id = Guid.NewGuid() };
@@ -247,7 +247,7 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
         {
             store.Advanced.Clean.CompletelyRemoveAll();
 
-            using (var session = store.OpenSession(new SessionOptions { Tracking = DocumentTracking.DirtyTracking, Listeners = { stub1, stub2 }}))
+            using (var session = store.LightweightSession(new SessionOptions { Tracking = DocumentTracking.DirtyTracking, Listeners = { stub1, stub2 }}))
             {
                 var user1 = new User { Id = Guid.NewGuid() };
                 var user2 = new User { Id = Guid.NewGuid() };
@@ -280,13 +280,13 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
 
-            using (var session = store.OpenSession())
+            using (var session = store.LightweightSession())
             {
                 session.StoreObjects(new[] { user1, user2 });
                 session.SaveChanges();
             }
 
-            using (var session = store.OpenSession(new SessionOptions { Tracking = DocumentTracking.DirtyTracking, Listeners = { stub1, stub2 }}))
+            using (var session = store.LightweightSession(new SessionOptions { Tracking = DocumentTracking.DirtyTracking, Listeners = { stub1, stub2 }}))
             {
                 var user = session.Load<User>(user1.Id);
 
@@ -313,13 +313,13 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
 
-            using (var session = store.OpenSession())
+            using (var session = store.LightweightSession())
             {
                 session.StoreObjects(new[] { user1, user2 });
                 session.SaveChanges();
             }
 
-            using (var session = store.OpenSession(new SessionOptions { Tracking = DocumentTracking.DirtyTracking, Listeners = { stub1, stub2 }}))
+            using (var session = store.LightweightSession(new SessionOptions { Tracking = DocumentTracking.DirtyTracking, Listeners = { stub1, stub2 }}))
             {
                 var users = session.Query<User>().ToList();
 

@@ -33,7 +33,7 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
             _.Schema.For<User>().Index(x => x.UserName);
         });
 
-        await using var session = store.OpenSession();
+        await using var session = store.LightweightSession();
 
         string term = null;
         for (var i = 1; i < 4; i++)
@@ -73,7 +73,7 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
             _.Schema.For<User>().Index(x => x.UserName);
         });
 
-        await using var session = store.OpenSession();
+        await using var session = store.LightweightSession();
 
         string term = null;
         for (var i = 1; i < 4; i++)

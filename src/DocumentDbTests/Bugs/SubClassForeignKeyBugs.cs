@@ -42,13 +42,13 @@ public class SubClassForeignKeyBugs: BugIntegrationContext
     [Fact]
     public void ForeignKeyEntitiesToSubClassesShouldBeInsertedFirst()
     {
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             var department = new Department { Id = 37 };
             session.Store(department);
             session.SaveChanges();
         }
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             // Creating an employee with an address - the employee object should be
             // inserted *before* the address object.
@@ -64,15 +64,13 @@ public class SubClassForeignKeyBugs: BugIntegrationContext
     [Fact]
     public void ForeignKeysOnSubClassesShouldInsertedFirst()
     {
-        using (var session = theStore.OpenSession())
-        {
-            var department = new Department { Id = 1 };
-            session.Store(department);
+        using var session = theStore.LightweightSession();
+        var department = new Department { Id = 1 };
+        session.Store(department);
 
-            var employee = new Employee { Id = 2, DepartmentId = 1 };
-            session.Store(employee);
+        var employee = new Employee { Id = 2, DepartmentId = 1 };
+        session.Store(employee);
 
-            session.SaveChanges();
-        }
+        session.SaveChanges();
     }
 }

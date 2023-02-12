@@ -45,30 +45,28 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
     {
         var store = InitStore(tenancyStyle);
 
-        When.CalledForEach(tenants, (tenantId, index) =>
+        When.CalledForEach(tenants, (tenantId, _) =>
         {
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
-            {
-                session.Logger = new TestOutputMartenLogger(_output);
+            using var session = store.LightweightSession(tenantId);
+            session.Logger = new TestOutputMartenLogger(_output);
 
-                #region sample_start-stream-with-aggregate-type
-                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            #region sample_start-stream-with-aggregate-type
+            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+            var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var id = session.Events.StartStream<Quest>(joined, departed).Id;
-                session.SaveChanges();
-                #endregion
+            var id = session.Events.StartStream<Quest>(joined, departed).Id;
+            session.SaveChanges();
+            #endregion
 
-                var streamEvents = session.Events.FetchStream(id);
+            var streamEvents = session.Events.FetchStream(id);
 
-                streamEvents.Count().ShouldBe(2);
-                streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
-                streamEvents.ElementAt(0).Version.ShouldBe(1);
-                streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
-                streamEvents.ElementAt(1).Version.ShouldBe(2);
+            streamEvents.Count().ShouldBe(2);
+            streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
+            streamEvents.ElementAt(0).Version.ShouldBe(1);
+            streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
+            streamEvents.ElementAt(1).Version.ShouldBe(2);
 
-                streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
-            }
+            streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
         }).ShouldSucceed();
     }
 
@@ -78,28 +76,27 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
     {
         var store = InitStore(tenancyStyle);
 
-        return When.CalledForEachAsync(tenants, async (tenantId, index) =>
+        return When.CalledForEachAsync(tenants, async (tenantId, _) =>
         {
-            await using (var session = store.OpenSession(tenantId, DocumentTracking.None))
-            {
-                #region sample_start-stream-with-aggregate-type
-                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            await using var session = store.LightweightSession(tenantId);
 
-                var id = session.Events.StartStream<Quest>(joined, departed).Id;
-                await session.SaveChangesAsync();
-                #endregion
+            #region sample_start-stream-with-aggregate-type
+            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+            var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var streamEvents = await session.Events.FetchStreamAsync(id);
+            var id = session.Events.StartStream<Quest>(joined, departed).Id;
+            await session.SaveChangesAsync();
+            #endregion
 
-                streamEvents.Count().ShouldBe(2);
-                streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
-                streamEvents.ElementAt(0).Version.ShouldBe(1);
-                streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
-                streamEvents.ElementAt(1).Version.ShouldBe(2);
+            var streamEvents = await session.Events.FetchStreamAsync(id);
 
-                streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
-            }
+            streamEvents.Count().ShouldBe(2);
+            streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
+            streamEvents.ElementAt(0).Version.ShouldBe(1);
+            streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
+            streamEvents.ElementAt(1).Version.ShouldBe(2);
+
+            streamEvents.Each(e => e.Timestamp.ShouldNotBe(default));
         }).ShouldSucceedAsync();
     }
 
@@ -109,29 +106,28 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
     {
         var store = InitStore(tenancyStyle);
 
-        return When.CalledForEachAsync(tenants, async (tenantId, index) =>
+        return When.CalledForEachAsync(tenants, async (tenantId, _) =>
         {
-            await using (var session = store.OpenSession(tenantId, DocumentTracking.None))
-            {
-                #region sample_start-stream-with-aggregate-type
-                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            await using var session = store.LightweightSession(tenantId);
 
-                var id = session.Events.StartStream<Quest>(joined, departed).Id;
-                await session.SaveChangesAsync();
-                #endregion
+            #region sample_start-stream-with-aggregate-type
+            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+            var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var streamEvents = await session.Events.QueryAllRawEvents()
-                    .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToListAsync();
+            var id = session.Events.StartStream<Quest>(joined, departed).Id;
+            await session.SaveChangesAsync();
+            #endregion
 
-                streamEvents.Count().ShouldBe(2);
-                streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
-                streamEvents.ElementAt(0).Version.ShouldBe(1);
-                streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
-                streamEvents.ElementAt(1).Version.ShouldBe(2);
+            var streamEvents = await session.Events.QueryAllRawEvents()
+                .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToListAsync();
 
-                streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
-            }
+            streamEvents.Count().ShouldBe(2);
+            streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
+            streamEvents.ElementAt(0).Version.ShouldBe(1);
+            streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
+            streamEvents.ElementAt(1).Version.ShouldBe(2);
+
+            streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
         }).ShouldSucceedAsync();
     }
 
@@ -141,29 +137,28 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
     {
         var store = InitStore(tenancyStyle);
 
-        When.CalledForEach(tenants, (tenantId, index) =>
+        When.CalledForEach(tenants, (tenantId, _) =>
         {
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
-            {
-                #region sample_start-stream-with-aggregate-type
-                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            using var session = store.LightweightSession(tenantId);
 
-                var id = session.Events.StartStream<Quest>(joined, departed).Id;
-                session.SaveChanges();
-                #endregion
+            #region sample_start-stream-with-aggregate-type
+            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+            var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                var streamEvents = session.Events.QueryAllRawEvents()
-                    .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToList();
+            var id = session.Events.StartStream<Quest>(joined, departed).Id;
+            session.SaveChanges();
+            #endregion
 
-                streamEvents.Count().ShouldBe(2);
-                streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
-                streamEvents.ElementAt(0).Version.ShouldBe(1);
-                streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
-                streamEvents.ElementAt(1).Version.ShouldBe(2);
+            var streamEvents = session.Events.QueryAllRawEvents()
+                .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToList();
 
-                streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
-            }
+            streamEvents.Count().ShouldBe(2);
+            streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
+            streamEvents.ElementAt(0).Version.ShouldBe(1);
+            streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
+            streamEvents.ElementAt(1).Version.ShouldBe(2);
+
+            streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
         }).ShouldSucceed();
     }
 
@@ -176,7 +171,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
         When.CalledForEach(tenants, (tenantId, index) =>
         {
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 //Note Id = questId, is we remove it from first message then AggregateStream will return party.Id=default(Guid) that is not equals to Load<QuestParty> result
                 var started = new QuestStarted { /*Id = questId,*/ Name = "Destroy the One Ring" };
@@ -186,7 +181,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
                 session.SaveChanges();
             }
 
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 var liveAggregate = session.Events.AggregateStream<QuestParty>(questId);
                 var inlinedAggregate = session.Load<QuestParty>(questId);
@@ -207,7 +202,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
         When.CalledForEach(tenants, (tenantId, index) =>
         {
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 //Note "Id = questId" @see live_aggregate_equals_inlined_aggregate...
                 var started = new QuestStarted { Id = questId, Name = "Destroy the One Ring" };
@@ -218,7 +213,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
             }
 
             // events-aggregate-on-the-fly - works with same store
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 // questId is the id of the stream
                 var party = session.Events.AggregateStream<QuestParty>(questId);
@@ -236,7 +231,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
                 party_yesterday.ShouldBeNull();
             }
 
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 var party = session.Load<QuestParty>(questId);
                 party.Id.ShouldBe(questId);
@@ -245,13 +240,13 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
             var newStore = InitStore(tenancyStyle, false);
 
             //Inline is working
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 var party = session.Load<QuestParty>(questId);
                 SpecificationExtensions.ShouldNotBeNull(party);
             }
             //GetAll
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 var parties = session.Events.QueryRawEventDataOnly<QuestParty>().ToArray();
                 foreach (var party in parties)
@@ -260,7 +255,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
                 }
             }
             //This AggregateStream fail with NPE
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 // questId is the id of the stream
                 var party = session.Events.AggregateStream<QuestParty>(questId);//Here we get NPE
@@ -288,14 +283,14 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
         When.CalledForEach(tenants, (tenantId, index) =>
         {
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 var parties = session.Query<QuestParty>().ToArray();
                 parties.Length.ShouldBeLessThanOrEqualTo(index);
             }
 
             //This SaveChanges will fail with missing method (ro collection configured?)
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 var started = new QuestStarted { Name = "Destroy the One Ring" };
                 var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");
@@ -320,14 +315,14 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
         return When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
-            await using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            await using (var session = store.LightweightSession(tenantId))
             {
                 var parties = await session.Query<QuestParty>().ToListAsync();
                 parties.Count.ShouldBeLessThanOrEqualTo(index);
             }
 
             //This SaveChanges will fail with missing method (ro collection configured?)
-            await using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            await using (var session = store.LightweightSession(tenantId))
             {
                 var started = new QuestStarted { Name = "Destroy the One Ring" };
                 var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");
@@ -352,7 +347,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
         When.CalledForEach(tenants, (tenantId, index) =>
         {
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 #region sample_start-stream-with-existing-guid
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
@@ -382,7 +377,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
         When.CalledForEach(tenants, (tenantId, index) =>
         {
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -416,13 +411,13 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
         {
             var started = new QuestStarted();
 
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 session.Events.StartStream<Quest>(id, started);
                 session.SaveChanges();
             }
 
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -456,7 +451,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
         When.CalledForEach(tenants, (tenantId, index) =>
         {
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -485,7 +480,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
         When.CalledForEach(tenants, (tenantId, index) =>
         {
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -516,7 +511,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
         When.CalledForEach(tenants, (tenantId, index) =>
         {
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -551,13 +546,13 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
         {
             var started = new QuestStarted();
 
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 session.Events.StartStream<Quest>(id, started);
                 session.SaveChanges();
             }
 
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 #region sample_append-events
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
@@ -596,7 +591,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
         {
             var started = new QuestStarted();
 
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 #region sample_append-events-assert-on-eventid
                 session.Events.StartStream<Quest>(id, started);
@@ -629,13 +624,13 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
         {
             var immutableEvent = new ImmutableEvent(id, "some-name");
 
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 session.Events.Append(id, immutableEvent);
                 session.SaveChanges();
             }
 
-            using (var session = store.OpenSession(tenantId, DocumentTracking.None))
+            using (var session = store.LightweightSession(tenantId))
             {
                 var streamEvents = session.Events.FetchStream(id);
 

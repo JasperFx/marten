@@ -85,7 +85,7 @@ public class Diagnostics: IDiagnostics
             case DocumentTracking.QueryOnly:
                 return (QuerySession)_store.QuerySession();
             case DocumentTracking.IdentityOnly:
-                return (QuerySession)_store.OpenSession();
+                return (QuerySession)_store.IdentitySession();
             case DocumentTracking.DirtyTracking:
                 return (QuerySession)_store.DirtyTrackedSession();
         }

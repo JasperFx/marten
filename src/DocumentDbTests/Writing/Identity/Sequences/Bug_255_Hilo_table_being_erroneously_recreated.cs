@@ -31,7 +31,7 @@ public class Bug_255_Hilo_table_being_erroneously_recreated : BugIntegrationCont
                    _.Logger(logger);
                }))
         {
-            using (var session = store2.OpenSession())
+            using (var session = store2.LightweightSession())
             {
                 session.Store(new IntDoc());
                 session.SaveChanges();

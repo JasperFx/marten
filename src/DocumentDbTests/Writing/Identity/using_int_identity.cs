@@ -16,13 +16,10 @@ public class using_int_identity : IntegrationContext
         theSession.Store(IntDoc);
         theSession.SaveChanges();
 
-        using (var session = theStore.OpenSession())
-        {
-            SpecificationExtensions.ShouldNotBeNull(session.Load<IntDoc>(456));
+        using var session = theStore.LightweightSession();
+        SpecificationExtensions.ShouldNotBeNull(session.Load<IntDoc>(456));
 
-            SpecificationExtensions.ShouldBeNull(session.Load<IntDoc>(222));
-        }
-
+        SpecificationExtensions.ShouldBeNull(session.Load<IntDoc>(222));
     }
 
     [Fact]
@@ -50,13 +47,13 @@ public class using_int_identity : IntegrationContext
         theSession.Store(IntDoc);
         theSession.SaveChanges();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Delete<IntDoc>(IntDoc.Id);
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.QuerySession())
         {
             SpecificationExtensions.ShouldBeNull(session.Load<IntDoc>(IntDoc.Id));
         }
@@ -72,10 +69,8 @@ public class using_int_identity : IntegrationContext
         theSession.Store(new IntDoc { Id = 7 });
         theSession.SaveChanges();
 
-        using (var session = theStore.OpenSession())
-        {
-            session.LoadMany<IntDoc>(4, 5, 6).Count().ShouldBe(3);
-        }
+        using var session = theStore.QuerySession();
+        session.LoadMany<IntDoc>(4, 5, 6).Count().ShouldBe(3);
     }
 
     public using_int_identity(DefaultStoreFixture fixture) : base(fixture)

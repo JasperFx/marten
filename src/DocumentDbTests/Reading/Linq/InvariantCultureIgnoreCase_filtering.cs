@@ -14,7 +14,7 @@ public class InvariantCultureIgnoreCase_filtering: IntegrationContext
     {
         var user = new User {UserName = "TEST_USER"};
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(user);
             session.SaveChanges();
@@ -31,7 +31,7 @@ public class InvariantCultureIgnoreCase_filtering: IntegrationContext
     {
         var user = new User {UserName = @"DOMAIN\TEST_USER"};
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(user);
             session.SaveChanges();

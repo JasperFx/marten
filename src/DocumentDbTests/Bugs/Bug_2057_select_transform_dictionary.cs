@@ -24,7 +24,7 @@ namespace DocumentDbTests.Bugs
 
             await documentStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
-            await using var session = documentStore.OpenSession();
+            await using var session = documentStore.LightweightSession();
             session.Store(new TestEntity
             {
                 Name = "Test",

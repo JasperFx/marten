@@ -8,14 +8,14 @@ namespace DocumentDbTests.SessionMechanics;
 
 public class ejecting_documents : IntegrationContext
 {
-    #region sample_ejecting_a_document
     [Fact]
     public void demonstrate_eject()
     {
+        #region sample_ejecting_a_document
         var target1 = Target.Random();
         var target2 = Target.Random();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.IdentitySession())
         {
             session.Store(target1, target2);
 
@@ -38,8 +38,8 @@ public class ejecting_documents : IntegrationContext
             // was saved, so it was never persisted
             session.Load<Target>(target2.Id).ShouldBeNull();
         }
+        #endregion
     }
-    #endregion
 
     [Fact]
     public void eject_a_document_clears_it_from_the_identity_map_regular()
@@ -47,7 +47,7 @@ public class ejecting_documents : IntegrationContext
         var target1 = Target.Random();
         var target2 = Target.Random();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.IdentitySession())
         {
             session.Store(target1, target2);
 
@@ -85,7 +85,7 @@ public class ejecting_documents : IntegrationContext
         var target1 = Target.Random();
         var target2 = Target.Random();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.IdentitySession())
         {
             session.Store(target1, target2);
 
@@ -153,7 +153,7 @@ public class ejecting_documents : IntegrationContext
         var user1 = new User();
         var user2 = new User();
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.IdentitySession();
         session.Store(target1, target2);
         session.Store(user1, user2);
 
@@ -211,7 +211,7 @@ public class ejecting_documents : IntegrationContext
         var user1 = new User();
         var user2 = new User();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.IdentitySession())
         {
             session.Insert(target1);
             session.Store(target2);
@@ -239,7 +239,7 @@ public class ejecting_documents : IntegrationContext
         var user1 = new User { Age = 10 };
         var user2 = new User { Age = 20 };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.IdentitySession())
         {
             session.Store(target1, target2);
             session.Store(user1, user2);
@@ -247,7 +247,7 @@ public class ejecting_documents : IntegrationContext
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.IdentitySession())
         {
             target1.Number = 3;
             target2.Number = 4;
@@ -308,7 +308,7 @@ public class ejecting_documents : IntegrationContext
         var user1 = new User { Age = 10 };
         var user2 = new User { Age = 20 };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.IdentitySession())
         {
             session.Store(target1, target2);
             session.Store(user1, user2);
@@ -374,7 +374,7 @@ public class ejecting_documents : IntegrationContext
         var user1 = new User { Age = 10 };
         var user2 = new User { Age = 20 };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.IdentitySession())
         {
             session.Store(target1, target2);
             session.Store(user1, user2);

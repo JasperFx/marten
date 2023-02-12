@@ -14,7 +14,7 @@ public class query_with_dates_Tests: IntegrationContext
         var document = Target.Random();
         document.DateOffset = DateTimeOffset.UtcNow;
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Insert(document);
             session.SaveChanges();

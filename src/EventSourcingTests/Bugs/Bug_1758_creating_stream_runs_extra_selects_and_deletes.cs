@@ -28,7 +28,7 @@ public class Bug_1758_creating_stream_runs_extra_selects_and_deletes : BugIntegr
 
         documentStore.Advanced.Clean.CompletelyRemoveAll();
 
-        using var session = documentStore.OpenSession();
+        using var session = documentStore.LightweightSession();
         var id = session.Events.StartStream<AggregateA>(new CreateAEvent {Name = "Test"}).Id;
         session.SaveChanges();
 

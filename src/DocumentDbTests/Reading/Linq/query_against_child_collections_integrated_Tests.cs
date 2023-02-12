@@ -141,7 +141,7 @@ public class query_against_child_collections_integrated_Tests : OneOffConfigurat
     [Fact]
     public void Bug_503_child_collection_query_in_compiled_query()
     {
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             var outer = new Outer();
             outer.Inners.Add(new Inner { Type = "T1", Value = "V11" });
@@ -152,7 +152,7 @@ public class query_against_child_collections_integrated_Tests : OneOffConfigurat
             session.SaveChanges();
         }
 
-        using (var session2 = theStore.OpenSession())
+        using (var session2 = theStore.LightweightSession())
         {
             // This works
             var o1 = session2.Query<Outer>().First(o => o.Inners.Any(i => i.Type == "T1" && i.Value == "V12"));

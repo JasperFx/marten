@@ -771,7 +771,7 @@ namespace EventSourcingTests.SchemaChange
 
             await theStore.EnsureStorageExistsAsync(typeof(StreamAction));
 
-            await using (var session = theStore.OpenSession())
+            await using (var session = theStore.LightweightSession())
             {
                 session.Events.Append(shoppingCartId, (IEnumerable<object>)shoppingCart.DequeueEvents());
                 await session.SaveChangesAsync();
@@ -779,7 +779,7 @@ namespace EventSourcingTests.SchemaChange
 
             using var store = SeparateStore(configureUpcasters);
             {
-                await using var session = store.OpenSession();
+                await using var session = store.LightweightSession();
                 var shoppingCartNew = await session.Events.AggregateStreamAsync<New.ShoppingCart>(shoppingCartId);
 
                 shoppingCartNew.Id.ShouldBe(shoppingCartId);
