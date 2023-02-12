@@ -409,13 +409,13 @@ internal class ShardAgent: IShardAgent, IObserver<ShardState>
         Status = AgentStatus.Paused;
         _tracker!.Publish(new ShardState(_projectionShard, ShardAction.Paused));
 
-#pragma warning disable 4014
+#pragma warning disable 4014, MA0040
         // ReSharper disable once MethodSupportsCancellation
         Task.Run(async () =>
-#pragma warning restore 4014
         {
             // ReSharper disable once MethodSupportsCancellation
             await Task.Delay(timeout).ConfigureAwait(false);
+#pragma warning restore 4014, MA0040
             _cancellationSource = new CancellationTokenSource();
             _cancellation = _cancellationSource.Token;
 

@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 
@@ -11,7 +12,7 @@ public partial class ProjectionScenario
     /// </summary>
     /// <param name="description"></param>
     /// <param name="assertions"></param>
-    public void AssertAgainstProjectedData(string description, Func<IQuerySession, Task> assertions)
+    public void AssertAgainstProjectedData(string description, Func<IQuerySession, CancellationToken, Task> assertions)
     {
         assertion(assertions).Description = description;
     }
@@ -24,9 +25,9 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldExist<T>(string id, Action<T> assertions = null)
     {
-        assertion(async session =>
+        assertion(async (session, ct) =>
         {
-            var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
+            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
             if (document == null)
             {
                 throw new Exception($"Document {typeof(T).FullNameInCode()} with id '{id}' does not exist");
@@ -44,9 +45,9 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldExist<T>(long id, Action<T> assertions = null)
     {
-        assertion(async session =>
+        assertion(async (session, ct) =>
         {
-            var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
+            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
             if (document == null)
             {
                 throw new Exception($"Document {typeof(T).FullNameInCode()} with id '{id}' does not exist");
@@ -64,9 +65,9 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldExist<T>(int id, Action<T> assertions = null)
     {
-        assertion(async session =>
+        assertion(async (session, ct) =>
         {
-            var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
+            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
             if (document == null)
             {
                 throw new Exception($"Document {typeof(T).FullNameInCode()} with id '{id}' does not exist");
@@ -84,9 +85,9 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldExist<T>(Guid id, Action<T> assertions = null)
     {
-        assertion(async session =>
+        assertion(async (session, ct) =>
         {
-            var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
+            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
             if (document == null)
             {
                 throw new Exception($"Document {typeof(T).FullNameInCode()} with id '{id}' does not exist");
@@ -103,9 +104,9 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldNotExist<T>(string id)
     {
-        assertion(async session =>
+        assertion(async (session, ct) =>
         {
-            var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
+            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
             if (document != null)
             {
                 throw new Exception(
@@ -121,9 +122,9 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldNotExist<T>(long id)
     {
-        assertion(async session =>
+        assertion(async (session, ct) =>
         {
-            var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
+            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
             if (document != null)
             {
                 throw new Exception(
@@ -139,9 +140,9 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldNotExist<T>(int id)
     {
-        assertion(async session =>
+        assertion(async (session, ct) =>
         {
-            var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
+            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
             if (document != null)
             {
                 throw new Exception(
@@ -157,9 +158,9 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldNotExist<T>(Guid id)
     {
-        assertion(async session =>
+        assertion(async (session, ct) =>
         {
-            var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
+            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
             if (document != null)
             {
                 throw new Exception(

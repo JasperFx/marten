@@ -78,6 +78,5 @@ public class JsonNetContractResolver: DefaultContractResolver
             },
             _ => NamingStrategy
         };
-        ;
     }
 }

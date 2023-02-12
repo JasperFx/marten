@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Events.Daemon;
@@ -55,7 +56,7 @@ public partial class ProjectionScenario: IEventOperations
         return step;
     }
 
-    private ScenarioStep assertion(Func<IQuerySession, Task> check)
+    private ScenarioStep assertion(Func<IQuerySession, CancellationToken, Task> check)
     {
         var step = new ScenarioAssertion(check);
         _steps.Enqueue(step);
@@ -63,7 +64,7 @@ public partial class ProjectionScenario: IEventOperations
         return step;
     }
 
-    internal async Task Execute()
+    internal async Task Execute(CancellationToken ct = default)
     {
         if (!DoNotDeleteExistingData)
         {
@@ -94,7 +95,7 @@ public partial class ProjectionScenario: IEventOperations
 
                 try
                 {
-                    await step.Execute(this).ConfigureAwait(false);
+                    await step.Execute(this, ct).ConfigureAwait(false);
                     descriptions.Add($"{number.ToString().PadLeft(3)}. {step.Description}");
                 }
                 catch (Exception e)

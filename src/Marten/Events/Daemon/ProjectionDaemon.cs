@@ -63,14 +63,14 @@ internal class ProjectionDaemon: IProjectionDaemon
 
     public async Task StartDaemon()
     {
-        await Database.EnsureStorageExistsAsync(typeof(IEvent)).ConfigureAwait(false);
+        await Database.EnsureStorageExistsAsync(typeof(IEvent), _cancellation.Token).ConfigureAwait(false);
         await _highWater.Start().ConfigureAwait(false);
     }
 
     public async Task WaitForNonStaleData(TimeSpan timeout)
     {
         var stopWatch = Stopwatch.StartNew();
-        var statistics = await Database.FetchEventStoreStatistics().ConfigureAwait(false);
+        var statistics = await Database.FetchEventStoreStatistics(_cancellation.Token).ConfigureAwait(false);
 
         while (stopWatch.Elapsed < timeout)
         {
@@ -79,7 +79,7 @@ internal class ProjectionDaemon: IProjectionDaemon
                 return;
             }
 
-            await Task.Delay(100.Milliseconds()).ConfigureAwait(false);
+            await Task.Delay(100.Milliseconds(), _cancellation.Token).ConfigureAwait(false);
         }
 
         var message = $"The active projection shards did not reach sequence {statistics.EventSequenceNumber} in time";
@@ -535,7 +535,7 @@ internal class ProjectionDaemon: IProjectionDaemon
             await using (session.ConfigureAwait(false))
             {
                 session.Store(deadLetterEvent);
-                await session.SaveChangesAsync().ConfigureAwait(false);
+                await session.SaveChangesAsync(_cancellation.Token).ConfigureAwait(false);
             }
         }
         catch (Exception e)

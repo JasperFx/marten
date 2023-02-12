@@ -99,8 +99,6 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
             success = version == _version;
         }
 
-        ;
-
         checkVersions(exceptions, success);
 
         return success;
@@ -142,8 +140,6 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
                 success = false;
             }
         }
-
-        ;
 
         checkVersions(exceptions, success);
 

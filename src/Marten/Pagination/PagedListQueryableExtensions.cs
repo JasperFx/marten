@@ -44,6 +44,6 @@ public static class PagedListQueryableExtensions
         CancellationToken token = default)
     {
         // return paged list
-        return await PagedList<T>.CreateAsync(queryable, pageNumber, pageSize).ConfigureAwait(false);
+        return await PagedList<T>.CreateAsync(queryable, pageNumber, pageSize, token).ConfigureAwait(false);
     }
 }
