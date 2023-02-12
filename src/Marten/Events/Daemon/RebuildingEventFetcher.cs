@@ -40,13 +40,13 @@ internal class RebuildingEventFetcher: EventFetcher
         _serializationErrorCount += arg.Length;
         try
         {
-            await _store.BulkInsertDocumentsAsync(arg).ConfigureAwait(false);
+            await _store.BulkInsertDocumentsAsync(arg, cancellation: _cancellation.Token).ConfigureAwait(false);
         }
         catch (Exception)
         {
             if (!_cancellation.IsCancellationRequested)
             {
-                await Task.Delay(100).ConfigureAwait(false);
+                await Task.Delay(100, _cancellation.Token).ConfigureAwait(false);
                 if (!_cancellation.IsCancellationRequested)
                 {
                     _storing.Post(arg); // retry

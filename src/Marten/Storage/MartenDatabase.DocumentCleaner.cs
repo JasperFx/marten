@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Exceptions;
@@ -275,7 +276,7 @@ END; $$;
         cmd.ExecuteNonQuery();
     }
 
-    private async Task DeleteSingleEventStreamAsync<T>(T streamId, string? tenantId = null)
+    private async Task DeleteSingleEventStreamAsync<T>(T streamId, string? tenantId = null, CancellationToken ct = default)
     {
         if (typeof(T) != _options.EventGraph.GetStreamIdType())
         {
@@ -303,8 +304,8 @@ END; $$;
             cmd.AddNamedParameter("tenantId", tenantId);
         }
 
-        await conn.OpenAsync().ConfigureAwait(false);
+        await conn.OpenAsync(ct).ConfigureAwait(false);
 
-        await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 }

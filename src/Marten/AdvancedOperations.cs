@@ -146,11 +146,11 @@ public class AdvancedOperations
     /// </summary>
     /// <param name="configuration"></param>
     /// <returns></returns>
-    public Task EventProjectionScenario(Action<ProjectionScenario> configuration)
+    public Task EventProjectionScenario(Action<ProjectionScenario> configuration, CancellationToken ct = default)
     {
         var scenario = new ProjectionScenario(_store);
         configuration(scenario);
 
-        return scenario.Execute();
+        return scenario.Execute(ct);
     }
 }

@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Storage;
@@ -77,15 +78,15 @@ public class HiloSequence: ISequence
         }
     }
 
-    public async Task AdvanceToNextHi()
+    public async Task AdvanceToNextHi(CancellationToken ct = default)
     {
         await using var conn = _database.CreateConnection();
-        await conn.OpenAsync().ConfigureAwait(false);
+        await conn.OpenAsync(ct).ConfigureAwait(false);
 
         for (var attempts = 0; attempts < _settings.MaxAdvanceToNextHiAttempts; attempts++)
         {
             var command = GetNexFunctionCommand(conn);
-            var raw = await command.ExecuteScalarAsync().ConfigureAwait(false);
+            var raw = await command.ExecuteScalarAsync(ct).ConfigureAwait(false);
 
             if (TrySetCurrentHi(raw))
             {

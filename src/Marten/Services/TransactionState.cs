@@ -49,7 +49,7 @@ internal class TransactionState: IDisposable, IAsyncDisposable
             if (Transaction != null)
             {
                 await Transaction.DisposeAsync().ConfigureAwait(false);
-                ;
+
                 Transaction = null;
             }
         }
@@ -57,9 +57,8 @@ internal class TransactionState: IDisposable, IAsyncDisposable
         if (_ownsConnection)
         {
             await Connection.CloseAsync().ConfigureAwait(false);
-            ;
+
             await Connection.DisposeAsync().ConfigureAwait(false);
-            ;
         }
     }
 

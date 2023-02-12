@@ -207,15 +207,20 @@ internal class BulkInsertion: IDisposable
         }
     }
 
-    public async Task BulkInsertDocumentsEnlistTransactionAsync(IEnumerable<object> documents, Transaction transaction,
-        BulkInsertMode mode, int batchSize, CancellationToken cancellation)
+    public async Task BulkInsertDocumentsEnlistTransactionAsync(
+        IEnumerable<object> documents,
+        Transaction transaction,
+        BulkInsertMode mode,
+        int batchSize,
+        CancellationToken cancellation
+    )
     {
         var groups = bulkInserters(documents);
         var types = documentTypes(documents);
 
         // this needs to be done before open connection
         foreach (var type in types)
-            await _tenant.Database.EnsureStorageExistsAsync(type).ConfigureAwait(false);
+            await _tenant.Database.EnsureStorageExistsAsync(type, cancellation).ConfigureAwait(false);
 
         await using var conn = _tenant.Database.CreateConnection();
         await conn.OpenAsync(cancellation).ConfigureAwait(false);

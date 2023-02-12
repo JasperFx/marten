@@ -67,7 +67,8 @@ internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
         if (Store.Options.CreateDatabases != null)
         {
             var databaseGenerator = new DatabaseGenerator();
-            await databaseGenerator.CreateDatabasesAsync(Store.Tenancy, Store.Options.CreateDatabases)
+            await databaseGenerator
+                .CreateDatabasesAsync(Store.Tenancy, Store.Options.CreateDatabases, cancellationToken)
                 .ConfigureAwait(false);
         }
 
@@ -75,7 +76,8 @@ internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
         {
             var databases = Store.Tenancy.BuildDatabases().ConfigureAwait(false);
             foreach (PostgresqlDatabase database in await databases)
-                await database.ApplyAllConfiguredChangesToDatabaseAsync(this, AutoCreate.CreateOrUpdate, ct: cancellationToken)
+                await database
+                    .ApplyAllConfiguredChangesToDatabaseAsync(this, AutoCreate.CreateOrUpdate, ct: cancellationToken)
                     .ConfigureAwait(false);
         }
 
