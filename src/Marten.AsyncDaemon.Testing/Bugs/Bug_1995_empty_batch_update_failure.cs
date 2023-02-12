@@ -28,7 +28,7 @@ public class Bug_1995_empty_batch_update_failure : BugIntegrationContext
     {
         await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
-        await using (var session = await documentStore.LightweightSessionAsync())
+        await using (var session = documentStore.LightweightSession())
         {
             for (var i = 0; i < 499; i++)
             {
