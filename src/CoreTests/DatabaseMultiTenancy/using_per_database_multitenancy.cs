@@ -137,7 +137,7 @@ public class using_per_database_multitenancy : IAsyncLifetime
             await using var conn = database.CreateConnection();
             await conn.OpenAsync();
 
-            var tables = await conn.ExistingTables();
+            var tables = await conn.ExistingTablesAsync();
             tables.Any(x => x.QualifiedName == "public.mt_doc_user").ShouldBeTrue();
             tables.Any(x => x.QualifiedName == "public.mt_doc_target").ShouldBeTrue();
         }

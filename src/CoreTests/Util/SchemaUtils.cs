@@ -34,7 +34,7 @@ public static class SchemaUtils
         {
             await using var dbConn = new NpgsqlConnection(connectionString);
             await dbConn.OpenAsync();
-            await dbConn.DropSchema(schemaName);
+            await dbConn.DropSchemaAsync(schemaName);
 
             return true;
         }

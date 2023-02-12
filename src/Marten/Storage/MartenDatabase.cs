@@ -62,7 +62,7 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
 
         var schemaNames = AllSchemaNames();
 
-        return await conn.ExistingFunctions("mt_%", schemaNames).ConfigureAwait(false);
+        return await conn.ExistingFunctionsAsync("mt_%", schemaNames).ConfigureAwait(false);
     }
 
     public async Task<Table> ExistingTableFor(Type type)
@@ -73,7 +73,7 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
         await using var conn = CreateConnection();
         await conn.OpenAsync().ConfigureAwait(false);
 
-        return await expected.FetchExisting(conn).ConfigureAwait(false);
+        return await expected.FetchExistingAsync(conn).ConfigureAwait(false);
     }
 
 

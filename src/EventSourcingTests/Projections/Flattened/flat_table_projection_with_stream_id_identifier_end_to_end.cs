@@ -38,7 +38,7 @@ public class flat_table_projection_with_stream_id_identifier_end_to_end : OneOff
         await using var conn = theStore.Storage.Database.CreateConnection();
         await conn.OpenAsync();
 
-        var table = await new Table(new DbObjectName(SchemaName, "values")).FetchExisting(conn);
+        var table = await new Table(new DbObjectName(SchemaName, "values")).FetchExistingAsync(conn);
 
         table.PrimaryKeyColumns.Single().ShouldBe("id");
         table.Columns.Select(x => x.Name).OrderBy(x => x)
@@ -75,7 +75,7 @@ public class flat_table_projection_with_stream_id_identifier_end_to_end : OneOff
 
         var all = await conn.CreateCommand($"select * from {SchemaName}.values where id = :id")
             .With("id", streamId)
-            .FetchList(readData);
+            .FetchListAsync(readData);
 
         return all.Single();
     }

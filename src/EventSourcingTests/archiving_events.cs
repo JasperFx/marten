@@ -47,7 +47,7 @@ public class archiving_events: IntegrationContext
 
         var isArchived = await theSession.Connection
             .CreateCommand("select is_archived from mt_events where stream_id = :stream")
-            .With("stream", stream).FetchList<bool>();
+            .With("stream", stream).FetchListAsync<bool>();
 
         // None of the events should be archived
         isArchived.All(x => !x).ShouldBeTrue();
@@ -60,7 +60,7 @@ public class archiving_events: IntegrationContext
 
         isArchived = await theSession.Connection
             .CreateCommand("select is_archived from mt_events where stream_id = :stream")
-            .With("stream", stream).FetchList<bool>();
+            .With("stream", stream).FetchListAsync<bool>();
 
         // All of the events should be archived
         isArchived.All(x => x).ShouldBeTrue();
@@ -98,7 +98,7 @@ public class archiving_events: IntegrationContext
 
         var isArchived = await theSession.Connection
             .CreateCommand("select is_archived from string_events.mt_events where stream_id = :stream")
-            .With("stream", stream).FetchList<bool>();
+            .With("stream", stream).FetchListAsync<bool>();
 
         // None of the events should be archived
         isArchived.All(x => !x).ShouldBeTrue();
@@ -111,7 +111,7 @@ public class archiving_events: IntegrationContext
 
         isArchived = await theSession.Connection
             .CreateCommand("select is_archived from string_events.mt_events where stream_id = :stream")
-            .With("stream", stream).FetchList<bool>();
+            .With("stream", stream).FetchListAsync<bool>();
 
         // All of the events should be archived
         isArchived.All(x => x).ShouldBeTrue();
