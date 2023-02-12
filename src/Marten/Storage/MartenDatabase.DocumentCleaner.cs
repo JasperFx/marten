@@ -52,7 +52,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         await conn.OpenAsync().ConfigureAwait(false);
 
         var schemas = AllSchemaNames();
-        var tables = await conn.ExistingTables("mt_%", schemas).ConfigureAwait(false);
+        var tables = await conn.ExistingTablesAsync("mt_%", schemas).ConfigureAwait(false);
 
         if (!tables.Any())
         {
@@ -156,7 +156,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         await using var conn = CreateConnection();
         await conn.OpenAsync().ConfigureAwait(false);
         var schemas = AllSchemaNames();
-        var tables = await conn.ExistingTables("mt_%", schemas).ConfigureAwait(false);
+        var tables = await conn.ExistingTablesAsync("mt_%", schemas).ConfigureAwait(false);
 
         var builder = new CommandBuilder();
 
@@ -165,12 +165,12 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
         var functionDrops = await conn.CreateCommand(DropAllFunctionSql)
             .With("schemas", schemas)
-            .FetchList<string>().ConfigureAwait(false);
+            .FetchListAsync<string>().ConfigureAwait(false);
         foreach (var functionDrop in functionDrops) builder.Append(functionDrop);
 
         var sequenceDrops = await conn.CreateCommand(DropAllSequencesSql)
             .With("schemas", schemas)
-            .FetchList<string>().ConfigureAwait(false);
+            .FetchListAsync<string>().ConfigureAwait(false);
         foreach (var sequenceDrop in sequenceDrops) builder.Append(sequenceDrop);
 
         if (tables.Any() || functionDrops.Any() || sequenceDrops.Any())

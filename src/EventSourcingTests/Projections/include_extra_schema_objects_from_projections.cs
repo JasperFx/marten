@@ -40,7 +40,7 @@ public class include_extra_schema_objects_from_projections : OneOffConfiguration
         {
             await conn.OpenAsync();
 
-            await conn.DropSchema("extra");
+            await conn.DropSchemaAsync("extra");
         }
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
@@ -49,7 +49,7 @@ public class include_extra_schema_objects_from_projections : OneOffConfiguration
         {
             await conn.OpenAsync();
 
-            (await conn.ExistingTables()).Any(x => x.Equals(tableName)).ShouldBeTrue();
+            (await conn.ExistingTablesAsync()).Any(x => x.Equals(tableName)).ShouldBeTrue();
         }
     }
 }

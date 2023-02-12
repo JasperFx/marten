@@ -49,7 +49,7 @@ public class multi_tenancy_by_database : IAsyncLifetime
 
         await using var dbConn = new NpgsqlConnection(builder.ConnectionString);
         await dbConn.OpenAsync();
-        await dbConn.DropSchema("multi_tenancy_daemon");
+        await dbConn.DropSchemaAsync("multi_tenancy_daemon");
 
         return builder.ConnectionString;
     }
@@ -58,7 +58,6 @@ public class multi_tenancy_by_database : IAsyncLifetime
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
-
 
         var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");
         var tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");

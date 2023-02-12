@@ -38,7 +38,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end : One
         await using var conn = theStore.Storage.Database.CreateConnection();
         await conn.OpenAsync();
 
-        var table = await new Table(new DbObjectName(SchemaName, "member_values")).FetchExisting(conn);
+        var table = await new Table(new DbObjectName(SchemaName, "member_values")).FetchExistingAsync(conn);
 
         table.PrimaryKeyColumns.Single().ShouldBe("name");
         table.Columns.Select(x => x.Name).OrderBy(x => x)
@@ -79,7 +79,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end : One
 
         var all = await conn.CreateCommand($"select * from {SchemaName}.member_values where name = :id")
             .With("id", name)
-            .FetchList(readData);
+            .FetchListAsync(readData);
 
         return all.Single();
     }

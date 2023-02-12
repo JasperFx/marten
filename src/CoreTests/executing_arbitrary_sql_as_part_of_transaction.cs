@@ -18,7 +18,7 @@ public class executing_arbitrary_sql_as_part_of_transaction : OneOffConfiguratio
         await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
         {
             await conn.OpenAsync();
-            await conn.RunSql("drop table if exists names cascade");
+            await conn.RunSqlAsync("drop table if exists names cascade");
         }
 
         StoreOptions(opts =>
@@ -53,7 +53,7 @@ public class executing_arbitrary_sql_as_part_of_transaction : OneOffConfiguratio
             await conn.OpenAsync();
 
             var names = await conn.CreateCommand("select name from names order by name")
-                .FetchList<string>();
+                .FetchListAsync<string>();
 
             names.ShouldHaveTheSameElementsAs("Babu", "Jeremy", "Oskar");
         }

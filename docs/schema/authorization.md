@@ -130,7 +130,7 @@ var store = DocumentStore.For(_ =>
     // let's say that you have template files in a
     // "templates" directory under the root of your
     // application
-    _.Advanced.Migrator.ReadTemplates("templates");
+    _.Advanced.Migrator.ReadTemplatesAsync("templates");
 
 });
 ```

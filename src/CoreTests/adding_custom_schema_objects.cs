@@ -62,7 +62,7 @@ public class adding_custom_schema_objects : OneOffConfigurationsContext
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
 
-        var tableNames = await conn.ExistingTables(schemas: new[] { "adding_custom_schema_objects" });
+        var tableNames = await conn.ExistingTablesAsync(schemas: new[] { "adding_custom_schema_objects" });
         tableNames.Any(x => x.Name == "names").ShouldBeTrue();
     }
 

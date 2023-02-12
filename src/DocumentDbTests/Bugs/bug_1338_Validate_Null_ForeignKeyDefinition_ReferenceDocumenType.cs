@@ -27,7 +27,7 @@ public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType: B
 
         await using var dbConn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await dbConn.OpenAsync();
-        await table.Create(dbConn);
+        await table.CreateAsync(dbConn);
 
         await dbConn.CreateCommand("insert into bugs.external_table (id) values (1)").ExecuteNonQueryAsync();
 
