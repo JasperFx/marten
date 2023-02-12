@@ -161,18 +161,38 @@ public partial class DocumentStore: IDocumentStore
 
     public IDiagnostics Diagnostics { get; }
 
+    [Obsolete(
+        """
+        Opening a session without explicitly providing desired type may be dropped in next Marten version.
+        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
+        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
+        """
+    )]
     public IDocumentSession OpenSession(SessionOptions options)
     {
-        options.Tracking = DocumentTracking.IdentityOnly;
         return openSession(options);
     }
 
+    [Obsolete(
+        """
+        Opening a session without explicitly providing desired type may be dropped in next Marten version.
+        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
+        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
+        """
+    )]
     public IDocumentSession OpenSession(
         DocumentTracking tracking = DocumentTracking.IdentityOnly,
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
     ) =>
         openSession(new SessionOptions { Tracking = tracking, IsolationLevel = isolationLevel });
 
+    [Obsolete(
+        """
+        Opening a session without explicitly providing desired type may be dropped in next Marten version.
+        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
+        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
+        """
+    )]
     public IDocumentSession OpenSession(
         string tenantId,
         DocumentTracking tracking = DocumentTracking.IdentityOnly,
@@ -256,7 +276,7 @@ public partial class DocumentStore: IDocumentStore
         CancellationToken cancellation = default
     )
     {
-        options.Tracking = DocumentTracking.None;
+        options.Tracking = DocumentTracking.DirtyTracking;
         return OpenSessionAsync(options, cancellation);
     }
 
@@ -365,6 +385,13 @@ public partial class DocumentStore: IDocumentStore
         return database.As<MartenDatabase>().StartProjectionDaemon(this, logger);
     }
 
+    [Obsolete(
+        """
+        Opening a session without explicitly providing desired type may be dropped in next Marten version.
+        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
+        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
+        """
+    )]
     public async Task<IDocumentSession> OpenSessionAsync(SessionOptions options, CancellationToken token = default)
     {
         var connection = await options.InitializeAsync(this, CommandRunnerMode.Transactional, token)
@@ -381,7 +408,13 @@ public partial class DocumentStore: IDocumentStore
         return session;
     }
 
-
+    [Obsolete(
+        """
+        Opening a session without explicitly providing desired type may be dropped in next Marten version.
+        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
+        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
+        """
+    )]
     public Task<IDocumentSession> OpenSessionAsync(
         DocumentTracking tracking = DocumentTracking.IdentityOnly,
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
@@ -389,6 +422,13 @@ public partial class DocumentStore: IDocumentStore
     ) =>
         OpenSessionAsync(new SessionOptions { Tracking = tracking, IsolationLevel = isolationLevel }, token);
 
+    [Obsolete(
+        """
+        Opening a session without explicitly providing desired type may be dropped in next Marten version.
+        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
+        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
+        """
+    )]
     public Task<IDocumentSession> OpenSessionAsync(
         string tenantId,
         DocumentTracking tracking = DocumentTracking.IdentityOnly,

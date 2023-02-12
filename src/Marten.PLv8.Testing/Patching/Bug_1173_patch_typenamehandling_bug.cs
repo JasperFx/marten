@@ -35,7 +35,7 @@ public class Bug_1173_patch_typenamehandling_bug: BugIntegrationContext
 
             _.UseJavascriptTransformsAndPatching();
         });
-        using (var session = store.OpenSession())
+        using (var session = store.LightweightSession())
         {
             var obj = new PatchTypeA
             {
@@ -50,7 +50,7 @@ public class Bug_1173_patch_typenamehandling_bug: BugIntegrationContext
             session.Store(obj);
             session.SaveChanges();
         }
-        using (var session = store.OpenSession())
+        using (var session = store.LightweightSession())
         {
             var newObj = new PatchTypeB
             {
@@ -61,7 +61,7 @@ public class Bug_1173_patch_typenamehandling_bug: BugIntegrationContext
             session.SaveChanges();
         }
 
-        using (var session = store.OpenSession())
+        using (var session = store.LightweightSession())
         {
             var result = session.Json.FindById<PatchTypeA>("1");
             var expected = "{\"Id\": \"1\", \"$type\": \"Marten.PLv8.Testing.Patching.PatchTypeA, Marten.PLv8.Testing\", \"TypeB\": {\"Name\": \"test2\", \"$type\": \"Marten.PLv8.Testing.Patching.PatchTypeB, Marten.PLv8.Testing\"}}";

@@ -584,7 +584,7 @@ public void can_select_a_string_field_in_compiled_query()
 {
     var user = new User { FirstName = "Eric", LastName = "Berry" };
 
-    using var session = theStore.OpenSession();
+    using var session = theStore.LightweightSession();
     session.Store(user);
     session.SaveChanges();
 
@@ -599,7 +599,7 @@ public async Task can_transform_to_json()
 {
     var user = new User { FirstName = "Eric", LastName = "Berry" };
 
-    await using var session = theStore.OpenSession();
+    await using var session = theStore.LightweightSession();
     session.Store(user);
     await session.SaveChangesAsync();
 
@@ -629,7 +629,7 @@ public async Task can_transform_to_another_doc()
 {
     var user = new User { FirstName = "Eric", LastName = "Berry" };
 
-    await using var session = theStore.OpenSession();
+    await using var session = theStore.LightweightSession();
     session.Store(user);
     await session.SaveChangesAsync();
 
@@ -646,7 +646,7 @@ public async Task can_write_many_to_json()
     var user1 = new User { FirstName = "Eric", LastName = "Berry" };
     var user2 = new User { FirstName = "Derrick", LastName = "Johnson" };
 
-    await using var session = theStore.OpenSession();
+    await using var session = theStore.LightweightSession();
     session.Store(user1, user2);
     await session.SaveChangesAsync();
 

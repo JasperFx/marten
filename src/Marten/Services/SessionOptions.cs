@@ -35,7 +35,7 @@ public sealed class SessionOptions
         We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
         """
     )]
-    public DocumentTracking Tracking { get; set; }
+    public DocumentTracking Tracking { get; set; } = DocumentTracking.IdentityOnly;
 
     /// <summary>
     ///     If not specified, sessions default to Npgsql command timeout (30 seconds)

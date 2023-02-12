@@ -564,7 +564,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
         var id1 = Guid.NewGuid();
         var id2 = Guid.NewGuid();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.DeleteWhere<TestModel5>(x => x.ObjectId == id1 && x.DefinitionId == 1 && x.Stage > 1);
 
@@ -630,7 +630,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
         theSession.SaveChanges();
 
         var id = Guid.NewGuid();
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Patch<TestModel7>(model.Id).Set(x => x.NullableObjectId, id);
             session.Patch<TestModel7>(nullModel.Id).Set(x => x.NullableObjectId, null);

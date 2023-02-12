@@ -15,7 +15,7 @@ public class Bug_1296_sessionlistener_updates : BugIntegrationContext
     {
         var user = new User();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Insert(user);
             session.SaveChanges();
@@ -23,7 +23,7 @@ public class Bug_1296_sessionlistener_updates : BugIntegrationContext
 
         var updates = 0;
 
-        using (var session = theStore.OpenSession(new SessionOptions()
+        using (var session = theStore.LightweightSession(new SessionOptions
                {
                    Listeners = { new CustomDocumentSessionListener(work =>
                    {

@@ -44,7 +44,7 @@ namespace CoreTests.Bugs
 
             await initializationStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
-            await using (var session = initializationStore.OpenSession())
+            await using (var session = initializationStore.LightweightSession())
             {
                 session.Store(new TestEntity { Name = "Test" });
                 await session.SaveChangesAsync();
@@ -64,7 +64,7 @@ namespace CoreTests.Bugs
 
 
 
-            await using (var session = await testStore.OpenSessionAsync(SessionOptions.ForConnectionString(connectionString)))
+            await using (var session = await testStore.LightweightSessionAsync(SessionOptions.ForConnectionString(connectionString)))
             {
                 new NpgsqlConnectionStringBuilder(session.Connection.ConnectionString).Timeout.ShouldBe(11);
                 session.Store(new TestEntity { Name = "Test 2" });
@@ -72,7 +72,7 @@ namespace CoreTests.Bugs
 
             }
 
-            await using (var session = await testStore.OpenSessionAsync(SessionOptions.ForConnectionString(connectionString)))
+            await using (var session = await testStore.LightweightSessionAsync(SessionOptions.ForConnectionString(connectionString)))
             {
                 new NpgsqlConnectionStringBuilder(session.Connection.ConnectionString).Timeout.ShouldBe(11);
                 var entities = await session.Query<TestEntity>()
@@ -82,8 +82,6 @@ namespace CoreTests.Bugs
 
             }
         }
-
-
     }
 }
 

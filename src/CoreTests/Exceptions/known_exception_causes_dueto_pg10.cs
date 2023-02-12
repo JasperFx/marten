@@ -15,10 +15,8 @@ public class known_exception_causes_dueto_pg10: IntegrationContext
     {
         var e = Assert.Throws<MartenCommandNotSupportedException>(() =>
         {
-            using (var session = theStore.OpenSession())
-            {
-                session.Query<User>().Where(x => x.WebStyleSearch("throw")).ToList();
-            }
+            using var session = theStore.QuerySession();
+            session.Query<User>().Where(x => x.WebStyleSearch("throw")).ToList();
         });
 
         e.Reason.ShouldBe(NotSupportedReason.WebStyleSearchNeedsAtLeastPostgresVersion11);

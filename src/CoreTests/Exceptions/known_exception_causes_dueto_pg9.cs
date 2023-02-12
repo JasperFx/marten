@@ -15,10 +15,8 @@ public class known_exception_causes_dueto_pg9: IntegrationContext
     {
         var e = Assert.Throws<MartenCommandNotSupportedException>(() =>
         {
-            using (var session = theStore.OpenSession())
-            {
-                session.Query<User>().Where(x => x.PlainTextSearch("throw")).ToList();
-            }
+            using var session = theStore.QuerySession();
+            session.Query<User>().Where(x => x.PlainTextSearch("throw")).ToList();
         });
 
         e.Reason.ShouldBe(NotSupportedReason.FullTextSearchNeedsAtLeastPostgresVersion10);
@@ -28,12 +26,10 @@ public class known_exception_causes_dueto_pg9: IntegrationContext
     [PgVersionTargetedFact(MaximumVersion = "10.0")]
     public void can_totsvector_other_than_jsonb_without_FTS_exception()
     {
-        var e = Assert.Throws<Marten.Exceptions.MartenCommandException>(() =>
+        var e = Assert.Throws<MartenCommandException>(() =>
         {
-            using (var session = theStore.OpenSession())
-            {
-                session.Query<User>("to_tsvector(?)", 0).ToList();
-            }
+            using var session = theStore.QuerySession();
+            session.Query<User>("to_tsvector(?)", 0).ToList();
         });
         SpecificationExtensions.ShouldNotBeOfType<MartenCommandNotSupportedException>(e);
     }
