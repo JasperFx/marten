@@ -19,11 +19,9 @@ public class Bug_837_missing_func_mt_immutable_timestamp_when_initializing_with_
             _.DatabaseSchemaName = "other1";
         });
 
-        using (var session = store.OpenSession())
-        {
-            session.Query<Target>().FirstOrDefault(m => m.DateOffset > DateTimeOffset.UtcNow)
-                .ShouldBeNull();
-        }
+        using var session = store.QuerySession();
+        session.Query<Target>().FirstOrDefault(m => m.DateOffset > DateTimeOffset.UtcNow)
+            .ShouldBeNull();
     }
 
 

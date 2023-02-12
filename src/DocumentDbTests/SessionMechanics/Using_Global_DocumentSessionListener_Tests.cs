@@ -98,7 +98,7 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
         {
             store.Advanced.Clean.CompletelyRemoveAll();
 
-            using (var session = store.OpenSession())
+            using (var session = store.LightweightSession())
             {
                 var user1 = new User { Id = Guid.NewGuid() };
                 var user2 = new User { Id = Guid.NewGuid() };
@@ -131,7 +131,7 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
         {
             store.Advanced.Clean.CompletelyRemoveAll();
 
-            using (var session = store.OpenSession())
+            using (var session = store.LightweightSession())
             {
                 var user1 = new User { Id = Guid.NewGuid() };
                 var user2 = new User { Id = Guid.NewGuid() };
@@ -167,13 +167,13 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
 
-            using (var session = store.OpenSession())
+            using (var session = store.LightweightSession())
             {
                 session.StoreObjects(new[] { user1, user2 });
                 session.SaveChanges();
             }
 
-            using (var session = store.OpenSession())
+            using (var session = store.LightweightSession())
             {
                 var user = session.Load<User>(user1.Id);
 
@@ -203,13 +203,13 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
 
-            using (var session = store.OpenSession())
+            using (var session = store.LightweightSession())
             {
                 session.StoreObjects(new[] { user1, user2 });
                 session.SaveChanges();
             }
 
-            using (var session = store.OpenSession())
+            using (var session = store.LightweightSession())
             {
                 var users = session.Query<User>().ToList();
 
@@ -308,7 +308,7 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
 
-            using (var session = store.OpenSession())
+            using (var session = store.LightweightSession())
             {
                 session.StoreObjects(new[] { user1, user2 });
                 session.SaveChanges();
@@ -344,7 +344,7 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
 
-            using (var session = store.OpenSession())
+            using (var session = store.LightweightSession())
             {
                 session.StoreObjects(new[] { user1, user2 });
                 session.SaveChanges();
@@ -383,7 +383,7 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
 
-            using (var session = store.OpenSession())
+            using (var session = store.LightweightSession())
             {
                 session.StoreObjects(new[] { user1, user2 });
                 session.SaveChanges();

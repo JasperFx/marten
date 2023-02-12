@@ -22,7 +22,7 @@ public class event_store_quickstart
 
         var questId = Guid.NewGuid();
 
-        await using (var session = store.OpenSession())
+        await using (var session = store.LightweightSession())
         {
             var started = new QuestStarted { Name = "Destroy the One Ring" };
             var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
@@ -45,7 +45,7 @@ public class event_store_quickstart
 
         #region sample_event-store-start-stream-with-explicit-type
 
-        await using (var session = store.OpenSession())
+        await using (var session = store.LightweightSession())
         {
             var started = new QuestStarted { Name = "Destroy the One Ring" };
             var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
@@ -59,7 +59,7 @@ public class event_store_quickstart
 
         #region sample_event-store-start-stream-with-no-type
 
-        await using (var session = store.OpenSession())
+        await using (var session = store.LightweightSession())
         {
             var started = new QuestStarted { Name = "Destroy the One Ring" };
             var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
@@ -74,7 +74,7 @@ public class event_store_quickstart
 
         #region sample_events-fetching-stream
 
-        await using (var session = store.OpenSession())
+        await using (var session = store.LightweightSession())
         {
             var events = await session.Events.FetchStreamAsync(questId);
             events.Each(evt =>
@@ -86,7 +86,7 @@ public class event_store_quickstart
 
         #region sample_events-aggregate-on-the-fly
 
-        await using (var session = store.OpenSession())
+        await using (var session = store.LightweightSession())
         {
             // questId is the id of the stream
             var party = session.Events.AggregateStream<QuestParty>(questId);
@@ -100,7 +100,7 @@ public class event_store_quickstart
         }
         #endregion
 
-        await using (var session = store.OpenSession())
+        await using (var session = store.LightweightSession())
         {
             var party = session.Load<QuestParty>(questId);
             Console.WriteLine(party);

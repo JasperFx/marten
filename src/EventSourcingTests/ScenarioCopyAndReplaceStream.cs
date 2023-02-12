@@ -34,7 +34,7 @@ public class ScenarioCopyAndReplaceStream : StoreContext<StringIdentifiedStreams
         var slayed1 = new MonsterSlayed { Name = "Troll" };
         var slayed2 = new MonsterSlayed { Name = "Dragon" };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream<Quest>(started.Name,started, joined, slayed1, slayed2);
             session.SaveChanges();
@@ -42,7 +42,7 @@ public class ScenarioCopyAndReplaceStream : StoreContext<StringIdentifiedStreams
         #endregion
 
         #region sample_scenario-copyandtransformstream-transform
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             var events = session.Events.FetchStream(started.Name);
 

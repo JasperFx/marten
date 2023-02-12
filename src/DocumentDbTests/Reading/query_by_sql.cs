@@ -26,7 +26,7 @@ public class query_by_sql: IntegrationContext
         theSession.Store(company);
         await theSession.SaveChangesAsync();
 
-        await using var session = theStore.OpenSession();
+        await using var session = theStore.LightweightSession();
 
         #region sample_sample-query-type-parameter-overload
         dynamic userFromDb = session.Query(user.GetType(), "where id = ?", user.Id).First();
@@ -40,7 +40,7 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task stream_query_by_one_parameter()
     {
-        await using var session = theStore.OpenSession();
+        await using var session = theStore.LightweightSession();
         session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
         session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
         session.Store(new User {FirstName = "Max", LastName = "Miller"});
@@ -65,92 +65,84 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public void query_by_one_parameter()
     {
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
-            session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
-            session.Store(new User {FirstName = "Max", LastName = "Miller"});
-            session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+        session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+        session.Store(new User {FirstName = "Max", LastName = "Miller"});
+        session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
+        session.SaveChanges();
 
-            var firstnames =
-                session.Query<User>("where data ->> 'LastName' = ?", "Miller").OrderBy(x => x.FirstName)
-                    .Select(x => x.FirstName).ToArray();
+        var firstnames =
+            session.Query<User>("where data ->> 'LastName' = ?", "Miller").OrderBy(x => x.FirstName)
+                .Select(x => x.FirstName).ToArray();
 
-            firstnames.Length.ShouldBe(3);
-            firstnames[0].ShouldBe("Jeremy");
-            firstnames[1].ShouldBe("Lindsey");
-            firstnames[2].ShouldBe("Max");
-        }
+        firstnames.Length.ShouldBe(3);
+        firstnames[0].ShouldBe("Jeremy");
+        firstnames[1].ShouldBe("Lindsey");
+        firstnames[2].ShouldBe("Max");
     }
 
     [Fact]
     public void query_ignores_case_of_where_keyword()
     {
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
-            session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
-            session.Store(new User {FirstName = "Max", LastName = "Miller"});
-            session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+        session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+        session.Store(new User {FirstName = "Max", LastName = "Miller"});
+        session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
+        session.SaveChanges();
 
-            var firstnames =
-                session.Query<User>("WHERE data ->> 'LastName' = ?", "Miller").OrderBy(x => x.FirstName)
-                    .Select(x => x.FirstName).ToArray();
+        var firstnames =
+            session.Query<User>("WHERE data ->> 'LastName' = ?", "Miller").OrderBy(x => x.FirstName)
+                .Select(x => x.FirstName).ToArray();
 
-            firstnames.Length.ShouldBe(3);
-            firstnames[0].ShouldBe("Jeremy");
-            firstnames[1].ShouldBe("Lindsey");
-            firstnames[2].ShouldBe("Max");
-        }
+        firstnames.Length.ShouldBe(3);
+        firstnames[0].ShouldBe("Jeremy");
+        firstnames[1].ShouldBe("Lindsey");
+        firstnames[2].ShouldBe("Max");
     }
 
     [Fact]
     public void query_by_one_named_parameter()
     {
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
-            session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
-            session.Store(new User {FirstName = "Max", LastName = "Miller"});
-            session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+        session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+        session.Store(new User {FirstName = "Max", LastName = "Miller"});
+        session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
+        session.SaveChanges();
 
-            var firstnames =
-                session.Query<User>("where data ->> 'LastName' = :Name", new {Name = "Miller"})
-                    .OrderBy(x => x.FirstName)
-                    .Select(x => x.FirstName).ToArray();
+        var firstnames =
+            session.Query<User>("where data ->> 'LastName' = :Name", new {Name = "Miller"})
+                .OrderBy(x => x.FirstName)
+                .Select(x => x.FirstName).ToArray();
 
-            firstnames.Length.ShouldBe(3);
-            firstnames[0].ShouldBe("Jeremy");
-            firstnames[1].ShouldBe("Lindsey");
-            firstnames[2].ShouldBe("Max");
-        }
+        firstnames.Length.ShouldBe(3);
+        firstnames[0].ShouldBe("Jeremy");
+        firstnames[1].ShouldBe("Lindsey");
+        firstnames[2].ShouldBe("Max");
     }
 
     [Fact]
     public void query_by_two_parameters()
     {
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
-            session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
-            session.Store(new User {FirstName = "Max", LastName = "Miller"});
-            session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+        session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+        session.Store(new User {FirstName = "Max", LastName = "Miller"});
+        session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
+        session.SaveChanges();
 
-            #region sample_using_parameterized_sql
+        #region sample_using_parameterized_sql
 
-            var user =
-                session.Query<User>("where data ->> 'FirstName' = ? and data ->> 'LastName' = ?", "Jeremy",
-                        "Miller")
-                    .Single();
+        var user =
+            session.Query<User>("where data ->> 'FirstName' = ? and data ->> 'LastName' = ?", "Jeremy",
+                    "Miller")
+                .Single();
 
-            #endregion
+        #endregion
 
-            user.ShouldNotBeNull();
-        }
+        user.ShouldNotBeNull();
     }
 
     #region sample_query_by_two_named_parameters
@@ -158,20 +150,18 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public void query_by_two_named_parameters()
     {
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
-            session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
-            session.Store(new User {FirstName = "Max", LastName = "Miller"});
-            session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
-            session.SaveChanges();
-            var user =
-                session.Query<User>("where data ->> 'FirstName' = :FirstName and data ->> 'LastName' = :LastName",
-                        new {FirstName = "Jeremy", LastName = "Miller"})
-                    .Single();
+        using var session = theStore.LightweightSession();
+        session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+        session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+        session.Store(new User {FirstName = "Max", LastName = "Miller"});
+        session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
+        session.SaveChanges();
+        var user =
+            session.Query<User>("where data ->> 'FirstName' = :FirstName and data ->> 'LastName' = :LastName",
+                    new {FirstName = "Jeremy", LastName = "Miller"})
+                .Single();
 
-            SpecificationExtensions.ShouldNotBeNull(user);
-        }
+        SpecificationExtensions.ShouldNotBeNull(user);
     }
 
     #endregion
@@ -179,65 +169,59 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public void query_two_fields_by_one_named_parameter()
     {
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
-            session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
-            session.Store(new User {FirstName = "Max", LastName = "Miller"});
-            session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
-            session.SaveChanges();
-            var user =
-                session.Query<User>("where data ->> 'FirstName' = :Name or data ->> 'LastName' = :Name",
-                        new {Name = "Jeremy"})
-                    .Single();
+        using var session = theStore.LightweightSession();
+        session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+        session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+        session.Store(new User {FirstName = "Max", LastName = "Miller"});
+        session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
+        session.SaveChanges();
+        var user =
+            session.Query<User>("where data ->> 'FirstName' = :Name or data ->> 'LastName' = :Name",
+                    new {Name = "Jeremy"})
+                .Single();
 
-            user.ShouldNotBeNull();
-        }
+        user.ShouldNotBeNull();
     }
 
     [Fact]
     public void query_for_multiple_documents()
     {
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
-            session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
-            session.Store(new User {FirstName = "Max", LastName = "Miller"});
-            session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+        session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+        session.Store(new User {FirstName = "Max", LastName = "Miller"});
+        session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
+        session.SaveChanges();
 
-            var firstnames =
-                session.Query<User>("where data ->> 'LastName' = 'Miller'").OrderBy(x => x.FirstName)
-                    .Select(x => x.FirstName).ToArray();
+        var firstnames =
+            session.Query<User>("where data ->> 'LastName' = 'Miller'").OrderBy(x => x.FirstName)
+                .Select(x => x.FirstName).ToArray();
 
-            firstnames.Length.ShouldBe(3);
-            firstnames[0].ShouldBe("Jeremy");
-            firstnames[1].ShouldBe("Lindsey");
-            firstnames[2].ShouldBe("Max");
-        }
+        firstnames.Length.ShouldBe(3);
+        firstnames[0].ShouldBe("Jeremy");
+        firstnames[1].ShouldBe("Lindsey");
+        firstnames[2].ShouldBe("Max");
     }
 
 
     [Fact]
     public void query_for_multiple_documents_with_ordering()
     {
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
-            session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
-            session.Store(new User {FirstName = "Max", LastName = "Miller"});
-            session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+        session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+        session.Store(new User {FirstName = "Max", LastName = "Miller"});
+        session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
+        session.SaveChanges();
 
-            var firstnames =
-                session.Query<User>("where data ->> 'LastName' = 'Miller' order by data ->> 'FirstName'")
-                    .Select(x => x.FirstName).ToArray();
+        var firstnames =
+            session.Query<User>("where data ->> 'LastName' = 'Miller' order by data ->> 'FirstName'")
+                .Select(x => x.FirstName).ToArray();
 
-            firstnames.Length.ShouldBe(3);
-            firstnames[0].ShouldBe("Jeremy");
-            firstnames[1].ShouldBe("Lindsey");
-            firstnames[2].ShouldBe("Max");
-        }
+        firstnames.Length.ShouldBe(3);
+        firstnames[0].ShouldBe("Jeremy");
+        firstnames[1].ShouldBe("Lindsey");
+        firstnames[2].ShouldBe("Max");
     }
 
 
@@ -246,16 +230,14 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public void query_for_single_document()
     {
-        using (var session = theStore.OpenSession())
-        {
-            var u = new User {FirstName = "Jeremy", LastName = "Miller"};
-            session.Store(u);
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        var u = new User {FirstName = "Jeremy", LastName = "Miller"};
+        session.Store(u);
+        session.SaveChanges();
 
-            var user = session.Query<User>("where data ->> 'FirstName' = 'Jeremy'").Single();
-            user.LastName.ShouldBe("Miller");
-            user.Id.ShouldBe(u.Id);
-        }
+        var user = session.Query<User>("where data ->> 'FirstName' = 'Jeremy'").Single();
+        user.LastName.ShouldBe("Miller");
+        user.Id.ShouldBe(u.Id);
     }
 
     #endregion
@@ -263,17 +245,15 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public void query_for_single_document_where_clause_trimmed()
     {
-        using (var session = theStore.OpenSession())
-        {
-            var u = new User {FirstName = "Jeremy", LastName = "Miller"};
-            session.Store(u);
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        var u = new User {FirstName = "Jeremy", LastName = "Miller"};
+        session.Store(u);
+        session.SaveChanges();
 
-            var user = session.Query<User>(@"
+        var user = session.Query<User>(@"
 where data ->> 'FirstName' = 'Jeremy'").Single();
-            user.LastName.ShouldBe("Miller");
-            user.Id.ShouldBe(u.Id);
-        }
+        user.LastName.ShouldBe("Miller");
+        user.Id.ShouldBe(u.Id);
     }
 
     #region sample_query_with_matches_sql
@@ -281,16 +261,14 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
     [Fact]
     public void query_with_matches_sql()
     {
-        using (var session = theStore.OpenSession())
-        {
-            var u = new User {FirstName = "Eric", LastName = "Smith"};
-            session.Store(u);
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        var u = new User {FirstName = "Eric", LastName = "Smith"};
+        session.Store(u);
+        session.SaveChanges();
 
-            var user = session.Query<User>().Where(x => x.MatchesSql("data->> 'FirstName' = ?", "Eric")).Single();
-            user.LastName.ShouldBe("Smith");
-            user.Id.ShouldBe(u.Id);
-        }
+        var user = session.Query<User>().Where(x => x.MatchesSql("data->> 'FirstName' = ?", "Eric")).Single();
+        user.LastName.ShouldBe("Smith");
+        user.Id.ShouldBe(u.Id);
     }
 
     #endregion
@@ -298,47 +276,43 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
     [Fact]
     public void query_with_select_in_query()
     {
-        using (var session = theStore.OpenSession())
-        {
-            var u = new User {FirstName = "Jeremy", LastName = "Miller"};
-            session.Store(u);
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        var u = new User {FirstName = "Jeremy", LastName = "Miller"};
+        session.Store(u);
+        session.SaveChanges();
 
-            #region sample_use_all_your_own_sql
+        #region sample_use_all_your_own_sql
 
-            var user =
-                session.Query<User>("select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'")
-                    .Single();
+        var user =
+            session.Query<User>("select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'")
+                .Single();
 
-            #endregion
+        #endregion
 
-            user.LastName.ShouldBe("Miller");
-            user.Id.ShouldBe(u.Id);
-        }
+        user.LastName.ShouldBe("Miller");
+        user.Id.ShouldBe(u.Id);
     }
 
     [Fact]
     public async Task query_with_select_in_query_async()
     {
-        await using (var session = theStore.OpenSession())
-        {
-            var u = new User {FirstName = "Jeremy", LastName = "Miller"};
-            session.Store(u);
-            session.SaveChanges();
+        await using var session = theStore.LightweightSession();
+        var u = new User {FirstName = "Jeremy", LastName = "Miller"};
+        session.Store(u);
+        await session.SaveChangesAsync();
 
-            #region sample_using-queryasync
+        #region sample_using-queryasync
 
-            var users =
-                await
-                    session.QueryAsync<User>(
-                        "select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'");
-            var user = users.Single();
+        var users =
+            await
+                session.QueryAsync<User>(
+                    "select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'");
+        var user = users.Single();
 
-            #endregion
+        #endregion
 
-            user.LastName.ShouldBe("Miller");
-            user.Id.ShouldBe(u.Id);
-        }
+        user.LastName.ShouldBe("Miller");
+        user.Id.ShouldBe(u.Id);
     }
 
     [Fact]

@@ -19,7 +19,7 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
     {
         var random = Target.Random();
         var theString = random.String;
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Insert(random);
             session.SaveChanges();
@@ -47,7 +47,7 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
     {
         var random = Target.Random();
         var theString = random.String;
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Insert(random);
             await session.SaveChangesAsync();
@@ -55,7 +55,6 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
 
         await using (var session = theStore.QuerySession())
         {
-
             session.Query<Target>()
                 .Where(x => x.String.Equals(theString))
                 .ToList()
@@ -77,7 +76,7 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
     {
         var random = Target.Random();
         var theString = random.String;
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Insert(random);
             await session.SaveChangesAsync();
@@ -97,7 +96,6 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
                 .ToList()
                 .Count
                 .ShouldBe(1);
-
         }
     }
 
@@ -106,7 +104,7 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
     {
         var random = Target.Random();
         var theNumber = random.Number;
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Insert(random);
             await session.SaveChangesAsync();
@@ -114,7 +112,6 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
 
         await using (var session = theStore.QuerySession())
         {
-
             session.Query<Target>()
                 .Where(x => x.Number.Equals(theNumber))
                 .ToList()
@@ -134,7 +131,7 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
     {
         var random = Target.Random();
         var theNumber = random.Number;
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Insert(random);
             await session.SaveChangesAsync();
@@ -142,7 +139,6 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
 
         await using (var session = theStore.QuerySession())
         {
-
             session.Query<Target>()
                 .Where(x => x.Number == theNumber )
                 .ToList()

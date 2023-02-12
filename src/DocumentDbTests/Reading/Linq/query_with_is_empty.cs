@@ -16,9 +16,9 @@ public class query_with_is_empty : IntegrationContext
         var doc3 = Target.Random(false);
         var doc4 = Target.Random(true);
 
-        var empties = new Target[] {doc1, doc3}.OrderBy(x => x.Id).Select(x => x.Id).ToArray();
+        var empties = new[] {doc1, doc3}.OrderBy(x => x.Id).Select(x => x.Id).ToArray();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(doc1, doc2, doc3, doc4);
             session.SaveChanges();

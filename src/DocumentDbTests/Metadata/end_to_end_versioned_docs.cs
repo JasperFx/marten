@@ -16,18 +16,16 @@ public class end_to_end_versioned_docs: IntegrationContext
     {
         var doc = new AttVersionedDoc();
 
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(doc);
+        using var session = theStore.LightweightSession();
+        session.Store(doc);
 
-            session.VersionFor(doc).ShouldBeNull();
+        session.VersionFor(doc).ShouldBeNull();
 
-            session.SaveChanges();
+        session.SaveChanges();
 
-            session.VersionFor(doc).ShouldNotBeNull();
-            doc.Version.ShouldNotBe(Guid.Empty);
-            doc.Version.ShouldBe(session.VersionFor(doc).Value);
-        }
+        session.VersionFor(doc).ShouldNotBeNull();
+        doc.Version.ShouldNotBe(Guid.Empty);
+        doc.Version.ShouldBe(session.VersionFor(doc).Value);
     }
 
     [Fact]
@@ -35,26 +33,24 @@ public class end_to_end_versioned_docs: IntegrationContext
     {
         var doc = new AttVersionedDoc();
 
-        await using (var session = theStore.OpenSession())
-        {
-            session.Store(doc);
+        await using var session = theStore.LightweightSession();
+        session.Store(doc);
 
-            session.VersionFor(doc).ShouldBeNull();
+        session.VersionFor(doc).ShouldBeNull();
 
-            await session.SaveChangesAsync();
+        await session.SaveChangesAsync();
 
-            session.VersionFor(doc).ShouldNotBeNull();
-            doc.Version.ShouldNotBe(Guid.Empty);
-            doc.Version.ShouldBe(session.VersionFor(doc).Value);
-        }
+        session.VersionFor(doc).ShouldNotBeNull();
+        doc.Version.ShouldNotBe(Guid.Empty);
+        doc.Version.ShouldBe(session.VersionFor(doc).Value);
     }
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
     public void overwrite_behavior()
     {
-        Guid originalVerion = Guid.Empty;
+        var originalVerion = Guid.Empty;
         var doc = new AttVersionedDoc();
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(doc);
 
@@ -70,8 +66,8 @@ public class end_to_end_versioned_docs: IntegrationContext
 
         try
         {
-            session1 = theStore.OpenSession();
-            session2 = theStore.OpenSession(new SessionOptions
+            session1 = theStore.LightweightSession();
+            session2 = theStore.LightweightSession(new SessionOptions
             {
                 ConcurrencyChecks = ConcurrencyChecks.Disabled
             });
@@ -103,9 +99,9 @@ public class end_to_end_versioned_docs: IntegrationContext
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
     public void overwrite_behavior_with_props()
     {
-        Guid originalVerion = Guid.Empty;
+        var originalVerion = Guid.Empty;
         var doc = new PropVersionedDoc();
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(doc);
 
@@ -121,8 +117,8 @@ public class end_to_end_versioned_docs: IntegrationContext
 
         try
         {
-            session1 = theStore.OpenSession();
-            session2 = theStore.OpenSession(new SessionOptions
+            session1 = theStore.LightweightSession();
+            session2 = theStore.LightweightSession(new SessionOptions
             {
                 ConcurrencyChecks = ConcurrencyChecks.Disabled
             });
@@ -154,9 +150,9 @@ public class end_to_end_versioned_docs: IntegrationContext
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
     public async Task overwrite_behavior_async()
     {
-        Guid originalVerion = Guid.Empty;
+        var originalVerion = Guid.Empty;
         var doc = new AttVersionedDoc();
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Store(doc);
 
@@ -172,8 +168,8 @@ public class end_to_end_versioned_docs: IntegrationContext
 
         try
         {
-            session1 = theStore.OpenSession();
-            session2 = theStore.OpenSession(new SessionOptions
+            session1 = theStore.LightweightSession();
+            session2 = theStore.LightweightSession(new SessionOptions
             {
                 ConcurrencyChecks = ConcurrencyChecks.Disabled
             });

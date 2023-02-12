@@ -17,7 +17,7 @@ public class CodeGenIEventIssue: BugIntegrationContext
             _.Projections.Add(new FooProjection());
         });
 
-        using var session = store.OpenSession();
+        using var session = store.LightweightSession();
         session.Events.Append(Guid.NewGuid(), new FooCreated { Id = Guid.NewGuid() });
         session.SaveChanges();
     }
@@ -30,7 +30,7 @@ public class CodeGenIEventIssue: BugIntegrationContext
             _.Projections.Add(new RecordProjection());
         });
 
-        using var session = store.OpenSession();
+        using var session = store.LightweightSession();
         var id = Guid.NewGuid();
         session.Events.Append(id, new RecordLogCreated(id));
         session.Events.Append(id, new RecordLogUpdated(id));

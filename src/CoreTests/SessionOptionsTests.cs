@@ -198,12 +198,10 @@ public class SessionOptionsTests : OneOffConfigurationsContext
             c.Connection(connectionStringBuilder.ToString());
         });
 
-        using (var query = documentStore.OpenSession())
-        {
-            var cmd = query.Query<FryGuy>().Explain();
-            Assert.Equal(1, cmd.Command.CommandTimeout);
-            Assert.Equal(1, query.Connection.CommandTimeout);
-        }
+        using var query = documentStore.LightweightSession();
+        var cmd = query.Query<FryGuy>().Explain();
+        Assert.Equal(1, cmd.Command.CommandTimeout);
+        Assert.Equal(1, query.Connection.CommandTimeout);
     }
 
     [Fact]

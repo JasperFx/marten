@@ -32,21 +32,19 @@ public class Bug_2018_fts_string_list: BugIntegrationContext
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
     public void can_do_index_with_full_text_search()
     {
-        using (var session = theStore.OpenSession())
+        using var session = theStore.LightweightSession();
+        session.Store(new BugFullTextSearchFields()
         {
-            session.Store(new BugFullTextSearchFields()
+            Id = Guid.NewGuid(),
+            Text = "Hello my Darling, this is a long text",
+            Data = new List<string>()
             {
-                Id = Guid.NewGuid(),
-                Text = "Hello my Darling, this is a long text",
-                Data = new List<string>()
-                {
-                    "Foo",
-                    "VeryLongEntry",
-                    "Baz"
-                },
-            });
+                "Foo",
+                "VeryLongEntry",
+                "Baz"
+            },
+        });
 
-            session.SaveChanges();
-        }
+        session.SaveChanges();
     }
 }

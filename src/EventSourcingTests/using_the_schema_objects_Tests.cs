@@ -21,7 +21,7 @@ public class using_the_schema_objects_Tests : OneOffConfigurationsContext
                    opts.DatabaseSchemaName = "samples";
                }))
         {
-            using (var session = store1.OpenSession())
+            using (var session = store1.LightweightSession())
             {
                 session.Events.StartStream<Quest>(id, new QuestStarted { Name = "Destroy the Orb" },
                     new MonsterSlayed { Name = "Troll" }, new MonsterSlayed { Name = "Dragon" });
@@ -41,7 +41,7 @@ public class using_the_schema_objects_Tests : OneOffConfigurationsContext
         });
         #endregion
 
-        using (var session = store2.OpenSession())
+        using (var session = store2.LightweightSession())
         {
             session.Events.FetchStream(id).Count.ShouldBe(3);
         }

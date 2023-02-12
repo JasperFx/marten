@@ -18,7 +18,7 @@ public class disabling_default_tenant_usage : OneOffConfigurationsContext
 
         Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
         {
-            using (var session = theStore.OpenSession()) { }
+            using (var session = theStore.LightweightSession()) { }
         });
     }
 
@@ -32,7 +32,7 @@ public class disabling_default_tenant_usage : OneOffConfigurationsContext
 
         Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
         {
-            using (var session = theStore.QuerySession()) { }
+            using (var session = theStore.LightweightSession()) { }
         });
     }
 
@@ -46,7 +46,7 @@ public class disabling_default_tenant_usage : OneOffConfigurationsContext
 
         Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
         {
-            using (var session = theStore.OpenSession(Tenancy.DefaultTenantId)) { }
+            using (var session = theStore.LightweightSession(Tenancy.DefaultTenantId)) { }
         });
     }
 
@@ -60,7 +60,7 @@ public class disabling_default_tenant_usage : OneOffConfigurationsContext
 
         Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
         {
-            using (var session = theStore.QuerySession(Tenancy.DefaultTenantId)) { }
+            using (var session = theStore.LightweightSession(Tenancy.DefaultTenantId)) { }
         });
     }
 
@@ -75,7 +75,7 @@ public class disabling_default_tenant_usage : OneOffConfigurationsContext
         Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
         {
             var sessionOptions = new SessionOptions {TenantId = Tenancy.DefaultTenantId};
-            using (var session = theStore.OpenSession(sessionOptions)) { }
+            using (var session = theStore.LightweightSession(sessionOptions)) { }
         });
     }
 

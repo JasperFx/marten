@@ -34,11 +34,9 @@ public class StringNotVisitorTests : IntegrationContext
     [InlineData("zap", StringComparison.CurrentCulture, 4)]
     public void CanQueryByNotEquals(string search, StringComparison comparison, int expectedCount)
     {
-        using (var s = theStore.OpenSession())
-        {
-            var fromDb = s.Query<User>().Where(x => !x.FirstName.Equals(search, comparison)).ToList();
-            Assert.Equal(expectedCount, fromDb.Count);
-        }
+        using var s = theStore.QuerySession();
+        var fromDb = s.Query<User>().Where(x => !x.FirstName.Equals(search, comparison)).ToList();
+        Assert.Equal(expectedCount, fromDb.Count);
     }
 
     [Theory]
@@ -46,11 +44,9 @@ public class StringNotVisitorTests : IntegrationContext
     [InlineData("zap", StringComparison.CurrentCulture, 4)]
     public void CanQueryByNotContains(string search, StringComparison comparison, int expectedCount)
     {
-        using (var s = theStore.OpenSession())
-        {
-            var fromDb = s.Query<User>().Where(x => !x.FirstName.Contains(search, comparison)).ToList();
-            Assert.Equal(expectedCount, fromDb.Count);
-        }
+        using var s = theStore.QuerySession();
+        var fromDb = s.Query<User>().Where(x => !x.FirstName.Contains(search, comparison)).ToList();
+        Assert.Equal(expectedCount, fromDb.Count);
     }
 
     [Theory]
@@ -58,13 +54,10 @@ public class StringNotVisitorTests : IntegrationContext
     [InlineData("zap", StringComparison.CurrentCulture, 4)]
     public void CanQueryByNotStartsWith(string search, StringComparison comparison, int expectedCount)
     {
-        using (var s = theStore.OpenSession())
-        {
-            var fromDb = s.Query<User>().Where(x => !x.FirstName.StartsWith(search, comparison)).ToList();
-            Assert.Equal(expectedCount, fromDb.Count);
-        }
+        using var s = theStore.QuerySession();
+        var fromDb = s.Query<User>().Where(x => !x.FirstName.StartsWith(search, comparison)).ToList();
+        Assert.Equal(expectedCount, fromDb.Count);
     }
-
 
     [Theory]
     [InlineData("hod", StringComparison.OrdinalIgnoreCase, 3)]
@@ -72,11 +65,9 @@ public class StringNotVisitorTests : IntegrationContext
     [InlineData("Hod", StringComparison.CurrentCulture, 4)]
     public void CanQueryByNotEndsWith(string search, StringComparison comparison, int expectedCount)
     {
-        using (var s = theStore.OpenSession())
-        {
-            var fromDb = s.Query<User>().Where(x => !x.FirstName.EndsWith(search, comparison)).ToList();
-            Assert.Equal(expectedCount, fromDb.Count);
-        }
+        using var s = theStore.QuerySession();
+        var fromDb = s.Query<User>().Where(x => !x.FirstName.EndsWith(search, comparison)).ToList();
+        Assert.Equal(expectedCount, fromDb.Count);
     }
 
     [Theory]
@@ -84,10 +75,8 @@ public class StringNotVisitorTests : IntegrationContext
     [InlineData("zap", "hod", StringComparison.CurrentCulture, 0)]
     public void CanMixContainsAndNotContains(string contains, string notContains, StringComparison comparison, int expectedCount)
     {
-        using (var s = theStore.OpenSession())
-        {
-            var fromDb = s.Query<User>().Where(x => !x.FirstName.Contains(notContains, comparison) && x.FirstName.Contains(contains, comparison)).ToList();
-            Assert.Equal(expectedCount, fromDb.Count);
-        }
+        using var s = theStore.QuerySession();
+        var fromDb = s.Query<User>().Where(x => !x.FirstName.Contains(notContains, comparison) && x.FirstName.Contains(contains, comparison)).ToList();
+        Assert.Equal(expectedCount, fromDb.Count);
     }
 }

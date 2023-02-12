@@ -58,7 +58,7 @@ namespace Marten.AsyncDaemon.Testing.Bugs
 
         private static async Task insertUserWithSameIdInOtherTenant(DocumentStore documentStore, Guid userId)
         {
-            await using var defaultSession = documentStore.OpenSession();
+            await using var defaultSession = documentStore.LightweightSession();
             defaultSession.Store(new User { Id = userId, FirstName = "Somebody", LastName = "Else" });
             await defaultSession.SaveChangesAsync();
         }

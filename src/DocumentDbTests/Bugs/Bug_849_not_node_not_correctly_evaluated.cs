@@ -34,13 +34,10 @@ public class Bug_849_not_node_not_correctly_evaluated: IntegrationContext
         theSession.Store(flagFalse, flagTrue);
         theSession.SaveChanges();
 
-        using (var s = theStore.OpenSession())
-        {
-            var items = s.Query<TestClass>().Where(x => !x.Flag == false).ToList();
+        using var s = theStore.QuerySession();
+        var items = s.Query<TestClass>().Where(x => !x.Flag == false).ToList();
 
-            items.Single().Id.ShouldBe(flagTrue.Id);
-
-        }
+        items.Single().Id.ShouldBe(flagTrue.Id);
     }
 
     public Bug_849_not_node_not_correctly_evaluated(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)

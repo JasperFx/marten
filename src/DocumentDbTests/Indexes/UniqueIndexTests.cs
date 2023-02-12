@@ -72,21 +72,19 @@ public class UniqueIndexTests : OneOffConfigurationsContext
         var secondDocument = new UniqueUser { Id = Guid.NewGuid(), Email = "some.mail@outlook.com", FirstName = "John", Surname = "Doe" };
 
 
-        using (var session = theStore.OpenSession())
-        {
-            //2. Save documents
-            session.Store(firstDocument);
-            session.Store(secondDocument);
+        using var session = theStore.LightweightSession();
+        //2. Save documents
+        session.Store(firstDocument);
+        session.Store(secondDocument);
 
-            //3. Unique Exception Was thrown
-            try
-            {
-                session.SaveChanges();
-            }
-            catch (DocumentAlreadyExistsException exception)
-            {
-                ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
-            }
+        //3. Unique Exception Was thrown
+        try
+        {
+            session.SaveChanges();
+        }
+        catch (DocumentAlreadyExistsException exception)
+        {
+            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
         }
     }
 
@@ -98,21 +96,19 @@ public class UniqueIndexTests : OneOffConfigurationsContext
         var firstDocument = new UniqueUser { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Smith" };
         var secondDocument = new UniqueUser { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Doe" };
 
-        using (var session = theStore.OpenSession())
-        {
-            //2. Save documents
-            session.Store(firstDocument);
-            session.Store(secondDocument);
+        using var session = theStore.LightweightSession();
+        //2. Save documents
+        session.Store(firstDocument);
+        session.Store(secondDocument);
 
-            //3. Unique Exception Was thrown
-            try
-            {
-                session.SaveChanges();
-            }
-            catch (DocumentAlreadyExistsException exception)
-            {
-                ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
-            }
+        //3. Unique Exception Was thrown
+        try
+        {
+            session.SaveChanges();
+        }
+        catch (DocumentAlreadyExistsException exception)
+        {
+            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
         }
     }
 
@@ -123,21 +119,19 @@ public class UniqueIndexTests : OneOffConfigurationsContext
         var firstEvent = new UserCreated { UserId = Guid.NewGuid(), Email = "john.doe@gmail.com", FirstName = "John", Surname = "Doe" };
         var secondEvent = new UserCreated { UserId = Guid.NewGuid(), Email = "some.mail@outlook.com", FirstName = "John", Surname = "Doe" };
 
-        using (var session = theStore.OpenSession())
-        {
-            //2. Publish Events
-            session.Events.Append(firstEvent.UserId, firstEvent);
-            session.Events.Append(secondEvent.UserId, secondEvent);
+        using var session = theStore.LightweightSession();
+        //2. Publish Events
+        session.Events.Append(firstEvent.UserId, firstEvent);
+        session.Events.Append(secondEvent.UserId, secondEvent);
 
-            //3. Unique Exception Was thrown
-            try
-            {
-                session.SaveChanges();
-            }
-            catch (Marten.Exceptions.MartenCommandException exception)
-            {
-                ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
-            }
+        //3. Unique Exception Was thrown
+        try
+        {
+            session.SaveChanges();
+        }
+        catch (MartenCommandException exception)
+        {
+            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
         }
     }
 
@@ -149,21 +143,19 @@ public class UniqueIndexTests : OneOffConfigurationsContext
         var firstEvent = new UserCreated { UserId = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Smith" };
         var secondEvent = new UserCreated { UserId = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Doe" };
 
-        using (var session = theStore.OpenSession())
-        {
-            //2. Publish Events
-            session.Events.Append(firstEvent.UserId, firstEvent);
-            session.Events.Append(secondEvent.UserId, secondEvent);
+        using var session = theStore.LightweightSession();
+        //2. Publish Events
+        session.Events.Append(firstEvent.UserId, firstEvent);
+        session.Events.Append(secondEvent.UserId, secondEvent);
 
-            //3. Unique Exception Was thrown
-            try
-            {
-                session.SaveChanges();
-            }
-            catch (DocumentAlreadyExistsException exception)
-            {
-                ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
-            }
+        //3. Unique Exception Was thrown
+        try
+        {
+            session.SaveChanges();
+        }
+        catch (DocumentAlreadyExistsException exception)
+        {
+            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
         }
     }
 

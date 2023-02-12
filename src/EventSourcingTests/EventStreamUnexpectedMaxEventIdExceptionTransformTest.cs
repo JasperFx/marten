@@ -29,7 +29,7 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
         {
             await Parallel.ForEachAsync(Enumerable.Range(1, 5), async (_, token) =>
             {
-                await using var session = theStore.OpenSession();
+                await using var session = theStore.LightweightSession();
                 session.Events.Append(streamId, departed);
                 await session.SaveChangesAsync(token);
             });
@@ -56,7 +56,7 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
         {
             await Parallel.ForEachAsync(Enumerable.Range(1, 30), async (_, token) =>
             {
-                await using var session = theStore.OpenSession();
+                await using var session = theStore.LightweightSession();
                 session.Events.Append(streamId, departed);
                 await session.SaveChangesAsync(token);
             });

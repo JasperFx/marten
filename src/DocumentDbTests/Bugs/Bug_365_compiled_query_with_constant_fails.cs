@@ -81,20 +81,18 @@ public class Bug_365_compiled_query_with_constant_fails: BugIntegrationContext
 
     private void AddRoutes(int number)
     {
-        using (var session = theStore.OpenSession())
+        using var session = theStore.LightweightSession();
+        for (var index = 0; index < number; index++)
         {
-            for (var index = 0; index < number; index++)
+            var route = new Route();
+            if (index % 2 == 0)
             {
-                var route = new Route();
-                if (index % 2 == 0)
-                {
-                    route.Plan(DateTime.Today.AddDays(index + 1));
-                }
-
-                session.Store(route);
+                route.Plan(DateTime.Today.AddDays(index + 1));
             }
 
-            session.SaveChanges();
+            session.Store(route);
         }
+
+        session.SaveChanges();
     }
 }

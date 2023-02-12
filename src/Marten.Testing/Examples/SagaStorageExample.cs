@@ -15,14 +15,12 @@ public class SagaStorageExample
     {
         // The session below will open its connection and start a
         // serializable transaction
-        using (var session = store.DirtyTrackedSession(IsolationLevel.Serializable))
-        {
-            var state = session.Load<MySagaState>(sagaId);
+        using var session = store.DirtyTrackedSession(IsolationLevel.Serializable);
+        var state = session.Load<MySagaState>(sagaId);
 
-            // do some work against the saga
+        // do some work against the saga
 
-            session.SaveChanges();
-        }
+        session.SaveChanges();
     }
 
     #endregion

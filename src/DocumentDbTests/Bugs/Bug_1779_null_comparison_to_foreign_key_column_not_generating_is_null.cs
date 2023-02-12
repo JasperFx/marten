@@ -32,9 +32,9 @@ namespace DocumentDbTests.Bugs
                     .ForeignKey<HierarchyEntity>(m => m.ParentId);
             });
 
-            documentStore.Advanced.Clean.DeleteAllDocuments();
+            await documentStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
-            await using var session = documentStore.OpenSession();
+            await using var session = documentStore.LightweightSession();
             session.Store(new HierarchyEntity {Name = "Test", ParentId = null});
 
             await session.SaveChangesAsync();
@@ -63,7 +63,7 @@ namespace DocumentDbTests.Bugs
 
             var parentId = Guid.NewGuid();
 
-            await using var session = documentStore.OpenSession();
+            await using var session = documentStore.LightweightSession();
             session.Store(new HierarchyEntity {Id = parentId, Name = "Parent"}, new HierarchyEntity {Name = "Test", ParentId = parentId});
 
             await session.SaveChangesAsync();

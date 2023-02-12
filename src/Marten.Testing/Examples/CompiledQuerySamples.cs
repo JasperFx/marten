@@ -48,9 +48,7 @@ public class samples
     public samples(ITestOutputHelper output)
     {
         _output = output;
-
     }
-
 }
 
 public class FindByName: ICompiledListQuery<User>

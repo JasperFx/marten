@@ -87,13 +87,13 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         InitStore(tenancyStyle);
 
         Guid stream = Guid.NewGuid();
-        using (var session = theStore.OpenSession("Green"))
+        using (var session = theStore.LightweightSession("Green"))
         {
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession("Green"))
+        using (var session = theStore.LightweightSession("Green"))
         {
             var events = session.Events.FetchStream(stream);
             foreach (var @event in events)
@@ -110,13 +110,13 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         InitStore(tenancyStyle);
 
         Guid stream = Guid.NewGuid();
-        await using (var session = theStore.OpenSession("Green"))
+        await using (var session = theStore.LightweightSession("Green"))
         {
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
             await session.SaveChangesAsync();
         }
 
-        await using (var session = theStore.OpenSession("Green"))
+        await using (var session = theStore.LightweightSession("Green"))
         {
             var events = await session.Events.FetchStreamAsync(stream);
             foreach (var @event in events)
@@ -133,13 +133,13 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         InitStore(tenancyStyle, StreamIdentity.AsString);
 
         var stream = "SomeStream";
-        using (var session = theStore.OpenSession("Green"))
+        using (var session = theStore.LightweightSession("Green"))
         {
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession("Green"))
+        using (var session = theStore.LightweightSession("Green"))
         {
             var events = session.Events.FetchStream(stream);
             foreach (var @event in events)
@@ -156,13 +156,13 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         InitStore(tenancyStyle, StreamIdentity.AsString);
 
         var stream = "SomeStream";
-        await using (var session = theStore.OpenSession("Green"))
+        await using (var session = theStore.LightweightSession("Green"))
         {
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
             await session.SaveChangesAsync();
         }
 
-        await using (var session = theStore.OpenSession("Green"))
+        await using (var session = theStore.LightweightSession("Green"))
         {
             var events = await session.Events.FetchStreamAsync(stream);
             foreach (var @event in events)
@@ -179,21 +179,21 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         InitStore(tenancyStyle);
 
         Guid stream = Guid.NewGuid();
-        using (var session = theStore.OpenSession("Green"))
+        using (var session = theStore.LightweightSession("Green"))
         {
             session.Logger = new TestOutputMartenLogger(_output);
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession("Green"))
+        using (var session = theStore.LightweightSession("Green"))
         {
             session.Logger = new TestOutputMartenLogger(_output);
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession("Green"))
+        using (var session = theStore.LightweightSession("Green"))
         {
             var events = session.Events.FetchStream(stream);
             foreach (var @event in events)
@@ -210,7 +210,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         InitStore(TenancyStyle.Conjoined);
 
         Guid stream = Guid.NewGuid();
-        using (var session = theStore.OpenSession("Green"))
+        using (var session = theStore.LightweightSession("Green"))
         {
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
             session.SaveChanges();
@@ -218,7 +218,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
         Should.NotThrow(() =>
         {
-            using (var session = theStore.OpenSession("Red"))
+            using (var session = theStore.LightweightSession("Red"))
             {
                 session.Events.Append(stream, new MembersJoined(), new MembersJoined());
                 session.SaveChanges();
@@ -233,13 +233,13 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
         theStore.Advanced.Clean.DeleteAllEventData();
 
-        using (var session = theStore.OpenSession("Green"))
+        using (var session = theStore.LightweightSession("Green"))
         {
             session.Events.Append(Guid.NewGuid(), new MembersJoined());
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession("Red"))
+        using (var session = theStore.LightweightSession("Red"))
         {
             session.Events.Append(Guid.NewGuid(), new MembersJoined());
             session.SaveChanges();
@@ -271,73 +271,73 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
     {
         {
             StreamIdentity.AsGuid,
-            s => s.OpenSession(),
+            s => s.LightweightSession(),
             s => { s.Events.StartStream(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); },
             s => { s.Events.Append(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); }
         },
         {
             StreamIdentity.AsGuid,
-            s => s.OpenSession("Green"),
+            s => s.LightweightSession("Green"),
             s => { s.Events.StartStream(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); },
             s => { s.Events.Append(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); }
         },
         {
             StreamIdentity.AsGuid,
-            s => s.OpenSession(),
+            s => s.LightweightSession(),
             s => { s.Events.StartStream(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); },
             s => { s.Events.AppendOptimistic(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()).GetAwaiter().GetResult(); }
         },
         {
             StreamIdentity.AsGuid,
-            s => s.OpenSession("Green"),
+            s => s.LightweightSession("Green"),
             s => { s.Events.StartStream(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); },
             s => { s.Events.AppendOptimistic(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()).GetAwaiter().GetResult(); }
         },
         {
             StreamIdentity.AsGuid,
-            s => s.OpenSession(),
+            s => s.LightweightSession(),
             s => { s.Events.StartStream(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); },
             s => { s.Events.AppendExclusive(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()).GetAwaiter().GetResult(); }
         },
         {
             StreamIdentity.AsGuid,
-            s => s.OpenSession("Green"),
+            s => s.LightweightSession("Green"),
             s => { s.Events.StartStream(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()); },
             s => { s.Events.AppendExclusive(Guid.Parse("0b60936d-1be0-4378-8e4c-275263e123d1"), new MembersJoined()).GetAwaiter().GetResult(); }
         },
         {
             StreamIdentity.AsString,
-            s => s.OpenSession(),
+            s => s.LightweightSession(),
             s => { s.Events.StartStream("Stream", new MembersJoined()); },
             s => { s.Events.Append("Stream", new MembersJoined()); }
         },
         {
             StreamIdentity.AsString,
-            s => s.OpenSession("Green"),
+            s => s.LightweightSession("Green"),
             s => { s.Events.StartStream("Stream", new MembersJoined()); },
             s => { s.Events.Append("Stream", new MembersJoined()); }
         },
         {
             StreamIdentity.AsString,
-            s => s.OpenSession(),
+            s => s.LightweightSession(),
             s => { s.Events.StartStream("Stream", new MembersJoined()); },
             s => { s.Events.AppendOptimistic("Stream", new MembersJoined()).GetAwaiter().GetResult(); }
         },
         {
             StreamIdentity.AsString,
-            s => s.OpenSession("Green"),
+            s => s.LightweightSession("Green"),
             s => { s.Events.StartStream("Stream", new MembersJoined()); },
             s => { s.Events.AppendOptimistic("Stream", new MembersJoined()).GetAwaiter().GetResult(); }
         },
         {
             StreamIdentity.AsString,
-            s => s.OpenSession(),
+            s => s.LightweightSession(),
             s => { s.Events.StartStream("Stream", new MembersJoined()); },
             s => { s.Events.AppendExclusive("Stream", new MembersJoined()).GetAwaiter().GetResult(); }
         },
         {
             StreamIdentity.AsString,
-            s => s.OpenSession("Green"),
+            s => s.LightweightSession("Green"),
             s => { s.Events.StartStream("Stream", new MembersJoined()); },
             s => { s.Events.AppendExclusive("Stream", new MembersJoined()).GetAwaiter().GetResult(); }
         },
@@ -345,31 +345,31 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
     [Theory]
     [MemberData(nameof(WillParameterizeTenantId))]
-    public void will_parameterize_tenant_id_when_checking_stream_version(StreamIdentity streamIdentity, Func<DocumentStore, IDocumentSession> openSession, Action<IDocumentSession> startStream, Action<IDocumentSession> append)
+    public void will_parameterize_tenant_id_when_checking_stream_version(StreamIdentity streamIdentity, Func<DocumentStore, IDocumentSession> LightweightSession, Action<IDocumentSession> startStream, Action<IDocumentSession> append)
     {
         InitStore(TenancyStyle.Conjoined, streamIdentity);
         theStore.Advanced.Clean.DeleteAllEventData();
 
         var streamId = Guid.NewGuid();
-        using (var session = openSession(theStore))
+        using (var session = LightweightSession(theStore))
         {
             startStream(session);
             session.SaveChanges();
         }
 
-        using (var session = openSession(theStore))
+        using (var session = LightweightSession(theStore))
         {
             append(session);
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession("Red"))
+        using (var session = theStore.LightweightSession("Red"))
         {
             startStream(session);
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession("Red"))
+        using (var session = theStore.LightweightSession("Red"))
         {
             append(session);
             session.SaveChanges();

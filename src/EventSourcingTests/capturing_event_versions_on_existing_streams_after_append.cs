@@ -43,7 +43,7 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
 
         Guid streamId = Guid.NewGuid();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Logger = logger;
 
@@ -62,7 +62,7 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
             events.Select(x => x.Sequence).Distinct().Count().ShouldBe(2);
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Logger = logger;
 
@@ -76,7 +76,7 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
                 .ShouldHaveTheSameElementsAs(3, 4);
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Logger = logger;
 
@@ -97,7 +97,7 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
         var logger = new RecordingSessionLogger();
         Guid streamId = Guid.NewGuid();
 
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Logger = logger;
 
@@ -111,7 +111,7 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
                 .ShouldHaveTheSameElementsAs(1, 2);
         }
 
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Logger = logger;
 
@@ -125,7 +125,7 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
                 .ShouldHaveTheSameElementsAs(3, 4);
         }
 
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             session.Logger = logger;
 

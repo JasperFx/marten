@@ -131,7 +131,7 @@ You can always fetch a stream of events and build an aggregate completely live f
 <!-- snippet: sample_events-aggregate-on-the-fly -->
 <a id='snippet-sample_events-aggregate-on-the-fly'></a>
 ```cs
-await using (var session = store.OpenSession())
+await using (var session = store.LightweightSession())
 {
     // questId is the id of the stream
     var party = session.Events.AggregateStream<QuestParty>(questId);

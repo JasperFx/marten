@@ -89,7 +89,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     [Fact]
     public void initial_state_of_deleted_columns()
     {
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         var user = new User();
         session.Store(user);
         session.SaveChanges();
@@ -124,7 +124,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     [Fact]
     public void soft_delete_a_document_row_state()
     {
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         var user = new User();
         session.Store(user);
         session.SaveChanges();
@@ -138,7 +138,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     [Fact]
     public void hard_delete_a_document_row_state()
     {
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         var user = new User();
         session.Store(user);
         session.SaveChanges();
@@ -173,7 +173,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     [Fact]
     public void hard_delete_a_document_row_state_int()
     {
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         var doc = new IntDoc();
         session.Store(doc);
         session.SaveChanges();
@@ -187,7 +187,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     [Fact]
     public void hard_delete_a_document_row_state_long()
     {
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         var doc = new LongDoc();
         session.Store(doc);
         session.SaveChanges();
@@ -201,7 +201,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     [Fact]
     public void hard_delete_a_document_row_state_string()
     {
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         var doc = new StringDoc{Id = Guid.NewGuid().ToString()};
         session.Store(doc);
         session.SaveChanges();
@@ -232,7 +232,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         var user2 = new User { UserName = "bar" };
         var user3 = new User { UserName = "baz" };
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3);
         session.SaveChanges();
 
@@ -251,7 +251,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         var user2 = new User { UserName = "bar" };
         var user3 = new User { UserName = "baz" };
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         session.Logger = new TestOutputMartenLogger(_output);
 
         session.Store(user1, user2, user3);
@@ -281,7 +281,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         var user3 = new User { UserName = "baz" };
         var user4 = new User { UserName = "jack" };
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
         session.SaveChanges();
 
@@ -309,7 +309,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         var user3 = new User { UserName = "baz" };
         var user4 = new User { UserName = "jack" };
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
         session.SaveChanges();
 
@@ -339,7 +339,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         var user3 = new User { UserName = "baz" };
         var user4 = new User { UserName = "jack" };
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
         session.SaveChanges();
 
@@ -369,7 +369,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         var user3 = new User { UserName = "baz" };
         var user4 = new User { UserName = "jack" };
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
         session.SaveChanges();
 
@@ -394,7 +394,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         var user3 = new User { UserName = "baz" };
         var user4 = new User { UserName = "jack" };
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
         session.SaveChanges();
 
@@ -420,7 +420,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         var user3 = new User { UserName = "baz" };
         var user4 = new User { UserName = "jack" };
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
         session.SaveChanges();
 
@@ -446,7 +446,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         var user4 = new SuperUser { UserName = "jack" };
         var user5 = new AdminUser { UserName = "admin" };
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         session.StoreObjects(new User[] { user1, user2, user3, user4, user5 });
         session.SaveChanges();
 
@@ -472,7 +472,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         var user4 = new SuperUser { UserName = "jack" };
         var user5 = new AdminUser { UserName = "admin" };
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         session.StoreObjects(new User[] { user1, user2, user3, user4, user5 });
         session.SaveChanges();
 
@@ -500,7 +500,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         var user4 = new SuperUser { UserName = "jack" };
         var user5 = new AdminUser { UserName = "admin" };
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         session.StoreObjects(new User[] { user1, user2, user3, user4, user5 });
         session.SaveChanges();
 
@@ -521,7 +521,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     [Fact]
     public void soft_deleted_documents_work_with_linq_include()
     {
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
 
         var user = new User();
         session.Store(user);

@@ -41,27 +41,25 @@ public class Bug_1245_include_plus_full_text_search: BugIntegrationContext
     {
         var term = "content";
         var userDictionary = new Dictionary<Guid, Bug1245User>();
-        using (var session = theStore.OpenSession())
+        using var session = theStore.LightweightSession();
+        for (var i = 0; i < 3; i++)
         {
-            for (var i = 0; i < 3; i++)
-            {
-                var newUser = new Bug1245User(Guid.NewGuid(), $"Test user {i}");
-                var newEmail = new Email(Guid.NewGuid(), newUser.Id, $"Some content {i} {newUser.Name} ");
+            var newUser = new Bug1245User(Guid.NewGuid(), $"Test user {i}");
+            var newEmail = new Email(Guid.NewGuid(), newUser.Id, $"Some content {i} {newUser.Name} ");
 
-                session.Store(newUser);
-                session.Store(newEmail);
-            }
-
-            session.SaveChanges();
-
-            var query = session.Query<Email>()
-                .Include(x => x.UserId, userDictionary)
-                //.Where(x => x.Content.PlainTextSearch(term)).ToList();
-                //.Where(x => x.Content.Search(term)).ToList();
-                .Where(x => x.Content.PhraseSearch(term)).ToList();
-
-            query.ShouldNotBeNull();
+            session.Store(newUser);
+            session.Store(newEmail);
         }
+
+        session.SaveChanges();
+
+        var query = session.Query<Email>()
+            .Include(x => x.UserId, userDictionary)
+            //.Where(x => x.Content.PlainTextSearch(term)).ToList();
+            //.Where(x => x.Content.Search(term)).ToList();
+            .Where(x => x.Content.PhraseSearch(term)).ToList();
+
+        query.ShouldNotBeNull();
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -69,27 +67,25 @@ public class Bug_1245_include_plus_full_text_search: BugIntegrationContext
     {
         var term = "content";
         var userDictionary = new Dictionary<Guid, Bug1245User>();
-        await using (var session = theStore.OpenSession())
+        await using var session = theStore.LightweightSession();
+        for (var i = 0; i < 3; i++)
         {
-            for (var i = 0; i < 3; i++)
-            {
-                var newUser = new Bug1245User(Guid.NewGuid(), $"Test user {i}");
-                var newEmail = new Email(Guid.NewGuid(), newUser.Id, $"Some content {i} {newUser.Name} ");
+            var newUser = new Bug1245User(Guid.NewGuid(), $"Test user {i}");
+            var newEmail = new Email(Guid.NewGuid(), newUser.Id, $"Some content {i} {newUser.Name} ");
 
-                session.Store(newUser);
-                session.Store(newEmail);
-            }
-
-            await session.SaveChangesAsync();
-
-            var query = await session.Query<Email>()
-                .Include(x => x.UserId, userDictionary)
-                //.Where(x => x.Content.PlainTextSearch(term)).ToList();
-                //.Where(x => x.Content.Search(term)).ToList();
-                .Where(x => x.Content.PhraseSearch(term)).ToListAsync();
-
-            query.ShouldNotBeNull();
+            session.Store(newUser);
+            session.Store(newEmail);
         }
+
+        await session.SaveChangesAsync();
+
+        var query = await session.Query<Email>()
+            .Include(x => x.UserId, userDictionary)
+            //.Where(x => x.Content.PlainTextSearch(term)).ToList();
+            //.Where(x => x.Content.Search(term)).ToList();
+            .Where(x => x.Content.PhraseSearch(term)).ToListAsync();
+
+        query.ShouldNotBeNull();
     }
 
 }

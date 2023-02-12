@@ -38,18 +38,17 @@ public class persist_and_query_via_dynamic: IntegrationContext
         // Persist our records
         theStore.BulkInsertDocuments(docs);
 
-        using (var session = theStore.OpenSession())
-        {
-            // Read back the data for "aisle-1"
-            dynamic[] tempsFromDb = session.Query(typeof(TemperatureData),
-                "where data->'Values'->>'detector' = :sensor OR data->'Values'->>'sensor' = :sensor",
-                new {sensor = "aisle-1"}).ToArray();
+        using var session = theStore.QuerySession();
+        // Read back the data for "aisle-1"
+        dynamic[] tempsFromDb = session.Query(typeof(TemperatureData),
+            "where data->'Values'->>'detector' = :sensor OR data->'Values'->>'sensor' = :sensor",
+            new {sensor = "aisle-1"}).ToArray();
 
-            var temperatures = tempsFromDb.Select(x => (decimal)x.Values.temperature);
+        var temperatures = tempsFromDb.Select(x => (decimal)x.Values.temperature);
 
-            Assert.Equal(15.675m, temperatures.Average());
-            Assert.Equal(4, tempsFromDb.Length);
-        }
+        Assert.Equal(15.675m, temperatures.Average());
+        Assert.Equal(4, tempsFromDb.Length);
+
         #endregion
     }
 

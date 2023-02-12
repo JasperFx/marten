@@ -32,7 +32,7 @@ public class dirty_tracked_sessions : IntegrationContext
             session2.SaveChanges();
         }
 
-        using (var session3 = theStore.OpenSession())
+        using (var session3 = theStore.LightweightSession())
         {
             var user3 = session3.Load<User>(user.Id);
             user3.FirstName.ShouldBe("Jens");
@@ -52,7 +52,7 @@ public class dirty_tracked_sessions : IntegrationContext
         user.LastName = "Pettersson";
         theSession.SaveChanges();
 
-        using var session3 = theStore.OpenSession();
+        using var session3 = theStore.LightweightSession();
         var user3 = session3.Load<User>(user.Id);
         user3.FirstName.ShouldBe("Jens");
         user3.LastName.ShouldBe("Pettersson");
@@ -72,7 +72,7 @@ public class dirty_tracked_sessions : IntegrationContext
         user2.LastName = "Pettersson";
         theSession.SaveChanges();
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.LightweightSession();
         var user3 = session.Load<User>(user.Id);
         user3.FirstName.ShouldBe("Jens");
         user3.LastName.ShouldBe("Pettersson");

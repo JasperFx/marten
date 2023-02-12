@@ -47,9 +47,9 @@ public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended
         var item2 = new SoftDeletedItem { Number = 2, Name = "Joe Bill" };
         var item3 = new SoftDeletedItem { Number = 1, Name = "Jim Beam" };
 
-        int expected = 3;
+        var expected = 3;
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(item1, item2, item3);
             session.SaveChanges();

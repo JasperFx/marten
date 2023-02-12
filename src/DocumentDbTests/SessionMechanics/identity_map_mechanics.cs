@@ -20,7 +20,7 @@ public class identity_map_mechanics : IntegrationContext
         theSession.Store(user);
         theSession.SaveChanges();
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.IdentitySession();
         var first = session.Load<User>(user.Id);
         var second = session.Load<User>(user.Id);
 
@@ -37,7 +37,7 @@ public class identity_map_mechanics : IntegrationContext
         theSession.Store(user);
         theSession.SaveChanges();
 
-        using var session = theStore.OpenSession();
+        using var session = theStore.IdentitySession();
         var first = session.Load<User>(user.Id);
         var second = session.LoadMany<User>(user.Id)
             .SingleOrDefault();
@@ -56,7 +56,7 @@ public class identity_map_mechanics : IntegrationContext
 
         theSession.SaveChanges();
 
-        using (var session2 = theStore.OpenSession(DocumentTracking.DirtyTracking))
+        using (var session2 = theStore.DirtyTrackedSession())
         {
             var users = session2.Query<User>().Where(x => x.FirstName == "James").ToList();
 
@@ -68,7 +68,7 @@ public class identity_map_mechanics : IntegrationContext
             session2.SaveChanges();
         }
 
-        using (var session2 = theStore.OpenSession())
+        using (var session2 = theStore.IdentitySession())
         {
             var users = session2.Query<User>().Where(x => x.FirstName == "James").OrderBy(x => x.LastName).ToList();
 
@@ -91,7 +91,7 @@ public class identity_map_mechanics : IntegrationContext
 
         theSession.SaveChanges();
 
-        using (var session2 = theStore.OpenSession(DocumentTracking.DirtyTracking))
+        using (var session2 = theStore.DirtyTrackedSession())
         {
             var users = session2.Query<User>().Where(x => x.FirstName == "James").ToList();
 
@@ -103,7 +103,7 @@ public class identity_map_mechanics : IntegrationContext
             session2.SaveChanges();
         }
 
-        using (var session2 = theStore.OpenSession())
+        using (var session2 = theStore.IdentitySession())
         {
             var users = session2.Query<User>().Where(x => x.FirstName == "James").OrderBy(x => x.LastName).ToList();
 

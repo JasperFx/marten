@@ -20,7 +20,7 @@ public class document_updates: IntegrationContext
         theStore.BulkInsert(targets);
 
         var theNewNumber = 54321;
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             targets[0].Double = theNewNumber;
             session.Update(targets[0]);
@@ -39,14 +39,12 @@ public class document_updates: IntegrationContext
     {
         var target = Target.Random();
 
-        using (var session = theStore.OpenSession())
+        using var session = theStore.LightweightSession();
+        Exception<NonExistentDocumentException>.ShouldBeThrownBy(() =>
         {
-            Exception<NonExistentDocumentException>.ShouldBeThrownBy(() =>
-            {
-                session.Update(target);
-                session.SaveChanges();
-            });
-        }
+            session.Update(target);
+            session.SaveChanges();
+        });
     }
 
     [Fact]
@@ -54,14 +52,12 @@ public class document_updates: IntegrationContext
     {
         var target = Target.Random();
 
-        await using (var session = theStore.OpenSession())
+        await using var session = theStore.LightweightSession();
+        await Exception<NonExistentDocumentException>.ShouldBeThrownByAsync(async () =>
         {
-            await Exception<NonExistentDocumentException>.ShouldBeThrownByAsync(async () =>
-            {
-                session.Update(target);
-                await session.SaveChangesAsync();
-            });
-        }
+            session.Update(target);
+            await session.SaveChangesAsync();
+        });
     }
 
     public document_updates(DefaultStoreFixture fixture) : base(fixture)

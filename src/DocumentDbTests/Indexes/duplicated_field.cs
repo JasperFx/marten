@@ -33,7 +33,7 @@ public class duplicated_field: OneOffConfigurationsContext
         var document = Target.Random();
         document.Color = Colors.Red;
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Insert(document);
             session.SaveChanges();
@@ -66,7 +66,7 @@ public class duplicated_field: OneOffConfigurationsContext
             NonNullableDuplicateFieldViaAttribute = DateTime.Now
         };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Insert(document);
             session.SaveChanges();
@@ -99,7 +99,7 @@ public class duplicated_field: OneOffConfigurationsContext
             Id = Guid.NewGuid()
         };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Insert(document);
             session.SaveChanges();

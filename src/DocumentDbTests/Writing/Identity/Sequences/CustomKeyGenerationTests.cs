@@ -48,7 +48,7 @@ public class CustomKeyGenerationTests : OneOffConfigurationsContext
         });
 
         #region sample_configuring-global-custom-test
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(new UserWithString { LastName = "last" });
             session.SaveChanges();
@@ -56,7 +56,7 @@ public class CustomKeyGenerationTests : OneOffConfigurationsContext
 
         using (var session1 = theStore.QuerySession())
         {
-            var users = session1.Query<UserWithString>().ToArray<UserWithString>();
+            var users = session1.Query<UserWithString>().ToArray();
             users.Single(user => user.LastName == "last").Id.ShouldBe("newId");
         }
         #endregion

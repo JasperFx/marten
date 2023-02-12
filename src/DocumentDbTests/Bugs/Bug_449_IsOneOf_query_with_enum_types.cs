@@ -17,7 +17,7 @@ public class Bug_449_IsOneOf_query_with_enum_types: BugIntegrationContext
         var red = new Target { Color = Colors.Red };
         var green = new Target { Color = Colors.Green };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(blue, red, green);
             session.SaveChanges();
@@ -42,7 +42,7 @@ public class Bug_449_IsOneOf_query_with_enum_types: BugIntegrationContext
         var red = new Target { Color = Colors.Red };
         var green = new Target { Color = Colors.Green };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(blue, red, green);
             session.SaveChanges();

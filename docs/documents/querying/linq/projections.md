@@ -144,7 +144,7 @@ public void can_do_simple_select_many_against_simple_array()
     var product2 = new Product {Tags = new[] {"b", "c", "d"}};
     var product3 = new Product {Tags = new[] {"d", "e", "f"}};
 
-    using (var session = theStore.OpenSession())
+    using (var session = theStore.LightweightSession())
     {
         session.Store(product1, product2, product3);
         session.SaveChanges();
@@ -178,7 +178,7 @@ var results = query.Query<Target>()
     .Take(15)
     .ToList();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_select_many.cs#L395-L403' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-select-many' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_select_many.cs#L385-L393' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-select-many' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A few notes on the `SelectMany()` usage and limitations:

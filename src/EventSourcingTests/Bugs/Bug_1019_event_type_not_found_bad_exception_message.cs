@@ -14,7 +14,7 @@ namespace EventSourcingTests.Bugs
             var streamGuid = Guid.Parse("378b8405-8cdc-40ef-bafa-2033cd3c43c3");
             var typeName = "Bug1019.Product, EventSourcingTests";
             var newTypeName = "Foo, Bar";
-            using (var session = theStore.OpenSession())
+            using (var session = theStore.LightweightSession())
             {
                 var product = new Bug1019.Product { Id = 1, Name = "prod1", Price = 108 };
                 session.Events.Append(streamGuid, product);

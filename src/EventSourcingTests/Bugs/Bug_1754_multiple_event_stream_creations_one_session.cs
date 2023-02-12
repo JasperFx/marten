@@ -25,7 +25,7 @@ namespace EventSourcingTests.Bugs
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
-            await using var session = documentStore.OpenSession();
+            await using var session = documentStore.LightweightSession();
 
             var importStream = session.Events.StartStream<DataImportAggregate>("original", new DataImportStartedEvent {ByUser = Guid.NewGuid()});
 
@@ -57,7 +57,7 @@ namespace EventSourcingTests.Bugs
 
             documentStore.Advanced.Clean.CompletelyRemoveAll();
 
-            using var session = documentStore.OpenSession();
+            using var session = documentStore.LightweightSession();
 
             var importStream = session.Events.StartStream<DataImportAggregate>("original", new DataImportStartedEvent {ByUser = Guid.NewGuid()});
 

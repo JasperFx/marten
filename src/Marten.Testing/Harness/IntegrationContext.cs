@@ -124,6 +124,7 @@ namespace Marten.Testing.Harness
         /// <summary>
         /// Sets the default DocumentTracking for this context. Default is "None"
         /// </summary>
+        [Obsolete("TODO: Remove it and replace with expicit sessions")]
         protected DocumentTracking DocumentTracking { get; set; } = DocumentTracking.None;
 
 

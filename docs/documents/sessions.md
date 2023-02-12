@@ -36,10 +36,21 @@ types of sessions are:
 |**Creation**|**Read/Write**|**Identity Map**|**Dirty Checking**|
 |------------|--------------|----------------|------------------|
 |`IDocumentStore.QuerySession()`|Read Only|No|No|
-|`IDocumentStore.OpenSession()`|Read/Write|Yes|No|
-|`IDocumentStore.OpenSessionAsync()`|Read/Write|Yes|No|
-|`IDocumentStore.DirtyTrackedSession()`|Read/Write|Yes|Yes|
+|`IDocumentStore.QuerySessionAsync()`|Read Only|No|No|
 |`IDocumentStore.LightweightSession()`|Read/Write|No|No|
+|`IDocumentStore.LightweightSessionAsync()`|Read/Write|No|No|
+|`IDocumentStore.IdentitySession()`|Read/Write|Yes|Yes|
+|`IDocumentStore.IdentitySessionAsync()`|Read/Write|Yes|Yes|
+|`IDocumentStore.DirtyTrackedSession()`|Read/Write|Yes|Yes|
+|`IDocumentStore.DirtyTrackedSessionAsync()`|Read/Write|Yes|Yes|
+|`IDocumentStore.OpenSession()` _(Obsolete)_|Read/Write|Yes|No|
+|`IDocumentStore.OpenSessionAsync()` _(Obsolete)_|Read/Write|Yes|No|
+
+::: tip INFO
+The recommended session type for read/write operations is `LightWeightDocumentSession`, which gives the best performance. It does not do change tracking, which may not be needed for most cases.
+
+For read-only access, use `QuerySession`.
+:::
 
 ## Read Only QuerySession
 
@@ -124,20 +135,15 @@ Marten's `IDocumentSession` implements the [_Identity Map_](https://en.wikipedia
 <!-- snippet: sample_using-identity-map -->
 <a id='snippet-sample_using-identity-map'></a>
 ```cs
-public void using_identity_map()
-{
-    var user = new User { FirstName = "Tamba", LastName = "Hali" };
-    theStore.BulkInsert(new[] { user });
+var user = new User { FirstName = "Tamba", LastName = "Hali" };
+theStore.BulkInsert(new[] { user });
 
-    // Open a document session with the identity map
-    using (var session = theStore.OpenSession())
-    {
-        session.Load<User>(user.Id)
-            .ShouldBeTheSameAs(session.Load<User>(user.Id));
-    }
-}
+// Open a document session with the identity map
+using var session = theStore.IdentitySession();
+session.Load<User>(user.Id)
+    .ShouldBeTheSameAs(session.Load<User>(user.Id));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/IdentityMapTests.cs#L8-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-identity-map' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/IdentityMapTests.cs#L10-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-identity-map' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that using the identity map functionality can be wasteful if you aren't able to take advantage of the identity map caching in a session. In those cases, you may want to either use the `IDocumentStore.LightweightSession()` which forgos the identity map functionality, or use the read only `IQuerySession` alternative. RavenDb users will note that Marten does not (yet) support any notion of `Evict()` to manually remove documents from identity map tracking to avoid memory usage problems. Our hope is that the existence of the lightweight session and the read only interface will alleviate the memory explosion problems that you can run into with naive usage of identity maps or the dirty checking when fetching a large number of documents.
@@ -152,38 +158,34 @@ If for some reason you need to completely remove a document from a session's [id
 <!-- snippet: sample_ejecting_a_document -->
 <a id='snippet-sample_ejecting_a_document'></a>
 ```cs
-[Fact]
-public void demonstrate_eject()
+var target1 = Target.Random();
+var target2 = Target.Random();
+
+using (var session = theStore.IdentitySession())
 {
-    var target1 = Target.Random();
-    var target2 = Target.Random();
+    session.Store(target1, target2);
 
-    using (var session = theStore.OpenSession())
-    {
-        session.Store(target1, target2);
+    // Both documents are in the identity map
+    session.Load<Target>(target1.Id).ShouldBeTheSameAs(target1);
+    session.Load<Target>(target2.Id).ShouldBeTheSameAs(target2);
 
-        // Both documents are in the identity map
-        session.Load<Target>(target1.Id).ShouldBeTheSameAs(target1);
-        session.Load<Target>(target2.Id).ShouldBeTheSameAs(target2);
+    // Eject the 2nd document
+    session.Eject(target2);
 
-        // Eject the 2nd document
-        session.Eject(target2);
+    // Now that 2nd document is no longer in the identity map
+    session.Load<Target>(target2.Id).ShouldBeNull();
 
-        // Now that 2nd document is no longer in the identity map
-        session.Load<Target>(target2.Id).ShouldBeNull();
+    session.SaveChanges();
+}
 
-        session.SaveChanges();
-    }
-
-    using (var session = theStore.QuerySession())
-    {
-        // The 2nd document was ejected before the session
-        // was saved, so it was never persisted
-        session.Load<Target>(target2.Id).ShouldBeNull();
-    }
+using (var session = theStore.QuerySession())
+{
+    // The 2nd document was ejected before the session
+    // was saved, so it was never persisted
+    session.Load<Target>(target2.Id).ShouldBeNull();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_documents.cs#L11-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_a_document' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_documents.cs#L14-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_a_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Ejecting all pending changes from a Session
@@ -193,21 +195,17 @@ If you want to remove all queued operations such as document changes or event op
 <!-- snippet: sample_ejecting_all_document_changes -->
 <a id='snippet-sample_ejecting_all_document_changes'></a>
 ```cs
-[Fact]
-public void will_clear_all_document_changes()
-{
-    theSession.Store(Target.Random());
-    theSession.Insert(Target.Random());
-    theSession.Update(Target.Random());
+theSession.Store(Target.Random());
+theSession.Insert(Target.Random());
+theSession.Update(Target.Random());
 
-    theSession.PendingChanges.Operations().Any().ShouldBeTrue();
+theSession.PendingChanges.Operations().Any().ShouldBeTrue();
 
-    theSession.EjectAllPendingChanges();
+theSession.EjectAllPendingChanges();
 
-    theSession.PendingChanges.Operations().Any().ShouldBeFalse();
-}
+theSession.PendingChanges.Operations().Any().ShouldBeFalse();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_all_pending_changes.cs#L16-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_all_document_changes' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_all_pending_changes.cs#L19-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_all_document_changes' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Connection Handling
@@ -279,25 +277,19 @@ Netstandard 2.0.
 <!-- snippet: sample_passing-in-existing-connections-and-transactions -->
 <a id='snippet-sample_passing-in-existing-connections-and-transactions'></a>
 ```cs
-public void samples(IDocumentStore store, NpgsqlConnection connection, NpgsqlTransaction transaction)
-{
-    // Use an existing connection, but Marten still controls the transaction lifecycle
-    var session1 = store.OpenSession(SessionOptions.ForConnection(connection));
+// Use an existing connection, but Marten still controls the transaction lifecycle
+var session1 = store.OpenSession(SessionOptions.ForConnection(connection));
 
-    // Enlist in an existing Npgsql transaction, but
-    // choose not to allow the session to own the transaction
-    // boundaries
-    var session3 = store.OpenSession(SessionOptions.ForTransaction(transaction));
+// Enlist in an existing Npgsql transaction, but
+// choose not to allow the session to own the transaction
+// boundaries
+var session3 = store.OpenSession(SessionOptions.ForTransaction(transaction));
 
-    // Enlist in the current, ambient transaction scope
-    using (var scope = new TransactionScope())
-    {
-        var session4 = store.OpenSession(SessionOptions.ForCurrentTransaction());
-    }
-
-}
+// Enlist in the current, ambient transaction scope
+using var scope = new TransactionScope();
+var session4 = store.OpenSession(SessionOptions.ForCurrentTransaction());
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/ability_to_use_an_existing_connection_and_transaction.cs#L33-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_passing-in-existing-connections-and-transactions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/ability_to_use_an_existing_connection_and_transaction.cs#L35-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_passing-in-existing-connections-and-transactions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Transaction Isolation Level
@@ -321,50 +313,43 @@ public void execute_saga(IDocumentStore store, Guid sagaId)
 {
     // The session below will open its connection and start a
     // serializable transaction
-    using (var session = store.DirtyTrackedSession(IsolationLevel.Serializable))
-    {
-        var state = session.Load<MySagaState>(sagaId);
+    using var session = store.DirtyTrackedSession(IsolationLevel.Serializable);
+    var state = session.Load<MySagaState>(sagaId);
 
-        // do some work against the saga
+    // do some work against the saga
 
-        session.SaveChanges();
-    }
+    session.SaveChanges();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/SagaStorageExample.cs#L8-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_serializable-saga-transaction' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/SagaStorageExample.cs#L8-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_serializable-saga-transaction' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Manual Change Tracking
 
-The first step is to create a new `DocumentSession` with the `IDocumentStore.LightweightSession()` (or `IDocumentStore.OpenSession()`):
+The first step is to create a new `DocumentSession` with the `IDocumentStore.LightweightSession()`:
 
 <!-- snippet: sample_lightweight_document_session_uow -->
 <a id='snippet-sample_lightweight_document_session_uow'></a>
 ```cs
-public void lightweight_document_session(IDocumentStore store)
-{
-    using (var session = store.LightweightSession())
-    {
-        var user = new User { FirstName = "Jeremy", LastName = "Miller" };
+await using var session = store.LightweightSession();
+var user = new User { FirstName = "Jeremy", LastName = "Miller" };
 
-        // Manually adding the new user to the session
-        session.Store(user);
+// Manually adding the new user to the session
+session.Store(user);
 
-        var existing = session.Query<User>().Single(x => x.FirstName == "Max");
-        existing.Internal = false;
+var existing = session.Query<User>().Single(x => x.FirstName == "Max");
+existing.Internal = false;
 
-        // Manually marking an existing user as changed
-        session.Store(existing);
+// Manually marking an existing user as changed
+session.Store(existing);
 
-        // Marking another existing User document as deleted
-        session.Delete<User>(Guid.NewGuid());
+// Marking another existing User document as deleted
+session.Delete<User>(Guid.NewGuid());
 
-        // Persisting the changes to the database
-        session.SaveChanges();
-    }
-}
+// Persisting the changes to the database
+await session.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/UnitOfWorkMechanics.cs#L9-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_lightweight_document_session_uow' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/UnitOfWorkMechanics.cs#L12-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_lightweight_document_session_uow' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that Marten's `Store()` method makes no distinctions between inserts and updates. The Postgresql functions generated by Marten to update the document storage tables perform "upserts" for you. Anytime a document is registered through `IDocumentSession.Store(document)`, Marten runs the "auto-assignment" policy for the id type of that document. See [identity](/documents/identity) for more information on document id's.
@@ -378,27 +363,22 @@ JSON representation of the document at the time that `IDocumentSession` is calle
 <!-- snippet: sample_tracking_document_session_uow -->
 <a id='snippet-sample_tracking_document_session_uow'></a>
 ```cs
-public void tracking_document_session(IDocumentStore store)
-{
-    using (var session = store.DirtyTrackedSession())
-    {
-        var user = new User { FirstName = "Jeremy", LastName = "Miller" };
+await using var session = store.DirtyTrackedSession();
+var user = new User { FirstName = "Jeremy", LastName = "Miller" };
 
-        // Manually adding the new user to the session
-        session.Store(user);
+// Manually adding the new user to the session
+session.Store(user);
 
-        var existing = session.Query<User>().Single(x => x.FirstName == "Max");
-        existing.Internal = false;
+var existing = session.Query<User>().Single(x => x.FirstName == "Max");
+existing.Internal = false;
 
-        // Marking another existing User document as deleted
-        session.Delete<User>(Guid.NewGuid());
+// Marking another existing User document as deleted
+session.Delete<User>(Guid.NewGuid());
 
-        // Persisting the changes to the database
-        session.SaveChanges();
-    }
-}
+// Persisting the changes to the database
+await session.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/UnitOfWorkMechanics.cs#L35-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tracking_document_session_uow' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/UnitOfWorkMechanics.cs#L35-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tracking_document_session_uow' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do be aware that the automated dirty checking comes with some mechanical cost in memory and runtime performance.

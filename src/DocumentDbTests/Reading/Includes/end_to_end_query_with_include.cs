@@ -469,15 +469,13 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         theSession.SaveChanges();
 
         // This will only work with a non-NulloIdentityMap
-        using (var query = theStore.OpenSession())
-        {
-            var dict = new Dictionary<Guid, User>();
+        using var query = theStore.IdentitySession();
+        var dict = new Dictionary<Guid, User>();
 
-            query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
+        query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
 
-            query.Load<User>(user1.Id).ShouldBeSameAs(dict[user1.Id]);
-            query.Load<User>(user2.Id).ShouldBeSameAs(dict[user2.Id]);
-        }
+        query.Load<User>(user1.Id).ShouldBeSameAs(dict[user1.Id]);
+        query.Load<User>(user2.Id).ShouldBeSameAs(dict[user2.Id]);
     }
 
     #region sample_dictionary_include
@@ -756,7 +754,7 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
 
         var group2 = new Group {Name = "Evens", Users = new[] {user2.Id, user4.Id, user6.Id}};
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(group1, group2);
             session.SaveChanges();
@@ -879,17 +877,16 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
     [Fact]
     public void include_many_to_list_with_empty_parent_collection()
     {
+        var user1 = new User();
+        var user2 = new User();
+        var user3 = new User();
 
-        var user1 = new User { };
-        var user2 = new User { };
-        var user3 = new User { };
-
-        theStore.BulkInsert(new User[] {user1, user2, user3});
+        theStore.BulkInsert(new[] {user1, user2, user3});
 
         var group1 = new Group {Name = "Users", Users = new[] {user1.Id, user2.Id, user3.Id}};
         var group2 = new Group {Name = "Empty", Users = new Guid[0]};
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(group1, group2);
             session.SaveChanges();
@@ -915,7 +912,7 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         }
     }
 
-    public end_to_end_query_with_include(ITestOutputHelper output) 
+    public end_to_end_query_with_include(ITestOutputHelper output)
     {
         _output = output;
 

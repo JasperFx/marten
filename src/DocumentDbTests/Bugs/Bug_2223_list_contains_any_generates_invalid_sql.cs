@@ -31,7 +31,7 @@ namespace DocumentDbTests.Bugs
             await documentStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
             var otherEntityTestId = Guid.NewGuid();
-            await using (var session = documentStore.OpenSession())
+            await using (var session = documentStore.LightweightSession())
             {
                 var otherEntityOne = CreateOtherTestEntity(session, otherEntityTestId, "Other one");
                 var otherEntityTwo = CreateOtherTestEntity(session, Guid.NewGuid(), "Other two");
@@ -60,7 +60,7 @@ namespace DocumentDbTests.Bugs
                 await session.SaveChangesAsync();
             }
 
-            await using (var session = documentStore.OpenSession())
+            await using (var session = documentStore.QuerySession())
             {
                 var otherIdsQuery = new[]
                 {

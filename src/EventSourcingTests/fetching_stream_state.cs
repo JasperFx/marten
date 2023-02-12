@@ -15,7 +15,7 @@ public class fetching_stream_state_before_aggregator_is_registered: IntegrationC
     {
         var streamId = Guid.NewGuid();
 
-        await using (var session = theStore.OpenSession())
+        await using (var session = theStore.LightweightSession())
         {
             var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -24,7 +24,7 @@ public class fetching_stream_state_before_aggregator_is_registered: IntegrationC
             await session.SaveChangesAsync();
         }
 
-        await using (var query = theStore.OpenSession())
+        await using (var query = theStore.LightweightSession())
         {
             var state = await query.Events.FetchStreamStateAsync(streamId);
             var aggregate = await query.Events.AggregateStreamAsync<QuestParty>(streamId);
@@ -43,7 +43,7 @@ public class fetching_stream_state_before_aggregator_is_registered: IntegrationC
             _.Events.AddEventTypes(new[] { typeof(FooEvent), });
         });
 
-        using (var session = store.OpenSession())
+        using (var session = store.LightweightSession())
         {
             var aid = Guid.Parse("1442cbbb-a49a-497e-9ee8-715ed2833bf8");
             session.Events.StartStream<FooAggregate>(aid, new FooEvent());
@@ -58,7 +58,7 @@ public class fetching_stream_state_before_aggregator_is_registered: IntegrationC
             _.Projections.AggregatorFor<FooAggregate>();
         });
 
-        using (var session = store2.OpenSession())
+        using (var session = store2.LightweightSession())
         {
             var aid = Guid.Parse("1442cbbb-a49a-497e-9ee8-715ed2833bf8");
             var state = session.Events.FetchStreamState(aid);

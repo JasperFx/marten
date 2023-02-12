@@ -18,13 +18,10 @@ public class using_string_identity : IntegrationContext
         theSession.Store(account);
         theSession.SaveChanges();
 
-        using (var session = theStore.OpenSession())
-        {
-            SpecificationExtensions.ShouldNotBeNull(session.Load<Account>("email@server.com"));
+        using var session = theStore.QuerySession();
+        SpecificationExtensions.ShouldNotBeNull(session.Load<Account>("email@server.com"));
 
-            SpecificationExtensions.ShouldBeNull(session.Load<Account>("nonexistent@server.com"));
-        }
-
+        SpecificationExtensions.ShouldBeNull(session.Load<Account>("nonexistent@server.com"));
     }
 
     #region sample_persist_and_load_async
@@ -36,12 +33,10 @@ public class using_string_identity : IntegrationContext
         theSession.Store(account);
         await theSession.SaveChangesAsync();
 
-        await using (var session = theStore.OpenSession())
-        {
-            SpecificationExtensions.ShouldNotBeNull((await session.LoadAsync<Account>("email@server.com")));
+        await using var session = theStore.QuerySession();
+        SpecificationExtensions.ShouldNotBeNull((await session.LoadAsync<Account>("email@server.com")));
 
-            SpecificationExtensions.ShouldBeNull((await session.LoadAsync<Account>("nonexistent@server.com")));
-        }
+        SpecificationExtensions.ShouldBeNull((await session.LoadAsync<Account>("nonexistent@server.com")));
     }
     #endregion
 
@@ -54,8 +49,6 @@ public class using_string_identity : IntegrationContext
         {
             theSession.Store(account);
         });
-
-
     }
 
 
@@ -68,8 +61,6 @@ public class using_string_identity : IntegrationContext
         {
             theSession.Store(account);
         });
-
-
     }
 
     [Fact]
@@ -80,13 +71,13 @@ public class using_string_identity : IntegrationContext
         theSession.Store(account);
         theSession.SaveChanges();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Delete<Account>(account.Id);
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.QuerySession())
         {
             SpecificationExtensions.ShouldBeNull(session.Load<Account>(account.Id));
         }
@@ -103,10 +94,8 @@ public class using_string_identity : IntegrationContext
 
         theSession.SaveChanges();
 
-        using (var session = theStore.OpenSession())
-        {
-            session.LoadMany<Account>("A", "B", "E").Count().ShouldBe(3);
-        }
+        using var session = theStore.QuerySession();
+        session.LoadMany<Account>("A", "B", "E").Count().ShouldBe(3);
     }
 
     public using_string_identity(DefaultStoreFixture fixture) : base(fixture)

@@ -31,18 +31,16 @@ public class Bug_484_Contains_on_IList_of_string: BugIntegrationContext
         var doc2 = new DocWithLists {Names = new List<string> {"Jeremy", "Lindsey", "Max"}};
         var doc3 = new DocWithLists {Names = new List<string> {"Jack", "Lindsey", "Max"}};
 
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(doc1, doc2, doc3);
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        session.Store(doc1, doc2, doc3);
+        session.SaveChanges();
 
-            var ids = session.Query<DocWithLists>().Where(x => x.Names.Contains("Jeremy")).Select(x => x.Id)
-                .ToList();
+        var ids = session.Query<DocWithLists>().Where(x => x.Names.Contains("Jeremy")).Select(x => x.Id)
+            .ToList();
 
-            ids.Count.ShouldBe(2);
-            ids.ShouldContain(doc1.Id);
-            ids.ShouldContain(doc2.Id);
-        }
+        ids.Count.ShouldBe(2);
+        ids.ShouldContain(doc1.Id);
+        ids.ShouldContain(doc2.Id);
     }
 
     [Fact]
@@ -54,17 +52,15 @@ public class Bug_484_Contains_on_IList_of_string: BugIntegrationContext
         var doc2 = new DocWithLists {Names = new List<string> {"Jeremy", "Lindsey", "Max"}};
         var doc3 = new DocWithLists {Names = new List<string> {"Jack", "Lindsey", "Max"}};
 
-        using (var session = theStore.OpenSession())
-        {
-            session.Store(doc1, doc2, doc3);
-            session.SaveChanges();
+        using var session = theStore.LightweightSession();
+        session.Store(doc1, doc2, doc3);
+        session.SaveChanges();
 
-            var ids = session.Query<DocWithLists>().Where(x => x.Names.Contains("Jeremy")).Select(x => x.Id)
-                .ToList();
+        var ids = session.Query<DocWithLists>().Where(x => x.Names.Contains("Jeremy")).Select(x => x.Id)
+            .ToList();
 
-            ids.Count.ShouldBe(2);
-            ids.ShouldContain(doc1.Id);
-            ids.ShouldContain(doc2.Id);
-        }
+        ids.Count.ShouldBe(2);
+        ids.ShouldContain(doc1.Id);
+        ids.ShouldContain(doc2.Id);
     }
 }

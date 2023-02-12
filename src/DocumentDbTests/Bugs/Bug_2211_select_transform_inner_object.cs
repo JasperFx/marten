@@ -23,7 +23,7 @@ namespace DocumentDbTests.Bugs
 
             await documentStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
-            await using var session = documentStore.OpenSession();
+            await using var session = documentStore.LightweightSession();
             var testEntity = new TestEntity { Name = "Test", Inner = new TestDto { Name = "TestDto" } };
             session.Store(testEntity);
 
@@ -32,7 +32,7 @@ namespace DocumentDbTests.Bugs
             await using var querySession = documentStore.QuerySession();
 
             var results = await querySession.Query<TestEntity>()
-                .Select(x => new { Inner = x.Inner })
+                .Select(x => new { x.Inner })
                 .ToListAsync();
 
             results.Count.ShouldBe(1);

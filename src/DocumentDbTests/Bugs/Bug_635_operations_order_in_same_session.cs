@@ -29,7 +29,7 @@ public class Bug_635_operations_order_in_same_session: IntegrationContext
             batch.Add(new User { LastName = "batch-id1" });
         }
 
-        using (var replaceSession = theStore.OpenSession())
+        using (var replaceSession = theStore.LightweightSession())
         {
             //First, delete everything matching a given criteria
             replaceSession.DeleteWhere<User>(x => x.LastName == "batch-id1");

@@ -27,7 +27,7 @@ namespace EventSourcingTests.Bugs
             var entityOneId = await CreateEntityForTest(documentStore, "Entity one", 0);
             var entityTwoId = await CreateEntityForTest(documentStore, "Entity two", 2);
 
-            await using (var session = documentStore.OpenSession())
+            await using (var session = documentStore.LightweightSession())
             {
                 var entityOneStream = await session.Events.FetchForWriting<TestEntity>(entityOneId);
                 var entityTwoStream = await session.Events.FetchForWriting<TestEntity>(entityTwoId);
@@ -38,7 +38,7 @@ namespace EventSourcingTests.Bugs
                 await session.SaveChangesAsync();
             }
 
-            await using (var session = documentStore.OpenSession())
+            await using (var session = documentStore.LightweightSession())
             {
                 var entityOne = session.Load<TestEntity>(entityOneId);
                 entityOne.Status.ShouldBe(1);
@@ -59,7 +59,7 @@ namespace EventSourcingTests.Bugs
             var entityOneId = await CreateEntityForTest(documentStore, "Entity one", 2);
             var entityTwoId = await CreateEntityForTest(documentStore, "Entity two", 2);
 
-            await using (var session = documentStore.OpenSession())
+            await using (var session = documentStore.LightweightSession())
             {
                 var entityOneStream = await session.Events.FetchForWriting<TestEntity>(entityOneId);
                 var entityTwoStream = await session.Events.FetchForWriting<TestEntity>(entityTwoId);
@@ -70,7 +70,7 @@ namespace EventSourcingTests.Bugs
                 await session.SaveChangesAsync();
             }
 
-            await using (var session = documentStore.OpenSession())
+            await using (var session = documentStore.LightweightSession())
             {
                 var entityOne = session.Load<TestEntity>(entityOneId);
                 entityOne.Status.ShouldBe(2);

@@ -15,7 +15,7 @@ public class EqualsIgnoreCase_filtering: IntegrationContext
         var user1 = new User { UserName = "Abc" };
         var user2 = new User { UserName = "DeF" };
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.Store(user1, user2);
             session.SaveChanges();

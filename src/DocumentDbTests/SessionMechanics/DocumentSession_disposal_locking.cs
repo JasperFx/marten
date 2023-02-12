@@ -14,7 +14,7 @@ public class DocumentSession_disposal_locking
     {
         var store = DocumentStore.For(_ => _.Connection(ConnectionSource.ConnectionString));
 
-        var session = store.OpenSession();
+        var session = store.LightweightSession();
         session.Dispose();
 
         Should.Throw<ObjectDisposedException>(() =>

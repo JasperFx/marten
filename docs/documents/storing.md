@@ -75,7 +75,7 @@ While `IDocumentSession.Store` will perform either insertion or update depending
 <!-- snippet: sample_sample-document-insertonly -->
 <a id='snippet-sample_sample-document-insertonly'></a>
 ```cs
-using (var session = theStore.OpenSession())
+using (var session = theStore.LightweightSession())
 {
     session.Insert(target);
     session.SaveChanges();

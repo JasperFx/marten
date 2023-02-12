@@ -26,7 +26,7 @@ public class deleting_multiple_documents : IntegrationContext
 
         theSession.SaveChanges();
 
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             var user = session.Load<User>(user1.Id);
             user.FirstName = "Max";
@@ -64,7 +64,7 @@ public class deleting_multiple_documents : IntegrationContext
         theSession.SaveChanges();
 
         // Delete a mix of documents types
-        using (var session = theStore.OpenSession())
+        using (var session = theStore.LightweightSession())
         {
             session.DeleteObjects(new object[] { user1, company1 });
 

@@ -53,21 +53,19 @@ public class UniqueIndexMultiTenantTests : OneOffConfigurationsContext
             _.NameDataLength = 100;
         });
 
-        using (var session = store.OpenSession())
+        using var session = store.LightweightSession();
+        session.Store(new UniqueCodePerTenant { Code = "ABC" });
+        session.SaveChanges();
+
+        session.Store(new UniqueCodePerTenant { Code = "ABC" });
+
+        try
         {
-            session.Store(new UniqueCodePerTenant { Code = "ABC" });
             session.SaveChanges();
-
-            session.Store(new UniqueCodePerTenant { Code = "ABC" });
-
-            try
-            {
-                session.SaveChanges();
-            }
-            catch (DocumentAlreadyExistsException exception)
-            {
-                ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
-            }
+        }
+        catch (DocumentAlreadyExistsException exception)
+        {
+            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
         }
     }
 
@@ -82,7 +80,7 @@ public class UniqueIndexMultiTenantTests : OneOffConfigurationsContext
         });
 
         //default tenant unique constraints still work
-        using (var session = store.OpenSession())
+        using (var session = store.LightweightSession())
         {
             session.Store(new Project { Name = "Project A" });
             session.SaveChanges();
@@ -137,7 +135,7 @@ public class UniqueIndexMultiTenantTests : OneOffConfigurationsContext
         });
 
         //default tenant unique constraints still work
-        using (var session = store.OpenSession())
+        using (var session = store.LightweightSession())
         {
             session.Store(new ProjectUsingDuplicateField { Name = "Project A" });
             session.SaveChanges();
@@ -150,7 +148,7 @@ public class UniqueIndexMultiTenantTests : OneOffConfigurationsContext
             }
             catch (DocumentAlreadyExistsException exception)
             {
-                ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
+                ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
             }
         }
 

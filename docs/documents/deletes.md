@@ -82,7 +82,7 @@ theSession.StoreObjects(new object[] { user1, issue1, company1 });
 theSession.SaveChanges();
 
 // Delete a mix of documents types
-using (var session = theStore.OpenSession())
+using (var session = theStore.LightweightSession())
 {
     session.DeleteObjects(new object[] { user1, company1 });
 
@@ -186,7 +186,7 @@ public void query_soft_deleted_docs()
     var user3 = new User { UserName = "baz" };
     var user4 = new User { UserName = "jack" };
 
-    using var session = theStore.OpenSession();
+    using var session = theStore.LightweightSession();
     session.Store(user1, user2, user3, user4);
     session.SaveChanges();
 
@@ -228,7 +228,7 @@ public void query_maybe_soft_deleted_docs()
     var user3 = new User { UserName = "baz" };
     var user4 = new User { UserName = "jack" };
 
-    using var session = theStore.OpenSession();
+    using var session = theStore.LightweightSession();
     session.Store(user1, user2, user3, user4);
     session.SaveChanges();
 
@@ -266,7 +266,7 @@ public void query_is_soft_deleted_docs()
     var user3 = new User { UserName = "baz" };
     var user4 = new User { UserName = "jack" };
 
-    using var session = theStore.OpenSession();
+    using var session = theStore.LightweightSession();
     session.Store(user1, user2, user3, user4);
     session.SaveChanges();
 
@@ -304,7 +304,7 @@ public void query_is_soft_deleted_since_docs()
     var user3 = new User { UserName = "baz" };
     var user4 = new User { UserName = "jack" };
 
-    using var session = theStore.OpenSession();
+    using var session = theStore.LightweightSession();
     session.Store(user1, user2, user3, user4);
     session.SaveChanges();
 
