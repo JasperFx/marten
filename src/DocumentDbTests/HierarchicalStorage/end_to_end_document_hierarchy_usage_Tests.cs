@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;
@@ -26,8 +28,8 @@ public class end_to_end_document_hierarchy_usage_Tests: OneOffConfigurationsCont
         UserName = "B3", FirstName = "Sean", LastName = "Smith", Role = "Master"
     };
 
-    protected User user1 = new User {UserName = "A1", FirstName = "Justin", LastName = "Houston"};
-    protected User user2 = new User {UserName = "B1", FirstName = "Tamba", LastName = "Hali"};
+    protected User user1 = new User { UserName = "A1", FirstName = "Justin", LastName = "Houston" };
+    protected User user2 = new User { UserName = "B1", FirstName = "Tamba", LastName = "Hali" };
 
     protected end_to_end_document_hierarchy_usage_Tests()
     {
@@ -43,5 +45,15 @@ public class end_to_end_document_hierarchy_usage_Tests: OneOffConfigurationsCont
         theSession.Store(user1, user2, admin1, admin2, super1, super2);
 
         theSession.SaveChanges();
+    }
+
+
+    protected IDocumentSession identitySessionWithData()
+    {
+        var session = theStore.IdentitySession();
+        session.Store(user1, user2, admin1, admin2, super1, super2);
+
+        session.SaveChanges();
+        return session;
     }
 }

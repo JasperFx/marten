@@ -31,7 +31,7 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     [Fact]
     public void identity_map_usage_from_select()
     {
-        using var session = theStore.IdentitySession();
+        using var session = identitySessionWithData();
         var users = session.Query<User>().OrderBy(x => x.FirstName).ToArray();
         users[0].ShouldBeTheSameAs(admin1);
         users[1].ShouldBeTheSameAs(super1);
@@ -50,7 +50,7 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     [Fact]
     public void load_by_id_keys_from_base_class_resolved_from_identity_map()
     {
-        using var session = theStore.IdentitySession();
+        using var session = identitySessionWithData();
         session.LoadMany<AdminUser>(admin1.Id, admin2.Id)
             .ShouldHaveTheSameElementsAs(admin1, admin2);
     }
@@ -58,7 +58,7 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     [Fact]
     public async Task load_by_id_keys_from_base_class_resolved_from_identity_map_async()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = identitySessionWithData();
         var users = await session.LoadManyAsync<AdminUser>(admin1.Id, admin2.Id);
         users.ShouldHaveTheSameElementsAs(admin1, admin2);
     }
@@ -88,7 +88,7 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     [Fact]
     public void load_by_id_with_mixed_results_from_identity_map()
     {
-        using var session = theStore.IdentitySession();
+        using var session = identitySessionWithData();
         session.LoadMany<User>(admin1.Id, super1.Id, user1.Id)
             .ToArray().ShouldHaveTheSameElementsAs(admin1, super1, user1);
     }
@@ -96,7 +96,7 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     [Fact]
     public async Task load_by_id_with_mixed_results_from_identity_map_async()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = identitySessionWithData();
         var users = await session.LoadManyAsync<User>(admin1.Id, super1.Id, user1.Id);
         users.OrderBy(x => x.FirstName).ShouldHaveTheSameElementsAs(admin1, super1, user1);
     }

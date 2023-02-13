@@ -54,7 +54,7 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
 
         async Task ForceEventStreamUnexpectedMaxEventIdException()
         {
-            await Parallel.ForEachAsync(Enumerable.Range(1, 30), async (_, token) =>
+            await Parallel.ForEachAsync(Enumerable.Range(1, 50), async (_, token) =>
             {
                 await using var session = theStore.LightweightSession();
                 session.Events.Append(streamId, departed);
@@ -63,7 +63,8 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
         }
 
         var expectedPattern =
-            "Unexpected starting version number for event stream '" + streamId + "', expected [0-9]{1,2} but was [0-9]{1,2}";
+            "Unexpected starting version number for event stream '" + streamId +
+            "', expected [0-9]{1,2} but was [0-9]{1,2}";
         Should.Throw<EventStreamUnexpectedMaxEventIdException>(ForceEventStreamUnexpectedMaxEventIdException)
             .Message.ShouldMatch(expectedPattern);
     }
