@@ -6,11 +6,10 @@ using Xunit;
 
 namespace DocumentDbTests.SessionMechanics;
 
-public class dirty_tracked_sessions : IntegrationContext
+public class dirty_tracked_sessions: IntegrationContext
 {
-    public dirty_tracked_sessions(DefaultStoreFixture fixture) : base(fixture)
+    public dirty_tracked_sessions(DefaultStoreFixture fixture): base(fixture)
     {
-        DocumentTracking = DocumentTracking.DirtyTracking;
     }
 
     [Fact]
@@ -18,12 +17,13 @@ public class dirty_tracked_sessions : IntegrationContext
     {
         var user = new User { FirstName = "James", LastName = "Worthy" };
 
-        theSession.Store(user);
-        theSession.SaveChanges();
+        using var session = theStore.DirtyTrackedSession();
+        session.Store(user);
+        session.SaveChanges();
 
         using (var session2 = theStore.DirtyTrackedSession())
         {
-            session2.ShouldNotBeSameAs(theSession);
+            session2.ShouldNotBeSameAs(session);
 
             var user2 = session2.Load<User>(user.Id);
             user2.FirstName = "Jens";
@@ -45,12 +45,13 @@ public class dirty_tracked_sessions : IntegrationContext
     {
         var user = new User { FirstName = "James", LastName = "Worthy" };
 
-        theSession.Store(user);
-        theSession.SaveChanges();
+        using var session = theStore.DirtyTrackedSession();
+        session.Store(user);
+        session.SaveChanges();
 
         user.FirstName = "Jens";
         user.LastName = "Pettersson";
-        theSession.SaveChanges();
+        session.SaveChanges();
 
         using var session3 = theStore.LightweightSession();
         var user3 = session3.Load<User>(user.Id);
@@ -64,18 +65,18 @@ public class dirty_tracked_sessions : IntegrationContext
     {
         var user = new User { FirstName = "James", LastName = "Worthy" };
 
-        theSession.Store(user);
-        theSession.SaveChanges();
+        using var session = theStore.DirtyTrackedSession();
+        session.Store(user);
+        session.SaveChanges();
 
-        var user2 = theSession.Load<User>(user.Id);
+        var user2 = session.Load<User>(user.Id);
         user2.FirstName = "Jens";
         user2.LastName = "Pettersson";
-        theSession.SaveChanges();
+        session.SaveChanges();
 
-        using var session = theStore.LightweightSession();
-        var user3 = session.Load<User>(user.Id);
+        using var query = theStore.QuerySession();
+        var user3 = query.Load<User>(user.Id);
         user3.FirstName.ShouldBe("Jens");
         user3.LastName.ShouldBe("Pettersson");
     }
-
 }

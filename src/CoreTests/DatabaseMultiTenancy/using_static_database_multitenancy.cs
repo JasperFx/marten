@@ -58,17 +58,17 @@ public class using_static_database_multitenancy: IAsyncLifetime
                         opts.MultiTenantedDatabases(x =>
                         {
                             // Map multiple tenant ids to a single named database
-                            x.AddMultipleTenantDatabase(db1ConnectionString,"database1").ForTenants("tenant1", "tenant2");
+                            x.AddMultipleTenantDatabase(db1ConnectionString, "database1")
+                                .ForTenants("tenant1", "tenant2");
 
                             // Map a single tenant id to a database, which uses the tenant id as well for the database identifier
                             x.AddSingleTenantDatabase(tenant3ConnectionString, "tenant3");
-                            x.AddSingleTenantDatabase(tenant4ConnectionString,"tenant4");
+                            x.AddSingleTenantDatabase(tenant4ConnectionString, "tenant4");
                         });
 
 
                         opts.RegisterDocumentType<User>();
                         opts.RegisterDocumentType<Target>();
-
                     })
 
                     // All detected changes will be applied to all
@@ -127,10 +127,7 @@ public class using_static_database_multitenancy: IAsyncLifetime
     public async Task can_open_a_session_to_a_different_database()
     {
         await using var session =
-            await theStore.OpenSessionAsync(new SessionOptions
-            {
-                TenantId = "tenant1", Tracking = DocumentTracking.None
-            });
+            await theStore.LightweightSessionAsync(new SessionOptions { TenantId = "tenant1" });
 
         session.Connection.Database.ShouldBe("database1");
     }

@@ -13,33 +13,33 @@ using User = Marten.Testing.Documents.User;
 
 namespace DocumentDbTests.Reading.Includes;
 
-public class end_to_end_query_with_compiled_include_Tests : IntegrationContext
+public class end_to_end_query_with_compiled_include_Tests: IntegrationContext
 {
     private readonly ITestOutputHelper _output;
 
     #region sample_compiled_include
+
     [Fact]
     public void simple_compiled_include_for_a_single_document()
     {
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
-        theSession.Store<object>(user, issue);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store<object>(user, issue);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            var issueQuery = new IssueByTitleWithAssignee {Title = issue.Title};
-            var issue2 = query.Query(issueQuery);
+        using var query = theStore.QuerySession();
+        var issueQuery = new IssueByTitleWithAssignee { Title = issue.Title };
+        var issue2 = query.Query(issueQuery);
 
-            SpecificationExtensions.ShouldNotBeNull(issueQuery.Included);
-            issueQuery.Included.Single().Id.ShouldBe(user.Id);
+        SpecificationExtensions.ShouldNotBeNull(issueQuery.Included);
+        issueQuery.Included.Single().Id.ShouldBe(user.Id);
 
-            SpecificationExtensions.ShouldNotBeNull(issue2);
-        }
+        SpecificationExtensions.ShouldNotBeNull(issue2);
     }
 
-    public class IssueByTitleWithAssignee : ICompiledQuery<Issue>
+    public class IssueByTitleWithAssignee: ICompiledQuery<Issue>
     {
         public string Title { get; set; }
         public IList<User> Included { get; private set; } = new List<User>();
@@ -51,11 +51,12 @@ public class end_to_end_query_with_compiled_include_Tests : IntegrationContext
                 .Single(x => x.Title == Title);
         }
     }
+
     #endregion
 
-
     #region sample_compiled_include_list
-    public class IssueWithUsers : ICompiledListQuery<Issue>
+
+    public class IssueWithUsers: ICompiledListQuery<Issue>
     {
         public List<User> Users { get; set; } = new List<User>();
         // Can also work like that:
@@ -77,29 +78,30 @@ public class end_to_end_query_with_compiled_include_Tests : IntegrationContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-        theSession.Store(user1, user2);
-        theSession.Store(issue1, issue2, issue3);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store(user1, user2);
+        session.Store(issue1, issue2, issue3);
+        session.SaveChanges();
 
-        using (var session = theStore.QuerySession())
-        {
-            var query = new IssueWithUsers();
+        using var querySession = theStore.QuerySession();
+        var compiledQuery = new IssueWithUsers();
 
-            var issues = session.Query(query).ToArray();
+        var issues = querySession.Query(compiledQuery).ToArray();
 
-            query.Users.Count.ShouldBe(2);
-            issues.Count().ShouldBe(3);
+        compiledQuery.Users.Count.ShouldBe(2);
+        issues.Count().ShouldBe(3);
 
-            query.Users.Any(x => x.Id == user1.Id);
-            query.Users.Any(x => x.Id == user2.Id);
-        }
+        compiledQuery.Users.Any(x => x.Id == user1.Id);
+        compiledQuery.Users.Any(x => x.Id == user2.Id);
     }
+
     #endregion
 
     #region sample_compiled_include_dictionary
-    public class IssueWithUsersById : ICompiledListQuery<Issue>
+
+    public class IssueWithUsersById: ICompiledListQuery<Issue>
     {
-        public IDictionary<Guid,User> UsersById { get; set; } = new Dictionary<Guid, User>();
+        public IDictionary<Guid, User> UsersById { get; set; } = new Dictionary<Guid, User>();
         // Can also work like that:
         //public List<User> Users => new Dictionary<Guid,User>();
 
@@ -119,27 +121,28 @@ public class end_to_end_query_with_compiled_include_Tests : IntegrationContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-        theSession.Store(user1, user2);
-        theSession.Store(issue1, issue2, issue3);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store(user1, user2);
+        session.Store(issue1, issue2, issue3);
+        session.SaveChanges();
 
-        using (var session = theStore.QuerySession())
-        {
-            var query = new IssueWithUsersById();
+        using var querySession = theStore.QuerySession();
+        var compiledQuery = new IssueWithUsersById();
 
-            var issues = session.Query(query).ToArray();
+        var issues = querySession.Query(compiledQuery).ToArray();
 
-            issues.ShouldNotBeEmpty();
+        issues.ShouldNotBeEmpty();
 
-            query.UsersById.Count.ShouldBe(2);
-            query.UsersById.ContainsKey(user1.Id).ShouldBeTrue();
-            query.UsersById.ContainsKey(user2.Id).ShouldBeTrue();
-        }
+        compiledQuery.UsersById.Count.ShouldBe(2);
+        compiledQuery.UsersById.ContainsKey(user1.Id).ShouldBeTrue();
+        compiledQuery.UsersById.ContainsKey(user2.Id).ShouldBeTrue();
     }
+
     #endregion
-    public end_to_end_query_with_compiled_include_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+
+    public end_to_end_query_with_compiled_include_Tests(DefaultStoreFixture fixture, ITestOutputHelper output):
+        base(fixture)
     {
         _output = output;
-        DocumentTracking = DocumentTracking.IdentityOnly;
     }
 }

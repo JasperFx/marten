@@ -14,7 +14,7 @@ using User = Marten.Testing.Documents.User;
 
 namespace DocumentDbTests.Reading.Includes;
 
-public class end_to_end_query_with_include : OneOffConfigurationsContext
+public class end_to_end_query_with_include: OneOffConfigurationsContext
 {
     private readonly ITestOutputHelper _output;
 
@@ -28,153 +28,151 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted #2" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted #3" };
 
-        theSession.Store(user1, user2);
-        theSession.Store(issue1, issue2, issue3);
-        await theSession.SaveChangesAsync();
+        await using var session = theStore.IdentitySession();
+        session.Store(user1, user2);
+        session.Store(issue1, issue2, issue3);
+        await session.SaveChangesAsync();
 
-        await using (var query = theStore.QuerySession())
-        {
-            User included = null;
-            var list = new List<User>();
-            var dict = new Dictionary<Guid, User>();
+        await using var query = theStore.QuerySession();
+        User included = null;
+        var list = new List<User>();
+        var dict = new Dictionary<Guid, User>();
 
-            #region sample_batch_include
-            var batch = query.CreateBatchQuery();
+        #region sample_batch_include
 
-            var found = batch.Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => included = x)
-                .Where(x => x.Title == issue1.Title)
-                .Single();
-            #endregion
+        var batch = query.CreateBatchQuery();
 
-            var toList = batch.Query<Issue>()
-                .Include<User>(x => x.AssigneeId, list).ToList();
+        var found = batch.Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => included = x)
+            .Where(x => x.Title == issue1.Title)
+            .Single();
 
-            var toDict = batch.Query<Issue>()
-                .Include(x => x.AssigneeId, dict).ToList();
+        #endregion
 
-            await batch.Execute();
+        var toList = batch.Query<Issue>()
+            .Include<User>(x => x.AssigneeId, list).ToList();
 
+        var toDict = batch.Query<Issue>()
+            .Include(x => x.AssigneeId, dict).ToList();
 
-            (await found).Id.ShouldBe(issue1.Id);
-
-            included.ShouldNotBeNull();
-            included.Id.ShouldBe(user1.Id);
-
-            (await toList).Count.ShouldBe(3);
-
-            list.Count.ShouldBe(2); // Only 2 users
+        await batch.Execute();
 
 
-            (await toDict).Count.ShouldBe(3);
+        (await found).Id.ShouldBe(issue1.Id);
 
-            dict.Count.ShouldBe(2);
+        included.ShouldNotBeNull();
+        included.Id.ShouldBe(user1.Id);
 
-            dict.ContainsKey(user1.Id).ShouldBeTrue();
-            dict.ContainsKey(user2.Id).ShouldBeTrue();
+        (await toList).Count.ShouldBe(3);
 
-        }
+        list.Count.ShouldBe(2); // Only 2 users
+
+
+        (await toDict).Count.ShouldBe(3);
+
+        dict.Count.ShouldBe(2);
+
+        dict.ContainsKey(user1.Id).ShouldBeTrue();
+        dict.ContainsKey(user2.Id).ShouldBeTrue();
     }
 
     #region sample_simple_include
+
     [Fact]
     public void simple_include_for_a_single_document()
     {
         var user = new User();
-        var issue = new Issue {AssigneeId = user.Id, Title = "Garage Door is busted"};
+        var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
-        theSession.Store<object>(user, issue);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store<object>(user, issue);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            User included = null;
-            var issue2 = query
-                .Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => included = x)
-                .Single(x => x.Title == issue.Title);
+        using var query = theStore.QuerySession();
+        User included = null;
+        var issue2 = query
+            .Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => included = x)
+            .Single(x => x.Title == issue.Title);
 
-            SpecificationExtensions.ShouldNotBeNull(included);
-            included.Id.ShouldBe(user.Id);
+        SpecificationExtensions.ShouldNotBeNull(included);
+        included.Id.ShouldBe(user.Id);
 
-            SpecificationExtensions.ShouldNotBeNull(issue2);
-        }
+        SpecificationExtensions.ShouldNotBeNull(issue2);
     }
+
     #endregion
 
     [Fact]
     public void include_with_containment_where_for_a_single_document()
     {
         var user = new User();
-        var issue = new Issue {AssigneeId = user.Id, Tags = new []{"DIY"}, Title = "Garage Door is busted"};
+        var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        theSession.Store<object>(user, issue);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store<object>(user, issue);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            User included = null;
-            var issue2 = query
-                .Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => included = x)
-                .Single(x => Enumerable.Contains(x.Tags, "DIY"));
+        using var query = theStore.QuerySession();
+        User included = null;
+        var issue2 = query
+            .Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => included = x)
+            .Single(x => Enumerable.Contains(x.Tags, "DIY"));
 
-            included.ShouldNotBeNull();
-            included.Id.ShouldBe(user.Id);
+        included.ShouldNotBeNull();
+        included.Id.ShouldBe(user.Id);
 
-            issue2.ShouldNotBeNull();
-        }
+        issue2.ShouldNotBeNull();
     }
 
 
     [Fact]
     public void include_with_containment_where_for_a_single_document_with_camel_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing:Casing.CamelCase));
+        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        theSession.Store<object>(user, issue);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store<object>(user, issue);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            User included = null;
-            var issue2 = query.Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => included = x)
-                .Where(x => x.Tags.Contains("DIY"))
-                .Single();
+        using var query = theStore.QuerySession();
+        User included = null;
+        var issue2 = query.Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => included = x)
+            .Where(x => x.Tags.Contains("DIY"))
+            .Single();
 
-            SpecificationExtensions.ShouldNotBeNull(included);
-            included.Id.ShouldBe(user.Id);
+        SpecificationExtensions.ShouldNotBeNull(included);
+        included.Id.ShouldBe(user.Id);
 
-            SpecificationExtensions.ShouldNotBeNull(issue2);
-        }
+        SpecificationExtensions.ShouldNotBeNull(issue2);
     }
 
     [Fact]
     public void include_with_any_containment_where_for_a_single_document()
     {
         var user = new User();
-        var issue = new Issue {AssigneeId = user.Id, Tags = new []{"DIY"}, Title = "Garage Door is busted"};
+        var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        theSession.Store<object>(user, issue);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store<object>(user, issue);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            User included = null;
-            var issue2 = query
-                .Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => included = x)
-                .Single(x => x.Tags.Any<string>(t=>t=="DIY"));
+        using var query = theStore.QuerySession();
+        User included = null;
+        var issue2 = query
+            .Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => included = x)
+            .Single(x => x.Tags.Any<string>(t => t == "DIY"));
 
-            SpecificationExtensions.ShouldNotBeNull(included);
-            included.Id.ShouldBe(user.Id);
+        SpecificationExtensions.ShouldNotBeNull(included);
+        included.Id.ShouldBe(user.Id);
 
-            SpecificationExtensions.ShouldNotBeNull(issue2);
-        }
+        SpecificationExtensions.ShouldNotBeNull(issue2);
     }
 
     [Fact]
@@ -185,22 +183,21 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        theSession.Store<object>(user, issue);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store<object>(user, issue);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            User included = null;
-            var issue2 = query.Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => included = x)
-                .Where(x => x.Tags.Any(t => t == "DIY"))
-                .Single();
+        using var query = theStore.QuerySession();
+        User included = null;
+        var issue2 = query.Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => included = x)
+            .Where(x => x.Tags.Any(t => t == "DIY"))
+            .Single();
 
-            SpecificationExtensions.ShouldNotBeNull(included);
-            included.Id.ShouldBe(user.Id);
+        SpecificationExtensions.ShouldNotBeNull(included);
+        included.Id.ShouldBe(user.Id);
 
-            SpecificationExtensions.ShouldNotBeNull(issue2);
-        }
+        SpecificationExtensions.ShouldNotBeNull(issue2);
     }
 
     [Fact]
@@ -211,48 +208,46 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        theSession.Store<object>(user, issue);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store<object>(user, issue);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            User included = null;
-            var issue2 = query.Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => included = x)
-                .Where(x => x.Tags.Any(t => t == "DIY"))
-                .Single();
+        using var query = theStore.QuerySession();
+        User included = null;
+        var issue2 = query.Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => included = x)
+            .Where(x => x.Tags.Any(t => t == "DIY"))
+            .Single();
 
-            included.ShouldNotBeNull();
-            included.Id.ShouldBe(user.Id);
+        included.ShouldNotBeNull();
+        included.Id.ShouldBe(user.Id);
 
-            issue2.ShouldNotBeNull();
-        }
+        issue2.ShouldNotBeNull();
     }
 
     [Fact]
     public void include_with_any_containment_where_for_a_single_document_with_camel_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing:Casing.CamelCase));
+        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        theSession.Store<object>(user, issue);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store<object>(user, issue);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            User included = null;
-            var issue2 = query.Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => included = x)
-                .Where(x => x.Tags.Any(t => t == "DIY"))
-                .Single();
+        using var query = theStore.QuerySession();
+        User included = null;
+        var issue2 = query.Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => included = x)
+            .Where(x => x.Tags.Any(t => t == "DIY"))
+            .Single();
 
-            included.ShouldNotBeNull();
-            included.Id.ShouldBe(user.Id);
+        included.ShouldNotBeNull();
+        included.Id.ShouldBe(user.Id);
 
-            issue2.ShouldNotBeNull();
-        }
+        issue2.ShouldNotBeNull();
     }
 
     [Fact]
@@ -263,53 +258,51 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        theSession.Store<object>(user, issue);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store<object>(user, issue);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            User included = null;
-            var issue2 = query.Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => included = x)
-                .Where(x => x.Tags.Any(t => t == "DIY"))
-                .Single();
+        using var query = theStore.QuerySession();
+        User included = null;
+        var issue2 = query.Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => included = x)
+            .Where(x => x.Tags.Any(t => t == "DIY"))
+            .Single();
 
-            included.ShouldNotBeNull();
-            included.Id.ShouldBe(user.Id);
+        included.ShouldNotBeNull();
+        included.Id.ShouldBe(user.Id);
 
-            issue2.ShouldNotBeNull();
-        }
+        issue2.ShouldNotBeNull();
     }
 
     [Fact]
     public void include_with_any_array_containment_where_for_a_single_document()
     {
-        var user  = new User();
-        var issue1 = new Issue {AssigneeId = user.Id, Tags = new []{"DIY"}, Title = "Garage Door is busted"};
-        var issue2 = new Issue {AssigneeId = user.Id, Tags = new []{"TAG"}, Title = "Garage Door is busted"};
-        var issue3 = new Issue {AssigneeId = user.Id, Tags = new string[] { }, Title = "Garage Door is busted"};
+        var user = new User();
+        var issue1 = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
+        var issue2 = new Issue { AssigneeId = user.Id, Tags = new[] { "TAG" }, Title = "Garage Door is busted" };
+        var issue3 = new Issue { AssigneeId = user.Id, Tags = new string[] { }, Title = "Garage Door is busted" };
 
-        var requestedTags = new[] {"DIY", "TAG"};
+        var requestedTags = new[] { "DIY", "TAG" };
 
-        theSession.Store(user);
-        theSession.Store(issue1, issue2, issue3);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store(user);
+        session.Store(issue1, issue2, issue3);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            var users = new List<User>();
-            var issues = query.Query<Issue>()
-                .Include(x => x.AssigneeId, users)
-                .Where(x => x.Tags.Any(t => requestedTags.Contains(t)))
-                .ToList();
+        using var query = theStore.QuerySession();
+        var users = new List<User>();
+        var issues = query.Query<Issue>()
+            .Include(x => x.AssigneeId, users)
+            .Where(x => x.Tags.Any(t => requestedTags.Contains(t)))
+            .ToList();
 
-            users.Count.ShouldBe(1);
-            users.ShouldContain(x => x.Id == user.Id);
+        users.Count.ShouldBe(1);
+        users.ShouldContain(x => x.Id == user.Id);
 
-            issues.Count.ShouldBe(2);
-            issues.ShouldContain(x => x.Id == issue1.Id);
-            issues.ShouldContain(x => x.Id == issue2.Id);
-        }
+        issues.Count.ShouldBe(2);
+        issues.ShouldContain(x => x.Id == issue1.Id);
+        issues.ShouldContain(x => x.Id == issue2.Id);
     }
 
     [Fact]
@@ -318,27 +311,26 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var user = new UserWithInterface { Id = Guid.NewGuid(), UserName = "Jens" };
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        theSession.Store<object>(user, issue);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store<object>(user, issue);
+        session.SaveChanges();
 
         IncludeGeneric<UserWithInterface>(user);
     }
 
     private void IncludeGeneric<T>(UserWithInterface userToCompareAgainst) where T : class, IUserWithInterface
     {
-        using (var query = theStore.QuerySession())
-        {
-            T included = default;
-            var issue2 = query.Query<Issue>()
-                .Include<T>(x => x.AssigneeId, x => included = x)
-                .Where(x => x.Tags.Any(t => t == "DIY"))
-                .Single();
+        using var query = theStore.QuerySession();
+        T included = default;
+        var issue2 = query.Query<Issue>()
+            .Include<T>(x => x.AssigneeId, x => included = x)
+            .Where(x => x.Tags.Any(t => t == "DIY"))
+            .Single();
 
-            included.ShouldNotBeNull();
-            included.Id.ShouldBe(userToCompareAgainst.Id);
+        included.ShouldNotBeNull();
+        included.Id.ShouldBe(userToCompareAgainst.Id);
 
-            issue2.ShouldNotBeNull();
-        }
+        issue2.ShouldNotBeNull();
     }
 
     [Fact]
@@ -346,48 +338,46 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
     {
         var issue = new Issue { AssigneeId = null, Title = "Garage Door is busted" };
 
-        theSession.Store(issue);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store(issue);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            User included = null;
-            var issue2 = query.Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => included = x)
-                .Where(x => x.Title == issue.Title)
-                .Single();
+        using var query = theStore.QuerySession();
+        User included = null;
+        var issue2 = query.Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => included = x)
+            .Where(x => x.Title == issue.Title)
+            .Single();
 
-            included.ShouldBeNull();
+        included.ShouldBeNull();
 
-            issue2.ShouldNotBeNull();
-        }
+        issue2.ShouldNotBeNull();
     }
 
     [Fact]
     public void include_to_list()
     {
-        var user1 = new User{FirstName = "Travis", LastName = "Kelce"};
-        var user2 = new User{FirstName = "Tyrann", LastName = "Mathieu"};
+        var user1 = new User { FirstName = "Travis", LastName = "Kelce" };
+        var user2 = new User { FirstName = "Tyrann", LastName = "Mathieu" };
 
         var issue1 = new Issue { AssigneeId = user1.Id, Title = "Garage Door is busted 1" };
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted 2" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted 3" };
 
-        theSession.Store(user1, user2);
-        theSession.Store(issue1, issue2, issue3);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store(user1, user2);
+        session.Store(issue1, issue2, issue3);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            var list = new List<User>();
+        using var query = theStore.QuerySession();
+        var list = new List<User>();
 
-            var issues = query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToArray();
+        var issues = query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToArray();
 
-            list.Count.ShouldBe(2);
+        list.Count.ShouldBe(2);
 
-            list.Any(x => x.Id == user1.Id).ShouldBeTrue();
-            list.Any(x => x.Id == user2.Id).ShouldBeTrue();
-        }
+        list.Any(x => x.Id == user1.Id).ShouldBeTrue();
+        list.Any(x => x.Id == user2.Id).ShouldBeTrue();
     }
 
     [Fact]
@@ -401,26 +391,25 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue4 = new Issue { AssigneeId = null, Title = "Garage Door is busted" };
 
-        theSession.Store(user1, user2);
-        theSession.Store(issue1, issue2, issue3, issue4);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store(user1, user2);
+        session.Store(issue1, issue2, issue3, issue4);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            var list = new List<User>();
+        using var query = theStore.QuerySession();
+        var list = new List<User>();
 
-            var issues = query.Query<Issue>()
-                .Include<User>(x => x.AssigneeId, list)
-                .Where(x => x.AssigneeId.HasValue)
-                .ToArray();
+        var issues = query.Query<Issue>()
+            .Include<User>(x => x.AssigneeId, list)
+            .Where(x => x.AssigneeId.HasValue)
+            .ToArray();
 
-            list.Count.ShouldBe(2);
+        list.Count.ShouldBe(2);
 
-            list.Any(x => x.Id == user1.Id).ShouldBeTrue();
-            list.Any(x => x.Id == user2.Id).ShouldBeTrue();
+        list.Any(x => x.Id == user1.Id).ShouldBeTrue();
+        list.Any(x => x.Id == user2.Id).ShouldBeTrue();
 
-            issues.Length.ShouldBe(3);
-        }
+        issues.Length.ShouldBe(3);
     }
 
     [Fact]
@@ -434,24 +423,23 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue4 = new Issue { AssigneeId = null, Title = "Garage Door is busted" };
 
-        theSession.Store(user1, user2);
-        theSession.Store(issue1, issue2, issue3, issue4);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store(user1, user2);
+        session.Store(issue1, issue2, issue3, issue4);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            var list = new List<User>();
+        using var query = theStore.QuerySession();
+        var list = new List<User>();
 
-            var issues = query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToArray();
+        var issues = query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToArray();
 
-            list.Count.ShouldBe(2);
+        list.Count.ShouldBe(2);
 
-            list.Any(x => x.Id == user1.Id).ShouldBeTrue();
-            list.Any(x => x.Id == user2.Id).ShouldBeTrue();
-            list.Any(x => x == null).ShouldBeFalse();
+        list.Any(x => x.Id == user1.Id).ShouldBeTrue();
+        list.Any(x => x.Id == user2.Id).ShouldBeTrue();
+        list.Any(x => x == null).ShouldBeFalse();
 
-            issues.Length.ShouldBe(4);
-        }
+        issues.Length.ShouldBe(4);
     }
 
     [Fact]
@@ -464,9 +452,10 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-        theSession.Store(user1, user2);
-        theSession.Store(issue1, issue2, issue3);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store(user1, user2);
+        session.Store(issue1, issue2, issue3);
+        session.SaveChanges();
 
         // This will only work with a non-NulloIdentityMap
         using var query = theStore.IdentitySession();
@@ -479,6 +468,7 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
     }
 
     #region sample_dictionary_include
+
     [Fact]
     public void include_to_dictionary()
     {
@@ -489,21 +479,21 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-        theSession.Store(user1, user2);
-        theSession.Store(issue1, issue2, issue3);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store(user1, user2);
+        session.Store(issue1, issue2, issue3);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            var dict = new Dictionary<Guid, User>();
+        using var query = theStore.QuerySession();
+        var dict = new Dictionary<Guid, User>();
 
-            query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
+        query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
 
-            dict.Count.ShouldBe(2);
-            dict.ContainsKey(user1.Id).ShouldBeTrue();
-            dict.ContainsKey(user2.Id).ShouldBeTrue();
-        }
+        dict.Count.ShouldBe(2);
+        dict.ContainsKey(user1.Id).ShouldBeTrue();
+        dict.ContainsKey(user2.Id).ShouldBeTrue();
     }
+
     #endregion
 
     [Fact]
@@ -517,25 +507,24 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue4 = new Issue { AssigneeId = null, Title = "Garage Door is busted" };
 
-        theSession.Store(user1,  user2);
-        theSession.Store(issue1, issue2, issue3, issue4);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store(user1, user2);
+        session.Store(issue1, issue2, issue3, issue4);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            var dict = new Dictionary<Guid, User>();
+        using var query = theStore.QuerySession();
+        var dict = new Dictionary<Guid, User>();
 
-            var issues = query
-                .Query<Issue>()
-                .Include(x => x.AssigneeId, dict)
-                .Where(x => x.AssigneeId.HasValue).ToArray();
+        var issues = query
+            .Query<Issue>()
+            .Include(x => x.AssigneeId, dict)
+            .Where(x => x.AssigneeId.HasValue).ToArray();
 
-            dict.Count.ShouldBe(2);
-            dict.ContainsKey(user1.Id).ShouldBeTrue();
-            dict.ContainsKey(user2.Id).ShouldBeTrue();
+        dict.Count.ShouldBe(2);
+        dict.ContainsKey(user1.Id).ShouldBeTrue();
+        dict.ContainsKey(user2.Id).ShouldBeTrue();
 
-            issues.Length.ShouldBe(3);
-        }
+        issues.Length.ShouldBe(3);
     }
 
     [Fact]
@@ -549,22 +538,21 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue4 = new Issue { AssigneeId = null, Title = "Garage Door is busted" };
 
-        theSession.Store(user1,  user2);
-        theSession.Store(issue1, issue2, issue3, issue4);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store(user1, user2);
+        session.Store(issue1, issue2, issue3, issue4);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            var dict = new Dictionary<Guid, User>();
+        using var query = theStore.QuerySession();
+        var dict = new Dictionary<Guid, User>();
 
-            var issues = query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
+        var issues = query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
 
-            dict.Count.ShouldBe(2);
-            dict.ContainsKey(user1.Id).ShouldBeTrue();
-            dict.ContainsKey(user2.Id).ShouldBeTrue();
+        dict.Count.ShouldBe(2);
+        dict.ContainsKey(user1.Id).ShouldBeTrue();
+        dict.ContainsKey(user2.Id).ShouldBeTrue();
 
-            issues.Length.ShouldBe(4);
-        }
+        issues.Length.ShouldBe(4);
     }
 
     [Fact]
@@ -573,22 +561,21 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
-        theSession.Store<object>(user, issue);
-        await theSession.SaveChangesAsync();
+        await using var session = theStore.IdentitySession();
+        session.Store<object>(user, issue);
+        await session.SaveChangesAsync();
 
-        await using (var query = theStore.QuerySession())
-        {
-            User included = null;
-            var issue2 = await query.Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => included = x)
-                .Where(x => x.Title == issue.Title)
-                .SingleAsync();
+        await using var query = theStore.QuerySession();
+        User included = null;
+        var issue2 = await query.Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => included = x)
+            .Where(x => x.Title == issue.Title)
+            .SingleAsync();
 
-            included.ShouldNotBeNull();
-            included.Id.ShouldBe(user.Id);
+        included.ShouldNotBeNull();
+        included.Id.ShouldBe(user.Id);
 
-            issue2.ShouldNotBeNull();
-        }
+        issue2.ShouldNotBeNull();
     }
 
     [Fact]
@@ -601,21 +588,20 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-        theSession.Store(user1, user2);
-        theSession.Store(issue1, issue2, issue3);
-        await theSession.SaveChangesAsync();
+        await using var session = theStore.IdentitySession();
+        session.Store(user1, user2);
+        session.Store(issue1, issue2, issue3);
+        await session.SaveChangesAsync();
 
-        await using (var query = theStore.QuerySession())
-        {
-            var list = new List<User>();
+        await using var query = theStore.QuerySession();
+        var list = new List<User>();
 
-            await query.Query<Issue>().Include(x => x.AssigneeId, list).ToListAsync();
+        await query.Query<Issue>().Include(x => x.AssigneeId, list).ToListAsync();
 
-            list.Count.ShouldBe(2);
+        list.Count.ShouldBe(2);
 
-            list.Any(x => x.Id == user1.Id).ShouldBeTrue();
-            list.Any(x => x.Id == user2.Id).ShouldBeTrue();
-        }
+        list.Any(x => x.Id == user1.Id).ShouldBeTrue();
+        list.Any(x => x.Id == user2.Id).ShouldBeTrue();
     }
 
     [Fact]
@@ -628,23 +614,22 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-        theSession.Store(user1, user2);
-        theSession.Store(issue1, issue2, issue3);
-        await theSession.SaveChangesAsync();
+        await using var session = theStore.IdentitySession();
+        session.Store(user1, user2);
+        session.Store(issue1, issue2, issue3);
+        await session.SaveChangesAsync();
 
-        await using (var query = theStore.QuerySession())
-        {
-            var list = new List<User>();
+        await using var query = theStore.QuerySession();
+        var list = new List<User>();
 
-            await query.Query<Issue>().Include(x => x.AssigneeId, list)
-                .OrderByDescending(x => x.Id)
-                .ToListAsync();
+        await query.Query<Issue>().Include(x => x.AssigneeId, list)
+            .OrderByDescending(x => x.Id)
+            .ToListAsync();
 
-            list.Count.ShouldBe(2);
+        list.Count.ShouldBe(2);
 
-            list.Any(x => x.Id == user1.Id).ShouldBeTrue();
-            list.Any(x => x.Id == user2.Id).ShouldBeTrue();
-        }
+        list.Any(x => x.Id == user1.Id).ShouldBeTrue();
+        list.Any(x => x.Id == user2.Id).ShouldBeTrue();
     }
 
     [Fact]
@@ -657,23 +642,22 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-        theSession.Store(user1, user2);
-        theSession.Store(issue1, issue2, issue3);
-        await theSession.SaveChangesAsync();
+        await using var session = theStore.IdentitySession();
+        session.Store(user1, user2);
+        session.Store(issue1, issue2, issue3);
+        await session.SaveChangesAsync();
 
-        await using (var query = theStore.QuerySession())
-        {
-            var list = new List<User>();
+        await using var query = theStore.QuerySession();
+        var list = new List<User>();
 
-            await query.Query<Issue>().Include(x => x.AssigneeId, list)
-                .OrderBy(x => x.Id)
-                .ToListAsync();
+        await query.Query<Issue>().Include(x => x.AssigneeId, list)
+            .OrderBy(x => x.Id)
+            .ToListAsync();
 
-            list.Count.ShouldBe(2);
+        list.Count.ShouldBe(2);
 
-            list.Any(x => x.Id == user1.Id).ShouldBeTrue();
-            list.Any(x => x.Id == user2.Id).ShouldBeTrue();
-        }
+        list.Any(x => x.Id == user1.Id).ShouldBeTrue();
+        list.Any(x => x.Id == user2.Id).ShouldBeTrue();
     }
 
     [Fact]
@@ -686,9 +670,10 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-        theSession.Store(user1, user2);
-        theSession.Store(issue1, issue2, issue3);
-        await theSession.SaveChangesAsync();
+        await using var session = theStore.IdentitySession();
+        session.Store(user1, user2);
+        session.Store(issue1, issue2, issue3);
+        await session.SaveChangesAsync();
 
         await using var query = theStore.QuerySession();
 
@@ -702,6 +687,7 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
     }
 
     #region sample_multiple_include
+
     [Fact]
     public void multiple_includes()
     {
@@ -710,27 +696,26 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
 
         var issue1 = new Issue { AssigneeId = assignee.Id, ReporterId = reporter.Id, Title = "Garage Door is busted" };
 
-        theSession.Store(assignee, reporter);
-        theSession.Store(issue1);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store(assignee, reporter);
+        session.Store(issue1);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            User assignee2 = null;
-            User reporter2 = null;
+        using var query = theStore.QuerySession();
+        User assignee2 = null;
+        User reporter2 = null;
 
-            query
-                .Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => assignee2 = x)
-                .Include<User>(x => x.ReporterId, x => reporter2 = x)
-                .Single()
-                .ShouldNotBeNull();
+        query
+            .Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => assignee2 = x)
+            .Include<User>(x => x.ReporterId, x => reporter2 = x)
+            .Single()
+            .ShouldNotBeNull();
 
-            assignee2.Id.ShouldBe(assignee.Id);
-            reporter2.Id.ShouldBe(reporter.Id);
-
-        }
+        assignee2.Id.ShouldBe(assignee.Id);
+        reporter2.Id.ShouldBe(reporter.Id);
     }
+
     #endregion
 
     [Fact]
@@ -744,15 +729,11 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var user6 = new User { };
         var user7 = new User { };
 
-        theStore.BulkInsert(new User[]{user1, user2, user3, user4, user5, user6, user7});
+        theStore.BulkInsert(new User[] { user1, user2, user3, user4, user5, user6, user7 });
 
-        var group1 = new Group
-        {
-            Name = "Odds",
-            Users = new []{user1.Id, user3.Id, user5.Id, user7.Id}
-        };
+        var group1 = new Group { Name = "Odds", Users = new[] { user1.Id, user3.Id, user5.Id, user7.Id } };
 
-        var group2 = new Group {Name = "Evens", Users = new[] {user2.Id, user4.Id, user6.Id}};
+        var group2 = new Group { Name = "Evens", Users = new[] { user2.Id, user4.Id, user6.Id } };
 
         using (var session = theStore.LightweightSession())
         {
@@ -783,26 +764,25 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
     public void Bug_1751_Include_with_select()
     {
         var user = new User();
-        var issue = new Issue {AssigneeId = user.Id, Title = "Garage Door is busted"};
+        var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
-        theSession.Store<object>(user, issue);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store<object>(user, issue);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            User included = null;
-            var issue2 = query
-                .Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => included = x)
-                .Where(x => x.Title == issue.Title)
-                .Select(x => new IssueDTO {Id = x.Id, AssigneeId = x.AssigneeId})
-                .Single();
+        using var query = theStore.QuerySession();
+        User included = null;
+        var issue2 = query
+            .Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => included = x)
+            .Where(x => x.Title == issue.Title)
+            .Select(x => new IssueDTO { Id = x.Id, AssigneeId = x.AssigneeId })
+            .Single();
 
-            included.ShouldNotBeNull();
-            included.Id.ShouldBe(user.Id);
+        included.ShouldNotBeNull();
+        included.Id.ShouldBe(user.Id);
 
-            issue2.ShouldNotBeNull();
-        }
+        issue2.ShouldNotBeNull();
     }
 
     public class IssueDTO
@@ -816,62 +796,57 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
     [Fact]
     public async Task Bug_1715_simple_include_for_a_single_document_async()
     {
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        await using var session = theStore.IdentitySession();
+        session.Logger = new TestOutputMartenLogger(_output);
 
         var user = new User();
         var bug = new Bug();
 
-        theSession.Store(user);
-        theSession.Store(bug);
+        session.Store(user);
+        session.Store(bug);
 
-        var issue = new Issue
-        {
-            AssigneeId = user.Id, Title = "Garage Door is busted", BugId = bug.Id
-        };
+        var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted", BugId = bug.Id };
 
-        theSession.Store(issue);
+        session.Store(issue);
 
-        await theSession.SaveChangesAsync();
+        await session.SaveChangesAsync();
 
-        await using (var query = theStore.QuerySession())
-        {
-            User includedUser = null;
-            Bug includedBug = null;
-            var issue2 = await query.Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => includedUser = x)
-                .Include<Bug>(x => x.BugId, x => includedBug = x)
-                .Where(x => x.Title == issue.Title)
-                .SingleAsync();
+        await using var query = theStore.QuerySession();
+        User includedUser = null;
+        Bug includedBug = null;
+        var issue2 = await query.Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => includedUser = x)
+            .Include<Bug>(x => x.BugId, x => includedBug = x)
+            .Where(x => x.Title == issue.Title)
+            .SingleAsync();
 
-            includedUser.ShouldNotBeNull();
-            includedBug.ShouldNotBeNull();
-            includedUser.Id.ShouldBe(user.Id);
-            includedBug.Id.ShouldBe(bug.Id);
+        includedUser.ShouldNotBeNull();
+        includedBug.ShouldNotBeNull();
+        includedUser.Id.ShouldBe(user.Id);
+        includedBug.Id.ShouldBe(bug.Id);
 
-            issue2.ShouldNotBeNull();
-        }
+        issue2.ShouldNotBeNull();
     }
 
     [Fact]
     public void Bug_1752_simple_include_for_a_single_document()
     {
         var user = new User();
-        var issue = new Issue {AssigneeId = user.Id, Title = "Garage Door is busted"};
+        var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
-        theSession.Store<object>(user, issue);
-        theSession.SaveChanges();
+        using var session = theStore.IdentitySession();
+        session.Store<object>(user, issue);
+        session.SaveChanges();
 
-        using (var query = theStore.QuerySession())
-        {
-            User included = null;
-            var issue2 = query
-                .Query<Issue>()
-                .Include<User>(x => x.AssigneeId, x => included = x)
-                .SingleOrDefault(x => x.Title == "Garage Door is not busted");
+        using var query = theStore.QuerySession();
+        User included = null;
+        var issue2 = query
+            .Query<Issue>()
+            .Include<User>(x => x.AssigneeId, x => included = x)
+            .SingleOrDefault(x => x.Title == "Garage Door is not busted");
 
-            included.ShouldBeNull();
-            issue2.ShouldBeNull();
-        }
+        included.ShouldBeNull();
+        issue2.ShouldBeNull();
     }
 
     [Fact]
@@ -881,10 +856,10 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
         var user2 = new User();
         var user3 = new User();
 
-        theStore.BulkInsert(new[] {user1, user2, user3});
+        theStore.BulkInsert(new[] { user1, user2, user3 });
 
-        var group1 = new Group {Name = "Users", Users = new[] {user1.Id, user2.Id, user3.Id}};
-        var group2 = new Group {Name = "Empty", Users = new Guid[0]};
+        var group1 = new Group { Name = "Users", Users = new[] { user1.Id, user2.Id, user3.Id } };
+        var group2 = new Group { Name = "Empty", Users = new Guid[0] };
 
         using (var session = theStore.LightweightSession())
         {
@@ -915,8 +890,6 @@ public class end_to_end_query_with_include : OneOffConfigurationsContext
     public end_to_end_query_with_include(ITestOutputHelper output)
     {
         _output = output;
-
-        DocumentTracking = DocumentTracking.IdentityOnly;
     }
 }
 

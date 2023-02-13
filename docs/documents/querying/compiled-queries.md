@@ -33,7 +33,7 @@ In its simplest usage, let's say that we want to find the first user document wi
 <!-- snippet: sample_FindByFirstName -->
 <a id='snippet-sample_findbyfirstname'></a>
 ```cs
-public class FindByFirstName : ICompiledQuery<User, User>
+public class FindByFirstName: ICompiledQuery<User, User>
 {
     public string FirstName { get; set; }
 
@@ -43,7 +43,7 @@ public class FindByFirstName : ICompiledQuery<User, User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L103-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_findbyfirstname' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L90-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_findbyfirstname' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
@@ -60,11 +60,11 @@ To use the `FindByFirstName` query, just use the code below:
 <!-- snippet: sample_using-compiled-query -->
 <a id='snippet-sample_using-compiled-query'></a>
 ```cs
-var justin = theSession.Query(new FindByFirstName {FirstName = "Justin"});
+var justin = session.Query(new FindByFirstName { FirstName = "Justin" });
 
-var tamba = await theSession.QueryAsync(new FindByFirstName {FirstName = "Tamba"});
+var tamba = await session.QueryAsync(new FindByFirstName { FirstName = "Tamba" });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L150-L154' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-compiled-query' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L149-L155' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-compiled-query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or to use it as part of a batched query, this syntax:
@@ -72,17 +72,17 @@ Or to use it as part of a batched query, this syntax:
 <!-- snippet: sample_batch-query-with-compiled-queries -->
 <a id='snippet-sample_batch-query-with-compiled-queries'></a>
 ```cs
-var batch = theSession.CreateBatchQuery();
+var batch = session.CreateBatchQuery();
 
-var justin = batch.Query(new FindByFirstName {FirstName = "Justin"});
-var tamba = batch.Query(new FindByFirstName {FirstName = "Tamba"});
+var justin = batch.Query(new FindByFirstName { FirstName = "Justin" });
+var tamba = batch.Query(new FindByFirstName { FirstName = "Tamba" });
 
 await batch.Execute();
 
 (await justin).Id.ShouldBe(user1.Id);
 (await tamba).Id.ShouldBe(user2.Id);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L118-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-query-with-compiled-queries' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L109-L121' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-query-with-compiled-queries' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## How Does It Work?
@@ -189,7 +189,7 @@ public class UsersByFirstName: ICompiledListQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/Compiled/compiled_query_Tests.cs#L558-L570' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usersbyfirstname-query' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/Compiled/compiled_query_Tests.cs#L555-L568' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usersbyfirstname-query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you do want to use a `Select()` transform, use this interface:
@@ -221,7 +221,7 @@ public class UserNamesForFirstName: ICompiledListQuery<User, string>
     public string FirstName { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/Compiled/compiled_query_Tests.cs#L582-L595' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usernamesforfirstname' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/Compiled/compiled_query_Tests.cs#L580-L594' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usernamesforfirstname' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying for Related Documents with Include()
@@ -238,22 +238,21 @@ public void simple_compiled_include_for_a_single_document()
     var user = new User();
     var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
-    theSession.Store<object>(user, issue);
-    theSession.SaveChanges();
+    using var session = theStore.IdentitySession();
+    session.Store<object>(user, issue);
+    session.SaveChanges();
 
-    using (var query = theStore.QuerySession())
-    {
-        var issueQuery = new IssueByTitleWithAssignee {Title = issue.Title};
-        var issue2 = query.Query(issueQuery);
+    using var query = theStore.QuerySession();
+    var issueQuery = new IssueByTitleWithAssignee { Title = issue.Title };
+    var issue2 = query.Query(issueQuery);
 
-        SpecificationExtensions.ShouldNotBeNull(issueQuery.Included);
-        issueQuery.Included.Single().Id.ShouldBe(user.Id);
+    SpecificationExtensions.ShouldNotBeNull(issueQuery.Included);
+    issueQuery.Included.Single().Id.ShouldBe(user.Id);
 
-        SpecificationExtensions.ShouldNotBeNull(issue2);
-    }
+    SpecificationExtensions.ShouldNotBeNull(issue2);
 }
 
-public class IssueByTitleWithAssignee : ICompiledQuery<Issue>
+public class IssueByTitleWithAssignee: ICompiledQuery<Issue>
 {
     public string Title { get; set; }
     public IList<User> Included { get; private set; } = new List<User>();
@@ -266,7 +265,7 @@ public class IssueByTitleWithAssignee : ICompiledQuery<Issue>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_compiled_include.cs#L20-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_compiled_include.cs#L20-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In this example, the query has an `Included` property which will receive the included Assignee / `User`. The 'resulting' included property can only be
@@ -285,7 +284,7 @@ its' Assignee / `User`, in your compiled query you should have a list of `User`s
 <!-- snippet: sample_compiled_include_list -->
 <a id='snippet-sample_compiled_include_list'></a>
 ```cs
-public class IssueWithUsers : ICompiledListQuery<Issue>
+public class IssueWithUsers: ICompiledListQuery<Issue>
 {
     public List<User> Users { get; set; } = new List<User>();
     // Can also work like that:
@@ -307,25 +306,24 @@ public void compiled_include_to_list()
     var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
     var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-    theSession.Store(user1, user2);
-    theSession.Store(issue1, issue2, issue3);
-    theSession.SaveChanges();
+    using var session = theStore.IdentitySession();
+    session.Store(user1, user2);
+    session.Store(issue1, issue2, issue3);
+    session.SaveChanges();
 
-    using (var session = theStore.QuerySession())
-    {
-        var query = new IssueWithUsers();
+    using var querySession = theStore.QuerySession();
+    var compiledQuery = new IssueWithUsers();
 
-        var issues = session.Query(query).ToArray();
+    var issues = querySession.Query(compiledQuery).ToArray();
 
-        query.Users.Count.ShouldBe(2);
-        issues.Count().ShouldBe(3);
+    compiledQuery.Users.Count.ShouldBe(2);
+    issues.Count().ShouldBe(3);
 
-        query.Users.Any(x => x.Id == user1.Id);
-        query.Users.Any(x => x.Id == user2.Id);
-    }
+    compiledQuery.Users.Any(x => x.Id == user1.Id);
+    compiledQuery.Users.Any(x => x.Id == user2.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_compiled_include.cs#L57-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled_include_list' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_compiled_include.cs#L57-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled_include_list' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that you could either have the list instantiated or at least make sure the property has a setter as well as a getter (we've got your back).
@@ -335,9 +333,9 @@ As with the simple include queries, you could also use a Dictionary with a key t
 <!-- snippet: sample_compiled_include_dictionary -->
 <a id='snippet-sample_compiled_include_dictionary'></a>
 ```cs
-public class IssueWithUsersById : ICompiledListQuery<Issue>
+public class IssueWithUsersById: ICompiledListQuery<Issue>
 {
-    public IDictionary<Guid,User> UsersById { get; set; } = new Dictionary<Guid, User>();
+    public IDictionary<Guid, User> UsersById { get; set; } = new Dictionary<Guid, User>();
     // Can also work like that:
     //public List<User> Users => new Dictionary<Guid,User>();
 
@@ -357,25 +355,24 @@ public void compiled_include_to_dictionary()
     var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
     var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-    theSession.Store(user1, user2);
-    theSession.Store(issue1, issue2, issue3);
-    theSession.SaveChanges();
+    using var session = theStore.IdentitySession();
+    session.Store(user1, user2);
+    session.Store(issue1, issue2, issue3);
+    session.SaveChanges();
 
-    using (var session = theStore.QuerySession())
-    {
-        var query = new IssueWithUsersById();
+    using var querySession = theStore.QuerySession();
+    var compiledQuery = new IssueWithUsersById();
 
-        var issues = session.Query(query).ToArray();
+    var issues = querySession.Query(compiledQuery).ToArray();
 
-        issues.ShouldNotBeEmpty();
+    issues.ShouldNotBeEmpty();
 
-        query.UsersById.Count.ShouldBe(2);
-        query.UsersById.ContainsKey(user1.Id).ShouldBeTrue();
-        query.UsersById.ContainsKey(user2.Id).ShouldBeTrue();
-    }
+    compiledQuery.UsersById.Count.ShouldBe(2);
+    compiledQuery.UsersById.ContainsKey(user1.Id).ShouldBeTrue();
+    compiledQuery.UsersById.ContainsKey(user2.Id).ShouldBeTrue();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_compiled_include.cs#L99-L139' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled_include_dictionary' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_compiled_include.cs#L100-L141' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled_include_dictionary' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying for Paginated Results
@@ -448,7 +445,7 @@ public class FindUserByAllTheThings: ICompiledQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/Compiled/compiled_query_Tests.cs#L341-L357' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_finduserbyallthethings' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/Compiled/compiled_query_Tests.cs#L343-L360' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_finduserbyallthethings' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying for Multiple Results as JSON
@@ -468,10 +465,9 @@ public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
             query.Where(x => FirstName == x.FirstName)
                 .OrderBy(x => x.UserName);
     }
-
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/Compiled/compiled_query_Tests.cs#L373-L388' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledtojsonarray' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/Compiled/compiled_query_Tests.cs#L377-L391' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledtojsonarray' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you wish to do it asynchronously, you can use the `ToJsonArrayAsync()` method.
@@ -500,7 +496,7 @@ public class FindJsonUserByUsername: ICompiledQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/Compiled/compiled_query_Tests.cs#L359-L371' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledasjson' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/Compiled/compiled_query_Tests.cs#L362-L375' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledasjson' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And an example:
@@ -527,15 +523,15 @@ public class TargetsInOrder: ICompiledListQuery<Target>
     public int PageSize { get; set; } = 20;
     public int Start { get; set; } = 5;
 
-    Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> ICompiledQuery<Target, IEnumerable<Target>>.QueryIs()
+    Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> ICompiledQuery<Target, IEnumerable<Target>>.
+        QueryIs()
     {
         return q => q
             .OrderBy(x => x.Id).Skip(Start).Take(PageSize);
     }
-
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/Compiled/compiled_query_Tests.cs#L494-L512' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_targetsinorder' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/Compiled/compiled_query_Tests.cs#L491-L509' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_targetsinorder' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And when used in the actual test:
@@ -550,11 +546,7 @@ public async Task use_compiled_query_with_statistics()
     var targets = Target.GenerateRandomData(100).ToArray();
     await theStore.BulkInsertAsync(targets);
 
-    var query = new TargetsInOrder
-    {
-        PageSize = 10,
-        Start = 20
-    };
+    var query = new TargetsInOrder { PageSize = 10, Start = 20 };
 
     var results = await theSession.QueryAsync(query);
 
@@ -563,5 +555,5 @@ public async Task use_compiled_query_with_statistics()
     query.Statistics.TotalResults.ShouldBe(100);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/Compiled/compiled_query_Tests.cs#L39-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_querystatistics_with_compiled_query' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/Compiled/compiled_query_Tests.cs#L38-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_querystatistics_with_compiled_query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

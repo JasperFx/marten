@@ -77,19 +77,19 @@ var user1 = new User { FirstName = "Jamie", LastName = "Vaughan" };
 var issue1 = new Issue { Title = "Running low on coffee" };
 var company1 = new Company { Name = "ECorp" };
 
-theSession.StoreObjects(new object[] { user1, issue1, company1 });
+session.StoreObjects(new object[] { user1, issue1, company1 });
 
-theSession.SaveChanges();
+session.SaveChanges();
 
 // Delete a mix of documents types
-using (var session = theStore.LightweightSession())
+using (var documentSession = theStore.LightweightSession())
 {
-    session.DeleteObjects(new object[] { user1, company1 });
+    documentSession.DeleteObjects(new object[] { user1, company1 });
 
-    session.SaveChanges();
+    documentSession.SaveChanges();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/deleting_multiple_documents.cs#L56-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deleteobjects' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/deleting_multiple_documents.cs#L59-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deleteobjects' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Soft Deletes

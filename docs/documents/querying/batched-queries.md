@@ -21,7 +21,7 @@ This functionality is demonstrated below:
 <a id='snippet-sample_using-batch-query'></a>
 ```cs
 // Start a new IBatchQuery from an active session
-var batch = theSession.CreateBatchQuery();
+var batch = session.CreateBatchQuery();
 
 // Fetch a single document by its Id
 var user1 = batch.Load<User>("username");
@@ -52,7 +52,7 @@ await batch.Execute();
 var internalUser = await firstInternal;
 Debug.WriteLine($"The first internal user is {internalUser.FirstName} {internalUser.LastName}");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L513-L545' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-batch-query' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L528-L562' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-batch-query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Combining Compiled Queries and Batch Queries
@@ -64,7 +64,7 @@ Say you have a compiled query that finds the first user with a given first name:
 <!-- snippet: sample_FindByFirstName -->
 <a id='snippet-sample_findbyfirstname'></a>
 ```cs
-public class FindByFirstName : ICompiledQuery<User, User>
+public class FindByFirstName: ICompiledQuery<User, User>
 {
     public string FirstName { get; set; }
 
@@ -74,7 +74,7 @@ public class FindByFirstName : ICompiledQuery<User, User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L103-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_findbyfirstname' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L90-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_findbyfirstname' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To use that compiled query class in a batch query, you simply use the `IBatchedQuery.Query(ICompiledQuery)` syntax shown below:
@@ -82,17 +82,17 @@ To use that compiled query class in a batch query, you simply use the `IBatchedQ
 <!-- snippet: sample_batch-query-with-compiled-queries -->
 <a id='snippet-sample_batch-query-with-compiled-queries'></a>
 ```cs
-var batch = theSession.CreateBatchQuery();
+var batch = session.CreateBatchQuery();
 
-var justin = batch.Query(new FindByFirstName {FirstName = "Justin"});
-var tamba = batch.Query(new FindByFirstName {FirstName = "Tamba"});
+var justin = batch.Query(new FindByFirstName { FirstName = "Justin" });
+var tamba = batch.Query(new FindByFirstName { FirstName = "Tamba" });
 
 await batch.Execute();
 
 (await justin).Id.ShouldBe(user1.Id);
 (await tamba).Id.ShouldBe(user2.Id);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L118-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-query-with-compiled-queries' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L109-L121' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-query-with-compiled-queries' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Running Synchronously
@@ -102,7 +102,7 @@ As of v0.9.1, Marten also exposes the batch querying functionality with a synchr
 <!-- snippet: sample_batch-query-with-compiled-queries-synchronously -->
 <a id='snippet-sample_batch-query-with-compiled-queries-synchronously'></a>
 ```cs
-var batch = theSession.CreateBatchQuery();
+var batch = session.CreateBatchQuery();
 
 var justin = batch.Query(new FindByFirstName { FirstName = "Justin" });
 var tamba = batch.Query(new FindByFirstName { FirstName = "Tamba" });
@@ -112,7 +112,7 @@ batch.ExecuteSynchronously();
 justin.Result.Id.ShouldBe(user1.Id);
 tamba.Result.Id.ShouldBe(user2.Id);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L134-L144' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-query-with-compiled-queries-synchronously' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L129-L141' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-query-with-compiled-queries-synchronously' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The mechanics of running synchronously are identical except for calling `IBatchedQuery.ExecuteSynchronously()`.

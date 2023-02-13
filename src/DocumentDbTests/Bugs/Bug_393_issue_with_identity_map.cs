@@ -1,6 +1,5 @@
 using System;
 using Marten.Schema.Identity;
-using Marten.Services;
 using Marten.Testing.Harness;
 using Xunit;
 
@@ -25,9 +24,8 @@ public class Bug_393_issue_with_identity_map: IntegrationContext
         details.ShouldBeTheSameAs(routeDetails);
     }
 
-    public Bug_393_issue_with_identity_map(DefaultStoreFixture fixture) : base(fixture)
+    public Bug_393_issue_with_identity_map(DefaultStoreFixture fixture): base(fixture)
     {
-        DocumentTracking = Marten.DocumentTracking.IdentityOnly;
     }
 }
 
@@ -50,9 +48,8 @@ public class Bug_393_issue_with_dirty_tracking_identity_map: IntegrationContext
         details.ShouldBeTheSameAs(routeDetails);
     }
 
-    public Bug_393_issue_with_dirty_tracking_identity_map(DefaultStoreFixture fixture) : base(fixture)
+    public Bug_393_issue_with_dirty_tracking_identity_map(DefaultStoreFixture fixture): base(fixture)
     {
-        DocumentTracking = Marten.DocumentTracking.DirtyTracking;
     }
 }
 

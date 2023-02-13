@@ -14,7 +14,7 @@ namespace Marten.Testing.Harness
     /// all custom StoreOptions configuration
     /// </summary>
     [Collection("OneOffs")]
-    public abstract class OneOffConfigurationsContext : IDisposable
+    public abstract class OneOffConfigurationsContext: IDisposable
     {
         protected string _schemaName;
         private DocumentStore _store;
@@ -40,10 +40,7 @@ namespace Marten.Testing.Harness
         /// <returns></returns>
         protected DocumentStore SeparateStore(Action<StoreOptions> configure = null)
         {
-            var options = new StoreOptions
-            {
-                DatabaseSchemaName = SchemaName
-            };
+            var options = new StoreOptions { DatabaseSchemaName = SchemaName };
 
             options.Connection(ConnectionSource.ConnectionString);
 
@@ -89,31 +86,26 @@ namespace Marten.Testing.Harness
             {
                 if (_store == null)
                 {
-                    StoreOptions(_ => {});
+                    StoreOptions(_ => { });
                 }
 
                 return _store;
             }
         }
 
-        protected virtual IDocumentSession theSession
+        protected IDocumentSession theSession
         {
             get
             {
                 if (_session != null)
                     return _session;
 
-                _session = theStore.OpenSession(DocumentTracking);
+                _session = theStore.LightweightSession();
                 _disposables.Add(_session);
 
                 return _session;
             }
         }
-
-        /// <summary>
-        /// Sets the default DocumentTracking for this context. Default is "None"
-        /// </summary>
-        protected DocumentTracking DocumentTracking { get; set; } = DocumentTracking.None;
 
         public void Dispose()
         {

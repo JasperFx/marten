@@ -1,22 +1,12 @@
 using System.Linq;
-using Marten;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.HierarchicalStorage;
 
 public class delete_by_where_for_hierarchy_Tests: end_to_end_document_hierarchy_usage_Tests
 {
-    private new readonly ITestOutputHelper _output;
-
-    public delete_by_where_for_hierarchy_Tests(ITestOutputHelper output)
-    {
-        _output = output;
-        DocumentTracking = DocumentTracking.None;
-    }
-
     [Fact]
     public void can_delete_all_subclass()
     {

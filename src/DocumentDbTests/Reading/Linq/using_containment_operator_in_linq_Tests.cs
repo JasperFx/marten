@@ -8,11 +8,10 @@ using Xunit;
 
 namespace DocumentDbTests.Reading.Linq;
 
-public class using_containment_operator_in_linq_Tests : OneOffConfigurationsContext
+public class using_containment_operator_in_linq_Tests: OneOffConfigurationsContext
 {
     public using_containment_operator_in_linq_Tests()
     {
-        DocumentTracking = DocumentTracking.IdentityOnly;
         StoreOptions(_ => { _.Schema.For<Target>().GinIndexJsonData(); });
     }
 
@@ -20,11 +19,12 @@ public class using_containment_operator_in_linq_Tests : OneOffConfigurationsCont
     public void query_by_date()
     {
         var targets = Target.GenerateRandomData(6).ToArray();
-        theSession.Store(targets);
+        using var session = theStore.IdentitySession();
+        session.Store(targets);
 
-        theSession.SaveChanges();
+        session.SaveChanges();
 
-        var actual = theSession.Query<Target>().Where(x => x.Date == targets.ElementAt(2).Date)
+        var actual = session.Query<Target>().Where(x => x.Date == targets.ElementAt(2).Date)
             .ToArray();
 
         SpecificationExtensions.ShouldBeGreaterThan(actual.Length, 0);
@@ -36,35 +36,37 @@ public class using_containment_operator_in_linq_Tests : OneOffConfigurationsCont
     [Fact]
     public void query_by_number()
     {
-        theSession.Store(new Target {Number = 1});
-        theSession.Store(new Target {Number = 2});
-        theSession.Store(new Target {Number = 3});
-        theSession.Store(new Target {Number = 4});
-        theSession.Store(new Target {Number = 5});
-        theSession.Store(new Target {Number = 6});
+        using var session = theStore.IdentitySession();
+        session.Store(new Target { Number = 1 });
+        session.Store(new Target { Number = 2 });
+        session.Store(new Target { Number = 3 });
+        session.Store(new Target { Number = 4 });
+        session.Store(new Target { Number = 5 });
+        session.Store(new Target { Number = 6 });
 
-        theSession.SaveChanges();
+        session.SaveChanges();
 
 
-        theSession.Query<Target>().Where(x => x.Number == 3).Single().Number.ShouldBe(3);
+        session.Query<Target>().Where(x => x.Number == 3).Single().Number.ShouldBe(3);
     }
 
     [Fact]
     public void query_by_string()
     {
-        theSession.Store(new Target {String = "Python"});
-        theSession.Store(new Target {String = "Ruby"});
-        theSession.Store(new Target {String = "Java"});
-        theSession.Store(new Target {String = "C#"});
-        theSession.Store(new Target {String = "Scala"});
+        using var session = theStore.IdentitySession();
+        session.Store(new Target { String = "Python" });
+        session.Store(new Target { String = "Ruby" });
+        session.Store(new Target { String = "Java" });
+        session.Store(new Target { String = "C#" });
+        session.Store(new Target { String = "Scala" });
 
-        theSession.SaveChanges();
+        session.SaveChanges();
 
-        theSession.Query<Target>().Where(x => x.String == "Python").Single().String.ShouldBe("Python");
+        session.Query<Target>().Where(x => x.String == "Python").Single().String.ShouldBe("Python");
     }
 }
 
-public class using_containment_operator_in_linq_with_camel_casing_Tests : OneOffConfigurationsContext
+public class using_containment_operator_in_linq_with_camel_casing_Tests: OneOffConfigurationsContext
 {
     public using_containment_operator_in_linq_with_camel_casing_Tests()
     {
@@ -79,18 +81,17 @@ public class using_containment_operator_in_linq_with_camel_casing_Tests : OneOff
     [Fact]
     public void query_by_date()
     {
-        DocumentTracking = DocumentTracking.IdentityOnly;
+        using var session = theStore.IdentitySession();
 
         var targets = Target.GenerateRandomData(6).ToArray();
-        theSession.Store(targets);
+        session.Store(targets);
 
-        theSession.SaveChanges();
+        session.SaveChanges();
 
-        var actual = theSession.Query<Target>().Where(x => x.Date == targets.ElementAt(2).Date)
+        var actual = session.Query<Target>().Where(x => x.Date == targets.ElementAt(2).Date)
             .ToArray();
 
         SpecificationExtensions.ShouldBeGreaterThan(actual.Length, 0);
-
 
         actual.ShouldContain(targets.ElementAt(2));
     }
@@ -98,30 +99,32 @@ public class using_containment_operator_in_linq_with_camel_casing_Tests : OneOff
     [Fact]
     public void query_by_number()
     {
-        theSession.Store(new Target { Number = 1 });
-        theSession.Store(new Target { Number = 2 });
-        theSession.Store(new Target { Number = 3 });
-        theSession.Store(new Target { Number = 4 });
-        theSession.Store(new Target { Number = 5 });
-        theSession.Store(new Target { Number = 6 });
+        using var session = theStore.IdentitySession();
+        session.Store(new Target { Number = 1 });
+        session.Store(new Target { Number = 2 });
+        session.Store(new Target { Number = 3 });
+        session.Store(new Target { Number = 4 });
+        session.Store(new Target { Number = 5 });
+        session.Store(new Target { Number = 6 });
 
-        theSession.SaveChanges();
+        session.SaveChanges();
 
 
-        theSession.Query<Target>().Where(x => x.Number == 3).Single().Number.ShouldBe(3);
+        session.Query<Target>().Where(x => x.Number == 3).Single().Number.ShouldBe(3);
     }
 
     [Fact]
     public void query_by_string()
     {
-        theSession.Store(new Target { String = "Python" });
-        theSession.Store(new Target { String = "Ruby" });
-        theSession.Store(new Target { String = "Java" });
-        theSession.Store(new Target { String = "C#" });
-        theSession.Store(new Target { String = "Scala" });
+        using var session = theStore.IdentitySession();
+        session.Store(new Target { String = "Python" });
+        session.Store(new Target { String = "Ruby" });
+        session.Store(new Target { String = "Java" });
+        session.Store(new Target { String = "C#" });
+        session.Store(new Target { String = "Scala" });
 
-        theSession.SaveChanges();
+        session.SaveChanges();
 
-        theSession.Query<Target>().Where(x => x.String == "Python").Single().String.ShouldBe("Python");
+        session.Query<Target>().Where(x => x.String == "Python").Single().String.ShouldBe("Python");
     }
 }
