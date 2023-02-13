@@ -53,7 +53,7 @@ public abstract class CustomAggregation<TDoc, TId>: ProjectionBase, IAggregation
         EventRange range,
         CancellationToken cancellationToken)
     {
-        await using var session = store.OpenSession(SessionOptions.ForDatabase(database));
+        await using var session = store.LightweightSession(SessionOptions.ForDatabase(database));
         var groups = await Slicer.SliceAsyncEvents(session, range.Events).ConfigureAwait(false);
 
         return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);
@@ -101,7 +101,7 @@ public abstract class CustomAggregation<TDoc, TId>: ProjectionBase, IAggregation
         IMartenDatabase database,
         EventRange range, CancellationToken cancellation)
     {
-        using var session = store.OpenSession(SessionOptions.ForDatabase(database));
+        using var session = store.LightweightSession(SessionOptions.ForDatabase(database));
         return Slicer.SliceAsyncEvents(session, range.Events);
     }
 

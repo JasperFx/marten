@@ -14,7 +14,7 @@ using Shouldly;
 
 namespace Marten.AsyncDaemon.Testing.Bugs
 {
-    public class Bug_2177_query_session_tenancy_in_daemon : BugIntegrationContext
+    public class Bug_2177_query_session_tenancy_in_daemon: BugIntegrationContext
     {
         [Fact]
         public async Task should_have_tenancy_set_correctly()
@@ -33,18 +33,18 @@ namespace Marten.AsyncDaemon.Testing.Bugs
             });
 
 
-
             var tenantId = Guid.NewGuid().ToString();
             var userId = Guid.NewGuid();
             var ticketId = Guid.NewGuid();
 
-            await using var session = theStore.OpenSession(tenantId);
+            await using var session = theStore.LightweightSession(tenantId);
             session.Insert(new User { Id = userId, FirstName = "Tester", LastName = "McTestFace" });
             await session.SaveChangesAsync();
 
             await insertUserWithSameIdInOtherTenant(theStore, userId);
 
-            session.Events.Append(ticketId, new TicketCreated(ticketId, "Test Projections"), new TicketAssigned(ticketId, userId));
+            session.Events.Append(ticketId, new TicketCreated(ticketId, "Test Projections"),
+                new TicketAssigned(ticketId, userId));
             await session.SaveChangesAsync();
 
             using var daemon = await theStore.BuildProjectionDaemonAsync();
@@ -67,7 +67,6 @@ namespace Marten.AsyncDaemon.Testing.Bugs
 
 namespace Bug2177
 {
-
     public record TicketDeleted(Guid TicketId);
 
     public record TicketCreated(Guid TicketId, string Name);
@@ -98,9 +97,9 @@ namespace Bug2177
         public Ticket Create(TicketCreated created) =>
             new() { Id = created.TicketId, Name = created.Name };
 
-        public void Apply(Ticket ticket, TicketAssigned assigned, IQuerySession session) {
+        public void Apply(Ticket ticket, TicketAssigned assigned, IQuerySession session)
+        {
             ticket.User = session.Load<User>(assigned.UserId);
         }
-
     }
 }

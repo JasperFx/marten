@@ -26,13 +26,7 @@ class Program
         showProcessData();
 
 
-        var parentItem = new Parent
-        {
-            Children = new List<Child>
-            {
-                new Child()
-            }
-        };
+        var parentItem = new Parent { Children = new List<Child> { new Child() } };
 
         while (true)
         {
@@ -48,7 +42,7 @@ class Program
             //     await session.SaveChangesAsync();
             // }
 
-            await using (var session = store.OpenSession(SessionOptions.ForCurrentTransaction()))
+            await using (var session = store.LightweightSession(SessionOptions.ForCurrentTransaction()))
             {
                 session.Store(parentItem);
                 await session.SaveChangesAsync();
@@ -56,7 +50,7 @@ class Program
 
             showProcessData();
 
-            await using (var session = store.OpenSession(SessionOptions.ForCurrentTransaction()))
+            await using (var session = store.LightweightSession(SessionOptions.ForCurrentTransaction()))
             {
                 await session.Query<Parent>().FirstOrDefaultAsync(p => p.Children.Any(c => c.Id == Guid.Empty));
             }

@@ -46,8 +46,8 @@ public class AdvancedOperations
         var databases = await _store.Tenancy.BuildDatabases().ConfigureAwait(false);
         foreach (var database in databases.OfType<IMartenDatabase>())
         {
-            await database.DeleteAllDocumentsAsync().ConfigureAwait(false);
-            await database.DeleteAllEventDataAsync().ConfigureAwait(false);
+            await database.DeleteAllDocumentsAsync(cancellation).ConfigureAwait(false);
+            await database.DeleteAllEventDataAsync(cancellation).ConfigureAwait(false);
         }
 
 

@@ -40,13 +40,13 @@ public class multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<Mul
     public multi_tenancy(MultiTenancyFixture fixture, ITestOutputHelper output): base(fixture)
     {
         _output = output;
-        using (var session = theStore.OpenSession("Red"))
+        using (var session = theStore.LightweightSession("Red"))
         {
             session.Store(targetRed1, targetRed2);
             session.SaveChanges();
         }
 
-        using (var session = theStore.OpenSession("Blue"))
+        using (var session = theStore.LightweightSession("Blue"))
         {
             session.Store(targetBlue1, targetBlue2);
             session.SaveChanges();
@@ -57,16 +57,16 @@ public class multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<Mul
     [Fact]
     public void patching_respects_tenancy_too()
     {
-        var user = new User {UserName = "Me", FirstName = "Jeremy", LastName = "Miller"};
+        var user = new User { UserName = "Me", FirstName = "Jeremy", LastName = "Miller" };
         user.Id = Guid.NewGuid();
 
-        using (var red = theStore.OpenSession("Red"))
+        using (var red = theStore.LightweightSession("Red"))
         {
             red.Store(user);
             red.SaveChanges();
         }
 
-        using (var green = theStore.OpenSession("Green"))
+        using (var green = theStore.LightweightSession("Green"))
         {
             green.Patch<User>(user.Id).Set(x => x.FirstName, "John");
             green.SaveChanges();
@@ -82,16 +82,16 @@ public class multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<Mul
     [Fact]
     public void patching_respects_tenancy_too_2()
     {
-        var user = new User {UserName = "Me", FirstName = "Jeremy", LastName = "Miller"};
+        var user = new User { UserName = "Me", FirstName = "Jeremy", LastName = "Miller" };
         user.Id = Guid.NewGuid();
 
-        using (var red = theStore.OpenSession("Red"))
+        using (var red = theStore.LightweightSession("Red"))
         {
             red.Store(user);
             red.SaveChanges();
         }
 
-        using (var green = theStore.OpenSession("Green"))
+        using (var green = theStore.LightweightSession("Green"))
         {
             green.Patch<User>(x => x.UserName == "Me").Set(x => x.FirstName, "John");
             green.SaveChanges();
@@ -105,12 +105,9 @@ public class multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<Mul
     }
 
 
-
     [MultiTenanted]
     public class TenantedDoc
     {
         public Guid Id;
     }
-
-
 }

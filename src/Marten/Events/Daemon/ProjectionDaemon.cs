@@ -373,8 +373,7 @@ internal class ProjectionDaemon: IProjectionDaemon
     {
         var sessionOptions = SessionOptions.ForDatabase(Database);
         sessionOptions.AllowAnyTenant = true;
-        sessionOptions.Tracking = DocumentTracking.None;
-        await using var session = await _store.OpenSessionAsync(sessionOptions, token).ConfigureAwait(false);
+        await using var session = await _store.LightweightSessionAsync(sessionOptions, token).ConfigureAwait(false);
         source.Options.Teardown(session);
 
         foreach (var shard in shards)
@@ -530,7 +529,7 @@ internal class ProjectionDaemon: IProjectionDaemon
         {
             var deadLetterEvent = new DeadLetterEvent(@event, shardName, exception);
             var session =
-                _store.OpenSession(SessionOptions.ForDatabase(Database));
+                _store.LightweightSession(SessionOptions.ForDatabase(Database));
 
             await using (session.ConfigureAwait(false))
             {

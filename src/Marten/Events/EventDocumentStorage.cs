@@ -73,9 +73,9 @@ public abstract class EventDocumentStorage: IEventStorage
         database.RunSql($"truncate table {Events.DatabaseSchemaName}.mt_streams cascade");
     }
 
-    public Task TruncateDocumentStorageAsync(IMartenDatabase database)
+    public Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
     {
-        return database.RunSqlAsync($"truncate table {Events.DatabaseSchemaName}.mt_streams cascade");
+        return database.RunSqlAsync($"truncate table {Events.DatabaseSchemaName}.mt_streams cascade", ct: ct);
     }
 
     public TenancyStyle TenancyStyle { get; }

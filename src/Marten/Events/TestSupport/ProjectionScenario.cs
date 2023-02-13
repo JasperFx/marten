@@ -68,10 +68,10 @@ public partial class ProjectionScenario: IEventOperations
     {
         if (!DoNotDeleteExistingData)
         {
-            await _store.Advanced.Clean.DeleteAllEventDataAsync().ConfigureAwait(false);
+            await _store.Advanced.Clean.DeleteAllEventDataAsync(ct).ConfigureAwait(false);
             foreach (var storageType in
                      _store.Options.Projections.All.SelectMany(x => x.Options.StorageTypes))
-                await _store.Advanced.Clean.DeleteDocumentsByTypeAsync(storageType).ConfigureAwait(false);
+                await _store.Advanced.Clean.DeleteDocumentsByTypeAsync(storageType, ct).ConfigureAwait(false);
         }
 
         if (_store.Options.Projections.HasAnyAsyncProjections())

@@ -83,11 +83,10 @@ _host = await Host.CreateDefaultBuilder()
 
             opts.RegisterDocumentType<User>();
             opts.RegisterDocumentType<Target>();
-
         }).ApplyAllDatabaseChangesOnStartup();
     }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_per_database_multitenancy.cs#L74-L100' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_single_server_multi_tenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_per_database_multitenancy.cs#L76-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_single_server_multi_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Write your own tenancy strategy!
@@ -168,7 +167,7 @@ var store = DocumentStore.For(opts =>
     opts.Tenancy = new MySpecialTenancy();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_per_database_multitenancy.cs#L59-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_custom_tenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_per_database_multitenancy.cs#L61-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_custom_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Administering Multiple Databases

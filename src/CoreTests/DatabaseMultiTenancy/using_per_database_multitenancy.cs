@@ -20,7 +20,7 @@ using Xunit;
 namespace CoreTests.DatabaseMultiTenancy;
 
 [CollectionDefinition("multi-tenancy", DisableParallelization = true)]
-public class using_per_database_multitenancy : IAsyncLifetime
+public class using_per_database_multitenancy: IAsyncLifetime
 {
     private IHost _host;
     private IDocumentStore theStore;
@@ -30,6 +30,7 @@ public class using_per_database_multitenancy : IAsyncLifetime
     public class MySpecialTenancy: ITenancy
 
         #endregion
+
     {
         public ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
         {
@@ -43,6 +44,7 @@ public class using_per_database_multitenancy : IAsyncLifetime
 
         public Tenant Default { get; }
         public IDocumentCleaner Cleaner { get; }
+
         public ValueTask<Tenant> GetTenantAsync(string tenantId)
         {
             throw new System.NotImplementedException();
@@ -93,7 +95,6 @@ public class using_per_database_multitenancy : IAsyncLifetime
 
                     opts.RegisterDocumentType<User>();
                     opts.RegisterDocumentType<Target>();
-
                 }).ApplyAllDatabaseChangesOnStartup();
             }).StartAsync();
 
@@ -147,10 +148,7 @@ public class using_per_database_multitenancy : IAsyncLifetime
     public async Task can_open_a_session_to_a_different_database()
     {
         await using var session =
-            await theStore.OpenSessionAsync(new SessionOptions
-            {
-                TenantId = "tenant1", Tracking = DocumentTracking.None
-            });
+            await theStore.LightweightSessionAsync(new SessionOptions { TenantId = "tenant1" });
 
         session.Connection.Database.ShouldBe("database1");
     }

@@ -443,7 +443,7 @@ internal class ShardAgent: IShardAgent, IObserver<ShardState>
 
     public ProjectionUpdateBatch StartNewBatch(EventRangeGroup group)
     {
-        var session = _store.OpenSession(_sessionOptions!);
+        var session = _store.LightweightSession(_sessionOptions!);
         return new ProjectionUpdateBatch(_store.Events, _store.Options.Projections, (DocumentSessionBase)session,
             group.Range, group.Cancellation, Mode);
     }
@@ -462,7 +462,7 @@ internal class ShardAgent: IShardAgent, IObserver<ShardState>
             return;
         }
 
-        var session = (DocumentSessionBase)_store.OpenSession(_sessionOptions!);
+        var session = (DocumentSessionBase)_store.IdentitySession(_sessionOptions!);
         await using (session.ConfigureAwait(false))
         {
             try

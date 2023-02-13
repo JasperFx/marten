@@ -17,11 +17,14 @@ public class OpeningASessionAsync
         });
 
         #region sample_opening_session_async
-        await using var session = await store.OpenSessionAsync(SessionOptions.ForConnectionString("another connection string"));
+
+        await using var session =
+            await store.LightweightSessionAsync(SessionOptions.ForConnectionString("another connection string"));
 
         var openIssues = await session.Query<Issue>()
             .Where(x => x.Tags.Contains("open"))
             .ToListAsync();
+
         #endregion
     }
 }

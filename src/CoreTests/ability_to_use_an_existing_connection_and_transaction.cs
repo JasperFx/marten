@@ -15,13 +15,13 @@ using IsolationLevel = System.Data.IsolationLevel;
 
 namespace CoreTests;
 
-public class ability_to_use_an_existing_connection_and_transaction : IntegrationContext
+public class ability_to_use_an_existing_connection_and_transaction: IntegrationContext
 {
     private readonly Target[] targets = Target.GenerateRandomData(100).ToArray();
 
-    public ability_to_use_an_existing_connection_and_transaction(DefaultStoreFixture fixture,ITestOutputHelper output = null) : base(fixture)
+    public ability_to_use_an_existing_connection_and_transaction(DefaultStoreFixture fixture,
+        ITestOutputHelper output = null): base(fixture)
     {
-
     }
 
     protected override Task fixtureSetup()
@@ -33,18 +33,19 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
     public void samples(IDocumentStore store, NpgsqlConnection connection, NpgsqlTransaction transaction)
     {
         #region sample_passing-in-existing-connections-and-transactions
+
         // Use an existing connection, but Marten still controls the transaction lifecycle
-        var session1 = store.OpenSession(SessionOptions.ForConnection(connection));
+        var session1 = store.LightweightSession(SessionOptions.ForConnection(connection));
 
 
         // Enlist in an existing Npgsql transaction, but
         // choose not to allow the session to own the transaction
         // boundaries
-        var session3 = store.OpenSession(SessionOptions.ForTransaction(transaction));
+        var session3 = store.LightweightSession(SessionOptions.ForTransaction(transaction));
 
         // Enlist in the current, ambient transaction scope
         using var scope = new TransactionScope();
-        var session4 = store.OpenSession(SessionOptions.ForCurrentTransaction());
+        var session4 = store.LightweightSession(SessionOptions.ForCurrentTransaction());
 
         #endregion
     }
@@ -61,7 +62,7 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
     public void can_query_sync_with_session_enlisted_in_transaction_scope()
     {
         using var scope = new TransactionScope();
-        using var session = theStore.OpenSession(SessionOptions.ForCurrentTransaction());
+        using var session = theStore.LightweightSession(SessionOptions.ForCurrentTransaction());
 
         var aTarget = targets.First();
 
@@ -78,7 +79,7 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
     public async Task can_query_async_with_session_enlisted_in_transaction_scope()
     {
         using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-        await using var session = await theStore.OpenSessionAsync(SessionOptions.ForCurrentTransaction());
+        await using var session = await theStore.LightweightSessionAsync(SessionOptions.ForCurrentTransaction());
 
         var aTarget = targets.First();
 
@@ -96,7 +97,7 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
     {
         using (var scope = new TransactionScope())
         {
-            using (var session = theStore.OpenSession(SessionOptions.ForCurrentTransaction()))
+            using (var session = theStore.LightweightSession(SessionOptions.ForCurrentTransaction()))
             {
                 session.Store(Target.Random(), Target.Random());
                 session.SaveChanges();
@@ -120,13 +121,12 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
     }
 
 
-
     [Fact]
     public void enlist_in_transaction_scope_by_transaction()
     {
         using (var scope = new TransactionScope())
         {
-            using (var session = theStore.OpenSession(SessionOptions.ForCurrentTransaction()))
+            using (var session = theStore.LightweightSession(SessionOptions.ForCurrentTransaction()))
             {
                 session.Store(Target.Random(), Target.Random());
                 session.SaveChanges();
@@ -169,7 +169,7 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
                 query.Query<Target>().Count().ShouldBe(100);
             }
 
-            using (var session = theStore.OpenSession(SessionOptions.ForTransaction(tx, true)))
+            using (var session = theStore.LightweightSession(SessionOptions.ForTransaction(tx, true)))
             {
                 session.Store(newTargets);
                 session.SaveChanges();
@@ -204,7 +204,7 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
                 (await query.Query<Target>().CountAsync()).ShouldBe(100);
             }
 
-            await using (var session = theStore.OpenSession(SessionOptions.ForTransaction(tx, true)))
+            await using (var session = theStore.LightweightSession(SessionOptions.ForTransaction(tx, true)))
             {
                 session.Store(newTargets);
                 await session.SaveChangesAsync();
@@ -232,7 +232,7 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
             cmd.Transaction = tx;
             cmd.ExecuteNonQuery();
 
-            using (var session = theStore.OpenSession(SessionOptions.ForTransaction(tx)))
+            using (var session = theStore.LightweightSession(SessionOptions.ForTransaction(tx)))
             {
                 session.Store(newTargets);
                 session.SaveChanges();
@@ -269,7 +269,7 @@ public class ability_to_use_an_existing_connection_and_transaction : Integration
             cmd.Transaction = tx;
             await cmd.ExecuteNonQueryAsync();
 
-            await using (var session = theStore.OpenSession(SessionOptions.ForTransaction(tx)))
+            await using (var session = theStore.LightweightSession(SessionOptions.ForTransaction(tx)))
             {
                 session.Store(newTargets);
                 await session.SaveChangesAsync();
