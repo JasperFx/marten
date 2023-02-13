@@ -68,13 +68,13 @@ public partial class DocumentStore: ICodeFileCollection
     {
         var tenant = new Tenant(Marten.Storage.Tenancy.DefaultTenantId, new StandinDatabase(Options));
         using var lightweight =
-            (QuerySession)OpenSession(
-                new SessionOptions { Tracking = DocumentTracking.None, AllowAnyTenant = true, Tenant = tenant });
+            (QuerySession)LightweightSession(
+                new SessionOptions { AllowAnyTenant = true, Tenant = tenant });
 
-        using var identityMap = (QuerySession)OpenSession(
-            new SessionOptions { Tracking = DocumentTracking.IdentityOnly, AllowAnyTenant = true, Tenant = tenant });
-        using var dirty = (QuerySession)OpenSession(
-            new SessionOptions { Tracking = DocumentTracking.DirtyTracking, AllowAnyTenant = true, Tenant = tenant });
+        using var identityMap = (QuerySession)IdentitySession(
+            new SessionOptions { AllowAnyTenant = true, Tenant = tenant });
+        using var dirty = (QuerySession)DirtyTrackedSession(
+            new SessionOptions { AllowAnyTenant = true, Tenant = tenant });
 
 
         var options = new SessionOptions { AllowAnyTenant = true, Tenant = tenant };

@@ -30,7 +30,7 @@ class Program
 
         while (true)
         {
-            // using (var session = store.OpenSession())
+            // using (var session = store.LightweightSession())
             // {
             //     session.Store(new Target());
             //     session.Store(new Target());

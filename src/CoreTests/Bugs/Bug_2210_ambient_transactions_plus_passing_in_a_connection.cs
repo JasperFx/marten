@@ -44,7 +44,6 @@ public class Bug_2210_ambient_transactions_plus_passing_in_a_connection: BugInte
 
             var options = SessionOptions.ForConnection(connection).EnlistInAmbientTransactionScope();
             options.IsolationLevel = IsolationLevel.ReadCommitted;
-            options.Tracking = DocumentTracking.None;
 
             var martenConnection =
                 await options.InitializeAsync(theStore, CommandRunnerMode.External, CancellationToken.None);

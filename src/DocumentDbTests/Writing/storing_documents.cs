@@ -11,12 +11,11 @@ using Xunit;
 
 namespace DocumentDbTests.Writing;
 
-public class storing_documents : IntegrationContext
+public class storing_documents: IntegrationContext
 {
-    public storing_documents(DefaultStoreFixture fixture) : base(fixture)
+    public storing_documents(DefaultStoreFixture fixture): base(fixture)
     {
     }
-
 
 
     [Theory]
@@ -24,12 +23,12 @@ public class storing_documents : IntegrationContext
     [InlineData(DocumentTracking.None)]
     public void store_a_document(DocumentTracking tracking)
     {
-        DocumentTracking = tracking;
+        using var session = OpenSession(tracking);
 
         var user = new User { FirstName = "James", LastName = "Worthy" };
 
-        theSession.Store(user);
-        theSession.SaveChanges();
+        session.Store(user);
+        session.SaveChanges();
 
         using var session3 = theStore.LightweightSession();
         var user3 = session3.Load<User>(user.Id);
@@ -42,16 +41,15 @@ public class storing_documents : IntegrationContext
     [InlineData(DocumentTracking.None)]
     public void store_and_update_a_document_then_document_should_not_be_updated(DocumentTracking tracking)
     {
-        DocumentTracking = tracking;
-
         var user = new User { FirstName = "James", LastName = "Worthy" };
 
-        theSession.Store(user);
-        theSession.SaveChanges();
+        using var session = OpenSession(tracking);
+        session.Store(user);
+        session.SaveChanges();
 
         using (var session2 = theStore.LightweightSession())
         {
-            session2.ShouldNotBeSameAs(theSession);
+            session2.ShouldNotBeSameAs(session);
 
             var user2 = session2.Load<User>(user.Id);
             user2.FirstName = "Jens";
@@ -71,20 +69,21 @@ public class storing_documents : IntegrationContext
     [Theory]
     [InlineData(DocumentTracking.IdentityOnly)]
     [InlineData(DocumentTracking.None)]
-    public void store_and_update_a_document_in_same_session_then_document_should_not_be_updated(DocumentTracking tracking)
+    public void store_and_update_a_document_in_same_session_then_document_should_not_be_updated(
+        DocumentTracking tracking)
     {
-        DocumentTracking = tracking;
+        using var session = OpenSession(tracking);
 
         var user = new User { FirstName = "James", LastName = "Worthy" };
 
-        theSession.Store(user);
-        theSession.SaveChanges();
+        session.Store(user);
+        session.SaveChanges();
 
         user.FirstName = "Jens";
         user.LastName = "Pettersson";
-        theSession.SaveChanges();
+        session.SaveChanges();
 
-        using var session3 = theStore.LightweightSession();
+        using var session3 = theStore.QuerySession();
         var user3 = session3.Load<User>(user.Id);
         user3.FirstName.ShouldBe("James");
         user3.LastName.ShouldBe("Worthy");
@@ -93,22 +92,23 @@ public class storing_documents : IntegrationContext
     [Theory]
     [InlineData(DocumentTracking.IdentityOnly)]
     [InlineData(DocumentTracking.None)]
-    public void store_reload_and_update_a_document_in_same_session_then_document_should_not_be_updated(DocumentTracking tracking)
+    public void store_reload_and_update_a_document_in_same_session_then_document_should_not_be_updated(
+        DocumentTracking tracking)
     {
-        DocumentTracking = tracking;
+        using var session = OpenSession(tracking);
 
         var user = new User { FirstName = "James", LastName = "Worthy" };
 
-        theSession.Store(user);
-        theSession.SaveChanges();
+        session.Store(user);
+        session.SaveChanges();
 
-        var user2 = theSession.Load<User>(user.Id);
+        var user2 = session.Load<User>(user.Id);
         user2.FirstName = "Jens";
         user2.LastName = "Pettersson";
-        theSession.SaveChanges();
+        session.SaveChanges();
 
-        using var session = theStore.LightweightSession();
-        var user3 = session.Load<User>(user.Id);
+        using var querySession = theStore.QuerySession();
+        var user3 = querySession.Load<User>(user.Id);
         user3.FirstName.ShouldBe("James");
         user3.LastName.ShouldBe("Worthy");
     }
@@ -126,13 +126,12 @@ public class storing_documents : IntegrationContext
     [SessionTypes]
     public void persist_a_single_document(DocumentTracking tracking)
     {
-        DocumentTracking = tracking;
-
+        using var session = OpenSession(tracking);
         var user = new User { FirstName = "Magic", LastName = "Johnson" };
 
-        theSession.Store(user);
+        session.Store(user);
 
-        theSession.SaveChanges();
+        session.SaveChanges();
 
         using var conn = theStore.Tenancy.Default.Database.CreateConnection();
         conn.Open();
@@ -151,16 +150,16 @@ public class storing_documents : IntegrationContext
     [SessionTypes]
     public void persist_and_reload_a_document(DocumentTracking tracking)
     {
-        DocumentTracking = tracking;
+        using var session = OpenSession(tracking);
 
         var user = new User { FirstName = "James", LastName = "Worthy" };
 
-        // theSession is Marten's IDocumentSession service
-        theSession.Store(user);
-        theSession.SaveChanges();
+        // session is Marten's IDocumentSession service
+        session.Store(user);
+        session.SaveChanges();
 
         using var session2 = theStore.LightweightSession();
-        session2.ShouldNotBeSameAs(theSession);
+        session2.ShouldNotBeSameAs(session);
 
         var user2 = session2.Load<User>(user.Id);
 
@@ -173,39 +172,37 @@ public class storing_documents : IntegrationContext
     [SessionTypes]
     public async Task persist_and_reload_a_document_async(DocumentTracking tracking)
     {
-        DocumentTracking = tracking;
+        await using var session = OpenSession(tracking);
 
         var user = new User { FirstName = "James", LastName = "Worthy" };
 
-        // theSession is Marten's IDocumentSession service
-        theSession.Store(user);
-        await theSession.SaveChangesAsync();
+        // session is Marten's IDocumentSession service
+        session.Store(user);
+        await session.SaveChangesAsync();
 
-        await using (var session2 = theStore.LightweightSession())
-        {
-            session2.ShouldNotBeSameAs(theSession);
+        await using var session2 = theStore.LightweightSession();
+        session2.ShouldNotBeSameAs(session);
 
-            var user2 = await session2.LoadAsync<User>(user.Id);
+        var user2 = await session2.LoadAsync<User>(user.Id);
 
-            user.ShouldNotBeSameAs(user2);
-            user2.FirstName.ShouldBe(user.FirstName);
-            user2.LastName.ShouldBe(user.LastName);
-        }
+        user.ShouldNotBeSameAs(user2);
+        user2.FirstName.ShouldBe(user.FirstName);
+        user2.LastName.ShouldBe(user.LastName);
     }
 
     [Theory]
     [SessionTypes]
     public void try_to_load_a_document_that_does_not_exist(DocumentTracking tracking)
     {
-        DocumentTracking = tracking;
-        theSession.Load<User>(Guid.NewGuid()).ShouldBeNull();
+        using var session = OpenSession(tracking);
+        session.Load<User>(Guid.NewGuid()).ShouldBeNull();
     }
 
     [Theory]
     [SessionTypes]
     public void load_by_id_array(DocumentTracking tracking)
     {
-        DocumentTracking = tracking;
+        using var session = OpenSession(tracking);
 
         var user1 = new User { FirstName = "Magic", LastName = "Johnson" };
         var user2 = new User { FirstName = "James", LastName = "Worthy" };
@@ -213,15 +210,15 @@ public class storing_documents : IntegrationContext
         var user4 = new User { FirstName = "Mychal", LastName = "Thompson" };
         var user5 = new User { FirstName = "Kurt", LastName = "Rambis" };
 
-        theSession.Store(user1);
-        theSession.Store(user2);
-        theSession.Store(user3);
-        theSession.Store(user4);
-        theSession.Store(user5);
-        theSession.SaveChanges();
+        session.Store(user1);
+        session.Store(user2);
+        session.Store(user3);
+        session.Store(user4);
+        session.Store(user5);
+        session.SaveChanges();
 
-        using var session = theStore.LightweightSession();
-        var users = session.LoadMany<User>(user2.Id, user3.Id, user4.Id);
+        using var querySession = theStore.QuerySession();
+        var users = querySession.LoadMany<User>(user2.Id, user3.Id, user4.Id);
         users.Count().ShouldBe(3);
     }
 
@@ -229,7 +226,7 @@ public class storing_documents : IntegrationContext
     [SessionTypes]
     public async Task load_by_id_array_async(DocumentTracking tracking)
     {
-        DocumentTracking = tracking;
+        await using var session = OpenSession(tracking);
 
         #region sample_saving-changes-async
 
@@ -239,13 +236,13 @@ public class storing_documents : IntegrationContext
         var user4 = new User { FirstName = "Mychal", LastName = "Thompson" };
         var user5 = new User { FirstName = "Kurt", LastName = "Rambis" };
 
-        theSession.Store(user1);
-        theSession.Store(user2);
-        theSession.Store(user3);
-        theSession.Store(user4);
-        theSession.Store(user5);
+        session.Store(user1);
+        session.Store(user2);
+        session.Store(user3);
+        session.Store(user4);
+        session.Store(user5);
 
-        await theSession.SaveChangesAsync();
+        await session.SaveChangesAsync();
 
         #endregion
 
@@ -253,8 +250,8 @@ public class storing_documents : IntegrationContext
 
         #region sample_load_by_id_array_async
 
-        await using var session = store.QuerySession();
-        var users = await session.LoadManyAsync<User>(user2.Id, user3.Id, user4.Id);
+        await using var querySession = store.QuerySession();
+        var users = await querySession.LoadManyAsync<User>(user2.Id, user3.Id, user4.Id);
         users.Count().ShouldBe(3);
 
         #endregion

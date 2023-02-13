@@ -10,13 +10,13 @@ using Xunit;
 
 namespace Marten.Testing.Harness
 {
-    public class SessionTypes : IEnumerable<object[]>
+    public class SessionTypes: IEnumerable<object[]>
     {
         public IEnumerator<object[]> GetEnumerator()
         {
-            yield return new object[] { DocumentTracking.None};
-            yield return new object[] { DocumentTracking.IdentityOnly};
-            yield return new object[] { DocumentTracking.DirtyTracking};
+            yield return new object[] { DocumentTracking.None };
+            yield return new object[] { DocumentTracking.IdentityOnly };
+            yield return new object[] { DocumentTracking.DirtyTracking };
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -28,21 +28,20 @@ namespace Marten.Testing.Harness
     /// <summary>
     /// Use to build a theory test using a separate session with each kind of document tracking
     /// </summary>
-    public class SessionTypesAttribute : ClassDataAttribute
+    public class SessionTypesAttribute: ClassDataAttribute
     {
-        public SessionTypesAttribute() : base(typeof(SessionTypes))
+        public SessionTypesAttribute(): base(typeof(SessionTypes))
         {
         }
     }
 
     [CollectionDefinition("integration")]
-    public class IntegrationCollection : ICollectionFixture<DefaultStoreFixture>
+    public class IntegrationCollection: ICollectionFixture<DefaultStoreFixture>
     {
-
     }
 
     [Collection("integration")]
-    public class IntegrationContext : IDisposable, IAsyncLifetime
+    public class IntegrationContext: IDisposable, IAsyncLifetime
     {
         private readonly DefaultStoreFixture _fixture;
         private DocumentStore _store;
@@ -120,27 +119,28 @@ namespace Marten.Testing.Harness
             }
         }
 
-
-        /// <summary>
-        /// Sets the default DocumentTracking for this context. Default is "None"
-        /// </summary>
-        [Obsolete("TODO: Remove it and replace with expicit sessions")]
-        protected DocumentTracking DocumentTracking { get; set; } = DocumentTracking.None;
-
-
         protected IDocumentSession theSession
         {
             get
             {
                 if (_session == null)
                 {
-                    _session = theStore.OpenSession(DocumentTracking);
+                    _session = theStore.LightweightSession();
                     Disposables.Add(_session);
                 }
 
                 return _session;
             }
         }
+
+        protected IDocumentSession OpenSession(DocumentTracking tracking) =>
+            tracking switch
+            {
+                DocumentTracking.None => theStore.LightweightSession(),
+                DocumentTracking.IdentityOnly => theStore.IdentitySession(),
+                DocumentTracking.DirtyTracking => theStore.DirtyTrackedSession(),
+                _ => throw new ArgumentOutOfRangeException(nameof(tracking), tracking, null)
+            };
 
         protected async Task AppendEvent(Guid streamId, params object[] events)
         {

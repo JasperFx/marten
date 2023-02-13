@@ -11,13 +11,13 @@ using Xunit;
 
 namespace DocumentDbTests.SessionMechanics;
 
-public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsContext
+public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsContext
 {
-
     [Fact]
     public void call_listener_events_on_synchronous_session_saves()
     {
         #region sample_registering-a-document-session-listener
+
         var stub1 = new StubDocumentSessionListener();
         var stub2 = new StubDocumentSessionListener();
 
@@ -26,7 +26,9 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
                    _.Connection(ConnectionSource.ConnectionString);
                    _.AutoCreateSchemaObjects = AutoCreate.All;
                }))
+
             #endregion
+
         {
             store.Advanced.Clean.CompletelyRemoveAll();
 
@@ -194,11 +196,15 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
             {
                 var users = session.Query<User>().ToList();
 
-                stub1.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, users.FirstOrDefault(where => where.Id == user1.Id));
-                stub1.LoadedDocuments.ShouldContainKeyAndValue(user2.Id, users.FirstOrDefault(where => where.Id == user2.Id));
+                stub1.LoadedDocuments.ShouldContainKeyAndValue(user1.Id,
+                    users.FirstOrDefault(where => where.Id == user1.Id));
+                stub1.LoadedDocuments.ShouldContainKeyAndValue(user2.Id,
+                    users.FirstOrDefault(where => where.Id == user2.Id));
 
-                stub2.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, users.FirstOrDefault(where => where.Id == user1.Id));
-                stub2.LoadedDocuments.ShouldContainKeyAndValue(user2.Id, users.FirstOrDefault(where => where.Id == user2.Id));
+                stub2.LoadedDocuments.ShouldContainKeyAndValue(user1.Id,
+                    users.FirstOrDefault(where => where.Id == user1.Id));
+                stub2.LoadedDocuments.ShouldContainKeyAndValue(user2.Id,
+                    users.FirstOrDefault(where => where.Id == user2.Id));
             }
         }
     }
@@ -217,7 +223,7 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
         {
             store.Advanced.Clean.CompletelyRemoveAll();
 
-            using (var session = store.LightweightSession(new SessionOptions { Tracking = DocumentTracking.DirtyTracking, Listeners = { stub1, stub2 }}))
+            using (var session = store.DirtyTrackedSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
                 var user1 = new User { Id = Guid.NewGuid() };
                 var user2 = new User { Id = Guid.NewGuid() };
@@ -247,7 +253,7 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
         {
             store.Advanced.Clean.CompletelyRemoveAll();
 
-            using (var session = store.LightweightSession(new SessionOptions { Tracking = DocumentTracking.DirtyTracking, Listeners = { stub1, stub2 }}))
+            using (var session = store.DirtyTrackedSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
                 var user1 = new User { Id = Guid.NewGuid() };
                 var user2 = new User { Id = Guid.NewGuid() };
@@ -286,7 +292,7 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
                 session.SaveChanges();
             }
 
-            using (var session = store.LightweightSession(new SessionOptions { Tracking = DocumentTracking.DirtyTracking, Listeners = { stub1, stub2 }}))
+            using (var session = store.DirtyTrackedSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
                 var user = session.Load<User>(user1.Id);
 
@@ -319,15 +325,19 @@ public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsCon
                 session.SaveChanges();
             }
 
-            using (var session = store.LightweightSession(new SessionOptions { Tracking = DocumentTracking.DirtyTracking, Listeners = { stub1, stub2 }}))
+            using (var session = store.DirtyTrackedSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
                 var users = session.Query<User>().ToList();
 
-                stub1.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, users.FirstOrDefault(where => where.Id == user1.Id));
-                stub1.LoadedDocuments.ShouldContainKeyAndValue(user2.Id, users.FirstOrDefault(where => where.Id == user2.Id));
+                stub1.LoadedDocuments.ShouldContainKeyAndValue(user1.Id,
+                    users.FirstOrDefault(where => where.Id == user1.Id));
+                stub1.LoadedDocuments.ShouldContainKeyAndValue(user2.Id,
+                    users.FirstOrDefault(where => where.Id == user2.Id));
 
-                stub2.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, users.FirstOrDefault(where => where.Id == user1.Id));
-                stub2.LoadedDocuments.ShouldContainKeyAndValue(user2.Id, users.FirstOrDefault(where => where.Id == user2.Id));
+                stub2.LoadedDocuments.ShouldContainKeyAndValue(user1.Id,
+                    users.FirstOrDefault(where => where.Id == user1.Id));
+                stub2.LoadedDocuments.ShouldContainKeyAndValue(user2.Id,
+                    users.FirstOrDefault(where => where.Id == user2.Id));
             }
         }
     }

@@ -12,9 +12,7 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
 {
     public query_through_mixed_population_Tests()
     {
-        DocumentTracking = DocumentTracking.IdentityOnly;
         loadData();
-
     }
 
     [Fact]
@@ -22,17 +20,19 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     {
         theStore.Advanced.Clean.DeleteDocumentsByType(typeof(AdminUser));
 
-        theSession.Query<User>().Any().ShouldBeTrue();
-        theSession.Query<SuperUser>().Any().ShouldBeTrue();
+        using var session = theStore.IdentitySession();
+        session.Query<User>().Any().ShouldBeTrue();
+        session.Query<SuperUser>().Any().ShouldBeTrue();
 
-        theSession.Query<AdminUser>().Any().ShouldBeFalse();
+        session.Query<AdminUser>().Any().ShouldBeFalse();
     }
 
 
     [Fact]
     public void identity_map_usage_from_select()
     {
-        var users = theSession.Query<User>().OrderBy(x => x.FirstName).ToArray();
+        using var session = theStore.IdentitySession();
+        var users = session.Query<User>().OrderBy(x => x.FirstName).ToArray();
         users[0].ShouldBeTheSameAs(admin1);
         users[1].ShouldBeTheSameAs(super1);
         users[5].ShouldBeTheSameAs(user2);
@@ -41,72 +41,71 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     [Fact]
     public void load_by_id_keys_from_base_class_clean()
     {
-        using (var session = theStore.QuerySession())
-        {
-            session.LoadMany<AdminUser>(admin1.Id, admin2.Id)
-                .Select(x => x.Id)
-                .ShouldHaveTheSameElementsAs(admin1.Id, admin2.Id);
-        }
+        using var session = theStore.QuerySession();
+        session.LoadMany<AdminUser>(admin1.Id, admin2.Id)
+            .Select(x => x.Id)
+            .ShouldHaveTheSameElementsAs(admin1.Id, admin2.Id);
     }
 
     [Fact]
     public void load_by_id_keys_from_base_class_resolved_from_identity_map()
     {
-        theSession.LoadMany<AdminUser>(admin1.Id, admin2.Id)
+        using var session = theStore.IdentitySession();
+        session.LoadMany<AdminUser>(admin1.Id, admin2.Id)
             .ShouldHaveTheSameElementsAs(admin1, admin2);
     }
 
     [Fact]
     public async Task load_by_id_keys_from_base_class_resolved_from_identity_map_async()
     {
-        var users = await theSession.LoadManyAsync<AdminUser>(admin1.Id, admin2.Id);
+        await using var session = theStore.IdentitySession();
+        var users = await session.LoadManyAsync<AdminUser>(admin1.Id, admin2.Id);
         users.ShouldHaveTheSameElementsAs(admin1, admin2);
     }
 
     [Fact]
     public void load_by_id_with_mixed_results_fresh()
     {
-        using (var session = theStore.QuerySession())
-        {
-            session.LoadMany<User>(admin1.Id, super1.Id, user1.Id)
-                .ToArray()
-                .OrderBy(x => x.FirstName)
-                .Select(x => x.Id)
-                .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
-        }
+        using var session = theStore.QuerySession();
+        session.LoadMany<User>(admin1.Id, super1.Id, user1.Id)
+            .ToArray()
+            .OrderBy(x => x.FirstName)
+            .Select(x => x.Id)
+            .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
     }
 
     [Fact]
     public async Task load_by_id_with_mixed_results_fresh_async()
     {
-        await using (var session = theStore.QuerySession())
-        {
-            var users = await session.LoadManyAsync<User>(admin1.Id, super1.Id, user1.Id);
+        await using var session = theStore.QuerySession();
+        var users = await session.LoadManyAsync<User>(admin1.Id, super1.Id, user1.Id);
 
-            users.OrderBy(x => x.FirstName)
-                .Select(x => x.Id)
-                .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
-        }
+        users.OrderBy(x => x.FirstName)
+            .Select(x => x.Id)
+            .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
     }
 
     [Fact]
     public void load_by_id_with_mixed_results_from_identity_map()
     {
-        theSession.LoadMany<User>(admin1.Id, super1.Id, user1.Id)
+        using var session = theStore.IdentitySession();
+        session.LoadMany<User>(admin1.Id, super1.Id, user1.Id)
             .ToArray().ShouldHaveTheSameElementsAs(admin1, super1, user1);
     }
 
     [Fact]
     public async Task load_by_id_with_mixed_results_from_identity_map_async()
     {
-        var users = await theSession.LoadManyAsync<User>(admin1.Id, super1.Id, user1.Id);
+        await using var session = theStore.IdentitySession();
+        var users = await session.LoadManyAsync<User>(admin1.Id, super1.Id, user1.Id);
         users.OrderBy(x => x.FirstName).ShouldHaveTheSameElementsAs(admin1, super1, user1);
     }
 
     [Fact]
     public void query_against_all_with_no_where()
     {
-        var users = theSession.Query<User>().OrderBy(x => x.FirstName).ToArray();
+        using var session = theStore.IdentitySession();
+        var users = session.Query<User>().OrderBy(x => x.FirstName).ToArray();
         users
             .Select(x => x.Id)
             .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, admin2.Id, user1.Id, super2.Id, user2.Id);
@@ -119,7 +118,8 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     [Fact]
     public void query_against_all_with_where_clause()
     {
-        theSession.Query<User>().OrderBy(x => x.FirstName).Where(x => x.UserName.StartsWith("A"))
+        using var session = theStore.IdentitySession();
+        session.Query<User>().OrderBy(x => x.FirstName).Where(x => x.UserName.StartsWith("A"))
             .ToArray().Select(x => x.Id)
             .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
     }
@@ -127,14 +127,16 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     [Fact]
     public void query_for_only_a_subclass_with_no_where_clause()
     {
-        theSession.Query<AdminUser>().OrderBy(x => x.FirstName).ToArray()
+        using var session = theStore.IdentitySession();
+        session.Query<AdminUser>().OrderBy(x => x.FirstName).ToArray()
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(admin1.Id, admin2.Id);
     }
 
     [Fact]
     public void query_for_only_a_subclass_with_where_clause()
     {
-        theSession.Query<AdminUser>().Where(x => x.FirstName == "Eric").Single()
+        using var session = theStore.IdentitySession();
+        session.Query<AdminUser>().Where(x => x.FirstName == "Eric").Single()
             .Id.ShouldBe(admin2.Id);
     }
 }

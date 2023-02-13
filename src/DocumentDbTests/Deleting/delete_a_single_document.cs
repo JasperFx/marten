@@ -6,7 +6,7 @@ using Xunit;
 
 namespace DocumentDbTests.Deleting;
 
-public sealed class delete_a_single_document : IntegrationContext
+public sealed class delete_a_single_document: IntegrationContext
 {
     public delete_a_single_document(DefaultStoreFixture fixture): base(fixture)
     {
@@ -16,44 +16,45 @@ public sealed class delete_a_single_document : IntegrationContext
     [SessionTypes]
     public void persist_and_delete_a_document_by_entity(DocumentTracking tracking)
     {
-        DocumentTracking = tracking;
+        using var session = OpenSession(tracking);
 
-        var user = new User {FirstName = "Mychal", LastName = "Thompson"};
-        theSession.Store(user);
-        theSession.SaveChanges();
+        var user = new User { FirstName = "Mychal", LastName = "Thompson" };
+        session.Store(user);
+        session.SaveChanges();
 
 
-        using (var session = theStore.LightweightSession())
+        using (var session2 = theStore.LightweightSession())
         {
-            session.Delete(user);
-            session.SaveChanges();
+            session2.Delete(user);
+            session2.SaveChanges();
         }
 
-        using (var session = theStore.QuerySession())
+        using (var querySession = theStore.QuerySession())
         {
-            session.Load<User>(user.Id).ShouldBeNull();
+            querySession.Load<User>(user.Id).ShouldBeNull();
         }
     }
 
     [Fact]
     public void persist_and_delete_a_document_by_id()
     {
-        var user = new User {FirstName = "Mychal", LastName = "Thompson"};
-        theSession.Store(user);
-        theSession.SaveChanges();
+        using var session = theStore.LightweightSession();
 
-        using (var session = theStore.LightweightSession())
+        var user = new User { FirstName = "Mychal", LastName = "Thompson" };
+        session.Store(user);
+        session.SaveChanges();
+
+        using (var session2 = theStore.LightweightSession())
         {
-            session.Delete<User>(user.Id);
-            session.SaveChanges();
+            session2.Delete<User>(user.Id);
+            session2.SaveChanges();
         }
 
-        using (var session = theStore.QuerySession())
+        using (var querySession = theStore.QuerySession())
         {
-            session.Load<User>(user.Id).ShouldBeNull();
+            querySession.Load<User>(user.Id).ShouldBeNull();
         }
     }
-
 
     [Fact]
     public void persist_and_delete_by_id_documents_with_the_same_id()
@@ -61,11 +62,11 @@ public sealed class delete_a_single_document : IntegrationContext
         var id = Guid.NewGuid();
         using (var session = theStore.LightweightSession())
         {
-            var user = new User { Id = id, FirstName = "Mychal", LastName = "Thompson"};
+            var user = new User { Id = id, FirstName = "Mychal", LastName = "Thompson" };
             session.Store(user);
             session.SaveChanges();
 
-            var target = new Target {Id = id};
+            var target = new Target { Id = id };
             session.Store(target);
             session.SaveChanges();
         }

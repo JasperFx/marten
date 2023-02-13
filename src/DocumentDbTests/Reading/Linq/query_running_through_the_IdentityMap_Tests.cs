@@ -7,34 +7,34 @@ using Xunit;
 
 namespace DocumentDbTests.Reading.Linq;
 
-public class query_running_through_the_IdentityMap_Tests : IntegrationContext
+public class query_running_through_the_IdentityMap_Tests: IntegrationContext
 {
     private User user1;
     private User user2;
     private User user3;
     private User user4;
 
-    public query_running_through_the_IdentityMap_Tests(DefaultStoreFixture fixture) : base(fixture)
+    public query_running_through_the_IdentityMap_Tests(DefaultStoreFixture fixture): base(fixture)
     {
-
     }
 
     protected override async Task fixtureSetup()
     {
-        DocumentTracking = DocumentTracking.IdentityOnly;
-
         #region sample_using-store-with-multiple-docs
-        user1 = new User {FirstName = "Jeremy"};
-        user2 = new User {FirstName = "Jens"};
-        user3 = new User {FirstName = "Jeff"};
-        user4 = new User {FirstName = "Corey"};
 
-        theSession.Store(user1, user2, user3, user4);
+        user1 = new User { FirstName = "Jeremy" };
+        user2 = new User { FirstName = "Jens" };
+        user3 = new User { FirstName = "Jeff" };
+        user4 = new User { FirstName = "Corey" };
+
+        await using var session = theStore.IdentitySession();
+        session.Store(user1, user2, user3, user4);
+
         #endregion
 
-        await theSession.SaveChangesAsync();
+        await session.SaveChangesAsync();
 
-        (await theSession.LoadAsync<User>(user1.Id)).ShouldBeTheSameAs(user1);
+        (await session.LoadAsync<User>(user1.Id)).ShouldBeTheSameAs(user1);
     }
 
     [Fact]
@@ -45,8 +45,6 @@ public class query_running_through_the_IdentityMap_Tests : IntegrationContext
 
         theSession.Query<User>()
             .SingleOrDefault(x => x.FirstName == user4.FirstName).ShouldBeTheSameAs(user4);
-
-
     }
 
 
@@ -59,7 +57,6 @@ public class query_running_through_the_IdentityMap_Tests : IntegrationContext
 
         theSession.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
             .FirstOrDefault().ShouldBeTheSameAs(user3);
-
     }
 
     [Fact]
@@ -71,7 +68,6 @@ public class query_running_through_the_IdentityMap_Tests : IntegrationContext
         users[0].ShouldBeTheSameAs(user3);
         users[1].ShouldBeTheSameAs(user2);
         users[2].ShouldBeTheSameAs(user1);
-
     }
 
     [Fact]
@@ -86,10 +82,7 @@ public class query_running_through_the_IdentityMap_Tests : IntegrationContext
             .SingleOrDefaultAsync();
 
         u2.ShouldBeTheSameAs(user4);
-
-
     }
-
 
 
     [Fact]
@@ -105,7 +98,6 @@ public class query_running_through_the_IdentityMap_Tests : IntegrationContext
             .FirstOrDefaultAsync();
 
         u2.ShouldBeTheSameAs(user3);
-
     }
 
 
@@ -118,6 +110,5 @@ public class query_running_through_the_IdentityMap_Tests : IntegrationContext
         users[0].ShouldBeTheSameAs(user3);
         users[1].ShouldBeTheSameAs(user2);
         users[2].ShouldBeTheSameAs(user1);
-
     }
 }

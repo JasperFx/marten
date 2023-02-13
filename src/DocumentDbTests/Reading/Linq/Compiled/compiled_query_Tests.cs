@@ -20,9 +20,8 @@ public class compiled_query_Tests: IntegrationContext
     private User _user1;
     private User _user5;
 
-    public compiled_query_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public compiled_query_Tests(DefaultStoreFixture fixture): base(fixture)
     {
-
     }
 
     protected override Task fixtureSetup()
@@ -45,11 +44,7 @@ public class compiled_query_Tests: IntegrationContext
         var targets = Target.GenerateRandomData(100).ToArray();
         await theStore.BulkInsertAsync(targets);
 
-        var query = new TargetsInOrder
-        {
-            PageSize = 10,
-            Start = 20
-        };
+        var query = new TargetsInOrder { PageSize = 10, Start = 20 };
 
         var results = await theSession.QueryAsync(query);
 
@@ -63,9 +58,11 @@ public class compiled_query_Tests: IntegrationContext
     [Fact]
     public void can_preview_command_for_a_compiled_query()
     {
-        var cmd = theStore.Diagnostics.PreviewCommand(new UserByUsername { UserName = "hank" }, DocumentTracking.IdentityOnly);
+        var cmd = theStore.Diagnostics.PreviewCommand(new UserByUsername { UserName = "hank" },
+            DocumentTracking.IdentityOnly);
 
-        cmd.CommandText.ShouldBe("select d.id, d.data from public.mt_doc_user as d where d.data ->> 'UserName' = :p0 LIMIT :p1");
+        cmd.CommandText.ShouldBe(
+            "select d.id, d.data from public.mt_doc_user as d where d.data ->> 'UserName' = :p0 LIMIT :p1");
 
         cmd.Parameters.First().Value.ShouldBe("hank");
     }
@@ -73,9 +70,11 @@ public class compiled_query_Tests: IntegrationContext
     [Fact]
     public void can_preview_command_for_a_compiled_query_2()
     {
-        var cmd = theStore.Diagnostics.PreviewCommand(new UserByUsername { UserName = "hank" }, DocumentTracking.QueryOnly);
+        var cmd = theStore.Diagnostics.PreviewCommand(new UserByUsername { UserName = "hank" },
+            DocumentTracking.QueryOnly);
 
-        cmd.CommandText.ShouldBe("select d.data from public.mt_doc_user as d where d.data ->> 'UserName' = :p0 LIMIT :p1");
+        cmd.CommandText.ShouldBe(
+            "select d.data from public.mt_doc_user as d where d.data ->> 'UserName' = :p0 LIMIT :p1");
 
         cmd.Parameters.First().Value.ShouldBe("hank");
     }
@@ -94,7 +93,7 @@ public class compiled_query_Tests: IntegrationContext
     [SessionTypes]
     public void a_single_item_compiled_query(DocumentTracking tracking)
     {
-        DocumentTracking = tracking;
+        using var session = OpenSession(tracking);
 
         var user = theSession.Query(new UserByUsername { UserName = "myusername" });
         user.ShouldNotBeNull();
@@ -114,7 +113,6 @@ public class compiled_query_Tests: IntegrationContext
     [Fact]
     public void a_single_item_compiled_query_SingleOrDefault()
     {
-
         var user = theSession.Query(new UserByUsernameSingleOrDefault() { UserName = "myusername" });
         user.ShouldNotBeNull();
 
@@ -132,10 +130,16 @@ public class compiled_query_Tests: IntegrationContext
     [Fact]
     public void several_parameters_for_compiled_query()
     {
-        var user = theSession.Query(new FindUserByAllTheThings { Username = "jdm", FirstName = "Jeremy", LastName = "Miller" });
+        var user = theSession.Query(new FindUserByAllTheThings
+        {
+            Username = "jdm", FirstName = "Jeremy", LastName = "Miller"
+        });
         SpecificationExtensions.ShouldNotBeNull(user);
         user.UserName.ShouldBe("jdm");
-        user = theSession.Query(new FindUserByAllTheThings { Username = "shadetreedev", FirstName = "Jeremy", LastName = "Miller" });
+        user = theSession.Query(new FindUserByAllTheThings
+        {
+            Username = "shadetreedev", FirstName = "Jeremy", LastName = "Miller"
+        });
         SpecificationExtensions.ShouldNotBeNull(user);
         user.UserName.ShouldBe("shadetreedev");
     }
@@ -168,7 +172,7 @@ public class compiled_query_Tests: IntegrationContext
     {
         var json = await theSession.ToJsonOne(new UserByUsername { UserName = "myusername" });
         var stream = new MemoryStream();
-        var writer = new StreamWriter(stream) {AutoFlush = true};
+        var writer = new StreamWriter(stream) { AutoFlush = true };
         await writer.WriteAsync(json);
         stream.Position = 0;
 
@@ -185,7 +189,6 @@ public class compiled_query_Tests: IntegrationContext
         var wasFound = await theSession.StreamJsonOne(new UserByUsername { UserName = "nonexistent" }, stream);
         wasFound.ShouldBeFalse();
         stream.Length.ShouldBe(0);
-
     }
 
 
@@ -223,7 +226,6 @@ public class compiled_query_Tests: IntegrationContext
     [Fact]
     public void a_list_query_with_fields_compiled_2()
     {
-
         var users = theSession.Query(new UsersByFirstNameWithFields { FirstName = "Jeremy" }).ToList();
         users.Count.ShouldBe(2);
         users.ElementAt(0).UserName.ShouldBe("jdm");
@@ -248,7 +250,7 @@ public class compiled_query_Tests: IntegrationContext
     {
         var userJson = await theSession.ToJsonMany(new UsersByFirstName { FirstName = "Jeremy" });
         var stream = new MemoryStream();
-        var writer = new StreamWriter(stream) {AutoFlush = true};
+        var writer = new StreamWriter(stream) { AutoFlush = true };
         await writer.WriteAsync(userJson);
         stream.Position = 0;
 
@@ -298,14 +300,14 @@ public class compiled_query_Tests: IntegrationContext
     {
         // Really just a smoke test now
 
-        (await theSession.QueryAsync(new CompiledQuery1{StringValue = "foo"})).ShouldNotBeNull();
+        (await theSession.QueryAsync(new CompiledQuery1 { StringValue = "foo" })).ShouldNotBeNull();
         (await theSession.QueryAsync(new CompiledQuery2())).ShouldNotBeNull();
     }
 
     [Fact]
     public async Task Bug_1623_use_any_within_compiled_query()
     {
-        var user = new User {Age = 5, UserName = "testUser"};
+        var user = new User { Age = 5, UserName = "testUser" };
 
         theSession.Store(user);
         await theSession.SaveChangesAsync();
@@ -322,8 +324,8 @@ public class compiled_query_Tests: IntegrationContext
         var asyncR2 = await theSession.Query<User>().AnyAsync(x => x.Age == 5);
         asyncR2.ShouldBeTrue();
 
-        var q = new TestQuery() {Age = 6};
-        var queryAsync = theSession.Query(q);  // theSession.QueryAsync(q, default) will fail also!
+        var q = new TestQuery() { Age = 6 };
+        var queryAsync = theSession.Query(q); // theSession.QueryAsync(q, default) will fail also!
         queryAsync.ShouldBeFalse();
     }
 
@@ -339,6 +341,7 @@ public class compiled_query_Tests: IntegrationContext
 }
 
 #region sample_FindUserByAllTheThings
+
 public class FindUserByAllTheThings: ICompiledQuery<User>
 {
     public string Username { get; set; }
@@ -357,6 +360,7 @@ public class FindUserByAllTheThings: ICompiledQuery<User>
 #endregion
 
 #region sample_CompiledAsJson
+
 public class FindJsonUserByUsername: ICompiledQuery<User>
 {
     public string Username { get; set; }
@@ -371,6 +375,7 @@ public class FindJsonUserByUsername: ICompiledQuery<User>
 #endregion
 
 #region sample_CompiledToJsonArray
+
 public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
 {
     public string FirstName { get; set; }
@@ -381,8 +386,6 @@ public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
             query.Where(x => FirstName == x.FirstName)
                 .OrderBy(x => x.UserName);
     }
-
-
 }
 
 #endregion
@@ -408,12 +411,12 @@ public class when_using_open_generic_compiled_query: OneOffConfigurationsContext
             opts.Schema.For<User>().AddSubClass<AdminUser>();
         });
 
-        theSession.Store(new AdminUser{UserName = "Harry"}, new User{UserName = "Harry"}, new AdminUser{UserName = "Sue"});
+        theSession.Store(new AdminUser { UserName = "Harry" }, new User { UserName = "Harry" },
+            new AdminUser { UserName = "Sue" });
         await theSession.SaveChangesAsync();
 
         var user = await theSession.QueryAsync(new FindUserByUserName<AdminUser> { UserName = "Harry" });
         user.ShouldNotBeNull();
-
     }
 }
 
@@ -441,38 +444,32 @@ public class when_compiled_queries_are_used_in_multi_tenancy: OneOffConfiguratio
     {
         StoreOptions(opts => opts.Schema.For<User>().MultiTenanted());
 
-        var hanOne = new User{UserName = "han"};
+        var hanOne = new User { UserName = "han" };
         await using (var session = theStore.LightweightSession("one"))
         {
             session.Store(hanOne);
-            session.Store(new User{UserName = "luke"});
-            session.Store(new User{UserName = "leia"});
+            session.Store(new User { UserName = "luke" });
+            session.Store(new User { UserName = "leia" });
 
             await session.SaveChangesAsync();
         }
 
-        var hanTwo = new User{UserName = "han"};
+        var hanTwo = new User { UserName = "han" };
         await using (var session = theStore.LightweightSession("two"))
         {
-
             session.Store(hanTwo);
-            session.Store(new User{UserName = "luke"});
-            session.Store(new User{UserName = "vader"});
-            session.Store(new User{UserName = "yoda"});
+            session.Store(new User { UserName = "luke" });
+            session.Store(new User { UserName = "vader" });
+            session.Store(new User { UserName = "yoda" });
 
             await session.SaveChangesAsync();
         }
 
         await using var query = theStore.QuerySession("one");
         query.Logger = new TestOutputMartenLogger(_output);
-        var user = await query.QueryAsync(new UserByUsernameWithFields {UserName = "han"});
+        var user = await query.QueryAsync(new UserByUsernameWithFields { UserName = "han" });
         user.Id.ShouldBe(hanOne.Id);
     }
-
-
-
-
-
 }
 
 public class UserProjectionToLoginPayload: ICompiledQuery<User, LoginPayload>
@@ -501,12 +498,12 @@ public class TargetsInOrder: ICompiledListQuery<Target>
     public int PageSize { get; set; } = 20;
     public int Start { get; set; } = 5;
 
-    Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> ICompiledQuery<Target, IEnumerable<Target>>.QueryIs()
+    Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> ICompiledQuery<Target, IEnumerable<Target>>.
+        QueryIs()
     {
         return q => q
             .OrderBy(x => x.Id).Skip(Start).Take(PageSize);
     }
-
 }
 
 #endregion
@@ -556,6 +553,7 @@ public class UserByUsernameSingleOrDefault: ICompiledQuery<User>
 }
 
 #region sample_UsersByFirstName-Query
+
 public class UsersByFirstName: ICompiledListQuery<User>
 {
     public static int Count;
@@ -580,6 +578,7 @@ public class UsersByFirstNameWithFields: ICompiledListQuery<User>
 }
 
 #region sample_UserNamesForFirstName
+
 public class UserNamesForFirstName: ICompiledListQuery<User, string>
 {
     public Expression<Func<IMartenQueryable<User>, IEnumerable<string>>> QueryIs()
@@ -594,7 +593,7 @@ public class UserNamesForFirstName: ICompiledListQuery<User, string>
 
 #endregion
 
-public class CompiledQuery1 : ICompiledQuery<Target, bool>
+public class CompiledQuery1: ICompiledQuery<Target, bool>
 {
     public string StringValue { get; set; }
 
@@ -604,7 +603,7 @@ public class CompiledQuery1 : ICompiledQuery<Target, bool>
     }
 }
 
-public class CompiledQuery2 : ICompiledQuery<Target, bool>
+public class CompiledQuery2: ICompiledQuery<Target, bool>
 {
     public Guid IdValue { get; set; } = Guid.NewGuid();
 

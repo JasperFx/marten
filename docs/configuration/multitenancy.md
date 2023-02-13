@@ -35,16 +35,16 @@ _host = await Host.CreateDefaultBuilder()
                 opts.MultiTenantedDatabases(x =>
                 {
                     // Map multiple tenant ids to a single named database
-                    x.AddMultipleTenantDatabase(db1ConnectionString,"database1").ForTenants("tenant1", "tenant2");
+                    x.AddMultipleTenantDatabase(db1ConnectionString, "database1")
+                        .ForTenants("tenant1", "tenant2");
 
                     // Map a single tenant id to a database, which uses the tenant id as well for the database identifier
                     x.AddSingleTenantDatabase(tenant3ConnectionString, "tenant3");
-                    x.AddSingleTenantDatabase(tenant4ConnectionString,"tenant4");
+                    x.AddSingleTenantDatabase(tenant4ConnectionString, "tenant4");
                 });
 
                 opts.RegisterDocumentType<User>();
                 opts.RegisterDocumentType<Target>();
-
             })
 
             // All detected changes will be applied to all
@@ -196,7 +196,7 @@ var state = await database.FetchEventStoreStatistics();
 // Apply all outstanding database changes in just this database
 await database.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_static_database_multitenancy.cs#L188-L209' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_administering_multiple_databases' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_static_database_multitenancy.cs#L185-L206' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_administering_multiple_databases' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 All remaining methods on `IDocumentStore.Advanced` apply to all databases.

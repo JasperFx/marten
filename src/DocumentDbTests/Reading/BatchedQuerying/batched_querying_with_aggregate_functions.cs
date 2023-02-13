@@ -7,15 +7,16 @@ using Xunit;
 
 namespace DocumentDbTests.Reading.BatchedQuerying;
 
-public class batched_querying_with_aggregate_functions : IntegrationContext
+public class batched_querying_with_aggregate_functions: IntegrationContext
 {
     [Fact]
     public async Task can_run_aggregate_functions()
     {
-        theSession.Store(new IntDoc(1), new IntDoc(3), new IntDoc(5), new IntDoc(6));
-        await theSession.SaveChangesAsync();
+        await using var session = theStore.IdentitySession();
+        session.Store(new IntDoc(1), new IntDoc(3), new IntDoc(5), new IntDoc(6));
+        await session.SaveChangesAsync();
 
-        var batch = theSession.CreateBatchQuery();
+        var batch = session.CreateBatchQuery();
 
         var min = batch.Query<IntDoc>().Min(x => x.Id);
         var max = batch.Query<IntDoc>().Max(x => x.Id);
@@ -30,8 +31,7 @@ public class batched_querying_with_aggregate_functions : IntegrationContext
         (await average).ShouldBe(3.75);
     }
 
-    public batched_querying_with_aggregate_functions(DefaultStoreFixture fixture) : base(fixture)
+    public batched_querying_with_aggregate_functions(DefaultStoreFixture fixture): base(fixture)
     {
-        DocumentTracking = DocumentTracking.IdentityOnly;
     }
 }

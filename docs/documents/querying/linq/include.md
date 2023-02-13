@@ -11,27 +11,26 @@ Marten supports the ability to run include queries that execute a `join` SQL que
 public void simple_include_for_a_single_document()
 {
     var user = new User();
-    var issue = new Issue {AssigneeId = user.Id, Title = "Garage Door is busted"};
+    var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
-    theSession.Store<object>(user, issue);
-    theSession.SaveChanges();
+    using var session = theStore.IdentitySession();
+    session.Store<object>(user, issue);
+    session.SaveChanges();
 
-    using (var query = theStore.QuerySession())
-    {
-        User included = null;
-        var issue2 = query
-            .Query<Issue>()
-            .Include<User>(x => x.AssigneeId, x => included = x)
-            .Single(x => x.Title == issue.Title);
+    using var query = theStore.QuerySession();
+    User included = null;
+    var issue2 = query
+        .Query<Issue>()
+        .Include<User>(x => x.AssigneeId, x => included = x)
+        .Single(x => x.Title == issue.Title);
 
-        SpecificationExtensions.ShouldNotBeNull(included);
-        included.Id.ShouldBe(user.Id);
+    SpecificationExtensions.ShouldNotBeNull(included);
+    included.Id.ShouldBe(user.Id);
 
-        SpecificationExtensions.ShouldNotBeNull(issue2);
-    }
+    SpecificationExtensions.ShouldNotBeNull(issue2);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_include.cs#L79-L103' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simple_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_include.cs#L79-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simple_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The first parameter of the `Include()` method takes an expression that specifies the document properties on which the join will be done (`AssigneeId` in this case). The second parameter is the expression that will assign the fetched related document to a previously declared variable (`included` in our case). By default, Marten will use an inner join. This means that any `Issue` with no corresponding `User` (or no `AssigneeId`), will not be fetched. If you wish to override this behavior, you can add as a third parameter the enum `JoinType.LeftOuter`.
@@ -55,23 +54,22 @@ public void include_to_dictionary()
     var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
     var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-    theSession.Store(user1, user2);
-    theSession.Store(issue1, issue2, issue3);
-    theSession.SaveChanges();
+    using var session = theStore.IdentitySession();
+    session.Store(user1, user2);
+    session.Store(issue1, issue2, issue3);
+    session.SaveChanges();
 
-    using (var query = theStore.QuerySession())
-    {
-        var dict = new Dictionary<Guid, User>();
+    using var query = theStore.QuerySession();
+    var dict = new Dictionary<Guid, User>();
 
-        query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
+    query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
 
-        dict.Count.ShouldBe(2);
-        dict.ContainsKey(user1.Id).ShouldBeTrue();
-        dict.ContainsKey(user2.Id).ShouldBeTrue();
-    }
+    dict.Count.ShouldBe(2);
+    dict.ContainsKey(user1.Id).ShouldBeTrue();
+    dict.ContainsKey(user2.Id).ShouldBeTrue();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_include.cs#L481-L507' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_include.cs#L470-L497' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Include Multiple Document Types
@@ -89,29 +87,27 @@ public void multiple_includes()
 
     var issue1 = new Issue { AssigneeId = assignee.Id, ReporterId = reporter.Id, Title = "Garage Door is busted" };
 
-    theSession.Store(assignee, reporter);
-    theSession.Store(issue1);
-    theSession.SaveChanges();
+    using var session = theStore.IdentitySession();
+    session.Store(assignee, reporter);
+    session.Store(issue1);
+    session.SaveChanges();
 
-    using (var query = theStore.QuerySession())
-    {
-        User assignee2 = null;
-        User reporter2 = null;
+    using var query = theStore.QuerySession();
+    User assignee2 = null;
+    User reporter2 = null;
 
-        query
-            .Query<Issue>()
-            .Include<User>(x => x.AssigneeId, x => assignee2 = x)
-            .Include<User>(x => x.ReporterId, x => reporter2 = x)
-            .Single()
-            .ShouldNotBeNull();
+    query
+        .Query<Issue>()
+        .Include<User>(x => x.AssigneeId, x => assignee2 = x)
+        .Include<User>(x => x.ReporterId, x => reporter2 = x)
+        .Single()
+        .ShouldNotBeNull();
 
-        assignee2.Id.ShouldBe(assignee.Id);
-        reporter2.Id.ShouldBe(reporter.Id);
-
-    }
+    assignee2.Id.ShouldBe(assignee.Id);
+    reporter2.Id.ShouldBe(reporter.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_include.cs#L704-L734' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multiple_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_include.cs#L689-L719' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multiple_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Asynchronous Support
@@ -135,5 +131,5 @@ var found = batch.Query<Issue>()
     .Where(x => x.Title == issue1.Title)
     .Single();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_include.cs#L41-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_include.cs#L41-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
