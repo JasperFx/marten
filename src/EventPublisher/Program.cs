@@ -100,7 +100,7 @@ internal class Publisher
             var count = 0;
             var options = SessionOptions.ForDatabase(_database);
 
-            await using var session = _store.OpenSession(options);
+            await using var session = _store.LightweightSession(options);
             foreach (var stream in streams.ToArray())
             {
                 if (stream.TryCheckOutEvents(out var events))
@@ -118,6 +118,5 @@ internal class Publisher
             await session.SaveChangesAsync();
             _board.Update(_name, count);
         }
-
     }
 }

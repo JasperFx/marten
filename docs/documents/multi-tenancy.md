@@ -14,36 +14,36 @@ The following sample demonstrates scoping a document session to tenancy identifi
 <a id='snippet-sample_tenancy-scoping-session-write'></a>
 ```cs
 // Write some User documents to tenant "tenant1"
-using (var session = theStore.OpenSession("tenant1"))
+using (var session = theStore.LightweightSession("tenant1"))
 {
     session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
     session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = new string[0] });
     session.SaveChanges();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L74-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L68-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_tenancy-scoping-session-write-1'></a>
 ```cs
 // Write some User documents to tenant "tenant1"
-using (var session = theStore.OpenSession("tenant1"))
+using (var session = theStore.LightweightSession("tenant1"))
 {
     session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
     session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = new string[0] });
     session.SaveChanges();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L119-L127' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L115-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-1' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_tenancy-scoping-session-write-2'></a>
 ```cs
 // Write some User documents to tenant "tenant1"
-using (var session = store.OpenSession("tenant1"))
+using (var session = store.LightweightSession("tenant1"))
 {
     session.Store(new User { UserName = "Bill" });
     session.Store(new User { UserName = "Lindsey" });
     session.SaveChanges();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L33-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L35-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As with storing, the load operations respect tenancy of the session.
@@ -61,7 +61,7 @@ using (var query = store.QuerySession("tenant1"))
         .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L51-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L55-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Lastly, unlike reading operations, `IDocumentSession.Store` offers an overload to explicitly pass in a tenant identifier, bypassing any tenancy associated with the session. Similar overload for tenancy exists for `IDocumentStore.BulkInsert`.
@@ -96,16 +96,16 @@ store.BulkInsert("Red", reds);
 
 // Add non-tenanted documents
 // User is non-tenanted in schema
-var user1 = new User {UserName = "Frank"};
-var user2 = new User {UserName = "Bill"};
-store.BulkInsert(new[] {user1, user2});
+var user1 = new User { UserName = "Frank" };
+var user2 = new User { UserName = "Bill" };
+store.BulkInsert(new[] { user1, user2 });
 
 // Add documents to default tenant
 // Note that schema for Issue is multi-tenanted hence documents will get added
 // to default tenant if tenant is not passed in the bulk insert operation
-var issue1 = new Issue {Title = "Test issue1"};
-var issue2 = new Issue {Title = "Test issue2"};
-store.BulkInsert(new[] {issue1, issue2});
+var issue1 = new Issue { Title = "Test issue1" };
+var issue2 = new Issue { Title = "Test issue2" };
+store.BulkInsert(new[] { issue1, issue2 });
 
 // Create a session with tenant Green
 using (var session = store.QuerySession("Green"))
@@ -140,7 +140,7 @@ using (var session = store.QuerySession())
     session.Query<Target>().Count(x => x.TenantIsOneOf("Red")).ShouldBe(11);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L263-L329' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L258-L325' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In some cases, You may want to disable using the default tenant for storing documents, set `StoreOptions.DefaultTenantUsageEnabled` to `false`. With this option disabled, Tenant (non-default tenant) should be passed via method argument or `SessionOptions` when creating a session using document store. Marten will throw an exception `DefaultTenantUsageDisabledException` if a session is created using default tenant.
@@ -166,7 +166,7 @@ storeOptions.Policies.AllDocumentsAreMultiTenanted();
 // Shorthand for
 // storeOptions.Policies.ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L24-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-through-policy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L24-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-through-policy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Tenancy At Document Level & Policy Overrides

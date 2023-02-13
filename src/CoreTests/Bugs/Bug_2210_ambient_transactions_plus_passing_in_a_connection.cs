@@ -13,7 +13,7 @@ using IsolationLevel = System.Data.IsolationLevel;
 
 namespace CoreTests.Bugs;
 
-public class Bug_2210_ambient_transactions_plus_passing_in_a_connection : BugIntegrationContext
+public class Bug_2210_ambient_transactions_plus_passing_in_a_connection: BugIntegrationContext
 {
     [Fact]
     public async Task do_not_blow_up()
@@ -24,10 +24,7 @@ public class Bug_2210_ambient_transactions_plus_passing_in_a_connection : BugInt
 
         var transaction = new TransactionScope(
             TransactionScopeOption.Required,
-            new TransactionOptions
-            {
-
-            },
+            new TransactionOptions { },
             TransactionScopeAsyncFlowOption.Enabled);
 
         using (transaction)
@@ -49,12 +46,13 @@ public class Bug_2210_ambient_transactions_plus_passing_in_a_connection : BugInt
             options.IsolationLevel = IsolationLevel.ReadCommitted;
             options.Tracking = DocumentTracking.None;
 
-            var martenConnection = await options.InitializeAsync(theStore, CommandRunnerMode.External, CancellationToken.None);
+            var martenConnection =
+                await options.InitializeAsync(theStore, CommandRunnerMode.External, CancellationToken.None);
             var lifetime = martenConnection.ShouldBeOfType<AmbientTransactionLifetime>();
             lifetime.OwnsConnection.ShouldBeFalse();
             lifetime.Connection.ShouldBe(connection);
 
-            await using var session = theStore.OpenSession(options);
+            await using var session = theStore.LightweightSession(options);
 
             session.Store(Target.Random());
             await session.SaveChangesAsync();

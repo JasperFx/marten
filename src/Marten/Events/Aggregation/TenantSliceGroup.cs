@@ -104,9 +104,13 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
         _session.Dispose();
     }
 
-    internal async Task Start(IShardAgent shardAgent, ProjectionUpdateBatch updateBatch,
+    internal async Task Start(
+        IShardAgent shardAgent,
+        ProjectionUpdateBatch updateBatch,
         IAggregationRuntime<TDoc, TId> runtime,
-        DocumentStore store, EventRangeGroup parent)
+        DocumentStore store,
+        EventRangeGroup parent
+    )
     {
         _session = new ProjectionDocumentSession(store, updateBatch,
             new SessionOptions { Tracking = DocumentTracking.None, Tenant = Tenant });
@@ -173,12 +177,9 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
 
         await shardAgent.TryAction(async () =>
         {
-            var options = new SessionOptions
-            {
-                Tenant = Tenant, Tracking = DocumentTracking.None, AllowAnyTenant = true
-            };
+            var options = new SessionOptions { Tenant = Tenant, AllowAnyTenant = true };
 
-            await using var session = (IMartenSession)store.OpenSession(options);
+            await using var session = (IMartenSession)store.LightweightSession(options);
             aggregates = await runtime.Storage
                 .LoadManyAsync(ids, session, token).ConfigureAwait(false);
         }, token).ConfigureAwait(false);

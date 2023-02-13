@@ -48,10 +48,11 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>
             $"delete from {_parent.TableName.QualifiedName} where {SchemaConstants.DocumentTypeColumn} = '{_mapping.Alias}'");
     }
 
-    public Task TruncateDocumentStorageAsync(IMartenDatabase database)
+    public Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
     {
         return database.RunSqlAsync(
-            $"delete from {_parent.TableName.QualifiedName} where {SchemaConstants.DocumentTypeColumn} = '{_mapping.Alias}'");
+            $"delete from {_parent.TableName.QualifiedName} where {SchemaConstants.DocumentTypeColumn} = '{_mapping.Alias}'",
+            ct: ct);
     }
 
     public TenancyStyle TenancyStyle => _parent.TenancyStyle;

@@ -17,6 +17,7 @@ using Xunit;
 namespace DocumentDbTests.Indexes;
 
 #region sample_using_a_full_text_index_through_attribute_on_class_with_default
+
 [FullTextIndex]
 public class Book
 {
@@ -32,17 +33,18 @@ public class Book
 #endregion
 
 #region sample_using_a_single_property_full_text_index_through_attribute_with_default
+
 public class UserProfile
 {
     public Guid Id { get; set; }
 
-    [FullTextIndex]
-    public string Information { get; set; }
+    [FullTextIndex] public string Information { get; set; }
 }
 
 #endregion
 
 #region sample_using_a_single_property_full_text_index_through_attribute_with_custom_settings
+
 public class UserDetails
 {
     private const string FullTextIndexName = "mt_custom_user_details_fts_idx";
@@ -56,44 +58,41 @@ public class UserDetails
 #endregion
 
 #region sample_using_multiple_properties_full_text_index_through_attribute_with_default
+
 public class Article
 {
     public Guid Id { get; set; }
 
-    [FullTextIndex]
-    public string Heading { get; set; }
+    [FullTextIndex] public string Heading { get; set; }
 
-    [FullTextIndex]
-    public string Text { get; set; }
+    [FullTextIndex] public string Text { get; set; }
 }
 
 #endregion
 
 #region sample_using_multiple_properties_full_text_index_through_attribute_with_custom_settings
+
 public class BlogPost
 {
     public Guid Id { get; set; }
 
     public string Category { get; set; }
 
-    [FullTextIndex]
-    public string EnglishText { get; set; }
+    [FullTextIndex] public string EnglishText { get; set; }
 
-    [FullTextIndex(RegConfig = "italian")]
-    public string ItalianText { get; set; }
+    [FullTextIndex(RegConfig = "italian")] public string ItalianText { get; set; }
 
-    [FullTextIndex(RegConfig = "french")]
-    public string FrenchText { get; set; }
+    [FullTextIndex(RegConfig = "french")] public string FrenchText { get; set; }
 }
 
 #endregion
 
 public class full_text_index: OneOffConfigurationsContext
 {
-
     public void using_whole_document_full_text_index_through_store_options_with_default()
     {
         #region sample_using_whole_document_full_text_index_through_store_options_with_default
+
         var store = DocumentStore.For(_ =>
         {
             _.Connection(ConnectionSource.ConnectionString);
@@ -101,12 +100,14 @@ public class full_text_index: OneOffConfigurationsContext
             // This creates
             _.Schema.For<User>().FullTextIndex();
         });
+
         #endregion
     }
 
     public void using_a_single_property_full_text_index_through_store_options_with_default()
     {
         #region sample_using_a_single_property_full_text_index_through_store_options_with_default
+
         var store = DocumentStore.For(_ =>
         {
             _.Connection(ConnectionSource.ConnectionString);
@@ -114,12 +115,14 @@ public class full_text_index: OneOffConfigurationsContext
             // This creates
             _.Schema.For<User>().FullTextIndex(d => d.FirstName);
         });
+
         #endregion
     }
 
     public void using_a_single_property_full_text_index_through_store_options_with_custom_settings()
     {
         #region sample_using_a_single_property_full_text_index_through_store_options_with_custom_settings
+
         var store = DocumentStore.For(_ =>
         {
             _.Connection(ConnectionSource.ConnectionString);
@@ -133,12 +136,14 @@ public class full_text_index: OneOffConfigurationsContext
                 },
                 d => d.FirstName);
         });
+
         #endregion
     }
 
     public void using_multiple_properties_full_text_index_through_store_options_with_default()
     {
         #region sample_using_multiple_properties_full_text_index_through_store_options_with_default
+
         var store = DocumentStore.For(_ =>
         {
             _.Connection(ConnectionSource.ConnectionString);
@@ -146,12 +151,14 @@ public class full_text_index: OneOffConfigurationsContext
             // This creates
             _.Schema.For<User>().FullTextIndex(d => d.FirstName, d => d.LastName);
         });
+
         #endregion
     }
 
     public void using_multiple_properties_full_text_index_through_store_options_with_custom_settings()
     {
         #region sample_using_multiple_properties_full_text_index_through_store_options_with_custom_settings
+
         var store = DocumentStore.For(_ =>
         {
             _.Connection(ConnectionSource.ConnectionString);
@@ -165,12 +172,14 @@ public class full_text_index: OneOffConfigurationsContext
                 },
                 d => d.FirstName, d => d.LastName);
         });
+
         #endregion
     }
 
     public void using_more_than_one_full_text_index_through_store_options_with_different_reg_config()
     {
         #region sample_using_more_than_one_full_text_index_through_store_options_with_different_reg_config
+
         var store = DocumentStore.For(_ =>
         {
             _.Connection(ConnectionSource.ConnectionString);
@@ -180,6 +189,7 @@ public class full_text_index: OneOffConfigurationsContext
                 .FullTextIndex(d => d.FirstName) //by default it will use "english"
                 .FullTextIndex("italian", d => d.LastName);
         });
+
         #endregion
     }
 
@@ -187,6 +197,7 @@ public class full_text_index: OneOffConfigurationsContext
     public void using_full_text_query_through_query_session()
     {
         #region sample_using_full_text_query_through_query_session
+
         var store = DocumentStore.For(_ =>
         {
             _.Connection(ConnectionSource.ConnectionString);
@@ -234,9 +245,11 @@ public class full_text_index: OneOffConfigurationsContext
         using (var session = theStore.QuerySession())
         {
             #region sample_search_in_query_sample
+
             var posts = session.Query<BlogPost>()
                 .Where(x => x.Search("somefilter"))
                 .ToList();
+
             #endregion
 
             posts.Count.ShouldBe(1);
@@ -261,9 +274,11 @@ public class full_text_index: OneOffConfigurationsContext
         using (var session = theStore.QuerySession())
         {
             #region sample_plain_search_in_query_sample
+
             var posts = session.Query<BlogPost>()
                 .Where(x => x.PlainTextSearch("somefilter"))
                 .ToList();
+
             #endregion
 
             posts.Count.ShouldBe(1);
@@ -288,9 +303,11 @@ public class full_text_index: OneOffConfigurationsContext
         using (var session = theStore.QuerySession())
         {
             #region sample_phrase_search_in_query_sample
+
             var posts = session.Query<BlogPost>()
                 .Where(x => x.PhraseSearch("somefilter"))
                 .ToList();
+
             #endregion
 
             posts.Count.ShouldBe(1);
@@ -315,9 +332,11 @@ public class full_text_index: OneOffConfigurationsContext
         using (var session = theStore.QuerySession())
         {
             #region sample_web_search_in_query_sample
+
             var posts = session.Query<BlogPost>()
                 .Where(x => x.WebStyleSearch("somefilter"))
                 .ToList();
+
             #endregion
 
             posts.Count.ShouldBe(1);
@@ -343,10 +362,12 @@ public class full_text_index: OneOffConfigurationsContext
         using (var session = theStore.QuerySession())
         {
             #region sample_text_search_combined_with_other_query_sample
+
             var posts = session.Query<BlogPost>()
                 .Where(x => x.Category == "LifeStyle")
                 .Where(x => x.PhraseSearch("somefilter"))
                 .ToList();
+
             #endregion
 
             posts.Count.ShouldBe(1);
@@ -371,9 +392,11 @@ public class full_text_index: OneOffConfigurationsContext
         using (var session = theStore.QuerySession())
         {
             #region sample_text_search_with_non_default_regConfig_sample
+
             var posts = session.Query<BlogPost>()
                 .Where(x => x.PhraseSearch("somefilter", "italian"))
                 .ToList();
+
             #endregion
 
             posts.Count.ShouldBe(1);
@@ -444,24 +467,20 @@ public class full_text_index: OneOffConfigurationsContext
 
         foreach (var tenant in tenants)
         {
-            using (var session = theStore.OpenSession(tenant))
-            {
-                session.Store(new User { FirstName = searchFilter, LastName = "Miller", UserName = "lmiller" });
-                session.Store(new User { FirstName = "Frank", LastName = "Zombo", UserName = "fzombo" });
-                session.SaveChanges();
-            }
+            using var session = theStore.LightweightSession(tenant);
+            session.Store(new User { FirstName = searchFilter, LastName = "Miller", UserName = "lmiller" });
+            session.Store(new User { FirstName = "Frank", LastName = "Zombo", UserName = "fzombo" });
+            session.SaveChanges();
         }
 
         foreach (var tenant in tenants)
         {
-            using (var session = theStore.OpenSession(tenant))
-            {
-                var results = session.Search<User>(searchFilter);
+            using var session = theStore.QuerySession(tenant);
+            var results = session.Search<User>(searchFilter);
 
-                results.Count.ShouldBe(1);
-                SpecificationExtensions.ShouldContain(results, u => u.FirstName == searchFilter);
-                results.ShouldNotContain(u => u.LastName == searchFilter);
-            }
+            results.Count.ShouldBe(1);
+            SpecificationExtensions.ShouldContain(results, u => u.FirstName == searchFilter);
+            results.ShouldNotContain(u => u.LastName == searchFilter);
         }
     }
 
@@ -506,11 +525,11 @@ public class full_text_index: OneOffConfigurationsContext
         index.ShouldNotBeNull();
 
         index.ToDDL(table).ShouldContain("to_tsvector", StringComparisonOption.Default);
-
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void creating_a_full_text_index_with_custom_data_configuration_should_create_the_index_without_regConfig_in_indexname_custom_data_configuration()
+    public void
+        creating_a_full_text_index_with_custom_data_configuration_should_create_the_index_without_regConfig_in_indexname_custom_data_configuration()
     {
         const string DataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
 
@@ -531,7 +550,8 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void creating_a_full_text_index_with_custom_data_configuration_and_custom_regConfig_should_create_the_index_with_custom_regConfig_in_indexname_custom_data_configuration()
+    public void
+        creating_a_full_text_index_with_custom_data_configuration_and_custom_regConfig_should_create_the_index_with_custom_regConfig_in_indexname_custom_data_configuration()
     {
         const string DataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
         const string RegConfig = "french";
@@ -555,7 +575,8 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void creating_a_full_text_index_with_custom_data_configuration_and_custom_regConfig_custom_indexName_should_create_the_index_with_custom_indexname_custom_data_configuration()
+    public void
+        creating_a_full_text_index_with_custom_data_configuration_and_custom_regConfig_custom_indexName_should_create_the_index_with_custom_indexname_custom_data_configuration()
     {
         const string DataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
         const string RegConfig = "french";
@@ -581,7 +602,8 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void creating_a_full_text_index_with_single_member_should_create_the_index_without_regConfig_in_indexname_and_member_selectors()
+    public void
+        creating_a_full_text_index_with_single_member_should_create_the_index_without_regConfig_in_indexname_and_member_selectors()
     {
         StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(d => d.String));
 
@@ -596,7 +618,8 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void creating_a_full_text_index_with_multiple_members_should_create_the_index_without_regConfig_in_indexname_and_members_selectors()
+    public void
+        creating_a_full_text_index_with_multiple_members_should_create_the_index_without_regConfig_in_indexname_and_members_selectors()
     {
         StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(d => d.String, d => d.AnotherString));
 
@@ -606,12 +629,14 @@ public class full_text_index: OneOffConfigurationsContext
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<Target>(
                 indexName: $"mt_doc_target_idx_fts",
-                dataConfig: $"((data ->> '{nameof(Target.String)}') || ' ' || (data ->> '{nameof(Target.AnotherString)}'))"
+                dataConfig:
+                $"((data ->> '{nameof(Target.String)}') || ' ' || (data ->> '{nameof(Target.AnotherString)}'))"
             );
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void creating_a_full_text_index_with_multiple_members_and_custom_configuration_should_create_the_index_with_custom_configuration_and_members_selectors()
+    public void
+        creating_a_full_text_index_with_multiple_members_and_custom_configuration_should_create_the_index_with_custom_configuration_and_members_selectors()
     {
         const string IndexName = "custom_index_name";
         const string RegConfig = "french";
@@ -636,7 +661,8 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void creating_multiple_full_text_index_with_different_regConfigs_and_custom_data_config_should_create_the_indexes_with_different_recConfigs()
+    public void
+        creating_multiple_full_text_index_with_different_regConfigs_and_custom_data_config_should_create_the_indexes_with_different_recConfigs()
     {
         const string frenchRegConfig = "french";
         const string italianRegConfig = "italian";
@@ -668,7 +694,10 @@ public class full_text_index: OneOffConfigurationsContext
     {
         StoreOptions(_ => _.RegisterDocumentType<Book>());
 
-        theStore.BulkInsert(new[] { new Book { Id = Guid.NewGuid(), Author = "test", Information = "test", Title = "test" } });
+        theStore.BulkInsert(new[]
+        {
+            new Book { Id = Guid.NewGuid(), Author = "test", Information = "test", Title = "test" }
+        });
 
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<Book>(
@@ -735,7 +764,17 @@ public class full_text_index: OneOffConfigurationsContext
 
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
-        theStore.BulkInsert(new[] { new BlogPost { Id = Guid.NewGuid(), Category = "test", EnglishText = "test", FrenchText = "test", ItalianText = "test" } });
+        theStore.BulkInsert(new[]
+        {
+            new BlogPost
+            {
+                Id = Guid.NewGuid(),
+                Category = "test",
+                EnglishText = "test",
+                FrenchText = "test",
+                ItalianText = "test"
+            }
+        });
 
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<BlogPost>(
@@ -860,7 +899,8 @@ public class full_text_index: OneOffConfigurationsContext
             await conn.OpenAsync();
             await conn.CreateCommand("DROP INDEX if exists full_text_index.mt_doc_user_idx_fts")
                 .ExecuteNonQueryAsync();
-            await conn.CreateCommand("CREATE INDEX mt_doc_user_idx_fts ON full_text_index.mt_doc_user USING gin (( to_tsvector('english', data) ))")
+            await conn.CreateCommand(
+                    "CREATE INDEX mt_doc_user_idx_fts ON full_text_index.mt_doc_user USING gin (( to_tsvector('english', data) ))")
                 .ExecuteNonQueryAsync();
         }
 

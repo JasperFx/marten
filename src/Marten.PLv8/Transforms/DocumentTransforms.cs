@@ -15,7 +15,7 @@ internal class DocumentTransforms: IDocumentTransforms, IDisposable
 
     public DocumentTransforms(DocumentStore store, Tenant tenant)
     {
-        Session = (DocumentSessionBase)store.OpenSession(new SessionOptions{Tenant = tenant, Tracking = DocumentTracking.None});
+        Session = (DocumentSessionBase)store.LightweightSession(new SessionOptions { Tenant = tenant });
         _ownsSession = true;
     }
 
@@ -82,7 +82,7 @@ internal class DocumentTransforms: IDocumentTransforms, IDisposable
         var storage = Session.StorageFor<T>();
         var operation = new DocumentTransformOperationFragment(storage, transform);
 
-        var statement = new StatementOperation(storage, operation) {Where = filter};
+        var statement = new StatementOperation(storage, operation) { Where = filter };
 
         // To bake in the default document filtering here
         statement.CompileLocal(Session);

@@ -9,7 +9,7 @@ using Xunit;
 
 namespace DocumentDbTests.MultiTenancy;
 
-public class UniqueIndexMultiTenantTests : OneOffConfigurationsContext
+public class UniqueIndexMultiTenantTests: OneOffConfigurationsContext
 {
     public const string UniqueSqlState = "23505";
 
@@ -25,7 +25,9 @@ public class UniqueIndexMultiTenantTests : OneOffConfigurationsContext
         public string Name { get; set; }
     }
 
-    public class ProjectUsingDuplicateField : Project { } //used for duplicatedfield index tests
+    public class ProjectUsingDuplicateField: Project
+    {
+    } //used for duplicatedfield index tests
 
     //used for attributes index tests
     public class UniqueCodePerTenant
@@ -37,7 +39,8 @@ public class UniqueIndexMultiTenantTests : OneOffConfigurationsContext
 
         public Guid Id { get; set; }
 
-        [UniqueIndex(TenancyScope = TenancyScope.PerTenant, IndexType = UniqueIndexType.Computed, IndexName = "ScopedPerTenant")]
+        [UniqueIndex(TenancyScope = TenancyScope.PerTenant, IndexType = UniqueIndexType.Computed,
+            IndexName = "ScopedPerTenant")]
         public string Code { get; set; }
     }
 
@@ -70,12 +73,15 @@ public class UniqueIndexMultiTenantTests : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void given_two_documents_with_the_same_value_for_unique_field_with_single_property_for_different_tenants_succeeds_using_computed_index()
+    public void
+        given_two_documents_with_the_same_value_for_unique_field_with_single_property_for_different_tenants_succeeds_using_computed_index()
     {
         var store = StoreOptions(_ =>
         {
             _.Schema.For<Project>().MultiTenanted();
-            _.Schema.For<Project>().UniqueIndex(UniqueIndexType.Computed, "index_name", TenancyScope.PerTenant, x => x.Name); //have to pass in index name
+            _.Schema.For<Project>()
+                .UniqueIndex(UniqueIndexType.Computed, "index_name", TenancyScope.PerTenant,
+                    x => x.Name); //have to pass in index name
             _.Connection(ConnectionSource.ConnectionString);
         });
 
@@ -98,14 +104,14 @@ public class UniqueIndexMultiTenantTests : OneOffConfigurationsContext
         }
 
         //but tenant abc can add a project with the same name
-        using (var session = store.OpenSession("abc"))
+        using (var session = store.LightweightSession("abc"))
         {
             session.Store(new Project { Name = "Project A" });
             session.SaveChanges();
         }
 
         //as can tenant def, but only once within the tenant
-        using (var session = store.OpenSession("def"))
+        using (var session = store.LightweightSession("def"))
         {
             session.Store(new Project { Name = "Project A" });
             session.SaveChanges();
@@ -123,14 +129,16 @@ public class UniqueIndexMultiTenantTests : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void given_two_documents_with_the_same_value_for_unique_field_with_single_property_for_different_tenants_succeeds_using_duplicated_field()
+    public void
+        given_two_documents_with_the_same_value_for_unique_field_with_single_property_for_different_tenants_succeeds_using_duplicated_field()
     {
         var store = StoreOptions(_ =>
         {
             _.NameDataLength = 200;
             _.Schema.For<ProjectUsingDuplicateField>().MultiTenanted();
             _.Schema.For<ProjectUsingDuplicateField>().DocumentAlias("ProjectUsingDuplicateField");
-            _.Schema.For<ProjectUsingDuplicateField>().UniqueIndex(UniqueIndexType.DuplicatedField, "ix_duplicate_field", TenancyScope.PerTenant, x => x.Name); //have to pass in index name
+            _.Schema.For<ProjectUsingDuplicateField>().UniqueIndex(UniqueIndexType.DuplicatedField,
+                "ix_duplicate_field", TenancyScope.PerTenant, x => x.Name); //have to pass in index name
             _.Connection(ConnectionSource.ConnectionString);
         });
 
@@ -153,14 +161,14 @@ public class UniqueIndexMultiTenantTests : OneOffConfigurationsContext
         }
 
         //but tenant abc can add a project with the same name
-        using (var session = store.OpenSession("abc"))
+        using (var session = store.LightweightSession("abc"))
         {
             session.Store(new ProjectUsingDuplicateField { Name = "Project A" });
             session.SaveChanges();
         }
 
         //as can tenant def, but only once within the tenant
-        using (var session = store.OpenSession("def"))
+        using (var session = store.LightweightSession("def"))
         {
             session.Store(new ProjectUsingDuplicateField { Name = "Project A" });
             session.SaveChanges();

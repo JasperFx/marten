@@ -38,7 +38,9 @@ public interface IDocumentStorage: ISelectClause
     Type DocumentType { get; }
 
     TenancyStyle TenancyStyle { get; }
-    Task TruncateDocumentStorageAsync(IMartenDatabase database);
+    Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default);
+
+    [Obsolete("Use async method instead.")]
     void TruncateDocumentStorage(IMartenDatabase database);
 
     ISqlFragment FilterDocuments(QueryModel? model, ISqlFragment query);

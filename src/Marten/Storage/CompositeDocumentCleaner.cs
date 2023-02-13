@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten.Schema;
 
@@ -20,9 +21,9 @@ public class CompositeDocumentCleaner: IDocumentCleaner
         DeleteAllDocumentsAsync().GetAwaiter().GetResult();
     }
 
-    public Task DeleteAllDocumentsAsync()
+    public Task DeleteAllDocumentsAsync(CancellationToken ct = default)
     {
-        return applyToAll(d => d.DeleteAllDocumentsAsync());
+        return applyToAll(d => d.DeleteAllDocumentsAsync(ct));
     }
 
     public void DeleteDocumentsByType(Type documentType)
@@ -30,19 +31,19 @@ public class CompositeDocumentCleaner: IDocumentCleaner
         DeleteDocumentsByTypeAsync(documentType).GetAwaiter().GetResult();
     }
 
-    public Task DeleteDocumentsByTypeAsync(Type documentType)
+    public Task DeleteDocumentsByTypeAsync(Type documentType, CancellationToken ct = default)
     {
-        return applyToAll(d => d.DeleteDocumentsByTypeAsync(documentType));
+        return applyToAll(d => d.DeleteDocumentsByTypeAsync(documentType, ct));
     }
 
     public void DeleteDocumentsExcept(params Type[] documentTypes)
     {
-        DeleteDocumentsExceptAsync(documentTypes).GetAwaiter().GetResult();
+        DeleteDocumentsExceptAsync(default, documentTypes).GetAwaiter().GetResult();
     }
 
-    public Task DeleteDocumentsExceptAsync(params Type[] documentTypes)
+    public Task DeleteDocumentsExceptAsync(CancellationToken ct, params Type[] documentTypes)
     {
-        return applyToAll(d => d.DeleteDocumentsExceptAsync(documentTypes));
+        return applyToAll(d => d.DeleteDocumentsExceptAsync(ct, documentTypes));
     }
 
     public void CompletelyRemove(Type documentType)
@@ -50,9 +51,9 @@ public class CompositeDocumentCleaner: IDocumentCleaner
         CompletelyRemoveAsync(documentType).GetAwaiter().GetResult();
     }
 
-    public Task CompletelyRemoveAsync(Type documentType)
+    public Task CompletelyRemoveAsync(Type documentType, CancellationToken ct = default)
     {
-        return applyToAll(d => d.CompletelyRemoveAsync(documentType));
+        return applyToAll(d => d.CompletelyRemoveAsync(documentType, ct));
     }
 
     public void CompletelyRemoveAll()
@@ -60,9 +61,9 @@ public class CompositeDocumentCleaner: IDocumentCleaner
         CompletelyRemoveAllAsync().GetAwaiter().GetResult();
     }
 
-    public Task CompletelyRemoveAllAsync()
+    public Task CompletelyRemoveAllAsync(CancellationToken ct = default)
     {
-        return applyToAll(d => d.CompletelyRemoveAllAsync());
+        return applyToAll(d => d.CompletelyRemoveAllAsync(ct));
     }
 
     public void DeleteAllEventData()
@@ -70,9 +71,9 @@ public class CompositeDocumentCleaner: IDocumentCleaner
         DeleteAllEventDataAsync().GetAwaiter().GetResult();
     }
 
-    public Task DeleteAllEventDataAsync()
+    public Task DeleteAllEventDataAsync(CancellationToken ct = default)
     {
-        return applyToAll(d => d.DeleteAllEventDataAsync());
+        return applyToAll(d => d.DeleteAllEventDataAsync(ct));
     }
 
     public void DeleteSingleEventStream(Guid streamId, string? tenantId = null)
@@ -80,15 +81,16 @@ public class CompositeDocumentCleaner: IDocumentCleaner
         DeleteSingleEventStreamAsync(streamId, tenantId).GetAwaiter().GetResult();
     }
 
-    public async Task DeleteSingleEventStreamAsync(Guid streamId, string? tenantId = null)
+    public async Task DeleteSingleEventStreamAsync(Guid streamId, string? tenantId = null,
+        CancellationToken ct = default)
     {
         if (tenantId.IsEmpty())
         {
-            await applyToAll(d => d.DeleteSingleEventStreamAsync(streamId, tenantId)).ConfigureAwait(false);
+            await applyToAll(d => d.DeleteSingleEventStreamAsync(streamId, tenantId, ct)).ConfigureAwait(false);
         }
 
         var tenant = await _tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
-        await tenant.Database.DeleteSingleEventStreamAsync(streamId, tenantId).ConfigureAwait(false);
+        await tenant.Database.DeleteSingleEventStreamAsync(streamId, tenantId, ct).ConfigureAwait(false);
     }
 
     public void DeleteSingleEventStream(string streamId, string? tenantId = null)
@@ -96,15 +98,16 @@ public class CompositeDocumentCleaner: IDocumentCleaner
         DeleteSingleEventStreamAsync(streamId, tenantId).GetAwaiter().GetResult();
     }
 
-    public async Task DeleteSingleEventStreamAsync(string streamId, string? tenantId = null)
+    public async Task DeleteSingleEventStreamAsync(string streamId, string? tenantId = null,
+        CancellationToken ct = default)
     {
         if (tenantId.IsEmpty())
         {
-            await applyToAll(d => d.DeleteSingleEventStreamAsync(streamId, tenantId)).ConfigureAwait(false);
+            await applyToAll(d => d.DeleteSingleEventStreamAsync(streamId, tenantId, ct)).ConfigureAwait(false);
         }
 
         var tenant = await _tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
-        await tenant.Database.DeleteSingleEventStreamAsync(streamId, tenantId).ConfigureAwait(false);
+        await tenant.Database.DeleteSingleEventStreamAsync(streamId, tenantId, ct).ConfigureAwait(false);
     }
 
     private async Task applyToAll(Func<IMartenDatabase, Task> func)

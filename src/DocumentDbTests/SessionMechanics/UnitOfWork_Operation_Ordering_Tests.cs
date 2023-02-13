@@ -8,7 +8,7 @@ using Xunit;
 
 namespace DocumentDbTests.SessionMechanics;
 
-public class UnitOfWork_Operation_Ordering_Tests : OneOffConfigurationsContext
+public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
 {
     private readonly Company _company;
 
@@ -41,17 +41,15 @@ public class UnitOfWork_Operation_Ordering_Tests : OneOffConfigurationsContext
         _userNoIssues = new User();
 
         _userWithIssues = new User();
-        _user1Issue1 = new Issue {AssigneeId = _userWithIssues.Id};
-        _user1Issue2 = new Issue {AssigneeId = _userWithIssues.Id};
+        _user1Issue1 = new Issue { AssigneeId = _userWithIssues.Id };
+        _user1Issue2 = new Issue { AssigneeId = _userWithIssues.Id };
 
-        using (var session = theStore.OpenSession("Bug_1229"))
-        {
-            session.Store(_company);
-            session.Store(_userNoIssues, _userWithIssues);
-            session.Store(_user1Issue1, _user1Issue2);
+        using var session = theStore.LightweightSession("Bug_1229");
+        session.Store(_company);
+        session.Store(_userNoIssues, _userWithIssues);
+        session.Store(_user1Issue1, _user1Issue2);
 
-            session.SaveChanges();
-        }
+        session.SaveChanges();
     }
 
     [Fact]
@@ -75,7 +73,7 @@ public class UnitOfWork_Operation_Ordering_Tests : OneOffConfigurationsContext
         RunTest(s =>
             {
                 _company.Name = "Something else";
-                _user1Issue1.Tags = new[] {"new tag"};
+                _user1Issue1.Tags = new[] { "new tag" };
                 _userNoIssues.FirstName = "A different name";
 
                 s.Update(_company);
@@ -258,7 +256,7 @@ public class UnitOfWork_Operation_Ordering_Tests : OneOffConfigurationsContext
             {
                 var newUser = new User();
 
-                s.Insert(new Issue {AssigneeId = newUser.Id});
+                s.Insert(new Issue { AssigneeId = newUser.Id });
 
                 s.Delete(_user1Issue1);
                 s.Delete(_userWithIssues);
@@ -279,7 +277,7 @@ public class UnitOfWork_Operation_Ordering_Tests : OneOffConfigurationsContext
             {
                 var newUser = new User();
 
-                s.Store(new Issue {AssigneeId = newUser.Id});
+                s.Store(new Issue { AssigneeId = newUser.Id });
 
                 s.Delete(_user1Issue1);
                 s.Delete(_userWithIssues);
@@ -314,8 +312,7 @@ public class UnitOfWork_Operation_Ordering_Tests : OneOffConfigurationsContext
         int expectedUserCount,
         int expectedIssueCount)
     {
-
-        using (var s = theStore.OpenSession("Bug_1229"))
+        using (var s = theStore.LightweightSession("Bug_1229"))
         {
             act(s);
 

@@ -14,18 +14,19 @@ using Xunit;
 
 namespace CoreTests;
 
-public class SessionOptionsTests : OneOffConfigurationsContext
+public class SessionOptionsTests: OneOffConfigurationsContext
 {
     #region sample_ConfigureCommandTimeout
+
     public void ConfigureCommandTimeout(IDocumentStore store)
     {
         // Sets the command timeout for this session to 60 seconds
         // The default is 30
-        using (var session = store.OpenSession(new SessionOptions {Timeout = 60}))
+        using (var session = store.LightweightSession(new SessionOptions { Timeout = 60 }))
         {
-
         }
     }
+
     #endregion
 
     [Fact]
@@ -69,7 +70,6 @@ public class SessionOptionsTests : OneOffConfigurationsContext
     }
 
 
-
     [Fact]
     public async System.Threading.Tasks.Task for_transaction()
     {
@@ -82,7 +82,6 @@ public class SessionOptionsTests : OneOffConfigurationsContext
         options.Connection.ShouldBe(conn);
         options.OwnsConnection.ShouldBeFalse();
         options.OwnsTransactionLifecycle.ShouldBeFalse();
-
     }
 
     [Fact]
@@ -94,7 +93,6 @@ public class SessionOptionsTests : OneOffConfigurationsContext
         options.Timeout.Value.ShouldBe(connection.CommandTimeout);
         options.OwnsConnection.ShouldBeTrue(); // if the connection is closed
         options.OwnsTransactionLifecycle.ShouldBeTrue();
-
     }
 
     [Fact]
@@ -107,7 +105,6 @@ public class SessionOptionsTests : OneOffConfigurationsContext
         options.Timeout.Value.ShouldBe(connection.CommandTimeout);
         options.OwnsConnection.ShouldBeFalse(); // if the connection is closed
         options.OwnsTransactionLifecycle.ShouldBeTrue();
-
     }
 
     [Fact]
@@ -126,7 +123,6 @@ public class SessionOptionsTests : OneOffConfigurationsContext
     }
 
 
-
     [Fact]
     public void the_default_concurrency_checks_is_enabled()
     {
@@ -137,18 +133,15 @@ public class SessionOptionsTests : OneOffConfigurationsContext
     [Fact] //doesn't play nicely on Travis
     public void can_choke_on_custom_timeout()
     {
+        var options = new SessionOptions { Timeout = 1 };
 
-        var options = new SessionOptions() { Timeout = 1 };
-
-        using (var session = theStore.OpenSession(options))
+        using var session = theStore.LightweightSession(options);
+        var e = Assert.Throws<Marten.Exceptions.MartenCommandException>(() =>
         {
-            var e = Assert.Throws<Marten.Exceptions.MartenCommandException>(() =>
-            {
-                session.Query<FryGuy>("select pg_sleep(2)");
-            });
+            session.Query<FryGuy>("select pg_sleep(2)");
+        });
 
-            Assert.Contains("Timeout during reading attempt", e.InnerException.InnerException.Message);
-        }
+        Assert.Contains("Timeout during reading attempt", e.InnerException.InnerException.Message);
     }
 
     [Fact]
@@ -205,6 +198,7 @@ public class SessionOptionsTests : OneOffConfigurationsContext
     }
 
     [Fact]
+    [Obsolete("Obsolete")]
     public void can_override_pgcstring_timeout_in_sessionoptions()
     {
         var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
@@ -216,14 +210,12 @@ public class SessionOptionsTests : OneOffConfigurationsContext
             c.Connection(connectionStringBuilder.ToString());
         });
 
-        var options = new SessionOptions() { Timeout = 60 };
+        var options = new SessionOptions { Timeout = 60 };
 
-        using (var query = documentStore.OpenSession(options))
-        {
-            var cmd = query.Query<FryGuy>().Explain();
-            Assert.Equal(60, cmd.Command.CommandTimeout);
-            Assert.Equal(1, query.Connection.CommandTimeout);
-        }
+        using var query = documentStore.QuerySession(options);
+        var cmd = query.Query<FryGuy>().Explain();
+        Assert.Equal(60, cmd.Command.CommandTimeout);
+        Assert.Equal(1, query.Connection.CommandTimeout);
     }
 
     [Fact]
@@ -243,12 +235,10 @@ public class SessionOptionsTests : OneOffConfigurationsContext
 
         var testObject = new FryGuy();
 
-        using (var session = documentStore.OpenSession(options))
-        {
-            session.Store(testObject);
-            session.SaveChanges();
-            session.Load<FryGuy>(testObject.Id).ShouldNotBeNull();
-        }
+        using var session = documentStore.LightweightSession(options);
+        session.Store(testObject);
+        session.SaveChanges();
+        session.Load<FryGuy>(testObject.Id).ShouldNotBeNull();
     }
 
     [Fact]
@@ -268,18 +258,15 @@ public class SessionOptionsTests : OneOffConfigurationsContext
 
         var testObject = new FryGuy();
 
-        await using (var query = documentStore.OpenSession(options))
-        {
-            query.Store(testObject);
-            await query.SaveChangesAsync();
-            var loadedObject = await query.LoadAsync<FryGuy>(testObject.Id);
-            loadedObject.ShouldNotBeNull();
-        }
+        await using var query = documentStore.LightweightSession(options);
+        query.Store(testObject);
+        await query.SaveChangesAsync();
+        var loadedObject = await query.LoadAsync<FryGuy>(testObject.Id);
+        loadedObject.ShouldNotBeNull();
     }
 
     public class FryGuy
     {
         public Guid Id;
     }
-
 }

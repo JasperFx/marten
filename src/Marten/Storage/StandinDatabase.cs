@@ -94,7 +94,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public Task DeleteAllDocumentsAsync()
+    public Task DeleteAllDocumentsAsync(CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }
@@ -104,7 +104,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public Task DeleteDocumentsByTypeAsync(Type documentType)
+    public Task DeleteDocumentsByTypeAsync(Type documentType, CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }
@@ -114,7 +114,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public Task DeleteDocumentsExceptAsync(params Type[] documentTypes)
+    public Task DeleteDocumentsExceptAsync(CancellationToken ct, params Type[] documentTypes)
     {
         throw new NotImplementedException();
     }
@@ -124,7 +124,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public Task CompletelyRemoveAsync(Type documentType)
+    public Task CompletelyRemoveAsync(Type documentType, CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }
@@ -134,7 +134,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public Task CompletelyRemoveAllAsync()
+    public Task CompletelyRemoveAllAsync(CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }
@@ -144,7 +144,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public Task DeleteAllEventDataAsync()
+    public Task DeleteAllEventDataAsync(CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }
@@ -154,7 +154,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public Task DeleteSingleEventStreamAsync(Guid streamId, string? tenantId = null)
+    public Task DeleteSingleEventStreamAsync(Guid streamId, string? tenantId = null, CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }
@@ -164,7 +164,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public Task DeleteSingleEventStreamAsync(string streamId, string? tenantId = null)
+    public Task DeleteSingleEventStreamAsync(string streamId, string? tenantId = null, CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }

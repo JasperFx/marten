@@ -1,18 +1,14 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-
 using Bug2135;
-
 using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
-
 using Weasel.Core;
-
 using Xunit;
 
 namespace CoreTests.Bugs
@@ -26,7 +22,7 @@ namespace CoreTests.Bugs
             var newTargets = Target.GenerateRandomData(5).ToArray();
 
             await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-            await using var session = theStore.OpenSession(SessionOptions.ForConnection(conn));
+            await using var session = theStore.LightweightSession(SessionOptions.ForConnection(conn));
 
             session.Store(newTargets);
             await session.SaveChangesAsync();
@@ -63,23 +59,22 @@ namespace CoreTests.Bugs
             var connectionString = builder.ConnectionString;
 
 
-
-            await using (var session = await testStore.LightweightSessionAsync(SessionOptions.ForConnectionString(connectionString)))
+            await using (var session =
+                         await testStore.LightweightSessionAsync(SessionOptions.ForConnectionString(connectionString)))
             {
                 new NpgsqlConnectionStringBuilder(session.Connection.ConnectionString).Timeout.ShouldBe(11);
                 session.Store(new TestEntity { Name = "Test 2" });
                 await session.SaveChangesAsync();
-
             }
 
-            await using (var session = await testStore.LightweightSessionAsync(SessionOptions.ForConnectionString(connectionString)))
+            await using (var session =
+                         await testStore.LightweightSessionAsync(SessionOptions.ForConnectionString(connectionString)))
             {
                 new NpgsqlConnectionStringBuilder(session.Connection.ConnectionString).Timeout.ShouldBe(11);
                 var entities = await session.Query<TestEntity>()
                     .ToListAsync();
 
                 entities.Count.ShouldBe(2);
-
             }
         }
     }

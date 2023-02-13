@@ -113,13 +113,14 @@ Use `IDocumentStore.OpenSessionAsync()` to Open a new `IDocumentSession` with th
 <!-- snippet: sample_opening_session_async -->
 <a id='snippet-sample_opening_session_async'></a>
 ```cs
-await using var session = await store.OpenSessionAsync(SessionOptions.ForConnectionString("another connection string"));
+await using var session =
+    await store.LightweightSessionAsync(SessionOptions.ForConnectionString("another connection string"));
 
 var openIssues = await session.Query<Issue>()
     .Where(x => x.Tags.Contains("open"))
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/OpeningASessionAsync.cs#L19-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_session_async' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/OpeningASessionAsync.cs#L19-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_session_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Identity Map Mechanics
@@ -232,13 +233,12 @@ public void ConfigureCommandTimeout(IDocumentStore store)
 {
     // Sets the command timeout for this session to 60 seconds
     // The default is 30
-    using (var session = store.OpenSession(new SessionOptions {Timeout = 60}))
+    using (var session = store.LightweightSession(new SessionOptions { Timeout = 60 }))
     {
-
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionOptionsTests.cs#L19-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionOptionsTests.cs#L19-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Unit of Work Mechanics
@@ -278,18 +278,18 @@ Netstandard 2.0.
 <a id='snippet-sample_passing-in-existing-connections-and-transactions'></a>
 ```cs
 // Use an existing connection, but Marten still controls the transaction lifecycle
-var session1 = store.OpenSession(SessionOptions.ForConnection(connection));
+var session1 = store.LightweightSession(SessionOptions.ForConnection(connection));
 
 // Enlist in an existing Npgsql transaction, but
 // choose not to allow the session to own the transaction
 // boundaries
-var session3 = store.OpenSession(SessionOptions.ForTransaction(transaction));
+var session3 = store.LightweightSession(SessionOptions.ForTransaction(transaction));
 
 // Enlist in the current, ambient transaction scope
 using var scope = new TransactionScope();
-var session4 = store.OpenSession(SessionOptions.ForCurrentTransaction());
+var session4 = store.LightweightSession(SessionOptions.ForCurrentTransaction());
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/ability_to_use_an_existing_connection_and_transaction.cs#L35-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_passing-in-existing-connections-and-transactions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/ability_to_use_an_existing_connection_and_transaction.cs#L35-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_passing-in-existing-connections-and-transactions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Transaction Isolation Level

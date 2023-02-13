@@ -217,9 +217,9 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
         database.RunSql($"delete from table {_tableName} where type = '{Alias}'");
     }
 
-    public Task TruncateDocumentStorageAsync(IMartenDatabase database)
+    public Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
     {
-        return database.RunSqlAsync($"delete from table {_tableName} where type = '{Alias}'");
+        return database.RunSqlAsync($"delete from table {_tableName} where type = '{Alias}'", ct: ct);
     }
 
     public bool UseOptimisticConcurrency { get; } = false;

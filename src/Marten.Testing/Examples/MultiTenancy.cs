@@ -22,26 +22,30 @@ public class MultiTenancy
             storeOptions.Connection(ConnectionSource.ConnectionString);
 
             #region sample_tenancy-configure-through-policy
+
             storeOptions.Policies.AllDocumentsAreMultiTenanted();
             // Shorthand for
             // storeOptions.Policies.ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
+
             #endregion
         });
 
         store.Advanced.Clean.CompletelyRemoveAll();
 
         #region sample_tenancy-scoping-session-write
+
         // Write some User documents to tenant "tenant1"
-        using (var session = store.OpenSession("tenant1"))
+        using (var session = store.LightweightSession("tenant1"))
         {
             session.Store(new User { UserName = "Bill" });
             session.Store(new User { UserName = "Lindsey" });
             session.SaveChanges();
         }
+
         #endregion
 
         // Write some User documents to tenant "tenant2"
-        using (var session = store.OpenSession("tenant2"))
+        using (var session = store.LightweightSession("tenant2"))
         {
             session.Store(new User { UserName = "Jill" });
             session.Store(new User { UserName = "Frank" });
@@ -49,6 +53,7 @@ public class MultiTenancy
         }
 
         #region sample_tenancy-scoping-session-read
+
         // When you query for data from the "tenant1" tenant,
         // you only get data for that tenant
         using (var query = store.QuerySession("tenant1"))
@@ -58,6 +63,7 @@ public class MultiTenancy
                 .ToList()
                 .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
         }
+
         #endregion
 
         using (var query = store.QuerySession("tenant2"))

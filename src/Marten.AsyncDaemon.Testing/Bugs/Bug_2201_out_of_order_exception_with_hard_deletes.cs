@@ -33,7 +33,7 @@ public class Bug_2201_out_of_order_exception_with_hard_deletes: BugIntegrationCo
 
         var tenantId = Guid.NewGuid().ToString();
         var ticketId = Guid.NewGuid();
-        await using var session = theStore.OpenSession(tenantId);
+        await using var session = theStore.LightweightSession(tenantId);
         for (var i = 1; i <= 1000; i++)
         {
             ticketId = Guid.NewGuid();

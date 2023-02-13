@@ -100,12 +100,12 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId> where T 
         }
     }
 
-    public async Task TruncateDocumentStorageAsync(IMartenDatabase database)
+    public async Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
     {
         var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
         try
         {
-            await database.RunSqlAsync(sql).ConfigureAwait(false);
+            await database.RunSqlAsync(sql, ct: ct).ConfigureAwait(false);
         }
         catch (PostgresException e)
         {
