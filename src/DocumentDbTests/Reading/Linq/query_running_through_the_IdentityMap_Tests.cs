@@ -18,7 +18,7 @@ public class query_running_through_the_IdentityMap_Tests: IntegrationContext
     {
     }
 
-    protected override async Task fixtureSetup()
+    private async Task<IDocumentSession> identitySessionWithData()
     {
         #region sample_using-store-with-multiple-docs
 
@@ -27,7 +27,7 @@ public class query_running_through_the_IdentityMap_Tests: IntegrationContext
         user3 = new User { FirstName = "Jeff" };
         user4 = new User { FirstName = "Corey" };
 
-        await using var session = theStore.IdentitySession();
+        var session = theStore.IdentitySession();
         session.Store(user1, user2, user3, user4);
 
         #endregion
@@ -35,34 +35,39 @@ public class query_running_through_the_IdentityMap_Tests: IntegrationContext
         await session.SaveChangesAsync();
 
         (await session.LoadAsync<User>(user1.Id)).ShouldBeTheSameAs(user1);
+
+        return session;
     }
 
     [Fact]
-    public void single_runs_through_the_identity_map()
+    public async Task single_runs_through_the_identity_map()
     {
-        theSession.Query<User>()
+        await using var session = await identitySessionWithData();
+        session.Query<User>()
             .Single(x => x.FirstName == "Jeremy").ShouldBeTheSameAs(user1);
 
-        theSession.Query<User>()
+        session.Query<User>()
             .SingleOrDefault(x => x.FirstName == user4.FirstName).ShouldBeTheSameAs(user4);
     }
 
 
     [Fact]
-    public void first_runs_through_the_identity_map()
+    public async Task first_runs_through_the_identity_map()
     {
-        theSession.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
+        await using var session = await identitySessionWithData();
+        session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
             .First().ShouldBeTheSameAs(user3);
 
 
-        theSession.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
+        session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
             .FirstOrDefault().ShouldBeTheSameAs(user3);
     }
 
     [Fact]
-    public void query_runs_through_identity_map()
+    public async Task query_runs_through_identity_map()
     {
-        var users = theSession.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
+        await using var session = await identitySessionWithData();
+        var users = session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
             .ToArray();
 
         users[0].ShouldBeTheSameAs(user3);
@@ -73,12 +78,13 @@ public class query_running_through_the_IdentityMap_Tests: IntegrationContext
     [Fact]
     public async Task single_runs_through_the_identity_map_async()
     {
-        var u1 = await theSession.Query<User>().Where(x => x.FirstName == "Jeremy")
+        await using var session = await identitySessionWithData();
+        var u1 = await session.Query<User>().Where(x => x.FirstName == "Jeremy")
             .SingleAsync();
 
         u1.ShouldBeTheSameAs(user1);
 
-        var u2 = await theSession.Query<User>().Where(x => x.FirstName == user4.FirstName)
+        var u2 = await session.Query<User>().Where(x => x.FirstName == user4.FirstName)
             .SingleOrDefaultAsync();
 
         u2.ShouldBeTheSameAs(user4);
@@ -88,13 +94,14 @@ public class query_running_through_the_IdentityMap_Tests: IntegrationContext
     [Fact]
     public async Task first_runs_through_the_identity_map_async()
     {
-        var u1 = await theSession.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
+        await using var session = await identitySessionWithData();
+        var u1 = await session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
             .FirstAsync();
 
         u1.ShouldBeTheSameAs(user3);
 
 
-        var u2 = await theSession.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
+        var u2 = await session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
             .FirstOrDefaultAsync();
 
         u2.ShouldBeTheSameAs(user3);
@@ -104,7 +111,8 @@ public class query_running_through_the_IdentityMap_Tests: IntegrationContext
     [Fact]
     public async Task query_runs_through_identity_map_async()
     {
-        var users = await theSession.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
+        await using var session = await identitySessionWithData();
+        var users = await session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
             .ToListAsync();
 
         users[0].ShouldBeTheSameAs(user3);
