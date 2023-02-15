@@ -41,7 +41,7 @@ export default withMermaid({
       { text: 'Document DB', link: '/documents/', activeMatch: '/documents/' },
       { text: 'Event Store', link: '/events/', activeMatch: '/events/' },
       { text: 'Migration', link: '/migration-guide' },
-      { text: 'Join Chat', link: 'https://gitter.im/jasperfx/marten?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge' },
+      { text: 'Join Chat', link: 'https://discord.com/channels/1074998995086225460/1074999076896112661' },
     ],
 
     algolia: {

@@ -6,3 +6,9 @@
   to = "/v3/index.html"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/discord"
+  to = "https://discord.com/channels/1074998995086225460/1074999076896112661"
+  status = 301
+  force = false
