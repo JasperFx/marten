@@ -105,7 +105,7 @@ export default withMermaid({
             { text: 'Storing Documents', link: '/documents/storing' },
             { text: 'Deleting Documents', link: '/documents/deletes' },
             {
-              text: 'Querying Documents', link: '/documents/querying/',  collapsed: true, items: [
+              text: 'Querying Documents', link: '/documents/querying/', collapsed: true, items: [
                 { text: 'Loading Documents by Id', link: '/documents/querying/byid' },
                 { text: 'Querying Documents with Linq', link: '/documents/querying/linq/' },
                 { text: 'Supported Linq Operators', link: '/documents/querying/linq/operators' },
@@ -128,12 +128,12 @@ export default withMermaid({
             {
               text: 'Indexing Documents', link: '/documents/indexing/', collapsed: true, items: [
                 { text: 'Calculated Indexes', link: '/documents/indexing/computed-indexes' },
-              { text: 'Duplicated Fields', link: '/documents/indexing/duplicated-fields' }, 
-              { text: 'Unique Indexes', link: '/documents/indexing/unique' },
-              { text: 'Foreign Keys', link: '/documents/indexing/foreign-keys' },
-              { text: 'GIN or GiST Indexes', link: '/documents/indexing/gin-gist-indexes' },
-              { text: 'Metadata Indexes', link: '/documents/indexing/metadata-indexes' },
-              { text: 'Ignore Indexes', link: '/documents/indexing/ignore-indexes' },]
+                { text: 'Duplicated Fields', link: '/documents/indexing/duplicated-fields' },
+                { text: 'Unique Indexes', link: '/documents/indexing/unique' },
+                { text: 'Foreign Keys', link: '/documents/indexing/foreign-keys' },
+                { text: 'GIN or GiST Indexes', link: '/documents/indexing/gin-gist-indexes' },
+                { text: 'Metadata Indexes', link: '/documents/indexing/metadata-indexes' },
+                { text: 'Ignore Indexes', link: '/documents/indexing/ignore-indexes' },]
             },
 
 
@@ -159,16 +159,20 @@ export default withMermaid({
             { text: 'Querying Events', link: '/events/querying' },
             { text: 'Metadata', link: '/events/metadata' },
             { text: 'Archiving Streams', link: '/events/archiving' },
-            { text: 'Projections', link: '/events/projections/', collapsed: false, items: [            
-              { text: 'Aggregate Projections', link: '/events/projections/aggregate-projections' },
-            { text: 'Live Aggregations', link: '/events/projections/live-aggregates' },
-            { text: 'Cross-Stream Aggregations', link: '/events/projections/view-projections' },
-            { text: 'Custom Aggregations', link: '/events/projections/custom-aggregates' },
-            { text: 'Event Projections', link: '/events/projections/event-projections' },
-            { text: 'Custom Projections', link: '/events/projections/custom' },
-            { text: 'Inline Projections', link: '/events/projections/inline' },
-            { text: 'Asynchronous Projections', link: '/events/projections/async-daemon' },
-            { text: 'Rebuilding Projections', link: '/events/projections/rebuilding' },] },
+            {
+              text: 'Projections', link: '/events/projections/', collapsed: false, items: [
+                {
+                  text: 'Aggregate Projections', link: '/events/projections/aggregate-projections', items: [
+                    { text: 'Live Aggregations', link: '/events/projections/live-aggregates' },
+                    { text: 'Cross-Stream Aggregations', link: '/events/projections/view-projections' },
+                    { text: 'Custom Aggregations', link: '/events/projections/custom-aggregates' },]
+                },
+                { text: 'Event Projections', link: '/events/projections/event-projections' },
+                { text: 'Custom Projections', link: '/events/projections/custom' },
+                { text: 'Inline Projections', link: '/events/projections/inline' },
+                { text: 'Asynchronous Projections', link: '/events/projections/async-daemon' },
+                { text: 'Rebuilding Projections', link: '/events/projections/rebuilding' },]
+            },
 
             {
               text: 'Event Versioning',

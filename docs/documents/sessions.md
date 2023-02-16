@@ -294,8 +294,8 @@ var session4 = store.LightweightSession(SessionOptions.ForCurrentTransaction());
 
 ## Transaction Isolation Level
 
-New in v0.7 is the ability to configure the transaction isolation level when opening a new `IDocumentSession` by
-supplying the optional `isolationLevel` argument. As of v0.9.2, the default level is `ReadCommitted`.
+The transaction isolation level when opening a new `IDocumentSession` can be configured by
+supplying the optional `isolationLevel` argument. The default level is `ReadCommitted`.
 
 As one of the use cases that spawned this feature, say
 that you are using the [Saga pattern](https://lostechies.com/jimmybogard/2013/03/21/saga-implementation-patterns-variations/) in a service bus architecture. When handling a message with this pattern, you typically want to load some kind of persisted state for the long running saga, do some work, then persist the updated saga state. If you need to worry about serializing the messages
