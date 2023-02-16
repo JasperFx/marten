@@ -51,8 +51,8 @@ MultiStreamAggregation~TDoc, TId~ --|> IEventSlicer~TDoc, TId~
 
 Marten supports a few different types of aggregated projections:
 
-* **Single Stream Aggregates** -- creating a rolled up view of all or a segment of the events within an event stream. This is done through either a _self-aggregate_ or by using `AggregateStream<T>` as a base class for your projection.
-* **Multi Stream Aggregates** -- creating a rolled up view of a user-defined grouping of events across streams. These projections are done by sub-classing the `MultiStreamAggregation<TDoc, TId>` class and is further described in [View Projections](/events/projections/view-projections).
+* **Single Stream Aggregates** -- creating a rolled up view of all or a segment of the events within an event stream. This is done through either a _self-aggregate_ or by using `SingleStreamAggregation<T>` as a base class for your projection.
+* **Multi Stream Aggregates** -- creating a rolled up view of a user-defined grouping of events across streams. These projections are done by sub-classing the `MultiStreamAggregation<TDoc, TId>` class and is further described in [Cross-Stream Projections](/events/projections/multi-stream-projections).
 
 Please note that all aggregated projections share the same set of method conventions described in this page.
 
@@ -64,7 +64,7 @@ discovered by the method conventions can be internal or private, but the holding
 :::
 
 The easiest type of aggregate to create is a document that rolls up the state of a single event stream. You can do that by either creating a public aggregate
-document that directly mutates itself through method conventions or by sub-classing the `AggregateProjection<T>` class like this sample for a fictional `Trip` aggregate document:
+document that directly mutates itself through method conventions or by sub-classing the `SingleStreamAggregation<T>` class like this sample for a fictional `Trip` aggregate document:
 
 <!-- snippet: sample_TripProjection_aggregate -->
 <a id='snippet-sample_tripprojection_aggregate'></a>
@@ -121,13 +121,13 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripAggregationWithCustomName.cs#L17-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_an_aggregate_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Any projection based on `AggregateProjection<T>` will allow you to define steps by event type to either create, delete, or mutate an aggregate
+Any projection based on `SingleStreamAggregation<T>` will allow you to define steps by event type to either create, delete, or mutate an aggregate
 document through a mix of inline Lambda expressions in the constructor function of the projection class or by using specially named methods on the
 projection class. It's completely up to your preference to decide which to use.
 
 Alternatively, if your aggregate will never be deleted you can use a "self-aggregate" as explained in the last section of this page.
 
-To create aggregate projections that include events in multiple streams, see [View Projections](/events/projections/view-projections).
+To create aggregate projections that include events in multiple streams, see [Cross-Stream Projections](/events/projections/multi-stream-projections).
 
 ## Aggregate Creation
 
@@ -418,7 +418,7 @@ Additionally, `ShouldDelete()` methods should return either a `Boolean` or `Task
 
 ## "Self-Aggregates"
 
-You can use the `AggregateProjection<T>` method conventions with a _self-aggregate_, which we just mean to be an aggregate document type that implements its
+You can use the `SingleStreamAggregation<T>` method conventions with a _self-aggregate_, which we just mean to be an aggregate document type that implements its
 own `Apply()` or `ShouldDelete()` methods to mutate itself. Using that concept, let's take the `TripProjection` we have been using and apply that instead
 to a self-aggregating `Trip` type:
 

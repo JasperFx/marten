@@ -159,7 +159,7 @@ public class UserGroupsAssignment
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/TestClasses.cs#L6-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-test-classes' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Simple Event to Single View Projection
+## Simple Event to Single Cross-Stream Projection
 
 Here's a simple example of creating an aggregated view by user id:
 
@@ -187,7 +187,7 @@ public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAs
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/simple_multi_stream_projection.cs#L10-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Note that the primary difference between this and `AggregateProjection<T>` is the calls to `Identity<TEvent>()` to specify how the events are grouped
+Note that the primary difference between this and `SingleStreamAggregation<T>` is the calls to `Identity<TEvent>()` to specify how the events are grouped
 into separate aggregates across streams. We can also do the equivalent of the code above by using a common interface `IUserEvent` on the event types
 we care about and use this:
 
