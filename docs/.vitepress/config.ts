@@ -164,7 +164,7 @@ export default withMermaid({
                 {
                   text: 'Aggregate Projections', link: '/events/projections/aggregate-projections', items: [
                     { text: 'Live Aggregations', link: '/events/projections/live-aggregates' },
-                    { text: 'Cross-Stream Aggregations', link: '/events/projections/view-projections' },
+                    { text: 'Cross-Stream Aggregations', link: '/events/projections/multi-stream-projections' },
                     { text: 'Custom Aggregations', link: '/events/projections/custom-aggregates' },]
                 },
                 { text: 'Event Projections', link: '/events/projections/event-projections' },
