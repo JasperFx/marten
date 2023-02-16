@@ -10,7 +10,7 @@ in the [Single Stream Aggregations](/events/projections/aggregate-projections) p
 :::
 
 1. [Single Stream Aggregations](/events/projections/aggregate-projections) combine events from a single stream into a single view.
-2. [Multi Stream Aggregations](/events/projections/view-projections) are a specialized form of projection that allows you to aggregate a view against arbitrary groupings of events across streams.
+2. [Multi Stream Aggregations](/events/projections/multi-stream-projections) are a specialized form of projection that allows you to aggregate a view against arbitrary groupings of events across streams.
 3. [Event Projections](/events/projections/event-projections) are a recipe for building projections that create or delete one or more documents for a single event
 4. [Custom Aggregations](/events/projections/custom-aggregates) are a recipe for building aggregate projections that require more logic than
    can be accomplished by the other aggregation types. Example usages are soft-deleted aggregate documents that maybe be recreated later or
