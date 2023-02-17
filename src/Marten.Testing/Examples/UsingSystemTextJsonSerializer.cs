@@ -15,17 +15,13 @@ public class UsingSystemTextJsonSerializer
             opts.Connection("some connection string");
 
             // Opt into System.Text.Json serialization
-            opts.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
-
-            // Optionally configure the serializer directly
-            opts.Serializer(new SystemTextJsonSerializer
-            {
+            opts.UseDefaultSerialization(
+                serializerType: SerializerType.SystemTextJson,
                 // Optionally override the enum storage
-                EnumStorage = EnumStorage.AsString,
-
+                enumStorage: EnumStorage.AsString,
                 // Optionally override the member casing
-                Casing = Casing.CamelCase
-            });
+                casing: Casing.CamelCase
+            );
         });
 
         #endregion
