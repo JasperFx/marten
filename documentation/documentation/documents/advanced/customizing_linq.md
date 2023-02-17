@@ -1,7 +1,7 @@
 <!--Title:Extending Marten's Linq Support-->
 
 <div class="alert alert-info" role="alert">
-The Linq parsing and translation to Postgresql JSONB queries, not to mention Marten's own helpers and model, are pretty involved and this guide isn't exhaustive. Please feel free to ask for help in [Marten's Discord channel](https://discord.com/channels/1074998995086225460/1074999076896112661) linked above if there's any Linq customization or extension that you need.
+The Linq parsing and translation to Postgresql JSONB queries, not to mention Marten's own helpers and model, are pretty involved and this guide isn't exhaustive. Please feel free to ask for help in [Marten's Discord channel](https://discord.gg/WMxrvegf8H) linked above if there's any Linq customization or extension that you need.
 </div>
 
 Marten allows you to add Linq parsing and querying support for your own custom methods.

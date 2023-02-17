@@ -94,7 +94,7 @@ _host = await Host.CreateDefaultBuilder()
 :::tip
 It is strongly recommended that you first refer to the existing Marten options for per-database multi-tenancy
 before you write your own model. There are several helpers in the Marten codebase that will hopefully make
-this task easier. Failing all else, please feel free to ask questions in the [Marten's Discord channel](https://discord.com/channels/1074998995086225460/1074999076896112661) about custom
+this task easier. Failing all else, please feel free to ask questions in the [Marten's Discord channel](https://discord.gg/WMxrvegf8H) about custom
 multi-tenancy strategies.
 :::
 
