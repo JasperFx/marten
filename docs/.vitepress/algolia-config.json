@@ -24,6 +24,6 @@
   "strip_chars": " .,;:#",
   "selectors_exclude": ["sup"],
   "custom_settings": {
-    "attributesForFaceting": ["language", "tags"]
+    "attributesForFaceting": ["lang", "tags"]
   }
 }
