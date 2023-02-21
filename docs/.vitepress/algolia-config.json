@@ -8,12 +8,22 @@
       "selector": ".VPLink.link.VPNavBarMenuLink.active",
       "global": true
     },
-    "lvl1": ".main h1",
-    "lvl2": ".main h2",
-    "lvl3": ".main h3",
-    "lvl4": ".main h4",
-    "lvl5": ".main h5",
-    "text": ".main p, .main li"
+    "lvl1": ".content h1",
+    "lvl2": ".content h2",
+    "lvl3": ".content h3",
+    "lvl4": ".content h4",
+    "lvl5": ".content h5",
+    "text": ".content p, .content li",
+    "language": {
+      "selector": "/html/@lang",
+      "type": "xpath",
+      "global": true,
+      "default_value": "en-US"
+    }
   },
-  "selectors_exclude": ["sup"]
+  "strip_chars": " .,;:#",
+  "selectors_exclude": ["sup"],
+  "custom_settings": {
+    "attributesForFaceting": ["language", "tags"]
+  }
 }
