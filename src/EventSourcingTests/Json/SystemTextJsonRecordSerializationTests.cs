@@ -47,28 +47,48 @@ public class SystemTextJsonRecordSerializationTests: IntegrationContext
             opts.Events.DatabaseSchemaName = "events";
         });
 
-        var resourceId = Guid.NewGuid();
+        var organisationId = Guid.NewGuid().ToString();
         var resourceName = "Test";
 
-        theSession.Events.Append(resourceId, new ResourceCreatedEvent(resourceName));
-        await theSession.SaveChangesAsync();
+        var resourceId = await StartStreamForTenant(new ResourceCreatedEvent(resourceName));
+        await AssertProjectionUpdatedForTenant(ResourceState.Enabled);
 
-        var resource = await theSession.Query<Resource>().SingleOrDefaultAsync(r => r.Id == resourceId);
+        await AppendEventForTenant(new ResourceEnabledEvent());
+        await AssertProjectionUpdatedForTenant(ResourceState.Enabled);
 
-        resource.ShouldNotBeNull();
-        resource.Id.ShouldBe(resourceId);
-        resource.Name.ShouldBe(resourceName);
-        resource.State.ShouldBe(ResourceState.Enabled);
+        await AppendEventForTenant(new ResourceDisabledEvent());
+        await AssertProjectionUpdatedForTenant(ResourceState.Disabled);
 
-        theSession.Events.Append(resourceId, new ResourceDisabledEvent());
-        await theSession.SaveChangesAsync();
+        await AppendEventForTenant(new ResourceEnabledEvent());
+        await AssertProjectionUpdatedForTenant(ResourceState.Enabled);
 
-        resource = await theSession.Query<Resource>().SingleOrDefaultAsync(r => r.Id == resourceId);
+        async Task<Guid> StartStreamForTenant(ResourceCreatedEvent @event)
+        {
+            var startStream = theSession.ForTenant(organisationId)
+                .Events.StartStream(@event);
+            await theSession.SaveChangesAsync();
 
-        resource.ShouldNotBeNull();
-        resource.Id.ShouldBe(resourceId);
-        resource.Name.ShouldBe(resourceName);
-        resource.State.ShouldBe(ResourceState.Disabled);
+            return startStream.Id;
+        }
+
+        Task AppendEventForTenant(object @event)
+        {
+            theSession.ForTenant(organisationId)
+                .Events.Append(resourceId, @event);
+
+            return theSession.SaveChangesAsync();
+        }
+
+        async Task AssertProjectionUpdatedForTenant(ResourceState status)
+        {
+            var resource = await theSession.ForTenant(organisationId)
+                .Query<Resource>().SingleOrDefaultAsync(r => r.Id == resourceId);
+
+            resource.ShouldNotBeNull();
+            resource.Id.ShouldBe(resourceId);
+            resource.Name.ShouldBe(resourceName);
+            resource.State.ShouldBe(status);
+        }
     }
 }
 
