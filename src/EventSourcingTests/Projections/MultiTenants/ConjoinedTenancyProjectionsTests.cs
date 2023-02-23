@@ -3,48 +3,28 @@ using System.Threading.Tasks;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
-using Marten.Linq;
-using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
-using Weasel.Core;
-using Xunit;
 using Shouldly;
+using Xunit;
 
-namespace EventSourcingTests.Json;
+namespace EventSourcingTests.Projections.MultiTenants;
 
-public class SystemTextJsonRecordSerializationTests: IntegrationContext
+public class ConjoinedTenancyProjectionsTests: IntegrationContext
 {
-    public SystemTextJsonRecordSerializationTests(DefaultStoreFixture fixture): base(fixture)
+    public ConjoinedTenancyProjectionsTests(DefaultStoreFixture fixture): base(fixture)
     {
     }
 
     [Fact]
-    public async Task ForSystemTextJson_ProjectionShouldBeUpdated()
+    public async Task ForSystemTextJson_AndTenantedSession_ProjectionShouldBeUpdated()
     {
         StoreOptions(opts =>
         {
-            // Optionally configure the serializer directly
-            opts.Serializer(new SystemTextJsonSerializer
-            {
-                // Optionally override the enum storage
-                EnumStorage = EnumStorage.AsString,
-
-                // Optionally override the member casing
-                Casing = Casing.CamelCase,
-            });
-
             opts.Policies.AllDocumentsAreMultiTenanted();
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.MetadataConfig.EnableAll();
-            opts.Schema.For<Resource>().DatabaseSchemaName("resources");
 
             opts.Projections.Add<ResourceProjection>(ProjectionLifecycle.Inline);
-
-            opts.AutoCreateSchemaObjects = AutoCreate.All;
-
-            opts.DatabaseSchemaName = "fleetmonitor";
-            opts.Events.DatabaseSchemaName = "events";
         });
 
         var organisationId = Guid.NewGuid().ToString();
