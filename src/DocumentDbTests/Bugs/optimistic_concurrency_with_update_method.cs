@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Metadata;
+using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -128,6 +129,30 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
             });
 
             ex.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(CoffeeShop).FullName} #{doc1.Id}");
+        }
+    }
+
+    [Fact]
+    public async Task update_with_stale_version_and_disabled_checks()
+    {
+        var doc1 = new CoffeeShop();
+        await using (var session1 = theStore.LightweightSession())
+        {
+            session1.Insert(doc1);
+            await session1.SaveChangesAsync();
+        }
+
+        await using (var session2 = theStore.OpenSession(new SessionOptions{ConcurrencyChecks = ConcurrencyChecks.Disabled}))
+        {
+            var doc2 = session2.Load<CoffeeShop>(doc1.Id);
+            doc2.Name = "Mozart's";
+
+            // Some random version that won't match
+            doc2.Version = Guid.NewGuid();
+
+            session2.Update(doc2);
+
+            await session2.SaveChangesAsync();
         }
     }
 }
