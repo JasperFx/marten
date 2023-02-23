@@ -17,7 +17,7 @@ public class ConjoinedTenancyProjectionsTests: IntegrationContext
     }
 
     [Fact]
-    public async Task ForSystemTextJson_AndTenantedSession_ProjectionShouldBeUpdated()
+    public async Task ForEventsAppendedToTenantedSession_AndConjoinedTenancyProjection_ShouldBeUpdated()
     {
         StoreOptions(opts =>
         {

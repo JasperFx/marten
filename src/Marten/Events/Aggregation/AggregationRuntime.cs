@@ -53,6 +53,9 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         EventSlice<TDoc, TId> slice, CancellationToken cancellation,
         ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
     {
+
+        session = UseTenancyBasedOnSliceAndStorage(session, slice);
+
         if (Projection.MatchesAnyDeleteType(slice))
         {
             var operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
@@ -110,6 +113,24 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         session.QueueOperation(Storage.Upsert(aggregate, session, slice.Tenant.TenantId));
     }
 
+    private DocumentSessionBase UseTenancyBasedOnSliceAndStorage(DocumentSessionBase session, EventSlice<TDoc, TId> slice)
+    {
+        var shouldApplyConjoinedTenancy = Storage.TenancyStyle == TenancyStyle.Conjoined
+                                          && slice.Tenant.TenantId != Tenancy.DefaultTenantId
+                                          && session.TenantId != slice.Tenant.TenantId;
+
+        var shouldApplyDefaultTenancy = Storage.TenancyStyle == TenancyStyle.Single
+                                        && session.TenantId != Tenancy.DefaultTenantId;
+
+        return shouldApplyConjoinedTenancy || shouldApplyDefaultTenancy
+            ? (DocumentSessionBase)session.ForTenant(
+                !shouldApplyDefaultTenancy
+                    ? slice.Tenant.TenantId
+                    : Tenancy.DefaultTenantId
+            )
+            : session;
+    }
+
     public IAggregateVersioning Versioning { get; set; }
 
 
@@ -140,7 +161,10 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
 
         await martenSession.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
 
-        foreach (var slice in slices) await ApplyChangesAsync(martenSession, slice, cancellation).ConfigureAwait(false);
+        foreach (var slice in slices)
+        {
+            await ApplyChangesAsync(martenSession, slice, cancellation).ConfigureAwait(false);
+        }
     }
 
     public async ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase database, EventRange range,
