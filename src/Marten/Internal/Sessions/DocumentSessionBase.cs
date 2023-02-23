@@ -140,11 +140,23 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         {
             var storage = StorageFor<T>();
 
-            foreach (var entity in entities)
+            if (Concurrency == ConcurrencyChecks.Disabled && storage.UseOptimisticConcurrency)
             {
-                storage.Store(this, entity);
-                var op = storage.Update(entity, this, TenantId);
-                _workTracker.Add(op);
+                foreach (var entity in entities)
+                {
+                    storage.Store(this, entity);
+                    var op = storage.Update(entity, this, TenantId);
+                    _workTracker.Add(op);
+                }
+            }
+            else
+            {
+                foreach (var entity in entities)
+                {
+                    storeEntity(entity, storage);
+                    var op = storage.Update(entity, this, TenantId);
+                    _workTracker.Add(op);
+                }
             }
         }
     }
