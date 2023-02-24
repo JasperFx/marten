@@ -79,6 +79,12 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
         return tenant;
     }
 
+    public bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId)
+    {
+        var tenant = GetTenant(tenantId);
+        return ReferenceEquals(database, tenant.Database);
+    }
+
     public async ValueTask<Tenant> GetTenantAsync(string tenantId)
     {
         if (_tenants.TryFind(tenantId, out var tenant))

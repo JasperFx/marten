@@ -49,6 +49,23 @@ public class SingleServerMultiTenancyTests : IAsyncLifetime
         return await conn.DatabaseExists(databaseName);
     }
 
+    [Theory]
+    [InlineData("tenant1", "database1", true)]
+    [InlineData("tenant4", "database1", false)]
+    public async Task tenant_is_in_database(string tenantId, string databaseName, bool isContained)
+    {
+        theTenancy.WithTenants("tenant1", "tenant2", "tenant3")
+            .InDatabaseNamed("database1");
+
+        theTenancy.WithTenants("tenant4", "tenant5")
+            .InDatabaseNamed("database2");
+
+        var databases = await theTenancy.BuildDatabases();
+
+        var database = await theTenancy.FindOrCreateDatabase(databaseName);
+        theTenancy.IsTenantStoredInCurrentDatabase(database, tenantId).ShouldBe(isContained);
+    }
+
     [Fact]
     public void clean_should_be_a_composite()
     {

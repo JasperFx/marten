@@ -34,6 +34,16 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
         Cleaner = new CompositeDocumentCleaner(this);
     }
 
+    public bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId)
+    {
+        if (_databases.TryFind(tenantId, out var expected))
+        {
+            return ReferenceEquals(database, expected);
+        }
+
+        return false;
+    }
+
     /// <summary>
     ///     Register a database that will hold data for multiple conjoined tenants
     /// </summary>

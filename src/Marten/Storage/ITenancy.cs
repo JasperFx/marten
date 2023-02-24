@@ -43,6 +43,13 @@ public interface ITenancy: IDatabaseSource
     /// <param name="tenantIdOrDatabaseIdentifier"></param>
     /// <returns></returns>
     ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier);
+
+    /// <summary>
+    ///  Asserts that the requested tenant id is part of the current database
+    /// </summary>
+    /// <param name="database"></param>
+    /// <param name="tenantId"></param>
+    bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId);
 }
 
 #endregion

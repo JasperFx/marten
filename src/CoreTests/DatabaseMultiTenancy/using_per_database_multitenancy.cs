@@ -4,11 +4,13 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
+using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
@@ -51,6 +53,11 @@ public class using_per_database_multitenancy: IAsyncLifetime
         }
 
         public ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId)
         {
             throw new System.NotImplementedException();
         }
@@ -107,6 +114,28 @@ public class using_per_database_multitenancy: IAsyncLifetime
     {
         await _host.StopAsync();
         theStore.Dispose();
+    }
+
+    [Theory]
+    [InlineData("tenant3", "tenant3", true)]
+    [InlineData("tenant1", "database1", true)]
+    [InlineData("tenant3", "tenant4", false)]
+    [InlineData("tenant3", "database1", false)]
+    public async Task tenant_is_in_database(string tenantId, string databaseName, bool isContained)
+    {
+        var tenancy = theStore.Options.Tenancy;
+        var database = await tenancy.FindOrCreateDatabase(databaseName);
+        tenancy.IsTenantStoredInCurrentDatabase(database, tenantId).ShouldBe(isContained);
+    }
+
+    [Fact]
+    public async Task assert_invalid_tenant_for_database()
+    {
+        using var session = theStore.LightweightSession("tenant1");
+        Should.Throw<InvalidTenantForDatabaseException>(() =>
+        {
+            var nested = session.ForTenant("tenant4");
+        });
     }
 
     [Fact]
