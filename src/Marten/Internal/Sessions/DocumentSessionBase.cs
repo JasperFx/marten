@@ -5,6 +5,7 @@ using System.Linq;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events;
+using Marten.Exceptions;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Metadata;
@@ -251,6 +252,12 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         if (_byTenant.TryGetValue(tenantId, out var tenantSession))
         {
             return tenantSession;
+        }
+
+        var isValid = DocumentStore.Options.Tenancy.IsTenantStoredInCurrentDatabase(Database, tenantId);
+        if (!isValid)
+        {
+            throw new InvalidTenantForDatabaseException(tenantId, Database);
         }
 
         var tenant = new Tenant(tenantId, Database);

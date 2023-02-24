@@ -86,7 +86,7 @@ _host = await Host.CreateDefaultBuilder()
         }).ApplyAllDatabaseChangesOnStartup();
     }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_per_database_multitenancy.cs#L76-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_single_server_multi_tenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_per_database_multitenancy.cs#L83-L108' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_single_server_multi_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Write your own tenancy strategy!
@@ -139,9 +139,16 @@ public interface ITenancy: IDatabaseSource
     /// <param name="tenantIdOrDatabaseIdentifier"></param>
     /// <returns></returns>
     ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier);
+
+    /// <summary>
+    ///  Asserts that the requested tenant id is part of the current database
+    /// </summary>
+    /// <param name="database"></param>
+    /// <param name="tenantId"></param>
+    bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Storage/ITenancy.cs#L8-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_itenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Storage/ITenancy.cs#L8-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_itenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Assuming that we have a custom `ITenancy` model:
@@ -151,7 +158,7 @@ Assuming that we have a custom `ITenancy` model:
 ```cs
 public class MySpecialTenancy: ITenancy
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_per_database_multitenancy.cs#L28-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_myspecialtenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_per_database_multitenancy.cs#L30-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_myspecialtenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 We can utilize that by applying that model at configuration time:
@@ -167,7 +174,7 @@ var store = DocumentStore.For(opts =>
     opts.Tenancy = new MySpecialTenancy();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_per_database_multitenancy.cs#L61-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_custom_tenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_per_database_multitenancy.cs#L68-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_custom_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Administering Multiple Databases

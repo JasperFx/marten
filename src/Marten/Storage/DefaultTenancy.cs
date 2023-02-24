@@ -36,6 +36,11 @@ internal class DefaultTenancy: Tenancy, ITenancy
         return new ValueTask<IMartenDatabase>(Default.Database);
     }
 
+    public bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId)
+    {
+        return true;
+    }
+
     public ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
     {
         return new ValueTask<IReadOnlyList<IDatabase>>(new IDatabase[] { Default.Database });
