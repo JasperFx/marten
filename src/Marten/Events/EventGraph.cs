@@ -362,8 +362,12 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
         return mapping.Wrap(eventData);
     }
 
-    internal void AssertValidity(DocumentStore store)
+    internal void Initialize(DocumentStore store)
     {
         _store = store;
+        foreach (var mapping in _events)
+        {
+             mapping.JsonTransformation(null);
+        }
     }
 }

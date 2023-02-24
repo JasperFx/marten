@@ -44,7 +44,6 @@ public abstract class EventMapping: IDocumentMapping, IEventType
 {
     protected readonly DocumentMapping _inner;
     protected readonly EventGraph _parent;
-    private readonly ISerializer _serializer;
     private readonly ISqlFragment _defaultWhereFragment;
 
     protected EventMapping(EventGraph parent, Type eventType)
@@ -67,15 +66,15 @@ public abstract class EventMapping: IDocumentMapping, IEventType
             filter = filter.CombineAnd(CurrentTenantFilter.Instance);
         }
 
-        _serializer = parent.Options.Serializer();
         _defaultWhereFragment = filter;
 
         JsonTransformation(null);
     }
 
-    public Func<DbDataReader, IEvent> ReadEventData { get; private set; }
+    public Func<ISerializer, DbDataReader, IEvent> ReadEventData { get; private set; }
 
-    public Func<DbDataReader, CancellationToken, Task<IEvent>> ReadEventDataAsync { get; private set; }
+    public Func<ISerializer, DbDataReader, CancellationToken, Task<IEvent>> ReadEventDataAsync { get; private set; }
+
     public NpgsqlDbType IdType { get; } = NpgsqlDbType.Uuid;
     public TenancyStyle TenancyStyle { get; } = TenancyStyle.Single;
     public DuplicatedField[] DuplicatedFields { get; }
@@ -167,31 +166,31 @@ public abstract class EventMapping: IDocumentMapping, IEventType
     {
         ReadEventData =
             jsonTransformation == null
-                ? reader =>
+                ? (serializer, reader) =>
                 {
-                    var data = _serializer.FromJson(DocumentType, reader, 0);
+                    var data = serializer.FromJson(DocumentType, reader, 0);
 
                     return Wrap(data);
                 }
-                : reader =>
+                : (serializer, reader) =>
                 {
-                    var data = jsonTransformation.FromDbDataReader(_serializer, reader, 0);
+                    var data = jsonTransformation.FromDbDataReader(serializer, reader, 0);
 
                     return Wrap(data);
                 }
             ;
 
         ReadEventDataAsync = jsonTransformation == null
-            ? async (reader, token) =>
+            ? async (serializer, reader, token) =>
             {
-                var data = await _serializer.FromJsonAsync(DocumentType, reader, 0, token)
+                var data = await serializer.FromJsonAsync(DocumentType, reader, 0, token)
                     .ConfigureAwait(false);
 
                 return Wrap(data);
             }
-            : async (reader, token) =>
+            : async (serializer, reader, token) =>
             {
-                var data = await jsonTransformation.FromDbDataReaderAsync(_serializer, reader, 0, token)
+                var data = await jsonTransformation.FromDbDataReaderAsync(serializer, reader, 0, token)
                     .ConfigureAwait(false);
 
                 return Wrap(data);
