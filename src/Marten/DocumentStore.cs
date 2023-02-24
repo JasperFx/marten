@@ -48,7 +48,7 @@ public partial class DocumentStore: IDocumentStore
         }
 
         StorageFeatures.PostProcessConfiguration();
-        Events.AssertValidity(this);
+        Events.Initialize(this);
         Options.Projections.AssertValidity(this);
 
         Advanced = new AdvancedOperations(this);

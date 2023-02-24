@@ -222,7 +222,7 @@ public abstract class EventDocumentStorage: IEventStorage
             mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
         }
 
-        var @event = mapping.ReadEventData(reader);
+        var @event = mapping.ReadEventData(_serializer, reader);
 
         ApplyReaderDataToEvent(reader, @event);
 
@@ -243,7 +243,7 @@ public abstract class EventDocumentStorage: IEventStorage
         IEvent @event;
         try
         {
-            @event = await mapping.ReadEventDataAsync(reader, token).ConfigureAwait(false);
+            @event = await mapping.ReadEventDataAsync(_serializer, reader, token).ConfigureAwait(false);
         }
         catch (Exception e)
         {
