@@ -24,7 +24,7 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
 
     public UserSuppliedQueryHandler(IMartenSession session, string sql, object[] parameters)
     {
-        _sql = sql;
+        _sql = sql.TrimStart();
         _parameters = parameters;
         SqlContainsCustomSelect = _sql.StartsWith("select", StringComparison.OrdinalIgnoreCase);
 
@@ -40,7 +40,7 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
         {
             _selectClause.WriteSelectClause(builder);
 
-            if (_sql.StartsWith("where", StringComparison.OrdinalIgnoreCase))
+            if (_sql.StartsWith("where", StringComparison.OrdinalIgnoreCase) || _sql.StartsWith("order", StringComparison.OrdinalIgnoreCase))
             {
                 builder.Append(" ");
             }
@@ -48,10 +48,6 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
             {
                 builder.Append(" where ");
             }
-        }
-        else if (!_sql.Contains(" where ", StringComparison.OrdinalIgnoreCase))
-        {
-            builder.Append(" where ");
         }
 
 
