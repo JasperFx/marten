@@ -127,7 +127,7 @@ public interface IQueryEventStore
     /// <typeparam name="T"></typeparam>
     /// <param name="id"></param>
     /// <returns></returns>
-    IEvent<T> Load<T>(Guid id) where T : class;
+    IEvent<T>? Load<T>(Guid id) where T : class;
 
     /// <summary>
     ///     Load a single event by its id knowing the event type upfront
@@ -136,14 +136,14 @@ public interface IQueryEventStore
     /// <param name="id"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<IEvent<T>> LoadAsync<T>(Guid id, CancellationToken token = default) where T : class;
+    Task<IEvent<T>?> LoadAsync<T>(Guid id, CancellationToken token = default) where T : class;
 
     /// <summary>
     ///     Load a single event by its id
     /// </summary>
     /// <param name="id"></param>
     /// <returns></returns>
-    IEvent Load(Guid id);
+    IEvent? Load(Guid id);
 
     /// <summary>
     ///     Load a single event by its id
@@ -151,14 +151,14 @@ public interface IQueryEventStore
     /// <param name="id"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<IEvent> LoadAsync(Guid id, CancellationToken token = default);
+    Task<IEvent?> LoadAsync(Guid id, CancellationToken token = default);
 
     /// <summary>
     ///     Fetches only the metadata about a stream by id
     /// </summary>
     /// <param name="streamId"></param>
     /// <returns></returns>
-    StreamState FetchStreamState(Guid streamId);
+    StreamState? FetchStreamState(Guid streamId);
 
     /// <summary>
     ///     Fetches only the metadata about a stream by id
@@ -166,14 +166,14 @@ public interface IQueryEventStore
     /// <param name="streamId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<StreamState> FetchStreamStateAsync(Guid streamId, CancellationToken token = default);
+    Task<StreamState?> FetchStreamStateAsync(Guid streamId, CancellationToken token = default);
 
     /// <summary>
     ///     Fetches only the metadata about a stream by id
     /// </summary>
     /// <param name="streamKey"></param>
     /// <returns></returns>
-    StreamState FetchStreamState(string streamKey);
+    StreamState? FetchStreamState(string streamKey);
 
     /// <summary>
     ///     Fetches only the metadata about a stream by id
@@ -181,5 +181,5 @@ public interface IQueryEventStore
     /// <param name="streamKey"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<StreamState> FetchStreamStateAsync(string streamKey, CancellationToken token = default);
+    Task<StreamState?> FetchStreamStateAsync(string streamKey, CancellationToken token = default);
 }
