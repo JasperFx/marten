@@ -251,8 +251,37 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
     }
 
 
+    [Fact]
+    public async Task helpful_exception_when_id_type_is_mismatched_1()
+    {
+        UseStreamIdentity(StreamIdentity.AsString);
 
-        [Fact]
+        var streamId = Guid.NewGuid();
+
+        var ex = await Should.ThrowAsync<InvalidOperationException>(async () =>
+        {
+            var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 6);
+        });
+
+        ex.Message.ShouldBe("This Marten event store is configured to identify streams with strings");
+    }
+
+    [Fact]
+    public async Task helpful_exception_when_id_type_is_mismatched_2()
+    {
+        UseStreamIdentity(StreamIdentity.AsGuid);
+
+        var streamId = Guid.NewGuid().ToString();
+
+        var ex = await Should.ThrowAsync<InvalidOperationException>(async () =>
+        {
+            var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 6);
+        });
+
+        ex.Message.ShouldBe("This Marten event store is configured to identify streams with Guids");
+    }
+
+    [Fact]
     public async Task fetch_existing_stream_for_writing_string_identifier_with_expected_version()
     {
         UseStreamIdentity(StreamIdentity.AsString);

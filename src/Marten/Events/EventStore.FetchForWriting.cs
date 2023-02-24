@@ -127,6 +127,15 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
 
     private IAggregateFetchPlan<TDoc, TId> determineFetchPlan<TDoc, TId>() where TDoc : class
     {
+        if (typeof(TId) == typeof(Guid))
+        {
+            _session.Options.EventGraph.EnsureAsGuidStorage(_session);
+        }
+        else
+        {
+            _session.Options.EventGraph.EnsureAsStringStorage(_session);
+        }
+
         if (_fetchStrategies.TryFind(typeof(TDoc), out var stored))
         {
             return (IAggregateFetchPlan<TDoc, TId>)stored;
