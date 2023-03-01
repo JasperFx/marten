@@ -26,10 +26,12 @@ public class EventProjection_follow_up_operations: DaemonContext
 
         var guid = Guid.NewGuid();
 
-        theSession.Events.StartStream(guid,new EntityPublished(guid, new Dictionary<Guid, NestedEntity>() { { Guid.NewGuid(), nestedEntity }, { Guid.NewGuid(), nestedEntity } }));
-        theSession.Events.Append(Guid.NewGuid(), new SomeOtherEntityWithNestedIdentiferPublished(guid));
+        using var session = theStore.IdentitySession();
 
-        await theSession.SaveChangesAsync();
+        session.Events.StartStream(guid,new EntityPublished(guid, new Dictionary<Guid, NestedEntity>() { { Guid.NewGuid(), nestedEntity }, { Guid.NewGuid(), nestedEntity } }));
+        session.Events.Append(Guid.NewGuid(), new SomeOtherEntityWithNestedIdentiferPublished(guid));
+
+        await session.SaveChangesAsync();
 
         var agent = await StartDaemon();
 
@@ -62,6 +64,8 @@ public class EventProjection_follow_up_operations: DaemonContext
 
                 Assert.NotNull(entity);
             });
+
+
         }
     }
 

@@ -200,4 +200,6 @@ public abstract class CustomAggregation<TDoc, TId>: ProjectionBase, IAggregation
                 $"Invalid identity type {typeof(TId).NameInCode()} for aggregating by stream in projection {GetType().FullNameInCode()}");
         }
     }
+
+    public bool EnableDocumentTrackingDuringRebuilds { get; set; }
 }

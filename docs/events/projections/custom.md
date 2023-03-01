@@ -26,9 +26,15 @@ public interface IProjection
     /// <returns></returns>
     Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
         CancellationToken cancellation);
+
+    /// <summary>
+    /// Enable the identity map mechanics to reuse documents within the session by their identity
+    /// if a projection needs to make subsequent changes to the same document at one time. Default is no tracking
+    /// </summary>
+    bool EnableDocumentTrackingDuringRebuilds { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Projections/IProjection.cs#L8-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Projections/IProjection.cs#L8-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `StreamAction` aggregates outstanding events by the event stream, which is how Marten tracks events inside of an `IDocumentSession` that has
@@ -67,9 +73,11 @@ public class QuestPatchTestProjection: IProjection
         Apply(operations, streams);
         return Task.CompletedTask;
     }
+
+    public bool EnableDocumentTrackingDuringRebuilds { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L883-L916' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpatchtestprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L883-L918' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpatchtestprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the custom projection can be registered in your Marten `DocumentStore` like this:

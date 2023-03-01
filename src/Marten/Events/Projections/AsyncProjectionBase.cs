@@ -15,4 +15,6 @@ public abstract class AsyncProjectionBase: IProjection
 
     public abstract Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
         CancellationToken cancellation);
+
+    public bool EnableDocumentTrackingDuringRebuilds { get; set; }
 }

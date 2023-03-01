@@ -111,3 +111,63 @@ The `Project()` methods can accept these arguments:
 * `IDocumentOperations` is mandatory, and this is what you'd use to register any document operations
 
 The return value must be either `void` or `Task` depending on whether or not the method needs to be asynchronous
+
+## Reusing Documents in the Same Batch
+
+::: tip
+If you find yourself wanting this feature, maybe look to use one of the aggregation projection recipes instead that 
+are heavily optimized for this use case.
+:::
+
+If there is any need within your `EventProjection` to use and/or modify the exact same document within the same batch of
+events -- and remember that event batches in projection rebuilds are measured in the hundreds -- you may want to force Marten
+to use its identity map tracking to cache those documents in memory rather than reloading them. And also to make sure you are applying
+changes to the correct version of the document as well if you are doing some kind of aggregation within an `EventProjection`.
+
+That usage is below for an `EventProjection` that potentially makes several changes to the same document:
+
+<!-- snippet: sample_using_enable_document_tracking_in_event_projection -->
+<a id='snippet-sample_using_enable_document_tracking_in_event_projection'></a>
+```cs
+public enum Team
+{
+    VisitingTeam,
+    HomeTeam
+}
+
+public record Out;
+
+public record Run(Guid GameId, Team Team);
+
+public class BaseballGame
+{
+    public Guid Id { get; set; }
+    public int HomeRuns { get; set; }
+    public int VisitorRuns { get; set; }
+
+    public int Outs { get; set; }
+}
+
+public class TrackedEventProjection : EventProjection
+{
+    public TrackedEventProjection()
+    {
+        EnableDocumentTrackingDuringRebuilds = true;
+
+        ProjectAsync<Run>(async (run, ops) =>
+        {
+            var game = await ops.LoadAsync<BaseballGame>(run.GameId);
+            if (run.Team == Team.HomeTeam)
+            {
+                game.HomeRuns++;
+            }
+            else
+            {
+                game.VisitorRuns++;
+            }
+        });
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TrackedEventProjection.cs#L6-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_enable_document_tracking_in_event_projection' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
