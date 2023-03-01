@@ -1,13 +1,17 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
+using Marten.Events.Daemon.Resiliency;
+using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Schema;
@@ -59,6 +63,20 @@ public partial class DocumentStore: IDocumentStore
         _identityMapCompiledQueries = new CompiledQueryCollection(DocumentTracking.IdentityOnly, this);
         _dirtyTrackedCompiledQueries = new CompiledQueryCollection(DocumentTracking.DirtyTracking, this);
         _queryOnlyCompiledQueries = new CompiledQueryCollection(DocumentTracking.QueryOnly, this);
+
+        warnIfAsyncDaemonIsDisabledWithAsyncProjections();
+    }
+
+    private void warnIfAsyncDaemonIsDisabledWithAsyncProjections()
+    {
+        if (Options.Projections.HasAnyAsyncProjections() && Options.Projections.AsyncMode == DaemonMode.Disabled)
+        {
+            Console.WriteLine("Warning: The async daemon is disabled.");
+            var asyncProjectionList =
+                Options.Projections.All.Where(x => x.Lifecycle == ProjectionLifecycle.Async).Select(x => x.ToString())!
+                    .Join(", ");
+            Console.WriteLine($"Projections {asyncProjectionList} will not be executed without the async daemon enabled");
+        }
     }
 
     public ITenancy Tenancy => Options.Tenancy;
