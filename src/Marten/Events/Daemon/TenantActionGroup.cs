@@ -23,7 +23,7 @@ internal class TenantActionGroup
         CancellationToken cancellationToken)
     {
         await using var operations = new ProjectionDocumentSession(store, batch,
-            new SessionOptions { Tracking = DocumentTracking.None, Tenant = _tenant });
+            new SessionOptions { Tracking = projection.EnableDocumentTrackingDuringRebuilds ? DocumentTracking.IdentityOnly : DocumentTracking.None, Tenant = _tenant });
         await projection.ApplyAsync(operations, _actions, cancellationToken).ConfigureAwait(false);
     }
 }
