@@ -35,7 +35,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="JasperFx.Core" Version="1.1.0" />
+        <PackageReference Include="JasperFx.Core" Version="1.2.0" />
         <PackageReference Include="JasperFx.TypeDiscovery" Version="1.0.0" />
         <PackageReference Include="JasperFx.CodeGeneration" Version="1.0.1" />
         <PackageReference Include="JasperFx.RuntimeCompiler" Version="1.0.1" />
