@@ -2,8 +2,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
-using Marten.Testing.Harness;
-using Npgsql;
 
 namespace Marten.Testing.Examples;
 
@@ -19,7 +17,7 @@ public class OpeningASessionAsync
         #region sample_opening_session_async
 
         await using var session =
-            await store.LightweightSessionAsync(SessionOptions.ForConnectionString("another connection string"));
+            await store.LightweightSerializableSessionAsync(SessionOptions.ForConnectionString("another connection string"));
 
         var openIssues = await session.Query<Issue>()
             .Where(x => x.Tags.Contains("open"))

@@ -14,7 +14,6 @@ using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
-using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
@@ -233,32 +232,31 @@ public partial class DocumentStore: IDocumentStore
         return openSession(options);
     }
 
-    public Task<IDocumentSession> IdentitySessionAsync(
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+    public Task<IDocumentSession> IdentitySerializableSessionAsync(
         CancellationToken cancellation = default
     ) =>
-        IdentitySessionAsync(
-            new SessionOptions { IsolationLevel = isolationLevel },
+        IdentitySerializableSessionAsync(
+            new SessionOptions { IsolationLevel = IsolationLevel.Serializable },
             cancellation
         );
 
-    public Task<IDocumentSession> IdentitySessionAsync(
+    public Task<IDocumentSession> IdentitySerializableSessionAsync(
         string tenantId,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
         CancellationToken cancellation = default
     ) =>
-        IdentitySessionAsync(
-            new SessionOptions { IsolationLevel = isolationLevel, TenantId = tenantId },
+        IdentitySerializableSessionAsync(
+            new SessionOptions { IsolationLevel = IsolationLevel.Serializable, TenantId = tenantId },
             cancellation
         );
 
-    public Task<IDocumentSession> IdentitySessionAsync(
+    public Task<IDocumentSession> IdentitySerializableSessionAsync(
         SessionOptions options,
         CancellationToken cancellation = default
     )
     {
+        options.IsolationLevel = IsolationLevel.Serializable;
         options.Tracking = DocumentTracking.IdentityOnly;
-        return OpenSessionAsync(options, cancellation);
+        return OpenSerializableSessionAsync(options, cancellation);
     }
 
     public IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted) =>
@@ -276,26 +274,25 @@ public partial class DocumentStore: IDocumentStore
         return openSession(options);
     }
 
-    public Task<IDocumentSession> DirtyTrackedSessionAsync(
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+    public Task<IDocumentSession> DirtyTrackedSerializableSessionAsync(
         CancellationToken cancellation = default
     ) =>
-        DirtyTrackedSessionAsync(new SessionOptions { IsolationLevel = isolationLevel }, cancellation);
+        DirtyTrackedSerializableSessionAsync(new SessionOptions { IsolationLevel = IsolationLevel.Serializable }, cancellation);
 
-    public Task<IDocumentSession> DirtyTrackedSessionAsync(
+    public Task<IDocumentSession> DirtyTrackedSerializableSessionAsync(
         string tenantId,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
         CancellationToken cancellation = default
     ) =>
-        DirtyTrackedSessionAsync(new SessionOptions { IsolationLevel = isolationLevel, TenantId = tenantId}, cancellation);
+        DirtyTrackedSerializableSessionAsync(new SessionOptions { IsolationLevel = IsolationLevel.Serializable, TenantId = tenantId}, cancellation);
 
-    public Task<IDocumentSession> DirtyTrackedSessionAsync(
+    public Task<IDocumentSession> DirtyTrackedSerializableSessionAsync(
         SessionOptions options,
         CancellationToken cancellation = default
     )
     {
+        options.IsolationLevel = IsolationLevel.Serializable;
         options.Tracking = DocumentTracking.DirtyTracking;
-        return OpenSessionAsync(options, cancellation);
+        return OpenSerializableSessionAsync(options, cancellation);
     }
 
     public IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted) =>
@@ -313,26 +310,25 @@ public partial class DocumentStore: IDocumentStore
         return openSession(options);
     }
 
-    public Task<IDocumentSession> LightweightSessionAsync(
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
+    public Task<IDocumentSession> LightweightSerializableSessionAsync(
         CancellationToken cancellation = default
     ) =>
-        LightweightSessionAsync(new SessionOptions { IsolationLevel = isolationLevel}, cancellation);
+        LightweightSerializableSessionAsync(new SessionOptions { IsolationLevel = IsolationLevel.Serializable}, cancellation);
 
-    public Task<IDocumentSession> LightweightSessionAsync(
+    public Task<IDocumentSession> LightweightSerializableSessionAsync(
         string tenantId,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
         CancellationToken cancellation = default
     ) =>
-        LightweightSessionAsync(new SessionOptions { IsolationLevel = isolationLevel, TenantId = tenantId}, cancellation);
+        LightweightSerializableSessionAsync(new SessionOptions { IsolationLevel = IsolationLevel.Serializable, TenantId = tenantId}, cancellation);
 
-    public Task<IDocumentSession> LightweightSessionAsync(
+    public Task<IDocumentSession> LightweightSerializableSessionAsync(
         SessionOptions options,
         CancellationToken cancellation = default
     )
     {
+        options.IsolationLevel = IsolationLevel.Serializable;
         options.Tracking = DocumentTracking.None;
-        return OpenSessionAsync(options, cancellation);
+        return OpenSerializableSessionAsync(options, cancellation);
     }
 
     public IQuerySession QuerySession(SessionOptions options)
@@ -348,7 +344,7 @@ public partial class DocumentStore: IDocumentStore
     public IQuerySession QuerySession(string tenantId) =>
         QuerySession(new SessionOptions { TenantId = tenantId });
 
-    public async Task<IQuerySession> QuerySessionAsync(
+    public async Task<IQuerySession> QuerySerializableSessionAsync(
         SessionOptions options,
         CancellationToken cancellation = default
     )
@@ -359,14 +355,14 @@ public partial class DocumentStore: IDocumentStore
         return new QuerySession(this, options, connection);
     }
 
-    public Task<IQuerySession> QuerySessionAsync(CancellationToken cancellation = default) =>
-        QuerySessionAsync(Marten.Storage.Tenancy.DefaultTenantId, cancellation);
+    public Task<IQuerySession> QuerySerializableSessionAsync(CancellationToken cancellation = default) =>
+        QuerySerializableSessionAsync(Marten.Storage.Tenancy.DefaultTenantId, cancellation);
 
-    public Task<IQuerySession> QuerySessionAsync(
+    public Task<IQuerySession> QuerySerializableSessionAsync(
         string tenantId,
         CancellationToken cancellation = default
     ) =>
-        QuerySessionAsync(new SessionOptions { TenantId = tenantId }, cancellation);
+        QuerySerializableSessionAsync(new SessionOptions { TenantId = tenantId, IsolationLevel = IsolationLevel.Serializable}, cancellation);
 
     public IProjectionDaemon BuildProjectionDaemon(string? tenantIdOrDatabaseIdentifier = null, ILogger? logger = null)
     {
@@ -410,7 +406,7 @@ public partial class DocumentStore: IDocumentStore
         We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
         """
     )]
-    public async Task<IDocumentSession> OpenSessionAsync(SessionOptions options, CancellationToken token = default)
+    public async Task<IDocumentSession> OpenSerializableSessionAsync(SessionOptions options, CancellationToken token = default)
     {
         var connection = await options.InitializeAsync(this, CommandRunnerMode.Transactional, token)
             .ConfigureAwait(false);
@@ -438,7 +434,7 @@ public partial class DocumentStore: IDocumentStore
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
         CancellationToken token = default
     ) =>
-        OpenSessionAsync(new SessionOptions { Tracking = tracking, IsolationLevel = isolationLevel }, token);
+        OpenSerializableSessionAsync(new SessionOptions { Tracking = tracking, IsolationLevel = isolationLevel }, token);
 
     [Obsolete(
         """
@@ -453,7 +449,7 @@ public partial class DocumentStore: IDocumentStore
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
         CancellationToken token = default
     ) =>
-        OpenSessionAsync(
+        OpenSerializableSessionAsync(
             new SessionOptions { Tracking = tracking, IsolationLevel = isolationLevel, TenantId = tenantId }, token);
 
     /// <summary>

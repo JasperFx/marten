@@ -127,7 +127,7 @@ public class using_static_database_multitenancy: IAsyncLifetime
     public async Task can_open_a_session_to_a_different_database()
     {
         await using var session =
-            await theStore.LightweightSessionAsync(new SessionOptions { TenantId = "tenant1" });
+            await theStore.LightweightSerializableSessionAsync(new SessionOptions { TenantId = "tenant1" });
 
         session.Connection.Database.ShouldBe("database1");
     }

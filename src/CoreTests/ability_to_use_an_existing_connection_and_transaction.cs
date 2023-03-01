@@ -79,7 +79,7 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
     public async Task can_query_async_with_session_enlisted_in_transaction_scope()
     {
         using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-        await using var session = await theStore.LightweightSessionAsync(SessionOptions.ForCurrentTransaction());
+        await using var session = await theStore.LightweightSerializableSessionAsync(SessionOptions.ForCurrentTransaction());
 
         var aTarget = targets.First();
 
