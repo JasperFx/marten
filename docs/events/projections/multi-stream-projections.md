@@ -5,6 +5,14 @@ This may change again in V6 (sigh), but we have replaced the earlier nomenclatur
 `MultiStreamAggregation` to hopefully be more intention revealing.
 :::
 
+::: warning
+Multi-Stream Aggregations are async by default and require you to run the
+[Async Daemon](/events/projections/async-daemon). If the Async Daemon is not
+running, Multi-Stream Aggregations will not be evaluated. Marten will _not_
+issue a warning if there are Multi-Stream Aggregations registered, but the Async
+Daemon has not been enabled.
+:::
+
 Multi stream projections are designed to handle multi-stream projections where a view is aggregated over events between streams. The `MultiStreamAggregation<TDoc, TId>`
 base class is a subclass of the simpler [Single Stream Projection](/events/projections/aggregate-projections) and supports all the same method conventions and inline event handling, but allows
 the user to specify how events apply to aggregated views in ways besides the simple aggregation by stream model.
