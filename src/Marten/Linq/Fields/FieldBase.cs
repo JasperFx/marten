@@ -2,10 +2,12 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.Json.Serialization;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
 using Marten.Util;
+using Newtonsoft.Json;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -30,17 +32,36 @@ public abstract class FieldBase: IField
 
         for (var i = 0; i < members.Length - 1; i++)
         {
-            locator += $" -> '{members[i].Name.FormatCase(casing)}'";
+            var member = members[i];
+            var memberLocator = determineMemberLocator(casing, member);
+
+            locator += $" -> '{memberLocator}'";
         }
 
         parentLocator = locator;
-        lastMemberName = lastMember.Name.FormatCase(casing);
+        lastMemberName = determineMemberLocator(casing, lastMember);
 
         RawLocator = TypedLocator = $"{parentLocator} ->> '{lastMemberName}'";
 
         PgType = pgType;
 
         JSONBLocator = $"CAST({RawLocator} as jsonb)";
+    }
+
+    private static string determineMemberLocator(Casing casing, MemberInfo member)
+    {
+        var memberLocator = member.Name.FormatCase(casing);
+        if (member.TryGetAttribute<JsonPropertyAttribute>(out var newtonsoftAtt))
+        {
+            memberLocator = newtonsoftAtt.PropertyName;
+        }
+
+        if (member.TryGetAttribute<JsonPropertyNameAttribute>(out var stjAtt))
+        {
+            memberLocator = stjAtt.Name;
+        }
+
+        return memberLocator;
     }
 
     protected string lastMemberName { get; }
