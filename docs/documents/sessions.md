@@ -38,13 +38,13 @@ types of sessions are:
 |`IDocumentStore.QuerySession()`|Read Only|No|No|
 |`IDocumentStore.QuerySessionAsync()`|Read Only|No|No|
 |`IDocumentStore.LightweightSession()`|Read/Write|No|No|
-|`IDocumentStore.LightweightSessionAsync()`|Read/Write|No|No|
+|`IDocumentStore.LightweightSerializableSessionAsync()`|Read/Write|No|No|
 |`IDocumentStore.IdentitySession()`|Read/Write|Yes|Yes|
-|`IDocumentStore.IdentitySessionAsync()`|Read/Write|Yes|Yes|
+|`IDocumentStore.IdentitySerializableSessionAsync()`|Read/Write|Yes|Yes|
 |`IDocumentStore.DirtyTrackedSession()`|Read/Write|Yes|Yes|
-|`IDocumentStore.DirtyTrackedSessionAsync()`|Read/Write|Yes|Yes|
-|`IDocumentStore.OpenSession()` _(Obsolete)_|Read/Write|Yes|No|
-|`IDocumentStore.OpenSessionAsync()` _(Obsolete)_|Read/Write|Yes|No|
+|`IDocumentStore.DirtyTrackedSerializableSessionAsync()`|Read/Write|Yes|Yes|
+|`IDocumentStore.OpenSession()` |Read/Write|Yes|No|
+|`IDocumentStore.OpenSerializableSessionAsync()` |Read/Write|Yes|No|
 
 ::: tip INFO
 The recommended session type for read/write operations is `LightWeightDocumentSession`, which gives the best performance. It does not do change tracking, which may not be needed for most cases.
@@ -108,19 +108,19 @@ var badIssues = await session.Query<Issue>()
 
 ## Async session for serializable transactions
 
-Use `IDocumentStore.OpenSessionAsync()` to Open a new `IDocumentSession` with the supplied options and immediately open the database connection and start the transaction for the session. This is appropriate for Serializable transaction sessions. This is added in v5.
+Use `IDocumentStore.LightweightSerializableSessionAsync()` to Open a new `IDocumentSession` with the supplied options and immediately open the database connection and start the transaction for the session. This is appropriate for Serializable transaction sessions. This is added in v5.
 
 <!-- snippet: sample_opening_session_async -->
 <a id='snippet-sample_opening_session_async'></a>
 ```cs
 await using var session =
-    await store.LightweightSessionAsync(SessionOptions.ForConnectionString("another connection string"));
+    await store.LightweightSerializableSessionAsync(SessionOptions.ForConnectionString("another connection string"));
 
 var openIssues = await session.Query<Issue>()
     .Where(x => x.Tags.Contains("open"))
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/OpeningASessionAsync.cs#L19-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_session_async' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/OpeningASessionAsync.cs#L17-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_session_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Identity Map Mechanics

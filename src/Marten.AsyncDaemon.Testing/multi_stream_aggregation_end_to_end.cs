@@ -5,6 +5,7 @@ using JasperFx.Core;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
+using Marten.Metadata;
 using Marten.Schema;
 using Shouldly;
 using Xunit;
@@ -85,12 +86,13 @@ public class multi_stream_aggregation_end_to_end : DaemonContext
     }
 }
 
-public class UserIssues
+public class UserIssues: IVersioned
 {
     [Identity]
     public Guid UserId { get; set; }
 
     public List<Issue> Issues { get; set; } = new List<Issue>();
+    public Guid Version { get; set; }
 }
 
 public class Issue

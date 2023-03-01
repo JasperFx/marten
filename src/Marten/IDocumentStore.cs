@@ -159,13 +159,6 @@ public interface IDocumentStore: IDisposable
     /// </summary>
     /// <param name="options">Additional options for session</param>
     /// <returns></returns>
-    [Obsolete(
-        """
-        Opening a session without explicitly providing desired type may be dropped in next Marten version.
-        Use explicit method like `LightweightSessionAsync`, `IdentitySessionAsync` or `DirtyTrackedSessionAsync`.
-        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
-        """
-    )]
     IDocumentSession OpenSession(SessionOptions options);
 
     /// <summary>
@@ -176,14 +169,7 @@ public interface IDocumentStore: IDisposable
     /// <param name="options"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    [Obsolete(
-        """
-        Opening a session without explicitly providing desired type may be dropped in next Marten version.
-        Use explicit method like `LightweightSessionAsync`, `IdentitySessionAsync` or `DirtyTrackedSessionAsync`.
-        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
-        """
-    )]
-    Task<IDocumentSession> OpenSessionAsync(SessionOptions options, CancellationToken token = default);
+    Task<IDocumentSession> OpenSerializableSessionAsync(SessionOptions options, CancellationToken token = default);
 
     /// <summary>
     ///     Convenience method to create a new "lightweight" IDocumentSession with no IdentityMap
@@ -214,19 +200,15 @@ public interface IDocumentStore: IDisposable
     ///     or automatic dirty checking
     /// </summary>
     /// <returns></returns>
-    Task<IDocumentSession> LightweightSessionAsync(
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
-        CancellationToken token = default
-    );
+    Task<IDocumentSession> LightweightSerializableSessionAsync(CancellationToken token = default);
 
     /// <summary>
     ///     Convenience method to create a new "lightweight" IDocumentSession with no IdentityMap
     ///     or automatic dirty checking
     /// </summary>
     /// <returns></returns>
-    Task<IDocumentSession> LightweightSessionAsync(
+    Task<IDocumentSession> LightweightSerializableSessionAsync(
         string tenantId,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
         CancellationToken token = default
     );
 
@@ -235,7 +217,7 @@ public interface IDocumentStore: IDisposable
     ///     or automatic dirty checking
     /// </summary>
     /// <returns></returns>
-    Task<IDocumentSession> LightweightSessionAsync(SessionOptions options, CancellationToken token = default);
+    Task<IDocumentSession> LightweightSerializableSessionAsync(SessionOptions options, CancellationToken token = default);
 
     /// <summary>
     ///     Convenience method to create an IDocumentSession with IdentityMap but without automatic
@@ -266,19 +248,15 @@ public interface IDocumentStore: IDisposable
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
-    Task<IDocumentSession> IdentitySessionAsync(
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
-        CancellationToken token = default
-    );
+    Task<IDocumentSession> IdentitySerializableSessionAsync(CancellationToken token = default);
 
     /// <summary>
     ///     Convenience method to create an IDocumentSession with IdentityMap but without automatic
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
-    Task<IDocumentSession> IdentitySessionAsync(
+    Task<IDocumentSession> IdentitySerializableSessionAsync(
         string tenantId,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
         CancellationToken token = default
     );
 
@@ -287,7 +265,7 @@ public interface IDocumentStore: IDisposable
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
-    Task<IDocumentSession> IdentitySessionAsync(SessionOptions options, CancellationToken token = default);
+    Task<IDocumentSession> IdentitySerializableSessionAsync(SessionOptions options, CancellationToken token = default);
 
     /// <summary>
     ///     Convenience method to create an IDocumentSession with both IdentityMap and automatic
@@ -317,19 +295,15 @@ public interface IDocumentStore: IDisposable
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
-    Task<IDocumentSession> DirtyTrackedSessionAsync(
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
-        CancellationToken token = default
-    );
+    Task<IDocumentSession> DirtyTrackedSerializableSessionAsync(CancellationToken token = default);
 
     /// <summary>
     ///     Convenience method to create an IDocumentSession with both IdentityMap and automatic
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
-    Task<IDocumentSession> DirtyTrackedSessionAsync(
+    Task<IDocumentSession> DirtyTrackedSerializableSessionAsync(
         string tenantId,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
         CancellationToken token = default
     );
 
@@ -338,7 +312,7 @@ public interface IDocumentStore: IDisposable
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
-    Task<IDocumentSession> DirtyTrackedSessionAsync(SessionOptions options, CancellationToken token = default);
+    Task<IDocumentSession> DirtyTrackedSerializableSessionAsync(SessionOptions options, CancellationToken token = default);
 
     /// <summary>
     ///     Opens a read-only IQuerySession to the current document store for efficient
@@ -367,14 +341,14 @@ public interface IDocumentStore: IDisposable
     ///     querying without any underlying object tracking.
     /// </summary>
     /// <returns></returns>
-    Task<IQuerySession> QuerySessionAsync(CancellationToken token = default);
+    Task<IQuerySession> QuerySerializableSessionAsync(CancellationToken token = default);
 
     /// <summary>
     ///     Opens a read-only IQuerySession to the current document store for efficient
     ///     querying without any underlying object tracking.
     /// </summary>
     /// <returns></returns>
-    Task<IQuerySession> QuerySessionAsync(string tenantId, CancellationToken token = default);
+    Task<IQuerySession> QuerySerializableSessionAsync(string tenantId, CancellationToken token = default);
 
     /// <summary>
     ///     Opens a read-only IQuerySession to the current document store for efficient
@@ -382,7 +356,7 @@ public interface IDocumentStore: IDisposable
     /// </summary>
     /// <param name="options">Additional options for session. DocumentTracking is not applicable for IQuerySession.</param>
     /// <returns></returns>
-    Task<IQuerySession> QuerySessionAsync(SessionOptions options, CancellationToken token = default);
+    Task<IQuerySession> QuerySerializableSessionAsync(SessionOptions options, CancellationToken token = default);
 
     /// <summary>
     ///     Bulk insert a potentially mixed enumerable of document types

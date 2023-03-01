@@ -373,7 +373,7 @@ internal class ProjectionDaemon: IProjectionDaemon
     {
         var sessionOptions = SessionOptions.ForDatabase(Database);
         sessionOptions.AllowAnyTenant = true;
-        await using var session = await _store.LightweightSessionAsync(sessionOptions, token).ConfigureAwait(false);
+        await using var session = await _store.LightweightSerializableSessionAsync(sessionOptions, token).ConfigureAwait(false);
         source.Options.Teardown(session);
 
         foreach (var shard in shards)
