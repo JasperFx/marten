@@ -56,10 +56,8 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
                             $"Document '{typeof(T).FullNameInCode()}' with same Id already added to the session.");
                     }
                 }
-                else
-                {
-                    d[id] = document;
-                }
+
+                d[id] = document;
             }
             else
             {
@@ -115,15 +113,8 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         }
         else
         {
-            if (session.ItemMap.TryGetValue(typeof(T), out var d2))
-            {
-                dict = (Dictionary<TId, T>)d2;
-            }
-            else
-            {
-                dict = new Dictionary<TId, T>();
-                session.ItemMap.Add(typeof(T), dict);
-            }
+            dict = new Dictionary<TId, T>();
+            session.ItemMap.Add(typeof(T), dict);
         }
 
         var idList = new List<TId>();
