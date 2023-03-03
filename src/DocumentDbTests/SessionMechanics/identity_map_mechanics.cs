@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -172,6 +173,24 @@ public class identity_map_mechanics: IntegrationContext
             .Message.ShouldBe("Document 'Marten.Testing.Documents.User' with same Id already added to the session.");
     }
 
+    [Fact]
+    public async Task given_record_with_same_id_already_added_then_map_should_be_updated()
+    {
+        var initialState = new FriendCount(Guid.NewGuid(), 1);
+
+        await using var store = theStore.IdentitySession();
+
+        store.Store(initialState);
+
+        var updated = initialState with { Number = 3 };
+
+        store.Store(updated);
+
+        var entity = await store.LoadAsync<FriendCount>(updated.Id);
+
+        Assert.Equal(updated, entity);
+
+    }
 
     public identity_map_mechanics(DefaultStoreFixture fixture): base(fixture)
     {

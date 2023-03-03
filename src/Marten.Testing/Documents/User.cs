@@ -131,3 +131,5 @@ public class Post
     public Guid Id { get; set; }
     public string[] Tags { get; set; }
 }
+
+public record FriendCount(Guid Id, int Number);
