@@ -127,7 +127,7 @@ changes to the correct version of the document as well if you are doing some kin
 Usage of `EnableDocumentTrackingDuringRebuilds` is shown below for an `EventProjection` that potentially makes several changes to the same document:
 
 ::: danger
-Due to the async daemon processing projection operations in parallel to applying projection updates, directly mutating the content of a tracked object may result in an exception or unexpected behaviour.
+Due to the async daemon processing projection operations in parallel to applying projection updates, directly mutating the content of a tracked object may result in an exception or unexpected behavior.
 When this feature is enabled, we recommend using immutable projection & collection types within the EventProjection to avoid any issues.
 :::
 
