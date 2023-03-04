@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using Marten.Events.Projections;
 
 namespace EventSourcingTests.Examples;
@@ -11,17 +12,16 @@ public enum Team
     HomeTeam
 }
 
-public record Out;
+public record Run(Guid GameId, Team Team, string Player);
 
-public record Run(Guid GameId, Team Team);
-
-public class BaseballGame
+public record BaseballGame
 {
-    public Guid Id { get; set; }
-    public int HomeRuns { get; set; }
-    public int VisitorRuns { get; set; }
+    public Guid Id { get; init; }
+    public int HomeRuns { get; init; }
+    public int VisitorRuns { get; init; }
 
-    public int Outs { get; set; }
+    public int Outs { get; init; }
+    public ImmutableHashSet<string> PlayersWithRuns { get; init; }
 }
 
 public class TrackedEventProjection : EventProjection
@@ -33,14 +33,21 @@ public class TrackedEventProjection : EventProjection
         ProjectAsync<Run>(async (run, ops) =>
         {
             var game = await ops.LoadAsync<BaseballGame>(run.GameId);
-            if (run.Team == Team.HomeTeam)
-            {
-                game.HomeRuns++;
-            }
-            else
-            {
-                game.VisitorRuns++;
-            }
+
+            var updatedGame = run.Team switch {
+                Team.HomeTeam => game with
+                {
+                    HomeRuns = game.HomeRuns + 1,
+                    PlayersWithRuns = game.PlayersWithRuns.Add(run.Player)
+                },
+                Team.VisitingTeam => game with
+                {
+                    VisitorRuns = game.VisitorRuns + 1,
+                    PlayersWithRuns = game.PlayersWithRuns.Add(run.Player)
+                },
+            };
+
+            ops.Store(updatedGame);
         });
     }
 }

@@ -1,9 +1,9 @@
 # Event Projections
 
-sub-classing the `Marten.Events.EventProjection` class will let you efficiently write a projection where you can explicitly define document operations
-on individual events. In essence, the `EventProjection` recipe effectively does pattern matching for you.
+Sub-classing the `Marten.Events.EventProjection` class will let you efficiently write a projection where you can explicitly define document operations
+on individual events. In essence, the `EventProjection` recipe does pattern matching for you.
 
-To show off what `EventProjection` does, here's a sample that uses pretty well everything that `EventProjection` supports:
+To show off what `EventProjection` does, here's a sample that uses most features that `EventProjection` supports:
 
 <!-- snippet: sample_SampleEventProjection -->
 <a id='snippet-sample_sampleeventprojection'></a>
@@ -124,7 +124,12 @@ events -- and remember that event batches in projection rebuilds are measured in
 to use its identity map tracking to cache those documents in memory rather than reloading them. And also to make sure you are applying
 changes to the correct version of the document as well if you are doing some kind of aggregation within an `EventProjection`.
 
-That usage is below for an `EventProjection` that potentially makes several changes to the same document:
+Usage of `EnableDocumentTrackingDuringRebuilds` is shown below for an `EventProjection` that potentially makes several changes to the same document:
+
+::: danger
+Due to the async daemon processing projection operations in parallel to applying projection updates, directly mutating the content of a tracked object may result in an exception or unexpected behaviour.
+When this feature is enabled, we recommend using immutable projection & collection types within the EventProjection to avoid any issues.
+:::
 
 <!-- snippet: sample_using_enable_document_tracking_in_event_projection -->
 <a id='snippet-sample_using_enable_document_tracking_in_event_projection'></a>
@@ -135,17 +140,16 @@ public enum Team
     HomeTeam
 }
 
-public record Out;
+public record Run(Guid GameId, Team Team, string Player);
 
-public record Run(Guid GameId, Team Team);
-
-public class BaseballGame
+public record BaseballGame
 {
-    public Guid Id { get; set; }
-    public int HomeRuns { get; set; }
-    public int VisitorRuns { get; set; }
+    public Guid Id { get; init; }
+    public int HomeRuns { get; init; }
+    public int VisitorRuns { get; init; }
 
-    public int Outs { get; set; }
+    public int Outs { get; init; }
+    public ImmutableHashSet<string> PlayersWithRuns { get; init; }
 }
 
 public class TrackedEventProjection : EventProjection
@@ -157,17 +161,24 @@ public class TrackedEventProjection : EventProjection
         ProjectAsync<Run>(async (run, ops) =>
         {
             var game = await ops.LoadAsync<BaseballGame>(run.GameId);
-            if (run.Team == Team.HomeTeam)
-            {
-                game.HomeRuns++;
-            }
-            else
-            {
-                game.VisitorRuns++;
-            }
+
+            var updatedGame = run.Team switch {
+                Team.HomeTeam => game with
+                {
+                    HomeRuns = game.HomeRuns + 1,
+                    PlayersWithRuns = game.PlayersWithRuns.Add(run.Player)
+                },
+                Team.VisitingTeam => game with
+                {
+                    VisitorRuns = game.VisitorRuns + 1,
+                    PlayersWithRuns = game.PlayersWithRuns.Add(run.Player)
+                },
+            };
+
+            ops.Store(updatedGame);
         });
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TrackedEventProjection.cs#L6-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_enable_document_tracking_in_event_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TrackedEventProjection.cs#L7-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_enable_document_tracking_in_event_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
