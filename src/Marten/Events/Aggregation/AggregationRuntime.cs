@@ -10,6 +10,7 @@ using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Services;
+using Marten.Sessions;
 using Marten.Storage;
 using Npgsql;
 
@@ -54,7 +55,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
     {
 
-        session = UseTenancyBasedOnSliceAndStorage(session, slice);
+        session = session.UseTenancyBasedOnSliceAndStorage(Storage, slice);
 
         if (Projection.MatchesAnyDeleteType(slice))
         {
@@ -111,24 +112,6 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         }
 
         session.QueueOperation(Storage.Upsert(aggregate, session, slice.Tenant.TenantId));
-    }
-
-    private DocumentSessionBase UseTenancyBasedOnSliceAndStorage(DocumentSessionBase session, EventSlice<TDoc, TId> slice)
-    {
-        var shouldApplyConjoinedTenancy = Storage.TenancyStyle == TenancyStyle.Conjoined
-                                          && slice.Tenant.TenantId != Tenancy.DefaultTenantId
-                                          && session.TenantId != slice.Tenant.TenantId;
-
-        var shouldApplyDefaultTenancy = Storage.TenancyStyle == TenancyStyle.Single
-                                        && session.TenantId != Tenancy.DefaultTenantId;
-
-        return shouldApplyConjoinedTenancy || shouldApplyDefaultTenancy
-            ? (DocumentSessionBase)session.ForTenant(
-                !shouldApplyDefaultTenancy
-                    ? slice.Tenant.TenantId
-                    : Tenancy.DefaultTenantId
-            )
-            : session;
     }
 
     public IAggregateVersioning Versioning { get; set; }

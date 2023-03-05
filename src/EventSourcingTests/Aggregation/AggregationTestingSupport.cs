@@ -31,7 +31,6 @@ public class TestEventSlice: EventSlice<MyAggregate, Guid>
 
     internal Event<EEvent> E() => Add<EEvent>();
 
-
     internal Event<T> Add<T>() where T : new()
     {
         var @event = new Event<T>(new T());
