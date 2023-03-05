@@ -9,6 +9,7 @@ namespace Marten.Events.Projections;
 
 public interface IEventSlice
 {
+    Tenant Tenant { get; }
     IReadOnlyList<IEvent> Events();
 }
 
