@@ -84,6 +84,12 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: IAggregationS
         return this;
     }
 
+    public IAggregationSteps<T> ProjectEventAsync<TEvent>(Func<IQuerySession, T, TEvent, Task<T>> handler)
+    {
+        _applyMethods.AddLambda(handler, typeof(TEvent));
+        return this;
+    }
+
     public IAggregationSteps<T> TransformsEvent<TEvent>() where TEvent : class
     {
         TransformedEvents.Add(typeof(TEvent));
