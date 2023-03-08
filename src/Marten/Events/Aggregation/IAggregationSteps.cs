@@ -110,13 +110,21 @@ public interface IAggregationSteps<T>
         where TEvent : class;
 
     /// <summary>
+    ///     Apply changes to the existing aggregate based on the event type TEvent.
+    /// </summary>
+    /// <param name="handler"></param>
+    /// <typeparam name="TEvent"></typeparam>
+    /// <returns></returns>
+    IAggregationSteps<T> ProjectEventAsync<TEvent>(Func<IQuerySession, T, TEvent, Task> handler);
+
+    /// <summary>
     ///     Apply changes to the existing aggregate based on the event type TEvent and return
     ///     a new aggregate. This is appropriate for immutable aggregate documents
     /// </summary>
     /// <param name="handler"></param>
     /// <typeparam name="TEvent"></typeparam>
     /// <returns></returns>
-    IAggregationSteps<T> ProjectEventAsync<TEvent>(Func<IQuerySession, T, TEvent, Task> handler);
+    IAggregationSteps<T> ProjectEventAsync<TEvent>(Func<IQuerySession, T, TEvent, Task<T>> handler);
 
 
     /// <summary>
