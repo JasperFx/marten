@@ -658,6 +658,16 @@ public class MartenRegistry
         }
 
         /// <summary>
+        ///     Marks just this document type as being stored with single tenancy style
+        /// </summary>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> SingleTenanted()
+        {
+            _builder.Alter = m => m.TenancyStyle = TenancyStyle.Single;
+            return this;
+        }
+
+        /// <summary>
         ///     Opt into the identity key generation strategy
         /// </summary>
         /// <returns></returns>

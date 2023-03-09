@@ -24,6 +24,11 @@ namespace Marten.Events
         TenancyStyle TenancyStyle { get; set; }
 
         /// <summary>
+        /// Enables global project projections (with single tenancy style) for events with conjoined tenancy
+        /// </summary>
+        bool EnableGlobalProjectionsForConjoinedTenancy { get; set; }
+
+        /// <summary>
         ///     Override the database schema name for event related tables. By default this
         ///     is the same schema as the document storage
         /// </summary>

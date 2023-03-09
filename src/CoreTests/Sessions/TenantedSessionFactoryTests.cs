@@ -55,54 +55,48 @@ public class TenantedSessionFactoryTests
         }
     }
 
-    public static TheoryData<Configuration> Configurations
-    {
-        get
+    public static TheoryData<Configuration> Configurations =>
+        new()
         {
-            return new TheoryData<Configuration>
-            {
-                TheSame(Default, Default, TenancyStyle.Single),
-                TheSame(Default, Default, TenancyStyle.Conjoined),
-                TheSame(Default, NonDefault, TenancyStyle.Single),
-                New(Default, NonDefault, TenancyStyle.Conjoined, NonDefault),
-                TheSame(Default, NonDefault, TenancyStyle.Conjoined,
-                    isTenantStoredInCurrentDatabase: false
-                ),
-                New(NonDefault, Default, TenancyStyle.Single, Default),
-                New(NonDefault, Default, TenancyStyle.Single, Default,
-                    allowAnyTenant: false,
-                    defaultTenantUsageEnabled: true
-                ),
-                New(NonDefault, Default, TenancyStyle.Single, Default,
-                    allowAnyTenant: true,
-                    defaultTenantUsageEnabled: false
-                ),
-                TheSame(NonDefault, Default, TenancyStyle.Single,
-                    allowAnyTenant: false,
-                    defaultTenantUsageEnabled: false
-                ),
-                TheSame(NonDefault, Default, TenancyStyle.Conjoined),
-                New(NonDefault, NonDefault, TenancyStyle.Single, Default),
-                New(NonDefault, NonDefault, TenancyStyle.Single, Default,
-                    allowAnyTenant: false,
-                    defaultTenantUsageEnabled: true
-                ),
-                New(NonDefault, NonDefault, TenancyStyle.Single, Default,
-                    allowAnyTenant: true,
-                    defaultTenantUsageEnabled: false
-                ),
-                TheSame(NonDefault, NonDefault, TenancyStyle.Single,
-                    allowAnyTenant: false,
-                    defaultTenantUsageEnabled: false
-                ),
-                TheSame(NonDefault, NonDefault, TenancyStyle.Conjoined),
-            };
-        }
-    }
+            TheSame(Default, Default, TenancyStyle.Single),
+            TheSame(Default, Default, TenancyStyle.Conjoined),
+            TheSame(Default, NonDefault, TenancyStyle.Single),
+            New(Default, NonDefault, TenancyStyle.Conjoined, NonDefault),
+            TheSame(Default, NonDefault, TenancyStyle.Conjoined,
+                isTenantStoredInCurrentDatabase: false
+            ),
+            New(NonDefault, Default, TenancyStyle.Single, Default),
+            New(NonDefault, Default, TenancyStyle.Single, Default,
+                allowAnyTenant: false,
+                defaultTenantUsageEnabled: true
+            ),
+            New(NonDefault, Default, TenancyStyle.Single, Default,
+                allowAnyTenant: true,
+                defaultTenantUsageEnabled: false
+            ),
+            TheSame(NonDefault, Default, TenancyStyle.Single,
+                allowAnyTenant: false,
+                defaultTenantUsageEnabled: false
+            ),
+            TheSame(NonDefault, Default, TenancyStyle.Conjoined),
+            New(NonDefault, NonDefault, TenancyStyle.Single, Default),
+            New(NonDefault, NonDefault, TenancyStyle.Single, Default,
+                allowAnyTenant: false,
+                defaultTenantUsageEnabled: true
+            ),
+            New(NonDefault, NonDefault, TenancyStyle.Single, Default,
+                allowAnyTenant: true,
+                defaultTenantUsageEnabled: false
+            ),
+            TheSame(NonDefault, NonDefault, TenancyStyle.Single,
+                allowAnyTenant: false,
+                defaultTenantUsageEnabled: false
+            ),
+            TheSame(NonDefault, NonDefault, TenancyStyle.Conjoined),
+        };
 
     private static readonly string Default = Tenancy.DefaultTenantId;
     private static readonly string NonDefault = "NON_DEFAULT";
-
 
     public record Configuration(
         string SessionTenant,
