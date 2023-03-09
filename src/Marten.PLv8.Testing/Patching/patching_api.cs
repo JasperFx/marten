@@ -911,14 +911,9 @@ public class patching_api: OneOffConfigurationsContext
             Apply(operations, streams);
             return Task.CompletedTask;
         }
-
-        public bool EnableDocumentTrackingDuringRebuilds { get; set; }
     }
 
     #endregion
-
-
-
 }
 
 internal static class EnumerableExtensions

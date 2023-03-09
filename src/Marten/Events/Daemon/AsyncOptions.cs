@@ -31,6 +31,11 @@ public class AsyncOptions
     /// </summary>
     public IList<Type> StorageTypes { get; } = new List<Type>();
 
+    /// <summary>
+    /// Enable the identity map mechanics to reuse documents within the session by their identity
+    /// if a projection needs to make subsequent changes to the same document at one time. Default is no tracking
+    /// </summary>
+    public bool EnableDocumentTrackingByIdentity { get; set; }
 
     /// <summary>
     ///     Add explicit teardown rule to delete all documents of type T

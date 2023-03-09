@@ -28,12 +28,6 @@ public interface IProjection
     /// <returns></returns>
     Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
         CancellationToken cancellation);
-
-    /// <summary>
-    /// Enable the identity map mechanics to reuse documents within the session by their identity
-    /// if a projection needs to make subsequent changes to the same document at one time. Default is no tracking
-    /// </summary>
-    bool EnableDocumentTrackingDuringRebuilds { get; set; }
 }
 
 #endregion

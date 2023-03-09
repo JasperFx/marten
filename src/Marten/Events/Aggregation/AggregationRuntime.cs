@@ -143,8 +143,6 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         foreach (var slice in slices) await ApplyChangesAsync(martenSession, slice, cancellation).ConfigureAwait(false);
     }
 
-    public bool EnableDocumentTrackingDuringRebuilds { get; set; }
-
     public async ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase database, EventRange range,
         CancellationToken cancellationToken)
     {

@@ -27,8 +27,6 @@ public abstract partial class EventProjection: GeneratedProjection, IProjectionS
 
     public EventProjection(): base("Projections")
     {
-        EnableDocumentTrackingDuringRebuilds = true;
-
         _projectMethods = new ProjectMethodCollection(GetType());
         _createMethods = new CreateMethodCollection(GetType());
 
@@ -44,8 +42,6 @@ public abstract partial class EventProjection: GeneratedProjection, IProjectionS
 
             var projection = (IProjection)Activator.CreateInstance(_generatedType, this);
             foreach (var setter in _inlineType.Setters) setter.SetInitialValue(projection);
-
-            projection.EnableDocumentTrackingDuringRebuilds = EnableDocumentTrackingDuringRebuilds;
 
             return projection;
         });
@@ -89,13 +85,6 @@ public abstract partial class EventProjection: GeneratedProjection, IProjectionS
     {
         _projectMethods.AddLambda(project, typeof(TEvent));
     }
-
-    /// <summary>
-    /// Default is false. This can be set to true to track document usage in rebuilds if
-    /// the projection ever needs to apply consecutive changes to the same document
-    /// in the same batch
-    /// </summary>
-    public bool EnableDocumentTrackingDuringRebuilds { get; set; } = false;
 }
 
 public abstract class SyncEventProjection<T>: SyncEventProjectionBase where T : EventProjection
