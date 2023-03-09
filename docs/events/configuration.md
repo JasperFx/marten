@@ -62,3 +62,19 @@ var store = DocumentStore.For(opts =>
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L226-L236' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_making_the_events_multi_tenanted' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+By default, if you try to define projection with a single tenancy, Marten will throw an exception at runtime informing you about the mismatch.
+
+You can enable global projections for conjoined tenancy.
+
+<!-- snippet: sample_enabling_global_projections_for_conjoined_tenancy -->
+<a id='snippet-sample_enabling_global_projections_for_conjoined_tenancy'></a>
+```cs
+opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregation_projection_validation_rules.cs#L93-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_global_projections_for_conjoined_tenancy' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+::: warning
+If you enable global projections for conjoined tenancy, Marten won't validate potential tenancy mismatch and won't throw an exception for that case.
+:::

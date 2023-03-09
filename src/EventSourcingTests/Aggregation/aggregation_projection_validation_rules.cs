@@ -64,14 +64,11 @@ public class aggregation_projection_validation_rules
         errorMessageFor(x =>
         {
             x.Events.StreamIdentity = StreamIdentity.AsString;
-            x.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
+            x.Projections.Snapshot<GuidIdentifiedAggregate>(SnapshotLifecycle.Async);
         }).ShouldContain(
             $"Id type mismatch. The stream identity type is string, but the aggregate document {typeof(GuidIdentifiedAggregate).FullNameInCode()} id type is Guid",
-            StringComparisonOption.Default);
-            x.Projections.Snapshot<GuidIdentifiedAggregate>(SnapshotLifecycle.Async);
-        });
-
-        message.ShouldContain($"Id type mismatch. The stream identity type is string, but the aggregate document {typeof(GuidIdentifiedAggregate).FullNameInCode()} id type is Guid", StringComparisonOption.Default);
+            StringComparisonOption.Default
+        );
     }
 
     [Fact]
@@ -81,7 +78,9 @@ public class aggregation_projection_validation_rules
         {
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Projections.Snapshot<GuidIdentifiedAggregate>(SnapshotLifecycle.Async);
-        }).ShouldContain($"Tenancy storage style mismatch between the events (Conjoined) and the aggregate type {typeof(GuidIdentifiedAggregate).FullNameInCode()} (Single)", StringComparisonOption.Default);
+        }).ShouldContain(
+            $"Tenancy storage style mismatch between the events (Conjoined) and the aggregate type {typeof(GuidIdentifiedAggregate).FullNameInCode()} (Single)",
+            StringComparisonOption.Default);
     }
 
     [Fact]
@@ -90,8 +89,14 @@ public class aggregation_projection_validation_rules
         shouldNotThrow(opts =>
         {
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+
+            #region sample_enabling_global_projections_for_conjoined_tenancy
+
             opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
-            opts.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
+
+            #endregion
+
+            opts.Projections.Snapshot<GuidIdentifiedAggregate>(SnapshotLifecycle.Async);
         });
     }
 
