@@ -122,12 +122,19 @@ public class ProjectionOptions: DaemonSettings
     /// </summary>
     /// <param name="projection"></param>
     /// <param name="lifecycle">Optionally override the lifecycle of this projection. The default is Inline</param>
-    public void Add(EventProjection projection, ProjectionLifecycle? lifecycle = null)
+    /// <param name="asyncConfiguration">Use it to define behaviour during projection rebuilds</param>
+    public void Add(
+        EventProjection projection,
+        ProjectionLifecycle? lifecycle = null,
+        Action<AsyncOptions> asyncConfiguration = null
+    )
     {
         if (lifecycle.HasValue)
         {
             projection.Lifecycle = lifecycle.Value;
         }
+
+        asyncConfiguration?.Invoke(projection.Options);
 
         projection.AssembleAndAssertValidity();
         All.Add(projection);
@@ -138,14 +145,25 @@ public class ProjectionOptions: DaemonSettings
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="lifecycle">Override the aggregate lifecycle. The default is Inline</param>
+    /// <param name="asyncConfiguration">
+    ///     Optional configuration including teardown instructions for the usage of this
+    ///     projection within the async projection daempon
+    /// </param>
     /// <returns>The extended storage configuration for document T</returns>
-    public MartenRegistry.DocumentMappingExpression<T> SelfAggregate<T>(ProjectionLifecycle? lifecycle = null)
+    public MartenRegistry.DocumentMappingExpression<T> SelfAggregate<T>(
+        ProjectionLifecycle? lifecycle = null,
+        Action<AsyncOptions> asyncConfiguration = null
+    )
     {
         // Make sure there's a DocumentMapping for the aggregate
         var expression = _options.Schema.For<T>();
 
         var source = new SingleStreamAggregation<T> { Lifecycle = lifecycle ?? ProjectionLifecycle.Inline };
+
+        asyncConfiguration?.Invoke(source.Options);
+
         source.AssembleAndAssertValidity();
+
         All.Add(source);
 
         return expression;
@@ -157,7 +175,12 @@ public class ProjectionOptions: DaemonSettings
     /// </summary>
     /// <typeparam name="TProjection">Projection type</typeparam>
     /// <param name="lifecycle">Optionally override the ProjectionLifecycle</param>
-    public void Add<TProjection>(ProjectionLifecycle? lifecycle = null) where TProjection : GeneratedProjection, new()
+    /// <param name="asyncConfiguration">Use it to define behaviour during projection rebuilds</param>
+    public void Add<TProjection>(
+        ProjectionLifecycle? lifecycle = null,
+        Action<AsyncOptions> asyncConfiguration = null
+    )
+        where TProjection : GeneratedProjection, new()
     {
         var projection = new TProjection();
 
@@ -165,6 +188,8 @@ public class ProjectionOptions: DaemonSettings
         {
             projection.Lifecycle = lifecycle.Value;
         }
+
+        asyncConfiguration?.Invoke(projection.Options);
 
         projection.AssembleAndAssertValidity();
 
@@ -177,12 +202,19 @@ public class ProjectionOptions: DaemonSettings
     /// <param name="projection"></param>
     /// <typeparam name="T"></typeparam>
     /// <param name="lifecycle">Optionally override the ProjectionLifecycle</param>
-    public void Add<T>(GeneratedAggregateProjectionBase<T> projection, ProjectionLifecycle? lifecycle = null)
+    /// <param name="asyncConfiguration">Use it to define behaviour during projection rebuilds</param>
+    public void Add<T>(
+        GeneratedAggregateProjectionBase<T> projection,
+        ProjectionLifecycle? lifecycle = null,
+        Action<AsyncOptions> asyncConfiguration = null
+    )
     {
         if (lifecycle.HasValue)
         {
             projection.Lifecycle = lifecycle.Value;
         }
+
+        asyncConfiguration?.Invoke(projection.Options);
 
         projection.AssembleAndAssertValidity();
 
@@ -238,7 +270,6 @@ public class ProjectionOptions: DaemonSettings
         {
             throw new InvalidOperationException(duplicateNames.Join("; "));
         }
-
 
         var messages = All.Concat(_liveAggregateSources.Values)
             .OfType<GeneratedProjection>()

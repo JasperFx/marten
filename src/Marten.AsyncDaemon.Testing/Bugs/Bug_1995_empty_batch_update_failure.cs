@@ -73,6 +73,4 @@ public class IssueAggregateProjection : IProjection
         Apply(operations, streams);
         return Task.CompletedTask;
     }
-
-    public bool EnableDocumentTrackingDuringRebuilds { get; set; }
 }

@@ -13,22 +13,28 @@ namespace Marten.AsyncDaemon.Testing;
 
 public class EventProjection_follow_up_operations: DaemonContext
 {
-    public EventProjection_follow_up_operations(ITestOutputHelper output) : base(output)
+    public EventProjection_follow_up_operations(ITestOutputHelper output): base(output)
     {
     }
 
     [Fact]
     public async Task rebuild_with_follow_up_operations_should_work()
     {
-        StoreOptions(x => x.Projections.Add<NestedEntityEventProjection>(ProjectionLifecycle.Inline));
+        StoreOptions(x => x.Projections.Add<NestedEntityEventProjection>(ProjectionLifecycle.Inline,
+            asyncOptions => asyncOptions.EnableDocumentTrackingByIdentity = true));
 
         var nestedEntity = new NestedEntity("etc");
 
         var guid = Guid.NewGuid();
 
-        using var session = theStore.IdentitySession();
+        await using var session = theStore.IdentitySession();
 
-        session.Events.StartStream(guid,new EntityPublished(guid, new Dictionary<Guid, NestedEntity>() { { Guid.NewGuid(), nestedEntity }, { Guid.NewGuid(), nestedEntity } }));
+        session.Events.StartStream(guid,
+            new EntityPublished(guid,
+                new Dictionary<Guid, NestedEntity>()
+                {
+                    { Guid.NewGuid(), nestedEntity }, { Guid.NewGuid(), nestedEntity }
+                }));
         session.Events.Append(Guid.NewGuid(), new SomeOtherEntityWithNestedIdentiferPublished(guid));
 
         await session.SaveChangesAsync();
@@ -36,12 +42,14 @@ public class EventProjection_follow_up_operations: DaemonContext
         var agent = await StartDaemon();
 
         await agent.RebuildProjection(nameof(NestedEntity), CancellationToken.None);
-
     }
 
     public record EntityPublished(Guid Id, Dictionary<Guid, NestedEntity> Entities);
+
     public record NestedEntity(string SomeInformation);
+
     public record NestedEntityProjection(Guid Id, List<NestedEntity> Entity);
+
     public record SomeOtherEntityWithNestedIdentiferPublished(Guid Id);
 
     public class NestedEntityEventProjection: EventProjection
@@ -55,7 +63,6 @@ public class EventProjection_follow_up_operations: DaemonContext
                 var entity = new NestedEntityProjection(@event.Id, @event.Entities.Select(x => x.Value).ToList());
 
                 operations.Store(entity);
-
             });
 
             ProjectAsync<SomeOtherEntityWithNestedIdentiferPublished>(async (@event, operations) =>
@@ -64,9 +71,6 @@ public class EventProjection_follow_up_operations: DaemonContext
 
                 Assert.NotNull(entity);
             });
-
-
         }
     }
-
 }

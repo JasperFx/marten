@@ -22,8 +22,14 @@ internal class TenantActionGroup
     public async Task ApplyEvents(ProjectionUpdateBatch batch, IProjection projection, DocumentStore store,
         CancellationToken cancellationToken)
     {
+        var tracking =
+            projection is IProjectionSource projectionSource
+            && projectionSource.Options.EnableDocumentTrackingByIdentity
+                ? DocumentTracking.IdentityOnly
+                : DocumentTracking.None;
+
         await using var operations = new ProjectionDocumentSession(store, batch,
-            new SessionOptions { Tracking = projection.EnableDocumentTrackingDuringRebuilds ? DocumentTracking.IdentityOnly : DocumentTracking.None, Tenant = _tenant });
+            new SessionOptions { Tracking = tracking, Tenant = _tenant });
         await projection.ApplyAsync(operations, _actions, cancellationToken).ConfigureAwait(false);
     }
 }

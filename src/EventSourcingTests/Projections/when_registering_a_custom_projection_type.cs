@@ -70,7 +70,5 @@ public class when_registering_a_custom_projection_type: IDisposable
         {
             throw new System.NotSupportedException();
         }
-
-        public bool EnableDocumentTrackingDuringRebuilds { get; set; }
     }
 }

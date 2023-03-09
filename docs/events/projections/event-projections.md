@@ -115,19 +115,37 @@ The return value must be either `void` or `Task` depending on whether or not the
 ## Reusing Documents in the Same Batch
 
 ::: tip
-If you find yourself wanting this feature, maybe look to use one of the aggregation projection recipes instead that 
-are heavily optimized for this use case.
+If you find yourself wanting this feature, maybe look to use one of the aggregation projection recipes instead that are heavily optimized for this use case.
 :::
 
-If there is any need within your `EventProjection` to use and/or modify the exact same document within the same batch of
-events -- and remember that event batches in projection rebuilds are measured in the hundreds -- you may want to force Marten
-to use its identity map tracking to cache those documents in memory rather than reloading them. And also to make sure you are applying
-changes to the correct version of the document as well if you are doing some kind of aggregation within an `EventProjection`.
+If there is any need within your `EventProjection` to use and/or modify the exact same document within the same batch of events -- and remember that event batches in projection rebuilds are measured in the hundreds -- you may want to force Marten to use its identity map tracking to cache those documents in memory rather than reloading them. And also to make sure you are applying changes to the correct version of the document as well if you are doing some kind of aggregation within an `EventProjection`.
 
-Usage of `EnableDocumentTrackingDuringRebuilds` is shown below for an `EventProjection` that potentially makes several changes to the same document:
+To use identity map tracking for a particular projection, you should enable it in its async option by setting the `EnableDocumentTrackingByIdentity` property.
+
+<!-- snippet: sample_using_enable_document_tracking_in_event_projection_registration -->
+<a id='snippet-sample_using_enable_document_tracking_in_event_projection_registration'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    opts.Projections.Add(
+        new TrackedEventProjection(),
+        // Register projection to run it asynchronously
+        ProjectionLifecycle.Async,
+        // enable document tracking using identity map
+        asyncOptions => asyncOptions.EnableDocumentTrackingByIdentity = true
+    );
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TrackedEventProjection.cs#L12-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_enable_document_tracking_in_event_projection_registration' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Usage of `EnableDocumentTrackingByIdentity` is shown below for an `EventProjection` that potentially makes several changes to the same document:
 
 ::: danger
 Due to the async daemon processing projection operations in parallel to applying projection updates, directly mutating the content of a tracked object may result in an exception or unexpected behavior.
+
 When this feature is enabled, we recommend using immutable projection & collection types within the EventProjection to avoid any issues.
 :::
 
@@ -152,17 +170,16 @@ public record BaseballGame
     public ImmutableHashSet<string> PlayersWithRuns { get; init; }
 }
 
-public class TrackedEventProjection : EventProjection
+public class TrackedEventProjection: EventProjection
 {
     public TrackedEventProjection()
     {
-        EnableDocumentTrackingDuringRebuilds = true;
-
         ProjectAsync<Run>(async (run, ops) =>
         {
             var game = await ops.LoadAsync<BaseballGame>(run.GameId);
 
-            var updatedGame = run.Team switch {
+            var updatedGame = run.Team switch
+            {
                 Team.HomeTeam => game with
                 {
                     HomeRuns = game.HomeRuns + 1,
@@ -180,5 +197,5 @@ public class TrackedEventProjection : EventProjection
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TrackedEventProjection.cs#L7-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_enable_document_tracking_in_event_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TrackedEventProjection.cs#L31-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_enable_document_tracking_in_event_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

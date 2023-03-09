@@ -17,6 +17,4 @@ public abstract class SyncProjectionBase: IProjection
         Apply(operations, streams);
         return Task.CompletedTask;
     }
-
-    public bool EnableDocumentTrackingDuringRebuilds { get; set; }
 }
