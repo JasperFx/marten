@@ -95,6 +95,8 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
     /// </summary>
     public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
 
+    public bool EnableGlobalProjectionsForConjoinedTenancy { get; set; }
+
     /// <summary>
     ///     Configure the meta data required to be stored for events. By default meta data fields are disabled
     /// </summary>
@@ -367,7 +369,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
         _store = store;
         foreach (var mapping in _events)
         {
-             mapping.JsonTransformation(null);
+            mapping.JsonTransformation(null);
         }
     }
 }

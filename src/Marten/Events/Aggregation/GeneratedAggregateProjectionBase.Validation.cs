@@ -6,6 +6,7 @@ using JasperFx.Core.Reflection;
 using Marten.Events.CodeGeneration;
 using Marten.Exceptions;
 using Marten.Schema;
+using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
 
@@ -20,7 +21,11 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         var mapping = options.Storage.FindMapping(typeof(T)).Root.As<DocumentMapping>();
         foreach (var p in validateDocumentIdentity(options, mapping)) yield return p;
 
-        if (options.Events.TenancyStyle != mapping.TenancyStyle)
+        if (options.Events.TenancyStyle != mapping.TenancyStyle
+            && (options.Events.TenancyStyle == TenancyStyle.Single
+                || options.Events is
+                    { TenancyStyle: TenancyStyle.Conjoined, EnableGlobalProjectionsForConjoinedTenancy: false })
+           )
         {
             yield return
                 $"Tenancy storage style mismatch between the events ({options.Events.TenancyStyle}) and the aggregate type {typeof(T).FullNameInCode()} ({mapping.TenancyStyle})";

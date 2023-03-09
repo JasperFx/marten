@@ -24,44 +24,53 @@ public class ConjoinedTenancyProjectionsTests: IntegrationContext
             opts.Policies.AllDocumentsAreMultiTenanted();
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
 
+            opts.Schema.For<ResourcesGlobalSummary>().SingleTenanted();
+
             opts.Projections.Add<ResourceProjection>(ProjectionLifecycle.Inline);
+            opts.Projections.Add<ResourcesGlobalSummaryProjection>(ProjectionLifecycle.Inline);
         });
 
-        var organisationId = Guid.NewGuid().ToString();
+        var organisationId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid().ToString();
         var resourceName = "Test";
 
-        var resourceId = await StartStreamForTenant(new ResourceCreatedEvent(resourceName));
-        await AssertProjectionUpdatedForTenant(ResourceState.Enabled);
+        var resourceId = await StartStreamForTenant(tenantId, new ResourceCreatedEvent(resourceName, organisationId));
+        await AssertProjectionUpdatedForTenant(tenantId, ResourceState.Enabled);
 
-        await AppendEventForTenant(new ResourceEnabledEvent());
-        await AssertProjectionUpdatedForTenant(ResourceState.Enabled);
+        await AppendEventForTenant(tenantId, new ResourceEnabledEvent(organisationId));
+        await AssertProjectionUpdatedForTenant(tenantId, ResourceState.Enabled);
 
-        await AppendEventForTenant(new ResourceDisabledEvent());
-        await AssertProjectionUpdatedForTenant(ResourceState.Disabled);
+        await AppendEventForTenant(tenantId, new ResourceDisabledEvent(organisationId));
+        await AssertProjectionUpdatedForTenant(tenantId, ResourceState.Disabled);
 
-        await AppendEventForTenant(new ResourceEnabledEvent());
-        await AssertProjectionUpdatedForTenant(ResourceState.Enabled);
+        await AppendEventForTenant(tenantId, new ResourceEnabledEvent(organisationId));
+        await AssertProjectionUpdatedForTenant(tenantId, ResourceState.Enabled);
 
-        async Task<Guid> StartStreamForTenant(ResourceCreatedEvent @event)
+        var otherTenantId = Guid.NewGuid().ToString();
+        await StartStreamForTenant(otherTenantId, new ResourceCreatedEvent("doesn't matter", organisationId));
+
+        await AssertGlobalProjectionUpdatedForTenant();
+
+        async Task<Guid> StartStreamForTenant(string tenant, ResourceCreatedEvent @event)
         {
-            var startStream = theSession.ForTenant(organisationId)
+            var startStream = theSession.ForTenant(tenant)
                 .Events.StartStream(@event);
             await theSession.SaveChangesAsync();
 
             return startStream.Id;
         }
 
-        Task AppendEventForTenant(object @event)
+        Task AppendEventForTenant(string tenant, object @event)
         {
-            theSession.ForTenant(organisationId)
+            theSession.ForTenant(tenant)
                 .Events.Append(resourceId, @event);
 
             return theSession.SaveChangesAsync();
         }
 
-        async Task AssertProjectionUpdatedForTenant(ResourceState status)
+        async Task AssertProjectionUpdatedForTenant(string tenant, ResourceState status)
         {
-            var resource = await theSession.ForTenant(organisationId)
+            var resource = await theSession.ForTenant(tenant)
                 .Query<Resource>().SingleOrDefaultAsync(r => r.Id == resourceId);
 
             resource.ShouldNotBeNull();
@@ -69,40 +78,28 @@ public class ConjoinedTenancyProjectionsTests: IntegrationContext
             resource.Name.ShouldBe(resourceName);
             resource.State.ShouldBe(status);
         }
+
+        async Task AssertGlobalProjectionUpdatedForTenant()
+        {
+            var resource = await theSession.ForTenant(Tenancy.DefaultTenantId)
+                .Query<ResourcesGlobalSummary>().SingleOrDefaultAsync(r => r.Id == organisationId);
+
+            resource.ShouldNotBeNull();
+            resource.Id.ShouldBe(organisationId);
+            resource.TotalResourcesCount.ShouldBe(2);
+        }
     }
 }
 
 public record Event;
 
-public record ResourceCreatedEvent(string Name): Event;
+public record ResourceCreatedEvent(string Name, Guid OrganisationId): Event;
 
-public record ResourceRemovedEvent(): Event;
+public record ResourceRemovedEvent(Guid OrganisationId): Event;
 
-public record ResourceEnabledEvent(): Event;
+public record ResourceEnabledEvent(Guid OrganisationId): Event;
 
-public record ResourceDisabledEvent(): Event;
-
-public class ResourceProjection: SingleStreamProjection<Resource>
-{
-    public ResourceProjection()
-    {
-        DeleteEvent<ResourceRemovedEvent>();
-
-        Lifecycle = ProjectionLifecycle.Inline;
-    }
-
-    public void Apply(ResourceDisabledEvent e, Resource resource) => resource.State = ResourceState.Disabled;
-
-    public void Apply(ResourceEnabledEvent e, Resource resource)
-    {
-        resource.State = ResourceState.Enabled;
-    }
-
-    public Resource Create(ResourceCreatedEvent create)
-    {
-        return new Resource { Name = create.Name, State = ResourceState.Enabled };
-    }
-}
+public record ResourceDisabledEvent(Guid OrganisationId): Event;
 
 public record Resource
 {
@@ -115,4 +112,40 @@ public enum ResourceState
 {
     Disabled,
     Enabled
+}
+
+public class ResourceProjection: SingleStreamProjection<Resource>
+{
+    public ResourceProjection() =>
+        DeleteEvent<ResourceRemovedEvent>();
+
+    public void Apply(ResourceDisabledEvent e, Resource resource) =>
+        resource.State = ResourceState.Disabled;
+
+    public void Apply(ResourceEnabledEvent e, Resource resource) =>
+        resource.State = ResourceState.Enabled;
+
+    public Resource Create(ResourceCreatedEvent create) =>
+        new() { Name = create.Name, State = ResourceState.Enabled };
+}
+
+public record ResourcesGlobalSummary
+{
+    public Guid Id { get; set; }
+    public int TotalResourcesCount { get; set; }
+}
+
+public class ResourcesGlobalSummaryProjection: MultiStreamAggregation<ResourcesGlobalSummary, Guid>
+{
+    public ResourcesGlobalSummaryProjection()
+    {
+        Identity<ResourceCreatedEvent>(e => e.OrganisationId);
+        Identity<ResourceRemovedEvent>(e => e.OrganisationId);
+    }
+
+    public void Apply(ResourceCreatedEvent e, ResourcesGlobalSummary resourceGlobal) =>
+        resourceGlobal.TotalResourcesCount++;
+
+    public void Apply(ResourceRemovedEvent e, ResourcesGlobalSummary resourceGlobal) =>
+        resourceGlobal.TotalResourcesCount--;
 }

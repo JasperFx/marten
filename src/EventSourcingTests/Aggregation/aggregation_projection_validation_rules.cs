@@ -31,7 +31,17 @@ public class aggregation_projection_validation_rules
         return ex.Message;
     }
 
-
+    protected void shouldNotThrow(Action<StoreOptions> configure)
+    {
+        Should.NotThrow(() =>
+        {
+            DocumentStore.For(opts =>
+            {
+                opts.Connection(ConnectionSource.ConnectionString);
+                configure(opts);
+            });
+        });
+    }
 
     [Fact]
     public void aggregate_id_is_wrong_type_1()
@@ -42,16 +52,22 @@ public class aggregation_projection_validation_rules
             x.Projections.Snapshot<StringIdentifiedAggregate>(SnapshotLifecycle.Async);
         });
 
-        message.ShouldContain($"Id type mismatch. The stream identity type is System.Guid, but the aggregate document {typeof(StringIdentifiedAggregate).FullNameInCode()} id type is string", StringComparisonOption.Default);
+        message.ShouldContain(
+            $"Id type mismatch. The stream identity type is System.Guid, but the aggregate document {typeof(StringIdentifiedAggregate).FullNameInCode()} id type is string",
+            StringComparisonOption.Default);
     }
 
 
     [Fact]
     public void aggregate_id_is_wrong_type_2()
     {
-        var message = errorMessageFor(x =>
+        errorMessageFor(x =>
         {
             x.Events.StreamIdentity = StreamIdentity.AsString;
+            x.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
+        }).ShouldContain(
+            $"Id type mismatch. The stream identity type is string, but the aggregate document {typeof(GuidIdentifiedAggregate).FullNameInCode()} id type is Guid",
+            StringComparisonOption.Default);
             x.Projections.Snapshot<GuidIdentifiedAggregate>(SnapshotLifecycle.Async);
         });
 
@@ -59,7 +75,7 @@ public class aggregation_projection_validation_rules
     }
 
     [Fact]
-    public void if_events_are_multi_tenanted_so_must_the_projected_view()
+    public void if_events_are_multi_tenanted_and_global_projections_are_disabled_so_must_the_projected_view()
     {
         errorMessageFor(opts =>
         {
@@ -69,13 +85,26 @@ public class aggregation_projection_validation_rules
     }
 
     [Fact]
+    public void if_events_are_multi_tenanted_and_global_projections_are_enabled()
+    {
+        shouldNotThrow(opts =>
+        {
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
+            opts.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
+        });
+    }
+
+    [Fact]
     public void if_the_aggregate_is_multi_tenanted_but_the_events_are_not()
     {
         errorMessageFor(opts =>
         {
             opts.Projections.Snapshot<GuidIdentifiedAggregate>(SnapshotLifecycle.Async);
             opts.Schema.For<GuidIdentifiedAggregate>().MultiTenanted();
-        }).ShouldContain($"Tenancy storage style mismatch between the events (Single) and the aggregate type {typeof(GuidIdentifiedAggregate).FullNameInCode()} (Conjoined)", StringComparisonOption.Default);
+        }).ShouldContain(
+            $"Tenancy storage style mismatch between the events (Single) and the aggregate type {typeof(GuidIdentifiedAggregate).FullNameInCode()} (Conjoined)",
+            StringComparisonOption.Default);
     }
 
     [Fact]
@@ -89,9 +118,7 @@ public class aggregation_projection_validation_rules
 
     public class EmptyProjection: SingleStreamProjection<GuidIdentifiedAggregate>
     {
-
     }
-
 
 
     public class GuidIdentifiedAggregate
@@ -100,7 +127,6 @@ public class aggregation_projection_validation_rules
 
         public void Apply(AEvent a)
         {
-
         }
     }
 
@@ -110,7 +136,6 @@ public class aggregation_projection_validation_rules
 
         public void Apply(AEvent a)
         {
-
         }
     }
 
@@ -139,7 +164,9 @@ public class aggregation_projection_validation_rules
         var projection = new BadMethodName();
         var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
 
-        ex.Message.ShouldContain("Unrecognized method name 'DoStuff'. Either mark with [MartenIgnore] or use one of 'Apply', 'Create', 'ShouldDelete'", StringComparisonOption.NormalizeWhitespaces);
+        ex.Message.ShouldContain(
+            "Unrecognized method name 'DoStuff'. Either mark with [MartenIgnore] or use one of 'Apply', 'Create', 'ShouldDelete'",
+            StringComparisonOption.NormalizeWhitespaces);
     }
 
     [Fact]
@@ -149,7 +176,8 @@ public class aggregation_projection_validation_rules
         var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
         ex.InvalidMethods.Single()
             .Errors
-            .ShouldContain($"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, Marten.Events.IEvent, Marten.Events.IEvent<{typeof(AEvent).FullNameInCode()}>");
+            .ShouldContain(
+                $"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, Marten.Events.IEvent, Marten.Events.IEvent<{typeof(AEvent).FullNameInCode()}>");
     }
 
     [Fact]
@@ -175,7 +203,8 @@ public class aggregation_projection_validation_rules
         var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
         ex.InvalidMethods.Single()
             .Errors.ShouldContain(
-                $"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, Marten.Events.IEvent, Marten.Events.IEvent<{typeof(AEvent).FullNameInCode()}>", "Return type 'string' is invalid. The valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.Aggregation.MyAggregate");
+                $"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, Marten.Events.IEvent, Marten.Events.IEvent<{typeof(AEvent).FullNameInCode()}>",
+                "Return type 'string' is invalid. The valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.Aggregation.MyAggregate");
     }
 
     [Fact]
@@ -185,7 +214,8 @@ public class aggregation_projection_validation_rules
         var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
 
         ex.InvalidMethods.Single()
-            .Errors.ShouldContain($"Aggregate type '{typeof(MyAggregate).FullNameInCode()}' is required as a parameter");
+            .Errors
+            .ShouldContain($"Aggregate type '{typeof(MyAggregate).FullNameInCode()}' is required as a parameter");
     }
 }
 
@@ -193,7 +223,6 @@ public class MissingMandatoryType: SingleStreamProjection<MyAggregate>
 {
     public void Apply(AEvent @event)
     {
-
     }
 }
 
@@ -209,7 +238,6 @@ public class MissingEventType1: SingleStreamProjection<MyAggregate>
 {
     public void Apply(MyAggregate aggregate, IDocumentOperations operations)
     {
-
     }
 }
 
@@ -217,7 +245,6 @@ public class CanGuessEventType: SingleStreamProjection<MyAggregate>
 {
     public void Apply(AEvent a, MyAggregate aggregate, IQuerySession session)
     {
-
     }
 }
 
@@ -225,7 +252,6 @@ public class InvalidArgumentType: SingleStreamProjection<MyAggregate>
 {
     public void Apply(AEvent @event, MyAggregate aggregate, IDocumentOperations operations)
     {
-
     }
 }
 
@@ -233,18 +259,11 @@ public class BadMethodName: SingleStreamProjection<MyAggregate>
 {
     public void DoStuff(AEvent @event, MyAggregate aggregate)
     {
-
     }
 
     public MyAggregate Create(CreateEvent @event)
     {
-        return new MyAggregate
-        {
-            ACount = @event.A,
-            BCount = @event.B,
-            CCount = @event.C,
-            DCount = @event.D
-        };
+        return new MyAggregate { ACount = @event.A, BCount = @event.B, CCount = @event.C, DCount = @event.D };
     }
 }
 
@@ -258,18 +277,11 @@ public class AllGood: SingleStreamProjection<MyAggregate>
     [MartenIgnore]
     public void RandomMethodName()
     {
-
     }
 
     public MyAggregate Create(CreateEvent @event)
     {
-        return new MyAggregate
-        {
-            ACount = @event.A,
-            BCount = @event.B,
-            CCount = @event.C,
-            DCount = @event.D
-        };
+        return new MyAggregate { ACount = @event.A, BCount = @event.B, CCount = @event.C, DCount = @event.D };
     }
 
     public Task<MyAggregate> Create(CreateEvent @event, IQuerySession session)
