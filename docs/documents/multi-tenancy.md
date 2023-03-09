@@ -8,7 +8,7 @@ Once configured for multi-tenancy, Marten exposes it via sessions (`IQuerySessio
 
 ## Scoping Sessions to Tenancy
 
-The following sample demonstrates scoping a document session to tenancy identified as *tenant1*. With multi-tenancy enabled, the persisted `User` objects are then associated with the tenancy of the session.
+The following sample demonstrates scoping a document session to tenancy identified as _tenant1_. With multi-tenancy enabled, the persisted `User` objects are then associated with the tenancy of the session.
 
 <!-- snippet: sample_tenancy-scoping-session-write -->
 <a id='snippet-sample_tenancy-scoping-session-write'></a>
@@ -149,9 +149,9 @@ In some cases, You may want to disable using the default tenant for storing docu
 
 The three levels of tenancy that Marten supports are expressed in the enum `TenancyStyle` with effective values of:
 
-* `Single`, no multi-tenancy
-* `Conjoined`, multi-tenancy through tenant id
-* `Separate`, multi-tenancy through separate databases or schemas
+- `Single`, no multi-tenancy
+- `Conjoined`, multi-tenancy through tenant id
+- `Separate`, multi-tenancy through separate databases or schemas
 
 Tenancy can be configured at the store level, applying to all documents or, at the most fine-grained level, on individual documents.
 
@@ -179,7 +179,18 @@ Tenancy can be configured at a document level through document mappings. This al
 storeOptions.Policies.ForAllDocuments(x => x.TenancyStyle = TenancyStyle.Single);
 storeOptions.Schema.For<Target>().MultiTenanted();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/document_policies.cs#L59-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-override' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/document_policies.cs#L59-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-override' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+You can also do it the other way round, having the default set to `TenancyStyle.Conjoined` and overriding it to `TenancyStyle.Single` for `Target`.
+
+<!-- snippet: sample_tenancy-configure-override-with-single-tenancy -->
+<a id='snippet-sample_tenancy-configure-override-with-single-tenancy'></a>
+```cs
+storeOptions.Policies.ForAllDocuments(x => x.TenancyStyle = TenancyStyle.Conjoined);
+storeOptions.Schema.For<Target>().SingleTenanted();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/document_policies.cs#L76-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-override-with-single-tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Implementation Details

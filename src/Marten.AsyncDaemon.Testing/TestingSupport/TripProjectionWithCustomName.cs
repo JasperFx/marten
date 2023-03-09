@@ -77,7 +77,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
     #endregion
 }
 
-namespace TripProjection.SelfAggregate
+namespace TripProjection.StreamAggregation
 {
     internal class RegistrationSamples
     {

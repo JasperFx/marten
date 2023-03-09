@@ -23,6 +23,7 @@ public class ConjoinedTenancyProjectionsTests: IntegrationContext
         {
             opts.Policies.AllDocumentsAreMultiTenanted();
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
 
             opts.Schema.For<ResourcesGlobalSummary>().SingleTenanted();
 

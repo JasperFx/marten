@@ -38,9 +38,7 @@ The out-of-the box convention is to expose `public Apply(<EventType>)` methods o
 Sticking with the fantasy theme, the `QuestParty` class shown below could be used to aggregate streams of quest data:
 
 <!-- snippet: sample_QuestParty -->
-
 <a id='snippet-sample_questparty'></a>
-
 ```cs
 public class QuestParty
 {
@@ -63,9 +61,7 @@ public class QuestParty
     }
 }
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/QuestParty.cs#L8-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
-
 <!-- endSnippet -->
 
 New in Marten 1.2 is the ability to use `Event<T>` metadata within your projections, assuming that you're not trying to run the aggregations inline.
@@ -74,9 +70,7 @@ The syntax using the built in aggregation technique is to take in `Event<T>` as 
 where `T` is the event type you're interested in:
 
 <!-- snippet: sample_QuestPartyWithEvents -->
-
 <a id='snippet-sample_questpartywithevents'></a>
-
 ```cs
 public class QuestPartyWithEvents
 {
@@ -122,9 +116,7 @@ public class QuestPartyWithEvents
     }
 }
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/QuestPartyWithEvents.cs#L8-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpartywithevents' title='Start of snippet'>anchor</a></sup>
-
 <!-- endSnippet -->
 
 ## Live Aggregation via .Net
@@ -132,9 +124,7 @@ public class QuestPartyWithEvents
 You can always fetch a stream of events and build an aggregate completely live from the current event data by using this syntax:
 
 <!-- snippet: sample_events-aggregate-on-the-fly -->
-
 <a id='snippet-sample_events-aggregate-on-the-fly'></a>
-
 ```cs
 await using (var session = store.LightweightSession())
 {
@@ -149,9 +139,7 @@ await using (var session = store.LightweightSession())
         .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
 }
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L87-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
-
 <!-- endSnippet -->
 
 There is also a matching asynchronous `AggregateStreamAsync()` mechanism as well. Additionally, you can do stream aggregations in batch queries with
@@ -164,9 +152,7 @@ _First off, be aware that event metadata (e.g. stream version and sequence numbe
 If you would prefer that the projected aggregate document be updated _inline_ with the events being appended, you simply need to register the aggregation type in the `StoreOptions` upfront when you build up your document store like this:
 
 <!-- snippet: sample_registering-quest-party -->
-
 <a id='snippet-sample_registering-quest-party'></a>
-
 ```cs
 var store = DocumentStore.For(_ =>
 {
@@ -183,9 +169,7 @@ var store = DocumentStore.For(_ =>
     _.Projections.Snapshot<QuestParty>();
 });
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/inline_aggregation_by_stream_with_multiples.cs#L24-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-quest-party' title='Start of snippet'>anchor</a></sup>
-
 <!-- endSnippet -->
 
 At this point, you would be able to query against `QuestParty` as just another document type.

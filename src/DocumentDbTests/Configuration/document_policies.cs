@@ -57,13 +57,32 @@ public class document_policies: OneOffConfigurationsContext
         StoreOptions(storeOptions =>
         {
             #region sample_tenancy-configure-override
+
             storeOptions.Policies.ForAllDocuments(x => x.TenancyStyle = TenancyStyle.Single);
             storeOptions.Schema.For<Target>().MultiTenanted();
+
             #endregion
         });
 
         theStore.StorageFeatures.MappingFor(typeof(Target))
             .TenancyStyle.ShouldBe(TenancyStyle.Conjoined);
+    }
+
+    [Fact]
+    public void fluent_interface_overrides_policies_with_single_tenancy()
+    {
+        StoreOptions(storeOptions =>
+        {
+            #region sample_tenancy-configure-override-with-single-tenancy
+
+            storeOptions.Policies.ForAllDocuments(x => x.TenancyStyle = TenancyStyle.Conjoined);
+            storeOptions.Schema.For<Target>().SingleTenanted();
+
+            #endregion
+        });
+
+        theStore.StorageFeatures.MappingFor(typeof(Target))
+            .TenancyStyle.ShouldBe(TenancyStyle.Single);
     }
 
     [MultiTenanted]
