@@ -77,3 +77,9 @@ public class SingleStreamAggregation<T>: SingleStreamProjection<T>
 {
 
 }
+
+[Obsolete("Please switch to SingleStreamProjection<T> with the exact same syntax")]
+public class AggregateProjection<T>: SingleStreamProjection<T>
+{
+
+}
