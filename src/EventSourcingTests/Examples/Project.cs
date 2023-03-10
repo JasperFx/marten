@@ -22,7 +22,7 @@ public class Startup
             // inline as new events are captured
             opts
                 .Projections
-                .SelfAggregate<Project>(ProjectionLifecycle.Inline);
+                .Snapshot<Project>(ProjectionLifecycle.Inline);
 
         });
     }

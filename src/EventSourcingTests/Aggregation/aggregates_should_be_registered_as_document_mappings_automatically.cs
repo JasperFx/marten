@@ -40,7 +40,7 @@ public class aggregates_should_be_registered_as_document_mappings_automatically:
     {
         StoreOptions(_ =>
         {
-            _.Projections.SelfAggregate<QuestParty>();
+            _.Projections.Snapshot<QuestParty>();
         });
 
         theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
@@ -52,7 +52,7 @@ public class aggregates_should_be_registered_as_document_mappings_automatically:
     {
         StoreOptions(_ =>
         {
-            _.Projections.SelfAggregate<QuestParty>(ProjectionLifecycle.Async);
+            _.Projections.Snapshot<QuestParty>(ProjectionLifecycle.Async);
         });
 
         theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)

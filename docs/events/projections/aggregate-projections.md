@@ -487,10 +487,10 @@ internal async Task use_a_self_aggregate()
         opts.Connection("some connection string");
 
         // Run the Trip as an inline projection
-        opts.Projections.SelfAggregate<Trip>(ProjectionLifecycle.Inline);
+        opts.Projections.Snapshot<Trip>(ProjectionLifecycle.Inline);
 
         // Or run it as an asynchronous projection
-        opts.Projections.SelfAggregate<Trip>(ProjectionLifecycle.Async);
+        opts.Projections.Snapshot<Trip>(ProjectionLifecycle.Async);
     });
 
     // Or more likely, use it as a live aggregation:

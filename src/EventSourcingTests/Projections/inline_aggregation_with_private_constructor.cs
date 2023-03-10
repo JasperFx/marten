@@ -15,13 +15,13 @@ public class inline_aggregation_with_private_constructor: OneOffConfigurationsCo
         {
             _.AutoCreateSchemaObjects = AutoCreate.All;
             _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.All);
-            _.Projections.SelfAggregate<QuestMonstersWithPrivateConstructor>();
-            _.Projections.SelfAggregate<QuestMonstersWithNonDefaultPublicConstructor>();
-            _.Projections.SelfAggregate<WithDefaultPrivateConstructorNonDefaultPublicConstructor>();
-            _.Projections.SelfAggregate<WithMultiplePublicNonDefaultConstructors>();
-            _.Projections.SelfAggregate<WithMultiplePrivateNonDefaultConstructors>();
-            _.Projections.SelfAggregate<WithMultiplePrivateNonDefaultConstructorsAndAttribute>();
-            _.Projections.SelfAggregate<WithNonDefaultConstructorsPrivateAndPublicWithEqualParamsCount>();
+            _.Projections.Snapshot<QuestMonstersWithPrivateConstructor>();
+            _.Projections.Snapshot<QuestMonstersWithNonDefaultPublicConstructor>();
+            _.Projections.Snapshot<WithDefaultPrivateConstructorNonDefaultPublicConstructor>();
+            _.Projections.Snapshot<WithMultiplePublicNonDefaultConstructors>();
+            _.Projections.Snapshot<WithMultiplePrivateNonDefaultConstructors>();
+            _.Projections.Snapshot<WithMultiplePrivateNonDefaultConstructorsAndAttribute>();
+            _.Projections.Snapshot<WithNonDefaultConstructorsPrivateAndPublicWithEqualParamsCount>();
         });
     }
 

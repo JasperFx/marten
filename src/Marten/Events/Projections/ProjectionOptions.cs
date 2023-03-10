@@ -84,8 +84,12 @@ public class ProjectionOptions: DaemonSettings
     ///     Optional configuration including teardown instructions for the usage of this
     ///     projection within the async projection daempon
     /// </param>
-    public void Add(IProjection projection, ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline,
-        string projectionName = null, Action<AsyncOptions> asyncConfiguration = null)
+    public void Add(
+        IProjection projection,
+        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline,
+        string projectionName = null,
+        Action<AsyncOptions> asyncConfiguration = null
+    )
     {
         if (lifecycle == ProjectionLifecycle.Live)
         {
@@ -140,8 +144,9 @@ public class ProjectionOptions: DaemonSettings
         All.Add(projection);
     }
 
+
     /// <summary>
-    /// Use a "self-aggregating" aggregate of type.
+    /// Perform automated snapshot on each event for selected entity type
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="lifecycle">Override the aggregate lifecycle. The default is Inline</param>
@@ -150,7 +155,20 @@ public class ProjectionOptions: DaemonSettings
     ///     projection within the async projection daempon
     /// </param>
     /// <returns>The extended storage configuration for document T</returns>
+    [Obsolete("Use Snapshot method instead.")]
     public MartenRegistry.DocumentMappingExpression<T> SelfAggregate<T>(
+        ProjectionLifecycle? lifecycle = null,
+        Action<AsyncOptions> asyncConfiguration = null
+    ) =>
+        Snapshot<T>(lifecycle, asyncConfiguration);
+
+    /// <summary>
+    /// Perform automated snapshot on each event for selected entity type
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="lifecycle">Override the aggregate lifecycle. The default is Inline</param>
+    /// <returns>The extended storage configuration for document T</returns>
+    public MartenRegistry.DocumentMappingExpression<T> Snapshot<T>(
         ProjectionLifecycle? lifecycle = null,
         Action<AsyncOptions> asyncConfiguration = null
     )

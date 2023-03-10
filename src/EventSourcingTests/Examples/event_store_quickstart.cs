@@ -17,7 +17,7 @@ public class event_store_quickstart
         var store = DocumentStore.For(_ =>
         {
             _.Connection(ConnectionSource.ConnectionString);
-            _.Projections.SelfAggregate<QuestParty>();
+            _.Projections.Snapshot<QuestParty>();
         });
 
         var questId = Guid.NewGuid();

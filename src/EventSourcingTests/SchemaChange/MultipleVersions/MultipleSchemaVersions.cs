@@ -31,7 +31,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
         StoreOptions(options =>
         {
             options.GeneratedCodeMode = TypeLoadMode.Auto;
-            options.Projections.SelfAggregate<V1.ShoppingCart>();
+            options.Projections.Snapshot<V1.ShoppingCart>();
         });
         await theStore.EnsureStorageExistsAsync(typeof(StreamAction));
 
@@ -78,7 +78,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
         StoreOptions(options =>
         {
             options.GeneratedCodeMode = TypeLoadMode.Auto;
-            options.Projections.SelfAggregate<V1.ShoppingCart>();
+            options.Projections.Snapshot<V1.ShoppingCart>();
         });
         await theStore.EnsureStorageExistsAsync(typeof(StreamAction));
 
@@ -130,7 +130,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
         using var storeV2 = SeparateStore(options =>
         {
             options.GeneratedCodeMode = TypeLoadMode.Auto;
-            options.Projections.SelfAggregate<V2.WithTheSameName.ShoppingCart>();
+            options.Projections.Snapshot<V2.WithTheSameName.ShoppingCart>();
             ////////////////////////////////////////////////////////
             // 2.1. Define Upcast methods from V1 to V2
             ////////////////////////////////////////////////////////
@@ -209,7 +209,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
         using var storeV3 = SeparateStore(options =>
         {
             options.GeneratedCodeMode = TypeLoadMode.Auto;
-            options.Projections.SelfAggregate<V3.WithTheSameName.ShoppingCart>();
+            options.Projections.Snapshot<V3.WithTheSameName.ShoppingCart>();
             ////////////////////////////////////////////////////////
             // 3.1. Define Upcast methods from V1 to V3, and from V2 to V3
             ////////////////////////////////////////////////////////
@@ -290,7 +290,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
         using var storeV2 = SeparateStore(options =>
         {
             options.GeneratedCodeMode = TypeLoadMode.Auto;
-            options.Projections.SelfAggregate<V2.WithDifferentName.ShoppingCart>();
+            options.Projections.Snapshot<V2.WithDifferentName.ShoppingCart>();
             ////////////////////////////////////////////////////////
             // 2.1. Define Upcast methods from V1 to V2
             ////////////////////////////////////////////////////////
@@ -368,7 +368,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
         using var storeV3 = SeparateStore(options =>
         {
             options.GeneratedCodeMode = TypeLoadMode.Auto;
-            options.Projections.SelfAggregate<V3.WithDifferentName.ShoppingCart>();
+            options.Projections.Snapshot<V3.WithDifferentName.ShoppingCart>();
             ////////////////////////////////////////////////////////
             // 3.1. Define Upcast methods from V1 to V3, and from V2 to V3
             ////////////////////////////////////////////////////////

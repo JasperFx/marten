@@ -167,7 +167,7 @@ var store = DocumentStore.For(_ =>
 
     // This is all you need to create the QuestParty projected
     // view
-    _.Projections.SelfAggregate<QuestParty>();
+    _.Projections.Snapshot<QuestParty>();
 });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/inline_aggregation_by_stream_with_multiples.cs#L24-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-quest-party' title='Start of snippet'>anchor</a></sup>

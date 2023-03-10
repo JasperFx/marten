@@ -84,7 +84,7 @@ public static class Program
                         .Add(new SimpleAggregate(), ProjectionLifecycle.Inline);
 
                     // This is actually important to register "live" aggregations too for the code generation
-                    opts.Projections.SelfAggregate<SelfAggregatingTrip>(ProjectionLifecycle.Live);
+                    opts.Projections.Snapshot<SelfAggregatingTrip>(ProjectionLifecycle.Live);
                 }).AddAsyncDaemon(DaemonMode.Solo);
             });
     }

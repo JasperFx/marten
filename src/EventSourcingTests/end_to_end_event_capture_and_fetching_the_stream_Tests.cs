@@ -658,7 +658,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
             _.Connection(ConnectionSource.ConnectionString);
 
-            _.Projections.SelfAggregate<QuestParty>();
+            _.Projections.Snapshot<QuestParty>();
 
             _.Events.AddEventType(typeof(MembersJoined));
             _.Events.AddEventType(typeof(MembersDeparted));
