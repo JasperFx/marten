@@ -155,7 +155,7 @@ public class ProjectionOptions: DaemonSettings
     ///     projection within the async projection daempon
     /// </param>
     /// <returns>The extended storage configuration for document T</returns>
-    [Obsolete("Use Snapshot method instead.")]
+    [Obsolete("Please switch to Snapshot method with the exact same syntax")]
     public MartenRegistry.DocumentMappingExpression<T> SelfAggregate<T>(
         ProjectionLifecycle? lifecycle = null,
         Action<AsyncOptions> asyncConfiguration = null
@@ -176,7 +176,7 @@ public class ProjectionOptions: DaemonSettings
         // Make sure there's a DocumentMapping for the aggregate
         var expression = _options.Schema.For<T>();
 
-        var source = new SingleStreamAggregation<T> { Lifecycle = lifecycle ?? ProjectionLifecycle.Inline };
+        var source = new SingleStreamProjection<T> { Lifecycle = lifecycle ?? ProjectionLifecycle.Inline };
 
         asyncConfiguration?.Invoke(source.Options);
 
@@ -260,9 +260,9 @@ public class ProjectionOptions: DaemonSettings
         return (ILiveAggregator<T>)aggregator;
     }
 
-    private SingleStreamAggregation<T> tryFindProjectionSourceForAggregateType<T>() where T : class
+    private SingleStreamProjection<T> tryFindProjectionSourceForAggregateType<T>() where T : class
     {
-        var candidate = All.OfType<SingleStreamAggregation<T>>().FirstOrDefault();
+        var candidate = All.OfType<SingleStreamProjection<T>>().FirstOrDefault();
         if (candidate != null)
         {
             return candidate;
@@ -270,10 +270,10 @@ public class ProjectionOptions: DaemonSettings
 
         if (!_liveAggregateSources.TryGetValue(typeof(T), out var source))
         {
-            return new SingleStreamAggregation<T>();
+            return new SingleStreamProjection<T>();
         }
 
-        return source as SingleStreamAggregation<T>;
+        return source as SingleStreamProjection<T>;
     }
 
     internal void AssertValidity(DocumentStore store)

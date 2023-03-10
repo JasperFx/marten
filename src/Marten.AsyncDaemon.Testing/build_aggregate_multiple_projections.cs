@@ -38,9 +38,9 @@ public class build_aggregate_multiple_projections: DaemonContext
     }
 
     //Aggregation 2
-    public class CarAggregation: SingleStreamAggregation<CarView>
+    public class CarProjection: SingleStreamProjection<CarView>
     {
-        public CarAggregation()
+        public CarProjection()
         {
             ProjectionName = "Car";
         }
@@ -71,9 +71,9 @@ public class build_aggregate_multiple_projections: DaemonContext
     }
 
     //Aggregation 2
-    public class TruckAggregation: SingleStreamAggregation<TruckView>
+    public class TruckProjection: SingleStreamProjection<TruckView>
     {
-        public TruckAggregation()
+        public TruckProjection()
         {
             ProjectionName = "Truck";
         }
@@ -97,8 +97,8 @@ public class build_aggregate_multiple_projections: DaemonContext
         //Register both projections
         StoreOptions(x =>
         {
-            x.Projections.Add<CarAggregation>(ProjectionLifecycle.Async);
-            x.Projections.Add<TruckAggregation>(ProjectionLifecycle.Async);
+            x.Projections.Add<CarProjection>(ProjectionLifecycle.Async);
+            x.Projections.Add<TruckProjection>(ProjectionLifecycle.Async);
         }, true);
 
         var agent = await StartDaemon();
@@ -159,7 +159,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         // register projection
         StoreOptions(x =>
         {
-            x.Projections.Add<CarAggregation>();
+            x.Projections.Add<CarProjection>();
             x.Projections.StaleSequenceThreshold = 250.Milliseconds();
             x.Projections.SlowPollingTime = 500.Milliseconds();
         }, true);
@@ -196,7 +196,7 @@ public class build_aggregate_multiple_projections: DaemonContext
 
         try
         {
-            await daemon.RebuildProjection<CarAggregation>(default);
+            await daemon.RebuildProjection<CarProjection>(default);
         }
         catch (Exception ex)
         {
@@ -227,7 +227,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         // register projection
         StoreOptions(x =>
         {
-            x.Projections.Add<CarAggregation>();
+            x.Projections.Add<CarProjection>();
             x.Projections.StaleSequenceThreshold = 250.Milliseconds();
             x.Projections.SlowPollingTime = 500.Milliseconds();
         }, true);
@@ -264,7 +264,7 @@ public class build_aggregate_multiple_projections: DaemonContext
 
         try
         {
-            await daemon.RebuildProjection<CarAggregation>(default);
+            await daemon.RebuildProjection<CarProjection>(default);
         }
         catch (Exception ex)
         {

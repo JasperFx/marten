@@ -157,7 +157,7 @@ public class View2
     public bool IsEvent4Applied { get; set; }
 }
 
-public class View1Projection : SingleStreamAggregation<View1>
+public class View1Projection : SingleStreamProjection<View1>
 {
     public void Apply(View1 v, Event1 e)
     {
@@ -168,7 +168,7 @@ public class View1Projection : SingleStreamAggregation<View1>
         v.IsEvent2Applied = true;
     }
 }
-public class View2Projection : SingleStreamAggregation<View2>
+public class View2Projection : SingleStreamProjection<View2>
 {
 
     public void Apply(View2 v, Event3 e)

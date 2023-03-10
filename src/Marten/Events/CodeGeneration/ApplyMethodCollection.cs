@@ -17,7 +17,7 @@ internal class ApplyMethodCollection: MethodCollection
     public ApplyMethodCollection(Type projectionType, Type aggregateType): base(MethodName, projectionType,
         aggregateType)
     {
-        LambdaName = nameof(SingleStreamAggregation<string>.ProjectEvent);
+        LambdaName = nameof(SingleStreamProjection<string>.ProjectEvent);
         _validArgumentTypes.Add(typeof(IQuerySession));
         _validArgumentTypes.Add(aggregateType);
 

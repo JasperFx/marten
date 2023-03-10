@@ -10,9 +10,9 @@ namespace Marten.Events.Aggregation;
 ///     Base class for aggregating events by a stream using Marten-generated pattern matching
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class SingleStreamAggregation<T>: GeneratedAggregateProjectionBase<T>
+public class SingleStreamProjection<T>: GeneratedAggregateProjectionBase<T>
 {
-    public SingleStreamAggregation(): base(AggregationScope.SingleStream)
+    public SingleStreamProjection(): base(AggregationScope.SingleStream)
     {
     }
 
@@ -69,4 +69,11 @@ public class SingleStreamAggregation<T>: GeneratedAggregateProjectionBase<T>
             }
         }
     }
+}
+
+
+[Obsolete("Please switch to SingleStreamProjection<T> with the exact same syntax")]
+public class SingleStreamAggregation<T>: SingleStreamProjection<T>
+{
+
 }

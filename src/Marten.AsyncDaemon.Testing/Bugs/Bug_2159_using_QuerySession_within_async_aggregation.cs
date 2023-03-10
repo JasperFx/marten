@@ -41,7 +41,7 @@ public class Bug_2159_using_QuerySession_within_async_aggregation : BugIntegrati
     }
 }
 
-public class UserAggregate: SingleStreamAggregation<MyAggregate>
+public class UserAggregate: SingleStreamProjection<MyAggregate>
 {
     public UserAggregate()
     {

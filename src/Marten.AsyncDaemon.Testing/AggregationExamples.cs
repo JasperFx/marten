@@ -15,9 +15,9 @@ namespace Samples.Deleting
 {
     #region sample_deleting_aggregate_by_event_type
 
-    public class TripAggregation: SingleStreamAggregation<Trip>
+    public class TripProjection: SingleStreamProjection<Trip>
     {
-        public TripAggregation()
+        public TripProjection()
         {
             // The current Trip aggregate would be deleted if
             // the projection encountered a TripAborted event
@@ -39,9 +39,9 @@ namespace Samples.Deleting2
 
     #region sample_deleting_aggregate_by_event_type_and_func
 
-    public class TripAggregation: SingleStreamAggregation<Trip>
+    public class TripProjection: SingleStreamProjection<Trip>
     {
-        public TripAggregation()
+        public TripProjection()
         {
             // The current Trip aggregate would be deleted if
             // the Breakdown event is "critical"
@@ -80,7 +80,7 @@ namespace Samples.Deleting3
 
     #region sample_deleting_aggregate_by_event_type_and_func_with_convention
 
-    public class TripAggregation: SingleStreamAggregation<Trip>
+    public class TripProjection: SingleStreamProjection<Trip>
     {
         // The current Trip aggregate would be deleted if
         // the Breakdown event is "critical"

@@ -144,7 +144,7 @@ public class QuestEnded
 }
 
 
-public class AllSync: SingleStreamAggregation<MyAggregate>
+public class AllSync: SingleStreamProjection<MyAggregate>
 {
     public AllSync()
     {
@@ -197,7 +197,7 @@ public class AllSync: SingleStreamAggregation<MyAggregate>
     }
 }
 
-public class AllGood: SingleStreamAggregation<MyAggregate>
+public class AllGood: SingleStreamProjection<MyAggregate>
 {
     public AllGood()
     {

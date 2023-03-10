@@ -52,7 +52,7 @@ public class Bug_2201_out_of_order_exception_with_hard_deletes: BugIntegrationCo
     }
 
 
-    public class TicketProjection: SingleStreamAggregation<Ticket>
+    public class TicketProjection: SingleStreamProjection<Ticket>
     {
         public TicketProjection()
         {

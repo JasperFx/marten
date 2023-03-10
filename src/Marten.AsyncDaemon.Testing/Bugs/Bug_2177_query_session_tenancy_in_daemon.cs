@@ -87,7 +87,7 @@ namespace Bug2177
         public User User { get; set; }
     }
 
-    public class TicketProjection: SingleStreamAggregation<Ticket>
+    public class TicketProjection: SingleStreamProjection<Ticket>
     {
         public TicketProjection()
         {

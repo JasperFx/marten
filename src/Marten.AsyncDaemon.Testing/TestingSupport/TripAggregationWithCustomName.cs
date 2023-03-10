@@ -44,7 +44,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
 
     #region sample_TripProjection_aggregate
 
-    public class TripProjection: SingleStreamAggregation<Trip>
+    public class TripProjection: SingleStreamProjection<Trip>
     {
         public TripProjection()
         {
@@ -170,7 +170,7 @@ namespace TripProjection.UsingLambdas
 {
     #region sample_using_ProjectEvent_in_aggregate_projection
 
-    public class TripProjection: SingleStreamAggregation<Trip>
+    public class TripProjection: SingleStreamProjection<Trip>
     {
         public TripProjection()
         {

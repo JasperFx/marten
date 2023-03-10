@@ -67,7 +67,7 @@ public class Bug_sequential_rebuilds_throws_internally: BugIntegrationContext
 
     public record RandomProjection(Guid Id, string Value)
     {
-        public class Projector: SingleStreamAggregation<RandomProjection>
+        public class Projector: SingleStreamProjection<RandomProjection>
         {
             public static RandomProjection Create(CreatedEvent @event)
             {

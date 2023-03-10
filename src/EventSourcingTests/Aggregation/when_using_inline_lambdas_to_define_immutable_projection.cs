@@ -38,7 +38,7 @@ public class when_using_inline_lambdas_to_define_immutable_projection : OneOffCo
 
     public record MyAggregateRecord(Guid Id, string Created, string UpdatedBy);
 
-    public class MyAggregateImmutableProjection: SingleStreamAggregation<MyAggregateRecord>
+    public class MyAggregateImmutableProjection: SingleStreamProjection<MyAggregateRecord>
     {
         public MyAggregateImmutableProjection()
         {
