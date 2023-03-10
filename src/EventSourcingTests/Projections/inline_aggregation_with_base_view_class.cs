@@ -18,9 +18,9 @@ public class inline_aggregation_with_base_view_class: OneOffConfigurationsContex
         StoreOptions(_ =>
         {
             _.AutoCreateSchemaObjects = AutoCreate.All;
-            _.Projections.SelfAggregate<QuestMonstersWithBaseClass>();
-            _.Projections.SelfAggregate<QuestMonstersWithBaseClassAndIdOverloaded>();
-            _.Projections.SelfAggregate<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
+            _.Projections.Snapshot<QuestMonstersWithBaseClass>();
+            _.Projections.Snapshot<QuestMonstersWithBaseClassAndIdOverloaded>();
+            _.Projections.Snapshot<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
         });
 
         streamId = theSession.Events

@@ -34,15 +34,15 @@ public class inline_aggregation_by_stream_with_multiples: OneOffConfigurationsCo
 
             // This is all you need to create the QuestParty projected
             // view
-            _.Projections.SelfAggregate<QuestParty>();
+            _.Projections.Snapshot<QuestParty>();
         });
         #endregion
 
         StoreOptions(_ =>
         {
             _.AutoCreateSchemaObjects = AutoCreate.All;
-            _.Projections.SelfAggregate<QuestParty>();
-            _.Projections.SelfAggregate<QuestMonsters>();
+            _.Projections.Snapshot<QuestParty>();
+            _.Projections.Snapshot<QuestMonsters>();
         });
 
         var streamId = theSession.Events
@@ -62,8 +62,8 @@ public class inline_aggregation_by_stream_with_multiples: OneOffConfigurationsCo
         {
             _.AutoCreateSchemaObjects = AutoCreate.All;
 
-            _.Projections.SelfAggregate<QuestMonsters>();
-            _.Projections.SelfAggregate<QuestParty>();
+            _.Projections.Snapshot<QuestMonsters>();
+            _.Projections.Snapshot<QuestParty>();
         });
 
         var streamId = theSession.Events

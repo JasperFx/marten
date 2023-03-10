@@ -20,8 +20,8 @@ public class inline_aggregation_with_non_public_setter: OneOffConfigurationsCont
         {
             _.AutoCreateSchemaObjects = AutoCreate.All;
             _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
-            _.Projections.SelfAggregate<QuestMonstersWithPrivateIdSetter>();
-            _.Projections.SelfAggregate<QuestMonstersWithProtectedIdSetter>();
+            _.Projections.Snapshot<QuestMonstersWithPrivateIdSetter>();
+            _.Projections.Snapshot<QuestMonstersWithProtectedIdSetter>();
         });
 
         streamId = theSession.Events

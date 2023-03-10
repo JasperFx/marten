@@ -21,8 +21,8 @@ namespace EventSourcingTests.Bugs
             using var documentStore = SeparateStore(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsString;
-                x.Projections.SelfAggregate<DataImportAggregate>(ProjectionLifecycle.Inline);
-                x.Projections.SelfAggregate<DataItemAggregate>(ProjectionLifecycle.Inline)
+                x.Projections.Snapshot<DataImportAggregate>(ProjectionLifecycle.Inline);
+                x.Projections.Snapshot<DataItemAggregate>(ProjectionLifecycle.Inline)
                     .ForeignKey<DataImportAggregate>(y => y.ImportId);
             });
 
@@ -35,9 +35,9 @@ namespace EventSourcingTests.Bugs
             using var documentStore = SeparateStore(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsString;
-                x.Projections.SelfAggregate<DataItemAggregate>(ProjectionLifecycle.Inline)
+                x.Projections.Snapshot<DataItemAggregate>(ProjectionLifecycle.Inline)
                     .ForeignKey<DataImportAggregate>(y => y.ImportId);
-                x.Projections.SelfAggregate<DataImportAggregate>(ProjectionLifecycle.Inline);
+                x.Projections.Snapshot<DataImportAggregate>(ProjectionLifecycle.Inline);
             });
 
             await RunTest(documentStore);

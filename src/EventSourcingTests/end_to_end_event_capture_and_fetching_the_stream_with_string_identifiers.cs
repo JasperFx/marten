@@ -449,7 +449,7 @@ public class StringIdentifiedStreamsFixture: StoreFixture
     public StringIdentifiedStreamsFixture() : base("string_identified_streams")
     {
         Options.Events.StreamIdentity = StreamIdentity.AsString;
-        Options.Projections.SelfAggregate<QuestPartyWithStringIdentifier>();
+        Options.Projections.Snapshot<QuestPartyWithStringIdentifier>();
 
         Options.Events.AddEventType(typeof(MembersJoined));
         Options.Events.AddEventType(typeof(MembersDeparted));

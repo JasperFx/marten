@@ -14,7 +14,7 @@ public class inline_aggregation_with_subclass : OneOffConfigurationsContext
         {
             x.Schema.For<FooBase>().AddSubClass<FooA>();
 
-            x.Projections.SelfAggregate<FooA>();
+            x.Projections.Snapshot<FooA>();
         });
     }
 

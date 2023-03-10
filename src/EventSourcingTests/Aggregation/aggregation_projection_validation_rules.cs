@@ -39,7 +39,7 @@ public class aggregation_projection_validation_rules
         var message = errorMessageFor(x =>
         {
             x.Events.StreamIdentity = StreamIdentity.AsGuid;
-            x.Projections.SelfAggregate<StringIdentifiedAggregate>(ProjectionLifecycle.Async);
+            x.Projections.Snapshot<StringIdentifiedAggregate>(ProjectionLifecycle.Async);
         });
 
         message.ShouldContain($"Id type mismatch. The stream identity type is System.Guid, but the aggregate document {typeof(StringIdentifiedAggregate).FullNameInCode()} id type is string", StringComparisonOption.Default);
@@ -52,7 +52,7 @@ public class aggregation_projection_validation_rules
         var message = errorMessageFor(x =>
         {
             x.Events.StreamIdentity = StreamIdentity.AsString;
-            x.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
+            x.Projections.Snapshot<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
         });
 
         message.ShouldContain($"Id type mismatch. The stream identity type is string, but the aggregate document {typeof(GuidIdentifiedAggregate).FullNameInCode()} id type is Guid", StringComparisonOption.Default);
@@ -64,7 +64,7 @@ public class aggregation_projection_validation_rules
         errorMessageFor(opts =>
         {
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
+            opts.Projections.Snapshot<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
         }).ShouldContain($"Tenancy storage style mismatch between the events (Conjoined) and the aggregate type {typeof(GuidIdentifiedAggregate).FullNameInCode()} (Single)", StringComparisonOption.Default);
     }
 
@@ -73,7 +73,7 @@ public class aggregation_projection_validation_rules
     {
         errorMessageFor(opts =>
         {
-            opts.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
+            opts.Projections.Snapshot<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
             opts.Schema.For<GuidIdentifiedAggregate>().MultiTenanted();
         }).ShouldContain($"Tenancy storage style mismatch between the events (Single) and the aggregate type {typeof(GuidIdentifiedAggregate).FullNameInCode()} (Conjoined)", StringComparisonOption.Default);
     }
