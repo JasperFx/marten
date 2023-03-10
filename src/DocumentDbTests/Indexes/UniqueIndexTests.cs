@@ -17,9 +17,9 @@ public class UserCreated
     public string Surname { get; set; }
 }
 
-public class UserMultiStreamAggregation : MultiStreamAggregation<UniqueUser, Guid>
+public class UserMultiStreamProjection : MultiStreamProjection<UniqueUser, Guid>
 {
-    public UserMultiStreamAggregation()
+    public UserMultiStreamProjection()
     {
         Identity<UserCreated>(x => x.UserId);
     }
@@ -59,7 +59,7 @@ public class UniqueIndexTests : OneOffConfigurationsContext
         StoreOptions(opts =>
         {
             opts.Events.AddEventTypes(new[] { typeof(UserCreated) });
-            opts.Projections.Add(new UserMultiStreamAggregation());
+            opts.Projections.Add(new UserMultiStreamProjection());
             opts.RegisterDocumentType<UniqueUser>();
         });
     }

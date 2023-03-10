@@ -132,7 +132,7 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
 
     public record SyncProjection([property: Identity] string Key, string Value)
     {
-        public class Projector : ViewProjection<SyncProjection, string>
+        public class Projector : MultiStreamProjection<SyncProjection, string>
         {
             public Projector()
             {
@@ -159,7 +159,7 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
     public record UnrelatedEvent(string Key, string Value);
     public record AsyncProjection([property: Identity] string Key, string Value)
     {
-        public class Projector : ViewProjection<AsyncProjection, string>
+        public class Projector : MultiStreamProjection<AsyncProjection, string>
         {
             public Projector()
             {

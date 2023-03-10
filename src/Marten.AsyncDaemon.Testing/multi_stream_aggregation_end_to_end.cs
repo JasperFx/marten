@@ -118,7 +118,7 @@ public interface IUserEvent
     public Guid UserId { get; }
 }
 
-public class UserIssueProjection: MultiStreamAggregation<UserIssues, Guid>
+public class UserIssueProjection: MultiStreamProjection<UserIssues, Guid>
 {
     public UserIssueProjection()
     {

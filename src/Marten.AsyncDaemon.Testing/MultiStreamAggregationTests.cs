@@ -55,7 +55,7 @@ public class MultiStreamAggregationTests: OneOffConfigurationsContext
         public IList<long> EventSequenceList { get; set; } = new List<long>();
     }
 
-    public class Projector: MultiStreamAggregation<Projection, Guid>
+    public class Projector: MultiStreamProjection<Projection, Guid>
     {
         public Projector()
         {

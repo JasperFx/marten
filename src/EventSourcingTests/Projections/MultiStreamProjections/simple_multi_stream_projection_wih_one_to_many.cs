@@ -10,7 +10,7 @@ namespace EventSourcingTests.Projections.MultiStreamProjections.Samples
 {
     #region sample_view-projection-simple-with-one-to-many
 
-    public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAssignment, Guid>
+    public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
     {
         public UserGroupsAssignmentProjection()
         {

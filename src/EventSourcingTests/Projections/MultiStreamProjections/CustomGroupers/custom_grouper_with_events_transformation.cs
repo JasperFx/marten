@@ -38,7 +38,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
         public double Hours { get; set; }
     }
 
-    public class MonthlyAllocationProjection: MultiStreamAggregation<MonthlyAllocation, string>
+    public class MonthlyAllocationProjection: MultiStreamProjection<MonthlyAllocation, string>
     {
         public MonthlyAllocationProjection()
         {
