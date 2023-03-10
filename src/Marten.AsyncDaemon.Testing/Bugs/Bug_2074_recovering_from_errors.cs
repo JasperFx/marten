@@ -63,7 +63,7 @@ public class UserIssueCounter
     public int Count { get; set; }
 }
 
-public class UserIssueCounterProjection : MultiStreamAggregation<UserIssueCounter, Guid>
+public class UserIssueCounterProjection : MultiStreamProjection<UserIssueCounter, Guid>
 {
     private static int _attempts;
 

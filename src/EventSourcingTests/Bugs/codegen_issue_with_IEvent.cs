@@ -55,7 +55,7 @@ public class FooAuditLog
     public List<string> Changes { get; set; } = new List<string>();
 }
 
-public class FooProjection: MultiStreamAggregation<FooAuditLog, Guid>
+public class FooProjection: MultiStreamProjection<FooAuditLog, Guid>
 {
     public FooProjection()
     {
@@ -79,7 +79,7 @@ public record RecordLogCreated(Guid Id): IRecordLogEvent;
 
 public record RecordLogUpdated(Guid Id): IRecordLogEvent;
 
-public class RecordProjection: MultiStreamAggregation<RecordAuditLog, Guid>
+public class RecordProjection: MultiStreamProjection<RecordAuditLog, Guid>
 {
     public RecordProjection()
     {

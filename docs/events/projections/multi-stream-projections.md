@@ -176,7 +176,7 @@ Here's a simple example of creating an aggregated view by user id:
 <!-- snippet: sample_view-projection-simple -->
 <a id='snippet-sample_view-projection-simple'></a>
 ```cs
-public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAssignment, Guid>
+public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
 {
     public UserGroupsAssignmentProjection()
     {
@@ -204,7 +204,7 @@ we care about and use this:
 <!-- snippet: sample_view-projection-simple-2 -->
 <a id='snippet-sample_view-projection-simple-2'></a>
 ```cs
-public class UserGroupsAssignmentProjection2: MultiStreamAggregation<UserGroupsAssignment, Guid>
+public class UserGroupsAssignmentProjection2: MultiStreamProjection<UserGroupsAssignment, Guid>
 {
     public UserGroupsAssignmentProjection2()
     {
@@ -237,7 +237,7 @@ shown below:
 <!-- snippet: sample_view-projection-simple-with-one-to-many -->
 <a id='snippet-sample_view-projection-simple-with-one-to-many'></a>
 ```cs
-public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAssignment, Guid>
+public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
 {
     public UserGroupsAssignmentProjection()
     {
@@ -305,7 +305,7 @@ public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>
 }
 
 // projection with documentsession
-public class UserFeatureTogglesProjection: MultiStreamAggregation<UserFeatureToggles, Guid>
+public class UserFeatureTogglesProjection: MultiStreamProjection<UserFeatureToggles, Guid>
 {
     public UserFeatureTogglesProjection()
     {
@@ -347,7 +347,7 @@ own `IEventSlicer` that can split and assign events to any number of aggregated 
 <!-- snippet: sample_view-projection-custom-slicer -->
 <a id='snippet-sample_view-projection-custom-slicer'></a>
 ```cs
-public class UserGroupsAssignmentProjection: MultiStreamAggregation<UserGroupsAssignment, Guid>
+public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
 {
     public class CustomSlicer: IEventSlicer<UserGroupsAssignment, Guid>
     {
@@ -410,7 +410,7 @@ In a sample `ViewProjection`, we do a "fan out" of the `Travel.Movements` member
 <!-- snippet: sample_showing_fanout_rules -->
 <a id='snippet-sample_showing_fanout_rules'></a>
 ```cs
-public class DayProjection: MultiStreamAggregation<Day, int>
+public class DayProjection: MultiStreamProjection<Day, int>
 {
     public DayProjection()
     {

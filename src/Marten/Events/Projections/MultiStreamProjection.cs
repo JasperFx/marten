@@ -16,13 +16,13 @@ namespace Marten.Events.Projections;
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
-public abstract class MultiStreamAggregation<TDoc, TId>: GeneratedAggregateProjectionBase<TDoc>
+public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjectionBase<TDoc>
 {
     private readonly EventSlicer<TDoc, TId> _defaultSlicer = new();
 
     private IEventSlicer<TDoc, TId>? _customSlicer;
 
-    protected MultiStreamAggregation(): base(AggregationScope.MultiStream)
+    protected MultiStreamProjection(): base(AggregationScope.MultiStream)
     {
         Lifecycle = ProjectionLifecycle.Async;
     }
@@ -141,4 +141,10 @@ public abstract class MultiStreamAggregation<TDoc, TId>: GeneratedAggregateProje
     {
         return typeof(CrossStreamAggregationRuntime<,>).MakeGenericType(typeof(TDoc), typeof(TId));
     }
+}
+
+[Obsolete("Please switch to MultiStreamProjection<T> with the exact same syntax")]
+public abstract class MultiStreamAggregation<TDoc, TId>: MultiStreamProjection<TDoc, TId>
+{
+
 }

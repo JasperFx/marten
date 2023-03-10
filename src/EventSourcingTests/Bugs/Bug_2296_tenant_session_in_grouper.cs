@@ -79,7 +79,7 @@ public class Bug_2296_tenant_session_in_grouper : OneOffConfigurationsContext
         public int Count { get; set; } = 0;
     }
 
-    public class CountsByTagProjector: MultiStreamAggregation<CountsByTag, string>
+    public class CountsByTagProjector: MultiStreamProjection<CountsByTag, string>
     {
         public CountsByTagProjector()
         {

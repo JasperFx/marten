@@ -158,7 +158,7 @@ public class ErrorRejectingEventProjection: EventProjection
     }
 }
 
-public class CollateNames: MultiStreamAggregation<NamesByLetter, string>
+public class CollateNames: MultiStreamProjection<NamesByLetter, string>
 {
     public CollateNames()
     {

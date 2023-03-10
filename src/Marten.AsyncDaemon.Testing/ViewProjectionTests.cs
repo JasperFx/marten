@@ -125,7 +125,7 @@ public class Day
 
 #region sample_showing_fanout_rules
 
-public class DayProjection: MultiStreamAggregation<Day, int>
+public class DayProjection: MultiStreamProjection<Day, int>
 {
     public DayProjection()
     {
