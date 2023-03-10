@@ -53,7 +53,7 @@ public class AggregationProjectionTests
     [Fact]
     public void adding_filter_for_another_aggregate_type()
     {
-        var projection = new SingleStreamAggregation<MyAggregate>();
+        var projection = new SingleStreamProjection<MyAggregate>();
         projection.ProjectEvent<AEvent>(a => { });
         projection.FilterIncomingEventsOnStreamType(typeof(OtherAggregate));
         projection.AssembleAndAssertValidity();
@@ -69,7 +69,7 @@ public class AggregationProjectionTests
 public interface IThing{}
 public class Thing : IThing{}
 
-public class SampleAggregate: SingleStreamAggregation<MyAggregate>
+public class SampleAggregate: SingleStreamProjection<MyAggregate>
 {
     public SampleAggregate()
     {

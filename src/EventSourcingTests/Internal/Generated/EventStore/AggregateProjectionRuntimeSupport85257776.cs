@@ -12,11 +12,11 @@ namespace Marten.Generated.EventStore
     // START: AggregateProjectionLiveAggregation85257776
     public class AggregateProjectionLiveAggregation85257776 : Marten.Events.Aggregation.SyncLiveAggregatorBase<EventSourcingTests.Aggregation.RoomsAvailability>
     {
-        private readonly Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Aggregation.RoomsAvailability> _singleStreamAggregation;
+        private readonly Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Aggregation.RoomsAvailability> _singleStreamProjection;
 
-        public AggregateProjectionLiveAggregation85257776(Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Aggregation.RoomsAvailability> singleStreamAggregation)
+        public AggregateProjectionLiveAggregation85257776(Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Aggregation.RoomsAvailability> singleStreamProjection)
         {
-            _singleStreamAggregation = singleStreamAggregation;
+            _singleStreamProjection = singleStreamProjection;
         }
 
 
@@ -72,16 +72,16 @@ namespace Marten.Generated.EventStore
         private readonly Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Aggregation.RoomsAvailability, System.Guid> _slicer;
         private readonly Marten.Storage.ITenancy _tenancy;
         private readonly Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Aggregation.RoomsAvailability, System.Guid> _storage;
-        private readonly Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Aggregation.RoomsAvailability> _singleStreamAggregation;
+        private readonly Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Aggregation.RoomsAvailability> _singleStreamProjection;
 
-        public AggregateProjectionInlineHandler85257776(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Aggregation.RoomsAvailability, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Aggregation.RoomsAvailability, System.Guid> storage, Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Aggregation.RoomsAvailability> singleStreamAggregation) : base(store, projection, slicer, storage)
+        public AggregateProjectionInlineHandler85257776(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Aggregation.RoomsAvailability, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Aggregation.RoomsAvailability, System.Guid> storage, Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Aggregation.RoomsAvailability> singleStreamProjection) : base(store, projection, slicer, storage)
         {
             _store = store;
             _projection = projection;
             _slicer = slicer;
             _tenancy = tenancy;
             _storage = storage;
-            _singleStreamAggregation = singleStreamAggregation;
+            _singleStreamProjection = singleStreamProjection;
         }
 
 

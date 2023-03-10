@@ -82,7 +82,7 @@ public record ResourceEnabledEvent(): Event;
 
 public record ResourceDisabledEvent(): Event;
 
-public class ResourceProjection: SingleStreamAggregation<Resource>
+public class ResourceProjection: SingleStreamProjection<Resource>
 {
     public ResourceProjection()
     {

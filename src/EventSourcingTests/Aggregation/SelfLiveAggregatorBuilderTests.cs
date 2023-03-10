@@ -14,14 +14,14 @@ public class SelfLiveAggregatorBuilderTests
     [Fact]
     public void try_existing_QuestParty()
     {
-        var aggregator = new SingleStreamAggregation<QuestParty>().Build(new StoreOptions());
+        var aggregator = new SingleStreamProjection<QuestParty>().Build(new StoreOptions());
         aggregator.ShouldNotBeNull();
     }
 
     [Fact]
     public void try_with_all_possibilities()
     {
-        new SingleStreamAggregation<FakeAggregate>()
+        new SingleStreamProjection<FakeAggregate>()
             .Build(new StoreOptions())
             .ShouldNotBeNull();
     }

@@ -87,7 +87,7 @@ public class aggregation_projection_validation_rules
         }).ShouldNotBeNull();
     }
 
-    public class EmptyProjection: SingleStreamAggregation<GuidIdentifiedAggregate>
+    public class EmptyProjection: SingleStreamProjection<GuidIdentifiedAggregate>
     {
 
     }
@@ -189,7 +189,7 @@ public class aggregation_projection_validation_rules
     }
 }
 
-public class MissingMandatoryType: SingleStreamAggregation<MyAggregate>
+public class MissingMandatoryType: SingleStreamProjection<MyAggregate>
 {
     public void Apply(AEvent @event)
     {
@@ -197,7 +197,7 @@ public class MissingMandatoryType: SingleStreamAggregation<MyAggregate>
     }
 }
 
-public class BadReturnType: SingleStreamAggregation<MyAggregate>
+public class BadReturnType: SingleStreamProjection<MyAggregate>
 {
     public string Apply(AEvent @event, MyAggregate aggregate, IDocumentOperations operations)
     {
@@ -205,7 +205,7 @@ public class BadReturnType: SingleStreamAggregation<MyAggregate>
     }
 }
 
-public class MissingEventType1: SingleStreamAggregation<MyAggregate>
+public class MissingEventType1: SingleStreamProjection<MyAggregate>
 {
     public void Apply(MyAggregate aggregate, IDocumentOperations operations)
     {
@@ -213,7 +213,7 @@ public class MissingEventType1: SingleStreamAggregation<MyAggregate>
     }
 }
 
-public class CanGuessEventType: SingleStreamAggregation<MyAggregate>
+public class CanGuessEventType: SingleStreamProjection<MyAggregate>
 {
     public void Apply(AEvent a, MyAggregate aggregate, IQuerySession session)
     {
@@ -221,7 +221,7 @@ public class CanGuessEventType: SingleStreamAggregation<MyAggregate>
     }
 }
 
-public class InvalidArgumentType: SingleStreamAggregation<MyAggregate>
+public class InvalidArgumentType: SingleStreamProjection<MyAggregate>
 {
     public void Apply(AEvent @event, MyAggregate aggregate, IDocumentOperations operations)
     {
@@ -229,7 +229,7 @@ public class InvalidArgumentType: SingleStreamAggregation<MyAggregate>
     }
 }
 
-public class BadMethodName: SingleStreamAggregation<MyAggregate>
+public class BadMethodName: SingleStreamProjection<MyAggregate>
 {
     public void DoStuff(AEvent @event, MyAggregate aggregate)
     {
@@ -248,7 +248,7 @@ public class BadMethodName: SingleStreamAggregation<MyAggregate>
     }
 }
 
-public class AllGood: SingleStreamAggregation<MyAggregate>
+public class AllGood: SingleStreamProjection<MyAggregate>
 {
     public AllGood()
     {

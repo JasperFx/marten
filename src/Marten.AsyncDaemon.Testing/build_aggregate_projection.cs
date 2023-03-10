@@ -330,7 +330,7 @@ public class build_aggregate_projection: DaemonContext
     }
 
 
-    public class ContactProjectionNullReturn: SingleStreamAggregation<Contact>
+    public class ContactProjectionNullReturn: SingleStreamProjection<Contact>
     {
         public ContactProjectionNullReturn()
         {
@@ -394,7 +394,7 @@ public class build_aggregate_projection: DaemonContext
     }
 
 
-    public class InterfaceCreationProjection: SingleStreamAggregation<Foo>
+    public class InterfaceCreationProjection: SingleStreamProjection<Foo>
     {
         public InterfaceCreationProjection()
         {
@@ -442,7 +442,7 @@ public class build_aggregate_projection: DaemonContext
     }
 
 
-    public class AbstractCreationProjection: SingleStreamAggregation<Foo>
+    public class AbstractCreationProjection: SingleStreamProjection<Foo>
     {
         public AbstractCreationProjection()
         {

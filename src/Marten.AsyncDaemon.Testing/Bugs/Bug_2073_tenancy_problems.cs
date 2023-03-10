@@ -79,7 +79,7 @@ public record UpdateDoc(string DocumentId, string Content);
 // projection
 public record Document([property: Identity] string DocumentId, string Owner, string Content);
 
-public class DocumentProjection: SingleStreamAggregation<Document>
+public class DocumentProjection: SingleStreamProjection<Document>
 {
     public DocumentProjection()
     {

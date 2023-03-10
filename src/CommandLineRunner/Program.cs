@@ -119,7 +119,7 @@ public class SelfAggregatingTrip
     }
 }
 
-public class SimpleAggregate: SingleStreamAggregation<MyAggregate>
+public class SimpleAggregate: SingleStreamProjection<MyAggregate>
 {
     public SimpleAggregate()
     {

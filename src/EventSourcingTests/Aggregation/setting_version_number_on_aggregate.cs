@@ -56,7 +56,7 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
 
 
 
-    public class SampleSingleStream : SingleStreamAggregation<MyAggregate>
+    public class SampleSingleStream : SingleStreamProjection<MyAggregate>
     {
         public SampleSingleStream ()
         {

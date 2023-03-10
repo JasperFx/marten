@@ -12,11 +12,11 @@ namespace Marten.Generated.EventStore
     // START: AggregateProjectionLiveAggregation1201339788
     public class AggregateProjectionLiveAggregation1201339788 : Marten.Events.Aggregation.SyncLiveAggregatorBase<EventSourcingTests.Aggregation.Invoice>
     {
-        private readonly Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Aggregation.Invoice> _singleStreamAggregation;
+        private readonly Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Aggregation.Invoice> _singleStreamProjection;
 
-        public AggregateProjectionLiveAggregation1201339788(Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Aggregation.Invoice> singleStreamAggregation)
+        public AggregateProjectionLiveAggregation1201339788(Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Aggregation.Invoice> singleStreamProjection)
         {
-            _singleStreamAggregation = singleStreamAggregation;
+            _singleStreamProjection = singleStreamProjection;
         }
 
 
@@ -72,16 +72,16 @@ namespace Marten.Generated.EventStore
         private readonly Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Aggregation.Invoice, System.Guid> _slicer;
         private readonly Marten.Storage.ITenancy _tenancy;
         private readonly Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Aggregation.Invoice, System.Guid> _storage;
-        private readonly Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Aggregation.Invoice> _singleStreamAggregation;
+        private readonly Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Aggregation.Invoice> _singleStreamProjection;
 
-        public AggregateProjectionInlineHandler1201339788(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Aggregation.Invoice, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Aggregation.Invoice, System.Guid> storage, Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Aggregation.Invoice> singleStreamAggregation) : base(store, projection, slicer, storage)
+        public AggregateProjectionInlineHandler1201339788(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Aggregation.Invoice, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Aggregation.Invoice, System.Guid> storage, Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Aggregation.Invoice> singleStreamProjection) : base(store, projection, slicer, storage)
         {
             _store = store;
             _projection = projection;
             _slicer = slicer;
             _tenancy = tenancy;
             _storage = storage;
-            _singleStreamAggregation = singleStreamAggregation;
+            _singleStreamProjection = singleStreamProjection;
         }
 
 

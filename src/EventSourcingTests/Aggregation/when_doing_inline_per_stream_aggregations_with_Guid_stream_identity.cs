@@ -220,7 +220,7 @@ public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity
 
     }
 
-    public class SometimesDeletes: SingleStreamAggregation<MyAggregate>
+    public class SometimesDeletes: SingleStreamProjection<MyAggregate>
     {
         public void Apply(AEvent @event, MyAggregate aggregate)
         {

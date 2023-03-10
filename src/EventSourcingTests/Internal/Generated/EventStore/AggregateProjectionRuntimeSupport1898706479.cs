@@ -12,11 +12,11 @@ namespace Marten.Generated.EventStore
     // START: AggregateProjectionLiveAggregation1898706479
     public class AggregateProjectionLiveAggregation1898706479 : Marten.Events.Aggregation.SyncLiveAggregatorBase<EventSourcingTests.Projections.QuestParty>
     {
-        private readonly Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Projections.QuestParty> _singleStreamAggregation;
+        private readonly Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Projections.QuestParty> _singleStreamProjection;
 
-        public AggregateProjectionLiveAggregation1898706479(Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Projections.QuestParty> singleStreamAggregation)
+        public AggregateProjectionLiveAggregation1898706479(Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Projections.QuestParty> singleStreamProjection)
         {
-            _singleStreamAggregation = singleStreamAggregation;
+            _singleStreamProjection = singleStreamProjection;
         }
 
 
@@ -72,16 +72,16 @@ namespace Marten.Generated.EventStore
         private readonly Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Projections.QuestParty, System.Guid> _slicer;
         private readonly Marten.Storage.ITenancy _tenancy;
         private readonly Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Projections.QuestParty, System.Guid> _storage;
-        private readonly Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Projections.QuestParty> _singleStreamAggregation;
+        private readonly Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Projections.QuestParty> _singleStreamProjection;
 
-        public AggregateProjectionInlineHandler1898706479(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Projections.QuestParty, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Projections.QuestParty, System.Guid> storage, Marten.Events.Aggregation.SingleStreamAggregation<EventSourcingTests.Projections.QuestParty> singleStreamAggregation) : base(store, projection, slicer, storage)
+        public AggregateProjectionInlineHandler1898706479(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Projections.QuestParty, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Projections.QuestParty, System.Guid> storage, Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Projections.QuestParty> singleStreamProjection) : base(store, projection, slicer, storage)
         {
             _store = store;
             _projection = projection;
             _slicer = slicer;
             _tenancy = tenancy;
             _storage = storage;
-            _singleStreamAggregation = singleStreamAggregation;
+            _singleStreamProjection = singleStreamProjection;
         }
 
 

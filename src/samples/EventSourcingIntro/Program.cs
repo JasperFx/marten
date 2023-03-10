@@ -70,7 +70,7 @@ public class WarehouseProductReadModel
     public int QuantityOnHand { get; set; }
 }
 
-public class WarehouseProductProjection: SingleStreamAggregation<WarehouseProductReadModel>
+public class WarehouseProductProjection: SingleStreamProjection<WarehouseProductReadModel>
 {
     public WarehouseProductProjection()
     {
