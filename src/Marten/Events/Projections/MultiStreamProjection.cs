@@ -148,3 +148,8 @@ public abstract class MultiStreamAggregation<TDoc, TId>: MultiStreamProjection<T
 {
 
 }
+
+[Obsolete("Please switch to MultiStreamProjection<T> with the exact same syntax")]
+public abstract class ViewProjection<TDoc, TId>: MultiStreamProjection<TDoc, TId>
+{
+}
