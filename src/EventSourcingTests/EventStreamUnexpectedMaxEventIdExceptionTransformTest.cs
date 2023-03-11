@@ -54,7 +54,7 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
 
         async Task ForceEventStreamUnexpectedMaxEventIdException()
         {
-            await Parallel.ForEachAsync(Enumerable.Range(1, 50), async (_, token) =>
+            await Parallel.ForEachAsync(Enumerable.Range(1, 100), async (_, token) =>
             {
                 await using var session = theStore.LightweightSession();
                 session.Events.Append(streamId, departed);
