@@ -21,7 +21,7 @@ namespace EventSourcingTests.Bugs
         {
             using var documentStore = SeparateStore(x =>
             {
-                x.Projections.Snapshot<TestEntity>(ProjectionLifecycle.Inline);
+                x.Projections.Snapshot<TestEntity>(SnapshotLifecycle.Inline);
             });
 
             var entityOneId = await CreateEntityForTest(documentStore, "Entity one", 0);
@@ -53,7 +53,7 @@ namespace EventSourcingTests.Bugs
         {
             using var documentStore = SeparateStore(x =>
             {
-                x.Projections.Snapshot<TestEntity>(ProjectionLifecycle.Inline);
+                x.Projections.Snapshot<TestEntity>(SnapshotLifecycle.Inline);
             });
 
             var entityOneId = await CreateEntityForTest(documentStore, "Entity one", 2);

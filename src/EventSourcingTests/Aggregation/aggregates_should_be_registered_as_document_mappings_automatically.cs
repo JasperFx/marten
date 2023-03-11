@@ -52,7 +52,7 @@ public class aggregates_should_be_registered_as_document_mappings_automatically:
     {
         StoreOptions(_ =>
         {
-            _.Projections.Snapshot<QuestParty>(ProjectionLifecycle.Async);
+            _.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Async);
         });
 
         theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)

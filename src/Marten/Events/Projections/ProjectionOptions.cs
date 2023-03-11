@@ -146,7 +146,7 @@ public class ProjectionOptions: DaemonSettings
 
 
     /// <summary>
-    /// Perform automated snapshot on each event for selected entity type
+    /// Register Snapshot or Live Stream aggregation for entity of type T.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="lifecycle">Override the aggregate lifecycle. The default is Inline</param>
@@ -155,20 +155,46 @@ public class ProjectionOptions: DaemonSettings
     ///     projection within the async projection daempon
     /// </param>
     /// <returns>The extended storage configuration for document T</returns>
-    [Obsolete("Please switch to Snapshot method with the exact same syntax")]
+    [Obsolete(
+        "Please switch to Snapshot (in case of inline or async lifecycle) or LiveStreamAggregation method (for online lifecycle).")]
     public MartenRegistry.DocumentMappingExpression<T> SelfAggregate<T>(
         ProjectionLifecycle? lifecycle = null,
         Action<AsyncOptions> asyncConfiguration = null
     ) =>
-        Snapshot<T>(lifecycle, asyncConfiguration);
+        lifecycle == ProjectionLifecycle.Live
+            ? LiveStreamAggregation<T>(asyncConfiguration)
+            : Snapshot<T>(lifecycle.Map(), asyncConfiguration);
+
+    /// <summary>
+    /// Register live stream aggregation. It's needed for pre-building generated types
+    /// (Read more in https://martendb.io/configuration/prebuilding.html).
+    /// You don't need to call this method if you registered Snapshot for this entity type.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="asyncConfiguration">Use it to define behaviour during projection rebuilds</param>
+    /// <returns>The extended storage configuration for entity T</returns>
+    public MartenRegistry.DocumentMappingExpression<T> LiveStreamAggregation<T>(
+        Action<AsyncOptions> asyncConfiguration = null
+    ) =>
+        singleStreamProjection<T>(ProjectionLifecycle.Live, asyncConfiguration);
 
     /// <summary>
     /// Perform automated snapshot on each event for selected entity type
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    /// <param name="lifecycle">Override the aggregate lifecycle. The default is Inline</param>
+    /// <param name="lifecycle">Override the snapshot lifecycle. The default is Inline</param>
+    /// <param name="asyncConfiguration">
+    ///     Optional configuration including teardown instructions for the usage of this
+    ///     projection within the async projection daempon
+    /// </param>
     /// <returns>The extended storage configuration for document T</returns>
     public MartenRegistry.DocumentMappingExpression<T> Snapshot<T>(
+        SnapshotLifecycle? lifecycle = null,
+        Action<AsyncOptions> asyncConfiguration = null
+    ) =>
+        singleStreamProjection<T>(lifecycle.Map(), asyncConfiguration);
+
+    private MartenRegistry.DocumentMappingExpression<T> singleStreamProjection<T>(
         ProjectionLifecycle? lifecycle = null,
         Action<AsyncOptions> asyncConfiguration = null
     )
@@ -186,7 +212,6 @@ public class ProjectionOptions: DaemonSettings
 
         return expression;
     }
-
 
     /// <summary>
     /// Register an aggregate projection that should be evaluated inline
