@@ -90,10 +90,10 @@ namespace TripProjection.SelfAggregate
                 opts.Connection("some connection string");
 
                 // Run the Trip as an inline projection
-                opts.Projections.Snapshot<Trip>(ProjectionLifecycle.Inline);
+                opts.Projections.Snapshot<Trip>(SnapshotLifecycle.Inline);
 
                 // Or run it as an asynchronous projection
-                opts.Projections.Snapshot<Trip>(ProjectionLifecycle.Async);
+                opts.Projections.Snapshot<Trip>(SnapshotLifecycle.Async);
             });
 
             // Or more likely, use it as a live aggregation:

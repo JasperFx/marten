@@ -18,7 +18,7 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
         {
             #region sample_eventstore-configure-stream-identity
             storeOptions.Events.StreamIdentity = StreamIdentity.AsString;
-            storeOptions.Projections.Snapshot<QuestPartyWithStringIdentifier>(ProjectionLifecycle.Async);
+            storeOptions.Projections.Snapshot<QuestPartyWithStringIdentifier>(SnapshotLifecycle.Async);
             #endregion
         });
     }

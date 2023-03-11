@@ -118,7 +118,7 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
     [Fact]
     public async Task set_version_on_aggregate_with_explicit_Version_attribute()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<MyAggregateWithDifferentVersionProperty>(ProjectionLifecycle.Inline));
+        StoreOptions(opts => opts.Projections.Snapshot<MyAggregateWithDifferentVersionProperty>(SnapshotLifecycle.Inline));
 
         var stream = theSession.Events.StartStream(new AEvent(), new AEvent(), new AEvent());
         await theSession.SaveChangesAsync();

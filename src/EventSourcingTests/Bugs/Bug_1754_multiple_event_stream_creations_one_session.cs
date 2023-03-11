@@ -19,8 +19,8 @@ namespace EventSourcingTests.Bugs
             using var documentStore = SeparateStore(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsString; // easier to debug
-                x.Projections.Snapshot<DataImportAggregate>(ProjectionLifecycle.Inline);
-                x.Projections.Snapshot<DataItemAggregate>(ProjectionLifecycle.Inline);
+                x.Projections.Snapshot<DataImportAggregate>(SnapshotLifecycle.Inline);
+                x.Projections.Snapshot<DataItemAggregate>(SnapshotLifecycle.Inline);
             });
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
@@ -51,8 +51,8 @@ namespace EventSourcingTests.Bugs
             using var documentStore = SeparateStore(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsString; // easier to debug
-                x.Projections.Snapshot<DataImportAggregate>(ProjectionLifecycle.Inline);
-                x.Projections.Snapshot<DataItemAggregate>(ProjectionLifecycle.Inline);
+                x.Projections.Snapshot<DataImportAggregate>(SnapshotLifecycle.Inline);
+                x.Projections.Snapshot<DataItemAggregate>(SnapshotLifecycle.Inline);
             });
 
             documentStore.Advanced.Clean.CompletelyRemoveAll();
