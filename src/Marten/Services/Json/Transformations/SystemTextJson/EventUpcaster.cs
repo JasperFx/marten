@@ -3,6 +3,7 @@ using System.Data.Common;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.EventTypes;
 using Marten.Exceptions;
 
 namespace Marten.Services.Json.Transformations.SystemTextJson;
@@ -57,7 +58,7 @@ namespace Marten.Services.Json.Transformations.SystemTextJson;
 ///     protected override ShoppingCartInitializedWithStatus Upcast(JsonDocument oldEventJson)
 ///     {
 ///         var oldEvent = oldEventJson.RootElement;
-/// 
+///
 ///         return new ShoppingCartInitializedWithStatus(
 ///             oldEvent.GetProperty("ShoppingCartId").GetGuid(),
 ///             new Client(
@@ -77,6 +78,10 @@ namespace Marten.Services.Json.Transformations.SystemTextJson;
 public abstract class EventUpcaster<TEvent>: Transformations.EventUpcaster<TEvent>
     where TEvent : notnull
 {
+    protected EventUpcaster(IEventTypeMapper eventTypeMapper) : base(eventTypeMapper)
+    {
+    }
+
     public override object FromDbDataReader(ISerializer serializer, DbDataReader dbDataReader, int index)
     {
         return JsonTransformations.FromDbDataReader(Upcast)(serializer, dbDataReader, index);
@@ -113,7 +118,7 @@ public abstract class EventUpcaster<TEvent>: Transformations.EventUpcaster<TEven
     /// protected override ShoppingCartInitializedWithStatus Upcast(JsonDocument oldEventJson)
     /// {
     ///     var oldEvent = oldEventJson.RootElement;
-    /// 
+    ///
     ///     return new ShoppingCartInitializedWithStatus(
     ///         oldEvent.GetProperty("ShoppingCartId").GetGuid(),
     ///         new Client(
@@ -187,20 +192,20 @@ public abstract class EventUpcaster<TEvent>: Transformations.EventUpcaster<TEven
 ///     AsyncOnlyEventUpcaster&#60;ShoppingCartInitializedWithStatus&#62;
 /// {
 ///     private readonly IClientRepository _clientRepository;
-/// 
+///
 ///     public ShoppingCartOpenedAsyncOnlyUpcaster(IClientRepository clientRepository) =>
 ///         _clientRepository = clientRepository;
-/// 
+///
 ///     protected override async Task&#60;ShoppingCartInitializedWithStatus&#62; UpcastAsync(
 ///         JsonDocument oldEventJson, CancellationToken ct
 ///     )
 ///     {
 ///         var oldEvent = oldEventJson.RootElement;
-/// 
+///
 ///         var clientId = oldEvent.GetProperty("ClientId").GetGuid();
-/// 
+///
 ///         var clientName = await _clientRepository.GetClientName(clientId, ct);
-/// 
+///
 ///         return new ShoppingCartInitializedWithStatus(
 ///             oldEvent.GetProperty("ShoppingCartId").GetGuid(),
 ///             new Client(clientId, clientName),
@@ -219,6 +224,10 @@ public abstract class EventUpcaster<TEvent>: Transformations.EventUpcaster<TEven
 public abstract class AsyncOnlyEventUpcaster<TEvent>: Transformations.EventUpcaster<TEvent>
     where TEvent : notnull
 {
+    protected AsyncOnlyEventUpcaster(IEventTypeMapper eventTypeMapper) : base(eventTypeMapper)
+    {
+    }
+
     public override object FromDbDataReader(ISerializer serializer, DbDataReader dbDataReader, int index)
     {
         throw new MartenException(
@@ -268,11 +277,11 @@ public abstract class AsyncOnlyEventUpcaster<TEvent>: Transformations.EventUpcas
     /// )
     /// {
     ///     var oldEvent = oldEventJson.RootElement;
-    /// 
+    ///
     ///     var clientId = oldEvent.GetProperty("ClientId").GetGuid();
-    /// 
+    ///
     ///     var clientName = await _clientRepository.GetClientName(clientId, ct);
-    /// 
+    ///
     ///     return new ShoppingCartInitializedWithStatus(
     ///         oldEvent.GetProperty("ShoppingCartId").GetGuid(),
     ///         new Client(clientId, clientName),

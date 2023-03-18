@@ -2,6 +2,7 @@
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.EventTypes;
 using Marten.Exceptions;
 using Newtonsoft.Json.Linq;
 
@@ -69,6 +70,10 @@ namespace Marten.Services.Json.Transformations.JsonNet;
 public abstract class EventUpcaster<TEvent>: Transformations.EventUpcaster<TEvent>
     where TEvent : notnull
 {
+    protected EventUpcaster(IEventTypeMapper eventTypeMapper) : base(eventTypeMapper)
+    {
+    }
+
     public override object FromDbDataReader(ISerializer serializer, DbDataReader dbDataReader, int index)
     {
         return JsonTransformations.FromDbDataReader(Upcast)(serializer, dbDataReader, index);
@@ -162,10 +167,10 @@ public abstract class EventUpcaster<TEvent>: Transformations.EventUpcaster<TEven
 ///     AsyncOnlyEventUpcaster&#60;ShoppingCartInitializedWithStatus&#62;
 /// {
 ///     private readonly IClientRepository _clientRepository;
-/// 
+///
 ///     public ShoppingCartOpenedAsyncOnlyUpcaster(IClientRepository clientRepository) =>
 ///         _clientRepository = clientRepository;
-/// 
+///
 ///     protected override async Task&#60;ShoppingCartInitializedWithStatus&#62; UpcastAsync(
 ///         JObject oldEvent,
 ///         CancellationToken ct
@@ -173,7 +178,7 @@ public abstract class EventUpcaster<TEvent>: Transformations.EventUpcaster<TEven
 ///     {
 ///         var clientId = (Guid)oldEvent["ClientId"]!;
 ///         var clientName = await _clientRepository.GetClientName(clientId, ct);
-/// 
+///
 ///         return new ShoppingCartInitializedWithStatus(
 ///             (Guid)oldEvent["ShoppingCartId"]!,
 ///             new Client(clientId, clientName),
@@ -192,6 +197,10 @@ public abstract class EventUpcaster<TEvent>: Transformations.EventUpcaster<TEven
 public abstract class AsyncOnlyEventUpcaster<TEvent>: Transformations.EventUpcaster<TEvent>
     where TEvent : notnull
 {
+    protected AsyncOnlyEventUpcaster(IEventTypeMapper eventTypeMapper) : base(eventTypeMapper)
+    {
+    }
+
     public override object FromDbDataReader(ISerializer serializer, DbDataReader dbDataReader, int index)
     {
         throw new MartenException(
@@ -241,7 +250,7 @@ public abstract class AsyncOnlyEventUpcaster<TEvent>: Transformations.EventUpcas
     /// {
     ///     var clientId = (Guid)oldEvent["ClientId"]!;
     ///     var clientName = await _clientRepository.GetClientName(clientId, ct);
-    /// 
+    ///
     ///     return new ShoppingCartInitializedWithStatus(
     ///         (Guid)oldEvent["ShoppingCartId"]!,
     ///         new Client(clientId, clientName),

@@ -5,9 +5,11 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Events.EventTypes;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
-using static Marten.Events.EventMappingExtensions;
+
+using static Marten.Events.EventTypes.EventMappingExtensions;
 
 namespace Marten.Events
 {
@@ -30,6 +32,8 @@ namespace Marten.Events
         string DatabaseSchemaName { get; set; }
 
         public MetadataConfig MetadataConfig { get; }
+
+        public IEventTypeMapper EventTypeMapper { get; set; }
 
         /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
@@ -309,7 +313,7 @@ public static class EventStoreOptionsExtensions
     )
         where TEvent : class
     {
-        options.MapEventType<TEvent>(GetEventTypeNameWithSuffix<TEvent>(suffix));
+        options.MapEventType<TEvent>(options.EventTypeMapper.GetEventTypeNameWithSuffix<TEvent>(suffix));
         return options;
     }
 
@@ -327,7 +331,7 @@ public static class EventStoreOptionsExtensions
     )
         where TEvent : class
     {
-        options.MapEventType<TEvent>(GetEventTypeNameWithSchemaVersion(typeof(TEvent), schemaVersion));
+        options.MapEventType<TEvent>(options.EventTypeMapper.GetEventTypeNameWithSchemaVersion(typeof(TEvent), schemaVersion));
         return options;
     }
 
@@ -376,7 +380,7 @@ public static class EventStoreOptionsExtensions
         JsonTransformation jsonTransformation
     ) where TEvent : class
     {
-        return options.Upcast<TEvent>(GetEventTypeName<TEvent>(), jsonTransformation);
+        return options.Upcast<TEvent>(options.EventTypeMapper.GetEventTypeName<TEvent>(), jsonTransformation);
     }
 
     /// <summary>
@@ -405,7 +409,7 @@ public static class EventStoreOptionsExtensions
         JsonTransformation jsonTransformation
     )
     {
-        return options.Upcast(eventType, GetEventTypeName(eventType), jsonTransformation);
+        return options.Upcast(eventType, options.EventTypeMapper.GetEventTypeName(eventType), jsonTransformation);
     }
 
     /// <summary>
@@ -434,7 +438,7 @@ public static class EventStoreOptionsExtensions
         JsonTransformation jsonTransformation
     ) where TEvent : class
     {
-        return options.Upcast<TEvent>(GetEventTypeNameWithSchemaVersion<TEvent>(schemaVersion), jsonTransformation);
+        return options.Upcast<TEvent>(options.EventTypeMapper.GetEventTypeNameWithSchemaVersion<TEvent>(schemaVersion), jsonTransformation);
     }
 
     /// <summary>
@@ -464,7 +468,7 @@ public static class EventStoreOptionsExtensions
         JsonTransformation jsonTransformation
     )
     {
-        return options.Upcast(eventType, GetEventTypeNameWithSchemaVersion(eventType, schemaVersion),
+        return options.Upcast(eventType, options.EventTypeMapper.GetEventTypeNameWithSchemaVersion(eventType, schemaVersion),
             jsonTransformation);
     }
 
@@ -500,7 +504,7 @@ public static class EventStoreOptionsExtensions
         where TOldEvent : class
         where TEvent : class
     {
-        return options.Upcast(GetEventTypeNameWithSchemaVersion<TOldEvent>(schemaVersion), upcast);
+        return options.Upcast(options.EventTypeMapper.GetEventTypeNameWithSchemaVersion<TOldEvent>(schemaVersion), upcast);
     }
 
 
@@ -543,6 +547,6 @@ public static class EventStoreOptionsExtensions
         where TOldEvent : class
         where TEvent : class
     {
-        return options.Upcast(GetEventTypeNameWithSchemaVersion<TOldEvent>(schemaVersion), upcastAsync);
+        return options.Upcast(options.EventTypeMapper.GetEventTypeNameWithSchemaVersion<TOldEvent>(schemaVersion), upcastAsync);
     }
 }

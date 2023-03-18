@@ -6,16 +6,15 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
+using Marten.Events.EventTypes;
 using Marten.Events.Projections;
 using Marten.Events.Schema;
-using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
 using Weasel.Core;
-using static Marten.Events.EventMappingExtensions;
 
 namespace Marten.Events;
 
@@ -32,12 +31,11 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
 
     private readonly Lazy<IProjection[]> _inlineProjections;
 
-    private readonly Ref<ImHashMap<string, Type>> _nameToType = Ref.Of(ImHashMap<string, Type>.Empty);
-
     private string _databaseSchemaName;
 
     private DocumentStore _store;
     private StreamIdentity _streamIdentity = StreamIdentity.AsGuid;
+    public IEventTypeMapper EventTypeMapper { get; set; } = new EventTypeMapperWrapper();
 
     internal EventGraph(StoreOptions options)
     {
@@ -181,7 +179,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
         Func<TOldEvent, TEvent> upcast
     ) where TOldEvent : class where TEvent : class
     {
-        return Upcast(typeof(TEvent), GetEventTypeName<TOldEvent>(), JsonTransformations.Upcast(upcast));
+        return Upcast(typeof(TEvent), EventTypeMapper.GetEventTypeName<TOldEvent>(), JsonTransformations.Upcast(upcast));
     }
 
     public IEventStoreOptions Upcast<TOldEvent, TEvent>(
@@ -196,7 +194,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
         Func<TOldEvent, CancellationToken, Task<TEvent>> upcastAsync
     ) where TOldEvent : class where TEvent : class
     {
-        return Upcast(typeof(TEvent), GetEventTypeName<TOldEvent>(), JsonTransformations.Upcast(upcastAsync));
+        return Upcast(typeof(TEvent), EventTypeMapper.GetEventTypeName<TOldEvent>(), JsonTransformations.Upcast(upcastAsync));
     }
 
     public IEventStoreOptions Upcast(params IEventUpcaster[] upcasters)
@@ -313,21 +311,11 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
         return StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
     }
 
-    internal Type TypeForDotNetName(string assemblyQualifiedName)
-    {
-        if (!_nameToType.Value.TryFind(assemblyQualifiedName, out var value))
-        {
-            value = Type.GetType(assemblyQualifiedName);
-            if (value == null)
-            {
-                throw new UnknownEventTypeException($"Unable to load event type '{assemblyQualifiedName}'.");
-            }
+    internal Type TypeForDotNetName(string assemblyQualifiedName, string eventTypeName)
+        => EventTypeMapper.TypeForDotNetName(assemblyQualifiedName, eventTypeName);
 
-            _nameToType.Swap(n => n.AddOrUpdate(assemblyQualifiedName, value));
-        }
-
-        return value;
-    }
+    internal string GetEventTypeName(Type eventType)
+        => EventTypeMapper.GetEventTypeName(eventType);
 
     internal IEventStorage EnsureAsStringStorage(IMartenSession session)
     {

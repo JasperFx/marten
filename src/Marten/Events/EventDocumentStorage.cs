@@ -262,20 +262,7 @@ public abstract class EventDocumentStorage: IEventStorage
 
     private EventMapping eventMappingForDotNetTypeName(string dotnetTypeName, string eventTypeName)
     {
-        if (dotnetTypeName.IsEmpty())
-        {
-            throw new UnknownEventTypeException(eventTypeName);
-        }
-
-        Type type;
-        try
-        {
-            type = Events.TypeForDotNetName(dotnetTypeName);
-        }
-        catch (ArgumentNullException)
-        {
-            throw new UnknownEventTypeException(dotnetTypeName);
-        }
+        var type = Events.TypeForDotNetName(dotnetTypeName, eventTypeName);
 
         return Events.EventMappingFor(type);
     }

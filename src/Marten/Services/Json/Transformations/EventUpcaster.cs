@@ -3,8 +3,10 @@ using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.EventTypes;
 using Marten.Exceptions;
-using static Marten.Events.EventMappingExtensions;
+
+using static Marten.Events.EventTypes.EventMappingExtensions;
 
 namespace Marten.Services.Json.Transformations;
 
@@ -119,12 +121,17 @@ public interface IEventUpcaster
 /// </summary>
 public abstract class EventUpcaster: IEventUpcaster
 {
+    protected EventUpcaster(IEventTypeMapper eventTypeMapper) =>
+        EventTypeMapper = eventTypeMapper;
+
+    protected readonly IEventTypeMapper EventTypeMapper;
+
     public abstract Type EventType { get; }
 
     /// <summary>
     ///     Event type name that you would like to transform. By default it uses the default convention
     /// </summary>
-    public virtual string EventTypeName => GetEventTypeName(EventType);
+    public virtual string EventTypeName => EventTypeMapper.GetEventTypeName(EventType);
 
     public abstract object FromDbDataReader(ISerializer serializer, DbDataReader dbDataReader, int index);
 
@@ -175,6 +182,10 @@ public abstract class EventUpcaster: IEventUpcaster
 public abstract class EventUpcaster<TEvent>: EventUpcaster
 {
     public override Type EventType => typeof(TEvent);
+
+    protected EventUpcaster(IEventTypeMapper eventTypeMapper) : base(eventTypeMapper)
+    {
+    }
 }
 
 /// <summary>
@@ -229,7 +240,11 @@ public abstract class EventUpcaster<TEvent>: EventUpcaster
 public abstract class EventUpcaster<TOldEvent, TEvent>: EventUpcaster<TEvent>
     where TOldEvent : notnull where TEvent : notnull
 {
-    public override string EventTypeName => GetEventTypeName<TOldEvent>();
+
+    protected EventUpcaster(IEventTypeMapper eventTypeMapper) : base(eventTypeMapper)
+    {
+    }
+    public override string EventTypeName => EventTypeMapper.GetEventTypeName<TOldEvent>();
 
     public override object FromDbDataReader(ISerializer serializer, DbDataReader dbDataReader, int index)
     {
@@ -316,17 +331,17 @@ public abstract class EventUpcaster<TOldEvent, TEvent>: EventUpcaster<TEvent>
 ///         AsyncOnlyEventUpcaster&#60;ShoppingCartOpened, ShoppingCartInitializedWithStatus&#62;
 /// {
 ///     private readonly IClientRepository _clientRepository;
-/// 
+///
 ///     public ShoppingCartOpenedAsyncOnlyUpcaster(IClientRepository clientRepository) =>
 ///         _clientRepository = clientRepository;
-/// 
+///
 ///     protected override async Task&#60;ShoppingCartInitializedWithStatus&#62; UpcastAsync(
 ///         ShoppingCartOpened oldEvent,
 ///         CancellationToken ct
 ///     )
 ///     {
 ///         var clientName = await _clientRepository.GetClientName(oldEvent.ClientId, ct);
-/// 
+///
 ///         return new ShoppingCartInitializedWithStatus(
 ///             oldEvent.ShoppingCartId,
 ///             new Client(oldEvent.ClientId, clientName),
@@ -346,7 +361,11 @@ public abstract class EventUpcaster<TOldEvent, TEvent>: EventUpcaster<TEvent>
 public abstract class AsyncOnlyEventUpcaster<TOldEvent, TEvent>: EventUpcaster<TEvent>
     where TOldEvent : notnull where TEvent : notnull
 {
-    public override string EventTypeName => GetEventTypeName<TOldEvent>();
+    protected AsyncOnlyEventUpcaster(IEventTypeMapper eventTypeMapper) : base(eventTypeMapper)
+    {
+    }
+
+    public override string EventTypeName => EventTypeMapper.GetEventTypeName<TOldEvent>();
 
     public override object FromDbDataReader(ISerializer serializer, DbDataReader dbDataReader, int index)
     {
@@ -396,7 +415,7 @@ public abstract class AsyncOnlyEventUpcaster<TOldEvent, TEvent>: EventUpcaster<T
     /// )
     /// {
     ///     var clientName = await _clientRepository.GetClientName(oldEvent.ClientId, ct);
-    /// 
+    ///
     ///     return new ShoppingCartInitializedWithStatus(
     ///         oldEvent.ShoppingCartId,
     ///         new Client(oldEvent.ClientId, clientName),
