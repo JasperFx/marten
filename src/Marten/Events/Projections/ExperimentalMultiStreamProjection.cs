@@ -15,12 +15,12 @@ namespace Marten.Events.Projections;
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
-public abstract class ExperimentalMultiStreamAggregation<TDoc, TId>: GeneratedAggregateProjectionBase<TDoc>,
+public abstract class ExperimentalMultiStreamProjection<TDoc, TId>: GeneratedAggregateProjectionBase<TDoc>,
     IEventSlicer<TDoc, TId>
 {
     private TenancyStyle _tenancyStyle;
 
-    protected ExperimentalMultiStreamAggregation(): base(AggregationScope.MultiStream)
+    protected ExperimentalMultiStreamProjection(): base(AggregationScope.MultiStream)
     {
         Lifecycle = ProjectionLifecycle.Async;
     }
@@ -94,4 +94,9 @@ public abstract class ExperimentalMultiStreamAggregation<TDoc, TId>: GeneratedAg
     {
         return typeof(AggregationRuntime<,>).MakeGenericType(typeof(TDoc), _aggregateMapping.IdType);
     }
+}
+
+[Obsolete("Please switch to ExperimentalMultiStreamProjection<TDoc, TId> with the exact same syntax")]
+public abstract class ExperimentalMultiStreamAggregation<TDoc, TId>: ExperimentalMultiStreamProjection<TDoc, TId>
+{
 }
