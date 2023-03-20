@@ -14,7 +14,7 @@ public class End{}
 public class Restart{}
 public class Increment{}
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomAggregationTests.cs#L395-L402' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L395-L402' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And a simple aggregate document type like this:
@@ -38,7 +38,7 @@ public class StartAndStopAggregate : ISoftDeleted
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomAggregationTests.cs#L375-L393' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startandstopaggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L375-L393' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startandstopaggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As you can see, `StartAndStopAggregate` as a `Guid` as its identity and is also [soft-deleted](/documents/deletes.html#soft-deletes) when stored by
@@ -49,7 +49,7 @@ With all that being done, here's a sample aggregation that inherits from the Mar
 <!-- snippet: sample_custom_aggregate_with_start_and_stop -->
 <a id='snippet-sample_custom_aggregate_with_start_and_stop'></a>
 ```cs
-public class StartAndStopProjection: CustomAggregation<StartAndStopAggregate, Guid>
+public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Guid>
 {
     public StartAndStopProjection()
     {
@@ -113,7 +113,7 @@ public class StartAndStopProjection: CustomAggregation<StartAndStopAggregate, Gu
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomAggregationTests.cs#L404-L472' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L404-L472' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Grouping

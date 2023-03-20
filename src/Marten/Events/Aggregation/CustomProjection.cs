@@ -14,11 +14,11 @@ using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
 
-public abstract class CustomAggregation<TDoc, TId>: ProjectionBase, IAggregationRuntime<TDoc, TId>, IProjectionSource
+public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationRuntime<TDoc, TId>, IProjectionSource
 {
     private IDocumentStorage<TDoc, TId> _storage;
 
-    protected CustomAggregation()
+    protected CustomProjection()
     {
         ProjectionName = GetType().NameInCode();
     }
@@ -200,4 +200,9 @@ public abstract class CustomAggregation<TDoc, TId>: ProjectionBase, IAggregation
                 $"Invalid identity type {typeof(TId).NameInCode()} for aggregating by stream in projection {GetType().FullNameInCode()}");
         }
     }
+}
+
+[Obsolete("Please switch to CustomProjection<TDoc, TId> with the exact same syntax")]
+public abstract class CustomAggregation<TDoc, TId>: CustomProjection<TDoc, TId>
+{
 }
