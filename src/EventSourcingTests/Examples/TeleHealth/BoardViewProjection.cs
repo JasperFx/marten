@@ -8,7 +8,7 @@ using Marten.Events.Projections;
 
 namespace EventSourcingTests.Examples.TeleHealth;
 
-public class BoardViewProjection: ExperimentalMultiStreamAggregation<BoardView, Guid>
+public class BoardViewProjection: ExperimentalMultiStreamProjection<BoardView, Guid>
 {
     protected override ValueTask GroupEvents(IEventGrouping<Guid> grouping, IQuerySession session, List<IEvent> events)
     {
