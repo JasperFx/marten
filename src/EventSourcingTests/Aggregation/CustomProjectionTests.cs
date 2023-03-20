@@ -23,24 +23,24 @@ using Xunit;
 
 namespace EventSourcingTests.Aggregation;
 
-public class CustomAggregationTests
+public class CustomProjectionTests
 {
     [Fact]
     public void default_projection_name_is_type_name()
     {
-        new MyCustomAggregation().ProjectionName.ShouldBe(nameof(MyCustomAggregation));
+        new MyCustomProjection().ProjectionName.ShouldBe(nameof(MyCustomProjection));
     }
 
     [Fact]
     public void default_lifecycle_should_be_async()
     {
-        new MyCustomAggregation().Lifecycle.ShouldBe(ProjectionLifecycle.Async);
+        new MyCustomProjection().Lifecycle.ShouldBe(ProjectionLifecycle.Async);
     }
 
     [Fact]
     public void async_options_is_not_null()
     {
-        new MyCustomAggregation().As<IProjectionSource>().Options.ShouldNotBeNull();
+        new MyCustomProjection().As<IProjectionSource>().Options.ShouldNotBeNull();
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public class CustomAggregationTests
 
 }
 
-public class EmptyCustomProjection<TDoc, TId>: CustomAggregation<TDoc, TId>
+public class EmptyCustomProjection<TDoc, TId>: CustomProjection<TDoc, TId>
 {
     public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<TDoc, TId> slice, CancellationToken cancellation,
         ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
@@ -113,7 +113,7 @@ public class EmptyCustomProjection<TDoc, TId>: CustomAggregation<TDoc, TId>
     }
 }
 
-public class custom_aggregation_end_to_end: OneOffConfigurationsContext
+public class custom_projection_end_to_end: OneOffConfigurationsContext
 {
     private void appendCustomEvent(int number, char letter)
     {
@@ -123,7 +123,7 @@ public class custom_aggregation_end_to_end: OneOffConfigurationsContext
     [Fact]
     public async Task use_inline_asynchronous()
     {
-        StoreOptions(opts => opts.Projections.Add(new MyCustomAggregation(), ProjectionLifecycle.Inline));
+        StoreOptions(opts => opts.Projections.Add(new MyCustomProjection(), ProjectionLifecycle.Inline));
 
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
@@ -157,7 +157,7 @@ public class custom_aggregation_end_to_end: OneOffConfigurationsContext
     [Fact]
     public void use_inline_synchronous()
     {
-        StoreOptions(opts => opts.Projections.Add(new MyCustomAggregation(), ProjectionLifecycle.Inline));
+        StoreOptions(opts => opts.Projections.Add(new MyCustomProjection(), ProjectionLifecycle.Inline));
 
         theStore.Advanced.Clean.DeleteAllDocuments();
         theStore.Advanced.Clean.DeleteAllEventData();
@@ -206,7 +206,7 @@ public interface INumbered
     public int Number { get; }
 }
 
-public class MyCustomAggregateWithNoSlicer: CustomAggregation<CustomAggregate, int>
+public class MyCustomAggregateWithNoSlicer: CustomProjection<CustomAggregate, int>
 {
     public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CustomAggregate, int> slice, CancellationToken cancellation,
         ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
@@ -218,9 +218,9 @@ public class MyCustomAggregateWithNoSlicer: CustomAggregation<CustomAggregate, i
 }
 
 
-public class MyCustomAggregation: CustomAggregation<CustomAggregate, int>
+public class MyCustomProjection: CustomProjection<CustomAggregate, int>
 {
-    public MyCustomAggregation()
+    public MyCustomProjection()
     {
         AggregateEvents(s =>
         {
@@ -403,7 +403,7 @@ public class Increment{}
 
 #region sample_custom_aggregate_with_start_and_stop
 
-public class StartAndStopProjection: CustomAggregation<StartAndStopAggregate, Guid>
+public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Guid>
 {
     public StartAndStopProjection()
     {

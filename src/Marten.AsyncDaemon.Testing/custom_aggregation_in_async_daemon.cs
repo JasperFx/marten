@@ -35,7 +35,7 @@ public class custom_aggregation_in_async_daemon : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            var myCustomAggregation = new MyCustomAggregation();
+            var myCustomAggregation = new MyCustomProjection();
             opts.Projections.Add(myCustomAggregation, ProjectionLifecycle.Async);
             opts.Logger(new TestOutputMartenLogger(_output));
         });
@@ -94,9 +94,9 @@ public interface INumbered
 }
 
 
-public class MyCustomAggregation: CustomAggregation<CustomAggregate, int>
+public class MyCustomProjection: CustomProjection<CustomAggregate, int>
 {
-    public MyCustomAggregation()
+    public MyCustomProjection()
     {
         ProjectionName = "Custom";
 
