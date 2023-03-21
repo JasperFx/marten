@@ -30,7 +30,7 @@ builder.Services.AddMarten(opts =>
     opts.DatabaseSchemaName = "cli";
 
     // Register all event store projections ahead of time
-    opts.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
+    opts.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
     opts.Projections.Add(new DayProjection(), ProjectionLifecycle.Async);
     opts.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async);
 });

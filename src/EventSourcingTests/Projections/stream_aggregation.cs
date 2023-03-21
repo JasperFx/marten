@@ -10,7 +10,7 @@ using Xunit;
 
 namespace EventSourcingTests.Projections;
 
-public class self_aggregates : OneOffConfigurationsContext
+public class stream_aggregation : OneOffConfigurationsContext
 {
     [Fact]
     public async Task create_with_static_create_method()

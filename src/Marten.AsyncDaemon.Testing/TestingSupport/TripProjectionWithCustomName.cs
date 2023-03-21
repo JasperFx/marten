@@ -31,15 +31,14 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         }
     }
 
-    public class TripAggregationWithCustomName: TripProjection
+    public class TripProjectionWithCustomName: TripProjection
     {
-        public TripAggregationWithCustomName()
+        public TripProjectionWithCustomName()
         {
-            ProjectionName = "Trip";
+            ProjectionName = "TripCustomName";
             TeardownDataOnRebuild = true;
         }
     }
-
 
 
     #region sample_TripProjection_aggregate
@@ -62,6 +61,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         // a small performance gain to making them public
         public void Apply(Arrival e, Trip trip) => trip.State = e.State;
         public void Apply(Travel e, Trip trip) => trip.Traveled += e.TotalDistance();
+
         public void Apply(TripEnded e, Trip trip)
         {
             trip.Active = false;
@@ -70,7 +70,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
 
         public Trip Create(TripStarted started)
         {
-            return new Trip {StartedOn = started.Day, Active = true};
+            return new Trip { StartedOn = started.Day, Active = true };
         }
     }
 
@@ -81,9 +81,9 @@ namespace TripProjection.SelfAggregate
 {
     internal class RegistrationSamples
     {
-        #region sample_using_self_aggregate
+        #region sample_using_stream_aggregation
 
-        internal async Task use_a_self_aggregate()
+        internal async Task use_a_stream_aggregation()
         {
             var store = DocumentStore.For(opts =>
             {
@@ -113,7 +113,7 @@ namespace TripProjection.SelfAggregate
     }
 
 
-    #region sample_Trip_self_aggregate
+    #region sample_Trip_stream_aggregation
 
     public class Trip
     {
@@ -148,14 +148,15 @@ namespace TripProjection.SelfAggregate
         // The Apply() methods would mutate the aggregate state
         internal void Apply(Arrival e) => State = e.State;
         internal void Apply(Travel e) => Traveled += e.TotalDistance();
+
         internal void Apply(TripEnded e)
         {
             Active = false;
             EndedOn = e.Day;
         }
 
-        // We think self-aggregates are mostly useful for live aggregations,
-        // but hey, if you want to use a self aggregate as an asynchronous projection,
+        // We think stream aggregation is mostly useful for live aggregations,
+        // but hey, if you want to use a aggregation as an asynchronous projection,
         // you can also specify when the aggregate document should be deleted
         internal bool ShouldDelete(TripAborted e) => true;
         internal bool ShouldDelete(Breakdown e) => e.IsCritical;

@@ -18,6 +18,8 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
     [Fact]
     public async Task throw_transformed_exception_with_details_redacted()
     {
+        await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+
         var streamId = Guid.NewGuid();
         var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
         var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -27,7 +29,7 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
 
         var forceEventStreamUnexpectedMaxEventIdException = async () =>
         {
-            await Parallel.ForEachAsync(Enumerable.Range(1, 5), async (_, token) =>
+            await Parallel.ForEachAsync(Enumerable.Range(1, 20), async (_, token) =>
             {
                 await using var session = theStore.LightweightSession();
                 session.Events.Append(streamId, departed);
@@ -42,6 +44,8 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
     [Fact]
     public async Task throw_transformed_exception_with_details_available()
     {
+        await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+
         var connectionString = ConnectionSource.ConnectionString + ";Include Error Detail=true";
         StoreOptions(storeOptions => storeOptions.Connection(connectionString));
 

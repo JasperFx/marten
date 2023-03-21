@@ -21,7 +21,7 @@ public class basic_async_daemon_tests: DaemonContext
 {
     private readonly IShardAgent theAgent;
 
-    public basic_async_daemon_tests(ITestOutputHelper output) : base(output)
+    public basic_async_daemon_tests(ITestOutputHelper output): base(output)
     {
         theAgent = Substitute.For<IShardAgent>();
         theAgent.Mode.Returns(ShardExecutionMode.Continuous);
@@ -30,7 +30,7 @@ public class basic_async_daemon_tests: DaemonContext
     [Fact]
     public async Task start_stop_and_restart_a_new_daemon()
     {
-        StoreOptions(x => x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async));
+        StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async));
 
         using var daemon = await StartDaemon();
         await daemon.StartAllShards();
@@ -50,6 +50,7 @@ public class basic_async_daemon_tests: DaemonContext
     }
 
     #region sample_AsyncDaemonListener
+
     public class FakeListener: IChangeListener
     {
         public IList<IChangeSet> Changes = new List<IChangeSet>();
@@ -61,18 +62,21 @@ public class basic_async_daemon_tests: DaemonContext
             return Task.CompletedTask;
         }
     }
+
     #endregion
 
     [Fact]
     public async Task can_listen_for_commits_in_daemon()
     {
         #region sample_AsyncListeners
+
         var listener = new FakeListener();
         StoreOptions(x =>
         {
-            x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
+            x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
             x.Projections.AsyncListeners.Add(listener);
         });
+
         #endregion
 
         using var daemon = await StartDaemon();
@@ -94,7 +98,7 @@ public class basic_async_daemon_tests: DaemonContext
         var listener = new FakeListener();
         StoreOptions(x =>
         {
-            x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
+            x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
             x.Projections.AsyncListeners.Add(listener);
         });
 
@@ -110,16 +114,15 @@ public class basic_async_daemon_tests: DaemonContext
 
         listener.Changes.Clear(); // clear state before doing this again
 
-        await daemon.RebuildProjection<TripAggregationWithCustomName>(CancellationToken.None);
+        await daemon.RebuildProjection<TripProjectionWithCustomName>(CancellationToken.None);
 
         listener.Changes.Any().ShouldBeFalse();
-
     }
 
     [Fact]
     public async Task start_and_stop_a_projection()
     {
-        StoreOptions(x => x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async));
+        StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async));
 
         using var daemon = await StartDaemon();
         await daemon.StartAllShards();
@@ -138,7 +141,8 @@ public class basic_async_daemon_tests: DaemonContext
     [Fact]
     public async Task event_fetcher_simple_case()
     {
-        using var fetcher = new EventFetcher(theStore, theAgent, theStore.Tenancy.Default.Database, new ISqlFragment[0]);
+        using var fetcher =
+            new EventFetcher(theStore, theAgent, theStore.Tenancy.Default.Database, new ISqlFragment[0]);
 
         NumberOfStreams = 10;
         await PublishSingleThreaded();
@@ -166,7 +170,8 @@ public class basic_async_daemon_tests: DaemonContext
         NumberOfStreams = 10;
         await PublishSingleThreaded();
 
-        using var fetcher1 = new EventFetcher(theStore, theAgent, theStore.Tenancy.Default.Database, new ISqlFragment[0]);
+        using var fetcher1 =
+            new EventFetcher(theStore, theAgent, theStore.Tenancy.Default.Database, new ISqlFragment[0]);
 
         var shardName = new ShardName("name");
         var range1 = new EventRange(shardName, 0, NumberOfEvents);
@@ -177,8 +182,9 @@ public class basic_async_daemon_tests: DaemonContext
 
         uniqueTypeCount.ShouldBe(6);
 
-        var filter = new EventTypeFilter(theStore.Events, new Type[] {typeof(Travel), typeof(Arrival)});
-        using var fetcher2 = new EventFetcher(theStore, theAgent, theStore.Tenancy.Default.Database, new ISqlFragment[]{filter});
+        var filter = new EventTypeFilter(theStore.Events, new Type[] { typeof(Travel), typeof(Arrival) });
+        using var fetcher2 = new EventFetcher(theStore, theAgent, theStore.Tenancy.Default.Database,
+            new ISqlFragment[] { filter });
 
         var range2 = new EventRange(shardName, 0, NumberOfEvents);
         await fetcher2.Load(range2, CancellationToken.None);
@@ -201,7 +207,6 @@ public class basic_async_daemon_tests: DaemonContext
     }
 
 
-
     [Fact]
     public async Task publish_multi_threaded()
     {
@@ -213,8 +218,4 @@ public class basic_async_daemon_tests: DaemonContext
         statistics.EventCount.ShouldBe(NumberOfEvents);
         statistics.StreamCount.ShouldBe(NumberOfStreams);
     }
-
-
-
-
 }

@@ -15,11 +15,10 @@ using Xunit.Abstractions;
 
 namespace Marten.AsyncDaemon.Testing;
 
-public class HotCold_leadership_election : DaemonContext
+public class HotCold_leadership_election: DaemonContext
 {
-    public HotCold_leadership_election(ITestOutputHelper output) : base(output)
+    public HotCold_leadership_election(ITestOutputHelper output): base(output)
     {
-
     }
 
 
@@ -52,7 +51,7 @@ public class HotCold_leadership_election : DaemonContext
 
         StoreOptions(x =>
         {
-            x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
+            x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
             x.Logger(new TestOutputMartenLogger(_output));
         }, true);
 
@@ -76,7 +75,7 @@ public class HotCold_leadership_election : DaemonContext
 
         StoreOptions(x =>
         {
-            x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
+            x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
         }, true);
 
         var agent = await StartDaemonInHotColdMode();
@@ -170,7 +169,5 @@ public class HotCold_leadership_election : DaemonContext
 
             other.IsRunning.ShouldBeFalse();
         }
-
-
     }
 }

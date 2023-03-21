@@ -10,21 +10,21 @@ using System.Linq;
 namespace Marten.Generated.EventStore
 {
     // START: AggregateProjectionLiveAggregation1433489248
-    public class AggregateProjectionLiveAggregation1433489248 : Marten.Events.Aggregation.AsyncLiveAggregatorBase<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate>
+    public class AggregateProjectionLiveAggregation1433489248 : Marten.Events.Aggregation.AsyncLiveAggregatorBase<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate>
     {
-        private readonly Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> _singleStreamProjection;
+        private readonly Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate> _singleStreamProjection;
 
-        public AggregateProjectionLiveAggregation1433489248(Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> singleStreamProjection)
+        public AggregateProjectionLiveAggregation1433489248(Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate> singleStreamProjection)
         {
             _singleStreamProjection = singleStreamProjection;
         }
 
 
 
-        public override async System.Threading.Tasks.ValueTask<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> BuildAsync(System.Collections.Generic.IReadOnlyList<Marten.Events.IEvent> events, Marten.IQuerySession session, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate snapshot, System.Threading.CancellationToken cancellation)
+        public override async System.Threading.Tasks.ValueTask<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate> BuildAsync(System.Collections.Generic.IReadOnlyList<Marten.Events.IEvent> events, Marten.IQuerySession session, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate snapshot, System.Threading.CancellationToken cancellation)
         {
             if (!events.Any()) return null;
-            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate innerAggregate = null;
+            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate innerAggregate = null;
             snapshot ??= Create(events[0], session);
             foreach (var @event in events)
             {
@@ -35,13 +35,13 @@ namespace Marten.Generated.EventStore
         }
 
 
-        public EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate Create(Marten.Events.IEvent @event, Marten.IQuerySession session)
+        public EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate Create(Marten.Events.IEvent @event, Marten.IQuerySession session)
         {
-            return new EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate();
+            return new EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate();
         }
 
 
-        public async System.Threading.Tasks.ValueTask<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> Apply(Marten.Events.IEvent @event, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate aggregate, Marten.IQuerySession session, System.Threading.CancellationToken cancellation)
+        public async System.Threading.Tasks.ValueTask<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate> Apply(Marten.Events.IEvent @event, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate aggregate, Marten.IQuerySession session, System.Threading.CancellationToken cancellation)
         {
             switch (@event)
             {
@@ -68,16 +68,16 @@ namespace Marten.Generated.EventStore
     
     
     // START: AggregateProjectionInlineHandler1433489248
-    public class AggregateProjectionInlineHandler1433489248 : Marten.Events.Aggregation.AggregationRuntime<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>
+    public class AggregateProjectionInlineHandler1433489248 : Marten.Events.Aggregation.AggregationRuntime<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>
     {
         private readonly Marten.IDocumentStore _store;
         private readonly Marten.Events.Aggregation.IAggregateProjection _projection;
-        private readonly Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid> _slicer;
+        private readonly Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid> _slicer;
         private readonly Marten.Storage.ITenancy _tenancy;
-        private readonly Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid> _storage;
-        private readonly Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> _singleStreamProjection;
+        private readonly Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid> _storage;
+        private readonly Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate> _singleStreamProjection;
 
-        public AggregateProjectionInlineHandler1433489248(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid> storage, Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> singleStreamProjection) : base(store, projection, slicer, storage)
+        public AggregateProjectionInlineHandler1433489248(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid> storage, Marten.Events.Aggregation.SingleStreamProjection<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate> singleStreamProjection) : base(store, projection, slicer, storage)
         {
             _store = store;
             _projection = projection;
@@ -89,24 +89,24 @@ namespace Marten.Generated.EventStore
 
 
 
-        public override async System.Threading.Tasks.ValueTask<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> ApplyEvent(Marten.IQuerySession session, Marten.Events.Projections.EventSlice<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid> slice, Marten.Events.IEvent evt, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate aggregate, System.Threading.CancellationToken cancellationToken)
+        public override async System.Threading.Tasks.ValueTask<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate> ApplyEvent(Marten.IQuerySession session, Marten.Events.Projections.EventSlice<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid> slice, Marten.Events.IEvent evt, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate aggregate, System.Threading.CancellationToken cancellationToken)
         {
             switch (evt)
             {
                 case Marten.Events.IEvent<EventSourcingTests.EventA> event_EventA96:
-                    aggregate ??= new EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate();
+                    aggregate ??= new EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate();
                     aggregate.Apply(event_EventA96.Data);
                     return aggregate;
                 case Marten.Events.IEvent<EventSourcingTests.EventB> event_EventB97:
-                    aggregate ??= new EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate();
+                    aggregate ??= new EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate();
                     aggregate.Apply(event_EventB97);
                     return aggregate;
                 case Marten.Events.IEvent<EventSourcingTests.EventC> event_EventC98:
-                    aggregate ??= new EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate();
+                    aggregate ??= new EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate();
                     aggregate = aggregate.Apply(event_EventC98);
                     return aggregate;
                 case Marten.Events.IEvent<EventSourcingTests.EventD> event_EventD99:
-                    aggregate ??= new EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate();
+                    aggregate ??= new EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate();
                     aggregate = await aggregate.Apply(event_EventD99.Data, session);
                     return aggregate;
             }
@@ -115,9 +115,9 @@ namespace Marten.Generated.EventStore
         }
 
 
-        public EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate Create(Marten.Events.IEvent @event, Marten.IQuerySession session)
+        public EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate Create(Marten.Events.IEvent @event, Marten.IQuerySession session)
         {
-            return new EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate();
+            return new EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate();
         }
 
     }

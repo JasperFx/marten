@@ -58,7 +58,7 @@ public static class Program
                     // *try* to use pre-generated code at runtime
                     opts.GeneratedCodeMode = TypeLoadMode.Auto;
 
-                    opts.Schema.For<Activity>().AddSubClass<Trip>();
+                    opts.Schema.For<Activity>().AddSubClass<Marten.AsyncDaemon.Testing.TestingSupport.Trip>();
 
                     // You have to register all persisted document types ahead of time
                     // RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()
@@ -72,7 +72,7 @@ public static class Program
 
                     // Register all event store projections ahead of time
                     opts.Projections
-                        .Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
+                        .Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
 
                     opts.Projections
                         .Add(new DayProjection(), ProjectionLifecycle.Async);
@@ -81,10 +81,10 @@ public static class Program
                         .Add(new DistanceProjection(), ProjectionLifecycle.Async);
 
                     opts.Projections
-                        .Add(new SimpleAggregate(), ProjectionLifecycle.Inline);
+                        .Add(new SimpleProjection(), ProjectionLifecycle.Inline);
 
                     // This is actually important to register "live" aggregations too for the code generation
-                    opts.Projections.LiveStreamAggregation<SelfAggregatingTrip>();
+                    opts.Projections.LiveStreamAggregation<Trip>();
                 }).AddAsyncDaemon(DaemonMode.Solo);
             });
     }
@@ -92,7 +92,7 @@ public static class Program
 
 #endregion
 
-public class SelfAggregatingTrip
+public class Trip
 {
     public Guid Id { get; set; }
     public string State { get; set; } = null!;
@@ -119,9 +119,9 @@ public class SelfAggregatingTrip
     }
 }
 
-public class SimpleAggregate: SingleStreamProjection<MyAggregate>
+public class SimpleProjection: SingleStreamProjection<MyAggregate>
 {
-    public SimpleAggregate()
+    public SimpleProjection()
     {
         ProjectionName = "AllGood";
     }

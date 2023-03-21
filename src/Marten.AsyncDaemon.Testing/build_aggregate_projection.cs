@@ -19,14 +19,14 @@ namespace Marten.AsyncDaemon.Testing;
 
 public class build_aggregate_projection: DaemonContext
 {
-    public build_aggregate_projection(ITestOutputHelper output) : base(output)
+    public build_aggregate_projection(ITestOutputHelper output): base(output)
     {
     }
 
     [Fact]
     public void uses_event_type_filter_for_base_filter_when_not_using_base_types()
     {
-        var projection = new TripAggregationWithCustomName();
+        var projection = new TripProjectionWithCustomName();
         projection.AssembleAndAssertValidity();
         var filter = projection.As<IProjectionSource>()
             .AsyncProjectionShards(theStore)
@@ -51,7 +51,7 @@ public class build_aggregate_projection: DaemonContext
 
         StoreOptions(x =>
         {
-            x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
+            x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
             x.Logger(new TestOutputMartenLogger(_output));
         }, true);
 
@@ -76,7 +76,7 @@ public class build_aggregate_projection: DaemonContext
         StoreOptions(x =>
         {
             x.Events.TenancyStyle = TenancyStyle.Conjoined;
-            x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
+            x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
             x.Schema.For<Trip>().MultiTenanted();
         }, true);
 
@@ -95,7 +95,6 @@ public class build_aggregate_projection: DaemonContext
 
         await CheckAllExpectedAggregatesAgainstActuals("a");
         await CheckAllExpectedAggregatesAgainstActuals("b");
-
     }
 
     [Fact]
@@ -105,7 +104,7 @@ public class build_aggregate_projection: DaemonContext
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-        StoreOptions(x => x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async), true);
+        StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async), true);
 
         var agent = await StartDaemon();
 
@@ -127,7 +126,7 @@ public class build_aggregate_projection: DaemonContext
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-        StoreOptions(x => x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async), true);
+        StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async), true);
 
         var agent = await StartDaemon();
 
@@ -226,8 +225,8 @@ public class build_aggregate_projection: DaemonContext
         var notCriticalBreakdownStream = days[0].Id;
         var criticalBreakdownStream = days[1].Id;
 
-        theSession.Events.Append(notCriticalBreakdownStream, new Breakdown {IsCritical = false});
-        theSession.Events.Append(criticalBreakdownStream, new Breakdown {IsCritical = true});
+        theSession.Events.Append(notCriticalBreakdownStream, new Breakdown { IsCritical = false });
+        theSession.Events.Append(criticalBreakdownStream, new Breakdown { IsCritical = true });
 
         await theSession.SaveChangesAsync();
 
@@ -240,15 +239,12 @@ public class build_aggregate_projection: DaemonContext
 
         (await query.LoadAsync<Trip>(notCriticalBreakdownStream)).ShouldNotBeNull();
         (await query.LoadAsync<Trip>(criticalBreakdownStream)).ShouldBeNull();
-
-
     }
 
 
     [Fact]
     public async Task conditional_deletes_through_lambda_conditions_on_aggregate()
     {
-
         var shortTrip = new TripStream().TravelIsUnder(200);
         var longTrip = new TripStream().TravelIsOver(2000);
         var initialCount = shortTrip.Events.Count + longTrip.Events.Count;
@@ -261,7 +257,6 @@ public class build_aggregate_projection: DaemonContext
         StoreOptions(x => x.Projections.Add(projection, ProjectionLifecycle.Async), true);
 
         var agent = await StartDaemon();
-
 
 
         var waiter1 = agent.Tracker.WaitForShardState("Trip:All", initialCount);
@@ -293,8 +288,6 @@ public class build_aggregate_projection: DaemonContext
 
         (await query.LoadAsync<Trip>(shortTrip.StreamId)).ShouldNotBeNull();
         (await query.LoadAsync<Trip>(longTrip.StreamId)).ShouldBeNull();
-
-
     }
 
     [Fact]
@@ -342,11 +335,22 @@ public class build_aggregate_projection: DaemonContext
         }
     }
 
-    public interface IEvent { Guid Id { get; init; } }
-    public interface ICreateEvent { Guid Id { get; init; } }
+    public interface IEvent
+    {
+        Guid Id { get; init; }
+    }
+
+    public interface ICreateEvent
+    {
+        Guid Id { get; init; }
+    }
+
     public record RandomOtherEvent(Guid Id): ICreateEvent;
+
     public record ContactCreated(Guid Id, string Name): ICreateEvent;
+
     public record ContactEdited(Guid Id, string Name): IEvent;
+
     public record Contact(Guid Id, string Name)
     {
         public static Contact Create(ICreateEvent ev) => ev switch
@@ -405,9 +409,15 @@ public class build_aggregate_projection: DaemonContext
         }
     }
 
-    public interface IFooCreated { Guid Id { get; init; } }
+    public interface IFooCreated
+    {
+        Guid Id { get; init; }
+    }
+
     public record BarCreated(Guid Id);
+
     public record FooCreated(Guid Id, string Name): IFooCreated;
+
     public record Foo(Guid Id, string Name);
 
     [Fact]
@@ -454,6 +464,6 @@ public class build_aggregate_projection: DaemonContext
     }
 
     public abstract record AbstractFooCreated(Guid Id);
-    public record FooCreated2(Guid Id, string Name): AbstractFooCreated(Id);
 
+    public record FooCreated2(Guid Id, string Name): AbstractFooCreated(Id);
 }
