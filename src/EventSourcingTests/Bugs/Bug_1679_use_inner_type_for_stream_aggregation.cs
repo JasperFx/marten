@@ -9,14 +9,14 @@ using Xunit;
 
 namespace EventSourcingTests.Bugs;
 
-public class Bug_1679_use_inner_type_for_self_aggregate : AggregationContext
+public class Bug_1679_use_inner_type_for_stream_aggregation : AggregationContext
 {
-    public Bug_1679_use_inner_type_for_self_aggregate(DefaultStoreFixture fixture) : base(fixture)
+    public Bug_1679_use_inner_type_for_stream_aggregation(DefaultStoreFixture fixture) : base(fixture)
     {
     }
 
     [Fact]
-    public async Task try_self_aggregate_with_inner_class()
+    public async Task try_live_stream_aggregation_with_inner_class()
     {
         var stream = Guid.NewGuid();
         theSession.Events.StartStream(stream, new AEvent(), new AEvent(), new AEvent(), new BEvent(), new BEvent(),
@@ -44,7 +44,5 @@ public class Bug_1679_use_inner_type_for_self_aggregate : AggregationContext
         {
             return Task.FromResult(this);
         }
-
-
     }
 }

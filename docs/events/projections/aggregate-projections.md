@@ -31,12 +31,12 @@ public class QuestParty
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/QuestParty.cs#L8-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Once again, here's the class diagram of the key projection types inside of Marten, but please note the `SingleStreamAggregation<T>`:
+Once again, here's the class diagram of the key projection types inside of Marten, but please note the `SingleStreamProjection<T>`:
 
 ```mermaid
 classDiagram
 
-CustomAggregation~TDoc, TId~ --|> ProjectionBase
+CustomProjection~TDoc, TId~ --|> ProjectionBase
 ProjectionWrapper ..|> IProjectionSource
 ProjectionWrapper --> IProjection
 GeneratedProjection --|> ProjectionBase
@@ -44,15 +44,15 @@ GeneratedProjection ..|> IProjectionSource
 EventProjection --|> GeneratedProjection
 
 GeneratedAggregateProjectionBase~T~ --|> GeneratedProjection
-SingleStreamAggregation~T~ --|> GeneratedAggregateProjectionBase~T~
-MultiStreamAggregation~TDoc, TId~ --|> GeneratedAggregateProjectionBase~T~
-MultiStreamAggregation~TDoc, TId~ --|> IEventSlicer~TDoc, TId~
+SingleStreamProjection~T~ --|> GeneratedAggregateProjectionBase~T~
+MultiStreamProjection~TDoc, TId~ --|> GeneratedAggregateProjectionBase~T~
+MultiStreamProjection~TDoc, TId~ --|> IEventSlicer~TDoc, TId~
 ```
 
 Marten supports a few different types of aggregated projections:
 
-* **Single Stream Aggregates** -- creating a rolled up view of all or a segment of the events within an event stream. This is done through either a _self-aggregate_ or by using `SingleStreamAggregation<T>` as a base class for your projection.
-* **Multi Stream Aggregates** -- creating a rolled up view of a user-defined grouping of events across streams. These projections are done by sub-classing the `MultiStreamAggregation<TDoc, TId>` class and is further described in [Cross-Stream Projections](/events/projections/multi-stream-projections).
+- **Single Stream Projections** -- creating a rolled up view of all or a segment of the events within an event stream. This is done through either a live stream aggregation, or `SingleStreamProjection<T>` as a base class for your projection or by doing _snapshots_.
+- **Multi Stream Projections** -- creating a rolled up view of a user-defined grouping of events across streams. These projections are done by sub-classing the `MultiStreamProjection<TDoc, TId>` class and is further described in [Cross-Stream Projections](/events/projections/multi-stream-projections).
 
 Please note that all aggregated projections share the same set of method conventions described in this page.
 
@@ -64,7 +64,7 @@ discovered by the method conventions can be internal or private, but the holding
 :::
 
 The easiest type of aggregate to create is a document that rolls up the state of a single event stream. You can do that by either creating a public aggregate
-document that directly mutates itself through method conventions or by sub-classing the `SingleStreamAggregation<T>` class like this sample for a fictional `Trip` aggregate document:
+document that directly mutates itself through method conventions or by sub-classing the `SingleStreamProjection<T>` class like this sample for a fictional `Trip` aggregate document:
 
 <!-- snippet: sample_TripProjection_aggregate -->
 <a id='snippet-sample_tripprojection_aggregate'></a>
@@ -87,6 +87,7 @@ public class TripProjection: SingleStreamProjection<Trip>
     // a small performance gain to making them public
     public void Apply(Arrival e, Trip trip) => trip.State = e.State;
     public void Apply(Travel e, Trip trip) => trip.Traveled += e.TotalDistance();
+
     public void Apply(TripEnded e, Trip trip)
     {
         trip.Active = false;
@@ -95,11 +96,11 @@ public class TripProjection: SingleStreamProjection<Trip>
 
     public Trip Create(TripStarted started)
     {
-        return new Trip {StartedOn = started.Day, Active = true};
+        return new Trip { StartedOn = started.Day, Active = true };
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripAggregationWithCustomName.cs#L45-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L44-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And register that projection like this:
@@ -118,14 +119,14 @@ var store = DocumentStore.For(opts =>
     opts.Projections.Add<TripProjection>(ProjectionLifecycle.Async);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripAggregationWithCustomName.cs#L17-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_an_aggregate_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L17-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_an_aggregate_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Any projection based on `SingleStreamAggregation<T>` will allow you to define steps by event type to either create, delete, or mutate an aggregate
+Any projection based on `SingleStreamProjection<T>` will allow you to define steps by event type to either create, delete, or mutate an aggregate
 document through a mix of inline Lambda expressions in the constructor function of the projection class or by using specially named methods on the
 projection class. It's completely up to your preference to decide which to use.
 
-Alternatively, if your aggregate will never be deleted you can use a "self-aggregate" as explained in the last section of this page.
+Alternatively, if your aggregate will never be deleted you can use a stream aggregation as explained in the last section of this page.
 
 To create aggregate projections that include events in multiple streams, see [Cross-Stream Projections](/events/projections/multi-stream-projections).
 
@@ -134,10 +135,10 @@ To create aggregate projections that include events in multiple streams, see [Cr
 Aggregates can initially be created behind the scenes by Marten if there's a no-arg constructor function on the aggregate
 document type -- which doesn't have to be public by the way.
 
-You can also use a constructor that takes an event type as shown in this sample of a `Trip` self-aggregate:
+You can also use a constructor that takes an event type as shown in this sample of a `Trip` stream aggregation:
 
-<!-- snippet: sample_Trip_self_aggregate -->
-<a id='snippet-sample_trip_self_aggregate'></a>
+<!-- snippet: sample_Trip_stream_aggregation -->
+<a id='snippet-sample_trip_stream_aggregation'></a>
 ```cs
 public class Trip
 {
@@ -172,21 +173,22 @@ public class Trip
     // The Apply() methods would mutate the aggregate state
     internal void Apply(Arrival e) => State = e.State;
     internal void Apply(Travel e) => Traveled += e.TotalDistance();
+
     internal void Apply(TripEnded e)
     {
         Active = false;
         EndedOn = e.Day;
     }
 
-    // We think self-aggregates are mostly useful for live aggregations,
-    // but hey, if you want to use a self aggregate as an asynchronous projection,
+    // We think stream aggregation is mostly useful for live aggregations,
+    // but hey, if you want to use a aggregation as an asynchronous projection,
     // you can also specify when the aggregate document should be deleted
     internal bool ShouldDelete(TripAborted e) => true;
     internal bool ShouldDelete(Breakdown e) => e.IsCritical;
     internal bool ShouldDelete(VacationOver e) => Traveled > 1000;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripAggregationWithCustomName.cs#L116-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_self_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L116-L166' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or finally, you can use a method named `Create()` on a projection type as shown in this sample:
@@ -212,6 +214,7 @@ public class TripProjection: SingleStreamProjection<Trip>
     // a small performance gain to making them public
     public void Apply(Arrival e, Trip trip) => trip.State = e.State;
     public void Apply(Travel e, Trip trip) => trip.Traveled += e.TotalDistance();
+
     public void Apply(TripEnded e, Trip trip)
     {
         trip.Active = false;
@@ -220,11 +223,11 @@ public class TripProjection: SingleStreamProjection<Trip>
 
     public Trip Create(TripStarted started)
     {
-        return new Trip {StartedOn = started.Day, Active = true};
+        return new Trip { StartedOn = started.Day, Active = true };
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripAggregationWithCustomName.cs#L45-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L44-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Create()` method has to return either the aggregate document type or `Task<T>` where `T` is the aggregate document type. There must be an argument for the specific event type or `Event<T>` where `T` is the event type if you need access to event metadata. You can also take in an `IQuerySession` if you need to look up additional data as part of the transformation or `IEvent` in addition to the exact event type just to get at event metadata.
@@ -264,7 +267,7 @@ public class TripProjection: SingleStreamProjection<Trip>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripAggregationWithCustomName.cs#L171-L196' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_projectevent_in_aggregate_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L172-L197' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_projectevent_in_aggregate_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 I'm not personally that wild about using lots of inline Lambdas like the example above, and to that end, Marten now supports the `Apply()` method convention. Here's the same `TripProjection`, but this time using methods to mutate the `Trip` document:
@@ -290,6 +293,7 @@ public class TripProjection: SingleStreamProjection<Trip>
     // a small performance gain to making them public
     public void Apply(Arrival e, Trip trip) => trip.State = e.State;
     public void Apply(Travel e, Trip trip) => trip.Traveled += e.TotalDistance();
+
     public void Apply(TripEnded e, Trip trip)
     {
         trip.Active = false;
@@ -298,11 +302,11 @@ public class TripProjection: SingleStreamProjection<Trip>
 
     public Trip Create(TripStarted started)
     {
-        return new Trip {StartedOn = started.Day, Active = true};
+        return new Trip { StartedOn = started.Day, Active = true };
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripAggregationWithCustomName.cs#L45-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L44-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Apply()` methods can accept any combination of these arguments:
@@ -416,14 +420,12 @@ The `ShouldDelete()` method can take any combination of these arguments:
 
 Additionally, `ShouldDelete()` methods should return either a `Boolean` or `Task<Boolean>` if doing data lookups with `IQuerySession` -- and we'very strongly recommend using strictly asynchronous APIs if running the projection asynchronously or using `SaveChangesAsync()` when executing projections inline.
 
-## "Self-Aggregates"
+## Stream Aggregations
 
-You can use the `SingleStreamAggregation<T>` method conventions with a _self-aggregate_, which we just mean to be an aggregate document type that implements its
-own `Apply()` or `ShouldDelete()` methods to mutate itself. Using that concept, let's take the `TripProjection` we have been using and apply that instead
-to a self-aggregating `Trip` type:
+You can use the `SingleStreamProjection<T>` method conventions for stream aggregations, which we just mean to be an aggregate document type that implements its own `Apply()` or `ShouldDelete()` methods to mutate itself. Using that concept, let's take the `TripProjection` we have been using and apply that instead to a `Trip` type:
 
-<!-- snippet: sample_Trip_self_aggregate -->
-<a id='snippet-sample_trip_self_aggregate'></a>
+<!-- snippet: sample_Trip_stream_aggregation -->
+<a id='snippet-sample_trip_stream_aggregation'></a>
 ```cs
 public class Trip
 {
@@ -458,29 +460,30 @@ public class Trip
     // The Apply() methods would mutate the aggregate state
     internal void Apply(Arrival e) => State = e.State;
     internal void Apply(Travel e) => Traveled += e.TotalDistance();
+
     internal void Apply(TripEnded e)
     {
         Active = false;
         EndedOn = e.Day;
     }
 
-    // We think self-aggregates are mostly useful for live aggregations,
-    // but hey, if you want to use a self aggregate as an asynchronous projection,
+    // We think stream aggregation is mostly useful for live aggregations,
+    // but hey, if you want to use a aggregation as an asynchronous projection,
     // you can also specify when the aggregate document should be deleted
     internal bool ShouldDelete(TripAborted e) => true;
     internal bool ShouldDelete(Breakdown e) => e.IsCritical;
     internal bool ShouldDelete(VacationOver e) => Traveled > 1000;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripAggregationWithCustomName.cs#L116-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_self_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L116-L166' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Here's an example of using the `Trip` self-aggregate:
+Here's an example of using the various ways of doing `Trip` stream aggregation:
 
-<!-- snippet: sample_using_self_aggregate -->
-<a id='snippet-sample_using_self_aggregate'></a>
+<!-- snippet: sample_using_stream_aggregation -->
+<a id='snippet-sample_using_stream_aggregation'></a>
 ```cs
-internal async Task use_a_self_aggregate()
+internal async Task use_a_stream_aggregation()
 {
     var store = DocumentStore.For(opts =>
     {
@@ -506,7 +509,7 @@ internal async Task use_a_self_aggregate()
     var trip = await session.Events.AggregateStreamAsync<Trip>(tripId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripAggregationWithCustomName.cs#L84-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_self_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L84-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_stream_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Aggregate Versioning
@@ -516,8 +519,7 @@ new, built in convention to automatically set the aggregate version on the aggre
 Marten users opt into Marten's [optimistic concurrency for appending events](/events/appending.html#appending-events-1) by making it easier to get the current aggregate (stream) version that you need
 in order to opt into the optimistic concurrency check.
 
-To start with, let's say
-we have a self aggregating `OrderAggregate` document like this:
+To start with, let's say we have an `OrderAggregate` defined like this:
 
 <!-- snippet: sample_OrderAggregate_with_version -->
 <a id='snippet-sample_orderaggregate_with_version'></a>
@@ -545,9 +547,9 @@ property will be 5.
 
 There are of course some restrictions:
 
-* The version member can be either a field or a property
-* The getter can be internal or private (but the mechanics are a tiny bit smoother with a public setter)
-* The version member can be either an `int` (Int32) or `long` (Int64)
+- The version member can be either a field or a property
+- The getter can be internal or private (but the mechanics are a tiny bit smoother with a public setter)
+- The version member can be either an `int` (Int32) or `long` (Int64)
 
 Marten determines whether a member is the version of the aggregate by first finding all public members
 of either type `int` or `long`, then running down these rules:

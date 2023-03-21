@@ -9,7 +9,7 @@ using Xunit;
 
 namespace EventSourcingTests.Aggregation;
 
-public class SelfLiveAggregatorBuilderTests
+public class LiveAggregatorBuilderTests
 {
     [Fact]
     public void try_existing_QuestParty()
@@ -46,7 +46,7 @@ public class FakeAggregate
         return Task.FromResult(this);
     }
 
-    public Task<FakeAggregate> Apply(IEvent<SelfLiveAggregatorBuilderTests.EventE> @event, IQuerySession session)
+    public Task<FakeAggregate> Apply(IEvent<LiveAggregatorBuilderTests.EventE> @event, IQuerySession session)
     {
         return Task.FromResult(this);
     }

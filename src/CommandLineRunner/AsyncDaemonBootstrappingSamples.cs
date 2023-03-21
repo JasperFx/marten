@@ -26,7 +26,7 @@ public class AsyncDaemonBootstrappingSamples
                         opts.Connection("some connection string");
 
                         // Register any projections you need to run asynchronously
-                        opts.Projections.Add<TripAggregationWithCustomName>(ProjectionLifecycle.Async);
+                        opts.Projections.Add<TripProjectionWithCustomName>(ProjectionLifecycle.Async);
                     })
                     // Turn on the async daemon in "Solo" mode
                     .AddAsyncDaemon(DaemonMode.Solo);
@@ -38,7 +38,6 @@ public class AsyncDaemonBootstrappingSamples
 
     public async Task ErrorHandlingSolo()
     {
-
         var host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
@@ -47,7 +46,7 @@ public class AsyncDaemonBootstrappingSamples
                         opts.Connection("some connection string");
 
                         // Register any projections you need to run asynchronously
-                        opts.Projections.Add<TripAggregationWithCustomName>(ProjectionLifecycle.Async);
+                        opts.Projections.Add<TripProjectionWithCustomName>(ProjectionLifecycle.Async);
 
                         #region sample_stop_shard_on_exception
 
@@ -58,7 +57,6 @@ public class AsyncDaemonBootstrappingSamples
                         // or get more granular
                         opts.Projections
                             .OnException<InvalidOperationException>(e => e.Message.Contains("Really bad!"))
-
                             .Stop(); // stops just the current projection shard
 
                         #endregion
@@ -84,9 +82,7 @@ public class AsyncDaemonBootstrappingSamples
                     .AddAsyncDaemon(DaemonMode.Solo);
             })
             .StartAsync();
-
     }
-
 
 
     public async Task BootstrapHotCold()
@@ -101,7 +97,7 @@ public class AsyncDaemonBootstrappingSamples
                         opts.Connection("some connection string");
 
                         // Register any projections you need to run asynchronously
-                        opts.Projections.Add<TripAggregationWithCustomName>(ProjectionLifecycle.Async);
+                        opts.Projections.Add<TripProjectionWithCustomName>(ProjectionLifecycle.Async);
                     })
                     // Turn on the async daemon in "HotCold" mode
                     // with built in leader election
@@ -110,8 +106,6 @@ public class AsyncDaemonBootstrappingSamples
             .StartAsync();
 
         #endregion
-
-
     }
 
     #region sample_DaemonDiagnostics
@@ -152,7 +146,7 @@ public class AsyncDaemonBootstrappingSamples
         await daemon.RebuildProjection("a projection name", 5.Minutes(), cancellation);
 
         // or a single projection by its type
-        await daemon.RebuildProjection<TripAggregationWithCustomName>(5.Minutes(), cancellation);
+        await daemon.RebuildProjection<TripProjectionWithCustomName>(5.Minutes(), cancellation);
 
         // Be careful with this. Wait until the async daemon has completely
         // caught up with the currently known high water mark

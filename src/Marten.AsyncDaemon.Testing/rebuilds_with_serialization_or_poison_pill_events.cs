@@ -13,9 +13,9 @@ using Xunit.Abstractions;
 
 namespace Marten.AsyncDaemon.Testing;
 
-public class rebuilds_with_serialization_or_poison_pill_events : DaemonContext
+public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
 {
-    public rebuilds_with_serialization_or_poison_pill_events(ITestOutputHelper output) : base(output)
+    public rebuilds_with_serialization_or_poison_pill_events(ITestOutputHelper output): base(output)
     {
         SometimesFailingTripProjection.FailingEventFails = false;
         FailingEvent.SerializationFails = false;
@@ -72,7 +72,8 @@ public class rebuilds_with_serialization_or_poison_pill_events : DaemonContext
         FailingEvent.SerializationFails = false;
         await CheckAllExpectedAggregatesAgainstActuals();
 
-        var deadLetters = await theSession.Query<DeadLetterEvent>().Where(x => x.ShardName == "All" && x.ProjectionName == "Trip")
+        var deadLetters = await theSession.Query<DeadLetterEvent>()
+            .Where(x => x.ShardName == "All" && x.ProjectionName == "Trip")
             .ToListAsync();
 
         var badEventCount = Streams.SelectMany(x => x.Events).OfType<FailingEvent>().Count();
@@ -118,7 +119,7 @@ public class rebuilds_with_serialization_or_poison_pill_events : DaemonContext
     }
 }
 
-public class SometimesFailingTripProjection: TripAggregationWithCustomName
+public class SometimesFailingTripProjection: TripProjectionWithCustomName
 {
     public static bool FailingEventFails = false;
 
@@ -138,4 +139,3 @@ public class FailingEvent
         if (SerializationFails) throw new DivideByZeroException("Boom!");
     }
 }
-

@@ -193,11 +193,7 @@ await using (var session = store.LightweightSession())
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L46-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-start-stream-with-explicit-type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Now, we would at some point like to see the current state of the quest party
-to check up on where they're at, who is in the party, and maybe how many
-monsters they've slain along the way. To keep things simple, we're going
-to use Marten's self-aggregating feature to model a `QuestParty` that
-can update itself based on our events:
+Now, we would at some point like to see the current state of the quest party to check up on where they're at, who is in the party, and maybe how many monsters they've slain along the way. To keep things simple, we're going to use Marten's live stream aggregation feature to model a `QuestParty` that can update itself based on our events:
 
 <!-- snippet: sample_QuestParty -->
 <a id='snippet-sample_questparty'></a>

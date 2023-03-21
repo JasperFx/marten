@@ -90,7 +90,7 @@ public void update_with_stale_version_standard()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L127-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_update_with_stale_version_standard' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Marten is throwing an AggregateException for the entire batch of chang
+Marten is throwing an `AggregateException` for the entire batch of changes.
 
 ## Using IVersioned
 
@@ -108,6 +108,6 @@ public class MyVersionedDoc: IVersioned
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L121-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_myversioneddoc' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Your document type will have the optimistic concurrency checks applied to updates *when* the current version is given to Marten. Moreover, the current version
+Your document type will have the optimistic concurrency checks applied to updates _when_ the current version is given to Marten. Moreover, the current version
 will always be written to the `IVersioned.Version` property when the document is modified or loaded by Marten. This makes `IVersioned` an easy strategy to track
 the current version of documents in web applications.

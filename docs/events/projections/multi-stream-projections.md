@@ -2,7 +2,7 @@
 
 ::: tip
 This may change again in V6 (sigh), but we have replaced the earlier nomenclature of "ViewProjection" and renamed this concept as
-`MultiStreamAggregation` to hopefully be more intention revealing.
+`MultiStreamProjection` to hopefully be more intention revealing.
 :::
 
 ::: warning
@@ -15,7 +15,7 @@ If you have Multi-Stream Aggregations registered as async and Async Daemon is no
 issue a warning in logs during startup in case of such a mismatch.
 :::
 
-Multi stream projections are designed to handle multi-stream projections where a view is aggregated over events between streams. The `MultiStreamAggregation<TDoc, TId>`
+Multi stream projections are designed to handle multi-stream projections where a view is aggregated over events between streams. The `MultiStreamProjection<TDoc, TId>`
 base class is a subclass of the simpler [Single Stream Projection](/events/projections/aggregate-projections) and supports all the same method conventions and inline event handling, but allows
 the user to specify how events apply to aggregated views in ways besides the simple aggregation by stream model.
 
@@ -197,7 +197,7 @@ public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAss
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/simple_multi_stream_projection.cs#L10-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Note that the primary difference between this and `SingleStreamAggregation<T>` is the calls to `Identity<TEvent>()` to specify how the events are grouped
+Note that the primary difference between this and `SingleStreamProjection<T>` is the calls to `Identity<TEvent>()` to specify how the events are grouped
 into separate aggregates across streams. We can also do the equivalent of the code above by using a common interface `IUserEvent` on the event types
 we care about and use this:
 

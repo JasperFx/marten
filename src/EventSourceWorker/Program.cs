@@ -40,7 +40,7 @@ public class Program
                             options.AutoCreateSchemaObjects = AutoCreate.All;
                         }
 
-                        options.Projections.Add(new TripAggregationWithCustomName());
+                        options.Projections.Add(new TripProjectionWithCustomName());
                     })
                     // Run the asynchronous projections in this node
                     .AddAsyncDaemon(DaemonMode.Solo);

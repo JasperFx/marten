@@ -1,10 +1,10 @@
 # Live Aggregation
 
 ::: tip
-For information on how to create aggregated projection or "self-aggregates," see [Aggregate Projections](/events/projections/aggregate-projections).
+For information on how to create aggregated projection or snapshots see [Aggregate Projections](/events/projections/aggregate-projections).
 :::
 
-In Event Sourcing, the entity state is stored as the series of events that happened for this specific object, e.g. `InvoiceInitiated`, `InvoiceIssued`, `InvoiceSent`.  All of those events shares the stream id, and have incremented stream version. In other words, they're correlated by the stream id ordered by stream position.
+In Event Sourcing, the entity state is stored as the series of events that happened for this specific object, e.g. `InvoiceInitiated`, `InvoiceIssued`, `InvoiceSent`. All of those events shares the stream id, and have incremented stream version. In other words, they're correlated by the stream id ordered by stream position.
 
 Streams can be thought of as the entities' representation. Traditionally (e.g. in relational or document approach), each entity is stored as a separate record.
 

@@ -44,7 +44,7 @@ var host = await Host.CreateDefaultBuilder()
                 opts.Connection("some connection string");
 
                 // Register any projections you need to run asynchronously
-                opts.Projections.Add<TripAggregationWithCustomName>(ProjectionLifecycle.Async);
+                opts.Projections.Add<TripProjectionWithCustomName>(ProjectionLifecycle.Async);
             })
             // Turn on the async daemon in "Solo" mode
             .AddAsyncDaemon(DaemonMode.Solo);
@@ -67,7 +67,7 @@ var host = await Host.CreateDefaultBuilder()
                 opts.Connection("some connection string");
 
                 // Register any projections you need to run asynchronously
-                opts.Projections.Add<TripAggregationWithCustomName>(ProjectionLifecycle.Async);
+                opts.Projections.Add<TripProjectionWithCustomName>(ProjectionLifecycle.Async);
             })
             // Turn on the async daemon in "HotCold" mode
             // with built in leader election
@@ -75,7 +75,7 @@ var host = await Host.CreateDefaultBuilder()
     })
     .StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L94-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bootstrap_daemon_hotcold' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L90-L108' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bootstrap_daemon_hotcold' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Solo vs. HotCold
@@ -132,10 +132,9 @@ opts.Projections.OnException<InvalidOperationException>()
 // or get more granular
 opts.Projections
     .OnException<InvalidOperationException>(e => e.Message.Contains("Really bad!"))
-
     .Stop(); // stops just the current projection shard
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L52-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_stop_shard_on_exception' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L51-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_stop_shard_on_exception' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For retry mechanics, you can specify a finite number of retries, then chain
@@ -149,7 +148,7 @@ opts.Projections.OnException<NpgsqlException>()
     .Then
     .Pause(1.Minutes());
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L74-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_exponential_back-off_strategy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L72-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_exponential_back-off_strategy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Default Error Handling Policies
@@ -198,7 +197,7 @@ opts.Projections.OnApplyEventException()
     .AndInner<ArithmeticException>()
     .SkipEvent();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L66-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_poison_pill' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L64-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_poison_pill' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Diagnostics
@@ -228,7 +227,7 @@ public static async Task ShowDaemonDiagnostics(IDocumentStore store)
     Console.WriteLine($"The daemon high water sequence mark is {daemonHighWaterMark}");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L117-L139' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemondiagnostics' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L111-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemondiagnostics' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Command Line Support
@@ -310,7 +309,7 @@ public static async Task UseAsyncDaemon(IDocumentStore store, CancellationToken 
     await daemon.RebuildProjection("a projection name", 5.Minutes(), cancellation);
 
     // or a single projection by its type
-    await daemon.RebuildProjection<TripAggregationWithCustomName>(5.Minutes(), cancellation);
+    await daemon.RebuildProjection<TripProjectionWithCustomName>(5.Minutes(), cancellation);
 
     // Be careful with this. Wait until the async daemon has completely
     // caught up with the currently known high water mark
@@ -326,5 +325,5 @@ public static async Task UseAsyncDaemon(IDocumentStore store, CancellationToken 
     await daemon.StopAll();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L141-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_async_daemon_alone' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L135-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_async_daemon_alone' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

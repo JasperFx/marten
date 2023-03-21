@@ -1,6 +1,6 @@
 # Custom Aggregations
 
-Once in awhile users are hitting use cases or desired functionality for aggregation projections that just don't fit in well to our [`SingleStreamAggregation<T>`](/events/projections/aggregate-projections) or [`MultiStreamAggregation<TDoc, TId>`](/events/projections/multi-stream-projections) models. Not to worry though, because
+Once in awhile users are hitting use cases or desired functionality for aggregation projections that just don't fit in well to our [`SingleStreamProjection<T>`](/events/projections/aggregate-projections) or [`MultiStreamProjection<TDoc, TId>`](/events/projections/multi-stream-projections) models. Not to worry though, because
 Marten V5.0 introduces the new `CustomAggregation<T>` base type that will let you define aggregation projections with explicit user code while still taking advantage of some of the parallelization
 optimizations that were built for the previous aggregation types running in the [async daemon](/events/projections/async-daemon);
 
@@ -120,8 +120,8 @@ public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Gui
 
 All aggregations in Marten come in two parts:
 
-1. *Grouping* incoming events into "slices" of events that should be applied to an aggregate by id
-2. *Applying* incoming events from each slice into the identified aggregate
+1. _Grouping_ incoming events into "slices" of events that should be applied to an aggregate by id
+2. _Applying_ incoming events from each slice into the identified aggregate
 
 `CustomAggregate` supports aggregating by the stream identity as shown above. You can also use all the same customizable grouping functionality as
-the older [MultiStreamAggregation](/events/projections/multi-stream-projections) subclass.
+the older [MultiStreamProjection](/events/projections/multi-stream-projections) subclass.

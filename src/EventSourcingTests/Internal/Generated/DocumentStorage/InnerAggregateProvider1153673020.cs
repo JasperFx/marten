@@ -14,14 +14,14 @@ using Weasel.Postgresql;
 namespace Marten.Generated.DocumentStorage
 {
     // START: UpsertInnerAggregateOperation1153673020
-    public class UpsertInnerAggregateOperation1153673020 : Marten.Internal.Operations.StorageOperation<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>
+    public class UpsertInnerAggregateOperation1153673020 : Marten.Internal.Operations.StorageOperation<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>
     {
-        private readonly EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate _document;
+        private readonly EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate _document;
         private readonly System.Guid _id;
         private readonly System.Collections.Generic.Dictionary<System.Guid, System.Guid> _versions;
         private readonly Marten.Schema.DocumentMapping _mapping;
 
-        public UpsertInnerAggregateOperation1153673020(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, System.Guid id, System.Collections.Generic.Dictionary<System.Guid, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
+        public UpsertInnerAggregateOperation1153673020(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, System.Guid id, System.Collections.Generic.Dictionary<System.Guid, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
         {
             _document = document;
             _id = id;
@@ -45,7 +45,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override void ConfigureParameters(Npgsql.NpgsqlParameter[] parameters, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session)
+        public override void ConfigureParameters(Npgsql.NpgsqlParameter[] parameters, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session)
         {
             parameters[0].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
             parameters[0].Value = session.Serializer.ToJson(_document);
@@ -83,14 +83,14 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: InsertInnerAggregateOperation1153673020
-    public class InsertInnerAggregateOperation1153673020 : Marten.Internal.Operations.StorageOperation<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>
+    public class InsertInnerAggregateOperation1153673020 : Marten.Internal.Operations.StorageOperation<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>
     {
-        private readonly EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate _document;
+        private readonly EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate _document;
         private readonly System.Guid _id;
         private readonly System.Collections.Generic.Dictionary<System.Guid, System.Guid> _versions;
         private readonly Marten.Schema.DocumentMapping _mapping;
 
-        public InsertInnerAggregateOperation1153673020(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, System.Guid id, System.Collections.Generic.Dictionary<System.Guid, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
+        public InsertInnerAggregateOperation1153673020(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, System.Guid id, System.Collections.Generic.Dictionary<System.Guid, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
         {
             _document = document;
             _id = id;
@@ -114,7 +114,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override void ConfigureParameters(Npgsql.NpgsqlParameter[] parameters, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session)
+        public override void ConfigureParameters(Npgsql.NpgsqlParameter[] parameters, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session)
         {
             parameters[0].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
             parameters[0].Value = session.Serializer.ToJson(_document);
@@ -152,14 +152,14 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: UpdateInnerAggregateOperation1153673020
-    public class UpdateInnerAggregateOperation1153673020 : Marten.Internal.Operations.StorageOperation<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>
+    public class UpdateInnerAggregateOperation1153673020 : Marten.Internal.Operations.StorageOperation<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>
     {
-        private readonly EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate _document;
+        private readonly EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate _document;
         private readonly System.Guid _id;
         private readonly System.Collections.Generic.Dictionary<System.Guid, System.Guid> _versions;
         private readonly Marten.Schema.DocumentMapping _mapping;
 
-        public UpdateInnerAggregateOperation1153673020(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, System.Guid id, System.Collections.Generic.Dictionary<System.Guid, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
+        public UpdateInnerAggregateOperation1153673020(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, System.Guid id, System.Collections.Generic.Dictionary<System.Guid, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
         {
             _document = document;
             _id = id;
@@ -183,7 +183,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override void ConfigureParameters(Npgsql.NpgsqlParameter[] parameters, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session)
+        public override void ConfigureParameters(Npgsql.NpgsqlParameter[] parameters, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session)
         {
             parameters[0].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
             parameters[0].Value = session.Serializer.ToJson(_document);
@@ -221,7 +221,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: QueryOnlyInnerAggregateSelector1153673020
-    public class QueryOnlyInnerAggregateSelector1153673020 : Marten.Internal.CodeGeneration.DocumentSelectorWithOnlySerializer, Marten.Linq.Selectors.ISelector<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate>
+    public class QueryOnlyInnerAggregateSelector1153673020 : Marten.Internal.CodeGeneration.DocumentSelectorWithOnlySerializer, Marten.Linq.Selectors.ISelector<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -234,20 +234,20 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate Resolve(System.Data.Common.DbDataReader reader)
+        public EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate Resolve(System.Data.Common.DbDataReader reader)
         {
 
-            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document;
-            document = _serializer.FromJson<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate>(reader, 0);
+            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document;
+            document = _serializer.FromJson<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate>(reader, 0);
             return document;
         }
 
 
-        public async System.Threading.Tasks.Task<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
 
-            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document;
-            document = await _serializer.FromJsonAsync<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate>(reader, 0, token).ConfigureAwait(false);
+            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document;
+            document = await _serializer.FromJsonAsync<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate>(reader, 0, token).ConfigureAwait(false);
             return document;
         }
 
@@ -257,7 +257,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: LightweightInnerAggregateSelector1153673020
-    public class LightweightInnerAggregateSelector1153673020 : Marten.Internal.CodeGeneration.DocumentSelectorWithVersions<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>, Marten.Linq.Selectors.ISelector<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate>
+    public class LightweightInnerAggregateSelector1153673020 : Marten.Internal.CodeGeneration.DocumentSelectorWithVersions<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>, Marten.Linq.Selectors.ISelector<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -270,23 +270,23 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate Resolve(System.Data.Common.DbDataReader reader)
+        public EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate Resolve(System.Data.Common.DbDataReader reader)
         {
             var id = reader.GetFieldValue<System.Guid>(0);
 
-            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document;
-            document = _serializer.FromJson<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate>(reader, 1);
+            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document;
+            document = _serializer.FromJson<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate>(reader, 1);
             _session.MarkAsDocumentLoaded(id, document);
             return document;
         }
 
 
-        public async System.Threading.Tasks.Task<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
             var id = await reader.GetFieldValueAsync<System.Guid>(0, token);
 
-            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document;
-            document = await _serializer.FromJsonAsync<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate>(reader, 1, token).ConfigureAwait(false);
+            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document;
+            document = await _serializer.FromJsonAsync<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate>(reader, 1, token).ConfigureAwait(false);
             _session.MarkAsDocumentLoaded(id, document);
             return document;
         }
@@ -297,7 +297,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: IdentityMapInnerAggregateSelector1153673020
-    public class IdentityMapInnerAggregateSelector1153673020 : Marten.Internal.CodeGeneration.DocumentSelectorWithIdentityMap<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>, Marten.Linq.Selectors.ISelector<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate>
+    public class IdentityMapInnerAggregateSelector1153673020 : Marten.Internal.CodeGeneration.DocumentSelectorWithIdentityMap<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>, Marten.Linq.Selectors.ISelector<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -310,26 +310,26 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate Resolve(System.Data.Common.DbDataReader reader)
+        public EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate Resolve(System.Data.Common.DbDataReader reader)
         {
             var id = reader.GetFieldValue<System.Guid>(0);
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document;
-            document = _serializer.FromJson<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate>(reader, 1);
+            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document;
+            document = _serializer.FromJson<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate>(reader, 1);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             return document;
         }
 
 
-        public async System.Threading.Tasks.Task<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
             var id = await reader.GetFieldValueAsync<System.Guid>(0, token);
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document;
-            document = await _serializer.FromJsonAsync<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate>(reader, 1, token).ConfigureAwait(false);
+            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document;
+            document = await _serializer.FromJsonAsync<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate>(reader, 1, token).ConfigureAwait(false);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             return document;
@@ -341,7 +341,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: DirtyTrackingInnerAggregateSelector1153673020
-    public class DirtyTrackingInnerAggregateSelector1153673020 : Marten.Internal.CodeGeneration.DocumentSelectorWithDirtyChecking<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>, Marten.Linq.Selectors.ISelector<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate>
+    public class DirtyTrackingInnerAggregateSelector1153673020 : Marten.Internal.CodeGeneration.DocumentSelectorWithDirtyChecking<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>, Marten.Linq.Selectors.ISelector<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -354,13 +354,13 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate Resolve(System.Data.Common.DbDataReader reader)
+        public EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate Resolve(System.Data.Common.DbDataReader reader)
         {
             var id = reader.GetFieldValue<System.Guid>(0);
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document;
-            document = _serializer.FromJson<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate>(reader, 1);
+            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document;
+            document = _serializer.FromJson<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate>(reader, 1);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             StoreTracker(_session, document);
@@ -368,13 +368,13 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public async System.Threading.Tasks.Task<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
             var id = await reader.GetFieldValueAsync<System.Guid>(0, token);
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document;
-            document = await _serializer.FromJsonAsync<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate>(reader, 1, token).ConfigureAwait(false);
+            EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document;
+            document = await _serializer.FromJsonAsync<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate>(reader, 1, token).ConfigureAwait(false);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             StoreTracker(_session, document);
@@ -387,7 +387,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: QueryOnlyInnerAggregateDocumentStorage1153673020
-    public class QueryOnlyInnerAggregateDocumentStorage1153673020 : Marten.Internal.Storage.QueryOnlyDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>
+    public class QueryOnlyInnerAggregateDocumentStorage1153673020 : Marten.Internal.Storage.QueryOnlyDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -398,59 +398,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override System.Guid AssignIdentity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override System.Guid AssignIdentity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
             if (document.Id == Guid.Empty) _setter(document, Marten.Schema.Identity.CombGuidIdGeneration.NewGuid());
             return document.Id;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateInnerAggregateOperation1153673020
             (
                 document, Identity(document),
-                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>(),
+                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertInnerAggregateOperation1153673020
             (
                 document, Identity(document),
-                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>(),
+                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertInnerAggregateOperation1153673020
             (
                 document, Identity(document),
-                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>(),
+                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override System.Guid Identity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document)
+        public override System.Guid Identity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document)
         {
             return document.Id;
         }
@@ -479,7 +479,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: LightweightInnerAggregateDocumentStorage1153673020
-    public class LightweightInnerAggregateDocumentStorage1153673020 : Marten.Internal.Storage.LightweightDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>
+    public class LightweightInnerAggregateDocumentStorage1153673020 : Marten.Internal.Storage.LightweightDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -490,59 +490,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override System.Guid AssignIdentity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override System.Guid AssignIdentity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
             if (document.Id == Guid.Empty) _setter(document, Marten.Schema.Identity.CombGuidIdGeneration.NewGuid());
             return document.Id;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateInnerAggregateOperation1153673020
             (
                 document, Identity(document),
-                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>(),
+                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertInnerAggregateOperation1153673020
             (
                 document, Identity(document),
-                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>(),
+                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertInnerAggregateOperation1153673020
             (
                 document, Identity(document),
-                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>(),
+                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override System.Guid Identity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document)
+        public override System.Guid Identity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document)
         {
             return document.Id;
         }
@@ -571,7 +571,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: IdentityMapInnerAggregateDocumentStorage1153673020
-    public class IdentityMapInnerAggregateDocumentStorage1153673020 : Marten.Internal.Storage.IdentityMapDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>
+    public class IdentityMapInnerAggregateDocumentStorage1153673020 : Marten.Internal.Storage.IdentityMapDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -582,59 +582,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override System.Guid AssignIdentity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override System.Guid AssignIdentity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
             if (document.Id == Guid.Empty) _setter(document, Marten.Schema.Identity.CombGuidIdGeneration.NewGuid());
             return document.Id;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateInnerAggregateOperation1153673020
             (
                 document, Identity(document),
-                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>(),
+                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertInnerAggregateOperation1153673020
             (
                 document, Identity(document),
-                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>(),
+                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertInnerAggregateOperation1153673020
             (
                 document, Identity(document),
-                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>(),
+                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override System.Guid Identity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document)
+        public override System.Guid Identity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document)
         {
             return document.Id;
         }
@@ -663,7 +663,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: DirtyTrackingInnerAggregateDocumentStorage1153673020
-    public class DirtyTrackingInnerAggregateDocumentStorage1153673020 : Marten.Internal.Storage.DirtyCheckedDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>
+    public class DirtyTrackingInnerAggregateDocumentStorage1153673020 : Marten.Internal.Storage.DirtyCheckedDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -674,59 +674,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override System.Guid AssignIdentity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override System.Guid AssignIdentity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
             if (document.Id == Guid.Empty) _setter(document, Marten.Schema.Identity.CombGuidIdGeneration.NewGuid());
             return document.Id;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateInnerAggregateOperation1153673020
             (
                 document, Identity(document),
-                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>(),
+                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertInnerAggregateOperation1153673020
             (
                 document, Identity(document),
-                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>(),
+                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertInnerAggregateOperation1153673020
             (
                 document, Identity(document),
-                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>(),
+                session.Versions.ForType<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override System.Guid Identity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document)
+        public override System.Guid Identity(EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document)
         {
             return document.Id;
         }
@@ -755,11 +755,11 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: InnerAggregateBulkLoader1153673020
-    public class InnerAggregateBulkLoader1153673020 : Marten.Internal.CodeGeneration.BulkLoader<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid>
+    public class InnerAggregateBulkLoader1153673020 : Marten.Internal.CodeGeneration.BulkLoader<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid>
     {
-        private readonly Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid> _storage;
+        private readonly Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid> _storage;
 
-        public InnerAggregateBulkLoader1153673020(Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate, System.Guid> storage) : base(storage)
+        public InnerAggregateBulkLoader1153673020(Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate, System.Guid> storage) : base(storage)
         {
             _storage = storage;
         }
@@ -776,7 +776,7 @@ namespace Marten.Generated.DocumentStorage
         public const string CREATE_TEMP_TABLE_FOR_COPYING_SQL = "create temporary table mt_doc_inner_aggregate_temp as select * from public.mt_doc_inner_aggregate limit 0";
 
 
-        public override void LoadRow(Npgsql.NpgsqlBinaryImporter writer, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer)
+        public override void LoadRow(Npgsql.NpgsqlBinaryImporter writer, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer)
         {
             writer.Write(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar);
             writer.Write(document.Id, NpgsqlTypes.NpgsqlDbType.Uuid);
@@ -785,7 +785,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override async System.Threading.Tasks.Task LoadRowAsync(Npgsql.NpgsqlBinaryImporter writer, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer, System.Threading.CancellationToken cancellation)
+        public override async System.Threading.Tasks.Task LoadRowAsync(Npgsql.NpgsqlBinaryImporter writer, EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer, System.Threading.CancellationToken cancellation)
         {
             await writer.WriteAsync(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar, cancellation);
             await writer.WriteAsync(document.Id, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
@@ -829,7 +829,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: InnerAggregateProvider1153673020
-    public class InnerAggregateProvider1153673020 : Marten.Internal.Storage.DocumentProvider<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_self_aggregate.InnerAggregate>
+    public class InnerAggregateProvider1153673020 : Marten.Internal.Storage.DocumentProvider<EventSourcingTests.Bugs.Bug_1679_use_inner_type_for_stream_aggregation.InnerAggregate>
     {
         private readonly Marten.Schema.DocumentMapping _mapping;
 
