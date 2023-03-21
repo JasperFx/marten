@@ -5,14 +5,13 @@ Marten has a strong model for user-defined projections of the raw event data. Pr
 ## Choosing a Projection Type
 
 :::tip
-Do note that all the various types of aggregated projections inherit from a common base type and have the same core set of conventions. The aggregation conventions are best explained
-in the [Single Stream Aggregations](/events/projections/aggregate-projections) page.
+Do note that all the various types of aggregated projections inherit from a common base type and have the same core set of conventions. The aggregation conventions are best explained in the [Aggregate Projections](/events/projections/aggregate-projections) page.
 :::
 
-1. [Single Stream Aggregations](/events/projections/aggregate-projections) combine events from a single stream into a single view.
-2. [Multi Stream Aggregations](/events/projections/multi-stream-projections) are a specialized form of projection that allows you to aggregate a view against arbitrary groupings of events across streams.
+1. [Single Stream Projections](/events/projections/aggregate-projections) combine events from a single stream into a single view.
+2. [Multi Stream Projections](/events/projections/multi-stream-projections) are a specialized form of projection that allows you to aggregate a view against arbitrary groupings of events across streams.
 3. [Event Projections](/events/projections/event-projections) are a recipe for building projections that create or delete one or more documents for a single event
-4. [Custom Aggregations](/events/projections/custom-aggregates) are a recipe for building aggregate projections that require more logic than
+4. [Custom Projections](/events/projections/custom-aggregates) are a recipe for building aggregate projections that require more logic than
    can be accomplished by the other aggregation types. Example usages are soft-deleted aggregate documents that maybe be recreated later or
    if you only apply events to an aggregate if the aggregate document previously existed.
 5. If one of the built in projection recipes doesn't fit what you want to do, you can happily build your own [custom projection](/events/projections/custom)
@@ -27,8 +26,8 @@ Marten varies a little bit in that projections can be executed with three differ
 
 For other descriptions of the _Projections_ pattern inside of Event Sourcing architectures, see:
 
-* [Projections in Event Sourcing](https://zimarev.com/blog/event-sourcing/projections/)
-* [Projections in Event Sourcing: Build ANY model you want!](https://codeopinion.com/projections-in-event-sourcing-build-any-model-you-want/)
+- [Projections in Event Sourcing](https://zimarev.com/blog/event-sourcing/projections/)
+- [Projections in Event Sourcing: Build ANY model you want!](https://codeopinion.com/projections-in-event-sourcing-build-any-model-you-want/)
 
 ## Aggregates
 
@@ -39,7 +38,9 @@ The out-of-the box convention is to expose `public Apply(<EventType>)` methods o
 Sticking with the fantasy theme, the `QuestParty` class shown below could be used to aggregate streams of quest data:
 
 <!-- snippet: sample_QuestParty -->
+
 <a id='snippet-sample_questparty'></a>
+
 ```cs
 public class QuestParty
 {
@@ -62,7 +63,9 @@ public class QuestParty
     }
 }
 ```
+
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/QuestParty.cs#L8-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
+
 <!-- endSnippet -->
 
 New in Marten 1.2 is the ability to use `Event<T>` metadata within your projections, assuming that you're not trying to run the aggregations inline.
@@ -71,7 +74,9 @@ The syntax using the built in aggregation technique is to take in `Event<T>` as 
 where `T` is the event type you're interested in:
 
 <!-- snippet: sample_QuestPartyWithEvents -->
+
 <a id='snippet-sample_questpartywithevents'></a>
+
 ```cs
 public class QuestPartyWithEvents
 {
@@ -117,7 +122,9 @@ public class QuestPartyWithEvents
     }
 }
 ```
+
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/QuestPartyWithEvents.cs#L8-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpartywithevents' title='Start of snippet'>anchor</a></sup>
+
 <!-- endSnippet -->
 
 ## Live Aggregation via .Net
@@ -125,7 +132,9 @@ public class QuestPartyWithEvents
 You can always fetch a stream of events and build an aggregate completely live from the current event data by using this syntax:
 
 <!-- snippet: sample_events-aggregate-on-the-fly -->
+
 <a id='snippet-sample_events-aggregate-on-the-fly'></a>
+
 ```cs
 await using (var session = store.LightweightSession())
 {
@@ -140,7 +149,9 @@ await using (var session = store.LightweightSession())
         .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
 }
 ```
+
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L87-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
+
 <!-- endSnippet -->
 
 There is also a matching asynchronous `AggregateStreamAsync()` mechanism as well. Additionally, you can do stream aggregations in batch queries with
@@ -153,7 +164,9 @@ _First off, be aware that event metadata (e.g. stream version and sequence numbe
 If you would prefer that the projected aggregate document be updated _inline_ with the events being appended, you simply need to register the aggregation type in the `StoreOptions` upfront when you build up your document store like this:
 
 <!-- snippet: sample_registering-quest-party -->
+
 <a id='snippet-sample_registering-quest-party'></a>
+
 ```cs
 var store = DocumentStore.For(_ =>
 {
@@ -170,7 +183,9 @@ var store = DocumentStore.For(_ =>
     _.Projections.Snapshot<QuestParty>();
 });
 ```
+
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/inline_aggregation_by_stream_with_multiples.cs#L24-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-quest-party' title='Start of snippet'>anchor</a></sup>
+
 <!-- endSnippet -->
 
 At this point, you would be able to query against `QuestParty` as just another document type.

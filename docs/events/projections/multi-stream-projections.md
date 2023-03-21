@@ -1,4 +1,4 @@
-# Multi-Stream Aggregations
+# Multi-Stream Projections
 
 ::: tip
 This may change again in V6 (sigh), but we have replaced the earlier nomenclature of "ViewProjection" and renamed this concept as
@@ -6,13 +6,12 @@ This may change again in V6 (sigh), but we have replaced the earlier nomenclatur
 :::
 
 ::: warning
-**Multi-Stream Aggregations are registered by default as async.** This is different from Single-Stream Aggregations. We recommend it as safe default because their processing may be more resource-demanding than single-stream projections. They may need to process more events and update more read models. Still, you can change that setting and register them synchronously if you're aware of that tradeoff.
+**Multi-Stream Projections are registered by default as async.** This is different from Single-Stream Projections. We recommend it as safe default because their processing may be more resource-demanding than single-stream projections. They may need to process more events and update more read models. Still, you can change that setting and register them synchronously if you're aware of that tradeoff.
 
 **Registering projection as async means that it requires running the
 [Async Daemon](/events/projections/async-daemon) as hosted service.**
 
-If you have Multi-Stream Aggregations registered as async and Async Daemon is not running, then projection won't be processed. Marten will
-issue a warning in logs during startup in case of such a mismatch.
+If you have Multi-Stream Projections registered as async and Async Daemon is not running, then projection won't be processed. Marten will issue a warning in logs during startup in case of such a mismatch.
 :::
 
 Multi stream projections are designed to handle multi-stream projections where a view is aggregated over events between streams. The `MultiStreamProjection<TDoc, TId>`
@@ -35,7 +34,9 @@ The last two mechanisms will allow you to use additional information in the unde
 Jumping right into an example, having defined events and views as:
 
 <!-- snippet: sample_view-projection-test-classes -->
+
 <a id='snippet-sample_view-projection-test-classes'></a>
+
 ```cs
 public interface IUserEvent
 {
@@ -166,7 +167,9 @@ public class UserGroupsAssignment
     public List<Guid> Groups { get; set; } = new();
 }
 ```
+
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/TestClasses.cs#L6-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-test-classes' title='Start of snippet'>anchor</a></sup>
+
 <!-- endSnippet -->
 
 ## Simple Event to Single Cross-Stream Projection
@@ -174,7 +177,9 @@ public class UserGroupsAssignment
 Here's a simple example of creating an aggregated view by user id:
 
 <!-- snippet: sample_view-projection-simple -->
+
 <a id='snippet-sample_view-projection-simple'></a>
+
 ```cs
 public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
 {
@@ -194,7 +199,9 @@ public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAss
         => view.Groups.Add(@event.GroupId);
 }
 ```
+
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/simple_multi_stream_projection.cs#L10-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple' title='Start of snippet'>anchor</a></sup>
+
 <!-- endSnippet -->
 
 Note that the primary difference between this and `SingleStreamProjection<T>` is the calls to `Identity<TEvent>()` to specify how the events are grouped
@@ -202,7 +209,9 @@ into separate aggregates across streams. We can also do the equivalent of the co
 we care about and use this:
 
 <!-- snippet: sample_view-projection-simple-2 -->
+
 <a id='snippet-sample_view-projection-simple-2'></a>
+
 ```cs
 public class UserGroupsAssignmentProjection2: MultiStreamProjection<UserGroupsAssignment, Guid>
 {
@@ -225,7 +234,9 @@ public class UserGroupsAssignmentProjection2: MultiStreamProjection<UserGroupsAs
         => view.Groups.Add(@event.GroupId);
 }
 ```
+
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/simple_multi_stream_projection.cs#L31-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-2' title='Start of snippet'>anchor</a></sup>
+
 <!-- endSnippet -->
 
 ## Simple Example of Events Updating Multiple Views
@@ -235,7 +246,9 @@ different `UserGroupsAssignment` projected documents with the usage of the `Iden
 shown below:
 
 <!-- snippet: sample_view-projection-simple-with-one-to-many -->
+
 <a id='snippet-sample_view-projection-simple-with-one-to-many'></a>
+
 ```cs
 public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
 {
@@ -256,7 +269,9 @@ public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAss
     }
 }
 ```
+
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/simple_multi_stream_projection_wih_one_to_many.cs#L11-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-with-one-to-many' title='Start of snippet'>anchor</a></sup>
+
 <!-- endSnippet -->
 
 ## View Projection with Custom Grouper
@@ -271,7 +286,9 @@ your grouping logic does require loading the actual aggregate documents, you nee
 As simpler mechanism to group events to aggregate documents is to supply a custom `IAggregatorGrouper<TId>` as shown below:
 
 <!-- snippet: sample_view-projection-custom-grouper-with-querysession -->
+
 <a id='snippet-sample_view-projection-custom-grouper-with-querysession'></a>
+
 ```cs
 public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>
 {
@@ -331,7 +348,9 @@ public class UserFeatureTogglesProjection: MultiStreamProjection<UserFeatureTogg
     }
 }
 ```
+
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_grouper_with_document_session.cs#L15-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-grouper-with-querysession' title='Start of snippet'>anchor</a></sup>
+
 <!-- endSnippet -->
 
 ## View Projection with Custom Slicer
@@ -345,7 +364,9 @@ If `Identity()` or `Identities()` is too limiting for your event aggregation rul
 own `IEventSlicer` that can split and assign events to any number of aggregated document views. Below is an example:
 
 <!-- snippet: sample_view-projection-custom-slicer -->
+
 <a id='snippet-sample_view-projection-custom-slicer'></a>
+
 ```cs
 public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
 {
@@ -389,7 +410,9 @@ public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAss
     }
 }
 ```
+
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_slicer.cs#L16-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-slicer' title='Start of snippet'>anchor</a></sup>
+
 <!-- endSnippet -->
 
 ## Event "Fan Out" Rules
@@ -398,17 +421,23 @@ The `ViewProjection` also provides the ability to "fan out" child events from a 
 create an aggregated view. As an example, a `Travel` event we use in Marten testing contains a list of `Movement` objects:
 
 <!-- snippet: sample_Travel_Movements -->
+
 <a id='snippet-sample_travel_movements'></a>
+
 ```cs
 public IList<Movement> Movements { get; set; } = new List<Movement>();
 ```
+
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/Travel.cs#L28-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_travel_movements' title='Start of snippet'>anchor</a></sup>
+
 <!-- endSnippet -->
 
 In a sample `ViewProjection`, we do a "fan out" of the `Travel.Movements` members into separate events being processed through the projection:
 
 <!-- snippet: sample_showing_fanout_rules -->
+
 <a id='snippet-sample_showing_fanout_rules'></a>
+
 ```cs
 public class DayProjection: MultiStreamProjection<Day, int>
 {
@@ -452,5 +481,7 @@ public class DayProjection: MultiStreamProjection<Day, int>
     }
 }
 ```
+
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/ViewProjectionTests.cs#L126-L170' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
+
 <!-- endSnippet -->
