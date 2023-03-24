@@ -19,15 +19,16 @@ namespace Marten.Storage;
 
 public class StorageFeatures: IFeatureSchema
 {
-    private readonly IDictionary<Type, IDocumentMappingBuilder> _builders
-        = new Dictionary<Type, IDocumentMappingBuilder>();
+    private readonly Ref<ImHashMap<Type, IDocumentMappingBuilder>> _builders =
+        Ref.Of(ImHashMap<Type, IDocumentMappingBuilder>.Empty);
 
     private readonly ThreadLocal<IList<Type>> _buildingList = new();
 
     private readonly Ref<ImHashMap<Type, DocumentMapping>> _documentMappings =
         Ref.Of(ImHashMap<Type, DocumentMapping>.Empty);
 
-    private readonly Dictionary<Type, IFeatureSchema> _features = new();
+    private readonly Ref<ImHashMap<Type, IFeatureSchema>> _features =
+        Ref.Of(ImHashMap<Type, IFeatureSchema>.Empty);
 
     private readonly Ref<ImHashMap<Type, IDocumentMapping>> _mappings =
         Ref.Of(ImHashMap<Type, IDocumentMapping>.Empty);
@@ -88,7 +89,7 @@ public class StorageFeatures: IFeatureSchema
 
         _buildingList.Value.Add(type);
 
-        if (_builders.TryGetValue(type, out var builder))
+        if (_builders.Value.TryFind(type, out var builder))
         {
             var mapping = builder.Build(options);
             _buildingList.Value.Remove(type);
@@ -101,29 +102,30 @@ public class StorageFeatures: IFeatureSchema
 
     internal void RegisterDocumentType(Type documentType)
     {
-        if (!_builders.ContainsKey(documentType))
+        if (!_builders.Value.Contains(documentType))
         {
-            _builders[documentType] =
-                typeof(DocumentMappingBuilder<>).CloseAndBuildAs<IDocumentMappingBuilder>(documentType);
+            _builders.Swap(d => d.AddOrUpdate(documentType,
+                typeof(DocumentMappingBuilder<>).CloseAndBuildAs<IDocumentMappingBuilder>(documentType))
+            );
         }
     }
 
     internal DocumentMappingBuilder<T> BuilderFor<T>()
     {
-        if (_builders.TryGetValue(typeof(T), out var builder))
+        if (_builders.Value.TryFind(typeof(T), out var builder))
         {
             return (DocumentMappingBuilder<T>)builder;
         }
 
         builder = new DocumentMappingBuilder<T>();
-        _builders[typeof(T)] = builder;
+        _builders.Swap(d => d.AddOrUpdate(typeof(T), builder));
 
         return (DocumentMappingBuilder<T>)builder;
     }
 
     internal void BuildAllMappings()
     {
-        foreach (var pair in _builders.ToArray())
+        foreach (var pair in _builders.Value.ToArray())
             // Just forcing them all to be built
             FindMapping(pair.Key);
 
@@ -138,9 +140,9 @@ public class StorageFeatures: IFeatureSchema
     /// <param name="feature"></param>
     public void Add(IFeatureSchema feature)
     {
-        if (!_features.ContainsKey(feature.StorageType))
+        if (!_features.Value.Contains(feature.StorageType))
         {
-            _features[feature.StorageType] = feature;
+            _features.Swap(d => d.AddOrUpdate(feature.StorageType, feature));
         }
     }
 
@@ -232,7 +234,7 @@ public class StorageFeatures: IFeatureSchema
     /// <returns></returns>
     public IFeatureSchema FindFeature(Type featureType)
     {
-        if (_features.TryGetValue(featureType, out var schema))
+        if (_features.Value.TryFind(featureType, out var schema))
         {
             return schema;
         }
@@ -261,9 +263,11 @@ public class StorageFeatures: IFeatureSchema
         Add(SystemFunctions);
 
         Add(_options.EventGraph);
-        _features[typeof(StreamState)] = _options.EventGraph;
-        _features[typeof(StreamAction)] = _options.EventGraph;
-        _features[typeof(IEvent)] = _options.EventGraph;
+
+
+        _features.Swap(d => d.AddOrUpdate(typeof(StreamState), _options.EventGraph));
+        _features.Swap(d => d.AddOrUpdate(typeof(StreamAction), _options.EventGraph));
+        _features.Swap(d => d.AddOrUpdate(typeof(IEvent), _options.EventGraph));
 
         _mappings.Swap(d => d.AddOrUpdate(typeof(IEvent), new EventQueryMapping(_options)));
 
@@ -272,7 +276,7 @@ public class StorageFeatures: IFeatureSchema
             foreach (var subClass in mapping.SubClasses)
             {
                 _mappings.Swap(d => d.AddOrUpdate(subClass.DocumentType, subClass));
-                _features[subClass.DocumentType] = subClass.Parent.Schema;
+                _features.Swap(d => d.AddOrUpdate(subClass.DocumentType, subClass.Parent.Schema));
             }
         }
     }
@@ -309,7 +313,7 @@ public class StorageFeatures: IFeatureSchema
             yield return _options.EventGraph;
         }
 
-        var custom = _features.Values
+        var custom = _features.Value.ToArray().Select(e => e.Value)
             .Where(x => x.GetType().Assembly != GetType().Assembly).ToArray();
 
         foreach (var featureSchema in custom) yield return featureSchema;
@@ -366,15 +370,15 @@ public class StorageFeatures: IFeatureSchema
     /// <param name="includedStorage"></param>
     internal void IncludeDocumentMappingBuilders(StorageFeatures includedStorage)
     {
-        foreach (var builder in includedStorage._builders.Values)
+        foreach (var builder in includedStorage._builders.Value.ToArray().Select(x => x.Value))
         {
-            if (_builders.TryGetValue(builder.DocumentType, out var existing))
+            if (_builders.Value.TryFind(builder.DocumentType, out var existing))
             {
                 existing.Include(builder);
             }
             else
             {
-                _builders.Add(builder.DocumentType, builder);
+                _builders.Swap(d => d.AddOrUpdate(builder.DocumentType, builder));
             }
         }
     }
