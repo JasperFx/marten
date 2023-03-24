@@ -31,10 +31,10 @@
         <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="JasperFx.CodeGeneration.Commands" Version="2.0.0" />
+        <PackageReference Include="JasperFx.CodeGeneration.Commands" Version="2.2.1" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
         <PackageReference Include="Oakton" Version="6.0.0" />
-        <PackageReference Include="Weasel.CommandLine" Version="6.0.0-alpha.10" />
+        <PackageReference Include="Weasel.CommandLine" Version="6.0.0-alpha.11" />
     </ItemGroup>
     <Import Project="../../Analysis.Build.props" />
 </Project>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using Marten.Services;
 using NodaTime;
@@ -43,7 +44,8 @@ public static class NodaTimeExtensions
                 });
                 break;
             default:
-                throw new NotSupportedException("Current serializer cannot be automatically configured for NodaTime. Set shouldConfigureJsonSerializer to false if you're using your own serializer.");
+                throw new NotSupportedException(
+                    "Current serializer cannot be automatically configured for NodaTime. Set shouldConfigureJsonSerializer to false if you're using your own serializer.");
         }
 
         storeOptions.Serializer(serializer);
@@ -51,24 +53,64 @@ public static class NodaTimeExtensions
 
     public static void SetNodaTimeTypeMappings()
     {
-        NpgsqlTypeMapper.Mappings.AddRange(
-            new NpgsqlTypeMapping[] {
-                // Date/time types
-#pragma warning disable 618 // NpgsqlDateTime is obsolete, remove in 7.0
-                new(NpgsqlDbType.Timestamp,   DbType.DateTime,       "timestamp without time zone", typeof(DateTime), typeof(LocalDateTime)),
-#pragma warning disable 618
-                new(NpgsqlDbType.TimestampTz, DbType.DateTimeOffset, "timestamp with time zone",    typeof(DateTimeOffset), typeof(Instant), typeof(ZonedDateTime)),
-                new(NpgsqlDbType.Date,        DbType.Date,           "date",                        typeof(LocalDate) , typeof(DateOnly)),
-                new(NpgsqlDbType.Time,        DbType.Time,     "time without time zone", typeof(LocalTime), typeof(TimeOnly)),
-                new(NpgsqlDbType.TimeTz,      DbType.Object,   "time with time zone", typeof(LocalTime), typeof(LocalTime)),
-                new(NpgsqlDbType.Interval,    DbType.Object,   "interval", typeof(TimeSpan), typeof(Period), typeof(Duration)),
-
-                new(NpgsqlDbType.Array | NpgsqlDbType.Timestamp,   DbType.Object, "timestamp without time zone[]"),
-                new(NpgsqlDbType.Array | NpgsqlDbType.TimestampTz, DbType.Object, "timestamp with time zone[]"),
-                new(NpgsqlDbType.Range | NpgsqlDbType.Timestamp,   DbType.Object, "tsrange"),
-                new(NpgsqlDbType.Range | NpgsqlDbType.TimestampTz, DbType.Object, "tstzrange"),
-                new(NpgsqlDbType.Multirange | NpgsqlDbType.Timestamp,   DbType.Object, "tsmultirange"),
-                new(NpgsqlDbType.Multirange | NpgsqlDbType.TimestampTz, DbType.Object, "tstzmultirange"),
-            });
+        foreach (var mapping in Mappings)
+        {
+            NpgsqlTypeMapper.Mappings[mapping.Key] = mapping.Value;
+        }
     }
+
+    private static readonly Dictionary<NpgsqlDbType, NpgsqlTypeMapping> Mappings =
+        new()
+        {
+            // Date/time types
+            {
+                NpgsqlDbType.Timestamp, new(NpgsqlDbType.Timestamp, DbType.DateTime, "timestamp without time zone",
+                    typeof(DateTime),
+                    typeof(LocalDateTime))
+            },
+            {
+                NpgsqlDbType.TimestampTz, new(NpgsqlDbType.TimestampTz, DbType.DateTimeOffset,
+                    "timestamp with time zone",
+                    typeof(DateTimeOffset),
+                    typeof(Instant), typeof(ZonedDateTime))
+            },
+            { NpgsqlDbType.Date, new(NpgsqlDbType.Date, DbType.Date, "date", typeof(LocalDate), typeof(DateOnly)) },
+            {
+                NpgsqlDbType.Time,
+                new(NpgsqlDbType.Time, DbType.Time, "time without time zone", typeof(LocalTime), typeof(TimeOnly))
+            },
+            {
+                NpgsqlDbType.TimeTz,
+                new(NpgsqlDbType.TimeTz, DbType.Object, "time with time zone", typeof(LocalTime), typeof(LocalTime))
+            },
+            {
+                NpgsqlDbType.Interval, new(NpgsqlDbType.Interval, DbType.Object, "interval", typeof(TimeSpan),
+                    typeof(Period),
+                    typeof(Duration))
+            },
+            {
+                NpgsqlDbType.Array | NpgsqlDbType.Timestamp,
+                new(NpgsqlDbType.Array | NpgsqlDbType.Timestamp, DbType.Object, "timestamp without time zone[]")
+            },
+            {
+                NpgsqlDbType.Array | NpgsqlDbType.TimestampTz,
+                new(NpgsqlDbType.Array | NpgsqlDbType.TimestampTz, DbType.Object, "timestamp with time zone[]")
+            },
+            {
+                NpgsqlDbType.Range | NpgsqlDbType.Timestamp,
+                new(NpgsqlDbType.Range | NpgsqlDbType.Timestamp, DbType.Object, "tsrange")
+            },
+            {
+                NpgsqlDbType.Range | NpgsqlDbType.TimestampTz,
+                new(NpgsqlDbType.Range | NpgsqlDbType.TimestampTz, DbType.Object, "tstzrange")
+            },
+            {
+                NpgsqlDbType.Multirange | NpgsqlDbType.Timestamp,
+                new(NpgsqlDbType.Multirange | NpgsqlDbType.Timestamp, DbType.Object, "tsmultirange")
+            },
+            {
+                NpgsqlDbType.Multirange | NpgsqlDbType.TimestampTz,
+                new(NpgsqlDbType.Multirange | NpgsqlDbType.TimestampTz, DbType.Object, "tstzmultirange")
+            }
+        };
 }
