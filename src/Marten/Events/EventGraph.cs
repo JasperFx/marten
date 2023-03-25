@@ -60,17 +60,6 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
 
     internal NpgsqlDbType StreamIdDbType { get; private set; }
 
-    /// <summary>
-    ///     Whether a "for update" (row exclusive lock) should be used when selecting out the event version to use from the
-    ///     streams table
-    /// </summary>
-    /// <remarks>
-    ///     Not using this can result in race conditions in a concurrent environment that lead to
-    ///     event version mismatches between the event and stream version numbers
-    /// </remarks>
-    [Obsolete("This is no longer used!")]
-    public bool UseAppendEventForUpdateLock { get; set; } = false;
-
     internal StoreOptions Options { get; }
 
     internal DbObjectName Table => new(DatabaseSchemaName, "mt_events");

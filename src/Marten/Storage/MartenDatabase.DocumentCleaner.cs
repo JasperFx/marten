@@ -6,9 +6,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Core.Exceptions;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Schema;
+using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
@@ -119,7 +121,11 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(cmd, e);
+            if (cmd != null)
+            {
+                e.Data[nameof(NpgsqlCommand)] = cmd;
+            }
+            ExceptionTransformer.WrapAndThrow(e);
         }
     }
 
@@ -142,7 +148,11 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(cmd, e);
+            if (cmd != null)
+            {
+                e.Data[nameof(NpgsqlCommand)] = cmd;
+            }
+            ExceptionTransformer.WrapAndThrow(e);
         }
     }
 

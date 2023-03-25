@@ -24,13 +24,6 @@ public interface IDocumentStore: IDisposable
     IReadOnlyStoreOptions Options { get; }
 
     /// <summary>
-    ///     Information about the document and event storage
-    /// </summary>
-    [Obsolete(
-        "While this is still functional for single-database Marten stores, please prefer the Storage property instead. This will be removed in Marten 6.0")]
-    IDatabase Schema { get; }
-
-    /// <summary>
     ///     Administration and diagnostic information about the underlying database storage
     /// </summary>
     IMartenStorage Storage { get; }
@@ -395,20 +388,6 @@ public interface IDocumentStore: IDisposable
     Task BulkInsertDocumentsAsync(string tenantId, IEnumerable<object> documents,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly,
         int batchSize = 1000, CancellationToken cancellation = default);
-
-
-    /// <summary>
-    ///     Build a new instance of the asynchronous projection daemon to use interactively
-    ///     in your own code
-    /// </summary>
-    /// <param name="tenantIdOrDatabaseIdentifier">
-    ///     If using multi-tenancy with multiple databases, supplying this will choose
-    ///     the database to target
-    /// </param>
-    /// <param name="logger">Override the logger inside this instance of the async daemon</param>
-    /// <returns></returns>
-    [Obsolete("Please use the asynchronous version of this method instead to avoid potential thread blocking")]
-    IProjectionDaemon BuildProjectionDaemon(string? tenantIdOrDatabaseIdentifier = null, ILogger? logger = null);
 
     /// <summary>
     ///     Build a new instance of the asynchronous projection daemon to use interactively

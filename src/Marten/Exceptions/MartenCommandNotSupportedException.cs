@@ -60,7 +60,9 @@ internal class MartenCommandNotSupportedExceptionTransform: IExceptionTransform
             var knownCause = KnownNotSupportedExceptionCause.KnownCauses.FirstOrDefault(x => x.Matches(e));
             if (knownCause != null)
             {
-                var command = e.ReadNpgsqlCommand();
+                var command = e.Data.Contains(nameof(NpgsqlCommand))
+                    ? (NpgsqlCommand)e.Data[nameof(NpgsqlCommand)]
+                    : null;
 
                 transformed =
                     new MartenCommandNotSupportedException(knownCause.Reason, command, e, knownCause.Description);

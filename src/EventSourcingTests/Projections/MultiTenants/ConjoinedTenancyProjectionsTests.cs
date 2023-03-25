@@ -136,7 +136,7 @@ public record ResourcesGlobalSummary
     public int TotalResourcesCount { get; set; }
 }
 
-public class ResourcesGlobalSummaryProjection: MultiStreamAggregation<ResourcesGlobalSummary, Guid>
+public class ResourcesGlobalSummaryProjection: MultiStreamProjection<ResourcesGlobalSummary, Guid>
 {
     public ResourcesGlobalSummaryProjection()
     {

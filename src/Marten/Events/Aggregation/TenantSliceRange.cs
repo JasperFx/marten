@@ -3,6 +3,7 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
+using Marten.Services;
 using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
@@ -56,7 +57,7 @@ internal class TenantSliceRange<TDoc, TId>: EventRangeGroup
     {
         reset();
         Range.SkipEventSequence(eventSequence);
-
-        Groups = await _runtime.GroupEventRange(_store, database, Range, Cancellation).ConfigureAwait(false);
+        await using var session = _store.LightweightSession(SessionOptions.ForDatabase(database));
+        Groups = await _runtime.Slicer.SliceAsyncEvents(session, Range.Events).ConfigureAwait(false);
     }
 }

@@ -23,6 +23,7 @@ public sealed class SessionOptions
     internal CommandRunnerMode Mode { get; private set; }
     internal Tenant? Tenant { get; set; }
 
+    // Note: recent one
     /// <summary>
     /// Define the type of session you'd like to open.
     /// We recommend using lightweight session by default.<br/>

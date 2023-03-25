@@ -95,7 +95,6 @@ public partial class DocumentStore: IDocumentStore
     {
     }
 
-    public IDatabase Schema => Tenancy.Default?.Database;
     public AdvancedOperations Advanced { get; }
 
     public void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,

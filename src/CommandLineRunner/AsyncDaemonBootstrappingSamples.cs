@@ -136,7 +136,7 @@ public class AsyncDaemonBootstrappingSamples
 
     public static async Task UseAsyncDaemon(IDocumentStore store, CancellationToken cancellation)
     {
-        using var daemon = store.BuildProjectionDaemon();
+        using var daemon = await store.BuildProjectionDaemonAsync();
 
         // Fire up everything!
         await daemon.StartAllShards();
