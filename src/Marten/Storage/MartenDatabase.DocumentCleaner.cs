@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
-using JasperFx.Core.Exceptions;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Schema;
@@ -125,7 +124,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
             {
                 e.Data[nameof(NpgsqlCommand)] = cmd;
             }
-            ExceptionTransformer.WrapAndThrow(e);
+            MartenExceptionTransformer.WrapAndThrow(e);
         }
     }
 
@@ -148,11 +147,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         }
         catch (Exception e)
         {
-            if (cmd != null)
-            {
-                e.Data[nameof(NpgsqlCommand)] = cmd;
-            }
-            ExceptionTransformer.WrapAndThrow(e);
+            MartenExceptionTransformer.WrapAndThrow(cmd, e);
         }
     }
 
