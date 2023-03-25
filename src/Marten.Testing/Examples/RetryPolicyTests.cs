@@ -127,7 +127,7 @@ public sealed class RetryPolicyTests: IntegrationContext
 
         using (var s = theStore.QuerySession())
         {
-            Assert.Throws<Marten.Exceptions.MartenCommandException>(() =>
+            Assert.Throws<PostgresException>(() =>
             {
                 var _ = s.Query<object>("select null from mt_nonexistenttable").FirstOrDefault();
             });
