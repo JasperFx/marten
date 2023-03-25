@@ -6,7 +6,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
-using JasperFx.Core.Exceptions;
+using Marten.Exceptions;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Services;
@@ -114,11 +114,7 @@ public partial class QuerySession
         this.SafeDispose();
         Logger.LogFailure(cmd, e);
 
-        if (cmd != null)
-        {
-            e.Data[nameof(NpgsqlCommand)] = cmd;
-        }
-        ExceptionTransformer.WrapAndThrow(e);
+        MartenExceptionTransformer.WrapAndThrow(cmd, e);
     }
 
     internal T? LoadOne<T>(NpgsqlCommand command, ISelector<T> selector)
