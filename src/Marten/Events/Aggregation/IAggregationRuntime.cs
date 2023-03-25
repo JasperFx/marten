@@ -31,7 +31,5 @@ public interface IAggregationRuntime<TDoc, TId>: IAggregationRuntime where TDoc 
 
     bool IsNew(EventSlice<TDoc, TId> slice);
 
-    [Obsolete]
-    ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> GroupEventRange(DocumentStore store,
-        IMartenDatabase database, EventRange range, CancellationToken cancellation);
+    IEventSlicer<TDoc, TId> Slicer { get; }
 }

@@ -8,7 +8,7 @@ using Marten.Linq.QueryHandlers;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Querying;
-
+// TODO: recheck
 [Obsolete("Use EventDocumentStorage as a generic ISelector<IEvent> and use generic handler instead")]
 internal class SingleEventQueryHandler: IQueryHandler<IEvent>
 {

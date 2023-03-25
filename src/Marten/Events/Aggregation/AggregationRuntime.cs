@@ -153,16 +153,10 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
     public async ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase database, EventRange range,
         CancellationToken cancellationToken)
     {
-        var groups = await GroupEventRange(store, database, range, cancellationToken).ConfigureAwait(false);
+        await using var session = store.LightweightSession(SessionOptions.ForDatabase(database));
+        var groups = await Slicer.SliceAsyncEvents(session, range.Events).ConfigureAwait(false);
 
         return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);
-    }
-
-    public async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> GroupEventRange(DocumentStore store,
-        IMartenDatabase database, EventRange range, CancellationToken cancellation)
-    {
-        await using var session = store.LightweightSession(SessionOptions.ForDatabase(database));
-        return await Slicer.SliceAsyncEvents(session, range.Events).ConfigureAwait(false);
     }
 
     public abstract ValueTask<TDoc> ApplyEvent(IQuerySession session, EventSlice<TDoc, TId> slice,

@@ -145,6 +145,7 @@ public class ProjectionOptions: DaemonSettings
     }
 
 
+    // Note: recent one
     /// <summary>
     /// Register Snapshot or Live Stream aggregation for entity of type T.
     /// </summary>

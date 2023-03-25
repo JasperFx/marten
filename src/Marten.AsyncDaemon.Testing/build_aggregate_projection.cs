@@ -313,7 +313,7 @@ public class build_aggregate_projection: DaemonContext
             Assert.Equal("x", contact.Name);
         }
 
-        var daemon = theStore.BuildProjectionDaemon();
+        var daemon = await theStore.BuildProjectionDaemonAsync();
 
         await daemon.RebuildProjection("Contact", CancellationToken.None);
 
@@ -442,7 +442,7 @@ public class build_aggregate_projection: DaemonContext
             Assert.Equal("Foo", foo.Name);
         }
 
-        var daemon = theStore.BuildProjectionDaemon();
+        var daemon = await theStore.BuildProjectionDaemonAsync();
 
         await daemon.RebuildProjection("Foo", CancellationToken.None);
 

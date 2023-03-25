@@ -109,9 +109,9 @@ public class multi_tenancy_by_database : IAsyncLifetime
     [Fact]
     public void fail_when_trying_to_create_daemon_with_no_tenant_sync()
     {
-        Should.Throw<DefaultTenantUsageDisabledException>(() =>
+        Should.Throw<DefaultTenantUsageDisabledException>(async () =>
         {
-            theStore.BuildProjectionDaemon();
+            await theStore.BuildProjectionDaemonAsync();
         });
     }
 
@@ -128,13 +128,13 @@ public class multi_tenancy_by_database : IAsyncLifetime
 
 
     [Fact]
-    public void build_daemon_for_database_sync()
+    public async Task build_daemon_for_database_async()
     {
-        using var daemon = (ProjectionDaemon)theStore.BuildProjectionDaemon("tenant1");
+        using var daemon = (ProjectionDaemon)(await theStore.BuildProjectionDaemonAsync("tenant1"));
 
         daemon.Database.Identifier.ShouldBe("database1");
 
-        using var conn = daemon.Database.CreateConnection();
+        await using var conn = daemon.Database.CreateConnection();
         conn.Database.ShouldBe("database1");
     }
 

@@ -158,25 +158,6 @@ public class MartenRegistry
         ///     Optional, allows you to customize the Postgresql database index configured for the duplicated
         ///     field
         /// </param>
-        /// <returns></returns>
-        [Obsolete(
-            "Prefer Index() if you just want to optimize querying, or choose Duplicate() if you really want a duplicated field")]
-        public DocumentMappingExpression<T> Searchable(Expression<Func<T, object>> expression, string? pgType = null,
-            NpgsqlDbType? dbType = null, Action<DocumentIndex>? configure = null)
-        {
-            return Duplicate(expression, pgType, dbType, configure);
-        }
-
-        /// <summary>
-        ///     Marks a property or field on this document type as a searchable field that is also duplicated in the
-        ///     database document table
-        /// </summary>
-        /// <param name="expression"></param>
-        /// <param name="pgType">Optional, overrides the Postgresql column type for the duplicated field</param>
-        /// <param name="configure">
-        ///     Optional, allows you to customize the Postgresql database index configured for the duplicated
-        ///     field
-        /// </param>
         /// <param name="dbType">Optional, overrides the Npgsql DbType for any parameter usage of this property</param>
         /// <returns></returns>
         public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object>> expression, string? pgType = null,

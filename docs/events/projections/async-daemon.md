@@ -300,7 +300,7 @@ want to use the async daemon from just an `IDocumentStore`, here's how you do it
 ```cs
 public static async Task UseAsyncDaemon(IDocumentStore store, CancellationToken cancellation)
 {
-    using var daemon = store.BuildProjectionDaemon();
+    using var daemon = await store.BuildProjectionDaemonAsync();
 
     // Fire up everything!
     await daemon.StartAllShards();

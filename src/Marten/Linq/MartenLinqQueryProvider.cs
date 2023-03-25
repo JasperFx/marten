@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Exceptions;
+using JasperFx.Core.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
@@ -101,7 +101,7 @@ internal class MartenLinqQueryProvider: IQueryProvider
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(e);
+            ExceptionTransformer.WrapAndThrow(e);
         }
 
         return default;
@@ -125,7 +125,7 @@ internal class MartenLinqQueryProvider: IQueryProvider
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(e);
+            ExceptionTransformer.WrapAndThrow(e);
         }
 
         return default;
@@ -142,7 +142,7 @@ internal class MartenLinqQueryProvider: IQueryProvider
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(e);
+            ExceptionTransformer.WrapAndThrow(e);
         }
 
         return default;
@@ -159,7 +159,7 @@ internal class MartenLinqQueryProvider: IQueryProvider
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(e);
+            ExceptionTransformer.WrapAndThrow(e);
         }
 
         return default;

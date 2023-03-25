@@ -7,6 +7,7 @@ namespace Marten.Schema;
 
 public interface IDocumentCleaner
 {
+    // Note: recent one
     /// <summary>
     ///     Deletes all existing document data in the underlying Postgresql database
     /// </summary>
