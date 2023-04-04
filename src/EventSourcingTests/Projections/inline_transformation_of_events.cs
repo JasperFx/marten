@@ -16,11 +16,17 @@ namespace EventSourcingTests.Projections;
 public class inline_transformation_of_events: OneOffConfigurationsContext
 {
     private QuestStarted started = new QuestStarted { Name = "Find the Orb" };
-    private MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
+
+    private MembersJoined joined = new MembersJoined
+    {
+        Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" }
+    };
+
     private MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
     private MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
 
-    private MembersJoined joined2 = new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
+    private MembersJoined joined2 =
+        new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
 
     private async Task sample_usage()
     {
@@ -58,7 +64,7 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
             _.AutoCreateSchemaObjects = AutoCreate.All;
             _.Events.TenancyStyle = tenancyStyle;
 
-            _.Projections.Add(new MonsterDefeatedTransform());
+            _.Projections.Add(new MonsterDefeatedTransform(), ProjectionLifecycle.Inline);
         });
 
         var streamId = theSession.Events
@@ -84,7 +90,7 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
         {
             _.AutoCreateSchemaObjects = AutoCreate.All;
 
-            _.Projections.Add(new MonsterDefeatedTransform());
+            _.Projections.Add(new MonsterDefeatedTransform(), ProjectionLifecycle.Inline);
         });
 
         var streamId = theSession.Events
@@ -107,13 +113,15 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
     public async Task async_projection_of_events()
     {
         #region sample_applying-monster-defeated
+
         var store = DocumentStore.For(_ =>
         {
             _.Connection(ConnectionSource.ConnectionString);
             _.DatabaseSchemaName = "monster_defeated";
 
-            _.Projections.Add(new MonsterDefeatedTransform());
+            _.Projections.Add(new MonsterDefeatedTransform(), ProjectionLifecycle.Inline);
         });
+
         #endregion
 
         // The code below is just customizing the document store
@@ -122,7 +130,7 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
         {
             _.AutoCreateSchemaObjects = AutoCreate.All;
 
-            _.Projections.Add(new MonsterDefeatedTransform());
+            _.Projections.Add(new MonsterDefeatedTransform(), ProjectionLifecycle.Inline);
         });
 
         var streamId = theSession.Events
@@ -147,15 +155,12 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
 }
 
 #region sample_MonsterDefeatedTransform
+
 public class MonsterDefeatedTransform: EventProjection
 {
     public MonsterDefeated Create(IEvent<MonsterSlayed> input)
     {
-        return new MonsterDefeated
-        {
-            Id = input.Id,
-            Monster = input.Data.Name
-        };
+        return new MonsterDefeated { Id = input.Id, Monster = input.Data.Name };
     }
 }
 

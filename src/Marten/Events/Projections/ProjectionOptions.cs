@@ -86,7 +86,7 @@ public class ProjectionOptions: DaemonSettings
     /// </param>
     public void Add(
         IProjection projection,
-        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline,
+        ProjectionLifecycle lifecycle,
         string projectionName = null,
         Action<AsyncOptions> asyncConfiguration = null
     )
@@ -129,14 +129,11 @@ public class ProjectionOptions: DaemonSettings
     /// <param name="asyncConfiguration">Use it to define behaviour during projection rebuilds</param>
     public void Add(
         EventProjection projection,
-        ProjectionLifecycle? lifecycle = null,
+        ProjectionLifecycle lifecycle,
         Action<AsyncOptions> asyncConfiguration = null
     )
     {
-        if (lifecycle.HasValue)
-        {
-            projection.Lifecycle = lifecycle.Value;
-        }
+        projection.Lifecycle = lifecycle;
 
         asyncConfiguration?.Invoke(projection.Options);
 
@@ -158,7 +155,7 @@ public class ProjectionOptions: DaemonSettings
     [Obsolete(
         "Please switch to Snapshot (in case of inline or async lifecycle) or LiveStreamAggregation method (for online lifecycle).")]
     public MartenRegistry.DocumentMappingExpression<T> SelfAggregate<T>(
-        ProjectionLifecycle? lifecycle = null,
+        ProjectionLifecycle lifecycle,
         Action<AsyncOptions> asyncConfiguration = null
     ) =>
         lifecycle == ProjectionLifecycle.Live
@@ -189,20 +186,20 @@ public class ProjectionOptions: DaemonSettings
     /// </param>
     /// <returns>The extended storage configuration for document T</returns>
     public MartenRegistry.DocumentMappingExpression<T> Snapshot<T>(
-        SnapshotLifecycle? lifecycle = null,
+        SnapshotLifecycle lifecycle,
         Action<AsyncOptions> asyncConfiguration = null
     ) =>
         singleStreamProjection<T>(lifecycle.Map(), asyncConfiguration);
 
     private MartenRegistry.DocumentMappingExpression<T> singleStreamProjection<T>(
-        ProjectionLifecycle? lifecycle = null,
+        ProjectionLifecycle lifecycle,
         Action<AsyncOptions> asyncConfiguration = null
     )
     {
         // Make sure there's a DocumentMapping for the aggregate
         var expression = _options.Schema.For<T>();
 
-        var source = new SingleStreamProjection<T> { Lifecycle = lifecycle ?? ProjectionLifecycle.Inline };
+        var source = new SingleStreamProjection<T> { Lifecycle = lifecycle };
 
         asyncConfiguration?.Invoke(source.Options);
 
@@ -220,17 +217,12 @@ public class ProjectionOptions: DaemonSettings
     /// <param name="lifecycle">Optionally override the ProjectionLifecycle</param>
     /// <param name="asyncConfiguration">Use it to define behaviour during projection rebuilds</param>
     public void Add<TProjection>(
-        ProjectionLifecycle? lifecycle = null,
+        ProjectionLifecycle lifecycle,
         Action<AsyncOptions> asyncConfiguration = null
     )
         where TProjection : GeneratedProjection, new()
     {
-        var projection = new TProjection();
-
-        if (lifecycle.HasValue)
-        {
-            projection.Lifecycle = lifecycle.Value;
-        }
+        var projection = new TProjection { Lifecycle = lifecycle };
 
         asyncConfiguration?.Invoke(projection.Options);
 
@@ -248,14 +240,11 @@ public class ProjectionOptions: DaemonSettings
     /// <param name="asyncConfiguration">Use it to define behaviour during projection rebuilds</param>
     public void Add<T>(
         GeneratedAggregateProjectionBase<T> projection,
-        ProjectionLifecycle? lifecycle = null,
+        ProjectionLifecycle lifecycle,
         Action<AsyncOptions> asyncConfiguration = null
     )
     {
-        if (lifecycle.HasValue)
-        {
-            projection.Lifecycle = lifecycle.Value;
-        }
+        projection.Lifecycle = lifecycle;
 
         asyncConfiguration?.Invoke(projection.Options);
 
@@ -358,6 +347,6 @@ public class ProjectionOptions: DaemonSettings
 
     internal IEnumerable<Type> AllPublishedTypes()
     {
-        return All.OfType<IProjectionSource>().SelectMany(x => x.PublishedTypes()).Distinct();
+        return All.SelectMany(x => x.PublishedTypes()).Distinct();
     }
 }

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten;
 using Marten.Events;
+using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -12,9 +13,12 @@ using Xunit;
 namespace EventSourcingTests;
 
 [Collection("string_identified_streams")]
-public class end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers : StoreContext<StringIdentifiedStreamsFixture>
+public class
+    end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers: StoreContext<
+        StringIdentifiedStreamsFixture>
 {
-    public end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers(StringIdentifiedStreamsFixture fixture) : base(fixture)
+    public end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers(
+        StringIdentifiedStreamsFixture fixture): base(fixture)
     {
     }
 
@@ -44,12 +48,14 @@ public class end_to_end_event_capture_and_fetching_the_stream_with_string_identi
     public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_async()
     {
         #region sample_start-stream-with-aggregate-type
+
         var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
         var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
         var id = "Second";
         theSession.Events.StartStream<Quest>(id, joined, departed);
         await theSession.SaveChangesAsync();
+
         #endregion
 
         var streamEvents = await theSession.Events.FetchStreamAsync(id);
@@ -67,12 +73,14 @@ public class end_to_end_event_capture_and_fetching_the_stream_with_string_identi
     public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_async_with_linq()
     {
         #region sample_start-stream-with-aggregate-type
+
         var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
         var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
         var id = "Third";
         theSession.Events.StartStream<Quest>(id, joined, departed);
         await theSession.SaveChangesAsync();
+
         #endregion
 
         var streamEvents = await theSession.Events.QueryAllRawEvents()
@@ -91,12 +99,14 @@ public class end_to_end_event_capture_and_fetching_the_stream_with_string_identi
     public void capture_events_to_a_new_stream_and_fetch_the_events_back_sync_with_linq()
     {
         #region sample_start-stream-with-aggregate-type
+
         var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
         var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
         var id = "Fourth";
         theSession.Events.StartStream<Quest>(id, joined, departed);
         theSession.SaveChanges();
+
         #endregion
 
         var streamEvents = theSession.Events.QueryAllRawEvents()
@@ -119,7 +129,11 @@ public class end_to_end_event_capture_and_fetching_the_stream_with_string_identi
         using (var session = theStore.LightweightSession())
         {
             //Note Id = questId, is we remove it from first message then AggregateStream will return party.Id=default(Guid) that is not equals to Load<QuestParty> result
-            var started = new QuestStarted { /*Id = questId,*/ Name = "Destroy the One Ring" };
+            var started = new QuestStarted
+            {
+                /*Id = questId,*/
+                Name = "Destroy the One Ring"
+            };
             var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");
 
             session.Events.StartStream<Quest>(questId, started, joined1);
@@ -182,6 +196,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_with_string_identi
             var party = session.Load<QuestPartyWithStringIdentifier>(questId);
             party.ShouldNotBeNull();
         }
+
         //GetAll
         using (var session = theStore.LightweightSession())
         {
@@ -191,11 +206,12 @@ public class end_to_end_event_capture_and_fetching_the_stream_with_string_identi
                 party.ShouldNotBeNull();
             }
         }
+
         //This AggregateStream fail with NPE
         using (var session = newStore.LightweightSession())
         {
             // questId is the id of the stream
-            var party = session.Events.AggregateStream<QuestPartyWithStringIdentifier>(questId);//Here we get NPE
+            var party = session.Events.AggregateStream<QuestPartyWithStringIdentifier>(questId); //Here we get NPE
             party.ShouldNotBeNull();
 
             var party_at_version_3 = session.Events
@@ -435,21 +451,19 @@ public class end_to_end_event_capture_and_fetching_the_stream_with_string_identi
 
         session.SaveChanges();
     }
-
 }
 
 [CollectionDefinition("string_identified_streams")]
-public class StringIdentifiedStreamsCollection : ICollectionFixture<StringIdentifiedStreamsFixture>
+public class StringIdentifiedStreamsCollection: ICollectionFixture<StringIdentifiedStreamsFixture>
 {
-
 }
 
 public class StringIdentifiedStreamsFixture: StoreFixture
 {
-    public StringIdentifiedStreamsFixture() : base("string_identified_streams")
+    public StringIdentifiedStreamsFixture(): base("string_identified_streams")
     {
         Options.Events.StreamIdentity = StreamIdentity.AsString;
-        Options.Projections.Snapshot<QuestPartyWithStringIdentifier>();
+        Options.Projections.Snapshot<QuestPartyWithStringIdentifier>(SnapshotLifecycle.Inline);
 
         Options.Events.AddEventType(typeof(MembersJoined));
         Options.Events.AddEventType(typeof(MembersDeparted));

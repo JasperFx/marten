@@ -22,7 +22,6 @@ public abstract class ExperimentalMultiStreamProjection<TDoc, TId>: GeneratedAgg
 
     protected ExperimentalMultiStreamProjection(): base(AggregationScope.MultiStream)
     {
-        Lifecycle = ProjectionLifecycle.Async;
     }
 
     public virtual ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> SliceInlineActions(IQuerySession querySession,

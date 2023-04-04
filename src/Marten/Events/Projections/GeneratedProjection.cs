@@ -22,7 +22,6 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
     protected GeneratedProjection(string projectionName)
     {
         ProjectionName = projectionName;
-        Lifecycle = ProjectionLifecycle.Inline;
     }
 
     internal StoreOptions StoreOptions { get; set; }

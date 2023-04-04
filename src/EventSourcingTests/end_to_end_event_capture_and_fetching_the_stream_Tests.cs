@@ -6,6 +6,7 @@ using EventSourcingTests.Projections;
 using EventSourcingTests.Utils;
 using JasperFx.CodeGeneration;
 using Marten;
+using Marten.Events.Projections;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -15,7 +16,7 @@ using Xunit.Abstractions;
 
 namespace EventSourcingTests;
 
-public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConfigurationsContext
+public class end_to_end_event_capture_and_fetching_the_stream_Tests: OneOffConfigurationsContext
 {
     private readonly ITestOutputHelper _output;
     private static readonly string[] SameTenants = { "tenant", "tenant" };
@@ -31,11 +32,8 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
     {
         { TenancyStyle.Conjoined, SameTenants },
         { TenancyStyle.Conjoined, DifferentTenants },
-
         { TenancyStyle.Single, DefaultTenant },
-
         { TenancyStyle.Single, DifferentTenants },
-
         { TenancyStyle.Single, SameTenants },
     };
 
@@ -51,11 +49,13 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
             session.Logger = new TestOutputMartenLogger(_output);
 
             #region sample_start-stream-with-aggregate-type
+
             var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
             var id = session.Events.StartStream<Quest>(joined, departed).Id;
             session.SaveChanges();
+
             #endregion
 
             var streamEvents = session.Events.FetchStream(id);
@@ -72,7 +72,8 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public Task capture_events_to_a_new_stream_and_fetch_the_events_back_async(TenancyStyle tenancyStyle, string[] tenants)
+    public Task capture_events_to_a_new_stream_and_fetch_the_events_back_async(TenancyStyle tenancyStyle,
+        string[] tenants)
     {
         var store = InitStore(tenancyStyle);
 
@@ -81,11 +82,13 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
             await using var session = store.LightweightSession(tenantId);
 
             #region sample_start-stream-with-aggregate-type
+
             var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
             var id = session.Events.StartStream<Quest>(joined, departed).Id;
             await session.SaveChangesAsync();
+
             #endregion
 
             var streamEvents = await session.Events.FetchStreamAsync(id);
@@ -102,7 +105,8 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public Task capture_events_to_a_new_stream_and_fetch_the_events_back_async_with_linq(TenancyStyle tenancyStyle, string[] tenants)
+    public Task capture_events_to_a_new_stream_and_fetch_the_events_back_async_with_linq(TenancyStyle tenancyStyle,
+        string[] tenants)
     {
         var store = InitStore(tenancyStyle);
 
@@ -111,11 +115,13 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
             await using var session = store.LightweightSession(tenantId);
 
             #region sample_start-stream-with-aggregate-type
+
             var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
             var id = session.Events.StartStream<Quest>(joined, departed).Id;
             await session.SaveChangesAsync();
+
             #endregion
 
             var streamEvents = await session.Events.QueryAllRawEvents()
@@ -133,7 +139,8 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void capture_events_to_a_new_stream_and_fetch_the_events_back_sync_with_linq(TenancyStyle tenancyStyle, string[] tenants)
+    public void capture_events_to_a_new_stream_and_fetch_the_events_back_sync_with_linq(TenancyStyle tenancyStyle,
+        string[] tenants)
     {
         var store = InitStore(tenancyStyle);
 
@@ -142,11 +149,13 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
             using var session = store.LightweightSession(tenantId);
 
             #region sample_start-stream-with-aggregate-type
+
             var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
             var id = session.Events.StartStream<Quest>(joined, departed).Id;
             session.SaveChanges();
+
             #endregion
 
             var streamEvents = session.Events.QueryAllRawEvents()
@@ -164,7 +173,8 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void live_aggregate_equals_inlined_aggregate_without_hidden_contracts(TenancyStyle tenancyStyle, string[] tenants)
+    public void live_aggregate_equals_inlined_aggregate_without_hidden_contracts(TenancyStyle tenancyStyle,
+        string[] tenants)
     {
         var store = InitStore(tenancyStyle);
         var questId = Guid.NewGuid();
@@ -174,7 +184,11 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
             using (var session = store.LightweightSession(tenantId))
             {
                 //Note Id = questId, is we remove it from first message then AggregateStream will return party.Id=default(Guid) that is not equals to Load<QuestParty> result
-                var started = new QuestStarted { /*Id = questId,*/ Name = "Destroy the One Ring" };
+                var started = new QuestStarted
+                {
+                    /*Id = questId,*/
+                    Name = "Destroy the One Ring"
+                };
                 var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");
 
                 session.Events.StartStream<Quest>(questId, started, joined1);
@@ -189,7 +203,8 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
                 inlinedAggregate.ToString().ShouldBe(liveAggregate.ToString());
             }
         }).ShouldThrowIf(
-            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) || (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
+            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
+            (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
         );
     }
 
@@ -245,6 +260,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
                 var party = session.Load<QuestParty>(questId);
                 SpecificationExtensions.ShouldNotBeNull(party);
             }
+
             //GetAll
             using (var session = store.LightweightSession(tenantId))
             {
@@ -254,11 +270,12 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
                     SpecificationExtensions.ShouldNotBeNull(party);
                 }
             }
+
             //This AggregateStream fail with NPE
             using (var session = store.LightweightSession(tenantId))
             {
                 // questId is the id of the stream
-                var party = session.Events.AggregateStream<QuestParty>(questId);//Here we get NPE
+                var party = session.Events.AggregateStream<QuestParty>(questId); //Here we get NPE
                 party.Id.ShouldBe(questId);
 
                 var party_at_version_3 = session.Events
@@ -270,7 +287,8 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
                 party_yesterday.ShouldBeNull();
             }
         }).ShouldThrowIf(
-            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) || (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
+            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
+            (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
         );
     }
 
@@ -302,7 +320,8 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
                 party.Id.ShouldBe(questId);
             }
         }).ShouldThrowIf(
-            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) || (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
+            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
+            (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
         );
     }
 
@@ -334,7 +353,8 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
                 party.Id.ShouldBe(questId);
             }
         }).ShouldThrowIfAsync(
-            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) || (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
+            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
+            (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
         );
     }
 
@@ -350,12 +370,14 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
             using (var session = store.LightweightSession(tenantId))
             {
                 #region sample_start-stream-with-existing-guid
+
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                 var id = Guid.NewGuid();
                 session.Events.StartStream<Quest>(id, joined, departed);
                 session.SaveChanges();
+
                 #endregion
 
                 var streamEvents = session.Events.FetchStream(id);
@@ -371,7 +393,8 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle, string[] tenants)
+    public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle,
+        string[] tenants)
     {
         var store = InitStore(tenancyStyle);
 
@@ -401,7 +424,8 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void capture_events_to_an_existing_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle, string[] tenants)
+    public void capture_events_to_an_existing_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle,
+        string[] tenants)
     {
         var store = InitStore(tenancyStyle);
 
@@ -438,7 +462,8 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
                 streamEvents.ElementAt(2).Version.ShouldBe(3);
             }
         }).ShouldThrowIf(
-            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) || (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
+            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
+            (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
         );
     }
 
@@ -555,12 +580,14 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
             using (var session = store.LightweightSession(tenantId))
             {
                 #region sample_append-events
+
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                 session.Events.Append(id, joined, departed);
 
                 session.SaveChanges();
+
                 #endregion
 
                 var streamEvents = session.Events.FetchStream(id);
@@ -574,7 +601,8 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
                 streamEvents.ElementAt(2).Version.ShouldBe(3);
             }
         }).ShouldThrowIf(
-            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) || (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
+            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
+            (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
         );
     }
 
@@ -594,6 +622,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
             using (var session = store.LightweightSession(tenantId))
             {
                 #region sample_append-events-assert-on-eventid
+
                 session.Events.StartStream<Quest>(id, started);
                 session.SaveChanges();
 
@@ -605,10 +634,12 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
                 session.Events.Append(id, 3, joined, departed);
 
                 session.SaveChanges();
+
                 #endregion
             }
         }).ShouldThrowIf(
-            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) || (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
+            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
+            (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
         );
     }
 
@@ -641,11 +672,13 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
                 @event.Name.ShouldBe("some-name");
             }
         }).ShouldThrowIf(
-            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) || (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
+            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
+            (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
         );
     }
 
-    private DocumentStore InitStore(TenancyStyle tenancyStyle, bool cleanSchema = true, bool useAppendEventForUpdateLock = false)
+    private DocumentStore InitStore(TenancyStyle tenancyStyle, bool cleanSchema = true,
+        bool useAppendEventForUpdateLock = false)
     {
         var store = StoreOptions(_ =>
         {
@@ -658,7 +691,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConf
 
             _.Connection(ConnectionSource.ConnectionString);
 
-            _.Projections.Snapshot<QuestParty>();
+            _.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
 
             _.Events.AddEventType(typeof(MembersJoined));
             _.Events.AddEventType(typeof(MembersDeparted));

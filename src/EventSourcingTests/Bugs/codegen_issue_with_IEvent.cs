@@ -14,7 +14,7 @@ public class CodeGenIEventIssue: BugIntegrationContext
     {
         var store = StoreOptions(_ =>
         {
-            _.Projections.Add(new FooProjection());
+            _.Projections.Add(new FooProjection(), ProjectionLifecycle.Inline);
         });
 
         using var session = store.LightweightSession();
@@ -27,7 +27,7 @@ public class CodeGenIEventIssue: BugIntegrationContext
     {
         var store = StoreOptions(_ =>
         {
-            _.Projections.Add(new RecordProjection());
+            _.Projections.Add(new RecordProjection(), ProjectionLifecycle.Inline);
         });
 
         using var session = store.LightweightSession();
@@ -60,7 +60,6 @@ public class FooProjection: MultiStreamProjection<FooAuditLog, Guid>
     public FooProjection()
     {
         ProjectionName = nameof(FooAuditLog);
-        Lifecycle = ProjectionLifecycle.Inline;
 
         Identity<FooCreated>(x => x.Id);
 
@@ -84,7 +83,6 @@ public class RecordProjection: MultiStreamProjection<RecordAuditLog, Guid>
     public RecordProjection()
     {
         ProjectionName = nameof(RecordAuditLog);
-        Lifecycle = ProjectionLifecycle.Inline;
 
         Identity<IRecordLogEvent>(x => x.Id);
 

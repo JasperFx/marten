@@ -17,7 +17,7 @@ public class UserCreated
     public string Surname { get; set; }
 }
 
-public class UserMultiStreamProjection : MultiStreamProjection<UniqueUser, Guid>
+public class UserMultiStreamProjection: MultiStreamProjection<UniqueUser, Guid>
 {
     public UserMultiStreamProjection()
     {
@@ -43,14 +43,12 @@ public class UniqueUser
     [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField)]
     public string Email { get; set; }
 
-    [UniqueIndex(IndexName = "fullname")]
-    public string FirstName { get; set; }
+    [UniqueIndex(IndexName = "fullname")] public string FirstName { get; set; }
 
-    [UniqueIndex(IndexName = "fullname")]
-    public string Surname { get; set; }
+    [UniqueIndex(IndexName = "fullname")] public string Surname { get; set; }
 }
 
-public class UniqueIndexTests : OneOffConfigurationsContext
+public class UniqueIndexTests: OneOffConfigurationsContext
 {
     public const string UniqueSqlState = "23505";
 
@@ -59,17 +57,24 @@ public class UniqueIndexTests : OneOffConfigurationsContext
         StoreOptions(opts =>
         {
             opts.Events.AddEventTypes(new[] { typeof(UserCreated) });
-            opts.Projections.Add(new UserMultiStreamProjection());
+            opts.Projections.Add(new UserMultiStreamProjection(), ProjectionLifecycle.Async);
             opts.RegisterDocumentType<UniqueUser>();
         });
     }
 
     [Fact]
-    public void given_two_documents_with_the_same_value_for_unique_field_with_multiple_properties_when_created_then_throws_exception()
+    public void
+        given_two_documents_with_the_same_value_for_unique_field_with_multiple_properties_when_created_then_throws_exception()
     {
         //1. Create Events
-        var firstDocument = new UniqueUser { Id = Guid.NewGuid(), Email = "john.doe@gmail.com", FirstName = "John", Surname = "Doe" };
-        var secondDocument = new UniqueUser { Id = Guid.NewGuid(), Email = "some.mail@outlook.com", FirstName = "John", Surname = "Doe" };
+        var firstDocument = new UniqueUser
+        {
+            Id = Guid.NewGuid(), Email = "john.doe@gmail.com", FirstName = "John", Surname = "Doe"
+        };
+        var secondDocument = new UniqueUser
+        {
+            Id = Guid.NewGuid(), Email = "some.mail@outlook.com", FirstName = "John", Surname = "Doe"
+        };
 
 
         using var session = theStore.LightweightSession();
@@ -89,11 +94,13 @@ public class UniqueIndexTests : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void given_two_documents_with_the_same_value_for_unique_field_with_single_property_when_created_then_throws_exception()
+    public void
+        given_two_documents_with_the_same_value_for_unique_field_with_single_property_when_created_then_throws_exception()
     {
         //1. Create Events
         const string email = "john.smith@mail.com";
-        var firstDocument = new UniqueUser { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Smith" };
+        var firstDocument =
+            new UniqueUser { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Smith" };
         var secondDocument = new UniqueUser { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Doe" };
 
         using var session = theStore.LightweightSession();
@@ -113,11 +120,18 @@ public class UniqueIndexTests : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void given_two_events_with_the_same_value_for_unique_field_with_multiple_properties_when_inline_transformation_is_applied_then_throws_exception()
+    public void
+        given_two_events_with_the_same_value_for_unique_field_with_multiple_properties_when_inline_transformation_is_applied_then_throws_exception()
     {
         //1. Create Events
-        var firstEvent = new UserCreated { UserId = Guid.NewGuid(), Email = "john.doe@gmail.com", FirstName = "John", Surname = "Doe" };
-        var secondEvent = new UserCreated { UserId = Guid.NewGuid(), Email = "some.mail@outlook.com", FirstName = "John", Surname = "Doe" };
+        var firstEvent = new UserCreated
+        {
+            UserId = Guid.NewGuid(), Email = "john.doe@gmail.com", FirstName = "John", Surname = "Doe"
+        };
+        var secondEvent = new UserCreated
+        {
+            UserId = Guid.NewGuid(), Email = "some.mail@outlook.com", FirstName = "John", Surname = "Doe"
+        };
 
         using var session = theStore.LightweightSession();
         //2. Publish Events
@@ -136,12 +150,15 @@ public class UniqueIndexTests : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void given_two_events_with_the_same_value_for_unique_field_with_single_property_when_inline_transformation_is_applied_then_throws_exception()
+    public void
+        given_two_events_with_the_same_value_for_unique_field_with_single_property_when_inline_transformation_is_applied_then_throws_exception()
     {
         //1. Create Events
         const string email = "john.smith@mail.com";
-        var firstEvent = new UserCreated { UserId = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Smith" };
-        var secondEvent = new UserCreated { UserId = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Doe" };
+        var firstEvent =
+            new UserCreated { UserId = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Smith" };
+        var secondEvent =
+            new UserCreated { UserId = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Doe" };
 
         using var session = theStore.LightweightSession();
         //2. Publish Events
@@ -158,5 +175,4 @@ public class UniqueIndexTests : OneOffConfigurationsContext
             ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
         }
     }
-
 }

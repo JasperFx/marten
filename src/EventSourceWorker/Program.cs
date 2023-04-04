@@ -1,6 +1,7 @@
 using Marten;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon.Resiliency;
+using Marten.Events.Projections;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -40,7 +41,7 @@ public class Program
                             options.AutoCreateSchemaObjects = AutoCreate.All;
                         }
 
-                        options.Projections.Add(new TripProjectionWithCustomName());
+                        options.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Inline);
                     })
                     // Run the asynchronous projections in this node
                     .AddAsyncDaemon(DaemonMode.Solo);

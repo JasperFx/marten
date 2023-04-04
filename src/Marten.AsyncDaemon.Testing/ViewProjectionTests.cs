@@ -64,7 +64,7 @@ public class ViewProjectionTests: DaemonContext
     [Fact]
     public async Task run_end_to_end()
     {
-        StoreOptions(x => x.Projections.Add(new DayProjection()));
+        StoreOptions(x => x.Projections.Add(new DayProjection(), ProjectionLifecycle.Async));
 
         await theStore.EnsureStorageExistsAsync(typeof(Day));
 
@@ -99,8 +99,6 @@ public class ViewProjectionTests: DaemonContext
             day.Version.ShouldBeGreaterThan(0);
         }
     }
-
-
 }
 
 public class Day

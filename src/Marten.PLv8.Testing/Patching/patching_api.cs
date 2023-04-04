@@ -836,8 +836,8 @@ public class patching_api: OneOffConfigurationsContext
             // Marten.PLv8 is necessary for patching
             opts.UseJavascriptTransformsAndPatching();
 
-            // The default lifecycle is inline
-            opts.Projections.Add(new QuestPatchTestProjection());
+            // Use inline lifecycle
+            opts.Projections.Add(new QuestPatchTestProjection(), ProjectionLifecycle.Inline);
 
             // Or use this as an asychronous projection
             opts.Projections.Add(new QuestPatchTestProjection(), ProjectionLifecycle.Async);
@@ -856,7 +856,7 @@ public class patching_api: OneOffConfigurationsContext
             _.AutoCreateSchemaObjects = AutoCreate.All;
             _.Events.TenancyStyle = tenancyStyle;
 
-            _.Projections.Add(new QuestPatchTestProjection());
+            _.Projections.Add(new QuestPatchTestProjection(), ProjectionLifecycle.Inline);
 
             _.UseJavascriptTransformsAndPatching();
         });

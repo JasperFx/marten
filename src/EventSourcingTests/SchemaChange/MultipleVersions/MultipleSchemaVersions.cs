@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using Marten;
 using Marten.Events;
+using Marten.Events.Projections;
 using Marten.Testing;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -31,7 +32,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
         StoreOptions(options =>
         {
             options.GeneratedCodeMode = TypeLoadMode.Auto;
-            options.Projections.Snapshot<V1.ShoppingCart>();
+            options.Projections.Snapshot<V1.ShoppingCart>(SnapshotLifecycle.Inline);
         });
         await theStore.EnsureStorageExistsAsync(typeof(StreamAction));
 
@@ -78,7 +79,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
         StoreOptions(options =>
         {
             options.GeneratedCodeMode = TypeLoadMode.Auto;
-            options.Projections.Snapshot<V1.ShoppingCart>();
+            options.Projections.Snapshot<V1.ShoppingCart>(SnapshotLifecycle.Inline);
         });
         await theStore.EnsureStorageExistsAsync(typeof(StreamAction));
 
@@ -130,7 +131,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
         using var storeV2 = SeparateStore(options =>
         {
             options.GeneratedCodeMode = TypeLoadMode.Auto;
-            options.Projections.Snapshot<V2.WithTheSameName.ShoppingCart>();
+            options.Projections.Snapshot<V2.WithTheSameName.ShoppingCart>(SnapshotLifecycle.Inline);
             ////////////////////////////////////////////////////////
             // 2.1. Define Upcast methods from V1 to V2
             ////////////////////////////////////////////////////////
@@ -209,7 +210,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
         using var storeV3 = SeparateStore(options =>
         {
             options.GeneratedCodeMode = TypeLoadMode.Auto;
-            options.Projections.Snapshot<V3.WithTheSameName.ShoppingCart>();
+            options.Projections.Snapshot<V3.WithTheSameName.ShoppingCart>(SnapshotLifecycle.Inline);
             ////////////////////////////////////////////////////////
             // 3.1. Define Upcast methods from V1 to V3, and from V2 to V3
             ////////////////////////////////////////////////////////
@@ -290,7 +291,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
         using var storeV2 = SeparateStore(options =>
         {
             options.GeneratedCodeMode = TypeLoadMode.Auto;
-            options.Projections.Snapshot<V2.WithDifferentName.ShoppingCart>();
+            options.Projections.Snapshot<V2.WithDifferentName.ShoppingCart>(SnapshotLifecycle.Inline);
             ////////////////////////////////////////////////////////
             // 2.1. Define Upcast methods from V1 to V2
             ////////////////////////////////////////////////////////
@@ -368,7 +369,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
         using var storeV3 = SeparateStore(options =>
         {
             options.GeneratedCodeMode = TypeLoadMode.Auto;
-            options.Projections.Snapshot<V3.WithDifferentName.ShoppingCart>();
+            options.Projections.Snapshot<V3.WithDifferentName.ShoppingCart>(SnapshotLifecycle.Inline);
             ////////////////////////////////////////////////////////
             // 3.1. Define Upcast methods from V1 to V3, and from V2 to V3
             ////////////////////////////////////////////////////////

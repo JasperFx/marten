@@ -13,9 +13,9 @@ using Xunit.Abstractions;
 
 namespace Marten.AsyncDaemon.Testing;
 
-public class multi_stream_aggregation_end_to_end : DaemonContext
+public class multi_stream_aggregation_end_to_end: DaemonContext
 {
-    public multi_stream_aggregation_end_to_end(ITestOutputHelper output) : base(output)
+    public multi_stream_aggregation_end_to_end(ITestOutputHelper output): base(output)
     {
     }
 
@@ -33,15 +33,15 @@ public class multi_stream_aggregation_end_to_end : DaemonContext
         StoreOptions(opts =>
         {
             opts.Projections.AsyncMode = DaemonMode.Solo;
-            opts.Projections.Add<UserIssueProjection>();
+            opts.Projections.Add<UserIssueProjection>(ProjectionLifecycle.Async);
         });
 
 
         await using (var session = theStore.LightweightSession())
         {
-            session.Events.Append(user1, new UserCreated {UserId = user1});
-            session.Events.Append(user2, new UserCreated {UserId = user2});
-            session.Events.Append(user3, new UserCreated {UserId = user3});
+            session.Events.Append(user1, new UserCreated { UserId = user1 });
+            session.Events.Append(user2, new UserCreated { UserId = user2 });
+            session.Events.Append(user3, new UserCreated { UserId = user3 });
 
             await session.SaveChangesAsync();
         }
@@ -54,7 +54,7 @@ public class multi_stream_aggregation_end_to_end : DaemonContext
 
         await using (var session = theStore.LightweightSession())
         {
-            session.Events.Append(issue1, new IssueCreated {UserId = user1, IssueId = issue1});
+            session.Events.Append(issue1, new IssueCreated { UserId = user1, IssueId = issue1 });
             await session.SaveChangesAsync();
         }
 
@@ -64,7 +64,7 @@ public class multi_stream_aggregation_end_to_end : DaemonContext
 
         await using (var session = theStore.LightweightSession())
         {
-            session.Events.Append(issue2, new IssueCreated {UserId = user1, IssueId = issue2});
+            session.Events.Append(issue2, new IssueCreated { UserId = user1, IssueId = issue2 });
             await session.SaveChangesAsync();
         }
 
@@ -72,7 +72,7 @@ public class multi_stream_aggregation_end_to_end : DaemonContext
 
         await using (var session = theStore.LightweightSession())
         {
-            session.Events.Append(issue3, new IssueCreated {UserId = user1, IssueId = issue3});
+            session.Events.Append(issue3, new IssueCreated { UserId = user1, IssueId = issue3 });
             await session.SaveChangesAsync();
         }
 
@@ -88,8 +88,7 @@ public class multi_stream_aggregation_end_to_end : DaemonContext
 
 public class UserIssues: IVersioned
 {
-    [Identity]
-    public Guid UserId { get; set; }
+    [Identity] public Guid UserId { get; set; }
 
     public List<Issue> Issues { get; set; } = new List<Issue>();
     public Guid Version { get; set; }
@@ -124,14 +123,13 @@ public class UserIssueProjection: MultiStreamProjection<UserIssues, Guid>
     {
         ProjectionName = "UserIssue";
 
-        Lifecycle = ProjectionLifecycle.Async;
         Identity<UserCreated>(x => x.UserId);
         Identity<IssueCreated>(x => x.UserId);
     }
 
     public UserIssues Create(UserCreated @event) =>
-        new UserIssues {UserId = @event.UserId, Issues = new List<Issue>()};
+        new UserIssues { UserId = @event.UserId, Issues = new List<Issue>() };
 
     public void Apply(UserIssues state, IssueCreated @event) =>
-        state.Issues.Add(new Issue {Id = @event.IssueId, Name = @event.Name});
+        state.Issues.Add(new Issue { Id = @event.IssueId, Name = @event.Name });
 }

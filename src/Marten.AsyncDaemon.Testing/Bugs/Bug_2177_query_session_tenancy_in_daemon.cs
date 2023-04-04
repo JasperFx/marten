@@ -89,11 +89,6 @@ namespace Bug2177
 
     public class TicketProjection: SingleStreamProjection<Ticket>
     {
-        public TicketProjection()
-        {
-            Lifecycle = ProjectionLifecycle.Async;
-        }
-
         public Ticket Create(TicketCreated created) =>
             new() { Id = created.TicketId, Name = created.Name };
 

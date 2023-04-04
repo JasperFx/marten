@@ -26,7 +26,7 @@ public class aggregates_should_be_registered_as_document_mappings_automatically:
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Add<AllGood>();
+            opts.Projections.Add<AllGood>(ProjectionLifecycle.Inline);
         });
 
         // MyAggregate is the aggregate type for AllGood above
@@ -40,7 +40,7 @@ public class aggregates_should_be_registered_as_document_mappings_automatically:
     {
         StoreOptions(_ =>
         {
-            _.Projections.Snapshot<QuestParty>();
+            _.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
         });
 
         theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
@@ -58,5 +58,4 @@ public class aggregates_should_be_registered_as_document_mappings_automatically:
         theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
             .ShouldContain(typeof(QuestParty));
     }
-
 }

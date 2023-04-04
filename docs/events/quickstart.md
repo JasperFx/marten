@@ -147,7 +147,7 @@ public class MembersEscaped
 var store = DocumentStore.For(_ =>
 {
     _.Connection(ConnectionSource.ConnectionString);
-    _.Projections.Snapshot<QuestParty>();
+    _.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
 });
 
 var questId = Guid.NewGuid();
@@ -171,7 +171,7 @@ await using (var session = store.LightweightSession())
     await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L16-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-quickstart' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L17-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-quickstart' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In addition to generic `StartStream<T>`, `IEventStore` has a non-generic `StartStream` overload that let you pass explicit type.
@@ -190,7 +190,7 @@ await using (var session = store.LightweightSession())
     await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L46-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-start-stream-with-explicit-type' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L49-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-start-stream-with-explicit-type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, we would at some point like to see the current state of the quest party to check up on where they're at, who is in the party, and maybe how many monsters they've slain along the way. To keep things simple, we're going to use Marten's live stream aggregation feature to model a `QuestParty` that can update itself based on our events:
@@ -240,5 +240,5 @@ await using (var session = store.LightweightSession())
         .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L87-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L93-L108' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

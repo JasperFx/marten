@@ -24,7 +24,6 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
 
     protected MultiStreamProjection(): base(AggregationScope.MultiStream)
     {
-        Lifecycle = ProjectionLifecycle.Async;
     }
 
     internal IEventSlicer<TDoc, TId> Slicer => _customSlicer ?? _defaultSlicer;
@@ -146,7 +145,6 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
 [Obsolete("Please switch to MultiStreamProjection<T> with the exact same syntax")]
 public abstract class MultiStreamAggregation<TDoc, TId>: MultiStreamProjection<TDoc, TId>
 {
-
 }
 
 [Obsolete("Please switch to MultiStreamProjection<T> with the exact same syntax")]

@@ -77,10 +77,7 @@ public class TripProjection: SingleStreamProjection<Trip>
 
         DeleteEvent<Breakdown>(x => x.IsCritical);
 
-        DeleteEvent<VacationOver>((trip, v) => trip.Traveled > 1000);
-
-        // Now let's change the lifecycle to inline
-        Lifecycle = ProjectionLifecycle.Inline;
+        DeleteEvent<VacationOver>((trip, _) => trip.Traveled > 1000);
     }
 
     // These methods can be either public, internal, or private but there's
@@ -100,7 +97,7 @@ public class TripProjection: SingleStreamProjection<Trip>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L44-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L44-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And register that projection like this:
@@ -188,7 +185,7 @@ public class Trip
     internal bool ShouldDelete(VacationOver e) => Traveled > 1000;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L116-L166' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L113-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or finally, you can use a method named `Create()` on a projection type as shown in this sample:
@@ -204,10 +201,7 @@ public class TripProjection: SingleStreamProjection<Trip>
 
         DeleteEvent<Breakdown>(x => x.IsCritical);
 
-        DeleteEvent<VacationOver>((trip, v) => trip.Traveled > 1000);
-
-        // Now let's change the lifecycle to inline
-        Lifecycle = ProjectionLifecycle.Inline;
+        DeleteEvent<VacationOver>((trip, _) => trip.Traveled > 1000);
     }
 
     // These methods can be either public, internal, or private but there's
@@ -227,7 +221,7 @@ public class TripProjection: SingleStreamProjection<Trip>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L44-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L44-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Create()` method has to return either the aggregate document type or `Task<T>` where `T` is the aggregate document type. There must be an argument for the specific event type or `Event<T>` where `T` is the event type if you need access to event metadata. You can also take in an `IQuerySession` if you need to look up additional data as part of the transformation or `IEvent` in addition to the exact event type just to get at event metadata.
@@ -267,7 +261,7 @@ public class TripProjection: SingleStreamProjection<Trip>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L172-L197' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_projectevent_in_aggregate_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L169-L194' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_projectevent_in_aggregate_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 I'm not personally that wild about using lots of inline Lambdas like the example above, and to that end, Marten now supports the `Apply()` method convention. Here's the same `TripProjection`, but this time using methods to mutate the `Trip` document:
@@ -283,10 +277,7 @@ public class TripProjection: SingleStreamProjection<Trip>
 
         DeleteEvent<Breakdown>(x => x.IsCritical);
 
-        DeleteEvent<VacationOver>((trip, v) => trip.Traveled > 1000);
-
-        // Now let's change the lifecycle to inline
-        Lifecycle = ProjectionLifecycle.Inline;
+        DeleteEvent<VacationOver>((trip, _) => trip.Traveled > 1000);
     }
 
     // These methods can be either public, internal, or private but there's
@@ -306,7 +297,7 @@ public class TripProjection: SingleStreamProjection<Trip>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L44-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L44-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Apply()` methods can accept any combination of these arguments:
@@ -475,7 +466,7 @@ public class Trip
     internal bool ShouldDelete(VacationOver e) => Traveled > 1000;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L116-L166' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L113-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Here's an example of using the various ways of doing `Trip` stream aggregation:
@@ -509,7 +500,7 @@ internal async Task use_a_stream_aggregation()
     var trip = await session.Events.AggregateStreamAsync<Trip>(tripId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L84-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_stream_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L81-L109' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_stream_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Aggregate Versioning

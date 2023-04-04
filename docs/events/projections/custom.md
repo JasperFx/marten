@@ -84,8 +84,8 @@ var store = DocumentStore.For(opts =>
     // Marten.PLv8 is necessary for patching
     opts.UseJavascriptTransformsAndPatching();
 
-    // The default lifecycle is inline
-    opts.Projections.Add(new QuestPatchTestProjection());
+    // Use inline lifecycle
+    opts.Projections.Add(new QuestPatchTestProjection(), ProjectionLifecycle.Inline);
 
     // Or use this as an asychronous projection
     opts.Projections.Add(new QuestPatchTestProjection(), ProjectionLifecycle.Async);
