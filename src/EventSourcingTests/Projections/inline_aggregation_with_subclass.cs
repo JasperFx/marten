@@ -1,12 +1,13 @@
 using System;
 using System.Linq;
+using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace EventSourcingTests.Projections;
 
-public class inline_aggregation_with_subclass : OneOffConfigurationsContext
+public class inline_aggregation_with_subclass: OneOffConfigurationsContext
 {
     public inline_aggregation_with_subclass()
     {
@@ -14,7 +15,7 @@ public class inline_aggregation_with_subclass : OneOffConfigurationsContext
         {
             x.Schema.For<FooBase>().AddSubClass<FooA>();
 
-            x.Projections.Snapshot<FooA>();
+            x.Projections.Snapshot<FooA>(SnapshotLifecycle.Inline);
         });
     }
 
@@ -23,7 +24,7 @@ public class inline_aggregation_with_subclass : OneOffConfigurationsContext
     {
         var description = "FooDescription";
 
-        var streamId = theSession.Events.StartStream(new FooACreated { Description = description } ).Id;
+        var streamId = theSession.Events.StartStream(new FooACreated { Description = description }).Id;
         theSession.SaveChanges();
 
         var fooInstance = theSession.Query<FooA>().Single(x => x.Id == streamId);
@@ -52,8 +53,7 @@ public abstract class FooBase
     public Guid Id { get; set; }
 }
 
-
-public class FooA : FooBase
+public class FooA: FooBase
 {
     public string Description { get; set; }
 

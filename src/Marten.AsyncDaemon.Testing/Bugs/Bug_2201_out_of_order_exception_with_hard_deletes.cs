@@ -56,7 +56,6 @@ public class Bug_2201_out_of_order_exception_with_hard_deletes: BugIntegrationCo
     {
         public TicketProjection()
         {
-            Lifecycle = ProjectionLifecycle.Async;
             DeleteEvent<TicketDeleted>();
         }
 

@@ -20,7 +20,7 @@ public abstract class ProjectionBase
     /// <summary>
     ///     The projection lifecycle that governs when this projection is executed
     /// </summary>
-    public ProjectionLifecycle Lifecycle { get; set; } = ProjectionLifecycle.Async;
+    public ProjectionLifecycle Lifecycle { get; internal set; } = ProjectionLifecycle.Async;
 
     /// <summary>
     ///     Optimize this projection within the Async Daemon by

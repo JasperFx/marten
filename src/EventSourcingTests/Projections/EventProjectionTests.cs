@@ -11,7 +11,7 @@ using Xunit;
 
 namespace EventSourcingTests.Projections;
 
-public class EventProjectionTests : OneOffConfigurationsContext
+public class EventProjectionTests: OneOffConfigurationsContext
 {
     public EventProjectionTests()
     {
@@ -20,7 +20,7 @@ public class EventProjectionTests : OneOffConfigurationsContext
 
     protected void UseProjection<T>() where T : EventProjection, new()
     {
-        StoreOptions(x => x.Projections.Add(new T()));
+        StoreOptions(x => x.Projections.Add(new T(), ProjectionLifecycle.Inline));
     }
 
     [Fact]
@@ -39,8 +39,8 @@ public class EventProjectionTests : OneOffConfigurationsContext
         UseProjection<SimpleProjection>();
 
         var stream = Guid.NewGuid();
-        theSession.Events.StartStream(stream, new UserCreated {UserName = "one"},
-            new UserCreated {UserName = "two"});
+        theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
+            new UserCreated { UserName = "two" });
 
         theSession.SaveChanges();
 
@@ -50,7 +50,7 @@ public class EventProjectionTests : OneOffConfigurationsContext
             .ToList()
             .ShouldHaveTheSameElementsAs("one", "two");
 
-        theSession.Events.Append(stream, new UserDeleted {UserName = "one"});
+        theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
         theSession.SaveChanges();
 
         query.Query<User>()
@@ -66,8 +66,8 @@ public class EventProjectionTests : OneOffConfigurationsContext
         UseProjection<LambdaProjection>();
 
         var stream = Guid.NewGuid();
-        theSession.Events.StartStream(stream, new UserCreated {UserName = "one"},
-            new UserCreated {UserName = "two"});
+        theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
+            new UserCreated { UserName = "two" });
 
         theSession.SaveChanges();
 
@@ -77,7 +77,7 @@ public class EventProjectionTests : OneOffConfigurationsContext
             .ToList()
             .ShouldHaveTheSameElementsAs("one", "two");
 
-        theSession.Events.Append(stream, new UserDeleted {UserName = "one"});
+        theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
         theSession.SaveChanges();
 
         query.Query<User>()
@@ -93,8 +93,8 @@ public class EventProjectionTests : OneOffConfigurationsContext
         UseProjection<SimpleCreatorProjection>();
 
         var stream = Guid.NewGuid();
-        theSession.Events.StartStream(stream, new UserCreated {UserName = "one"},
-            new UserCreated {UserName = "two"});
+        theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
+            new UserCreated { UserName = "two" });
 
         theSession.SaveChanges();
 
@@ -104,7 +104,7 @@ public class EventProjectionTests : OneOffConfigurationsContext
             .ToList()
             .ShouldHaveTheSameElementsAs("one", "two");
 
-        theSession.Events.Append(stream, new UserDeleted {UserName = "one"});
+        theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
         theSession.SaveChanges();
 
         query.Query<User>()
@@ -120,11 +120,10 @@ public class EventProjectionTests : OneOffConfigurationsContext
         UseProjection<SimpleTransformProjectionUsingMetadata>();
 
         var stream = Guid.NewGuid();
-        theSession.Events.Append(stream, new UserCreated {UserName = "one"},
-            new UserCreated {UserName = "two"});
+        theSession.Events.Append(stream, new UserCreated { UserName = "one" },
+            new UserCreated { UserName = "two" });
 
         theSession.SaveChanges();
-
     }
 
     [Fact]
@@ -133,12 +132,12 @@ public class EventProjectionTests : OneOffConfigurationsContext
         StoreOptions(x =>
         {
             x.Events.StreamIdentity = StreamIdentity.AsString;
-            x.Projections.Add(new SimpleTransformProjectionUsingMetadata());
+            x.Projections.Add(new SimpleTransformProjectionUsingMetadata(), ProjectionLifecycle.Inline);
         });
 
         var stream = Guid.NewGuid().ToString();
-        theSession.Events.StartStream(stream, new UserCreated {UserName = "one"},
-            new UserCreated {UserName = "two"});
+        theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
+            new UserCreated { UserName = "two" });
 
         theSession.SaveChanges();
 
@@ -152,8 +151,8 @@ public class EventProjectionTests : OneOffConfigurationsContext
         UseProjection<SimpleTransformProjection>();
 
         var stream = Guid.NewGuid();
-        theSession.Events.StartStream(stream, new UserCreated {UserName = "one"},
-            new UserCreated {UserName = "two"});
+        theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
+            new UserCreated { UserName = "two" });
 
         theSession.SaveChanges();
 
@@ -163,7 +162,7 @@ public class EventProjectionTests : OneOffConfigurationsContext
             .ToList()
             .ShouldHaveTheSameElementsAs("one", "two");
 
-        theSession.Events.Append(stream, new UserDeleted {UserName = "one"});
+        theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
         theSession.SaveChanges();
 
         query.Query<User>()
@@ -184,12 +183,14 @@ public class EventProjectionTests : OneOffConfigurationsContext
     }
 }
 
-public class EmptyProjection : EventProjection{}
+public class EmptyProjection: EventProjection
+{
+}
 
 public class SimpleProjection: EventProjection
 {
     public void Project(UserCreated @event, IDocumentOperations operations) =>
-        operations.Store(new User{UserName = @event.UserName});
+        operations.Store(new User { UserName = @event.UserName });
 
     public void Project(UserDeleted @event, IDocumentOperations operations) =>
         operations.DeleteWhere<User>(x => x.UserName == @event.UserName);
@@ -198,18 +199,17 @@ public class SimpleProjection: EventProjection
 public class SimpleTransformProjection: EventProjection
 {
     public User Transform(UserCreated @event) =>
-        new User{UserName = @event.UserName};
+        new User { UserName = @event.UserName };
 
     public void Project(UserDeleted @event, IDocumentOperations operations) =>
         operations.DeleteWhere<User>(x => x.UserName == @event.UserName);
 }
 
-public class OtherCreationEvent : UserCreated
+public class OtherCreationEvent: UserCreated
 {
-
 }
 
-public class SimpleTransformProjectionUsingMetadata : EventProjection
+public class SimpleTransformProjectionUsingMetadata: EventProjection
 {
     public User Transform(IEvent<UserCreated> @event)
     {
@@ -218,7 +218,7 @@ public class SimpleTransformProjectionUsingMetadata : EventProjection
             throw new Exception("StreamKey and StreamId are both missing");
         }
 
-        return new User {UserName = @event.Data.UserName};
+        return new User { UserName = @event.Data.UserName };
     }
 
     public User Transform(IEvent<OtherCreationEvent> @event)
@@ -228,7 +228,7 @@ public class SimpleTransformProjectionUsingMetadata : EventProjection
             throw new Exception("StreamKey and StreamId are both missing");
         }
 
-        return new User {UserName = @event.Data.UserName};
+        return new User { UserName = @event.Data.UserName };
     }
 
     public void Project(UserDeleted @event, IDocumentOperations operations) =>
@@ -237,7 +237,7 @@ public class SimpleTransformProjectionUsingMetadata : EventProjection
 
 public class SimpleCreatorProjection: EventProjection
 {
-    public User Create(UserCreated e) => new User {UserName = e.UserName};
+    public User Create(UserCreated e) => new User { UserName = e.UserName };
 
     public void Project(UserDeleted @event, IDocumentOperations operations) =>
         operations.DeleteWhere<User>(x => x.UserName == @event.UserName);
@@ -250,7 +250,7 @@ public class LambdaProjection: EventProjection
     public LambdaProjection()
     {
         Project<UserCreated>((e, ops) =>
-            ops.Store(new User {UserName = e.UserName}));
+            ops.Store(new User { UserName = e.UserName }));
 
         Project<UserDeleted>((e, ops) =>
             ops.DeleteWhere<User>(x => x.UserName == e.UserName));

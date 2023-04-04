@@ -23,7 +23,7 @@ public class Bug_2074_recovering_from_errors
             options.Connection(ConnectionSource.ConnectionString);
             options.DatabaseSchemaName = "bug2074";
 
-            options.Projections.Add<UserIssueCounterProjection>();
+            options.Projections.Add<UserIssueCounterProjection>(ProjectionLifecycle.Async);
 
             options.Projections.OnApplyEventException()
                 .RetryLater(250.Milliseconds(), 500.Milliseconds(), 1.Seconds())
@@ -38,7 +38,7 @@ public class Bug_2074_recovering_from_errors
         await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
         var logger = provider.GetRequiredService<ILogger<IProjectionDaemon>>();
-        using var daemon = await documentStore.BuildProjectionDaemonAsync(logger:logger).ConfigureAwait(false);
+        using var daemon = await documentStore.BuildProjectionDaemonAsync(logger: logger).ConfigureAwait(false);
         await daemon.StartAllShards();
 
         var waiter = daemon.Tracker.WaitForShardState("UserIssueCounter:All", 1000, 1.Hours());
@@ -63,13 +63,12 @@ public class UserIssueCounter
     public int Count { get; set; }
 }
 
-public class UserIssueCounterProjection : MultiStreamProjection<UserIssueCounter, Guid>
+public class UserIssueCounterProjection: MultiStreamProjection<UserIssueCounter, Guid>
 {
     private static int _attempts;
 
     public UserIssueCounterProjection()
     {
-        Lifecycle = ProjectionLifecycle.Async;
         Identity<IssueCountIncremented>(x => x.Id);
     }
 

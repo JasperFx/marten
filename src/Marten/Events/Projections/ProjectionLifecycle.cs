@@ -37,21 +37,21 @@ public enum SnapshotLifecycle
 
 public static class SnapshotLifecycleExtensions
 {
-    public static SnapshotLifecycle? Map(this ProjectionLifecycle? projectionLifecycle) =>
+    public static SnapshotLifecycle Map(this ProjectionLifecycle projectionLifecycle) =>
         projectionLifecycle switch
         {
             ProjectionLifecycle.Inline => SnapshotLifecycle.Inline,
             ProjectionLifecycle.Async => SnapshotLifecycle.Async,
             ProjectionLifecycle.Live => throw new ArgumentOutOfRangeException(nameof(projectionLifecycle),
                 "Snapshot lifecycle cannot be live!"),
-            null => null
+            _ => throw new ArgumentOutOfRangeException(nameof(projectionLifecycle), projectionLifecycle, null)
         };
 
-    public static ProjectionLifecycle? Map(this SnapshotLifecycle? projectionLifecycle) =>
+    public static ProjectionLifecycle Map(this SnapshotLifecycle projectionLifecycle) =>
         projectionLifecycle switch
         {
             SnapshotLifecycle.Inline => ProjectionLifecycle.Inline,
             SnapshotLifecycle.Async => ProjectionLifecycle.Async,
-            null => null
+            _ => throw new ArgumentOutOfRangeException(nameof(projectionLifecycle), projectionLifecycle, null)
         };
 }

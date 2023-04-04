@@ -1,5 +1,6 @@
 using System.Linq;
 using Marten;
+using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
@@ -15,13 +16,14 @@ public class inline_aggregation_with_private_constructor: OneOffConfigurationsCo
         {
             _.AutoCreateSchemaObjects = AutoCreate.All;
             _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.All);
-            _.Projections.Snapshot<QuestMonstersWithPrivateConstructor>();
-            _.Projections.Snapshot<QuestMonstersWithNonDefaultPublicConstructor>();
-            _.Projections.Snapshot<WithDefaultPrivateConstructorNonDefaultPublicConstructor>();
-            _.Projections.Snapshot<WithMultiplePublicNonDefaultConstructors>();
-            _.Projections.Snapshot<WithMultiplePrivateNonDefaultConstructors>();
-            _.Projections.Snapshot<WithMultiplePrivateNonDefaultConstructorsAndAttribute>();
-            _.Projections.Snapshot<WithNonDefaultConstructorsPrivateAndPublicWithEqualParamsCount>();
+            _.Projections.Snapshot<QuestMonstersWithPrivateConstructor>(SnapshotLifecycle.Inline);
+            _.Projections.Snapshot<QuestMonstersWithNonDefaultPublicConstructor>(SnapshotLifecycle.Inline);
+            _.Projections.Snapshot<WithDefaultPrivateConstructorNonDefaultPublicConstructor>(SnapshotLifecycle.Inline);
+            _.Projections.Snapshot<WithMultiplePublicNonDefaultConstructors>(SnapshotLifecycle.Inline);
+            _.Projections.Snapshot<WithMultiplePrivateNonDefaultConstructors>(SnapshotLifecycle.Inline);
+            _.Projections.Snapshot<WithMultiplePrivateNonDefaultConstructorsAndAttribute>(SnapshotLifecycle.Inline);
+            _.Projections.Snapshot<WithNonDefaultConstructorsPrivateAndPublicWithEqualParamsCount>(
+                SnapshotLifecycle.Inline);
         });
     }
 
@@ -37,7 +39,7 @@ public class inline_aggregation_with_private_constructor: OneOffConfigurationsCo
         Verify<WithNonDefaultConstructorsPrivateAndPublicWithEqualParamsCount>();
     }
 
-    private void Verify<T>() where T: IMonstersView
+    private void Verify<T>() where T : IMonstersView
     {
         var slayed1 = new MonsterSlayed { Name = "Troll" };
         var slayed2 = new MonsterSlayed { Name = "Dragon" };

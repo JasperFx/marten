@@ -313,7 +313,7 @@ public class using_custom_aggregate_with_soft_deletes_and_update_only_events : O
 {
     public using_custom_aggregate_with_soft_deletes_and_update_only_events()
     {
-        StoreOptions(opts => opts.Projections.Add(new StartAndStopProjection()));
+        StoreOptions(opts => opts.Projections.Add(new StartAndStopProjection(), ProjectionLifecycle.Inline));
     }
 
     public Task InitializeAsync()

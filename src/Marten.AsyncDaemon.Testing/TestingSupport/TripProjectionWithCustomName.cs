@@ -51,10 +51,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
 
             DeleteEvent<Breakdown>(x => x.IsCritical);
 
-            DeleteEvent<VacationOver>((trip, v) => trip.Traveled > 1000);
-
-            // Now let's change the lifecycle to inline
-            Lifecycle = ProjectionLifecycle.Inline;
+            DeleteEvent<VacationOver>((trip, _) => trip.Traveled > 1000);
         }
 
         // These methods can be either public, internal, or private but there's

@@ -1,11 +1,11 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.CodeGeneration;
+using Marten.Events.Projections;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -13,15 +13,15 @@ using Xunit;
 
 namespace CoreTests.Diagnostics;
 
-public class read_only_view_of_store_options_on_document_store : OneOffConfigurationsContext
+public class read_only_view_of_store_options_on_document_store: OneOffConfigurationsContext
 {
     public read_only_view_of_store_options_on_document_store()
     {
         StoreOptions(opts =>
         {
             opts.DatabaseSchemaName = "read_only";
-            opts.Projections.Add<AllGood>();
-            opts.Projections.Add<AllSync>();
+            opts.Projections.Add<AllGood>(ProjectionLifecycle.Inline);
+            opts.Projections.Add<AllSync>(ProjectionLifecycle.Inline);
 
             opts.RegisterDocumentType<User>();
             opts.RegisterDocumentType<Target>();
@@ -33,7 +33,6 @@ public class read_only_view_of_store_options_on_document_store : OneOffConfigura
 
             opts.Events.AddEventType(typeof(QuestStarted));
             opts.Events.AddEventType(typeof(QuestEnded));
-
         });
     }
 
@@ -96,11 +95,17 @@ public class read_only_view_of_store_options_on_document_store : OneOffConfigura
         public string Id { get; set; }
     }
 
-    public class BasketballTeam : Squad { }
+    public class BasketballTeam: Squad
+    {
+    }
 
-    public class FootballTeam : Squad { }
+    public class FootballTeam: Squad
+    {
+    }
 
-    public class BaseballTeam : Squad { }
+    public class BaseballTeam: Squad
+    {
+    }
 }
 
 public class QuestStarted
@@ -123,7 +128,7 @@ public class QuestStarted
         if (ReferenceEquals(null, obj)) return false;
         if (ReferenceEquals(this, obj)) return true;
         if (obj.GetType() != this.GetType()) return false;
-        return Equals((QuestStarted) obj);
+        return Equals((QuestStarted)obj);
     }
 
     public override int GetHashCode()
@@ -143,7 +148,6 @@ public class QuestEnded
     }
 }
 
-
 public class AllSync: SingleStreamProjection<MyAggregate>
 {
     public AllSync()
@@ -153,13 +157,7 @@ public class AllSync: SingleStreamProjection<MyAggregate>
 
     public MyAggregate Create(CreateEvent @event)
     {
-        return new MyAggregate
-        {
-            ACount = @event.A,
-            BCount = @event.B,
-            CCount = @event.C,
-            DCount = @event.D
-        };
+        return new MyAggregate { ACount = @event.A, BCount = @event.B, CCount = @event.C, DCount = @event.D };
     }
 
     public void Apply(AEvent @event, MyAggregate aggregate)
@@ -207,18 +205,11 @@ public class AllGood: SingleStreamProjection<MyAggregate>
     [MartenIgnore]
     public void RandomMethodName()
     {
-
     }
 
     public MyAggregate Create(CreateEvent @event)
     {
-        return new MyAggregate
-        {
-            ACount = @event.A,
-            BCount = @event.B,
-            CCount = @event.C,
-            DCount = @event.D
-        };
+        return new MyAggregate { ACount = @event.A, BCount = @event.B, CCount = @event.C, DCount = @event.D };
     }
 
     public Task<MyAggregate> Create(CreateEvent @event, IQuerySession session)
@@ -281,7 +272,7 @@ public interface ITabulator
     void Apply(MyAggregate aggregate);
 }
 
-public class AEvent : ITabulator
+public class AEvent: ITabulator
 {
     // Necessary for a couple tests. Let it go.
     public Guid Id { get; set; }
@@ -294,7 +285,7 @@ public class AEvent : ITabulator
     public Guid Tracker { get; } = Guid.NewGuid();
 }
 
-public class BEvent : ITabulator
+public class BEvent: ITabulator
 {
     public void Apply(MyAggregate aggregate)
     {
@@ -302,7 +293,7 @@ public class BEvent : ITabulator
     }
 }
 
-public class CEvent : ITabulator
+public class CEvent: ITabulator
 {
     public void Apply(MyAggregate aggregate)
     {
@@ -310,14 +301,17 @@ public class CEvent : ITabulator
     }
 }
 
-public class DEvent : ITabulator
+public class DEvent: ITabulator
 {
     public void Apply(MyAggregate aggregate)
     {
         aggregate.DCount++;
     }
 }
-public class EEvent {}
+
+public class EEvent
+{
+}
 
 public class CreateEvent
 {

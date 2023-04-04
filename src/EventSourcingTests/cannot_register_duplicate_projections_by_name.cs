@@ -19,8 +19,8 @@ public class cannot_register_duplicate_projections_by_name
             DocumentStore.For(opts =>
             {
                 opts.Connection(ConnectionSource.ConnectionString);
-                opts.Projections.Add<Projection1>();
-                opts.Projections.Add<Projection2>();
+                opts.Projections.Add<Projection1>(ProjectionLifecycle.Inline);
+                opts.Projections.Add<Projection2>(ProjectionLifecycle.Inline);
             });
         });
     }
@@ -50,7 +50,4 @@ public class cannot_register_duplicate_projections_by_name
             return new AEvent();
         }
     }
-
-
-
 }

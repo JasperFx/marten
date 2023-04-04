@@ -12,13 +12,13 @@ using Xunit;
 
 namespace EventSourcingTests.Projections;
 
-public class include_extra_schema_objects_from_projections : OneOffConfigurationsContext
+public class include_extra_schema_objects_from_projections: OneOffConfigurationsContext
 {
     public include_extra_schema_objects_from_projections()
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Add<TableCreatingProjection>();
+            opts.Projections.Add<TableCreatingProjection>(ProjectionLifecycle.Inline);
         });
     }
 
@@ -71,6 +71,5 @@ public class TableCreatingProjection: EventProjection
 
     public void Project(NameAdded added, IDocumentOperations operations)
     {
-
     }
 }

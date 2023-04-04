@@ -297,7 +297,7 @@ public class build_aggregate_projection: DaemonContext
         {
             x.Events.TenancyStyle = TenancyStyle.Conjoined;
             x.Policies.AllDocumentsAreMultiTenanted();
-            x.Projections.Add(new ContactProjectionNullReturn());
+            x.Projections.Add(new ContactProjectionNullReturn(), ProjectionLifecycle.Inline);
         }, true);
 
         var id = Guid.NewGuid();
@@ -328,7 +328,6 @@ public class build_aggregate_projection: DaemonContext
         public ContactProjectionNullReturn()
         {
             ProjectionName = nameof(Contact);
-            Lifecycle = ProjectionLifecycle.Inline;
 
             CreateEvent<ICreateEvent>(Contact.Create);
             ProjectEvent<ContactEdited>(Contact.Apply);
@@ -373,7 +372,7 @@ public class build_aggregate_projection: DaemonContext
         {
             x.Events.TenancyStyle = TenancyStyle.Conjoined;
             x.Policies.AllDocumentsAreMultiTenanted();
-            x.Projections.Add(new InterfaceCreationProjection());
+            x.Projections.Add(new InterfaceCreationProjection(), ProjectionLifecycle.Inline);
         }, true);
 
         var id = Guid.NewGuid();
@@ -403,7 +402,6 @@ public class build_aggregate_projection: DaemonContext
         public InterfaceCreationProjection()
         {
             ProjectionName = nameof(Foo);
-            Lifecycle = ProjectionLifecycle.Inline;
 
             CreateEvent<IFooCreated>(e => new(e.Id, "Foo"));
         }
@@ -427,7 +425,7 @@ public class build_aggregate_projection: DaemonContext
         {
             x.Events.TenancyStyle = TenancyStyle.Conjoined;
             x.Policies.AllDocumentsAreMultiTenanted();
-            x.Projections.Add(new AbstractCreationProjection());
+            x.Projections.Add(new AbstractCreationProjection(), ProjectionLifecycle.Inline);
         }, true);
 
         var id = Guid.NewGuid();
@@ -457,7 +455,6 @@ public class build_aggregate_projection: DaemonContext
         public AbstractCreationProjection()
         {
             ProjectionName = nameof(Foo);
-            Lifecycle = ProjectionLifecycle.Inline;
 
             CreateEvent<AbstractFooCreated>(e => new(e.Id, "Foo"));
         }

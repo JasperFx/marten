@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using EventSourcingTests.Projections;
 using Marten;
+using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 
@@ -14,10 +15,11 @@ public class event_store_quickstart
     public async Task capture_events()
     {
         #region sample_event-store-quickstart
+
         var store = DocumentStore.For(_ =>
         {
             _.Connection(ConnectionSource.ConnectionString);
-            _.Projections.Snapshot<QuestParty>();
+            _.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
         });
 
         var questId = Guid.NewGuid();
@@ -40,6 +42,7 @@ public class event_store_quickstart
             // Save the pending changes to db
             await session.SaveChangesAsync();
         }
+
         #endregion
 
 
@@ -55,6 +58,7 @@ public class event_store_quickstart
             session.Events.StartStream(typeof(Quest), questId, started, joined1);
             await session.SaveChangesAsync();
         }
+
         #endregion
 
         #region sample_event-store-start-stream-with-no-type
@@ -70,6 +74,7 @@ public class event_store_quickstart
             session.Events.StartStream(questId, started, joined1);
             await session.SaveChangesAsync();
         }
+
         #endregion
 
         #region sample_events-fetching-stream
@@ -82,6 +87,7 @@ public class event_store_quickstart
                 Console.WriteLine($"{evt.Version}.) {evt.Data}");
             });
         }
+
         #endregion
 
         #region sample_events-aggregate-on-the-fly
@@ -98,6 +104,7 @@ public class event_store_quickstart
             var party_yesterday = await session.Events
                 .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
         }
+
         #endregion
 
         await using (var session = store.LightweightSession())
@@ -108,6 +115,7 @@ public class event_store_quickstart
     }
 
     #region sample_using-fetch-stream
+
     public void load_event_stream(IDocumentSession session, Guid streamId)
     {
         // Fetch *all* of the events for this stream
@@ -137,6 +145,7 @@ public class event_store_quickstart
     #endregion
 
     #region sample_load-a-single-event
+
     public void load_a_single_event_synchronously(IDocumentSession session, Guid eventId)
     {
         // If you know what the event type is already
@@ -158,14 +167,19 @@ public class event_store_quickstart
     #endregion
 
     #region sample_using_live_transformed_events
+
     public void using_live_transformed_events(IDocumentSession session)
     {
         var started = new QuestStarted { Name = "Find the Orb" };
-        var joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
+        var joined = new MembersJoined
+        {
+            Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" }
+        };
         var slayed1 = new MonsterSlayed { Name = "Troll" };
         var slayed2 = new MonsterSlayed { Name = "Dragon" };
 
-        MembersJoined joined2 = new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
+        MembersJoined joined2 =
+            new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
 
         session.Events.StartStream<Quest>(started, joined, slayed1, slayed2);
         session.SaveChanges();

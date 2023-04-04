@@ -21,7 +21,7 @@ public class Bug_2438_generated_code_throwing_nre
 
     protected async Task execute_projection()
     {
-        using var container = new Container(services =>
+        await using var container = new Container(services =>
         {
             services.AddMarten(options =>
             {
@@ -35,7 +35,7 @@ public class Bug_2438_generated_code_throwing_nre
                         .ConnectionLimit(-1);
                 });
 
-                options.Projections.Add<MyEventProjection>();
+                options.Projections.Add<MyEventProjection>(ProjectionLifecycle.Inline);
                 options.AutoCreateSchemaObjects = AutoCreate.All;
                 options.GeneratedCodeMode = TypeLoadMode.Auto;
                 options.SetApplicationProject(typeof(MyEventProjection).Assembly);
@@ -48,18 +48,16 @@ public class Bug_2438_generated_code_throwing_nre
 
         session.Events.StartStream(new MyEvent(Guid.NewGuid(), "Stuff"));
         await session.SaveChangesAsync();
-
     }
 
     public record MyEvent(Guid Id, string Stuff);
 
-    public class MyEventProjection : EventProjection
+    public class MyEventProjection: EventProjection
     {
         public MyEventProjection()
         {
             Project<MyEvent>((@event, operations) =>
             {
-
             });
         }
     }

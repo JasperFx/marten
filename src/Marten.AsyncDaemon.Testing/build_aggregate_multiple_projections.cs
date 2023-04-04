@@ -85,7 +85,7 @@ public class build_aggregate_multiple_projections: DaemonContext
     }
 
 
-    public build_aggregate_multiple_projections(ITestOutputHelper output) : base(output)
+    public build_aggregate_multiple_projections(ITestOutputHelper output): base(output)
     {
     }
 
@@ -150,7 +150,6 @@ public class build_aggregate_multiple_projections: DaemonContext
             carName.ShouldBe("car-name-2");
             truckName.ShouldBe("truck-name-2");
         }
-
     }
 
     [Fact]
@@ -159,7 +158,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         // register projection
         StoreOptions(x =>
         {
-            x.Projections.Add<CarProjection>();
+            x.Projections.Add<CarProjection>(ProjectionLifecycle.Inline);
             x.Projections.StaleSequenceThreshold = 250.Milliseconds();
             x.Projections.SlowPollingTime = 500.Milliseconds();
         }, true);
@@ -227,7 +226,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         // register projection
         StoreOptions(x =>
         {
-            x.Projections.Add<CarProjection>();
+            x.Projections.Add<CarProjection>(ProjectionLifecycle.Inline);
             x.Projections.StaleSequenceThreshold = 250.Milliseconds();
             x.Projections.SlowPollingTime = 500.Milliseconds();
         }, true);
@@ -307,7 +306,8 @@ public class build_aggregate_multiple_projections: DaemonContext
         await conn.OpenAsync();
 
         return (long)await conn
-            .CreateCommand($"select last_seq_id from {theStore.Events.DatabaseSchemaName}.mt_event_progression where name = 'HighWaterMark'")
+            .CreateCommand(
+                $"select last_seq_id from {theStore.Events.DatabaseSchemaName}.mt_event_progression where name = 'HighWaterMark'")
             .ExecuteScalarAsync();
     }
 

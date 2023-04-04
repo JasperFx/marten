@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
@@ -18,9 +19,9 @@ public class inline_aggregation_with_base_view_class: OneOffConfigurationsContex
         StoreOptions(_ =>
         {
             _.AutoCreateSchemaObjects = AutoCreate.All;
-            _.Projections.Snapshot<QuestMonstersWithBaseClass>();
-            _.Projections.Snapshot<QuestMonstersWithBaseClassAndIdOverloaded>();
-            _.Projections.Snapshot<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
+            _.Projections.Snapshot<QuestMonstersWithBaseClass>(SnapshotLifecycle.Inline);
+            _.Projections.Snapshot<QuestMonstersWithBaseClassAndIdOverloaded>(SnapshotLifecycle.Inline);
+            _.Projections.Snapshot<QuestMonstersWithBaseClassAndIdOverloadedWithNew>(SnapshotLifecycle.Inline);
         });
 
         streamId = theSession.Events

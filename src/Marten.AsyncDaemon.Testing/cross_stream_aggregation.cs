@@ -64,7 +64,7 @@ public class cross_stream_aggregation: DaemonContext
     [Fact]
     public async Task run_end_to_end()
     {
-        StoreOptions(x => x.Projections.Add(new CrossStreamDayProjection()));
+        StoreOptions(x => x.Projections.Add(new CrossStreamDayProjection(), ProjectionLifecycle.Async));
 
         await theStore.EnsureStorageExistsAsync(typeof(Day));
 

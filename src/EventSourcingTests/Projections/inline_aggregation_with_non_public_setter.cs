@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Marten;
+using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
@@ -20,8 +21,8 @@ public class inline_aggregation_with_non_public_setter: OneOffConfigurationsCont
         {
             _.AutoCreateSchemaObjects = AutoCreate.All;
             _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
-            _.Projections.Snapshot<QuestMonstersWithPrivateIdSetter>();
-            _.Projections.Snapshot<QuestMonstersWithProtectedIdSetter>();
+            _.Projections.Snapshot<QuestMonstersWithPrivateIdSetter>(SnapshotLifecycle.Inline);
+            _.Projections.Snapshot<QuestMonstersWithProtectedIdSetter>(SnapshotLifecycle.Inline);
         });
 
         streamId = theSession.Events

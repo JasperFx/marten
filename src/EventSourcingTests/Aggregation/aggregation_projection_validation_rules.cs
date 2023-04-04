@@ -117,7 +117,7 @@ public class aggregation_projection_validation_rules
     {
         errorMessageFor(opts =>
         {
-            opts.Projections.Add(new Projections.EmptyProjection());
+            opts.Projections.Add(new Projections.EmptyProjection(), ProjectionLifecycle.Inline);
         }).ShouldNotBeNull();
     }
 
