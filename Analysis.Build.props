@@ -11,7 +11,7 @@
             <ExcludeAssets>none</ExcludeAssets>
             <IncludeAssets>all</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Meziantou.Analyzer" Version="2.0.22">
+        <PackageReference Include="Meziantou.Analyzer" Version="2.0.29">
             <PrivateAssets>all</PrivateAssets>
             <ExcludeAssets>none</ExcludeAssets>
             <IncludeAssets>all</IncludeAssets>
