@@ -5,7 +5,6 @@ using Marten;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
-using Marten.Services;
 using Samples.Deleting3;
 
 namespace Marten.AsyncDaemon.Testing.TestingSupport
