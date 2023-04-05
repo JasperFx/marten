@@ -77,7 +77,6 @@ namespace EventSourcingTests.Aggregation
 
     #endregion
 
-
     #region sample_aggregate-stream-into-state-wrapper
 
     public class CashRegisterRepository
@@ -139,12 +138,30 @@ namespace EventSourcingTests.Aggregation
             const int baseStateVersion = 1;
 
             #region sample_aggregate-stream-into-state-default
+
             await theSession.Events.AggregateStreamAsync(
                 streamId,
                 state: baseState,
                 fromVersion: baseStateVersion
             );
+
             #endregion
+        }
+
+        public async Task AggregatingEmptyStreamIntoStateShouldNotReturnNullButState()
+        {
+            var notExistingStreamId = Guid.NewGuid();
+
+            var state = new FinancialAccount();
+
+            (await theSession.Events.AggregateStreamAsync<FinancialAccount>(
+                notExistingStreamId
+            )).ShouldBeNull();
+
+            (await theSession.Events.AggregateStreamAsync(
+                notExistingStreamId,
+                state: state
+            )).ShouldBe(state);
         }
 
         [Fact]
