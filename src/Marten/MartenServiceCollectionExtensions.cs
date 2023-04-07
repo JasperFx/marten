@@ -642,7 +642,8 @@ public static class MartenServiceCollectionExtensions
         }
 
         /// <summary>
-        ///     Adds the optimized artifact workflow to this store. TODO -- LINK TO DOCS
+        ///     Adds the optimized artifact workflow to this store.
+        ///     See https://martendb.io/configuration/optimized_artifact_workflow.html for more information.
         /// </summary>
         /// <returns></returns>
         public MartenConfigurationExpression OptimizeArtifactWorkflow() =>
@@ -650,7 +651,7 @@ public static class MartenServiceCollectionExtensions
 
         /// <summary>
         ///     Adds the optimized artifact workflow to this store with ability to override the TypeLoadMode in "Production" mode.
-        ///     TODO -- LINK TO DOCS
+        ///     See https://martendb.io/configuration/optimized_artifact_workflow.html for more information.
         /// </summary>
         /// <param name="typeLoadMode"></param>
         /// <returns></returns>
@@ -663,7 +664,8 @@ public static class MartenServiceCollectionExtensions
         }
 
         /// <summary>
-        ///     Adds the optimized artifact workflow to this store. TODO -- LINK TO DOCS
+        ///     Adds the optimized artifact workflow to this store.
+        ///     See https://martendb.io/configuration/optimized_artifact_workflow.html for more information.
         /// </summary>
         /// <param name="developmentEnvironment"></param>
         /// <returns></returns>
@@ -672,7 +674,7 @@ public static class MartenServiceCollectionExtensions
 
         /// <summary>
         ///     Adds the optimized artifact workflow to this store with ability to override the TypeLoadMode in "Production" mode.
-        ///     TODO -- LINK TO DOCS
+        ///     See https://martendb.io/configuration/optimized_artifact_workflow.html for more information.
         /// </summary>
         /// <param name="typeLoadMode"></param>
         /// <param name="developmentEnvironment"></param>
