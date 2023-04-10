@@ -22,7 +22,7 @@ release in 2021 marks a massive overhaul of Marten's internals, and introduces n
 
 Marten aligns with the [.NET Core Support Lifecycle](https://dotnet.microsoft.com/platform/support/policy/dotnet-core) to determine platform compatibility. Marten targets `net6.0`,  `net7.0`.
 
-.NET Core 3.1 and .NET 5 was dropped as part of v6 release. If you require .NET Framework support, please use the latest Marten v5 release.
+.NET Core 3.1 and .NET 5 was dropped as part of v6 release. If you require .NET Core 3.1 or .NET 5 support, please use the latest Marten v5 release.
 
 .NET Framework support was dropped as part of the v4 release. If you require .NET Framework support, please use the latest Marten v3 release.
 
