@@ -131,7 +131,7 @@ var store = DocumentStore.For(_ =>
 
     // Add an index to the mt_events table on "type"
     _.Events.AddIndexToEventsTable(
-        new IndexDefinition("idx_mt_events_is_type")
+        new IndexDefinition("idx_mt_events_type")
             .AgainstColumns("type"));
 });
 ```
