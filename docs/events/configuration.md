@@ -60,7 +60,7 @@ var store = DocumentStore.For(opts =>
     opts.Events.TenancyStyle = TenancyStyle.Conjoined;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L226-L236' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_making_the_events_multi_tenanted' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L246-L256' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_making_the_events_multi_tenanted' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 By default, if you try to define projection with a single tenancy, Marten will throw an exception at runtime informing you about the mismatch.

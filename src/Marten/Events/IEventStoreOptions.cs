@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
+using Weasel.Postgresql.Tables;
 using static Marten.Events.EventMappingExtensions;
 
 namespace Marten.Events
@@ -277,6 +278,30 @@ namespace Marten.Events
         /// <param name="upcasters">Upcaster type transforming ("upcasting") event JSON payload from one schema to another.</param>
         /// <returns>Event store options, to allow fluent definition</returns>
         IEventStoreOptions Upcast<TUpcaster>() where TUpcaster : IEventUpcaster, new();
+
+        /// <summary>
+        ///     <para>
+        ///         Registers a custom index that will be applied the events "mt_events" table.
+        ///     </para>
+        ///     <para>
+        ///         See more in <a href="https://martendb.io/events/storage.html#adding-indexes-to-event-tables">documentation</a>
+        ///     </para>
+        /// </summary>
+        /// <param name="index">The index to add to the events table.</param>
+        /// <returns>Event store options, to allow fluent definition</returns>
+        IEventStoreOptions AddIndexToEventsTable(IndexDefinition index);
+
+        /// <summary>
+        ///     <para>
+        ///         Registers a custom index that will be applied the events "mt_streams" table.
+        ///     </para>
+        ///     <para>
+        ///         See more in <a href="https://martendb.io/events/storage.html#adding-indexes-to-event-tables">documentation</a>
+        ///     </para>
+        /// </summary>
+        /// <param name="index">The index to add to the events table.</param>
+        /// <returns>Event store options, to allow fluent definition</returns>
+        IEventStoreOptions AddIndexToStreamsTable(IndexDefinition index);
     }
 }
 

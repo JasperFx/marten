@@ -112,3 +112,28 @@ public Dictionary<string, object>? Headers { get; set; }
 <!-- endSnippet -->
 
 The full event data is available on `EventStream` and `IEvent` objects immediately after committing a transaction that involves event capture. See [diagnostics and instrumentation](/diagnostics) for more information on capturing event data in the instrumentation hooks.
+
+## Adding indexes to event tables
+
+Additional indexes can be added to the `mt_streams` and `mt_events` tables. These can be useful if you often need to perform queries directly against the event tables.
+
+<!-- snippet: sample_setting_event_custom_indexes -->
+<a id='snippet-sample_setting_event_custom_indexes'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    _.Connection("some connection string");
+
+    // Add an index to the mt_streams table on "is_archived"
+    _.Events.AddIndexToStreamsTable(
+        new IndexDefinition("idx_mt_streams_is_archived")
+            .AgainstColumns("is_archived"));
+
+    // Add an index to the mt_events table on "type"
+    _.Events.AddIndexToEventsTable(
+        new IndexDefinition("idx_mt_events_is_type")
+            .AgainstColumns("type"));
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L205-L220' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_event_custom_indexes' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->

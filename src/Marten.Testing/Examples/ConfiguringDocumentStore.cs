@@ -6,7 +6,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Newtonsoft.Json;
 using Weasel.Core;
-using Weasel.Postgresql;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Testing.Examples;
 // Leave this commented out please, and always use the User
@@ -196,6 +196,26 @@ public class ConfiguringDocumentStore
             // Places all the Event Store schema objects
             // into the "events" schema
             _.Events.DatabaseSchemaName = "events";
+        });
+        #endregion
+    }
+
+    public void setting_event_custom_indexes()
+    {
+        #region sample_setting_event_custom_indexes
+        var store = DocumentStore.For(_ =>
+        {
+            _.Connection("some connection string");
+
+            // Add an index to the mt_streams table on "is_archived"
+            _.Events.AddIndexToStreamsTable(
+                new IndexDefinition("idx_mt_streams_is_archived")
+                    .AgainstColumns("is_archived"));
+
+            // Add an index to the mt_events table on "type"
+            _.Events.AddIndexToEventsTable(
+                new IndexDefinition("idx_mt_events_is_type")
+                    .AgainstColumns("type"));
         });
         #endregion
     }

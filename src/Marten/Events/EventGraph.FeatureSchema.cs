@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using JasperFx.Core;
 using Marten.Events.Archiving;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -38,8 +39,12 @@ public partial class EventGraph: IFeatureSchema
 
     private IEnumerable<ISchemaObject> createAllSchemaObjects()
     {
-        yield return new StreamsTable(this);
+        var streamsTable = new StreamsTable(this);
+        streamsTable.Indexes.AddRange(_customStreamsTableIndexes);
+        yield return streamsTable;
+
         var eventsTable = new EventsTable(this);
+        eventsTable.Indexes.AddRange(_customEventsTableIndexes);
         yield return eventsTable;
 
         #region sample_using-sequence
