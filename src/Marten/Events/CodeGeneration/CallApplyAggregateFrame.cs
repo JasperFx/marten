@@ -43,7 +43,7 @@ internal class CallApplyAggregateFrame: Frame
     {
         if (InsideForEach)
         {
-            writer.Write("BLOCK:foreach (var @event in events)");
+            writer.Write("BLOCK:foreach (var @event in events.Skip(1))");
         }
 
         if (IsAsync)
