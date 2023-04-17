@@ -222,11 +222,68 @@ public class aggregation_projection_validation_rules
             .Errors
             .ShouldContain($"Aggregate type '{typeof(MyAggregate).FullNameInCode()}' is required as a parameter");
     }
+
+    [Fact]
+    public void missing_required_parameter_static()
+    {
+        var projection = new MissingMandatoryTypeStatic();
+        var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
+
+        ex.InvalidMethods.Single()
+            .Errors
+            .ShouldContain($"Aggregate type '{typeof(MyAggregate).FullNameInCode()}' is required as a parameter");
+    }
+
+    [Fact]
+    public void missing_return_type_static()
+    {
+        var projection = new MissingReturnTypeStatic();
+        var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
+
+        ex.InvalidMethods.Single()
+            .Errors
+            .ShouldContain($"'{typeof(MyAggregate).FullNameInCode()}' is a required return type when method is static");
+    }
+
+    [Fact]
+    public void missing_return_type_static_async()
+    {
+        var projection = new MissingReturnTypeStaticAsync();
+        var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
+
+        ex.InvalidMethods.Single()
+            .Errors
+            .ShouldContain($"'{typeof(Task<MyAggregate>).FullNameInCode()}' is a required return type when method is static");
+    }
 }
 
 public class MissingMandatoryType: SingleStreamProjection<MyAggregate>
 {
     public void Apply(AEvent @event)
+    {
+    }
+}
+
+public class MissingMandatoryTypeStatic: SingleStreamProjection<MyAggregate>
+{
+    public static MyAggregate Apply(AEvent @event)
+    {
+        return null;
+    }
+}
+
+public class MissingReturnTypeStatic: SingleStreamProjection<MyAggregate>
+{
+    public static void Apply(AEvent @event, MyAggregate aggregate)
+    {
+    }
+}
+
+public class MissingReturnTypeStaticAsync: SingleStreamProjection<MyAggregate>
+{
+#pragma warning disable CS1998
+    public static async Task Apply(AEvent @event, MyAggregate aggregate)
+#pragma warning restore CS1998
     {
     }
 }
@@ -286,12 +343,17 @@ public class AllGood: SingleStreamProjection<MyAggregate>
 
     public MyAggregate Create(CreateEvent @event)
     {
-        return new MyAggregate { ACount = @event.A, BCount = @event.B, CCount = @event.C, DCount = @event.D };
+        return new MyAggregate { ACount = @event.A, BCount = @event.B, CCount = @event.C, DCount = @event.D, ECount = 0 };
     }
 
     public Task<MyAggregate> Create(CreateEvent @event, IQuerySession session)
     {
         return null;
+    }
+
+    public static MyAggregate Create(CreateEvent2 @event)
+    {
+        return new MyAggregate { ACount = @event.A, BCount = @event.B, CCount = @event.C, DCount = @event.D, ECount = 0 };
     }
 
     public void Apply(AEvent @event, MyAggregate aggregate)
@@ -307,6 +369,7 @@ public class AllGood: SingleStreamProjection<MyAggregate>
             BCount = aggregate.BCount + 1,
             CCount = aggregate.CCount,
             DCount = aggregate.DCount,
+            ECount = aggregate.ECount,
             Id = aggregate.Id
         };
     }
@@ -324,6 +387,20 @@ public class AllGood: SingleStreamProjection<MyAggregate>
             BCount = aggregate.BCount,
             CCount = aggregate.CCount,
             DCount = aggregate.DCount + 1,
+            ECount = aggregate.ECount,
+            Id = aggregate.Id
+        };
+    }
+
+    public static MyAggregate Apply(MyAggregate aggregate, EEvent @event)
+    {
+        return new MyAggregate
+        {
+            ACount = aggregate.ACount,
+            BCount = aggregate.BCount,
+            CCount = aggregate.CCount,
+            DCount = aggregate.DCount,
+            ECount = aggregate.ECount + 1,
             Id = aggregate.Id
         };
     }

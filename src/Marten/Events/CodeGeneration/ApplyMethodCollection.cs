@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
@@ -13,6 +14,7 @@ namespace Marten.Events.CodeGeneration;
 internal class ApplyMethodCollection: MethodCollection
 {
     public static readonly string MethodName = "Apply";
+    private readonly Type _asyncAggregateType;
 
     public ApplyMethodCollection(Type projectionType, Type aggregateType): base(MethodName, projectionType,
         aggregateType)
@@ -24,15 +26,34 @@ internal class ApplyMethodCollection: MethodCollection
         _validReturnTypes.Add(typeof(Task));
         _validReturnTypes.Add(typeof(void));
         _validReturnTypes.Add(aggregateType);
-        _validReturnTypes.Add(typeof(Task<>).MakeGenericType(aggregateType));
+        _asyncAggregateType = typeof(Task<>).MakeGenericType(aggregateType);
+        _validReturnTypes.Add(_asyncAggregateType);
     }
 
     internal override void validateMethod(MethodSlot method)
     {
-        if (!method.DeclaredByAggregate && method.Method.GetParameters().All(x => x.ParameterType != AggregateType))
+        var requiresAggregateParameter = !method.DeclaredByAggregate || method.Method.IsStatic;
+        if (requiresAggregateParameter && method.Method.GetParameters().All(x => x.ParameterType != AggregateType))
         {
             method.AddError($"Aggregate type '{AggregateType.FullNameInCode()}' is required as a parameter");
         }
+
+        if (method.Method.IsStatic && method.ReturnType != AggregateType && method.ReturnType != _asyncAggregateType)
+        {
+            if (method.ReturnType == typeof(Task))
+            {
+                method.AddError($"'{_asyncAggregateType.FullNameInCode()}' is a required return type when method is static");
+            }
+            else
+            {
+                method.AddError($"'{AggregateType.FullNameInCode()}' is a required return type when method is static");
+            }
+        }
+    }
+
+    protected override BindingFlags flags()
+    {
+        return BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic;
     }
 
     public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
