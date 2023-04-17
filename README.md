@@ -8,7 +8,9 @@
 [![Nuget Package](https://badgen.net/nuget/v/marten)](https://www.nuget.org/packages/Marten/)
 [![Nuget](https://img.shields.io/nuget/dt/marten)](https://www.nuget.org/packages/Marten/)
 
-<img src="https://martendb.io/v3/content/images/banner.png" alt="marten logo" width="70%">
+<div align="center">
+    <img src="https://martendb.io/v3/content/images/banner.png" alt="marten logo" width="70%">
+</div>
 
 The Marten library provides .NET developers with the ability to use the proven [PostgreSQL database engine](http://www.postgresql.org/) and its [fantastic JSON support](https://www.compose.io/articles/is-postgresql-your-next-json-database/) as a fully fledged [document database](https://en.wikipedia.org/wiki/Document-oriented_database). The Marten team believes that a document database has far reaching benefits for developer productivity over relational databases with or without an ORM tool.
 
