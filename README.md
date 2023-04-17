@@ -16,6 +16,21 @@ Marten also provides .NET developers with an ACID-compliant event store with use
 
 Access docs [here](https://martendb.io/) and v3.x docs [here](https://martendb.io/v3).
 
+## Help us keep working on this project 💚
+
+[Become a Sponsor on GitHub](https://github.com/sponsors/JasperFX)
+
+<h4 align="center">Sponsors</h4>
+<p align="center">
+    <a href="https://aws.amazon.com/dotnet" target="_blank" rel="noopener noreferrer">
+    <picture>
+      <source srcset="https://martendb.io/dotnet-aws.png" media="(prefers-color-scheme: dark)" height="72px" alt=".NET on AWS" />
+      <img src="https://martendb.io/dotnet-aws.png" height="72px" alt=".NET on AWS" />
+    </picture>
+  </a>
+</p>
+
+
 ## Working with the Code
 
 Before getting started you will need the following in your environment:
