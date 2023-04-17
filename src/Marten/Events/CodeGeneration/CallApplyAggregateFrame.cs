@@ -12,6 +12,7 @@ internal class CallApplyAggregateFrame: Frame
     private Variable _aggregate;
     private Variable _cancellation;
     private Variable _session;
+    private Variable _usedEventOnCreate;
 
     public CallApplyAggregateFrame(ApplyMethodCollection methods): base(methods.IsAsync)
     {
@@ -27,6 +28,9 @@ internal class CallApplyAggregateFrame: Frame
 
         _session = chain.TryFindVariable(typeof(IQuerySession), VariableSource.All) ??
                    chain.FindVariable(typeof(IDocumentSession));
+
+        _usedEventOnCreate = chain.FindVariableByName(typeof(bool), CallCreateAggregateFrame.UsedEventOnCreateName);
+
         yield return _session;
 
         if (IsAsync)
@@ -43,7 +47,7 @@ internal class CallApplyAggregateFrame: Frame
     {
         if (InsideForEach)
         {
-            writer.Write("BLOCK:foreach (var @event in events.Skip(1))");
+            writer.Write($"BLOCK:foreach (var @event in events.Skip({_usedEventOnCreate.Usage} ? 1 : 0))");
         }
 
         if (IsAsync)

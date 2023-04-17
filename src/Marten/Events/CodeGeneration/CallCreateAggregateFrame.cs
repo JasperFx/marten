@@ -15,6 +15,7 @@ internal class CallCreateAggregateFrame: Frame
     public CallCreateAggregateFrame(CreateMethodCollection methods): base(methods.IsAsync)
     {
         Aggregate = new Variable(methods.AggregateType, this);
+        UsedEventOnCreate = new Variable(typeof(bool), UsedEventOnCreateName, this);
     }
 
     public CallCreateAggregateFrame(CreateMethodCollection methods, Variable aggregate): base(methods.IsAsync)
@@ -25,6 +26,10 @@ internal class CallCreateAggregateFrame: Frame
     public CreateAggregateAction Action { get; set; } = CreateAggregateAction.Initialize;
 
     public Variable Aggregate { get; private set; }
+
+    public Variable UsedEventOnCreate { get; private set; }
+
+    public const string UsedEventOnCreateName = "usedEventOnCreate";
 
     public string FirstEventExpression { get; set; } = "events[0]";
 
@@ -52,33 +57,53 @@ internal class CallCreateAggregateFrame: Frame
 
     public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
     {
-        string declaration = null;
+        /*
+         * Control flow:
+         *
+         * bool usedEventOnCreate = <true if aggregate is currently null>
+         * aggregate ??= createMethod(firstEvent)
+         *
+         * if(<aggregate is still null, meaning no create methods match event>)
+         * {
+         *     usedEventOnCreate = false;
+         *     // use default constructor or throw if not exists
+         *     // first event passed through for exception message
+         *     aggregate = createDefaultMethod(firstEvent);
+         * }
+         *
+         * //...in call apply frame
+         *
+         * foreach (@event in events.Skip(<skip first event if it was used on create>))
+         */
+
+        var methodCall = IsAsync
+            ? $"await {CreateMethodCollection.MethodName}({FirstEventExpression}, {_session.Usage}, {_cancellation.Usage});"
+            : $"{CreateMethodCollection.MethodName}({FirstEventExpression}, {_session.Usage});";
+
         switch (Action)
         {
             case CreateAggregateAction.Assign:
-                declaration = $"{Aggregate.Usage} =";
+                writer.WriteLine($"var {UsedEventOnCreate.Usage} = {Aggregate.Usage} is null;");
+                writer.WriteLine($"{Aggregate.Usage} = {methodCall};");
                 break;
             case CreateAggregateAction.Initialize:
-                declaration = $"var {Aggregate.Usage} =";
+                writer.WriteLine($"var {UsedEventOnCreate.Usage} = true;");
+                writer.WriteLine($"var {Aggregate.Usage} = {methodCall};");
                 break;
             case CreateAggregateAction.NullCoalesce:
-                declaration = $"{Aggregate.Usage} ??=";
+                writer.WriteLine($"var {UsedEventOnCreate.Usage} = {Aggregate.Usage} is null;");
+                writer.WriteLine($"{Aggregate.Usage} ??= {methodCall};");
                 break;
 
             default:
                 throw new ArgumentOutOfRangeException(nameof(Action));
         }
 
-        if (IsAsync)
-        {
-            writer.WriteLine(
-                $"{declaration} await {CreateMethodCollection.MethodName}({FirstEventExpression}, {_session.Usage}, {_cancellation.Usage});");
-        }
-        else
-        {
-            writer.WriteLine(
-                $"{declaration} {CreateMethodCollection.MethodName}({FirstEventExpression}, {_session.Usage});");
-        }
+        writer.Write($"BLOCK:if ({Aggregate.Usage} is null)");
+        writer.WriteLine($"{UsedEventOnCreate.Usage} = false;");
+        // creates default or throws if not possible
+        writer.WriteLine($"{Aggregate.Usage} = {CreateDefaultMethod.MethodName}({FirstEventExpression});");
+        writer.FinishBlock();
 
         Next?.GenerateCode(method, writer);
     }
