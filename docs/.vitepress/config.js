@@ -41,13 +41,13 @@ export default withMermaid({
       { text: 'Document DB', link: '/documents/', activeMatch: '/documents/' },
       { text: 'Event Store', link: '/events/', activeMatch: '/events/' },
       { text: 'Migration', link: '/migration-guide' },
-      { text: 'Join Chat', link: 'https://gitter.im/jasperfx/marten?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge' },
+      { text: 'Join Chat', link: 'https://discord.gg/WMxrvegf8H' }
     ],
 
     algolia: {
       appId: '9S7KY0SIDO',
       apiKey: '5b95a0e704fcf10d97ae621741cd907d',
-      indexName: 'marten_index'
+      indexName: 'marten_v5_index'
     },
 
     editLink: {
