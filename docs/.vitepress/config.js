@@ -30,14 +30,14 @@ module.exports = {
       { text: 'Event Store', link: '/events/' },
       { text: 'Migration', link: '/migration-guide' },
       { text: 'Release Notes', link: 'https://github.com/JasperFx/marten/releases' },
-      { text: 'Gitter | Join Chat', link: 'https://gitter.im/jasperfx/marten?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge' },
+      { text: 'Join Chat', link: 'https://discord.gg/WMxrvegf8H' },
       { text: 'Twitter', link: 'https://twitter.com/intent/follow?original_referer=https%3A%2F%2Fmartendb.io%2F&ref_src=twsrc%5Etfw&region=follow_link&screen_name=marten_lib&tw_p=followbutton' },
     ],
 
     algolia: {
       appId: '9S7KY0SIDO',
       apiKey: '5b95a0e704fcf10d97ae621741cd907d',
-      indexName: 'marten_index'
+      indexName: 'marten_v4_index'
     },
 
     sidebar: [
