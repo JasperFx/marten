@@ -339,6 +339,8 @@ public class StorageFeatures: IFeatureSchema
 
     private IEnumerable<Type> determineTypeDependencies(Type type)
     {
+        if (type == typeof(StorageFeatures)) return Array.Empty<Type>();
+
         var mapping = FindMapping(type);
         var documentMapping = mapping as DocumentMapping ?? (mapping as SubClassMapping)?.Parent;
         if (documentMapping == null)
