@@ -138,3 +138,53 @@ public class When_using_wildcard_conjoined_multi_tenancy_for_two_tenants: IAsync
         return Task.CompletedTask;
     }
 }
+
+public class When_using_wildcard_conjoined_multi_tenancy_when_session_id_doesnt_match_wildcard: IAsyncLifetime
+{
+    private IHost _host;
+    private IDocumentStore _store;
+    private Guid _id;
+
+    public async Task InitializeAsync()
+    {
+        _host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(
+                services => services.AddMarten(
+                    _ =>
+                    {
+                        _.Connection(ConnectionSource.ConnectionString);
+                        _.Tenancy = new WildcardConjoinedMultiTenancy(
+                            _,
+                            ConnectionSource.ConnectionString,
+                            "tenants",
+                            "shared"
+                        );
+                        _.AutoCreateSchemaObjects = AutoCreate.All;
+                    }
+                )
+            )
+            .StartAsync();
+        _store = _host.Services.GetService<IDocumentStore>();
+        _id = Guid.NewGuid();
+    }
+
+    [Fact]
+    public async Task Should_throw_argument_null_exception_for_tenant()
+    {
+        await Should.ThrowAsync<ArgumentNullException>(
+            async () =>
+            {
+                var user = new User() { Id = _id, Username = "Jane" };
+                await using var session = _store.LightweightSession("green");
+                session.Insert(user);
+                await session.SaveChangesAsync();
+            }
+        );
+    }
+
+    public Task DisposeAsync()
+    {
+        _host.Dispose();
+        return Task.CompletedTask;
+    }
+}
