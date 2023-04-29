@@ -27,6 +27,7 @@ public class WildcardConjoinedMultiTenancy: ITenancy
             identifier
         );
         _prefix = prefix;
+        Cleaner = new CompositeDocumentCleaner(this);
     }
 
     public ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
