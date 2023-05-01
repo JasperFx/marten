@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal.Storage;
 

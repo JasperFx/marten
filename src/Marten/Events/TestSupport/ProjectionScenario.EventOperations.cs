@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 
 namespace Marten.Events.TestSupport;
 

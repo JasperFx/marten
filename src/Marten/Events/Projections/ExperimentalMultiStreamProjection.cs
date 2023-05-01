@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Events.Aggregation;
 using Marten.Schema;
 using Marten.Storage;

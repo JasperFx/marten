@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
+using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 
 namespace Marten.Events.CodeGeneration;

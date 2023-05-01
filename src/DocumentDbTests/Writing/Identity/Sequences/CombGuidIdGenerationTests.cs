@@ -10,6 +10,7 @@ using Marten.Schema.Identity;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using CombGuidIdGeneration = Marten.Schema.Identity.CombGuidIdGeneration;
 
 namespace DocumentDbTests.Writing.Identity.Sequences;
 

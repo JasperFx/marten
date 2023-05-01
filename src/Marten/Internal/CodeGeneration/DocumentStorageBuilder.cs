@@ -3,6 +3,7 @@ using System.Linq;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;

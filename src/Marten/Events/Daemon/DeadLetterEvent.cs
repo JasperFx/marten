@@ -1,5 +1,6 @@
 using System;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 
 namespace Marten.Events.Daemon;

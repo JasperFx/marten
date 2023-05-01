@@ -11,6 +11,7 @@ using Marten.Schema.Identity;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Xunit;
+using CombGuidIdGeneration = Marten.Schema.Identity.CombGuidIdGeneration;
 
 namespace EventSourcingTests.Bugs;
 

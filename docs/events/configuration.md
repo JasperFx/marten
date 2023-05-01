@@ -72,7 +72,7 @@ You can enable global projections for conjoined tenancy.
 ```cs
 opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregation_projection_validation_rules.cs#L93-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_global_projections_for_conjoined_tenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregation_projection_validation_rules.cs#L94-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_global_projections_for_conjoined_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning
