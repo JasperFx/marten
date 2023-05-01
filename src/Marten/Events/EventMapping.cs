@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Events.Archiving;
 using Marten.Internal;
 using Marten.Internal.Operations;
@@ -29,6 +29,7 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 using static Marten.Events.EventMappingExtensions;
+using FindMembers = JasperFx.Core.Reflection.FindMembers;
 
 namespace Marten.Events;
 

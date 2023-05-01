@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
-using JasperFx.TypeDiscovery;
+using JasperFx.Core.TypeScanning;
 
 namespace Marten.Schema;
 

@@ -2,6 +2,7 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;

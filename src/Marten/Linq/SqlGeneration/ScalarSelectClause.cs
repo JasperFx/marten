@@ -3,6 +3,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Marten.Linq.Fields;
 using Marten.Linq.Parsing;

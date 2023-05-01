@@ -35,10 +35,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="JasperFx.Core" Version="1.2.0"/>
-        <PackageReference Include="JasperFx.TypeDiscovery" Version="1.0.0"/>
-        <PackageReference Include="JasperFx.CodeGeneration" Version="2.3.0"/>
-        <PackageReference Include="JasperFx.RuntimeCompiler" Version="2.3.0"/>
+        <PackageReference Include="JasperFx.Core" Version="1.4.0"/>
+        <PackageReference Include="JasperFx.CodeGeneration" Version="3.0.0"/>
+        <PackageReference Include="JasperFx.RuntimeCompiler" Version="3.0.0"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
         <PackageReference Include="Npgsql.Json.NET" Version="7.0.2"/>
         <PackageReference Include="Remotion.Linq" Version="2.2.0"/>

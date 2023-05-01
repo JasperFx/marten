@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.Serialization;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Internal.Storage;
 
 namespace Marten.Exceptions;

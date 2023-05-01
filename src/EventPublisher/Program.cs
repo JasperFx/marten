@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Lamar;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Services;

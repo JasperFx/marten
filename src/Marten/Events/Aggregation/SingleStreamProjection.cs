@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Schema;
 
 namespace Marten.Events.Aggregation;

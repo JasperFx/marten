@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
+using JasperFx.Core.Reflection;
 
 namespace Marten.Schema.Identity;
 

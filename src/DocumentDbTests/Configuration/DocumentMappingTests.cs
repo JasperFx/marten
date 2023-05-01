@@ -21,6 +21,7 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;
 using Xunit;
+using CombGuidIdGeneration = Marten.Schema.Identity.CombGuidIdGeneration;
 
 namespace DocumentDbTests.Configuration;
 

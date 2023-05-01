@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
+using JasperFx.Core.Reflection;
 using Marten.Events.Aggregation;
 using Marten.Schema;
 

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using JasperFx.Core;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Spectre.Console;
 
 namespace Marten.CommandLine.Commands.Projection;
