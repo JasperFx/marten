@@ -10,7 +10,7 @@ using CombGuidIdGeneration = Marten.Schema.Identity.CombGuidIdGeneration;
 
 namespace DocumentDbTests.Writing.Identity.Sequences;
 
-public class DocumentIdStrategyTests : OneOffConfigurationsContext
+public class DocumentIdStrategyTests: OneOffConfigurationsContext
 {
     [Fact]
     public void uses_no_id_generation_for_non_public_id()
@@ -44,5 +44,4 @@ public class DocumentIdStrategyTests : OneOffConfigurationsContext
 
         public string Name { get; set; }
     }
-
 }

@@ -534,7 +534,7 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
 
         if (idType == typeof(Guid))
         {
-            return new Marten.Schema.Identity.CombGuidIdGeneration();
+            return new Identity.CombGuidIdGeneration();
         }
 
         if (idType == typeof(int) || idType == typeof(long))

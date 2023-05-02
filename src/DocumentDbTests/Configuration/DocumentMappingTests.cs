@@ -94,7 +94,7 @@ public class DocumentMappingTests
         public int Id;
     }
 
-    public class BaseDocumentSubClass : BaseDocumentWithAttribute
+    public class BaseDocumentSubClass: BaseDocumentWithAttribute
     {
     }
 
@@ -106,8 +106,7 @@ public class DocumentMappingTests
         public string OtherProp;
         public Guid Id { get; set; }
 
-        [DuplicateField]
-        public string Name { get; set; }
+        [DuplicateField] public string Name { get; set; }
 
         public string OtherField { get; set; }
     }
@@ -117,6 +116,7 @@ public class DocumentMappingTests
         public IEnumerable<Type> KeyTypes { get; }
 
         public bool RequiresSequences { get; } = false;
+
         public void GenerateCode(GeneratedMethod assign, DocumentMapping mapping)
         {
             throw new NotSupportedException();
@@ -124,6 +124,7 @@ public class DocumentMappingTests
     }
 
     #region sample_ConfigureMarten-generic
+
     public class ConfiguresItself
     {
         public Guid Id;
@@ -137,6 +138,7 @@ public class DocumentMappingTests
     #endregion
 
     #region sample_ConfigureMarten-specifically
+
     public class ConfiguresItselfSpecifically
     {
         public Guid Id;
@@ -286,7 +288,8 @@ public class DocumentMappingTests
     [Theory]
     [InlineData(EnumStorage.AsInteger, NpgsqlDbType.Integer)]
     [InlineData(EnumStorage.AsString, NpgsqlDbType.Varchar)]
-    public void duplicated_field_enum_storage_should_be_taken_from_store_options_enum_storage_by_default(EnumStorage enumStorage, NpgsqlDbType expectedNpgsqlDbType)
+    public void duplicated_field_enum_storage_should_be_taken_from_store_options_enum_storage_by_default(
+        EnumStorage enumStorage, NpgsqlDbType expectedNpgsqlDbType)
     {
         var storeOptions = new StoreOptions();
         storeOptions.UseDefaultSerialization(enumStorage);
@@ -300,7 +303,9 @@ public class DocumentMappingTests
     [Theory]
     [InlineData(EnumStorage.AsInteger, NpgsqlDbType.Integer)]
     [InlineData(EnumStorage.AsString, NpgsqlDbType.Varchar)]
-    public void duplicated_field_enum_storage_should_be_taken_from_store_options_duplicated_field_enum_storage_when_it_was_changed(EnumStorage enumStorage, NpgsqlDbType expectedNpgsqlDbType)
+    public void
+        duplicated_field_enum_storage_should_be_taken_from_store_options_duplicated_field_enum_storage_when_it_was_changed(
+            EnumStorage enumStorage, NpgsqlDbType expectedNpgsqlDbType)
     {
         var storeOptions = new StoreOptions();
         storeOptions.Advanced.DuplicatedFieldEnumStorage = enumStorage;
@@ -314,10 +319,13 @@ public class DocumentMappingTests
     [Theory]
     [InlineData(true, NpgsqlDbType.Timestamp)]
     [InlineData(false, NpgsqlDbType.TimestampTz)]
-    public void duplicated_field_date_time_db_type_should_be_taken_from_store_options_useTimestampWithoutTimeZoneForDateTime(bool useTimestampWithoutTimeZoneForDateTime, NpgsqlDbType expectedNpgsqlDbType)
+    public void
+        duplicated_field_date_time_db_type_should_be_taken_from_store_options_useTimestampWithoutTimeZoneForDateTime(
+            bool useTimestampWithoutTimeZoneForDateTime, NpgsqlDbType expectedNpgsqlDbType)
     {
         var storeOptions = new StoreOptions();
-        storeOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;
+        storeOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime =
+            useTimestampWithoutTimeZoneForDateTime;
 
         var mapping = new DocumentMapping<Target>(storeOptions);
 
@@ -787,7 +795,6 @@ public class DocumentMappingTests
                 _.Schema.For<BadDoc>();
             });
         });
-
     }
 
     [Fact]
@@ -800,7 +807,6 @@ public class DocumentMappingTests
                 options.Schema.For<BadDoc>();
             });
         });
-
     }
 
     [Fact]
@@ -814,12 +820,12 @@ public class DocumentMappingTests
     [DatabaseSchemaName("organization")]
     public class Customer
     {
-        [Identity]
-        public string Name { get; set; }
+        [Identity] public string Name { get; set; }
     }
 
     #endregion
 }
+
 public class BadDoc
 {
     public string Name { get; set; }

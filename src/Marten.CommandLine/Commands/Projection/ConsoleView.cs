@@ -34,7 +34,8 @@ internal class ConsoleView: IConsoleView
         foreach (var projection in projections)
         {
             var shards = store.Shards.Where(x => x.Source == projection).Select(x => x.Name.Identity).Join(", ");
-            table.AddRow(projection.ProjectionName, projection.GetType().FullNameInCode(), shards, projection.Lifecycle.ToString());
+            table.AddRow(projection.ProjectionName, projection.GetType().FullNameInCode(), shards,
+                projection.Lifecycle.ToString());
         }
 
         AnsiConsole.Render(table);
@@ -82,7 +83,7 @@ internal class ConsoleView: IConsoleView
     public void WriteHeader(IProjectionStore store)
     {
         AnsiConsole.WriteLine();
-        AnsiConsole.Write(new Rule($"[bold blue]{store.Name}[/]"){Alignment = Justify.Left});
+        AnsiConsole.Write(new Rule($"[bold blue]{store.Name}[/]") { Justification = Justify.Left });
         AnsiConsole.WriteLine();
     }
 
@@ -100,7 +101,7 @@ internal class ConsoleView: IConsoleView
 
     public void WriteHeader(IProjectionDatabase database)
     {
-        AnsiConsole.Write(new Rule($"Database: {database.Identifier}"){Alignment = Justify.Left});
+        AnsiConsole.Write(new Rule($"Database: {database.Identifier}") { Justification = Justify.Left });
     }
 
     public string[] SelectDatabases(string[] databaseNames)

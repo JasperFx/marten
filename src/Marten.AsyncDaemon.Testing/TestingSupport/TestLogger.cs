@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace Marten.AsyncDaemon.Testing.TestingSupport;
 
-public class TestLogger<T> : ILogger<T>, IDisposable
+public class TestLogger<T>: ILogger<T>, IDisposable
 {
     private readonly ITestOutputHelper _output;
 
@@ -16,7 +16,8 @@ public class TestLogger<T> : ILogger<T>, IDisposable
         _output = output;
     }
 
-    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception,
+        Func<TState, Exception, string> formatter)
     {
         var message = $"{typeof(T).NameInCode()}/{logLevel}: {formatter(state, exception)}";
         Debug.WriteLine(message);

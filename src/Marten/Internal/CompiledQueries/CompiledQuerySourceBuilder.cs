@@ -11,7 +11,6 @@ using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema.Arguments;
-using Marten.Util;
 using Weasel.Postgresql;
 
 namespace Marten.Internal.CompiledQueries;

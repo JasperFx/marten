@@ -29,7 +29,7 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 using static Marten.Events.EventMappingExtensions;
-using FindMembers = JasperFx.Core.Reflection.FindMembers;
+using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Events;
 
