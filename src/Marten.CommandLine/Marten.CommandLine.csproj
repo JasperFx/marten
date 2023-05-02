@@ -15,7 +15,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Marten\Marten.csproj"/>
+        <ProjectReference Include="..\Marten\Marten.csproj" />
     </ItemGroup>
 
     <!--SourceLink specific settings-->
@@ -31,10 +31,10 @@
         <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="JasperFx.CodeGeneration.Commands" Version="2.3.0"/>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
-        <PackageReference Include="Oakton" Version="6.0.0"/>
-        <PackageReference Include="Weasel.CommandLine" Version="6.0.0-rc.1"/>
+        <PackageReference Include="JasperFx.CodeGeneration.Commands" Version="3.0.0" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+        <PackageReference Include="Oakton" Version="6.0.1" />
+        <PackageReference Include="Weasel.CommandLine" Version="6.0.0-rc.3" />
     </ItemGroup>
-    <Import Project="../../Analysis.Build.props"/>
+    <Import Project="../../Analysis.Build.props" />
 </Project>

@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 
 namespace Marten.Events.TestSupport;

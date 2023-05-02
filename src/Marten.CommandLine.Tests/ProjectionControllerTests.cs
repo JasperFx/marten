@@ -39,7 +39,7 @@ public static class ProjectionTestingExtensions
     }
 }
 
-public class ProjectionControllerTests : IProjectionHost
+public class ProjectionControllerTests: IProjectionHost
 {
     private readonly IConsoleView theView = Substitute.For<IConsoleView>();
     private readonly ProjectionController theController;
@@ -62,9 +62,10 @@ public class ProjectionControllerTests : IProjectionHost
 
     public bool ListeningForUserTriggeredExit { get; private set; }
 
-    protected readonly List<RebuildRecord> rebuilt = new ();
+    protected readonly List<RebuildRecord> rebuilt = new();
 
-    Task<RebuildStatus> IProjectionHost.TryRebuildShards(IProjectionDatabase database, IReadOnlyList<AsyncProjectionShard> asyncProjectionShards, TimeSpan? shardTimeout)
+    Task<RebuildStatus> IProjectionHost.TryRebuildShards(IProjectionDatabase database,
+        IReadOnlyList<AsyncProjectionShard> asyncProjectionShards, TimeSpan? shardTimeout)
     {
         foreach (var shard in asyncProjectionShards)
         {
@@ -118,10 +119,9 @@ public class ProjectionControllerTests : IProjectionHost
 
     protected AsyncProjectionShard shardFor(string storeName, string shardName)
     {
-        return _stores.FirstOrDefault(x => x.Name == storeName).Shards.FirstOrDefault(x => x.Name.Identity == shardName);
+        return _stores.FirstOrDefault(x => x.Name == storeName).Shards
+            .FirstOrDefault(x => x.Name.Identity == shardName);
     }
-
-
 
     [Fact]
     public async Task display_no_stores_message_if_no_stores()
@@ -182,7 +182,7 @@ public class ProjectionControllerTests : IProjectionHost
         var store2 = withStore("Other", new("Three:All", ProjectionLifecycle.Async),
             new("Four:All", ProjectionLifecycle.Inline));
 
-        var stores = theController.FilterStores(new ProjectionInput{StoreFlag = "other"});
+        var stores = theController.FilterStores(new ProjectionInput { StoreFlag = "other" });
         stores.ShouldHaveTheSameElementsAs<IProjectionStore>(store2);
     }
 
@@ -198,10 +198,10 @@ public class ProjectionControllerTests : IProjectionHost
         var store3 = withStore("Else", new("Six:All", ProjectionLifecycle.Async),
             new("Five:All", ProjectionLifecycle.Inline));
 
-        theView.SelectStores(Arg.Is<string[]>(a => a.SequenceEqual(new []{"Else", "Marten", "Other"})))
+        theView.SelectStores(Arg.Is<string[]>(a => a.SequenceEqual(new[] { "Else", "Marten", "Other" })))
             .Returns(new string[] { "Marten", "Else" });
 
-        var stores = theController.FilterStores(new ProjectionInput{InteractiveFlag = true});
+        var stores = theController.FilterStores(new ProjectionInput { InteractiveFlag = true });
 
         stores.ShouldHaveTheSameElementsAs<IProjectionStore>(store1, store3);
     }
@@ -222,7 +222,7 @@ public class ProjectionControllerTests : IProjectionHost
         var store1 = withStore("Marten", new("Foo:All", ProjectionLifecycle.Async),
             new("Bar:First", ProjectionLifecycle.Inline), new("Bar:Second", ProjectionLifecycle.Inline));
 
-        var shards = theController.FilterShards(new ProjectionInput{ProjectionFlag = "Bar"}, store1);
+        var shards = theController.FilterShards(new ProjectionInput { ProjectionFlag = "Bar" }, store1);
         shards.Select(x => x.Name.Identity)
             .ShouldHaveTheSameElementsAs("Bar:First", "Bar:Second");
     }
@@ -230,13 +230,15 @@ public class ProjectionControllerTests : IProjectionHost
     [Fact]
     public void filter_shards_interactively()
     {
-        var store1 = withStore("Marten", new("Foo:First", ProjectionLifecycle.Async),new("Foo:Second", ProjectionLifecycle.Async),
-            new("Bar:First", ProjectionLifecycle.Inline), new("Bar:Second", ProjectionLifecycle.Inline), ("Tom:All", ProjectionLifecycle.Async));
+        var store1 = withStore("Marten", new("Foo:First", ProjectionLifecycle.Async),
+            new("Foo:Second", ProjectionLifecycle.Async),
+            new("Bar:First", ProjectionLifecycle.Inline), new("Bar:Second", ProjectionLifecycle.Inline),
+            ("Tom:All", ProjectionLifecycle.Async));
 
-        theView.SelectProjections(Arg.Is<string[]>(a => a.SequenceEqual(new []{ "Bar", "Foo", "Tom"})))
+        theView.SelectProjections(Arg.Is<string[]>(a => a.SequenceEqual(new[] { "Bar", "Foo", "Tom" })))
             .Returns(new string[] { "Bar", "Tom" });
 
-        var shards = theController.FilterShards(new ProjectionInput{InteractiveFlag = true}, store1);
+        var shards = theController.FilterShards(new ProjectionInput { InteractiveFlag = true }, store1);
 
         shards.Select(x => x.Name.Identity)
             .ShouldHaveTheSameElementsAs("Bar:First", "Bar:Second", "Tom:All");
@@ -245,8 +247,10 @@ public class ProjectionControllerTests : IProjectionHost
     [Fact]
     public async Task try_to_rebuild_with_no_matching_shards()
     {
-        var store1 = withStore("Marten", new("Foo:First", ProjectionLifecycle.Async),new("Foo:Second", ProjectionLifecycle.Async),
-            new("Bar:First", ProjectionLifecycle.Inline), new("Bar:Second", ProjectionLifecycle.Inline), ("Tom:All", ProjectionLifecycle.Async));
+        var store1 = withStore("Marten", new("Foo:First", ProjectionLifecycle.Async),
+            new("Foo:Second", ProjectionLifecycle.Async),
+            new("Bar:First", ProjectionLifecycle.Inline), new("Bar:Second", ProjectionLifecycle.Inline),
+            ("Tom:All", ProjectionLifecycle.Async));
 
         await theController.Execute(new ProjectionInput { RebuildFlag = true, ProjectionFlag = "NonExistent" });
 
@@ -262,7 +266,7 @@ public class ProjectionControllerTests : IProjectionHost
         var store = withStore("Marten", new("Foo:All", ProjectionLifecycle.Async),
             new("Bar:All", ProjectionLifecycle.Inline));
 
-        await theController.Execute(new ProjectionInput() );
+        await theController.Execute(new ProjectionInput());
 
         ListeningForUserTriggeredExit.ShouldBeTrue();
     }
@@ -287,7 +291,7 @@ public class ProjectionControllerTests : IProjectionHost
 
         var databases = store.HasDatabases("one", "two", "three");
 
-        var filtered = theController.FilterDatabases(new ProjectionInput{DatabaseFlag = "two"}, databases);
+        var filtered = theController.FilterDatabases(new ProjectionInput { DatabaseFlag = "two" }, databases);
         filtered.Single().Identifier.ShouldBe("two");
     }
 
@@ -299,10 +303,10 @@ public class ProjectionControllerTests : IProjectionHost
 
         var databases = store.HasDatabases("one", "two", "three");
 
-        theView.SelectDatabases(Arg.Is<string[]>(a => a.SequenceEqual(new []{ "one", "three", "two"})))
+        theView.SelectDatabases(Arg.Is<string[]>(a => a.SequenceEqual(new[] { "one", "three", "two" })))
             .Returns(new string[] { "three" });
 
-        var filtered = theController.FilterDatabases(new ProjectionInput{InteractiveFlag = true}, databases);
+        var filtered = theController.FilterDatabases(new ProjectionInput { InteractiveFlag = true }, databases);
 
         filtered.Single().Identifier.ShouldBe("three");
     }
@@ -379,12 +383,13 @@ public class ProjectionControllerTests : IProjectionHost
 
         await theController.Execute(new ProjectionInput());
 
-        started[databases[0]].ShouldHaveTheSameElementsAs(shards.Where(x => x.Source.Lifecycle == ProjectionLifecycle.Async));
-        started[databases[1]].ShouldHaveTheSameElementsAs(shards.Where(x => x.Source.Lifecycle == ProjectionLifecycle.Async));
-        started[databases[2]].ShouldHaveTheSameElementsAs(shards.Where(x => x.Source.Lifecycle == ProjectionLifecycle.Async));
-
+        started[databases[0]]
+            .ShouldHaveTheSameElementsAs(shards.Where(x => x.Source.Lifecycle == ProjectionLifecycle.Async));
+        started[databases[1]]
+            .ShouldHaveTheSameElementsAs(shards.Where(x => x.Source.Lifecycle == ProjectionLifecycle.Async));
+        started[databases[2]]
+            .ShouldHaveTheSameElementsAs(shards.Where(x => x.Source.Lifecycle == ProjectionLifecycle.Async));
     }
-
 }
 
 public class RebuildRecord
@@ -432,8 +437,7 @@ public class RebuildRecord
 
     public override string ToString()
     {
-        return $"{nameof(Store)}: {Store.Name}, {nameof(Database)}: {Database.Identifier}, {nameof(Shard)}: {Shard.Name}";
+        return
+            $"{nameof(Store)}: {Store.Name}, {nameof(Database)}: {Database.Identifier}, {nameof(Shard)}: {Shard.Name}";
     }
 }
-
-
