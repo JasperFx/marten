@@ -19,11 +19,11 @@ internal class UpsertFunction: Function
     protected readonly string _andTenantWhereClause;
     private readonly bool _disableConcurrency;
     protected readonly DocumentMapping _mapping;
-    protected readonly string _primaryKeyConstraintName;
     protected readonly DbObjectName _tableName;
     protected readonly string _tenantWhereClause;
 
     public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
+    protected readonly string _primaryKeyFields;
 
     public UpsertFunction(DocumentMapping mapping, DbObjectName identifier = null, bool disableConcurrency = false):
         base(identifier ?? mapping.UpsertFunction)
@@ -38,8 +38,6 @@ internal class UpsertFunction: Function
         _tableName = mapping.TableName;
 
         var table = new DocumentTable(mapping);
-
-        _primaryKeyConstraintName = table.PrimaryKeyName;
 
         var idType = mapping.IdMember.GetMemberType();
         var pgIdType = PostgresqlProvider.Instance.GetDatabaseType(idType, mapping.EnumStorage);
@@ -86,6 +84,8 @@ internal class UpsertFunction: Function
             _tenantWhereClause = $"{_tableName.QualifiedName}.{TenantIdColumn.Name} = {TenantIdArgument.ArgName}";
             _andTenantWhereClause = $" and {_tenantWhereClause}";
         }
+
+        _primaryKeyFields = table.Columns.Where(x => x.IsPrimaryKey).Select(x => x.Name).Join(", ");
     }
 
     public void AddIfActive(MetadataColumn column)
@@ -164,7 +164,7 @@ DECLARE
   final_version uuid;
 BEGIN
 INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
-  ON CONFLICT ON CONSTRAINT {_primaryKeyConstraintName}
+  ON CONFLICT ({_primaryKeyFields})
   DO UPDATE SET {updates};
 
   SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId {_andTenantWhereClause};
@@ -183,7 +183,7 @@ DECLARE
   final_version uuid;
 BEGIN
 INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
-  ON CONFLICT ON CONSTRAINT {_primaryKeyConstraintName}
+  ON CONFLICT ({_primaryKeyFields})
   DO UPDATE SET {updates};
 
   RETURN '{Guid.Empty}';

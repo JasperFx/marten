@@ -21,7 +21,7 @@ DECLARE
   final_version uuid;
 BEGIN
 INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
-  ON CONFLICT ON CONSTRAINT {_primaryKeyConstraintName}
+  ON CONFLICT ({_primaryKeyFields})
   DO UPDATE SET {updates};
 
   SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId {_andTenantWhereClause};
