@@ -28,6 +28,11 @@ internal class StatementOperation: DocumentStatement, IStorageOperation
 
     public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
     {
+        if (Previous != null)
+        {
+            Top().Configure(builder);
+            return;
+        }
         configure(builder);
     }
 
@@ -60,6 +65,7 @@ internal class StatementOperation: DocumentStatement, IStorageOperation
         var model = MartenQueryParser.Flyweight.GetParsedQuery(queryExpression);
         var where = model.BodyClauses.OfType<WhereClause>().Single();
         WhereClauses.Add(where);
+
         CompileLocal(session);
 
         return Where;

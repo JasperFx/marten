@@ -112,7 +112,7 @@ To initialize a new property on existing documents:
 <!-- snippet: sample_initialise_a_new_property_by_expression -->
 <a id='snippet-sample_initialise_a_new_property_by_expression'></a>
 ```cs
-const string where = "where (data ->> 'UpdatedAt') is null";
+const string where = "(data ->> 'UpdatedAt') is null";
 theSession.Query<Target>(where).Count.ShouldBe(3);
 theSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
 theSession.SaveChanges();

@@ -219,23 +219,22 @@ internal class PatchExpression<T>: IPatchExpression<T>
         var transform = _session.Options.TransformFor(TransformSchema.PatchDoc);
         var storage = _session.StorageFor(typeof(T));
 
-        ISqlFragment where;
-        if (_filter == null)
-        {
-            var statement = new StatementOperation(storage, null);
-            statement.ApplyFiltering(_session, _filterExpression);
 
-            where = statement.Where;
+
+        var operation = new PatchOperation(transform, storage, Patch, _session.Serializer, PossiblyPolymorphic);
+
+        if (_filterExpression != null)
+        {
+            operation.ApplyFiltering(_session, _filterExpression);
+        }
+        else if (_filter == null)
+        {
+            operation.Where = storage.DefaultWhereFragment();
         }
         else
         {
-            where = storage.FilterDocuments(null, _filter, _session);
+            operation.Where = storage.FilterDocuments(null, _filter, _session);
         }
-
-        var operation = new PatchOperation(transform, storage, where, Patch, _session.Serializer)
-        {
-            PossiblyPolymorhpic = PossiblyPolymorphic
-        };
 
         _session.QueueOperation(operation);
     }

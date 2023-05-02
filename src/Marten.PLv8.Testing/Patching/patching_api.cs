@@ -83,7 +83,7 @@ public class patching_api: OneOffConfigurationsContext
         theSession.SaveChanges();
 
         #region sample_initialise_a_new_property_by_expression
-        const string where = "where (data ->> 'UpdatedAt') is null";
+        const string where = "(data ->> 'UpdatedAt') is null";
         theSession.Query<Target>(where).Count.ShouldBe(3);
         theSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
         theSession.SaveChanges();
