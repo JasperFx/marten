@@ -47,7 +47,7 @@ internal class DocumentStatement: SelectorStatement
                 break;
         }
 
-        return Storage.FilterDocuments(null, where);
+        return Storage.FilterDocuments(null, where, session);
     }
 
     public override void CompileLocal(IMartenSession session)

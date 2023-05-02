@@ -5,20 +5,31 @@ using Marten.Metadata;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.AsyncDaemon.Testing.Bugs;
 
 public class Bug_DeleteWhere_Operations_Should_Respect_Tenancy : BugIntegrationContext
 {
+    private readonly ITestOutputHelper _output;
+
+    public Bug_DeleteWhere_Operations_Should_Respect_Tenancy(ITestOutputHelper output)
+    {
+        _output = output;
+    }
 
     [Fact]
     public async Task ShouldDelete_ForDeleteCondition_AfterRebuild()
     {
-        StoreOptions(_ =>
+        StoreOptions(opts =>
         {
-            _.Projections.Add<DeletableEventProjection>(ProjectionLifecycle.Inline);
-            _.Events.TenancyStyle = TenancyStyle.Conjoined;
-            _.Policies.AllDocumentsAreMultiTenanted();
+            opts.Projections.Add<DeletableEventProjection>(ProjectionLifecycle.Inline);
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Policies.AllDocumentsAreMultiTenanted();
+
+            opts.Logger(new TestOutputMartenLogger(_output));
+
+            opts.Advanced.DefaultTenantUsageEnabled = false;
         });
 
         var innerGuid = Guid.NewGuid();
@@ -31,21 +42,21 @@ public class Bug_DeleteWhere_Operations_Should_Respect_Tenancy : BugIntegrationC
 
         await using var session = theStore.LightweightSession("test");
 
-        theSession.Events.StartStream(createNormal);
-        theSession.Events.StartStream(createHard);
+        session.Events.StartStream(createNormal);
+        session.Events.StartStream(createHard);
 
-        await theSession.SaveChangesAsync();
+        await session.SaveChangesAsync();
 
-        var createdProjections = await theSession.LoadManyAsync<DeletableProjection>(createNormal.Id, createHard.Id);
+        var createdProjections = await session.LoadManyAsync<DeletableProjection>(createNormal.Id, createHard.Id);
         Assert.Equal(2, createdProjections.Count);
 
-        theSession.Events.StartStream(deleteNormal);
-        theSession.Events.StartStream(deleteHard);
+        session.Events.StartStream(deleteNormal);
+        session.Events.StartStream(deleteHard);
 
-        await theSession.SaveChangesAsync();
+        await session.SaveChangesAsync();
 
-        var normalDeleteInline = await theSession.LoadAsync<DeletableProjection>(createNormal.Id);
-        var hardDeleteInline = await theSession.LoadAsync<DeletableProjection>(createHard.Id);
+        var normalDeleteInline = await session.LoadAsync<DeletableProjection>(createNormal.Id);
+        var hardDeleteInline = await session.LoadAsync<DeletableProjection>(createHard.Id);
         Assert.Null(normalDeleteInline);
         Assert.Null(hardDeleteInline);
 
@@ -53,8 +64,8 @@ public class Bug_DeleteWhere_Operations_Should_Respect_Tenancy : BugIntegrationC
 
         await daemon.RebuildProjection<DeletableEventProjection>(default);
 
-        var normalDeleteRebuilt = await theSession.LoadAsync<DeletableProjection>(createNormal.Id);
-        var hardDeleteRebuilt = await theSession.LoadAsync<DeletableProjection>(createHard.Id);
+        var normalDeleteRebuilt = await session.LoadAsync<DeletableProjection>(createNormal.Id);
+        var hardDeleteRebuilt = await session.LoadAsync<DeletableProjection>(createHard.Id);
         Assert.Null(normalDeleteRebuilt);
         Assert.Null(hardDeleteRebuilt);
     }

@@ -248,9 +248,9 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId> where T 
 
     public IOperationFragment HardDeleteFragment { get; }
 
-    public ISqlFragment FilterDocuments(QueryModel? model, ISqlFragment query)
+    public ISqlFragment FilterDocuments(QueryModel? model, ISqlFragment query, IMartenSession session)
     {
-        var extras = extraFilters(query).ToList();
+        var extras = extraFilters(query, session).ToList();
 
         if (extras.Count > 0)
         {
@@ -320,7 +320,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId> where T 
         };
     }
 
-    private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)
+    private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query, IMartenSession session)
     {
         if (_mapping.DeleteStyle == DeleteStyle.SoftDelete && !query.Contains(SchemaConstants.DeletedColumn))
         {
@@ -329,7 +329,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId> where T 
 
         if (TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant())
         {
-            yield return CurrentTenantFilter.Instance;
+            yield return new SpecificTenantFilter(session.TenantId);
         }
     }
 

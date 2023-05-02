@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Marten.Schema.Arguments;
 using Marten.Storage.Metadata;
 using Weasel.Postgresql;
@@ -10,6 +11,11 @@ public class CurrentTenantFilter: ISqlFragment
     public static readonly string Filter = $"d.{TenantIdColumn.Name} = :{TenantIdArgument.ArgName}";
 
     public static readonly CurrentTenantFilter Instance = new();
+
+    public CurrentTenantFilter()
+    {
+        Debug.WriteLine("Making one");
+    }
 
     public void Apply(CommandBuilder builder)
     {

@@ -122,7 +122,7 @@ public abstract class EventMapping: IDocumentMapping, IEventType
         throw new NotSupportedException();
     }
 
-    public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
+    public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query, IMartenSession martenSession)
     {
         var extras = extraFilters(query).ToList();
 

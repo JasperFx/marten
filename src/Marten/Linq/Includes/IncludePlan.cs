@@ -65,7 +65,7 @@ internal class IncludePlan<T>: IIncludePlan
         {
             var initial = new InTempTableWhereFragment(tempTableName, includePlan.IdAlias, paging,
                 includePlan.IsIdCollection());
-            Where = storage.FilterDocuments(null, initial);
+            Where = storage.FilterDocuments(null, initial, null);
         }
 
         protected override void configure(CommandBuilder sql)

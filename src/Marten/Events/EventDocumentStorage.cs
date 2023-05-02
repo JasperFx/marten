@@ -132,7 +132,7 @@ public abstract class EventDocumentStorage: IEventStorage
     public Type SourceType => typeof(IEvent);
     public IFieldMapping Fields { get; }
 
-    public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
+    public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query, IMartenSession session)
     {
         var shouldBeTenanted = Events.TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant();
         if (shouldBeTenanted)

@@ -229,7 +229,7 @@ internal class PatchExpression<T>: IPatchExpression<T>
         }
         else
         {
-            where = storage.FilterDocuments(null, _filter);
+            where = storage.FilterDocuments(null, _filter, _session);
         }
 
         var operation = new PatchOperation(transform, storage, where, Patch, _session.Serializer)

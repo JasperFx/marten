@@ -97,7 +97,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>
     public Type SourceType => typeof(TRoot);
     public IFieldMapping Fields => _mapping.Parent;
 
-    public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
+    public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query, IMartenSession session)
     {
         var extras = extraFilters(query).ToArray();
 

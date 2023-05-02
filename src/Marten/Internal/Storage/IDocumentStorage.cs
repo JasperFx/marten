@@ -43,7 +43,7 @@ public interface IDocumentStorage: ISelectClause
     [Obsolete("Use async method instead.")]
     void TruncateDocumentStorage(IMartenDatabase database);
 
-    ISqlFragment FilterDocuments(QueryModel? model, ISqlFragment query);
+    ISqlFragment FilterDocuments(QueryModel? model, ISqlFragment query, IMartenSession session);
 
     ISqlFragment? DefaultWhereFragment();
 }
