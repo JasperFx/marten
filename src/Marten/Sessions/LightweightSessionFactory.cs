@@ -1,15 +1,13 @@
+using Marten.Services;
+
 namespace Marten.Sessions;
 
-internal class LightweightSessionFactory: ISessionFactory
+internal class LightweightSessionFactory: SessionFactoryBase
 {
-    private readonly IDocumentStore _store;
+    public LightweightSessionFactory(IDocumentStore store) : base(store){}
 
-    public LightweightSessionFactory(IDocumentStore store) =>
-        _store = store;
-
-    public IQuerySession QuerySession() =>
-        _store.QuerySession();
-
-    public IDocumentSession OpenSession() =>
-        _store.LightweightSession();
+    public override SessionOptions BuildOptions()
+    {
+        return new SessionOptions { Tracking = DocumentTracking.None };
+    }
 }

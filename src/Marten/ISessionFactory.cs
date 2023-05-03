@@ -1,3 +1,5 @@
+using Marten.Services;
+
 namespace Marten;
 
 /// <summary>
@@ -17,4 +19,25 @@ public interface ISessionFactory
     /// </summary>
     /// <returns></returns>
     IDocumentSession OpenSession();
+}
+
+/// <summary>
+/// Base class for simple creation of document sessions
+/// </summary>
+public abstract class SessionFactoryBase: ISessionFactory
+{
+    private readonly IDocumentStore _store;
+
+    protected SessionFactoryBase(IDocumentStore store)
+    {
+        _store = store;
+    }
+
+    public abstract SessionOptions BuildOptions();
+
+    public IQuerySession QuerySession() =>
+        _store.QuerySession();
+
+    public IDocumentSession OpenSession() =>
+        _store.OpenSession(BuildOptions());
 }
