@@ -338,6 +338,39 @@ public class compiled_query_Tests: IntegrationContext
 
         public int Age { get; set; }
     }
+
+    [Fact]
+    public async Task bug_use_guid_contains_within_compiled_query()
+    {
+        var guid = Guid.NewGuid();
+
+        var target = new GuidClass { GuidList = new List<Guid> { guid } };
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        await using var query = theStore.QuerySession();
+        var actual = query.Query(new GuidContainsQuery { Guid = guid });
+
+        Assert.Contains(guid, actual.GuidList);
+    }
+
+    public class GuidContainsQuery: ICompiledQuery<GuidClass>
+    {
+        public Expression<Func<IMartenQueryable<GuidClass>, GuidClass>> QueryIs()
+        {
+            return q => q.Single(x => x.GuidList.Contains(Guid));
+        }
+
+        public Guid Guid { get; set; }
+    }
+
+
+    public class GuidClass
+    {
+        public Guid Id { get; set; }
+        public List<Guid> GuidList { get; set; }
+    }
 }
 
 #region sample_FindUserByAllTheThings
