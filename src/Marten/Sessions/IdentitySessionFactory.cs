@@ -1,15 +1,13 @@
+using Marten.Services;
+
 namespace Marten.Sessions;
 
-internal class IdentitySessionFactory: ISessionFactory
+internal class IdentitySessionFactory: SessionFactoryBase
 {
-    private readonly IDocumentStore _store;
+    public IdentitySessionFactory(IDocumentStore store) : base(store){}
 
-    public IdentitySessionFactory(IDocumentStore store) =>
-        _store = store;
-
-    public IQuerySession QuerySession() =>
-        _store.QuerySession();
-
-    public IDocumentSession OpenSession() =>
-        _store.LightweightSession();
+    public override SessionOptions BuildOptions()
+    {
+        return new SessionOptions { Tracking = DocumentTracking.IdentityOnly };
+    }
 }
