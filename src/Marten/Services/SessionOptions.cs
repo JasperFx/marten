@@ -25,18 +25,11 @@ public sealed class SessionOptions
 
     // Note: recent one
     /// <summary>
-    /// Define the type of session you'd like to open.
-    /// We recommend using lightweight session by default.<br/>
+    /// Define the type of session document tracking you'd like to open.
+    /// We recommend using lightweight session, and this is the default.<br/>
     /// Read more in documentation: https://martendb.io/documents/sessions.html.
     /// </summary>
-    [Obsolete(
-        """
-        Opening a session without explicitly providing desired type may be dropped in next Marten version.
-        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
-        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
-        """
-    )]
-    public DocumentTracking Tracking { get; set; } = DocumentTracking.IdentityOnly;
+    public DocumentTracking Tracking { get; set; } = DocumentTracking.None;
 
     /// <summary>
     ///     If not specified, sessions default to Npgsql command timeout (30 seconds)
@@ -61,7 +54,6 @@ public sealed class SessionOptions
     /// <summary>
     ///     Optional mechanism to open a session with an existing connection
     /// </summary>
-    // TODO -- try to make the setter private again
     public NpgsqlConnection? Connection { get; internal set; }
 
     /// <summary>
