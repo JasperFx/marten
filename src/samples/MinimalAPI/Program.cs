@@ -50,7 +50,8 @@ app.MapControllers();
 
 #region sample_using_WebApplication_2
 
-// This should be the last line of your Program.cs file
+// Instead of App.Run(), use the app.RunOaktonCommands(args)
+// as the last line of your Program.cs file
 return await app.RunOaktonCommands(args);
 
 #endregion
