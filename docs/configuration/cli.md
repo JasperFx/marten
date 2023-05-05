@@ -61,7 +61,7 @@ And finally, use Oakton as the command line parser and executor by replacing `Ap
 <!-- snippet: sample_using_WebApplication_2 -->
 <a id='snippet-sample_using_webapplication_2'></a>
 ```cs
-// Instead of App.Run(), use app.RunOaktonCommands(args)
+// Instead of App.Run(), use the app.RunOaktonCommands(args) as the last line of your Program.cs file
 return await app.RunOaktonCommands(args);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/MinimalAPI/Program.cs#L51-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_webapplication_2' title='Start of snippet'>anchor</a></sup>
