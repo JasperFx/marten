@@ -55,7 +55,7 @@ builder.Host.ApplyOaktonExtensions();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/MinimalAPI/Program.cs#L9-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_webapplication_1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-And finally, use Oakton as the command line parser and executor by replacing `App.Run()` with this line of code in your
+And finally, use Oakton as the command line parser and executor by replacing `App.Run()` as the last line of code in your
 `Program.cs` file:
 
 <!-- snippet: sample_using_WebApplication_2 -->
