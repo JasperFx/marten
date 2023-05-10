@@ -276,6 +276,9 @@ public static IServiceCollection AddUserModule2(this IServiceCollection services
     // This applies additional configuration to the main Marten DocumentStore
     // that is configured elsewhere
     services.AddSingleton<IConfigureMarten, UserMartenConfiguration>();
+    
+    // If you're using multiple databases per Host, register `IConfigureMarten<T>`, like this:
+    services.AddSingleton<IConfigureMarten<IInvoicingStore>, InvoicingStoreConfiguration>();
 
     // Other service registrations specific to the User submodule
     // within the bigger system
