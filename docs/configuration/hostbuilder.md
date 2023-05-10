@@ -249,7 +249,7 @@ public interface IConfigureMarten
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L734-L745' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-You could alternatively implement a custom `IConfigureMarten` class like so:
+You could alternatively implement a custom `IConfigureMarten` (or `IConfigureMarten<T> where T : IDocumentStore` if you're [working with multiple databases](#working-with-multiple-marten-databases)) class like so:
 
 <!-- snippet: sample_UserMartenConfiguration -->
 <a id='snippet-sample_usermartenconfiguration'></a>
