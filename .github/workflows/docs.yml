@@ -45,7 +45,7 @@ jobs:
 
       - name: Build & Deploy docs preview
         run: ./build.sh --no-color publish-docs-preview
-        if: ${{ github.event.inputs.publish_docs == 'false' }}
+        if: ${{ github.ref != 'refs/heads/master' && github.event.inputs.publish_docs == 'true' }}
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
