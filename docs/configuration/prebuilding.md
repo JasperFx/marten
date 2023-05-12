@@ -1,10 +1,6 @@
 # Pre-Building Generated Types
 
-:::tip
-This feature took a pretty big leap forward with Marten V5 and is much easier to utilize than it was with V4.
-:::
-
-Marten >= V4 extensively uses runtime code generation backed by [Roslyn runtime compilation](https://jeremydmiller.com/2018/06/04/compiling-code-at-runtime-with-lamar-part-1/) for dynamic code.
+Marten >= v4 extensively uses runtime code generation backed by [Roslyn runtime compilation](https://jeremydmiller.com/2018/06/04/compiling-code-at-runtime-with-lamar-part-1/) for dynamic code.
 This is both much more powerful than [source generators](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/source-generators-overview) in what it allows us to actually do, but can have
 significant memory usage and “[cold start](https://en.wikipedia.org/wiki/Cold_start_(computing))” problems (seems to depend on exact configurations, so it’s not a given that you’ll have these issues).
 Fear not though, Marten v4 introduced a facility to “generate ahead” the code to greatly optimize the "cold start" and memory usage in production scenarios.

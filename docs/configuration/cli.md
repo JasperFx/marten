@@ -1,7 +1,7 @@
 # Command Line Tooling
 
 ::: warning
-As of v4.0, the usage of Marten.CommandLine shown in this document is only valid for applications bootstrapped with the .Net Core / .Net 5.0
+The usage of Marten.CommandLine shown in this document is only valid for applications bootstrapped with the
 [generic host builder](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-3.1) with Marten registered in the application's IoC container.
 :::
 
@@ -9,39 +9,7 @@ There is a separate NuGet package called _Marten.CommandLine_ that can be used t
 your .Net Core application that uses Marten. _Marten.CommandLine_ is an extension library to [Oakton](https://jasperfx.github.io/oakton) that
 is the actual command line parser in this case.
 
-To use the expanded command line options to a .Net Core application bootstrapped by `IHostBuilder`, add a reference to the _Marten.CommandLine_ Nuget and ever so slightly change your `Program.Main()` entry point as shown below:
-
-<!-- snippet: sample_SampleConsoleApp -->
-<a id='snippet-sample_sampleconsoleapp'></a>
-```cs
-public class Program
-{
-    // It's actually important to return Task<int>
-    // so that the application commands can communicate
-    // success or failure
-    public static Task<int> Main(string[] args)
-    {
-        return CreateHostBuilder(args)
-
-            // This line replaces Build().Start()
-            // in most dotnet new templates
-            .RunOaktonCommands(args);
-    }
-
-    public static IHostBuilder CreateHostBuilder(string[] args) =>
-        Host.CreateDefaultBuilder(args)
-            .ConfigureWebHostDefaults(webBuilder =>
-            {
-                webBuilder.UseStartup<Startup>();
-            });
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L13-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sampleconsoleapp' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-Or if you're on >= .Net 6, you can still use the Marten CLI options with the `WebApplication` style
-of bootstrapping with a few changes. First, to completely enable the Weasel/Marten command line diagnostics,
-you'll need to add this line of code:
+To use the expanded command line options to a .NET application, add a reference to the _Marten.CommandLine_ Nuget and add this line of code to your `Program.cs`:
 
 <!-- snippet: sample_using_WebApplication_1 -->
 <a id='snippet-sample_using_webapplication_1'></a>

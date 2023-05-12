@@ -18,26 +18,22 @@ to your application, use the `AddMarten()` method as shown below:
 <!-- snippet: sample_StartupConfigureServices -->
 <a id='snippet-sample_startupconfigureservices'></a>
 ```cs
-public void ConfigureServices(IServiceCollection services)
+// This is the absolute, simplest way to integrate Marten into your
+// .NET application with Marten's default configuration
+builder.Services.AddMarten(options =>
 {
-    // This is the absolute, simplest way to integrate Marten into your
-    // .Net Core application with Marten's default configuration
-    services.AddMarten(options =>
-    {
-        // Establish the connection string to your Marten database
-        options.Connection(Configuration.GetConnectionString("Marten"));
+    // Establish the connection string to your Marten database
+    options.Connection(builder.Configuration.GetConnectionString("Marten")!);
 
-        // If we're running in development mode, let Marten just take care
-        // of all necessary schema building and patching behind the scenes
-        if (Environment.IsDevelopment())
-        {
-            options.AutoCreateSchemaObjects = AutoCreate.All;
-        }
-    });
-}
-// and other methods we don't care about right now...
+    // If we're running in development mode, let Marten just take care
+    // of all necessary schema building and patching behind the scenes
+    if (builder.Environment.IsDevelopment())
+    {
+        options.AutoCreateSchemaObjects = AutoCreate.All;
+    }
+});
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Startup.cs#L24-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L14-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `AddMarten()` method will add these service registrations to your application:
@@ -73,28 +69,12 @@ First, if you are using Marten completely out of the box with no customizations 
 <!-- snippet: sample_AddMartenByConnectionString -->
 <a id='snippet-sample_addmartenbyconnectionstring'></a>
 ```cs
-public class Startup
-{
-    public Startup(IConfiguration configuration)
-    {
-        Configuration = configuration;
-    }
+var connectionString = Configuration.GetConnectionString("postgres");
 
-    public IConfiguration Configuration { get; }
-
-    public void ConfigureServices(IServiceCollection services)
-    {
-
-        var connectionString = Configuration.GetConnectionString("postgres");
-
-        // By only the connection string
-        services.AddMarten(connectionString);
-    }
-
-    // And other methods we don't care about here...
-}
+// By only the connection string
+services.AddMarten(connectionString);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByConnectionString/Startup.cs#L7-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbyconnectionstring' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByConnectionString/Startup.cs#L18-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbyconnectionstring' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The second option is to supply a [nested closure](https://martinfowler.com/dslCatalog/nestedClosure.html) to configure Marten inline like so:
@@ -102,35 +82,18 @@ The second option is to supply a [nested closure](https://martinfowler.com/dslCa
 <!-- snippet: sample_AddMartenByNestedClosure -->
 <a id='snippet-sample_addmartenbynestedclosure'></a>
 ```cs
-public class Startup
-{
-    public IConfiguration Configuration { get; }
-    public IHostEnvironment Hosting { get; }
+var connectionString = Configuration.GetConnectionString("postgres");
 
-    public Startup(IConfiguration configuration, IHostEnvironment hosting)
+services.AddMarten(opts =>
     {
-        Configuration = configuration;
-        Hosting = hosting;
-    }
-
-    public void ConfigureServices(IServiceCollection services)
-    {
-        var connectionString = Configuration.GetConnectionString("postgres");
-
-        services.AddMarten(opts =>
-            {
-                opts.Connection(connectionString);
-            })
-            // Using the "Optimized artifact workflow" for Marten >= V5
-            // sets up your Marten configuration based on your environment
-            // See https://martendb.io/configuration/optimized_artifact_workflow.html
-            .OptimizeArtifactWorkflow();
-    }
-
-    // And other methods we don't care about here...
-}
+        opts.Connection(connectionString);
+    })
+    // Using the "Optimized artifact workflow" for Marten >= V5
+    // sets up your Marten configuration based on your environment
+    // See https://martendb.io/configuration/optimized_artifact_workflow.html
+    .OptimizeArtifactWorkflow();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByNestedClosure/Startup.cs#L10-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbynestedclosure' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByNestedClosure/Startup.cs#L24-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbynestedclosure' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Lastly, if you prefer, you can pass a Marten `StoreOptions` object to `AddMarten()` like this example:
@@ -138,42 +101,19 @@ Lastly, if you prefer, you can pass a Marten `StoreOptions` object to `AddMarten
 <!-- snippet: sample_AddMartenByStoreOptions -->
 <a id='snippet-sample_addmartenbystoreoptions'></a>
 ```cs
-public class Startup
-{
-    public IConfiguration Configuration { get; }
-    public IHostEnvironment Hosting { get; }
+var connectionString = Configuration.GetConnectionString("postgres");
 
-    public Startup(IConfiguration configuration, IHostEnvironment hosting)
-    {
-        Configuration = configuration;
-        Hosting = hosting;
-    }
+// Build a StoreOptions object yourself
+var options = new StoreOptions();
+options.Connection(connectionString);
 
-    public void ConfigureServices(IServiceCollection services)
-    {
-        var options = BuildStoreOptions();
-
-        services.AddMarten(options)
-            // Using the "Optimized artifact workflow" for Marten >= V5
-            // sets up your Marten configuration based on your environment
-            // See https://martendb.io/configuration/optimized_artifact_workflow.html
-            .OptimizeArtifactWorkflow();
-    }
-
-    private StoreOptions BuildStoreOptions()
-    {
-        var connectionString = Configuration.GetConnectionString("postgres");
-
-        // Or lastly, build a StoreOptions object yourself
-        var options = new StoreOptions();
-        options.Connection(connectionString);
-        return options;
-    }
-
-    // And other methods we don't care about here...
-}
+services.AddMarten(options)
+    // Using the "Optimized artifact workflow" for Marten >= V5
+    // sets up your Marten configuration based on your environment
+    // See https://martendb.io/configuration/optimized_artifact_workflow.html
+    .OptimizeArtifactWorkflow();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByStoreOptions/Startup.cs#L10-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbystoreoptions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByStoreOptions/Startup.cs#L23-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbystoreoptions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The last option may be best for more complicated Marten configuration just to keep the configuration code cleaner as `Startup` classes can become convoluted.
@@ -301,35 +241,18 @@ without the identity map behavior, use this syntax:
 <!-- snippet: sample_AddMartenWithLightweightSessions -->
 <a id='snippet-sample_addmartenwithlightweightsessions'></a>
 ```cs
-public class Startup
-{
-    public Startup(IConfiguration configuration, IHostEnvironment hosting)
+var connectionString = Configuration.GetConnectionString("postgres");
+
+services.AddMarten(opts =>
     {
-        Configuration = configuration;
-        Hosting = hosting;
-    }
+        opts.Connection(connectionString);
+    })
 
-    public IConfiguration Configuration { get; }
-    public IHostEnvironment Hosting { get; }
-
-    public void ConfigureServices(IServiceCollection services)
-    {
-        var connectionString = Configuration.GetConnectionString("postgres");
-
-        services.AddMarten(opts =>
-            {
-                opts.Connection(connectionString);
-            })
-
-            // Chained helper to replace the built in
-            // session factory behavior
-            .UseLightweightSessions();
-    }
-
-    // And other methods we don't care about here...
-}
+    // Chained helper to replace the built in
+    // session factory behavior
+    .UseLightweightSessions();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/LightweightSessions/Startup.cs#L10-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithlightweightsessions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/LightweightSessions/Startup.cs#L23-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithlightweightsessions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Customizing Session Creation Globally
@@ -374,38 +297,21 @@ To register the custom session factory, use the `BuildSessionsWith()` method as 
 <!-- snippet: sample_AddMartenWithCustomSessionCreation -->
 <a id='snippet-sample_addmartenwithcustomsessioncreation'></a>
 ```cs
-public class Startup
-{
-    public Startup(IConfiguration configuration, IHostEnvironment hosting)
+var connectionString = Configuration.GetConnectionString("postgres");
+
+services.AddMarten(opts =>
     {
-        Configuration = configuration;
-        Hosting = hosting;
-    }
-
-    public IConfiguration Configuration { get; }
-    public IHostEnvironment Hosting { get; }
-
-    public void ConfigureServices(IServiceCollection services)
-    {
-        var connectionString = Configuration.GetConnectionString("postgres");
-
-        services.AddMarten(opts =>
-            {
-                opts.Connection(connectionString);
-            })
-            // Using the "Optimized artifact workflow" for Marten >= V5
-            // sets up your Marten configuration based on your environment
-            // See https://martendb.io/configuration/optimized_artifact_workflow.html
-            .OptimizeArtifactWorkflow()
-            // Chained helper to replace the built in
-            // session factory behavior
-            .BuildSessionsWith<CustomSessionFactory>();
-    }
-
-    // And other methods we don't care about here...
-}
+        opts.Connection(connectionString);
+    })
+    // Using the "Optimized artifact workflow" for Marten >= V5
+    // sets up your Marten configuration based on your environment
+    // See https://martendb.io/configuration/optimized_artifact_workflow.html
+    .OptimizeArtifactWorkflow()
+    // Chained helper to replace the built in
+    // session factory behavior
+    .BuildSessionsWith<CustomSessionFactory>();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L41-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L54-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The session factories can also be used to build out and attach custom `IDocumentSessionListener` objects or replace the logging as we'll see in the next section.
@@ -515,37 +421,20 @@ Lastly, let's register our new session factory, but this time we need to take ca
 <!-- snippet: sample_AddMartenWithCustomSessionCreationByScope -->
 <a id='snippet-sample_addmartenwithcustomsessioncreationbyscope'></a>
 ```cs
-public class Startup
-{
-    public IConfiguration Configuration { get; }
-    public IHostEnvironment Hosting { get; }
+var connectionString = Configuration.GetConnectionString("postgres");
 
-    public Startup(IConfiguration configuration, IHostEnvironment hosting)
+services.AddMarten(opts =>
     {
-        Configuration = configuration;
-        Hosting = hosting;
-    }
-
-    public void ConfigureServices(IServiceCollection services)
-    {
-        var connectionString = Configuration.GetConnectionString("postgres");
-
-        services.AddMarten(opts =>
-            {
-                opts.Connection(connectionString);
-            })
-            // Using the "Optimized artifact workflow" for Marten >= V5
-            // sets up your Marten configuration based on your environment
-            // See https://martendb.io/configuration/optimized_artifact_workflow.html
-            .OptimizeArtifactWorkflow()
-            // Chained helper to replace the CustomSessionFactory
-            .BuildSessionsWith<ScopedSessionFactory>(ServiceLifetime.Scoped);
-    }
-
-    // And other methods we don't care about here...
-}
+        opts.Connection(connectionString);
+    })
+    // Using the "Optimized artifact workflow" for Marten >= V5
+    // sets up your Marten configuration based on your environment
+    // See https://martendb.io/configuration/optimized_artifact_workflow.html
+    .OptimizeArtifactWorkflow()
+    // Chained helper to replace the CustomSessionFactory
+    .BuildSessionsWith<ScopedSessionFactory>(ServiceLifetime.Scoped);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L91-L121' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreationbyscope' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L105-L118' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreationbyscope' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
@@ -559,34 +448,18 @@ Lastly, if desirable, you can force Marten to initialize the applications docume
 <!-- snippet: sample_AddMartenWithEagerInitialization -->
 <a id='snippet-sample_addmartenwitheagerinitialization'></a>
 ```cs
-public class Startup
-{
-    public Startup(IConfiguration configuration)
-    {
-        Configuration = configuration;
-    }
+var connectionString = Configuration.GetConnectionString("postgres");
 
-    public IConfiguration Configuration { get; }
-
-    public void ConfigureServices(IServiceCollection services)
-    {
-
-        var connectionString = Configuration.GetConnectionString("postgres");
-
-        // By only the connection string
-        services.AddMarten(connectionString)
-            // Using the "Optimized artifact workflow" for Marten >= V5
-            // sets up your Marten configuration based on your environment
-            // See https://martendb.io/configuration/optimized_artifact_workflow.html
-            .OptimizeArtifactWorkflow()
-            // Spin up the DocumentStore right this second!
-            .InitializeWith();
-    }
-
-    // And other methods we don't care about here...
-}
+// By only the connection string
+services.AddMarten(connectionString)
+    // Using the "Optimized artifact workflow" for Marten >= V5
+    // sets up your Marten configuration based on your environment
+    // See https://martendb.io/configuration/optimized_artifact_workflow.html
+    .OptimizeArtifactWorkflow()
+    // Spin up the DocumentStore right this second!
+    .InitializeWith();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/EagerInitialization/Startup.cs#L7-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwitheagerinitialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/EagerInitialization/Startup.cs#L19-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwitheagerinitialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Working with Multiple Marten Databases

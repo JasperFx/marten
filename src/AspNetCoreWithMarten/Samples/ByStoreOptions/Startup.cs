@@ -7,7 +7,6 @@ using Weasel.Postgresql;
 
 namespace AspNetCoreWithMarten.Samples.ByStoreOptions;
 
-#region sample_AddMartenByStoreOptions
 public class Startup
 {
     public IConfiguration Configuration { get; }
@@ -21,25 +20,22 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        var options = BuildStoreOptions();
+        #region sample_AddMartenByStoreOptions
+        var connectionString = Configuration.GetConnectionString("postgres");
+
+        // Build a StoreOptions object yourself
+        var options = new StoreOptions();
+        options.Connection(connectionString);
+
 
         services.AddMarten(options)
             // Using the "Optimized artifact workflow" for Marten >= V5
             // sets up your Marten configuration based on your environment
             // See https://martendb.io/configuration/optimized_artifact_workflow.html
             .OptimizeArtifactWorkflow();
-    }
 
-    private StoreOptions BuildStoreOptions()
-    {
-        var connectionString = Configuration.GetConnectionString("postgres");
-
-        // Or lastly, build a StoreOptions object yourself
-        var options = new StoreOptions();
-        options.Connection(connectionString);
-        return options;
+        #endregion
     }
 
     // And other methods we don't care about here...
 }
-#endregion

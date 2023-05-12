@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AspNetCoreWithMarten.Samples.ByConnectionString;
 
-#region sample_AddMartenByConnectionString
 public class Startup
 {
     public Startup(IConfiguration configuration)
@@ -16,14 +15,16 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
+        #region sample_AddMartenByConnectionString
 
         var connectionString = Configuration.GetConnectionString("postgres");
 
 
         // By only the connection string
         services.AddMarten(connectionString);
+
+        #endregion
     }
 
     // And other methods we don't care about here...
 }
-#endregion

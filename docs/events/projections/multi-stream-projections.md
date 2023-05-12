@@ -1,7 +1,7 @@
 # Multi-Stream Projections
 
 ::: tip
-This may change again in V6 (sigh), but we have replaced the earlier nomenclature of "ViewProjection" and renamed this concept as
+We have replaced the earlier nomenclature of "ViewProjection" and renamed this concept as
 `MultiStreamProjection` to hopefully be more intention revealing.
 :::
 

@@ -1,4 +1,4 @@
-# Do It Yourself IoC Integration
+# Custom IoC Integration
 
 ::: tip
 The Marten team recommends using the `IServiceCollection.AddMarten()` extension method

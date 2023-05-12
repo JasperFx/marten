@@ -1,35 +1,43 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Marten;
 using Oakton;
+using Weasel.Core;
 
-namespace AspNetCoreWithMarten;
 
 #region sample_SampleConsoleApp
-public class Program
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+
+builder.Services.AddControllers();
+
+
+#region sample_StartupConfigureServices
+// This is the absolute, simplest way to integrate Marten into your
+// .NET application with Marten's default configuration
+builder.Services.AddMarten(options =>
 {
-    // It's actually important to return Task<int>
-    // so that the application commands can communicate
-    // success or failure
-    public static Task<int> Main(string[] args)
+    // Establish the connection string to your Marten database
+    options.Connection(builder.Configuration.GetConnectionString("Marten")!);
+
+    // If we're running in development mode, let Marten just take care
+    // of all necessary schema building and patching behind the scenes
+    if (builder.Environment.IsDevelopment())
     {
-        return CreateHostBuilder(args)
-
-            // This line replaces Build().Start()
-            // in most dotnet new templates
-            .RunOaktonCommands(args);
+        options.AutoCreateSchemaObjects = AutoCreate.All;
     }
+});
+#endregion
 
-    public static IHostBuilder CreateHostBuilder(string[] args) =>
-        Host.CreateDefaultBuilder(args)
-            .ConfigureWebHostDefaults(webBuilder =>
-            {
-                webBuilder.UseStartup<Startup>();
-            });
-}
+var app = builder.Build();
+
+
+app.UseHttpsRedirection();
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.MapGet("/", context => context.Response.WriteAsync("Hello World!"));
+
+await app.RunOaktonCommands(args);
 #endregion

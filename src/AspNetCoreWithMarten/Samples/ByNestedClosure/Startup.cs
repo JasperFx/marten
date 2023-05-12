@@ -7,7 +7,7 @@ using Weasel.Postgresql;
 
 namespace AspNetCoreWithMarten.Samples.ByNestedClosure;
 
-#region sample_AddMartenByNestedClosure
+
 public class Startup
 {
     public IConfiguration Configuration { get; }
@@ -21,6 +21,7 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
+        #region sample_AddMartenByNestedClosure
         var connectionString = Configuration.GetConnectionString("postgres");
 
         services.AddMarten(opts =>
@@ -31,8 +32,8 @@ public class Startup
             // sets up your Marten configuration based on your environment
             // See https://martendb.io/configuration/optimized_artifact_workflow.html
             .OptimizeArtifactWorkflow();
+        #endregion
     }
 
     // And other methods we don't care about here...
 }
-#endregion
