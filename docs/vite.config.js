@@ -4,5 +4,12 @@ export default {
         root: '../' 
       }
     },
-    optimizeDeps: { include: ['moment-mini', '@braintree/sanitize-url', 'dagre', 'dagre-d3', 'graphlib'] }
+    optimizeDeps: {
+      include: ['@braintree/sanitize-url'],
+    },
+    resolve: {
+      alias: {
+        dayjs: 'dayjs/',
+      },
+    },
   }
