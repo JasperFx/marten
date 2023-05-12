@@ -207,7 +207,7 @@ public static IServiceCollection AddUserModule(this IServiceCollection services)
     return services;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L12-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addusermodule' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L14-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addusermodule' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And next, let's put that into context with its usage inside your application's bootstrapping:
@@ -228,7 +228,7 @@ using var host = await Host.CreateDefaultBuilder()
         services.AddUserModule();
     }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L70-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_configure_marten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L83-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_configure_marten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `ConfigureMarten()` method is the interesting part of the code samples above. That is registering a small
@@ -263,7 +263,7 @@ internal class UserMartenConfiguration: IConfigureMarten
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L51-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usermartenconfiguration' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L64-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usermartenconfiguration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 and registering it in your IoC container something like this:
@@ -276,7 +276,7 @@ public static IServiceCollection AddUserModule2(this IServiceCollection services
     // This applies additional configuration to the main Marten DocumentStore
     // that is configured elsewhere
     services.AddSingleton<IConfigureMarten, UserMartenConfiguration>();
-    
+
     // If you're using multiple databases per Host, register `IConfigureMarten<T>`, like this:
     services.AddSingleton<IConfigureMarten<IInvoicingStore>, InvoicingStoreConfiguration>();
 
@@ -286,7 +286,7 @@ public static IServiceCollection AddUserModule2(this IServiceCollection services
     return services;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L34-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addusermodule2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L36-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addusermodule2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Using Lightweight Sessions
