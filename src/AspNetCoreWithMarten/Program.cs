@@ -1,15 +1,15 @@
+using AspNetCoreWithMarten;
 using Marten;
+using Microsoft.AspNetCore.Mvc;
 using Oakton;
 using Weasel.Core;
 
-
-#region sample_SampleConsoleApp
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
-
+builder.Host.ApplyOaktonExtensions();
 
 #region sample_StartupConfigureServices
 // This is the absolute, simplest way to integrate Marten into your
@@ -37,7 +37,46 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapGet("/", context => context.Response.WriteAsync("Hello World!"));
+#region sample_UserEndpoints
+// You can inject the IDocumentStore and open sessions yourself
+app.MapPost("/user",
+    async (CreateUserRequest create, [FromServices] IDocumentStore store) =>
+{
+    // Open a session for querying, loading, and updating documents
+    await using var session = store.LightweightSession();
+
+    var user = new User {
+        FirstName = create.FirstName,
+        LastName = create.LastName,
+        Internal = create.Internal
+    };
+    session.Store(user);
+
+    await session.SaveChangesAsync();
+});
+
+app.MapGet("/users",
+    async (bool internalOnly, [FromServices] IDocumentStore store, CancellationToken ct) =>
+{
+    // Open a session for querying documents only
+    await using var session = store.QuerySession();
+
+    return await session.Query<User>()
+        .Where(x=> x.Internal == internalOnly)
+        .ToListAsync(ct);
+});
+
+// OR Inject the session directly to skip the management of the session lifetime
+app.MapGet("/user/{id:guid}",
+    async (Guid id, [FromServices] IQuerySession session, CancellationToken ct) =>
+{
+    return await session.LoadAsync<User>(id, ct);
+});
+#endregion
+
 
 await app.RunOaktonCommands(args);
-#endregion
+
+
+record CreateUserRequest(string FirstName, string LastName, bool Internal);
+
