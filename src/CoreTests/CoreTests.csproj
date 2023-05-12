@@ -116,8 +116,8 @@
         <Compile Include="..\Marten.Testing\SchemaMigrationExtensions.cs">
             <Link>SchemaMigrationExtensions.cs</Link>
         </Compile>
-        <Compile Include="..\Marten.Testing\performance_tuning.cs">
-            <Link>performance_tuning.cs</Link>
+        <Compile Include="..\Marten.Testing\JilSerializer.cs">
+            <Link>JilSerializer.cs</Link>
         </Compile>
     </ItemGroup>
 

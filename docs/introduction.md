@@ -32,4 +32,3 @@ Marten aligns with the [.NET Core Support Lifecycle](https://dotnet.microsoft.co
 ### Nullable Reference Types
 
 For enhanced developer ergonomics, Marten is annotated with [NRTs](https://docs.microsoft.com/en-us/dotnet/csharp/nullable-references). For new .NET projects, this is automatically enabled. If updating from previous versions of .NET, this can be opted-into via `<Nullable>enable</Nullable>` within your `.csproj`.
-
