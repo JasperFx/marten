@@ -47,7 +47,7 @@ builder.Services.AddMarten(options =>
 See [Bootstrapping with HostBuilder](/configuration/hostbuilder) for more information and options about this integration.
 
 ::: tip INFO
-The complete ASP<span/>.NET Core sample project is [available in the Marten codebase](https://github.com/JasperFx/marten/tree/master/src/AspNetCoreWithMarten)
+Use of the `.AddMarten` integration is not mandatory, see [Creating a standalone store](#creating-a-standalone-store)
 :::
 
 ## Postgres
