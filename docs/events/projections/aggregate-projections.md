@@ -52,7 +52,7 @@ MultiStreamProjection~TDoc, TId~ --|> IEventSlicer~TDoc, TId~
 Marten supports a few different types of aggregated projections:
 
 - **Single Stream Projections** -- creating a rolled up view of all or a segment of the events within an event stream. This is done through either a live stream aggregation, or `SingleStreamProjection<T>` as a base class for your projection or by doing _snapshots_.
-- **Multi Stream Projections** -- creating a rolled up view of a user-defined grouping of events across streams. These projections are done by sub-classing the `MultiStreamProjection<TDoc, TId>` class and is further described in [Cross-Stream Projections](/events/projections/multi-stream-projections).
+- **Multi Stream Projections** -- creating a rolled up view of a user-defined grouping of events across streams. These projections are done by sub-classing the `MultiStreamProjection<TDoc, TId>` class and is further described in [Multi-Stream Projections](/events/projections/multi-stream-projections).
 
 Please note that all aggregated projections share the same set of method conventions described in this page.
 

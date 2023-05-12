@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AspNetCoreWithMarten.Samples.EagerInitialization;
 
-#region sample_AddMartenWithEagerInitialization
+
 public class Startup
 {
     public Startup(IConfiguration configuration)
@@ -16,6 +16,7 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
+        #region sample_AddMartenWithEagerInitialization
 
         var connectionString = Configuration.GetConnectionString("postgres");
 
@@ -27,8 +28,10 @@ public class Startup
             .OptimizeArtifactWorkflow()
             // Spin up the DocumentStore right this second!
             .InitializeWith();
+
+        #endregion
     }
 
     // And other methods we don't care about here...
 }
-#endregion
+

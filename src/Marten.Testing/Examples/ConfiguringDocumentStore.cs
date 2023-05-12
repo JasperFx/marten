@@ -20,8 +20,8 @@ public class User
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public bool Internal { get; set; }
-    public string UserName { get; set; }
-    public string Department { get; set; }
+    public string? UserName { get; set; }
+    public string? Department { get; set; }
 }
 
 #endregion
@@ -40,8 +40,10 @@ public class ConfiguringDocumentStore
 
         await using (var session = store.QuerySession())
         {
-            var internalUsers = session
-                .Query<User>().Where(x => x.Internal).ToArray();
+            var internalUsers = await session
+                .Query<User>()
+                .Where(x => x.Internal)
+                .ToListAsync();
         }
         #endregion
 

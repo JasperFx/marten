@@ -1,4 +1,5 @@
 import { BUNDLED_LANGUAGES } from 'shiki'
+// @ts-expect-error
 import { withMermaid } from "vitepress-plugin-mermaid"
 
 // Include `cs` as alias for csharp
@@ -74,25 +75,24 @@ export default withMermaid({
           text: 'Introduction',
           collapsed: false,
           items: [
-            { text: 'What is Marten?', link: '/introduction' }
+            { text: 'What is Marten?', link: '/introduction' },
+            { text: 'Getting Started', link: '/getting-started' }
           ]
         },
         {
           text: 'Configuration',
           collapsed: false,
           items: [
-            { text: 'Integration and Configuration', link: '/configuration/', },
             { text: 'Bootstrap with HostBuilder', link: '/configuration/hostbuilder' },
-            { text: 'Do It Yourself IoC Integration', link: '/configuration/ioc' },
-            { text: 'Command Line Tooling', link: '/configuration/cli' },
-            { text: 'Configuring Document Storage', link: '/configuration/storeoptions' },
+            { text: 'Configuring Document Storage', link: '/configuration/storeoptions' },               
             { text: 'Json Serialization', link: '/configuration/json' },
             { text: 'Retry Policies', link: '/configuration/retries' },
             { text: 'Pre-Building Generated Types', link: '/configuration/prebuilding' },
+            { text: 'Command Line Tooling', link: '/configuration/cli' },      
             { text: 'Development versus Production Usage', link: '/configuration/optimized_artifact_workflow' },
             { text: 'Multi-Tenancy with Database per Tenant', link: '/configuration/multitenancy' },
             { text: 'Environment Checks', link: '/configuration/environment-checks' },
-
+            { text: 'Custom IoC Integration', link: '/configuration/ioc' },
           ]
         },
         {
@@ -162,11 +162,11 @@ export default withMermaid({
             { text: 'Metadata', link: '/events/metadata' },
             { text: 'Archiving Streams', link: '/events/archiving' },
             {
-              text: 'Projections', link: '/events/projections/', collapsed: false, items: [
+              text: 'Projections Overview', link: '/events/projections/', collapsed: false, items: [
                 {
                   text: 'Aggregate Projections', link: '/events/projections/aggregate-projections', items: [
                     { text: 'Live Aggregations', link: '/events/projections/live-aggregates' },
-                    { text: 'Cross-Stream Projection', link: '/events/projections/multi-stream-projections' },
+                    { text: 'Multi-Stream Projections', link: '/events/projections/multi-stream-projections' },
                     { text: 'Custom Projections', link: '/events/projections/custom-aggregates' },]
                 },
                 { text: 'Event Projections', link: '/events/projections/event-projections' },

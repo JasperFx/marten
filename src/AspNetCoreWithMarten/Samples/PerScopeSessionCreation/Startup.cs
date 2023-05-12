@@ -88,7 +88,7 @@ public class ScopedSessionFactory: ISessionFactory
 }
 #endregion
 
-#region sample_AddMartenWithCustomSessionCreationByScope
+
 public class Startup
 {
     public IConfiguration Configuration { get; }
@@ -102,6 +102,7 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
+        #region sample_AddMartenWithCustomSessionCreationByScope
         var connectionString = Configuration.GetConnectionString("postgres");
 
         services.AddMarten(opts =>
@@ -114,8 +115,8 @@ public class Startup
             .OptimizeArtifactWorkflow()
             // Chained helper to replace the CustomSessionFactory
             .BuildSessionsWith<ScopedSessionFactory>(ServiceLifetime.Scoped);
+        #endregion
     }
 
     // And other methods we don't care about here...
 }
-#endregion
