@@ -58,14 +58,6 @@ public class ConfiguringDocumentStore
             await session.SaveChangesAsync();
         }
 
-        // Open a session for querying, loading, and
-        // updating documents with a backing "Identity Map"
-        await using (var session = store.QuerySession())
-        {
-            var existing = await session
-                .Query<User>()
-                .SingleAsync(x => x.FirstName == "Han" && x.LastName == "Solo");
-        }
         #endregion
     }
 

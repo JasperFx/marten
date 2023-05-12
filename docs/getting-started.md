@@ -61,66 +61,69 @@ Marten uses the [Npgsql](http://www.npgsql.org) library to access PostgreSQL fro
 
 Now, for your first document type, we'll represent the users in our system:
 
-<!-- snippet: sample_user_document -->
-<a id='snippet-sample_user_document'></a>
+<!-- snippet: sample_GettingStartedUser -->
+<a id='snippet-sample_gettingstarteduser'></a>
 ```cs
 public class User
 {
     public Guid Id { get; set; }
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
+    public required string FirstName { get; set; }
+    public required string LastName { get; set; }
+
     public bool Internal { get; set; }
-    public string? UserName { get; set; }
-    public string? Department { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L16-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_user_document' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/User.cs#L3-L12' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_gettingstarteduser' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 *For more information on document identity, see [identity](/documents/identity).*
 
-From here, an instance of `IDocumentStore` can be injected into the class/controller/endpoint of your choice and we can start persisting and loading user documents:
+From here, an instance of `IDocumentStore` or a type of `IDocumentSession` can be injected into the class/controller/endpoint of your choice and we can start persisting and loading user documents:
 
-<!-- snippet: sample_opening_sessions -->
-<a id='snippet-sample_opening_sessions'></a>
+<!-- snippet: sample_UserEndpoints -->
+<a id='snippet-sample_userendpoints'></a>
 ```cs
-// Open a session for querying, loading, and
-// updating documents
-await using (var session = store.LightweightSession())
+// You can inject the IDocumentStore and open sessions yourself
+app.MapPost("/user",
+    async (CreateUserRequest create, [FromServices] IDocumentStore store) =>
 {
-    var user = new User { FirstName = "Han", LastName = "Solo" };
+    // Open a session for querying, loading, and updating documents
+    await using var session = store.LightweightSession();
+
+    var user = new User {
+        FirstName = create.FirstName,
+        LastName = create.LastName,
+        Internal = create.Internal
+    };
     session.Store(user);
 
     await session.SaveChangesAsync();
-}
+});
 
-// Open a session for querying, loading, and
-// updating documents with a backing "Identity Map"
-await using (var session = store.QuerySession())
+app.MapGet("/users",
+    async (bool internalOnly, [FromServices] IDocumentStore store, CancellationToken ct) =>
 {
-    var existing = await session
-        .Query<User>()
-        .SingleAsync(x => x.FirstName == "Han" && x.LastName == "Solo");
-}
+    // Open a session for querying documents only
+    await using var session = store.QuerySession();
+
+    return await session.Query<User>()
+        .Where(x=> x.Internal == internalOnly)
+        .ToListAsync(ct);
+});
+
+// OR Inject the session directly to skip the management of the session lifetime
+app.MapGet("/user/{id:guid}",
+    async (Guid id, [FromServices] IQuerySession session, CancellationToken ct) =>
+{
+    return await session.LoadAsync<User>(id, ct);
+});
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L50-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_sessions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L40-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_userendpoints' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-We can use our document store to create a new `IQuerySession` object just for querying or loading documents from the database:
-
-<!-- snippet: sample_start_a_query_session -->
-<a id='snippet-sample_start_a_query_session'></a>
-```cs
-await using (var session = store.QuerySession())
-{
-    var internalUsers = await session
-        .Query<User>()
-        .Where(x => x.Internal)
-        .ToListAsync();
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L39-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_query_session' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
+::: tip INFO
+The complete ASP<span/>.NET Core sample project is [available in the Marten codebase](https://github.com/JasperFx/marten/tree/master/src/AspNetCoreWithMarten)
+:::
 
 For more information on the query support within Marten, check [document querying](/documents/querying/)
 
