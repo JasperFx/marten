@@ -15,6 +15,7 @@ using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
 using Weasel.Core;
+using Weasel.Postgresql.Tables;
 using static Marten.Events.EventMappingExtensions;
 
 namespace Marten.Events;
@@ -214,6 +215,21 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
             new JsonTransformation(upcaster.FromDbDataReader, upcaster.FromDbDataReaderAsync)
         );
 
+        return this;
+    }
+
+    private readonly IList<IndexDefinition> _customEventsTableIndexes = new List<IndexDefinition>();
+    private readonly IList<IndexDefinition> _customStreamsTableIndexes = new List<IndexDefinition>();
+
+    public IEventStoreOptions AddIndexToEventsTable(IndexDefinition index)
+    {
+        _customEventsTableIndexes.Add(index);
+        return this;
+    }
+
+    public IEventStoreOptions AddIndexToStreamsTable(IndexDefinition index)
+    {
+        _customStreamsTableIndexes.Add(index);
         return this;
     }
 
