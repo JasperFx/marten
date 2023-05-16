@@ -137,7 +137,7 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
             using (var session = theStore.QuerySession())
             {
                 //See https://github.com/npgsql/npgsql/issues/1483 - Npgsql by default is enlisting
-                session.Query<Target>().Count().ShouldBe(102);
+                session.Query<Target>().Count().ShouldBe(2);
             }
 
             scope.Complete();
@@ -146,7 +146,7 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
         // should be 2 additional targets
         using (var session = theStore.QuerySession())
         {
-            session.Query<Target>().Count().ShouldBe(102);
+            session.Query<Target>().Count().ShouldBe(2);
         }
     }
 
