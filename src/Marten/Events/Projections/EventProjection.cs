@@ -70,8 +70,16 @@ public abstract partial class EventProjection: GeneratedProjection, IProjectionS
         EventRange range,
         CancellationToken cancellationToken)
     {
-        return new ValueTask<EventRangeGroup>(new TenantedEventRangeGroup(store, daemonDatabase,
-            _generatedProjection.Value, range, cancellationToken));
+        return new ValueTask<EventRangeGroup>(
+            new TenantedEventRangeGroup(
+                store,
+                daemonDatabase,
+                _generatedProjection.Value,
+                Options,
+                range,
+                cancellationToken
+            )
+        );
     }
 
 

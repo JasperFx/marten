@@ -47,7 +47,15 @@ internal class ProjectionWrapper: IProjectionSource
     public ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase, EventRange range,
         CancellationToken cancellationToken)
     {
-        return new ValueTask<EventRangeGroup>(new TenantedEventRangeGroup(store, daemonDatabase, _projection, range,
-            cancellationToken));
+        return new ValueTask<EventRangeGroup>(
+            new TenantedEventRangeGroup(
+                store,
+                daemonDatabase,
+                _projection,
+                Options,
+                range,
+                cancellationToken
+            )
+        );
     }
 }

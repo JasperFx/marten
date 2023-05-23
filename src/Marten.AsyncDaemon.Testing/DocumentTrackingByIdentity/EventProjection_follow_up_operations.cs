@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.AsyncDaemon.Testing.TestingSupport;
@@ -9,7 +8,7 @@ using Marten.Events.Projections;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Marten.AsyncDaemon.Testing;
+namespace Marten.AsyncDaemon.Testing.DocumentTrackingByIdentity;
 
 public class EventProjection_follow_up_operations: DaemonContext
 {
@@ -31,11 +30,11 @@ public class EventProjection_follow_up_operations: DaemonContext
 
         session.Events.StartStream(guid,
             new EntityPublished(guid,
-                new Dictionary<Guid, NestedEntity>()
+                new Dictionary<Guid, NestedEntity>
                 {
                     { Guid.NewGuid(), nestedEntity }, { Guid.NewGuid(), nestedEntity }
                 }));
-        session.Events.Append(Guid.NewGuid(), new SomeOtherEntityWithNestedIdentiferPublished(guid));
+        session.Events.Append(Guid.NewGuid(), new SomeOtherEntityWithNestedIdentifierPublished(guid));
 
         await session.SaveChangesAsync();
 
@@ -50,7 +49,7 @@ public class EventProjection_follow_up_operations: DaemonContext
 
     public record NestedEntityProjection(Guid Id, List<NestedEntity> Entity);
 
-    public record SomeOtherEntityWithNestedIdentiferPublished(Guid Id);
+    public record SomeOtherEntityWithNestedIdentifierPublished(Guid Id);
 
     public class NestedEntityEventProjection: EventProjection
     {
@@ -65,7 +64,7 @@ public class EventProjection_follow_up_operations: DaemonContext
                 operations.Store(entity);
             });
 
-            ProjectAsync<SomeOtherEntityWithNestedIdentiferPublished>(async (@event, operations) =>
+            ProjectAsync<SomeOtherEntityWithNestedIdentifierPublished>(async (@event, operations) =>
             {
                 var entity = await operations.LoadAsync<NestedEntityProjection>(@event.Id);
 
