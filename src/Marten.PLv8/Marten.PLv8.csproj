@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <Description>Document transforms and patching extension for Marten</Description>
-        <VersionPrefix>6.0.0</VersionPrefix>
+        <VersionPrefix>6.0.1</VersionPrefix>
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
@@ -15,11 +15,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Marten\Marten.csproj" />
+        <ProjectReference Include="..\Marten\Marten.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <EmbeddedResource Include="mt_patching.js" />
+        <EmbeddedResource Include="mt_patching.js"/>
     </ItemGroup>
-    <Import Project="../../Analysis.Build.props" />
+    <Import Project="../../Analysis.Build.props"/>
 </Project>

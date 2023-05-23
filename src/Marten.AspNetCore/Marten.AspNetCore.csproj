@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>Helpers for Marten-backed AspNetCore applications</Description>
-        <VersionPrefix>6.0.0</VersionPrefix>
+        <VersionPrefix>6.0.1</VersionPrefix>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
         <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
@@ -16,12 +16,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Marten\Marten.csproj" />
+        <ProjectReference Include="..\Marten\Marten.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     </ItemGroup>
 
-    <Import Project="../../Analysis.Build.props" />
+    <Import Project="../../Analysis.Build.props"/>
 </Project>
