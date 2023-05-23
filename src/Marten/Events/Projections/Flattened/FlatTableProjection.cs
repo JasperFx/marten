@@ -136,8 +136,16 @@ public partial class FlatTableProjection: GeneratedProjection, IProjectionSchema
         EventRange range,
         CancellationToken cancellationToken)
     {
-        return new ValueTask<EventRangeGroup>(new TenantedEventRangeGroup(store, daemonDatabase,
-            _generatedProjection.Value, range, cancellationToken));
+        return new ValueTask<EventRangeGroup>(
+            new TenantedEventRangeGroup(
+                store,
+                daemonDatabase,
+                _generatedProjection.Value,
+                Options,
+                range,
+                cancellationToken
+            )
+        );
     }
 
     private void readSchema(EventGraph events)
