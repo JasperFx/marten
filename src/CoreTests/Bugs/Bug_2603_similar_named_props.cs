@@ -8,7 +8,7 @@ using Xunit;
 
 namespace CoreTests.Bugs;
 
-public class Bug_9003_similar_named_props: BugIntegrationContext
+public class Bug_2603_similar_named_props: BugIntegrationContext
 {
     [Fact]
     public async Task where_clause_with_similar_names_should_still_be_different()
