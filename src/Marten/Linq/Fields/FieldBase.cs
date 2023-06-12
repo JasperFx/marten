@@ -51,7 +51,7 @@ public abstract class FieldBase: IField
     private static string determineMemberLocator(Casing casing, MemberInfo member)
     {
         var memberLocator = member.Name.FormatCase(casing);
-        if (member.TryGetAttribute<JsonPropertyAttribute>(out var newtonsoftAtt))
+        if (member.TryGetAttribute<JsonPropertyAttribute>(out var newtonsoftAtt) && newtonsoftAtt.PropertyName is not null)
         {
             memberLocator = newtonsoftAtt.PropertyName;
         }
