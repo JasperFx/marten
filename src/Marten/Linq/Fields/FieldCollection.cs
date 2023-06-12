@@ -61,7 +61,7 @@ public class FieldMapping: IFieldMapping
             return FieldFor(members.Single());
         }
 
-        var key = members.Select(x => x.Name).Join("");
+        var key = members.Select(x => x.Name).Join(".");
 
         return _fields.GetOrAdd(key,
             _ => resolveField(members.ToArray()));
