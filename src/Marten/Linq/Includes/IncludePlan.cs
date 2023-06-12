@@ -47,9 +47,9 @@ internal class IncludePlan<T>: IIncludePlan
     public string IdAlias { get; private set; }
     public string TempTableSelector { get; private set; }
 
-    public Statement BuildStatement(string tempTableName, IPagedStatement paging)
+    public Statement BuildStatement(string tempTableName, IPagedStatement paging, IMartenSession session)
     {
-        return new IncludedDocumentStatement(_storage, this, tempTableName, paging);
+        return new IncludedDocumentStatement(_storage, this, tempTableName, paging, session);
     }
 
     public IIncludeReader BuildReader(IMartenSession session)
@@ -60,12 +60,16 @@ internal class IncludePlan<T>: IIncludePlan
 
     public class IncludedDocumentStatement: SelectorStatement
     {
-        public IncludedDocumentStatement(IDocumentStorage<T> storage, IncludePlan<T> includePlan,
-            string tempTableName, IPagedStatement paging): base(storage, storage.Fields)
+        public IncludedDocumentStatement(
+            IDocumentStorage<T> storage,
+            IncludePlan<T> includePlan,
+            string tempTableName,
+            IPagedStatement paging,
+            IMartenSession session): base(storage, storage.Fields)
         {
             var initial = new InTempTableWhereFragment(tempTableName, includePlan.IdAlias, paging,
                 includePlan.IsIdCollection());
-            Where = storage.FilterDocuments(null, initial, null);
+            Where = storage.FilterDocuments(null, initial, session);
         }
 
         protected override void configure(CommandBuilder sql)

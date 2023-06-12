@@ -39,7 +39,7 @@ internal class IncludeIdentitySelectorStatement: Statement, ISelectClause
         Statement current = this;
         foreach (var include in includes)
         {
-            var includeStatement = include.BuildStatement(ExportName, OriginalPaging);
+            var includeStatement = include.BuildStatement(ExportName, OriginalPaging, session);
 
             current.InsertAfter(includeStatement);
             current = includeStatement;

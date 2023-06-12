@@ -14,5 +14,5 @@ internal interface IIncludePlan
     Type DocumentType { get; }
     IIncludeReader BuildReader(IMartenSession session);
     bool IsIdCollection();
-    Statement BuildStatement(string tempTableName, IPagedStatement paging);
+    Statement BuildStatement(string tempTableName, IPagedStatement paging, IMartenSession session);
 }
