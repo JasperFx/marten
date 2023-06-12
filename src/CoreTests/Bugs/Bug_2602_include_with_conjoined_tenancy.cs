@@ -6,12 +6,11 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten;
 using Marten.Testing.Harness;
-using Newtonsoft.Json;
 using Xunit;
 
 namespace CoreTests.Bugs;
 
-public class Bug_9002_include_with_conjoined_tenancy: BugIntegrationContext
+public class Bug_2602_include_with_conjoined_tenancy: BugIntegrationContext
 {
     [Fact]
     public async Task multi_tenant_query_with_include_should_work()
