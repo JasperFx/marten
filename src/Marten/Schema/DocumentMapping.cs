@@ -601,7 +601,7 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
         bool notNull = false)
     {
         var field = FieldFor(members);
-        var memberName = members.Select(x => x.Name).Join("");
+        var memberName = members.Select(x => x.Name).Join(".");
 
         var duplicatedField = new DuplicatedField(StoreOptions.Advanced.DuplicatedFieldEnumStorage, field,
             StoreOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);

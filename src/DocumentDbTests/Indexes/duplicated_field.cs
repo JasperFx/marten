@@ -14,11 +14,19 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace DocumentDbTests.Indexes;
 
 public class duplicated_field: OneOffConfigurationsContext
 {
+    private readonly ITestOutputHelper _testOutputHelper;
+
+    public duplicated_field(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
+
     [Fact]
     public void can_insert_document_with_duplicated_field_with_DuplicatedFieldEnumStorage_set_to_string()
     {
@@ -255,7 +263,9 @@ public class duplicated_field: OneOffConfigurationsContext
         results
             .Any(x => x.Id == thirdTarget.Id).ShouldBeTrue();
 
-        queryable.ToCommand(FetchType.FetchMany).CommandText.ShouldContain("inner_date = :p0", Case.Insensitive);
+        var text = queryable.ToCommand(FetchType.FetchMany).CommandText;
+        _testOutputHelper.WriteLine(text);
+        text.ShouldContain("inner_date = :p0", Case.Insensitive);
     }
 
     [Fact]
