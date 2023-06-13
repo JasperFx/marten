@@ -33,14 +33,14 @@ public class Bug_2603_similar_named_props: BugIntegrationContext
 
         // actual query:
         //   select d.id, d.data
-        //   from bugs.mt_doc_bug_9003_similar_named_props_document as d
+        //   from bugs.mt_doc_bug_2603_similar_named_props_document as d
         //   where (d.tenant_id = $1  and  (d.data -> 'Foo' ->> 'BarBaz' = $2 or d.data -> 'Foo' ->> 'BarBaz' = $3))
         //                                                            incorrect--^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
         // parameters: $1 = '*DEFAULT*', $2 = 'aaa', $3 = 'ddd'
 
         // query should be:
         //   select d.id, d.data
-        //   from bugs.mt_doc_bug_9003_similar_named_props_document as d
+        //   from bugs.mt_doc_bug_2603_similar_named_props_document as d
         //   where (d.tenant_id = $1  and  (d.data -> 'Foo' ->> 'BarBaz' = $2 or d.data -> 'FooBar' ->> 'Baz' = $3))
         //                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
         // parameters: $1 = '*DEFAULT*', $2 = 'aaa', $3 = 'ddd'
