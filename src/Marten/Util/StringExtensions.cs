@@ -13,18 +13,11 @@ internal static class StringExtensionMethods
         return _snakeCaseNamingStrategy.GetPropertyName(s, false);
     }
 
-    public static string FormatCase(this string s, Casing casing)
-    {
-        switch (casing)
+    public static string FormatCase(this string s, Casing casing) =>
+        casing switch
         {
-            case Casing.CamelCase:
-                return s.ToCamelCase();
-
-            case Casing.SnakeCase:
-                return s.ToSnakeCase();
-
-            default:
-                return s;
-        }
-    }
+            Casing.CamelCase => s.ToCamelCase(),
+            Casing.SnakeCase => s.ToSnakeCase(),
+            _ => s
+        };
 }

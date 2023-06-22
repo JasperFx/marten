@@ -214,7 +214,8 @@ public class JsonNetSerializer: ISerializer
 
             _serializer.ContractResolver =
                 new JsonNetContractResolver(_casing, CollectionStorage, NonPublicMembersStorage);
-            _clean.ContractResolver = new JsonNetContractResolver(_casing, CollectionStorage, NonPublicMembersStorage);
+            _clean.ContractResolver =
+                new JsonNetContractResolver(_casing, CollectionStorage, NonPublicMembersStorage);
         }
     }
 

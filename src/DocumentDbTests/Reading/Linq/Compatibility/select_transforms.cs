@@ -18,7 +18,7 @@ public class select_transforms: LinqTestContext<select_transforms>
         selectInOrder(docs => docs.OrderBy(x => x.Id).Take(10).Select(x => new Person { Name = x.String, Number = x.Number }));
     }
 
-    [SerializerTypeTargetedTheory(RunFor = SerializerType.Newtonsoft)]
+    [Theory]
     [MemberData(nameof(GetDescriptions))]
     public Task run_query(string description)
     {
