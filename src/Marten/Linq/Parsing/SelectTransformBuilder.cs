@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core;
 using Marten.Linq.Fields;
+using Marten.Util;
 using Remotion.Linq.Parsing;
 
 namespace Marten.Linq.Parsing;
@@ -112,7 +113,7 @@ internal class SelectTransformBuilder: RelinqExpressionVisitor
                     locator = field.JSONBLocator;
                 }
 
-                return $"'{Name}', {locator}";
+                return $"'{Name.FormatCase(serializer.Casing)}', {locator}";
             }
         }
     }
