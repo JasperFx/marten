@@ -123,6 +123,10 @@ public class SometimesFailingTripProjection: TripProjectionWithCustomName
 {
     public static bool FailingEventFails = false;
 
+    public SometimesFailingTripProjection()
+    {
+        ProjectionName = "Trip";
+    }
 
     public void Apply(FailingEvent e, Trip trip)
     {

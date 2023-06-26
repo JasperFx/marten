@@ -85,7 +85,7 @@ public class basic_async_daemon_tests: DaemonContext
         NumberOfStreams = 10;
         await PublishSingleThreaded();
 
-        await daemon.Tracker.WaitForShardState("Trip:All", NumberOfEvents);
+        await daemon.Tracker.WaitForShardState("TripCustomName:All", NumberOfEvents);
 
         await daemon.StopAll();
 
@@ -108,7 +108,7 @@ public class basic_async_daemon_tests: DaemonContext
         NumberOfStreams = 10;
         await PublishSingleThreaded();
 
-        await daemon.Tracker.WaitForShardState("Trip:All", NumberOfEvents);
+        await daemon.Tracker.WaitForShardState("TripCustomName:All", NumberOfEvents);
 
         await daemon.StopAll();
 

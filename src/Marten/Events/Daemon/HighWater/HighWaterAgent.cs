@@ -201,6 +201,14 @@ internal class HighWaterAgent: IDisposable
     {
         var statistics = await _detector.Detect(_token).ConfigureAwait(false);
         var initialHighMark = statistics.HighestSequence;
+
+        // Get out of here if you're at the initial, empty state
+        if (initialHighMark == 1 && statistics.CurrentMark == 0)
+        {
+            _tracker.MarkHighWater(statistics.CurrentMark);
+            return;
+        }
+
         while (statistics.CurrentMark < initialHighMark)
         {
             await Task.Delay(_settings.SlowPollingTime, _token).ConfigureAwait(false);

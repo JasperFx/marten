@@ -110,12 +110,12 @@ public class build_aggregate_projection: DaemonContext
 
         await PublishSingleThreaded();
 
-        var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 30.Seconds());
+        var waiter = agent.Tracker.WaitForShardState(new ShardState("TripCustomName:All", NumberOfEvents), 30.Seconds());
 
         await waiter;
-        Logger.LogDebug("About to rebuild Trip:All");
-        await agent.RebuildProjection("Trip", CancellationToken.None);
-        Logger.LogDebug("Done rebuilding Trip:All");
+        Logger.LogDebug("About to rebuild TripCustomName:All");
+        await agent.RebuildProjection("TripCustomName", CancellationToken.None);
+        Logger.LogDebug("Done rebuilding TripCustomName:All");
         await CheckAllExpectedAggregatesAgainstActuals();
     }
 
@@ -132,7 +132,7 @@ public class build_aggregate_projection: DaemonContext
 
         await PublishSingleThreaded();
 
-        var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 30.Seconds());
+        var waiter = agent.Tracker.WaitForShardState(new ShardState("TripCustomName:All", NumberOfEvents), 30.Seconds());
 
         await waiter;
 
@@ -141,7 +141,7 @@ public class build_aggregate_projection: DaemonContext
         theSession.Store(trip);
         await theSession.SaveChangesAsync();
 
-        await agent.RebuildProjection("Trip", CancellationToken.None);
+        await agent.RebuildProjection("TripCustomName", CancellationToken.None);
 
         await using var query = theStore.QuerySession();
         // Demonstrates that the Trip documents were deleted first

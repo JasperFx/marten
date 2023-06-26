@@ -179,12 +179,6 @@ internal class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner, IDispos
                 await Stop().ConfigureAwait(false);
             }
         }
-        else
-        {
-            _logger.LogDebug(
-                "Attempted to attain lock for async projections, but could not take leadership for database {Database}.",
-                _database.Identifier);
-        }
 
         if (_timer == null || !_timer.Enabled)
         {

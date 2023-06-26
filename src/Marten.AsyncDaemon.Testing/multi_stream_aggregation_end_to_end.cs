@@ -86,12 +86,11 @@ public class multi_stream_aggregation_end_to_end: DaemonContext
     }
 }
 
-public class UserIssues: IVersioned
+public class UserIssues
 {
     [Identity] public Guid UserId { get; set; }
 
     public List<Issue> Issues { get; set; } = new List<Issue>();
-    public Guid Version { get; set; }
 }
 
 public class Issue
