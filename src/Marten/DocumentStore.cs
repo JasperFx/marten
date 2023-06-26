@@ -399,6 +399,8 @@ public partial class DocumentStore: IDocumentStore
             ? Options.Tenancy.Default.Database
             : await Options.Tenancy.FindOrCreateDatabase(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
 
+        await database.EnsureStorageExistsAsync(typeof(IEvent)).ConfigureAwait(false);
+
         return database.As<MartenDatabase>().StartProjectionDaemon(this, logger);
     }
 

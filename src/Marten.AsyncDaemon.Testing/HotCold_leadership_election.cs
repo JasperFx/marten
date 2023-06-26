@@ -56,7 +56,7 @@ public class HotCold_leadership_election: DaemonContext
         }, true);
 
         var agent = await StartDaemonInHotColdMode();
-        var waiter = agent.Tracker.WaitForShardState("Trip:All", NumberOfEvents, 15.Seconds());
+        var waiter = agent.Tracker.WaitForShardState("TripCustomName:All", NumberOfEvents, 15.Seconds());
 
 
         await PublishSingleThreaded();
@@ -81,7 +81,7 @@ public class HotCold_leadership_election: DaemonContext
         var agent = await StartDaemonInHotColdMode();
         var daemon2 = await StartAdditionalDaemonInHotColdMode();
 
-        var waiter = agent.Tracker.WaitForShardState("Trip:All", NumberOfEvents, 30.Seconds());
+        var waiter = agent.Tracker.WaitForShardState("TripCustomName:All", NumberOfEvents, 30.Seconds());
 
 
         await PublishSingleThreaded();
