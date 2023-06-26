@@ -384,4 +384,13 @@ public class StorageFeatures: IFeatureSchema
             }
         }
     }
+
+    internal void RemoveBuilderFor<T>()
+    {
+        _builders.Swap(d => d.Remove(typeof(T)));
+        _documentMappings.Swap(d => d.Remove(typeof(T)));
+        _features.Swap(d => d.Remove(typeof(T)));
+        _mappings.Swap(d => d.Remove(typeof(T)));
+
+    }
 }

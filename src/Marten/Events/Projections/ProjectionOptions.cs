@@ -173,8 +173,15 @@ public class ProjectionOptions: DaemonSettings
     /// <returns>The extended storage configuration for entity T</returns>
     public MartenRegistry.DocumentMappingExpression<T> LiveStreamAggregation<T>(
         Action<AsyncOptions> asyncConfiguration = null
-    ) =>
-        singleStreamProjection<T>(ProjectionLifecycle.Live, asyncConfiguration);
+    )
+    {
+        var expression = singleStreamProjection<T>(ProjectionLifecycle.Live, asyncConfiguration);
+
+        // Hack to address https://github.com/JasperFx/marten/issues/2610
+        _options.Storage.RemoveBuilderFor<T>();
+
+        return expression;
+    }
 
     /// <summary>
     /// Perform automated snapshot on each event for selected entity type
@@ -348,6 +355,6 @@ public class ProjectionOptions: DaemonSettings
 
     internal IEnumerable<Type> AllPublishedTypes()
     {
-        return All.SelectMany(x => x.PublishedTypes()).Distinct();
+        return All.Where(x => x.Lifecycle != ProjectionLifecycle.Live).SelectMany(x => x.PublishedTypes()).Distinct();
     }
 }

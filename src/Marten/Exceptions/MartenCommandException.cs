@@ -28,7 +28,7 @@ public class MartenCommandException: MartenException
 
         foreach (NpgsqlParameter parameter in command.Parameters)
         {
-            Command.Parameters.Add(parameter);
+            Command.Parameters.Add(parameter.Clone());
         }
     }
 
