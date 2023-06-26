@@ -19,7 +19,17 @@ public class MartenCommandException: MartenException
     public MartenCommandException(NpgsqlCommand command, Exception innerException)
         : base(ToMessage(command, innerException) + innerException.Message, innerException)
     {
-        Command = command;
+        Command = new NpgsqlCommand
+        {
+            CommandText = command.CommandText,
+            CommandType = command.CommandType,
+            CommandTimeout = command.CommandTimeout
+        };
+
+        foreach (NpgsqlParameter parameter in command.Parameters)
+        {
+            Command.Parameters.Add(parameter);
+        }
     }
 
     /// <summary>
@@ -34,7 +44,17 @@ public class MartenCommandException: MartenException
         string prefix
     ): base(ToMessage(command, innerException, prefix) + innerException.Message, innerException)
     {
-        Command = command;
+        Command = new NpgsqlCommand
+        {
+            CommandText = command.CommandText,
+            CommandType = command.CommandType,
+            CommandTimeout = command.CommandTimeout
+        };
+
+        foreach (NpgsqlParameter parameter in command.Parameters)
+        {
+            Command.Parameters.Add(parameter);
+        }
     }
 
     /// <summary>
