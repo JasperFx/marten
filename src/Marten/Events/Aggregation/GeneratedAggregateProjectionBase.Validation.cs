@@ -4,6 +4,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.CodeGeneration;
+using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Storage;
@@ -18,7 +19,12 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
 
     internal override IEnumerable<string> ValidateConfiguration(StoreOptions options)
     {
-        var mapping = options.Storage.FindMapping(typeof(T)).Root.As<DocumentMapping>();
+        // Need to use an isolated DocumentMapping for live aggregations to prevent
+        // Marten from building empty tables for the aggregate type
+        var mapping = Lifecycle == ProjectionLifecycle.Live
+            ? new DocumentMapping(typeof(T), options)
+            : options.Storage.FindMapping(typeof(T)).Root.As<DocumentMapping>();
+
         foreach (var p in validateDocumentIdentity(options, mapping)) yield return p;
 
         if (options.Events.TenancyStyle != mapping.TenancyStyle
