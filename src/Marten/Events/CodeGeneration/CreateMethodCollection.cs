@@ -24,7 +24,7 @@ internal class CreateMethodCollection: MethodCollection
 
         var constructors = aggregateType
             .GetConstructors()
-            .Where(x => x.GetParameters().Length == 1);
+            .Where(x => x.GetParameters().Length == 1 && x.GetParameters().Single().ParameterType.IsClass);
 
         foreach (var constructor in constructors)
         {
