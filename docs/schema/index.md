@@ -80,7 +80,12 @@ StoreOptions.Events.DatabaseSchemaName = "event_store";
 
 This will ensure that all EventStore tables (mt_stream, mt_events, ...) and functions (mt_apply_transform, mt_apply_aggregation, ...) are created in the `event_store` schema.
 
-## Create database
+## Create Database
+
+::: warning
+You will probably need to use the `AddMarten().ApplyAllDatabaseChangesOnStartup()` option to force Marten to check and build additional databases on start up times by registering
+an `IHostedService` into your system that will run on startup.
+:::
 
 Marten can be configured to create (or drop & create) databases in case they do not exist. This is done via store options, through `StoreOptions.CreateDatabasesForTenants`.
 

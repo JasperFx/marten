@@ -239,7 +239,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     IReadOnlyLinqParsing IReadOnlyStoreOptions.Linq => Linq;
 
     /// <summary>
-    ///     Configure Marten to create databases for tenants in case databases do not exist or need to be dropped & re-created
+    ///     Configure Marten to create databases for tenants in case databases do not exist or need to be dropped & re-created.
+    /// You will need to also use the ApplyAllDatabaseChangesOnStartup() option when configuring Marten to make this function correctly
     /// </summary>
     /// <remarks>Creating and dropping databases requires the CREATEDB privilege</remarks>
     public void CreateDatabasesForTenants(Action<IDatabaseCreationExpressions> configure)
