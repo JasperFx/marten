@@ -299,6 +299,8 @@ internal class ProjectionDaemon: IProjectionDaemon
 
     private async Task rebuildProjection(IProjectionSource source, TimeSpan shardTimeout, CancellationToken token)
     {
+        await Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
         _logger.LogInformation("Starting to rebuild Projection {ProjectionName}@{DatabaseIdentifier}",
             source.ProjectionName, Database.Identifier);
 
