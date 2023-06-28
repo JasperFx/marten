@@ -265,6 +265,11 @@ See [Diagnostics and Instrumentation](/diagnostics) for information about using 
 
 ## Enlisting in Existing Transactions
 
+::: warning
+Marten is unable to evaluate database migrations within a session that is created by enrolling in an ambient transaction
+(`TransactionScope`). If you need to use ambient transactions, you will need to apply database changes upfront.
+:::
+
 Before Marten 2.4.0, a Marten `IDocumentSession` always controlled the lifecycle of its underlying database
 connection and transaction boundaries. With the 2.4.0+ release, you can pass in an existing transaction or connection, direct
 Marten to enlist in an ambient transaction scope, and even direct Marten on whether or not it owns the transaction boundaries

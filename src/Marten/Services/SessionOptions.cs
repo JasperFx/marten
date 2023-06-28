@@ -259,7 +259,8 @@ public sealed class SessionOptions
 
     /// <summary>
     ///     Create a new session options object using the current, ambient
-    ///     transaction scope
+    ///     transaction scope. NOTE THAT MARTEN'S AUTOMATIC DATABASE MIGRATIONS
+    ///     DO NOT WORK USING THIS OPTION
     /// </summary>
     /// <returns></returns>
     public static SessionOptions ForCurrentTransaction()
