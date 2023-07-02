@@ -16,9 +16,11 @@ internal sealed class EventTypeFilter: ISqlFragment
 {
     private readonly string[] _typeNames;
 
-    public EventTypeFilter(EventGraph graph, IReadOnlyCollection<Type> eventTypes, IReadOnlyCollection<string> additionalAliases)
+    public EventTypeFilter(EventGraph graph, IReadOnlyCollection<Type> eventTypes)
     {
         EventTypes = eventTypes;
+        // We need to load events that are mapped to this event type, not just the event itself.
+        var additionalAliases = graph.AliasesForEvents(eventTypes);
         _typeNames = eventTypes.Select(x => graph.EventMappingFor(x).Alias).Union(additionalAliases).ToArray();
     }
 

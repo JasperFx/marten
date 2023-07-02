@@ -59,9 +59,7 @@ public abstract class ProjectionBase
     {
         if (IncludedEventTypes.Any() && !IncludedEventTypes.Any(x => x.IsAbstract || x.IsInterface))
         {
-            // If we're filtering to included types only, check for mappings relevant to the current types.
-            var additionalAliases = store.Events.AliasesForEvents(IncludedEventTypes);
-            yield return new EventTypeFilter(store.Options.EventGraph, IncludedEventTypes, additionalAliases);
+            yield return new EventTypeFilter(store.Options.EventGraph, IncludedEventTypes);
         }
 
         if (StreamType != null)
