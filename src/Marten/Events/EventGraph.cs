@@ -276,7 +276,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
     }
 
     // Fetch additional event aliases that map to these types
-    internal IReadOnlySet<string> AliasesForEvents(IReadOnlyList<Type> types)
+    internal IReadOnlySet<string> AliasesForEvents(IReadOnlyCollection<Type> types)
     {
         var aliases = new HashSet<string>();
 
