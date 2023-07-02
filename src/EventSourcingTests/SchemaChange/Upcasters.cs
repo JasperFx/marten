@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Events;
+using Marten.Events.Aggregation;
+using Marten.Events.Projections;
 using Marten.Services.Json;
 using Marten.Services.Json.Transformations;
 using Marten.Testing;
@@ -734,14 +736,14 @@ namespace EventSourcingTests.SchemaChange
     // Events in new namespace `New`
     namespace New
     {
-        public class ShoppingCart: AggregateBase
+        public class ShoppingCartAggregate: AggregateBase
         {
             public Client Client { get; private set; }
             public ShoppingCartStatus Status { get; private set; }
 
-            private ShoppingCart() { }
+            private ShoppingCartAggregate() { }
 
-            public ShoppingCart(Guid id, Client client, ShoppingCartStatus status)
+            public ShoppingCartAggregate(Guid id, Client client, ShoppingCartStatus status)
             {
                 var @event = new ShoppingCartOpenedWithStatus(id, client, status);
                 EnqueueEvent(@event);
@@ -754,6 +756,25 @@ namespace EventSourcingTests.SchemaChange
                 Client = @event.Client;
                 Status = @event.Status;
             }
+        }
+
+        public sealed class ShoppingCart
+        {
+            public Guid Id { get; set; }
+            public Client Client { get; set; }
+            public ShoppingCartStatus Status { get; set; }
+
+            public void Apply(ShoppingCartOpenedWithStatus @event)
+            {
+                Id = @event.ShoppingCartId;
+                Client = @event.Client;
+                Status = @event.Status;
+            }
+        }
+
+        public class ShoppingCartProjection: SingleStreamProjection<ShoppingCart>
+        {
+
         }
     }
 
@@ -777,14 +798,31 @@ namespace EventSourcingTests.SchemaChange
                 await session.SaveChangesAsync();
             }
 
-            using var store = SeparateStore(configureUpcasters);
+            using var store = SeparateStore(_ =>
+            {
+                _.Projections.Add<New.ShoppingCartProjection>(ProjectionLifecycle.Inline);
+
+                configureUpcasters(_);
+            });
             {
                 await using var session = store.LightweightSession();
-                var shoppingCartNew = await session.Events.AggregateStreamAsync<New.ShoppingCart>(shoppingCartId);
+                var shoppingCartNew = await session.Events.AggregateStreamAsync<New.ShoppingCartAggregate>(shoppingCartId);
 
-                shoppingCartNew.Id.ShouldBe(shoppingCartId);
+                shoppingCartNew!.Id.ShouldBe(shoppingCartId);
                 shoppingCartNew.Client.ShouldNotBeNull();
                 shoppingCartNew.Client.Id.ShouldBe(shoppingCart.ClientId);
+
+
+                using var daemon = await store.BuildProjectionDaemonAsync();
+
+                await daemon.RebuildProjection<New.ShoppingCartProjection>(CancellationToken.None);
+
+                var shoppingCartRebuilt = await session.LoadAsync<New.ShoppingCart>(shoppingCartId);
+
+                shoppingCartRebuilt!.Id.ShouldBe(shoppingCartId);
+                shoppingCartRebuilt.Client.ShouldNotBeNull();
+                shoppingCartRebuilt.Client.Id.ShouldBe(shoppingCart.ClientId);
+
             }
         }
 

@@ -182,7 +182,7 @@ public class basic_async_daemon_tests: DaemonContext
 
         uniqueTypeCount.ShouldBe(6);
 
-        var filter = new EventTypeFilter(theStore.Events, new Type[] { typeof(Travel), typeof(Arrival) });
+        var filter = new EventTypeFilter(theStore.Events, new Type[] { typeof(Travel), typeof(Arrival) }, new HashSet<string>());
         using var fetcher2 = new EventFetcher(theStore, theAgent, theStore.Tenancy.Default.Database,
             new ISqlFragment[] { filter });
 
