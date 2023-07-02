@@ -275,6 +275,22 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
         return _byEventName[eventType];
     }
 
+    // Fetch additional event aliases that map to these types
+    internal IReadOnlySet<string> AliasesForEvents(IReadOnlyList<Type> types)
+    {
+        var aliases = new HashSet<string>();
+
+        foreach (var mapping in _byEventName)
+        {
+            if (types.Contains(mapping.DocumentType))
+            {
+                aliases.Add(mapping.Alias);
+            }
+        }
+
+        return aliases;
+    }
+
     internal bool IsActive(StoreOptions options)
     {
         return _events.Any() || Options.Projections.All.Any();

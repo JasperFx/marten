@@ -1,4 +1,7 @@
+#nullable enable
+
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NpgsqlTypes;
 using Weasel.Postgresql;
@@ -9,18 +12,17 @@ namespace Marten.Events.Daemon;
 /// <summary>
 ///     WHERE clause filter to limit event fetching to only the event types specified
 /// </summary>
-internal class EventTypeFilter: ISqlFragment
+internal sealed class EventTypeFilter: ISqlFragment
 {
     private readonly string[] _typeNames;
 
-    public EventTypeFilter(EventGraph graph, Type[] eventTypes)
+    public EventTypeFilter(EventGraph graph, IReadOnlyCollection<Type> eventTypes, IReadOnlyCollection<string> additionalAliases)
     {
         EventTypes = eventTypes;
-        _typeNames = eventTypes.Select(x => graph.EventMappingFor(x).Alias).ToArray();
+        _typeNames = eventTypes.Select(x => graph.EventMappingFor(x).Alias).Union(additionalAliases).ToArray();
     }
 
-    public Type[] EventTypes { get; }
-
+    public IReadOnlyCollection<Type> EventTypes { get; }
 
     public void Apply(CommandBuilder builder)
     {

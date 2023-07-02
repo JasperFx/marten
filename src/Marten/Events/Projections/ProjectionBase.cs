@@ -1,5 +1,7 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Marten.Events.Daemon;
 using Weasel.Postgresql.SqlGeneration;
@@ -8,14 +10,15 @@ namespace Marten.Events.Projections;
 
 public abstract class ProjectionBase
 {
-    private readonly IList<ISqlFragment> _filters = new List<ISqlFragment>();
+    private readonly List<ISqlFragment> _filters = new();
 
     private readonly List<Type> _publishedTypes = new();
 
     /// <summary>
     ///     Descriptive name for this projection in the async daemon. The default is the type name of the projection
     /// </summary>
-    public string ProjectionName { get; set; }
+    [DisallowNull]
+    public string? ProjectionName { get; set; }
 
     /// <summary>
     ///     The projection lifecycle that governs when this projection is executed
@@ -30,13 +33,14 @@ public abstract class ProjectionBase
     ///     type of event at runtime
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public IList<Type> IncludedEventTypes { get; } = new List<Type>();
+    public List<Type> IncludedEventTypes { get; } = new();
 
     /// <summary>
     ///     Limit the events processed by this projection to only streams
     ///     marked with this stream type
     /// </summary>
-    internal Type StreamType { get; set; }
+    [DisallowNull]
+    internal Type? StreamType { get; set; }
 
 
     /// <summary>
@@ -55,7 +59,9 @@ public abstract class ProjectionBase
     {
         if (IncludedEventTypes.Any() && !IncludedEventTypes.Any(x => x.IsAbstract || x.IsInterface))
         {
-            yield return new EventTypeFilter(store.Options.EventGraph, IncludedEventTypes.ToArray());
+            // If we're filtering to included types only, check for mappings relevant to the current types.
+            var additionalAliases = store.Events.AliasesForEvents(IncludedEventTypes);
+            yield return new EventTypeFilter(store.Options.EventGraph, IncludedEventTypes, additionalAliases);
         }
 
         if (StreamType != null)
