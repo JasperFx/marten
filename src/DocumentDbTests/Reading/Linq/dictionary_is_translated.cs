@@ -68,7 +68,7 @@ public class dictionary_is_translated: IntegrationContext
         results.All(r => r.StringDict.Contains(kvp)).ShouldBeTrue();
     }
 
-    [Fact(Skip = "Remotion treats a Contains on a Dictionary & IDictionary completely differently, thus this currently takes the wrong code path")]
+    [Fact]
     public async Task dict_guid_can_query_using_containsKVP()
     {
         var guidk = Guid.NewGuid();
@@ -79,7 +79,8 @@ public class dictionary_is_translated: IntegrationContext
         await theSession.SaveChangesAsync();
 
         var kvp = new KeyValuePair<Guid, Guid>(guidk, guidv);
-        var results = await theSession.Query<Target>().Where(x => x.GuidDict.Contains(kvp)).ToListAsync();
+        // Only works if the dictionary is in interface form
+        var results = await theSession.Query<Target>().Where(x => ((IDictionary<Guid, Guid>)x.GuidDict).Contains(kvp)).ToListAsync();
         results.All(r => r.GuidDict.Contains(kvp)).ShouldBeTrue();
     }
 

@@ -41,7 +41,8 @@ public class DictionaryExpressions: IMethodCallParser
                && m.DeclaringType.GetGenericTypeDefinition() == typeof(ICollection<>)
                && m.DeclaringType.GenericTypeArguments[0].IsConstructedGenericType
                && m.DeclaringType.GenericTypeArguments[0].GetGenericTypeDefinition() == typeof(KeyValuePair<,>)
-               && m.DeclaringType.GenericTypeArguments[0].GenericTypeArguments[0] == typeof(string);
+               && (m.DeclaringType.GenericTypeArguments[0].GenericTypeArguments[0] == typeof(string)
+                   || m.DeclaringType.GenericTypeArguments[0].GenericTypeArguments[0].IsValueType);
     }
 
     private static bool IsDictionaryContainsKey(MethodInfo m)
