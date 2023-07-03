@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using JasperFx.Core.Reflection;
 using Marten.Linq.Fields;
 using NpgsqlTypes;
 using Weasel.Postgresql.SqlGeneration;
@@ -47,13 +48,14 @@ public class DictionaryExpressions: IMethodCallParser
     {
         return m.Name == nameof(IDictionary<string, string>.ContainsKey)
                && m.DeclaringType != null && m.DeclaringType.IsConstructedGenericType
-               && m.DeclaringType.GetGenericTypeDefinition() == typeof(IDictionary<,>)
-               && m.DeclaringType.GenericTypeArguments[0] == typeof(string);
+               && m.DeclaringType.Closes(typeof(IDictionary<,>))
+               && (m.DeclaringType.GenericTypeArguments[0] == typeof(string)
+               || m.DeclaringType.GenericTypeArguments[0].IsValueType);
     }
 
     private static ISqlFragment QueryFromDictionaryContainsKey(MethodCallExpression expression, string fieldLocator)
     {
-        var key = (string)expression.Arguments[0].Value();
+        var key = expression.Arguments[0].Value().ToString()!;
         // have to use different token here because we actually want the `?` character as the operator!
         return new CustomizableWhereFragment($"{fieldLocator} ? @1", "@1",
             new CommandParameter(key, NpgsqlDbType.Text));

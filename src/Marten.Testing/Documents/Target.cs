@@ -102,6 +102,7 @@ public class Target
         Id = Guid.NewGuid();
         StringDict = new Dictionary<string, string>();
         StringList = new List<string>();
+        GuidDict = new Dictionary<Guid, Guid>();
     }
 
     public Guid Id { get; set; }
@@ -149,6 +150,7 @@ public class Target
     public Colors? NullableColor { get; set; }
 
     public IDictionary<string, string> StringDict { get; set; }
+    public Dictionary<Guid, Guid> GuidDict { get; set; }
 
     public Guid UserId { get; set; }
 
