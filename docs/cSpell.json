@@ -83,7 +83,8 @@
     "bigrams",
     "Blazor",
     "CQRS",
-    "stringly"
+    "stringly",
+    "hostbuilder"
   ],
   "ignoreRegExpList": [
     "\\((.*)\\)", // Markdown links
