@@ -758,7 +758,7 @@ namespace EventSourcingTests.SchemaChange
             }
         }
 
-        public sealed class ShoppingCartAsync
+        public sealed class ShoppingCartDetails
         {
             public Guid Id { get; set; }
             public Client Client { get; set; }
@@ -772,7 +772,7 @@ namespace EventSourcingTests.SchemaChange
             }
         }
 
-        public class ShoppingCartProjection: SingleStreamProjection<ShoppingCartAsync>
+        public class ShoppingCartProjection: SingleStreamProjection<ShoppingCartDetails>
         {
 
         }
@@ -817,7 +817,7 @@ namespace EventSourcingTests.SchemaChange
 
                 await daemon.RebuildProjection<New.ShoppingCartProjection>(CancellationToken.None);
 
-                var shoppingCartRebuilt = await session.LoadAsync<New.ShoppingCartAsync>(shoppingCartId);
+                var shoppingCartRebuilt = await session.LoadAsync<New.ShoppingCartDetails>(shoppingCartId);
 
                 shoppingCartRebuilt!.Id.ShouldBe(shoppingCartId);
                 shoppingCartRebuilt.Client.ShouldNotBeNull();
