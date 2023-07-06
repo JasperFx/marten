@@ -91,13 +91,20 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
 
     public void AddEvent(TId id, IEvent @event)
     {
-        Slices[id].AddEvent(@event);
+        if (id != null)
+        {
+            Slices[id].AddEvent(@event);
+        }
+
     }
 
     public void AddEvents(TId id, IEnumerable<IEvent> events)
     {
-        Slices[id].AddEvents(events);
-    }
+        if (id != null)
+        {
+            Slices[id].AddEvents(events);
+        }
+    } 
 
     public void Dispose()
     {
