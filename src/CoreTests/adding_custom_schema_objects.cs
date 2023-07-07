@@ -92,6 +92,30 @@ public class adding_custom_schema_objects : OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task enable_an_extension_with_multitenancy()
+    {
+        StoreOptions(opts =>
+        {
+            opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString);
+            opts.RegisterDocumentType<Target>();
+
+            // Unaccent is an extension ships with postgresql
+            // and removes accents (diacritic signs) from strings
+            var extension = new Extension("unaccent");
+
+            opts.Storage.ExtendedSchemaObjects.Add(extension);
+        });
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var session = theStore.QuerySession("tenant");
+
+        var result = await session.QueryAsync<bool>("select unaccent('Æ') = 'AE';");
+
+        result.First().ShouldBe(true);
+    }
+
+    [Fact]
     public async Task create_a_function()
     {
         #region sample_CustomSchemaFunction
