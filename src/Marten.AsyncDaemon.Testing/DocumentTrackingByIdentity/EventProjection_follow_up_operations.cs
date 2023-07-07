@@ -12,10 +12,6 @@ namespace Marten.AsyncDaemon.Testing.DocumentTrackingByIdentity;
 
 public class EventProjection_follow_up_operations: DaemonContext
 {
-    public EventProjection_follow_up_operations(ITestOutputHelper output): base(output)
-    {
-    }
-
     [Fact]
     public async Task rebuild_with_follow_up_operations_should_work()
     {
@@ -71,5 +67,9 @@ public class EventProjection_follow_up_operations: DaemonContext
                 Assert.NotNull(entity);
             });
         }
+    }
+
+    public EventProjection_follow_up_operations(ITestOutputHelper output): base(output)
+    {
     }
 }

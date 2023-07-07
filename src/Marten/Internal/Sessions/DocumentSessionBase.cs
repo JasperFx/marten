@@ -20,15 +20,23 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
     private Dictionary<string, NestedTenantSession>? _byTenant;
 
-    internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IConnectionLifetime connection):
-        base(store, sessionOptions, connection)
+    internal DocumentSessionBase(
+        DocumentStore store,
+        SessionOptions sessionOptions,
+        IConnectionLifetime connection
+    ): base(store, sessionOptions, connection)
     {
         Concurrency = sessionOptions.ConcurrencyChecks;
         _workTracker = new UnitOfWork(this);
     }
 
-    internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IConnectionLifetime connection,
-        ISessionWorkTracker workTracker, Tenant? tenant = default): base(store, sessionOptions, connection, tenant)
+    internal DocumentSessionBase(
+        DocumentStore store,
+        SessionOptions sessionOptions,
+        IConnectionLifetime connection,
+        ISessionWorkTracker workTracker,
+        Tenant? tenant = default
+    ): base(store, sessionOptions, connection, tenant)
     {
         Concurrency = sessionOptions.ConcurrencyChecks;
         _workTracker = workTracker;
