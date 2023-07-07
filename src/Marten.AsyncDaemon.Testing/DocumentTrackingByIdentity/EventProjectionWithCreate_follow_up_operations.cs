@@ -57,14 +57,7 @@ public class EventProjectionWithCreate_follow_up_operations: DaemonContext
 
         await daemon.StartDaemon();
 
-        try
-        {
-            await daemon.Tracker.WaitForShardState($"{nameof(EntityProjection)}:All", 2, TimeSpan.FromSeconds(10));
-        }
-        catch (Exception exc)
-        {
-            daemon.StatusFor($"{nameof(EntityProjection)}:All").ShouldBe(AgentStatus.Stopped);
-        }
+        await daemon.Tracker.WaitForShardState($"{nameof(EntityProjection)}:All", 2);
 
         var entity = await session.LoadAsync<Entity>(entityId);
 

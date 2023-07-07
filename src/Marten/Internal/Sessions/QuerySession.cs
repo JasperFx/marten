@@ -40,10 +40,12 @@ public partial class QuerySession: IMartenSession, IQuerySession
     public string TenantId { get; protected set; }
 #nullable enable
 
-    internal QuerySession(DocumentStore store,
+    internal QuerySession(
+        DocumentStore store,
         SessionOptions sessionOptions,
         IConnectionLifetime connection,
-        Tenant? tenant = default)
+        Tenant? tenant = default
+    )
     {
         _store = store;
         TenantId = tenant?.TenantId ?? sessionOptions.Tenant?.TenantId ?? sessionOptions.TenantId;
