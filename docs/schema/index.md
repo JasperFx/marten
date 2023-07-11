@@ -99,6 +99,7 @@ storeOptions.CreateDatabasesForTenants(c =>
     c.MaintenanceDatabase(cstring);
     c.ForTenant()
         .CheckAgainstPgDatabase()
+
         .WithOwner("postgres")
         .WithEncoding("UTF-8")
         .ConnectionLimit(-1)
@@ -108,7 +109,7 @@ storeOptions.CreateDatabasesForTenants(c =>
         });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/create_database_Tests.cs#L41-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_create_database' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/create_database_Tests.cs#L41-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_create_database' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Databases are checked for existence upon store initialization. By default, connection attempts are made against the databases specified for tenants. If a connection attempt results in an invalid catalog error (3D000), database creation is triggered. `ITenantDatabaseCreationExpressions.CheckAgainstPgDatabase` can be used to alter this behavior to check for database existence from `pg_database`.

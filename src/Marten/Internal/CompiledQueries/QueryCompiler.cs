@@ -10,8 +10,10 @@ using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
+using Marten.Linq.SqlGeneration;
 using Marten.Util;
 using Npgsql;
+using Weasel.Postgresql;
 
 namespace Marten.Internal.CompiledQueries;
 
@@ -152,7 +154,7 @@ internal class QueryCompiler
         var queryTemplate = plan.CreateQueryTemplate(query);
 
         var statistics = plan.GetStatisticsIfAny(query);
-        var builder = BuildDatabaseCommand(session, queryTemplate, statistics, out var command);
+        var (builder, statement) = BuildDatabaseCommand(session, queryTemplate, statistics, out var command);
 
         plan.IncludePlans.AddRange(new List<IIncludePlan>());
         var handler = builder.BuildHandler<TOut>();
@@ -163,26 +165,31 @@ internal class QueryCompiler
 
         plan.HandlerPrototype = handler;
 
-        plan.ReadCommand(command, storeOptions);
+        plan.ReadCommand(command, statement, storeOptions);
 
         return plan;
     }
 
-    internal static LinqHandlerBuilder BuildDatabaseCommand<TDoc, TOut>(QuerySession session,
+    internal static (LinqQueryParser, Statement) BuildDatabaseCommand<TDoc, TOut>(QuerySession session,
         ICompiledQuery<TDoc, TOut> queryTemplate,
         QueryStatistics statistics,
         out NpgsqlCommand command)
     {
         Expression expression = queryTemplate.QueryIs();
-        var invocation = Expression.Invoke(expression, Expression.Parameter(typeof(IMartenQueryable<TDoc>)));
+        if (expression is LambdaExpression lambda) expression = lambda.Body;
 
-        var builder = new LinqHandlerBuilder(new MartenLinqQueryProvider(session) { Statistics = statistics }, session,
-            invocation, forCompiled: true);
+        var parser = new LinqQueryParser(
+            new MartenLinqQueryProvider(session, typeof(TDoc)) { Statistics = statistics }, session,
+            expression);
 
-        command = builder.BuildDatabaseCommand(statistics);
+        var statements = parser.BuildStatements();
+        var builder = new CommandBuilder();
+        var topStatement = statements.Top;
+        topStatement.Apply(builder);
 
+        command = builder.Compile();
 
-        return builder;
+        return (parser, topStatement);
     }
 
     private static void eliminateStringNulls(object query)

@@ -1,3 +1,4 @@
+using Marten.Linq;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 
@@ -7,7 +8,7 @@ internal class ProjectionProgressStatement: Statement
 {
     private readonly EventGraph _events;
 
-    public ProjectionProgressStatement(EventGraph events): base(null)
+    public ProjectionProgressStatement(EventGraph events)
     {
         _events = events;
     }

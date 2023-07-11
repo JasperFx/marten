@@ -1,3 +1,5 @@
+using Marten.Linq;
+using Marten.Linq.Parsing;
 using Marten.Testing.Documents;
 using Xunit;
 
@@ -18,7 +20,7 @@ public sealed class CamelCasing
         });
 
         var field = store.StorageFeatures.MappingFor(typeof(User))
-            .FieldFor(nameof(User.FirstName));
+            .QueryMembers.MemberFor<User>(x => x.FirstName);
 
         Assert.Equal(@"d.data ->> 'firstName'", field.TypedLocator);
     }

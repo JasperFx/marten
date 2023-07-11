@@ -1,3 +1,4 @@
+using System;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -24,6 +25,7 @@ public class created_timestamp_queries: OneOffConfigurationsContext
     [IndexedCreatedAt]
     public class Customer
     {
+        public Guid Id { get; set; }
     }
     #endregion
 

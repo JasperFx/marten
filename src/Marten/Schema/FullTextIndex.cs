@@ -1,6 +1,8 @@
 using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
+using Marten.Linq;
+using Marten.Linq.Parsing;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;
 
@@ -78,7 +80,7 @@ public class FullTextIndex: IndexDefinition
     private static string GetDataConfig(DocumentMapping mapping, MemberInfo[][] members)
     {
         var dataConfig = members
-            .Select(m => $"({mapping.FieldFor(m).RawLocator.Replace("d.", "")})")
+            .Select(m => $"({mapping.QueryMembers.MemberFor(m).RawLocator.Replace("d.", "")})")
             .Join(" || ' ' || ");
 
         return $"({dataConfig})";

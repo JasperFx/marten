@@ -2,7 +2,7 @@ using System.Reflection;
 
 namespace Marten.Internal.CompiledQueries;
 
-public class FieldQueryMember<T>: QueryMember<T>
+internal class FieldQueryMember<T>: QueryMember<T>
 {
     private readonly FieldInfo _field;
 

@@ -4,8 +4,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using Marten.Exceptions;
 using Marten.Internal.Storage;
-using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
+using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Internal.Sessions;

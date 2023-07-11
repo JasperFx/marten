@@ -2,7 +2,7 @@ using System.Reflection;
 
 namespace Marten.Internal.CompiledQueries;
 
-public class PropertyQueryMember<T>: QueryMember<T>
+internal class PropertyQueryMember<T>: QueryMember<T>
 {
     private readonly PropertyInfo _property;
 

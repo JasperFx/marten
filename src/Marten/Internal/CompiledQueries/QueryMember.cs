@@ -13,14 +13,14 @@ using Weasel.Postgresql;
 
 namespace Marten.Internal.CompiledQueries;
 
-public interface IQueryMember<T>: IQueryMember
+internal interface IQueryMember<T>: IQueryMember
 {
     T Value { get; }
     T GetValue(object query);
     void SetValue(object query, T value);
 }
 
-public abstract class QueryMember<T>: IQueryMember<T>
+internal abstract class QueryMember<T>: IQueryMember<T>
 {
     protected QueryMember(MemberInfo member)
     {
@@ -45,7 +45,8 @@ public abstract class QueryMember<T>: IQueryMember<T>
         Value = GetValue(query);
     }
 
-    public void TryMatch(List<NpgsqlParameter> parameters, StoreOptions storeOptions)
+    public void TryMatch(List<NpgsqlParameter> parameters, ICompiledQueryAwareFilter[] filters,
+        StoreOptions storeOptions)
     {
         if (Type.IsEnum)
         {
@@ -53,26 +54,10 @@ public abstract class QueryMember<T>: IQueryMember<T>
                 ? Value.As<int>()
                 : (object)Value.ToString();
 
-            tryToFind(parameters, parameterValue);
+            tryToFind(parameters, filters, parameterValue);
         }
 
-        // These methods are on the ClonedCompiledQuery base class, and are
-        // used to set the right parameters
-        if (!tryToFind(parameters, Value) && Type == typeof(string))
-        {
-            if (tryToFind(parameters, $"%{Value}"))
-            {
-                Mask = "StartsWith({0})";
-            }
-            else if (tryToFind(parameters, $"%{Value}%"))
-            {
-                Mask = "ContainsString({0})";
-            }
-            else if (tryToFind(parameters, $"{Value}%"))
-            {
-                Mask = "EndsWith({0})";
-            }
-        }
+        tryToFind(parameters, filters, Value);
     }
 
     public void TryWriteValue(UniqueValueSource valueSource, object query)
@@ -91,78 +76,38 @@ public abstract class QueryMember<T>: IQueryMember<T>
 
     public MemberInfo Member { get; }
 
-    public IList<int> ParameterIndexes { get; } = new List<int>();
+    public List<CompiledParameterApplication> Usages { get; } = new();
 
     public void GenerateCode(GeneratedMethod method, StoreOptions storeOptions)
     {
-        if (Type.IsEnum)
+        foreach (var usage in Usages)
         {
-            generateEnumSetter(method, storeOptions);
-        }
-        else if (Mask == null)
-        {
-            generateBasicSetter(method);
-        }
-        else
-        {
-            generateMaskedStringCode(method);
+            usage.GenerateCode(method, storeOptions, Member);
         }
     }
 
-    private bool tryToFind(List<NpgsqlParameter> parameters, object value)
+    private bool tryToFind(List<NpgsqlParameter> parameters, ICompiledQueryAwareFilter[] filters,
+        object value)
     {
-        var matching = parameters.Where(x => value.Equals(x.Value));
-        foreach (var parameter in matching)
+        for (var i = 0; i < parameters.Count; i++)
         {
-            var index = parameters.IndexOf(parameter);
-            ParameterIndexes.Add(index);
-        }
-
-        return ParameterIndexes.Any();
-    }
-
-    private void generateEnumSetter(GeneratedMethod method, StoreOptions storeOptions)
-    {
-        foreach (var index in ParameterIndexes)
-        {
-            if (storeOptions.Serializer().EnumStorage == EnumStorage.AsInteger)
+            var parameter = parameters[i];
+            if (filters.All(x => x.ParameterName != parameter.ParameterName) && value.Equals(parameter.Value))
             {
-                method.Frames.Code($@"
-parameters[{index}].NpgsqlDbType = {{0}};
-parameters[{index}].Value = (int)_query.{Member.Name};
-", NpgsqlDbType.Integer);
-            }
-            else
-            {
-                method.Frames.Code($@"
-parameters[{index}].NpgsqlDbType = {{0}};
-parameters[{index}].Value = _query.{Member.Name}.ToString();
-", NpgsqlDbType.Varchar);
+                Usages.Add(new CompiledParameterApplication(i, null));
             }
         }
-    }
 
-    private void generateMaskedStringCode(GeneratedMethod method)
-    {
-        var maskedValue = Mask.ToFormat($"_query.{Member.Name}");
-
-        foreach (var index in ParameterIndexes)
+        foreach (var filter in filters)
         {
-            method.Frames.Code($@"
-parameters[{index}].NpgsqlDbType = {{0}};
-parameters[{index}].Value = {maskedValue};
-", PostgresqlProvider.Instance.ToParameterType(Member.GetMemberType()));
+            var parameter = parameters.FirstOrDefault(x => x.ParameterName == filter.ParameterName);
+            if (filter.TryMatchValue(value, Member))
+            {
+                var index = parameters.IndexOf(parameter);
+                Usages.Add(new CompiledParameterApplication(index, filter));
+            }
         }
-    }
 
-    private void generateBasicSetter(GeneratedMethod method)
-    {
-        foreach (var index in ParameterIndexes)
-        {
-            method.Frames.Code($@"
-parameters[{index}].NpgsqlDbType = {{0}};
-parameters[{index}].Value = _query.{Member.Name};
-", PostgresqlProvider.Instance.ToParameterType(Member.GetMemberType()));
-        }
+        return Usages.Any();
     }
 }

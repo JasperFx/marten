@@ -7,17 +7,18 @@ using Marten.Linq.SqlGeneration;
 using Marten.Schema.Arguments;
 using Npgsql;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Util;
 
 internal static class CommandExtensions
 {
-    public static NpgsqlCommand BuildCommand(this IMartenSession session, Statement statement)
+    public static NpgsqlCommand BuildCommand(this IMartenSession session, ISqlFragment statement)
     {
         var command = new NpgsqlCommand();
         var builder = new CommandBuilder(command);
 
-        statement.Configure(builder);
+        statement.Apply(builder);
 
         command.CommandText = builder.ToString();
 

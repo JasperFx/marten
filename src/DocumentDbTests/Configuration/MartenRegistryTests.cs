@@ -3,7 +3,9 @@ using System.Linq;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
-using Marten.Linq.Fields;
+using Marten.Linq;
+using Marten.Linq.Members;
+using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
@@ -49,14 +51,16 @@ public class MartenRegistryTests : OneOffConfigurationsContext
     public void picks_up_searchable_on_property()
     {
         theStorage.MappingFor(typeof (Organization)).As<DocumentMapping>()
-            .FieldFor(nameof(Organization.Name)).ShouldBeOfType<DuplicatedField>();
+            .QueryMembers
+            .MemberFor(nameof(Organization.Name)).ShouldBeOfType<DuplicatedField>();
     }
 
     [Fact]
     public void picks_up_searchable_on_field()
     {
         theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>()
-            .FieldFor(nameof(Organization.OtherName)).ShouldBeOfType<DuplicatedField>();
+            .QueryMembers
+            .MemberFor(nameof(Organization.OtherName)).ShouldBeOfType<DuplicatedField>();
     }
 
     [Fact]

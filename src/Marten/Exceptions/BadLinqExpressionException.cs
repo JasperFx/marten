@@ -1,4 +1,5 @@
 using System;
+using System.Linq.Expressions;
 
 namespace Marten.Exceptions;
 #if SERIALIZE
@@ -12,6 +13,10 @@ public class BadLinqExpressionException: MartenException
     }
 
     public BadLinqExpressionException(string message): base(message)
+    {
+    }
+
+    public BadLinqExpressionException(Expression expression) : this($"Marten can not (yet) support the Linq expression '{expression}'")
     {
     }
 

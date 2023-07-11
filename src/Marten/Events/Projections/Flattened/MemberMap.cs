@@ -18,7 +18,7 @@ internal class MemberMap<TEvent, TMember>: IColumnMap
     public MemberMap(Expression<Func<TEvent, TMember>> members, string? tableColumn,
         ColumnMapType columnMapType)
     {
-        _members = FindMembers.Determine(members);
+        _members = MemberFinder.Determine(members);
         _mapType = columnMapType;
 
         ColumnName = tableColumn ?? _members.Select(x => x.Name.ToKebabCase()).Join("_");

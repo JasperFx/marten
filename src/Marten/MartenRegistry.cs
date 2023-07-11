@@ -16,7 +16,6 @@ using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
-using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten;
 
@@ -419,7 +418,7 @@ public class MartenRegistry
         {
             _builder.Alter = m =>
             {
-                var visitor = new FindMembers();
+                var visitor = new MemberFinder();
                 visitor.Visit(expression);
 
                 var foreignKeyDefinition = m.AddForeignKey(visitor.Members.ToArray(), typeof(TReference));
@@ -447,7 +446,7 @@ public class MartenRegistry
         {
             _builder.Alter = m =>
             {
-                var members = FindMembers.Determine(expression);
+                var members = MemberFinder.Determine(expression);
 
                 var duplicateField = m.DuplicateField(members);
 
@@ -507,7 +506,7 @@ public class MartenRegistry
         {
             _builder.Alter = mapping =>
             {
-                var members = FindMembers.Determine(member);
+                var members = MemberFinder.Determine(member);
                 if (members.Length != 1)
                 {
                     throw new InvalidOperationException(
@@ -801,7 +800,7 @@ public class MartenRegistry
                 /// <param name="memberExpression"></param>
                 public void MapTo(Expression<Func<T, TProperty>> memberExpression)
                 {
-                    var member = FindMembers.Determine(memberExpression).Single();
+                    var member = MemberFinder.Determine(memberExpression).Single();
                     _parent._builder.Alter = m =>
                     {
                         var metadataColumn = _source(m.Metadata);

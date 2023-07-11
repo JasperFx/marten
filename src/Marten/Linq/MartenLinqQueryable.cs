@@ -1,12 +1,13 @@
 #nullable enable
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
-using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
@@ -15,8 +16,6 @@ using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Npgsql;
-using Remotion.Linq;
-using Remotion.Linq.Clauses;
 using Weasel.Postgresql;
 
 namespace Marten.Linq;
@@ -27,41 +26,54 @@ internal interface IMartenLinqQueryable
     QuerySession Session { get; }
 
     Expression Expression { get; }
-
-    LinqHandlerBuilder BuildLinqHandler();
+    LinqQueryParser BuildLinqParser();
 }
 
-internal class MartenLinqQueryable<T>: QueryableBase<T>, IMartenQueryable<T>, IMartenLinqQueryable
+internal class MartenLinqQueryable<T>: IOrderedQueryable<T>, IMartenQueryable<T>, IMartenLinqQueryable
 {
-    public MartenLinqQueryable(QuerySession session, MartenLinqQueryProvider provider, Expression expression): base(
-        provider,
-        expression)
+    public MartenLinqQueryable(QuerySession session, MartenLinqQueryProvider provider, Expression expression)
     {
+        Provider = provider;
         Session = session;
         MartenProvider = provider;
+        Expression = expression;
     }
 
-    public MartenLinqQueryable(QuerySession session): base(new MartenLinqQueryProvider(session))
+    public MartenLinqQueryable(QuerySession session)
     {
         Session = session;
-        MartenProvider = Provider.As<MartenLinqQueryProvider>();
+        MartenProvider = new MartenLinqQueryProvider(session, typeof(T));
+        Provider = MartenProvider;
+        Expression = Expression.Constant(this);
     }
 
-    public MartenLinqQueryable(QuerySession session, Expression expression): base(new MartenLinqQueryProvider(session),
-        expression)
+    public MartenLinqQueryable(QuerySession session, Expression expression) : this(session, new MartenLinqQueryProvider(session, typeof(T)), expression)
     {
-        Session = session;
-        MartenProvider = Provider.As<MartenLinqQueryProvider>();
+
     }
 
-    public LinqHandlerBuilder BuildLinqHandler()
+    public IEnumerator<T> GetEnumerator ()
     {
-        return MartenProvider.BuildLinqHandler(Expression);
+        return Provider.Execute<IEnumerable<T>> (Expression).GetEnumerator();
     }
+
+    IEnumerator IEnumerable.GetEnumerator ()
+    {
+        return Provider.Execute<IEnumerable> (Expression).GetEnumerator();
+    }
+
+    public Type ElementType => typeof(T);
+    public IQueryProvider Provider { get; }
 
     public MartenLinqQueryProvider MartenProvider { get; }
+    public Expression Expression { get; }
 
     public QuerySession Session { get; }
+
+    public LinqQueryParser BuildLinqParser()
+    {
+        return new LinqQueryParser(MartenProvider, Session, Expression);
+    }
 
     public QueryStatistics Statistics
     {
@@ -69,9 +81,14 @@ internal class MartenLinqQueryable<T>: QueryableBase<T>, IMartenQueryable<T>, IM
         set => MartenProvider.Statistics = value;
     }
 
-    public Task<IReadOnlyList<TResult>> ToListAsync<TResult>(CancellationToken token)
+    public async Task<IReadOnlyList<TResult>> ToListAsync<TResult>(CancellationToken token)
     {
-        return MartenProvider.ExecuteAsync<IReadOnlyList<TResult>>(Expression, token);
+        var builder = new LinqQueryParser(MartenProvider, Session, Expression);
+        var handler = builder.BuildListHandler<TResult>();
+
+        await MartenProvider.EnsureStorageExistsAsync(builder, token).ConfigureAwait(false);
+
+        return await MartenProvider.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
     }
 
     public IAsyncEnumerable<T> ToAsyncEnumerable(CancellationToken token = default)
@@ -81,57 +98,57 @@ internal class MartenLinqQueryable<T>: QueryableBase<T>, IMartenQueryable<T>, IM
 
     public Task<bool> AnyAsync(CancellationToken token)
     {
-        return MartenProvider.ExecuteAsync<bool>(Expression, token, LinqConstants.AnyOperator);
+        return MartenProvider.ExecuteAsync<bool>(Expression, token, SingleValueMode.Any);
     }
 
     public Task<int> CountAsync(CancellationToken token)
     {
-        return MartenProvider.ExecuteAsync<int>(Expression, token, LinqConstants.CountOperator);
+        return MartenProvider.ExecuteAsync<int>(Expression, token, SingleValueMode.Count);
     }
 
     public Task<long> CountLongAsync(CancellationToken token)
     {
-        return MartenProvider.ExecuteAsync<long>(Expression, token, LinqConstants.LongCountOperator);
+        return MartenProvider.ExecuteAsync<long>(Expression, token, SingleValueMode.LongCount);
     }
 
     public Task<TResult> FirstAsync<TResult>(CancellationToken token)
     {
-        return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.FirstOperator);
+        return MartenProvider.ExecuteAsync<TResult>(Expression, token, SingleValueMode.First);
     }
 
     public Task<TResult?> FirstOrDefaultAsync<TResult>(CancellationToken token)
     {
-        return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.FirstOrDefaultOperator)!;
+        return MartenProvider.ExecuteAsync<TResult>(Expression, token, SingleValueMode.FirstOrDefault)!;
     }
 
     public Task<TResult> SingleAsync<TResult>(CancellationToken token)
     {
-        return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.SingleOperator);
+        return MartenProvider.ExecuteAsync<TResult>(Expression, token, SingleValueMode.Single);
     }
 
     public Task<TResult?> SingleOrDefaultAsync<TResult>(CancellationToken token)
     {
-        return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.SingleOrDefaultOperator)!;
+        return MartenProvider.ExecuteAsync<TResult>(Expression, token, SingleValueMode.SingleOrDefault)!;
     }
 
     public Task<TResult> SumAsync<TResult>(CancellationToken token)
     {
-        return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.SumOperator);
+        return MartenProvider.ExecuteAsync<TResult>(Expression, token, SingleValueMode.Sum);
     }
 
     public Task<TResult> MinAsync<TResult>(CancellationToken token)
     {
-        return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.MinOperator);
+        return MartenProvider.ExecuteAsync<TResult>(Expression, token, SingleValueMode.Min);
     }
 
     public Task<TResult> MaxAsync<TResult>(CancellationToken token)
     {
-        return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.MaxOperator);
+        return MartenProvider.ExecuteAsync<TResult>(Expression, token, SingleValueMode.Max);
     }
 
     public Task<double> AverageAsync(CancellationToken token)
     {
-        return MartenProvider.ExecuteAsync<double>(Expression, token, LinqConstants.AverageOperator);
+        return MartenProvider.ExecuteAsync<double>(Expression, token, SingleValueMode.Average);
     }
 
     public QueryPlan Explain(FetchType fetchType = FetchType.FetchMany,
@@ -175,10 +192,10 @@ internal class MartenLinqQueryable<T>: QueryableBase<T>, IMartenQueryable<T>, IM
         return this;
     }
 
-    internal IQueryHandler<TResult> BuildHandler<TResult>(ResultOperatorBase? op = null)
+    internal IQueryHandler<TResult> BuildHandler<TResult>(SingleValueMode? mode = null)
     {
-        var builder = new LinqHandlerBuilder(MartenProvider, Session, Expression, op);
-        return builder.BuildHandler<TResult>();
+        var parser = new LinqQueryParser(MartenProvider, Session, Expression, mode);
+        return parser.BuildHandler<TResult>();
     }
 
     public Task<int> StreamJsonArray(Stream destination, CancellationToken token)
@@ -190,9 +207,9 @@ internal class MartenLinqQueryable<T>: QueryableBase<T>, IMartenQueryable<T>, IM
         where TInclude : notnull
     {
         var storage = (IDocumentStorage<TInclude>)Session.StorageFor(typeof(TInclude));
-        var identityField = Session.StorageFor(typeof(T)).Fields.FieldFor(idSource);
+        var identityMember = Session.StorageFor(typeof(T)).QueryMembers.MemberFor(idSource);
 
-        var include = new IncludePlan<TInclude>(storage, identityField, callback);
+        var include = new IncludePlan<TInclude>(storage, identityMember, callback);
         return include;
     }
 
@@ -203,7 +220,7 @@ internal class MartenLinqQueryable<T>: QueryableBase<T>, IMartenQueryable<T>, IM
 
         if (storage is IDocumentStorage<TInclude, TKey> s)
         {
-            var identityField = Session.StorageFor(typeof(T)).Fields.FieldFor(idSource);
+            var identityMember = Session.StorageFor(typeof(T)).QueryMembers.MemberFor(idSource);
 
             void Callback(TInclude item)
             {
@@ -211,7 +228,7 @@ internal class MartenLinqQueryable<T>: QueryableBase<T>, IMartenQueryable<T>, IM
                 dictionary[id] = item;
             }
 
-            return new IncludePlan<TInclude>(storage, identityField, Callback);
+            return new IncludePlan<TInclude>(storage, identityMember, Callback);
         }
 
         throw new DocumentIdTypeMismatchException(storage, typeof(TKey));
@@ -219,15 +236,16 @@ internal class MartenLinqQueryable<T>: QueryableBase<T>, IMartenQueryable<T>, IM
 
     public NpgsqlCommand ToPreviewCommand(FetchType fetchType)
     {
-        var builder = new LinqHandlerBuilder(MartenProvider, Session, Expression);
+        var parser = new LinqQueryParser(MartenProvider, Session, Expression);
+
         var command = new NpgsqlCommand();
 
         var sql = new CommandBuilder(command);
 
-        builder.BuildDiagnosticCommand(fetchType, sql);
+        parser.BuildDiagnosticCommand(fetchType, sql);
         command.CommandText = sql.ToString();
 
-        foreach (var documentType in builder.DocumentTypes()) Session.Database.EnsureStorageExists(documentType);
+        foreach (var documentType in parser.DocumentTypes()) Session.Database.EnsureStorageExists(documentType);
 
         Session._connection.Apply(command);
 
@@ -244,22 +262,22 @@ internal class MartenLinqQueryable<T>: QueryableBase<T>, IMartenQueryable<T>, IM
 
     public Task StreamJsonFirst(Stream destination, CancellationToken token)
     {
-        return MartenProvider.StreamJson<T>(destination, Expression, token, LinqConstants.FirstOperator);
+        return MartenProvider.StreamJson<T>(destination, Expression, token, SingleValueMode.First);
     }
 
     public Task<int> StreamJsonFirstOrDefault(Stream destination, CancellationToken token)
     {
-        return MartenProvider.StreamJson<T>(destination, Expression, token, LinqConstants.FirstOrDefaultOperator);
+        return MartenProvider.StreamJson<T>(destination, Expression, token, SingleValueMode.FirstOrDefault);
     }
 
     public Task StreamJsonSingle(Stream destination, CancellationToken token)
     {
-        return MartenProvider.StreamJson<T>(destination, Expression, token, LinqConstants.SingleOperator);
+        return MartenProvider.StreamJson<T>(destination, Expression, token, SingleValueMode.Single);
     }
 
     public Task<int> StreamJsonSingleOrDefault(Stream destination, CancellationToken token)
     {
-        return MartenProvider.StreamJson<T>(destination, Expression, token, LinqConstants.SingleOrDefaultOperator);
+        return MartenProvider.StreamJson<T>(destination, Expression, token, SingleValueMode.SingleOrDefault);
     }
 
     public async Task<string> ToJsonFirst(CancellationToken token)

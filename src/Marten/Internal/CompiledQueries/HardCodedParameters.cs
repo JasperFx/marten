@@ -10,7 +10,7 @@ public class HardCodedParameters
 {
     private readonly IDictionary<int, NpgsqlParameter> _parameters = new Dictionary<int, NpgsqlParameter>();
 
-    public HardCodedParameters(CompiledQueryPlan plan)
+    internal HardCodedParameters(CompiledQueryPlan plan)
     {
         var parameters = plan.Command.Parameters;
         HasTenantId = parameters.Any(x => x.ParameterName == TenantIdArgument.ArgName);
@@ -22,7 +22,7 @@ public class HardCodedParameters
 
         for (var i = 0; i < parameters.Count; i++)
         {
-            if (plan.Parameters.All(x => !x.ParameterIndexes.Contains(i)))
+            if (plan.Parameters.All(x => !x.Usages.Any(x => x.Index == i)))
             {
                 Record(i, parameters[i]);
             }

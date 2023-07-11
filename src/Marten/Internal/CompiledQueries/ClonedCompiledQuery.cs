@@ -45,7 +45,7 @@ public abstract class ClonedCompiledQuery<TOut, TQuery>: IQueryHandler<TOut>
 
     protected string StartsWith(string value)
     {
-        return $"%{value}";
+        return $"{value}%";
     }
 
     protected string ContainsString(string value)
@@ -55,6 +55,6 @@ public abstract class ClonedCompiledQuery<TOut, TQuery>: IQueryHandler<TOut>
 
     protected string EndsWith(string value)
     {
-        return $"{value}%";
+        return $"%{value}";
     }
 }

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core.Reflection;
-using Marten.Linq.Fields;
+using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Weasel.Postgresql.SqlGeneration;
@@ -20,7 +20,8 @@ public class ModifiedSinceParser: IMethodCallParser
         return Equals(expression.Method, _method);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
+    public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
+        MethodCallExpression expression)
     {
         var time = expression.Arguments.Last().Value().As<DateTimeOffset>();
 

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Linq.SoftDeletes;
 using Marten.Metadata;
@@ -69,12 +71,15 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         await theSession.SaveChangesAsync();
 
         await using var session2 = theStore.LightweightSession();
+
+        session2.Logger = new TestOutputMartenLogger(_output);
+
         session2.Delete(doc1);
         session2.Delete(doc3);
         await session2.SaveChangesAsync();
 
         await using var query = theStore.QuerySession();
-        query.Logger = new TestOutputMartenLogger(_output);
+
 
         var deleted = await query.Query<SoftDeletedDocument>().Where(x => x.Deleted)
             .CountAsync();
@@ -642,6 +647,53 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
             .CountAsync();
 
         blueCount.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task throw_not_supported_when_trying_to_query_against_non_soft_deleted_docs_1()
+    {
+        var ex = await Should.ThrowAsync<InvalidOperationException>(async () =>
+        {
+            var dateTimeOffset = DateTimeOffset.Now.Subtract(5.Days());
+            await theSession.Query<Target>().Where(x => x.DeletedBefore(dateTimeOffset)).ToListAsync();
+        });
+
+        ex.Message.ShouldBe($"Document type {typeof(Target).FullNameInCode()} is not configured as soft deleted");
+    }
+
+    [Fact]
+    public async Task throw_not_supported_when_trying_to_query_against_non_soft_deleted_docs_2()
+    {
+        var ex = await Should.ThrowAsync<InvalidOperationException>(async () =>
+        {
+            var dateTimeOffset = DateTimeOffset.Now.Subtract(5.Days());
+            await theSession.Query<Target>().Where(x => x.DeletedSince(dateTimeOffset)).ToListAsync();
+        });
+
+        ex.Message.ShouldBe($"Document type {typeof(Target).FullNameInCode()} is not configured as soft deleted");
+    }
+
+    [Fact]
+    public async Task throw_not_supported_when_trying_to_query_against_non_soft_deleted_docs_3()
+    {
+        var ex = await Should.ThrowAsync<InvalidOperationException>(async () =>
+        {
+            await theSession.Query<Target>().Where(x => x.MaybeDeleted()).ToListAsync();
+        });
+
+        ex.Message.ShouldBe($"Document type {typeof(Target).FullNameInCode()} is not configured as soft deleted");
+    }
+
+
+    [Fact]
+    public async Task throw_not_supported_when_trying_to_query_against_non_soft_deleted_docs_4()
+    {
+        var ex = await Should.ThrowAsync<InvalidOperationException>(async () =>
+        {
+            await theSession.Query<Target>().Where(x => x.IsDeleted()).ToListAsync();
+        });
+
+        ex.Message.ShouldBe($"Document type {typeof(Target).FullNameInCode()} is not configured as soft deleted");
     }
 }
 

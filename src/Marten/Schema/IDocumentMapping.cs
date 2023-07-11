@@ -14,4 +14,7 @@ internal interface IDocumentMapping
 
     Type IdType { get; }
     DbObjectName TableName { get; }
+
+    public PropertySearching PropertySearching { get; }
+    public DeleteStyle DeleteStyle { get; }
 }
