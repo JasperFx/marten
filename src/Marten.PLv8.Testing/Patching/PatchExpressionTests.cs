@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
-using Marten.Linq.Filters;
+using Marten.Linq.SqlGeneration.Filters;
 using Marten.PLv8.Patching;
 using Marten.PLv8.Transforms;
 using Marten.Schema;

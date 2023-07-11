@@ -21,7 +21,7 @@ using (var session = theStore.LightweightSession("tenant1"))
     session.SaveChanges();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L68-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L65-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_tenancy-scoping-session-write-1'></a>
 ```cs
 // Write some User documents to tenant "tenant1"
@@ -32,7 +32,7 @@ using (var session = theStore.LightweightSession("tenant1"))
     session.SaveChanges();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L115-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L112-L122' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-1' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_tenancy-scoping-session-write-2'></a>
 ```cs
 // Write some User documents to tenant "tenant1"

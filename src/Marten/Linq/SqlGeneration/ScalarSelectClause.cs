@@ -2,14 +2,14 @@ using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
-using Marten.Linq.Fields;
+using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
@@ -21,41 +21,46 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
     public ScalarSelectClause(string locator, string from)
     {
         FromObject = from;
-        FieldName = locator;
+        MemberName = locator;
     }
 
-    public ScalarSelectClause(IField field, string from)
+    public ScalarSelectClause(IQueryableMember field, string from)
     {
         FromObject = from;
 
-        FieldName = field.TypedLocator;
+        MemberName = field.TypedLocator;
     }
 
-    public string FieldName { get; private set; }
+    public string MemberName { get; private set; }
 
     public ISelectClause CloneToOtherTable(string tableName)
     {
-        return new ScalarSelectClause<T>(FieldName, tableName);
+        return new ScalarSelectClause<T>(MemberName, tableName);
     }
 
     public void ApplyOperator(string op)
     {
-        FieldName = $"{op}({FieldName})";
+        MemberName = $"{op}({MemberName})";
     }
 
     public ISelectClause CloneToDouble()
     {
-        return new ScalarSelectClause<double>(FieldName, FromObject);
+        return new ScalarSelectClause<double>(MemberName, FromObject);
+    }
+
+    bool ISqlFragment.Contains(string sqlText)
+    {
+        return false;
     }
 
     public Type SelectedType => typeof(T);
 
     public string FromObject { get; }
 
-    public void WriteSelectClause(CommandBuilder sql)
+    public void Apply(CommandBuilder sql)
     {
         sql.Append("select ");
-        sql.Append(FieldName);
+        sql.Append(MemberName);
         sql.Append(" from ");
         sql.Append(FromObject);
         sql.Append(" as d");
@@ -63,7 +68,7 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
 
     public string[] SelectFields()
     {
-        return new[] { FieldName };
+        return new[] { MemberName };
     }
 
     public ISelector BuildSelector(IMartenSession session)
@@ -71,12 +76,12 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
         return this;
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, Statement statement,
-        Statement currentStatement)
+    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
+        ISqlFragment currentStatement)
     {
         var selector = (ISelector<T>)BuildSelector(session);
 
-        return LinqHandlerBuilder.BuildHandler<T, TResult>(selector, statement);
+        return LinqQueryParser.BuildHandler<T, TResult>(selector, statement);
     }
 
     public ISelectClause UseStatistics(QueryStatistics statistics)
@@ -136,5 +141,10 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
         }
 
         return await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false);
+    }
+
+    public override string ToString()
+    {
+        return $"Select {typeof(T).ShortNameInCode()} from {FromObject}";
     }
 }

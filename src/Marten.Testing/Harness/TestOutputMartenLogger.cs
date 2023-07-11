@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
@@ -13,6 +14,8 @@ namespace Marten.Testing.Harness
         private readonly ITestOutputHelper _output;
         private static readonly ITestOutputHelper _noopTestOutputHelper = new NoopTestOutputHelper();
 
+        private readonly StringWriter _writer = new StringWriter();
+
         public TestOutputMartenLogger(ITestOutputHelper output)
         {
             _output = output ?? _noopTestOutputHelper;
@@ -21,6 +24,11 @@ namespace Marten.Testing.Harness
         public IMartenSessionLogger StartSession(IQuerySession session)
         {
             return this;
+        }
+
+        public string ExecutedSql()
+        {
+            return _writer.ToString();
         }
 
         public void SchemaChange(string sql)
@@ -47,6 +55,8 @@ namespace Marten.Testing.Harness
             {
                 Debug.WriteLine($"  {p.ParameterName}: {p.Value}");
             }
+
+            _writer.WriteLine(command.CommandText);
         }
 
         public void LogFailure(NpgsqlCommand command, Exception ex)
@@ -71,6 +81,8 @@ namespace Marten.Testing.Harness
         {
 
         }
+
+
 
         private class NoopTestOutputHelper : ITestOutputHelper
         {

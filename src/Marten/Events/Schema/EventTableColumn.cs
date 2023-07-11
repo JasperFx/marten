@@ -12,7 +12,6 @@ using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
-using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Events.Schema;
 
@@ -24,7 +23,7 @@ internal class EventTableColumn: TableColumn, IEventTableColumn
     public EventTableColumn(string name, Expression<Func<IEvent, object>> eventMemberExpression): base(name, "varchar")
     {
         _eventMemberExpression = eventMemberExpression;
-        _member = FindMembers.Determine(eventMemberExpression).Single();
+        _member = MemberFinder.Determine(eventMemberExpression).Single();
         var memberType = _member.GetMemberType();
         Type = PostgresqlProvider.Instance.GetDatabaseType(memberType, EnumStorage.AsInteger);
         NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(memberType);

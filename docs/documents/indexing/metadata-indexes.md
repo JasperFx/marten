@@ -14,9 +14,10 @@ an index on the document's `mt_last_modified` metadata column either using `Inde
 [IndexedLastModified]
 public class Customer
 {
+    public Guid Id { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/last_modified_queries.cs#L26-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_index-last-modified-via-attribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/last_modified_queries.cs#L26-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_index-last-modified-via-attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or by using the fluent interface:

@@ -9,13 +9,13 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
+using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Util;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
-using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Storage.Metadata;
 
@@ -100,7 +100,7 @@ internal abstract class MetadataColumn<T>: MetadataColumn
     protected MetadataColumn(string name, Expression<Func<DocumentMetadata, T>> property): base(name,
         PostgresqlProvider.Instance.GetDatabaseType(typeof(T), EnumStorage.AsInteger), typeof(T))
     {
-        var member = FindMembers.Determine(property).Last();
+        var member = MemberFinder.Determine(property).Last();
         _memberName = member.Name;
         _setter = LambdaBuilder.Setter<DocumentMetadata, T>(member);
     }

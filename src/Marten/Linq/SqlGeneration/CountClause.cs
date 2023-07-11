@@ -7,21 +7,32 @@ using Marten.Internal;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
-public class CountClause<T>: ISelectClause, IQueryHandler<T>
+public interface ICountClause: ISelectClause
 {
-    private Statement _topStatement;
+    public void OverrideFromObject(Statement parent);
+}
+
+public class CountClause<T>: IQueryHandler<T>, ICountClause
+{
+    private ISqlFragment _topStatement;
 
     public CountClause(string from)
     {
         FromObject = from;
     }
 
+    public void OverrideFromObject(Statement parent)
+    {
+        FromObject = parent.ExportName;
+    }
+
     public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
     {
-        _topStatement.Configure(builder);
+        _topStatement.Apply(builder);
     }
 
     public T Handle(DbDataReader reader, IMartenSession session)
@@ -47,14 +58,19 @@ public class CountClause<T>: ISelectClause, IQueryHandler<T>
 
     public Type SelectedType => typeof(T);
 
-    public string FromObject { get; }
+    public string FromObject { get; set; }
 
-    public void WriteSelectClause(CommandBuilder sql)
+    public void Apply(CommandBuilder sql)
     {
         sql.Append("select count(*) as number");
         sql.Append(" from ");
         sql.Append(FromObject);
         sql.Append(" as d");
+    }
+
+    bool ISqlFragment.Contains(string sqlText)
+    {
+        return false;
     }
 
     public string[] SelectFields()
@@ -67,8 +83,8 @@ public class CountClause<T>: ISelectClause, IQueryHandler<T>
         throw new NotSupportedException();
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, Statement topStatement,
-        Statement currentStatement)
+    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment topStatement,
+        ISqlFragment currentStatement)
     {
         _topStatement = topStatement;
         return (IQueryHandler<TResult>)this;
@@ -77,5 +93,10 @@ public class CountClause<T>: ISelectClause, IQueryHandler<T>
     public ISelectClause UseStatistics(QueryStatistics statistics)
     {
         throw new NotSupportedException("QueryStatistics are not valid with a Count()/CountAsync() query");
+    }
+
+    public override string ToString()
+    {
+        return $"Count(*) from {FromObject}";
     }
 }

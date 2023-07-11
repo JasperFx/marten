@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.CodeGeneration;
@@ -10,14 +9,16 @@ using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema.Arguments;
-using Marten.Util;
 using Npgsql;
 
 namespace Marten.Internal.CompiledQueries;
 
-public class CompiledQueryPlan
+internal class CompiledQueryPlan
 {
+    public const string ParameterPlaceholder = "^";
+
     public CompiledQueryPlan(Type queryType, Type outputType)
     {
         QueryType = queryType;
@@ -106,7 +107,7 @@ public class CompiledQueryPlan
                 continue;
             }
 
-            text = text.Replace(":" + parameterName, "?");
+            text = text.Replace(":" + parameterName, ParameterPlaceholder);
         }
 
         return text;
@@ -154,9 +155,7 @@ public class CompiledQueryPlan
 
     public object TryCreateUniqueTemplate(Type type)
     {
-        var constructor = type.GetConstructors()
-            .OrderByDescending(x => x.GetParameters().Count())
-            .FirstOrDefault();
+        var constructor = type.GetConstructors().MaxBy(x => x.GetParameters().Count());
 
 
         if (constructor == null)
@@ -191,15 +190,20 @@ public class CompiledQueryPlan
                                                 type.FullNameInCode());
     }
 
-    public void ReadCommand(NpgsqlCommand command, StoreOptions storeOptions)
+    public void ReadCommand(NpgsqlCommand command, Statement statement, StoreOptions storeOptions)
     {
         Command = command;
 
+        var filters = statement.AllFilters().OfType<ICompiledQueryAwareFilter>().ToArray();
+
         var parameters = command.Parameters.ToList();
         parameters.RemoveAll(x => x.ParameterName == TenantIdArgument.ArgName);
-        foreach (var parameter in Parameters) parameter.TryMatch(parameters, storeOptions);
+        foreach (var parameter in Parameters)
+        {
+            parameter.TryMatch(parameters, filters, storeOptions);
+        }
 
-        var missing = Parameters.Where(x => !x.ParameterIndexes.Any());
+        var missing = Parameters.Where(x => !x.Usages.Any());
         if (missing.Any())
         {
             throw new InvalidCompiledQueryException(

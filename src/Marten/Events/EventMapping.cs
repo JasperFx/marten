@@ -12,24 +12,22 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Linq;
-using Marten.Linq.Fields;
-using Marten.Linq.Filters;
+using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Marten.Linq.SqlGeneration.Filters;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
-using Remotion.Linq;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 using static Marten.Events.EventMappingExtensions;
-using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Events;
 
@@ -78,7 +76,7 @@ public abstract class EventMapping: IDocumentMapping, IEventType
 
     public NpgsqlDbType IdType { get; } = NpgsqlDbType.Uuid;
     public TenancyStyle TenancyStyle { get; } = TenancyStyle.Single;
-    public DuplicatedField[] DuplicatedFields { get; }
+    public IReadOnlyList<DuplicatedField> DuplicatedFields { get; }
     public DeleteStyle DeleteStyle { get; }
 
     public PropertySearching PropertySearching { get; } = PropertySearching.JSON_Locator_Only;
@@ -102,27 +100,7 @@ public abstract class EventMapping: IDocumentMapping, IEventType
         return new[] { "id", "data" };
     }
 
-    public IField FieldFor(Expression expression)
-    {
-        return FieldFor(FindMembers.Determine(expression));
-    }
-
-    public IField FieldFor(IEnumerable<MemberInfo> members)
-    {
-        return _inner.FieldFor(members);
-    }
-
-    public IField FieldFor(MemberInfo member)
-    {
-        return _inner.FieldFor(member);
-    }
-
-    public IField FieldFor(string memberName)
-    {
-        throw new NotSupportedException();
-    }
-
-    public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query, IMartenSession martenSession)
+    public ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession martenSession)
     {
         var extras = extraFilters(query).ToList();
 
@@ -210,7 +188,12 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
         _tableName = schemaName == SchemaConstants.DefaultSchema ? "mt_events" : $"{schemaName}.mt_events";
 
         _idType = parent.StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
+
+        QueryMembers = new DocumentQueryableMemberCollection(this, parent.Options);
     }
+
+    public IQueryableMemberCollection QueryMembers { get; }
+    public ISelectClause SelectClauseWithDuplicatedFields => this;
 
     public void TruncateDocumentStorage(IMartenDatabase database)
     {
@@ -230,11 +213,16 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
 
     Type ISelectClause.SelectedType => typeof(T);
 
-    void ISelectClause.WriteSelectClause(CommandBuilder sql)
+    void ISqlFragment.Apply(CommandBuilder sql)
     {
         sql.Append("select data from ");
         sql.Append(_tableName);
         sql.Append(" as d");
+    }
+
+    bool ISqlFragment.Contains(string sqlText)
+    {
+        return false;
     }
 
     ISelector ISelectClause.BuildSelector(IMartenSession session)
@@ -242,12 +230,12 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
         return new EventSelector<T>(session.Serializer);
     }
 
-    IQueryHandler<TResult> ISelectClause.BuildHandler<TResult>(IMartenSession session, Statement topStatement,
-        Statement currentStatement)
+    IQueryHandler<TResult> ISelectClause.BuildHandler<TResult>(IMartenSession session, ISqlFragment topStatement,
+        ISqlFragment currentStatement)
     {
         var selector = new EventSelector<T>(session.Serializer);
 
-        return LinqHandlerBuilder.BuildHandler<T, TResult>(selector, topStatement);
+        return LinqQueryParser.BuildHandler<T, TResult>(selector, topStatement);
     }
 
     ISelectClause ISelectClause.UseStatistics(QueryStatistics statistics)
@@ -263,7 +251,6 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
     }
 
     Type IDocumentStorage.IdType => _idType;
-    public IFieldMapping Fields => _inner;
 
     Guid? IDocumentStorage<T>.VersionFor(T document, IMartenSession session)
     {

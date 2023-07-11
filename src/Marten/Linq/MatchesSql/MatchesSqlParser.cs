@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core.Reflection;
-using Marten.Linq.Fields;
+using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -22,7 +22,8 @@ public class MatchesSqlParser: IMethodCallParser
         return Equals(expression.Method, _sqlMethod) || Equals(expression.Method, _fragmentMethod);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
+    public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
+        MethodCallExpression expression)
     {
         if (expression.Method.Equals(_sqlMethod))
         {

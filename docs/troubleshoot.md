@@ -25,7 +25,7 @@ var store = DocumentStore.For(storeOptions =>
     // Change default casing to CamelCase
     storeOptions.UseDefaultSerialization(casing: Casing.CamelCase);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/CamelCasing.cs#L11-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-serialize-to-camelcase' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/CamelCasing.cs#L13-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-serialize-to-camelcase' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## More diagnostics data outside of Marten

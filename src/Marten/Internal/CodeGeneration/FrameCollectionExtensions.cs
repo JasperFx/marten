@@ -9,10 +9,10 @@ using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Util;
 using Weasel.Postgresql;
-using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Internal.CodeGeneration;
 
@@ -162,7 +162,7 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
         int index,
         Expression<Func<T, object>> memberExpression)
     {
-        var member = FindMembers.Determine(memberExpression).Single();
+        var member = MemberFinder.Determine(memberExpression).Single();
         var variableName = member.Name.ToCamelCase();
         method.Frames.Code(
             $"var {variableName} = reader.GetFieldValue<{member.GetMemberType().FullNameInCode()}>({index});");
@@ -185,7 +185,7 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
         int index,
         Expression<Func<T, object>> memberExpression)
     {
-        var member = FindMembers.Determine(memberExpression).Single();
+        var member = MemberFinder.Determine(memberExpression).Single();
         var variableName = member.Name.ToCamelCase();
         method.Frames.Code(
             $"var {variableName} = await reader.GetFieldValueAsync<{member.GetMemberType().FullNameInCode()}>({index}, {{0}}).ConfigureAwait(false);",
@@ -244,7 +244,7 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
     public static void SetParameterFromMemberNonNullableString<T>(this GeneratedMethod method, int index,
         Expression<Func<T, string>> memberExpression)
     {
-        var member = FindMembers.Determine(memberExpression).Single();
+        var member = MemberFinder.Determine(memberExpression).Single();
 
         method.Frames.Code($"parameters[{index}].Value = {{0}}.{member.Name};", Use.Type<T>());
         method.Frames.Code($"parameters[{index}].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;");
@@ -253,7 +253,7 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
     public static void SetParameterFromMember<T>(this GeneratedMethod method, int index,
         Expression<Func<T, object>> memberExpression)
     {
-        var member = FindMembers.Determine(memberExpression).Single();
+        var member = MemberFinder.Determine(memberExpression).Single();
         var memberType = member.GetMemberType();
         var pgType = PostgresqlProvider.Instance.ToParameterType(memberType);
 

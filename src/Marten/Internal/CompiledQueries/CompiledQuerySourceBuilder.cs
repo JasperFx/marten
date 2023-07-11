@@ -59,8 +59,6 @@ internal class CompiledQuerySourceBuilder
     private void buildSourceType(GeneratedAssembly assembly, CompiledSourceType handlerType,
         GeneratedType compiledHandlerType)
     {
-        var rules = _storeOptions.CreateGenerationRules();
-
         var sourceBaseType = typeof(CompiledQuerySource<,>).MakeGenericType(_plan.OutputType, _plan.QueryType);
         var sourceType = assembly.AddType(_typeName, sourceBaseType);
 
@@ -185,7 +183,7 @@ internal class CompiledQuerySourceBuilder
         var method = compiledType.MethodFor(nameof(IQueryHandler.ConfigureCommand));
         var correctedCommandText = _plan.CorrectedCommandText();
 
-        method.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(@{{1}});",
+        method.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(@{{1}}, '{CompiledQueryPlan.ParameterPlaceholder}');",
             Use.Type<CommandBuilder>(), correctedCommandText);
 
         foreach (var parameter in _plan.Parameters) parameter.GenerateCode(method, _storeOptions);
@@ -236,4 +234,5 @@ internal class CompiledQuerySourceBuilder
 
         return CompiledSourceType.Stateless;
     }
+
 }

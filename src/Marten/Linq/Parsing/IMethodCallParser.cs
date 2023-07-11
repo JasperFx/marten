@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using Marten.Linq.Fields;
+using Marten.Linq.Members;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing;
@@ -27,11 +27,13 @@ public interface IMethodCallParser
     ///     uses to help construct the underlying Sql
     ///     command
     /// </summary>
-    /// <param name="mapping"></param>
-    /// <param name="serializer"></param>
+    /// <param name="memberCollection"></param>
+    /// <param name="options"></param>
     /// <param name="expression"></param>
+    /// <param name="serializer"></param>
     /// <returns></returns>
-    ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression);
+    ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
+        MethodCallExpression expression);
 }
 
 #endregion

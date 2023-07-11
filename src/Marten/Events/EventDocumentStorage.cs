@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Threading;
@@ -10,15 +11,14 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Linq;
-using Marten.Linq.Fields;
-using Marten.Linq.Filters;
+using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Marten.Linq.SqlGeneration.Filters;
 using Marten.Services;
 using Marten.Storage;
-using Remotion.Linq;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -45,7 +45,6 @@ public abstract class EventDocumentStorage: IEventStorage
         _mapping = new EventQueryMapping(options);
 
         FromObject = _mapping.TableName.QualifiedName;
-        Fields = _mapping;
 
         _serializer = options.Serializer();
 
@@ -65,6 +64,9 @@ public abstract class EventDocumentStorage: IEventStorage
             ? CompoundWhereFragment.And(IsNotArchivedFilter.Instance, CurrentTenantFilter.Instance)
             : IsNotArchivedFilter.Instance;
     }
+
+    public IQueryableMemberCollection QueryMembers => _mapping.QueryMembers;
+    public ISelectClause SelectClauseWithDuplicatedFields => this;
 
     public EventGraph Events { get; }
 
@@ -103,7 +105,7 @@ public abstract class EventDocumentStorage: IEventStorage
     public string FromObject { get; }
     public Type SelectedType => typeof(IEvent);
 
-    public void WriteSelectClause(CommandBuilder sql)
+    public void Apply(CommandBuilder sql)
     {
         sql.Append(_selectClause);
     }
@@ -118,10 +120,10 @@ public abstract class EventDocumentStorage: IEventStorage
         return this;
     }
 
-    public IQueryHandler<T> BuildHandler<T>(IMartenSession session, Statement topStatement,
-        Statement currentStatement)
+    public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement,
+        ISqlFragment currentStatement)
     {
-        return LinqHandlerBuilder.BuildHandler<IEvent, T>(this, topStatement);
+        return LinqQueryParser.BuildHandler<IEvent, T>(this, topStatement);
     }
 
     public ISelectClause UseStatistics(QueryStatistics statistics)
@@ -130,9 +132,8 @@ public abstract class EventDocumentStorage: IEventStorage
     }
 
     public Type SourceType => typeof(IEvent);
-    public IFieldMapping Fields { get; }
 
-    public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query, IMartenSession session)
+    public ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession session)
     {
         var shouldBeTenanted = Events.TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant();
         if (shouldBeTenanted)
@@ -153,7 +154,7 @@ public abstract class EventDocumentStorage: IEventStorage
     public bool UseOptimisticConcurrency { get; } = false;
     public IOperationFragment DeleteFragment => throw new NotSupportedException();
     public IOperationFragment HardDeleteFragment => throw new NotSupportedException();
-    public DuplicatedField[] DuplicatedFields { get; } = Array.Empty<DuplicatedField>();
+    public IReadOnlyList<DuplicatedField> DuplicatedFields { get; } = Array.Empty<DuplicatedField>();
     public DbObjectName TableName => _mapping.TableName;
     public Type DocumentType => typeof(IEvent);
 
@@ -278,5 +279,10 @@ public abstract class EventDocumentStorage: IEventStorage
         }
 
         return Events.EventMappingFor(type);
+    }
+
+    bool ISqlFragment.Contains(string sqlText)
+    {
+        return false;
     }
 }

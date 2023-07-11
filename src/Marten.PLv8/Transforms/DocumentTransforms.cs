@@ -1,8 +1,8 @@
 using System;
 using System.Linq.Expressions;
 using Marten.Internal.Sessions;
-using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
+using Marten.Linq.SqlGeneration.Filters;
 using Marten.Services;
 using Marten.Storage;
 using Weasel.Postgresql.SqlGeneration;
@@ -42,8 +42,13 @@ internal class DocumentTransforms: IDocumentTransforms, IDisposable
         var operation = new DocumentTransformOperationFragment(storage, transform);
         var statement = new StatementOperation(storage, operation);
 
-        // To bake in the default document filtering here
-        statement.CompileLocal(Session);
+        // Bake in any default filtering
+        var filter = storage.DefaultWhereFragment();
+        if (filter != null)
+        {
+            statement.Wheres.Add(filter);
+        }
+
         Session.QueueOperation(statement);
     }
 
@@ -82,10 +87,7 @@ internal class DocumentTransforms: IDocumentTransforms, IDisposable
         var storage = Session.StorageFor<T>();
         var operation = new DocumentTransformOperationFragment(storage, transform);
 
-        var statement = new StatementOperation(storage, operation) { Where = filter };
-
-        // To bake in the default document filtering here
-        statement.CompileLocal(Session);
+        var statement = new StatementOperation(storage, operation, filter);
         Session.QueueOperation(statement);
     }
 

@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Model;
 using Marten.Internal.Operations;
-using Marten.Linq.Fields;
-using Marten.Linq.Filters;
+using Marten.Linq;
+using Marten.Linq.Members;
 using Marten.Linq.SqlGeneration;
+using Marten.Linq.SqlGeneration.Filters;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Schema.BulkLoading;
 using Marten.Services;
 using Marten.Storage;
 using Npgsql;
-using Remotion.Linq;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -28,12 +28,10 @@ public interface IDocumentStorage: ISelectClause
 
     Type IdType { get; }
 
-    IFieldMapping Fields { get; }
-
     bool UseOptimisticConcurrency { get; }
     IOperationFragment DeleteFragment { get; }
     IOperationFragment HardDeleteFragment { get; }
-    DuplicatedField[] DuplicatedFields { get; }
+    IReadOnlyList<DuplicatedField> DuplicatedFields { get; }
     DbObjectName TableName { get; }
     Type DocumentType { get; }
 
@@ -43,9 +41,16 @@ public interface IDocumentStorage: ISelectClause
     [Obsolete("Use async method instead.")]
     void TruncateDocumentStorage(IMartenDatabase database);
 
-    ISqlFragment FilterDocuments(QueryModel? model, ISqlFragment query, IMartenSession session);
+    ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession session);
 
     ISqlFragment? DefaultWhereFragment();
+
+    IQueryableMemberCollection QueryMembers { get; }
+
+    /// <summary>
+    /// Necessary (maybe) for usage within the temporary tables when using Includes()
+    /// </summary>
+    ISelectClause SelectClauseWithDuplicatedFields { get; }
 }
 
 internal class CreateFromDocumentMapping: Variable

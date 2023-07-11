@@ -5,22 +5,21 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core;
-using Marten.Linq.Fields;
+using Marten.Linq.Members;
 using Marten.Util;
-using Remotion.Linq.Parsing;
 
 namespace Marten.Linq.Parsing;
 
-internal class SelectTransformBuilder: RelinqExpressionVisitor
+internal class SelectTransformBuilder: ExpressionVisitor
 {
     private SelectedField _currentField;
     private TargetObject _target;
 
-    public SelectTransformBuilder(Expression clause, IFieldMapping fields, ISerializer serializer)
+    public SelectTransformBuilder(Expression clause, IQueryableMemberCollection members, ISerializer serializer)
     {
         // ReSharper disable once VirtualMemberCallInConstructor
         Visit(clause);
-        SelectedFieldExpression = _target.ToSelectField(fields, serializer);
+        SelectedFieldExpression = _target.ToSelectField(members, serializer);
     }
 
     public string SelectedFieldExpression { get; }
@@ -78,7 +77,7 @@ internal class SelectTransformBuilder: RelinqExpressionVisitor
             return setter.Field;
         }
 
-        public string ToSelectField(IFieldMapping fields, ISerializer serializer)
+        public string ToSelectField(IQueryableMemberCollection fields, ISerializer serializer)
         {
             var jsonBuildObjectArgs = _setters.Select(x => x.ToJsonBuildObjectPair(fields, serializer)).Join(", ");
             return $"jsonb_build_object({jsonBuildObjectArgs})";
@@ -94,20 +93,21 @@ internal class SelectTransformBuilder: RelinqExpressionVisitor
             private string Name { get; }
             public SelectedField Field { get; } = new();
 
-            public string ToJsonBuildObjectPair(IFieldMapping mapping, ISerializer serializer)
+            public string ToJsonBuildObjectPair(IQueryableMemberCollection mapping, ISerializer serializer)
             {
-                var field = mapping.FieldFor(Field.ToArray());
+                var field = mapping.MemberFor(Field.ToArray());
                 var locator = serializer.ValueCasting == ValueCasting.Relaxed
                     ? field.RawLocator ?? field.TypedLocator
                     : field.TypedLocator;
 
-                if (field is DictionaryField)
+                if (field is IDictionaryMember)
                 {
                     // DictionaryField.RawLocator does not have cast to JSONB so TypedLocator is used
                     locator = field.TypedLocator;
                 }
 
-                if (field.FieldType.IsClass && field.FieldType != typeof(string) && field.FieldType != typeof(decimal))
+                if (field.MemberType.IsClass && field.MemberType != typeof(string) &&
+                    field.MemberType != typeof(decimal))
                 {
                     // If the field is a class, we need to cast it to JSONB otherwise it will be serialized to plain string and fail to deserialize later on
                     locator = field.JSONBLocator;

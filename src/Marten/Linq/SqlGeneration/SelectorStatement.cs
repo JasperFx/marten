@@ -1,49 +1,59 @@
 using System;
-using System.Linq.Expressions;
-using JasperFx.Core.Reflection;
+using System.Linq;
+using JasperFx.Core;
 using Marten.Internal;
-using Marten.Linq.Fields;
-using Marten.Linq.Includes;
-using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
+using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
-internal abstract class SelectorStatement: Statement
+public class SelectorStatement: Statement, IWhereFragmentHolder
 {
-    protected SelectorStatement(ISelectClause selectClause, IFieldMapping fields): base(fields)
-    {
-        SelectClause = selectClause;
-        FromObject = SelectClause.FromObject;
-    }
+    public int? Limit { get; set; }
+    public int? Offset { get; set; }
+
+    public OrderByFragment Ordering { get; internal set; } = new();
 
     public ISelectClause SelectClause { get; internal set; }
-
-
     public bool IsDistinct { get; set; }
+
+    public void Register(ISqlFragment fragment)
+    {
+        Wheres.Add(fragment);
+    }
 
     protected override void configure(CommandBuilder sql)
     {
         startCommonTableExpression(sql);
 
-        SelectClause.WriteSelectClause(sql);
+        SelectClause.Apply(sql);
 
-        writeWhereClause(sql);
-
-        writeOrderClause(sql);
-
-        if (Offset > 0)
+        if (Wheres.Any())
         {
-            sql.Append(" OFFSET ");
-            sql.AppendParameter(Offset);
+            sql.Append(" where ");
+            Wheres[0].Apply(sql);
+            for (var i = 1; i < Wheres.Count; i++)
+            {
+                sql.Append(" and ");
+                Wheres[i].Apply(sql);
+            }
         }
 
-        if (Limit > 0)
+        Ordering.Apply(sql);
+
+        if (Offset.HasValue)
+        {
+            sql.Append(" OFFSET ");
+            sql.AppendParameter(Offset.Value);
+        }
+
+        if (Limit.HasValue)
         {
             sql.Append(" LIMIT ");
-            sql.AppendParameter(Limit);
+            sql.AppendParameter(Limit.Value);
         }
 
         endCommonTableExpression(sql);
@@ -60,82 +70,11 @@ internal abstract class SelectorStatement: Statement
         SelectClause = new CountClause<T>(SelectClause.FromObject);
     }
 
-    public IQueryHandler<TResult> BuildSingleResultHandler<TResult>(IMartenSession session, Statement topStatement)
+    public void ApplyAggregateOperator(string databaseOperator)
     {
-        var selector = (ISelector<TResult>)SelectClause.BuildSelector(session);
-        return new OneResultHandler<TResult>(topStatement, selector, ReturnDefaultWhenEmpty, CanBeMultiples);
-    }
-
-    public void ToScalar(Expression selectClauseSelector)
-    {
-        var field = Fields.FieldFor(selectClauseSelector);
-
-        if (field.FieldType == typeof(string))
-        {
-            SelectClause = new ScalarStringSelectClause(field, SelectClause.FromObject);
-        }
-        else if (field.FieldType.IsSimple() || field.FieldType == typeof(Guid) || field.FieldType == typeof(decimal) ||
-                 field.FieldType == typeof(DateTimeOffset))
-        {
-            SelectClause =
-                typeof(ScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(field, SelectClause.FromObject,
-                    field.FieldType);
-        }
-        else
-        {
-            SelectClause =
-                typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(SelectClause.FromObject, field.RawLocator,
-                    field.FieldType);
-        }
-    }
-
-    public SelectorStatement ToSelectMany(IField collectionField, IMartenSession session, bool isComplex,
-        Type elementType)
-    {
-        if (elementType.IsSimple())
-        {
-            var selection = $"jsonb_array_elements_text({collectionField.JSONBLocator})";
-
-            SelectClause = typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(SelectClause.FromObject, selection,
-                elementType);
-
-            Mode = StatementMode.CommonTableExpression;
-            ExportName = session.NextTempTableName() + "CTE";
-
-            var next = elementType == typeof(string)
-                ? new ScalarSelectManyStringStatement(this)
-                : typeof(ScalarSelectManyStatement<>).CloseAndBuildAs<Statement>(this, session.Serializer, elementType);
-
-            InsertAfter(next);
-
-            return (SelectorStatement)next;
-        }
-
-        var childFields = session.Options.ChildTypeMappingFor(elementType);
-
-        if (isComplex)
-        {
-            var selection = $"jsonb_array_elements({collectionField.JSONBLocator})";
-            SelectClause = typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(SelectClause.FromObject, selection,
-                elementType);
-
-            Mode = StatementMode.CommonTableExpression;
-            ExportName = session.NextTempTableName() + "CTE";
-
-            var statement = new JsonStatement(elementType, childFields, this);
-
-            InsertAfter(statement);
-
-            return statement;
-        }
-        else
-        {
-            var selection = $"jsonb_array_elements_text({collectionField.JSONBLocator})";
-            SelectClause = typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(SelectClause.FromObject, selection,
-                elementType);
-
-            return this;
-        }
+        ApplySqlOperator(databaseOperator);
+        SingleValue = true;
+        ReturnDefaultWhenEmpty = true;
     }
 
     public void ApplySqlOperator(string databaseOperator)
@@ -157,32 +96,57 @@ internal abstract class SelectorStatement: Statement
         }
     }
 
-    public void ApplyAggregateOperator(string databaseOperator)
+    public IQueryHandler<TResult> BuildSingleResultHandler<TResult>(IMartenSession session, Statement topStatement)
     {
-        ApplySqlOperator(databaseOperator);
-        SingleValue = true;
-        ReturnDefaultWhenEmpty = true;
+        var selector = (ISelector<TResult>)SelectClause.BuildSelector(session);
+        return new OneResultHandler<TResult>(topStatement, selector, ReturnDefaultWhenEmpty, CanBeMultiples);
     }
 
-    public void ToSelectTransform(Expression selectExpression, ISerializer serializer)
+    public override string ToString()
     {
-        var builder = new SelectTransformBuilder(selectExpression, Fields, serializer);
-        var transformField = builder.SelectedFieldExpression;
-
-        SelectClause =
-            typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(SelectClause.FromObject, transformField,
-                selectExpression.Type);
+        return $"Selector statement: {SelectClause}";
     }
 
-
-    public void UseStatistics(QueryStatistics statistics)
+    protected override void compileAnySubQueries(IMartenSession session)
     {
-        SelectClause = SelectClause.UseStatistics(statistics);
-    }
+        if (Wheres[0] is CompoundWhereFragment compound && compound.Children.OfType<ISubQueryFilter>().Any())
+        {
+            var subQueries = compound.Children.OfType<ISubQueryFilter>().ToArray();
+            if (compound.Separator.ContainsIgnoreCase("and"))
+            {
+                var others = compound.Children.Where(x => !subQueries.Contains(x)).ToArray();
 
-    public virtual SelectorStatement UseAsEndOfTempTableAndClone(
-        IncludeIdentitySelectorStatement includeIdentitySelectorStatement)
-    {
-        throw new NotSupportedException();
+                ISqlFragment topLevel = null;
+                switch (others.Length)
+                {
+                    case 0:
+                        break;
+
+                    case 1:
+                        topLevel = others.Single();
+                        break;
+
+                    default:
+                        topLevel = CompoundWhereFragment.And(others);
+                        break;
+                }
+
+                foreach (var subQuery in subQueries) subQuery.PlaceUnnestAbove(session, this, topLevel);
+
+                // We've moved all the non-sub query filters up to the various explode statements
+                Wheres.Clear();
+                Wheres.Add(CompoundWhereFragment.And(subQueries));
+            }
+            else
+            {
+                foreach (var subQuery in subQueries) subQuery.PlaceUnnestAbove(session, this);
+            }
+        }
+        else if (Wheres[0] is ISubQueryFilter subQuery)
+        {
+            subQuery.PlaceUnnestAbove(session, this);
+        }
+
+        // The else is perfectly fine as is
     }
 }

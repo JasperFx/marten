@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using JasperFx.Core.Reflection;
+using Marten.Linq;
+using Marten.Linq.Parsing;
 using Marten.Schema.Indexing.Unique;
 using Marten.Storage.Metadata;
 using Marten.Util;
@@ -77,17 +79,17 @@ public class ComputedIndex: IndexDefinition
     {
         foreach (var m in _members)
         {
-            var field = _mapping.FieldFor(m);
+            var member = _mapping.QueryMembers.MemberFor(m);
             var casing = Casing;
-            if (field.FieldType != typeof(string))
+            if (member.MemberType != typeof(string))
             {
                 // doesn't make sense to lower-case this particular member
                 casing = Casings.Default;
             }
 
-            var sql = field.FieldType.IsEnumerable()
-                ? field.RawLocator.Replace("d.", "")
-                : field.TypedLocator.Replace("d.", "");
+            var sql = member.MemberType.IsEnumerable()
+                ? member.RawLocator.Replace("d.", "")
+                : member.TypedLocator.Replace("d.", "");
             switch (casing)
             {
                 case Casings.Upper:

@@ -23,7 +23,7 @@ internal class SingleEventQueryHandler: IQueryHandler<IEvent>
 
     public void ConfigureCommand(CommandBuilder sql, IMartenSession session)
     {
-        _selector.WriteSelectClause(sql);
+        _selector.Apply(sql);
 
         sql.Append(" where id = ");
         sql.AppendParameter(_id);

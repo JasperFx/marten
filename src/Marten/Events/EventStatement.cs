@@ -4,6 +4,7 @@ using System.Linq;
 using JasperFx.Core;
 using Marten.Events.Archiving;
 using Marten.Events.Daemon;
+using Marten.Linq;
 using Marten.Linq.SqlGeneration;
 using Marten.Storage;
 using Weasel.Postgresql;
@@ -11,12 +12,12 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events;
 
-internal class EventStatement: Statement
+internal class EventStatement: SelectorStatement
 {
     private const string ALL_TENANTS = "~ALL~";
     private readonly IEventStorage _storage;
 
-    public EventStatement(IEventStorage storage): base(storage.Fields)
+    public EventStatement(IEventStorage storage)
     {
         _storage = storage;
     }
@@ -39,7 +40,7 @@ internal class EventStatement: Statement
 
     protected override void configure(CommandBuilder builder)
     {
-        _storage.WriteSelectClause(builder);
+        _storage.Apply(builder);
 
         var wheres = filters().ToArray();
         switch (wheres.Length)

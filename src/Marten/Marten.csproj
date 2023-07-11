@@ -12,14 +12,14 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
     <ItemGroup>
-        <None Remove="Schema\SQL\mt_grams_array.sql"/>
-        <None Remove="Schema\SQL\mt_grams_query.sql"/>
-        <None Remove="Schema\SQL\mt_grams_vector.sql"/>
-        <None Remove="Schema\SQL\mt_immutable_timestamptz.sql"/>
+        <None Remove="Schema\SQL\mt_grams_array.sql" />
+        <None Remove="Schema\SQL\mt_grams_query.sql" />
+        <None Remove="Schema\SQL\mt_grams_vector.sql" />
+        <None Remove="Schema\SQL\mt_immutable_timestamptz.sql" />
     </ItemGroup>
     <ItemGroup>
-        <EmbeddedResource Include="Schema\SQL\*.*"/>
-        <EmbeddedResource Include="Schema\SchemaObjects.sql"/>
+        <EmbeddedResource Include="Schema\SQL\*.*" />
+        <EmbeddedResource Include="Schema\SchemaObjects.sql" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
@@ -65,5 +65,5 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
     </ItemGroup>
-    <Import Project="../../Analysis.Build.props"/>
+    <Import Project="../../Analysis.Build.props" />
 </Project>

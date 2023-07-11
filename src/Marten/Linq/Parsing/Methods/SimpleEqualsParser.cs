@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Exceptions;
-using Marten.Linq.Fields;
-using Marten.Linq.Filters;
-using Marten.Schema;
+using Marten.Linq.Members;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -56,83 +53,24 @@ internal class SimpleEqualsParser: IMethodCallParser
                expression.Method.Name.Equals("Equals", StringComparison.Ordinal);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
+    public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
+        MethodCallExpression expression)
     {
-        var serializer = options.Serializer();
-        var field = GetField(mapping, expression);
-        var locator = field.TypedLocator;
+        var leftType = expression.Object?.Type;
+        var rightType = expression.Arguments[0].Type;
 
-        ConstantExpression value;
-        if (expression.Object?.NodeType == ExpressionType.Constant)
+        if (leftType != null)
         {
-            value = (ConstantExpression)expression.Object;
-        }
-        else
-        {
-            value = expression.Arguments.OfType<ConstantExpression>().FirstOrDefault();
-        }
-
-        if (value == null)
-        {
-            throw new BadLinqExpressionException("Could not extract value from {0}.".ToFormat(expression), null);
-        }
-
-        var valueToQuery = value.Value;
-
-        if (valueToQuery == null)
-        {
-            return new WhereFragment($"({field.RawLocator}) {_isOperator} null");
-        }
-
-        if (valueToQuery.GetType() != expression.Method.DeclaringType)
-        {
-            try
-            {
-                valueToQuery = Convert.ChangeType(value.Value, expression.Method.DeclaringType);
-            }
-            catch (Exception e)
+            if (!rightType.CanBeCastTo(leftType))
             {
                 throw new BadLinqExpressionException(
-                    $"Could not convert {value.Value.GetType().FullName} to {expression.Method.DeclaringType}", e);
+                    $"Mismatched types in Equals() usage in expression '{expression}'");
             }
         }
 
-        if (_supportContainment && (mapping.PropertySearching == PropertySearching.ContainmentOperator ||
-                                    field.ShouldUseContainmentOperator()))
-        {
-            var dict = new Dictionary<string, object>();
-            ContainmentWhereFragment.CreateDictionaryForSearch(dict, expression, valueToQuery, serializer);
-            return new ContainmentWhereFragment(serializer, dict);
-        }
+        var left = new SimpleExpression(memberCollection, expression.Object);
+        var right = new SimpleExpression(memberCollection, expression.Arguments[0]);
 
-        return new WhereFragment($"{locator} {_equalsOperator} ?", valueToQuery);
-    }
-
-    private static IField GetField(IFieldMapping mapping, MethodCallExpression expression)
-    {
-        IField GetField(Expression e)
-        {
-            var visitor = new FindMembers();
-            visitor.Visit(e);
-
-            var field = mapping.FieldFor(visitor.Members);
-            return field;
-        }
-
-        if (!expression.Method.IsStatic && expression.Object != null &&
-            expression.Object.NodeType != ExpressionType.Constant)
-        {
-            // x.member.Equals(...)
-            return GetField(expression.Object);
-        }
-
-        if (expression.Arguments[0].NodeType == ExpressionType.Constant)
-        {
-            // type.Equals("value", x.member) [decimal]
-            return GetField(expression.Arguments[1]);
-        }
-
-        // type.Equals(x.member, "value") [decimal]
-        return GetField(expression.Arguments[0]);
+        return left.CompareTo(right, _equalsOperator);
     }
 }

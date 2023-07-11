@@ -14,7 +14,6 @@ using Weasel.Core;
 using Weasel.Postgresql.Tables;
 using JasperFx.Core.Reflection;
 using Weasel.Postgresql;
-using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Events.Projections.Flattened;
 
@@ -89,7 +88,7 @@ public partial class FlatTableProjection: GeneratedProjection, IProjectionSchema
 
         var members = tablePrimaryKeySource == null
             ? Array.Empty<MemberInfo>()
-            : FindMembers.Determine(tablePrimaryKeySource);
+            : MemberFinder.Determine(tablePrimaryKeySource);
 
         var map = new StatementMap<T>(this, members);
 
@@ -128,7 +127,7 @@ public partial class FlatTableProjection: GeneratedProjection, IProjectionSchema
 
         var members = tablePrimaryKeySource == null
             ? Array.Empty<MemberInfo>()
-            : FindMembers.Determine(tablePrimaryKeySource);
+            : MemberFinder.Determine(tablePrimaryKeySource);
 
         _handlers.Add(new EventDeleter(typeof(T), members));
     }

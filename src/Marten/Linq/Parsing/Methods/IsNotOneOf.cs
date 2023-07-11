@@ -1,8 +1,6 @@
 using System.Linq;
 using System.Linq.Expressions;
-using JasperFx.Core.Reflection;
-using Marten.Linq.Fields;
-using Marten.Util;
+using Marten.Linq.Members;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing.Methods;
@@ -16,14 +14,14 @@ internal class IsNotOneOf: IMethodCallParser
                && expression.Method.DeclaringType == typeof(LinqExtensions);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
+    public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
+        MethodCallExpression expression)
     {
-        var members = FindMembers.Determine(expression);
-
-        var locator = mapping.FieldFor(expression).TypedLocator;
+        var queryableMember = memberCollection.MemberFor(expression);
+        var locator = queryableMember.TypedLocator;
         var values = expression.Arguments.Last().Value();
 
-        if (members.Last().GetMemberType().IsEnum)
+        if (queryableMember.MemberType.IsEnum)
         {
             return new EnumIsNotOneOfWhereFragment(values, options.Serializer().EnumStorage, locator);
         }

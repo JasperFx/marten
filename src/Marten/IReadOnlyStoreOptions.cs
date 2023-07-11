@@ -87,4 +87,6 @@ public interface IReadOnlyStoreOptions
     /// <param name="documentType"></param>
     /// <returns></returns>
     IDocumentType FindOrResolveDocumentType(Type documentType);
+
+    void AssertDocumentTypeIsSoftDeleted(Type documentType);
 }
