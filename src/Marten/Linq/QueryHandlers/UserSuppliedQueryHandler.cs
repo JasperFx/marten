@@ -119,17 +119,18 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
     {
         if (typeof(T) == typeof(string))
         {
-            return new ScalarStringSelectClause("", "");
+            return new ScalarStringSelectClause(string.Empty, string.Empty);
         }
 
-        if (typeof(T).IsSimple())
+        if (PostgresqlProvider.Instance.HasTypeMapping(typeof(T)))
         {
-            return typeof(ScalarSelectClause<>).CloseAndBuildAs<ISelectClause>("", "", typeof(T));
+            return typeof(ScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(string.Empty, string.Empty, typeof(T));
         }
+
 
         if (SqlContainsCustomSelect)
         {
-            return new DataSelectClause<T>("", "");
+            return new DataSelectClause<T>(string.Empty, string.Empty);
         }
 
         return session.StorageFor(typeof(T));
