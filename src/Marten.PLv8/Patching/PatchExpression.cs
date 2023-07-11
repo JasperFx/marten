@@ -205,7 +205,7 @@ internal class PatchExpression<T>: IPatchExpression<T>
 
     private string toPath(Expression expression)
     {
-        var visitor = new FindMembers();
+        var visitor = new MemberFinder();
         visitor.Visit(expression);
 
         // TODO -- don't like this. Smells like duplication in logic
@@ -219,8 +219,6 @@ internal class PatchExpression<T>: IPatchExpression<T>
         var transform = _session.Options.TransformFor(TransformSchema.PatchDoc);
         var storage = _session.StorageFor(typeof(T));
 
-
-
         var operation = new PatchOperation(transform, storage, Patch, _session.Serializer, PossiblyPolymorphic);
 
         if (_filterExpression != null)
@@ -229,11 +227,11 @@ internal class PatchExpression<T>: IPatchExpression<T>
         }
         else if (_filter == null)
         {
-            operation.Where = storage.DefaultWhereFragment();
+            operation.Wheres.Add(storage.DefaultWhereFragment());
         }
         else
         {
-            operation.Where = storage.FilterDocuments(null, _filter, _session);
+            operation.Wheres.Add(storage.FilterDocuments(_filter, _session));
         }
 
         _session.QueueOperation(operation);

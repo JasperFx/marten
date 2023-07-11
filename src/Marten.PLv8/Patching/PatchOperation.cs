@@ -95,10 +95,10 @@ internal class PatchOperation: StatementOperation, NoDataReturnedCall
     protected override void configure(CommandBuilder builder)
     {
         base.configure(builder);
-        applyUpdates(builder, _fragment);
+        applyUpdates(builder);
     }
 
-    private void applyUpdates(CommandBuilder builder, ISqlFragment where)
+    private void applyUpdates(CommandBuilder builder)
     {
         var fields = _storage.DuplicatedFields;
         if (!fields.Any())
@@ -111,16 +111,12 @@ internal class PatchOperation: StatementOperation, NoDataReturnedCall
         builder.Append(" as d set ");
 
         builder.Append(fields[0].UpdateSqlFragment());
-        for (var i = 1; i < fields.Length; i++)
+        for (var i = 1; i < fields.Count; i++)
         {
             builder.Append(", ");
             builder.Append(fields[i].UpdateSqlFragment());
         }
 
-        if (Where != null)
-        {
-            builder.Append(" where ");
-            Where.Apply(builder);
-        }
+        writeWhereClause(builder);
     }
 }

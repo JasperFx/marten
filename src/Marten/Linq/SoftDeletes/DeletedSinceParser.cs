@@ -3,7 +3,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core.Reflection;
-using Marten.Linq.Fields;
+using Marten.Exceptions;
+using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Weasel.Postgresql.SqlGeneration;
@@ -20,12 +21,16 @@ internal class DeletedSinceParser: IMethodCallParser
         return Equals(expression.Method, _method);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
+    public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
+        MethodCallExpression expression)
     {
-        if (mapping.DeleteStyle != DeleteStyle.SoftDelete)
+        var documentType = memberCollection as DocumentQueryableMemberCollection;
+        if (documentType == null)
         {
-            throw new NotSupportedException($"Document DeleteStyle must be {DeleteStyle.SoftDelete}");
+            throw new BadLinqExpressionException($"{_method.Name} can only be used to query against documents");
         }
+
+        options.AssertDocumentTypeIsSoftDeleted(expression.Arguments[0].Type);
 
         var time = expression.Arguments.Last().Value().As<DateTimeOffset>();
 

@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
+using Marten.Linq;
+using Marten.Linq.Parsing;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;
 
@@ -75,7 +77,7 @@ public class NgramIndex: IndexDefinition
     private static string GetDataConfig(DocumentMapping mapping, MemberInfo[] members)
     {
         var dataConfig = members
-            .Select(m => $"{mapping.FieldFor(m).TypedLocator.Replace("d.", "")}")
+            .Select(m => $"{mapping.QueryMembers.MemberFor(members).TypedLocator.Replace("d.", "")}")
             .Join(" || ' ' || ");
 
         return $"{dataConfig}";

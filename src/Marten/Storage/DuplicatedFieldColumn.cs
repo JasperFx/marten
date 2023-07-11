@@ -1,4 +1,4 @@
-using Marten.Linq.Fields;
+using Marten.Linq.Members;
 using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage;

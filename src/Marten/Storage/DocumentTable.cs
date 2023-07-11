@@ -46,7 +46,9 @@ internal class DocumentTable: Table
         AddIfActive(_mapping.Metadata.Headers);
 
         foreach (var field in mapping.DuplicatedFields.Where(x => !x.OnlyForSearching))
+        {
             AddColumn(new DuplicatedFieldColumn(field));
+        }
 
         if (mapping.IsHierarchy())
         {

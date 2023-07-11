@@ -2,7 +2,7 @@ namespace Marten.Linq.SqlGeneration;
 
 internal interface IScalarSelectClause
 {
-    string FieldName { get; }
+    string MemberName { get; }
     void ApplyOperator(string op);
     ISelectClause CloneToDouble();
 

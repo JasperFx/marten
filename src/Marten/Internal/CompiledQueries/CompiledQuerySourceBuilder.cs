@@ -59,8 +59,6 @@ internal class CompiledQuerySourceBuilder
     private void buildSourceType(GeneratedAssembly assembly, CompiledSourceType handlerType,
         GeneratedType compiledHandlerType)
     {
-        var rules = _storeOptions.CreateGenerationRules();
-
         var sourceBaseType = typeof(CompiledQuerySource<,>).MakeGenericType(_plan.OutputType, _plan.QueryType);
         var sourceType = assembly.AddType(_typeName, sourceBaseType);
 

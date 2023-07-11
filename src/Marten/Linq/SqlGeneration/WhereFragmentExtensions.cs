@@ -1,6 +1,6 @@
 using System.Linq;
 using Marten.Events.Archiving;
-using Marten.Linq.Filters;
+using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Marten.Linq;
+using Marten.Linq.Members;
 using Weasel.Core;
 
 namespace Marten.Schema;
@@ -22,6 +24,8 @@ public class SubClassMapping: IDocumentMapping
         Parent = parent;
         Alias = alias ?? GetTypeMartenAlias(documentType);
         Aliases = new[] { Alias };
+
+        QueryMembers = new DocumentQueryableMemberCollection(this, storeOptions);
     }
 
     public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions,
@@ -36,6 +40,10 @@ public class SubClassMapping: IDocumentMapping
                     t.Type == documentType)
             .Select(GetTypeMartenAlias).Concat(Aliases).ToArray();
     }
+
+    public PropertySearching PropertySearching => Parent.PropertySearching;
+
+    public IQueryableMemberCollection QueryMembers { get; }
 
     public DocumentMapping Inner { get; }
 

@@ -27,6 +27,7 @@ public class last_modified_queries: IntegrationContext
     [IndexedLastModified]
     public class Customer
     {
+        public Guid Id { get; set; }
     }
     #endregion
 

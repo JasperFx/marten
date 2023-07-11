@@ -84,6 +84,4 @@ By default, the duplicate column is created with NULL constraint. If you want to
 
 ## Indexing
 
-By default, Marten adds a [btree index](http://www.postgresql.org/docs/9.4/static/indexes-types.html) (the Postgresql default) to a searchable index, but you can also
-customize the generated index with the syntax shown above: The second [nested closure](http://martinfowler.com/dslCatalog/nestedClosure.html) argument is an optional
-mechanism to customize the database index generated for the duplicated field.
+By default, Marten adds a [btree index](http://w

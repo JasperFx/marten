@@ -15,7 +15,6 @@ using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Linq;
-using Marten.Linq.Fields;
 using Marten.Metadata;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
@@ -35,9 +34,6 @@ namespace Marten;
 /// </summary>
 public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
 {
-    private readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, ChildDocument>> _childDocs
-        = new();
-
     private readonly IList<IDocumentPolicy> _policies = new List<IDocumentPolicy>
     {
         new VersionedPolicy(), new SoftDeletedPolicy(), new TrackedPolicy(), new TenancyPolicy()
@@ -58,8 +54,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     ///     Modify the document and event store database mappings for indexes and searching options
     /// </summary>
     public readonly MartenRegistry Schema;
-
-    private ImHashMap<Type, IFieldMapping> _childFieldMappings = ImHashMap<Type, IFieldMapping>.Empty;
 
     private string _databaseSchemaName = SchemaConstants.DefaultSchema;
 
@@ -84,6 +78,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
         Advanced = new AdvancedOptions(this);
 
         Projections = new ProjectionOptions(this);
+
+        Linq = new LinqParsing(this);
     }
 
     internal IList<Type> CompiledQueryTypes { get; } = new List<Type>();
@@ -138,7 +134,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     /// <summary>
     ///     Extension point to add custom Linq query parsers
     /// </summary>
-    public LinqParsing Linq { get; } = new();
+    public LinqParsing Linq { get; }
 
     /// <summary>
     ///     Apply conventional policies to how documents are mapped
@@ -227,6 +223,16 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     IDocumentType IReadOnlyStoreOptions.FindOrResolveDocumentType(Type documentType)
     {
         return (Storage.FindMapping(documentType).Root as IDocumentType)!;
+    }
+
+    void IReadOnlyStoreOptions.AssertDocumentTypeIsSoftDeleted(Type documentType)
+    {
+        var mapping = Storage.FindMapping(documentType) as IDocumentMapping;
+        if (mapping is null || mapping.DeleteStyle == DeleteStyle.Remove)
+        {
+            throw new InvalidOperationException(
+                $"Document type {documentType.FullNameInCode()} is not configured as soft deleted");
+        }
     }
 
     /// <summary>
@@ -414,25 +420,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
             throw new InvalidOperationException(
                 "Tenancy not specified - provide either connection string or connection factory through Connection(..)");
         }
-    }
-
-    /// <summary>
-    ///     These mappings should only be used for Linq querying within the SelectMany() body
-    /// </summary>
-    /// <param name="type"></param>
-    /// <returns></returns>
-    internal IFieldMapping ChildTypeMappingFor(Type type)
-    {
-        if (_childFieldMappings.TryFind(type, out var mapping))
-        {
-            return mapping;
-        }
-
-        mapping = new FieldMapping("d.data", type, this);
-
-        _childFieldMappings = _childFieldMappings.AddOrUpdate(type, mapping);
-
-        return mapping;
     }
 
     /// <summary>

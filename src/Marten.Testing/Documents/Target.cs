@@ -53,7 +53,7 @@ public class Target
 
         target.Float = float.Parse(_random.NextDouble().ToString());
 
-        target.NumberArray = new[] { _random.Next(0, 10), _random.Next(0, 10), _random.Next(0, 10) };
+        target.NumberArray = _random.Next(0, 10) > 8 ? new[] { _random.Next(0, 10), _random.Next(0, 10), _random.Next(0, 10) } : Array.Empty<int>();
 
         target.NumberArray = target.NumberArray.Distinct().ToArray();
 
@@ -70,6 +70,20 @@ public class Target
             default:
                 target.Color = Colors.Red;
                 break;
+        }
+
+        var value = _random.Next(0, 100);
+        if (value > 10) target.NullableNumber = value;
+
+        if (value > 20)
+        {
+            var list = new List<string>();
+            for (int i = 0; i < 5; i++)
+            {
+                list.Add(_strings[_random.Next(0, 10)]);
+            }
+
+            target.StringArray = list.Distinct().ToArray();
         }
 
         target.Long = 100 * _random.Next();
@@ -114,6 +128,8 @@ public class Target
     public long Long { get; set; }
     public string String { get; set; }
     public string AnotherString { get; set; }
+
+    public string[] StringArray { get; set; }
 
     public Guid OtherGuid { get; set; }
 

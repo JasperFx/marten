@@ -2,6 +2,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using System;
 using System.Linq;
+using Marten.Exceptions;
 using Marten.Schema;
 using Xunit;
 
@@ -20,14 +21,11 @@ public class Bug_2327_using_identity_extension_on_class_with_invalid_type_id_fie
     [Fact]
     public void should_not_set_id_member_property_when_new_value_has_invalid_type()
     {
-        var mapping = DocumentMapping.For<OverriddenIdWithInvalidTypeIdField>();
-        var fieldWithInvalidTypeForId = typeof(OverriddenIdWithInvalidTypeIdField)
-            .GetMember(nameof(OverriddenIdWithInvalidTypeIdField.Id)).First();
+        Should.Throw<InvalidDocumentException>(() =>
+        {
+            var mapping = DocumentMapping.For<OverriddenIdWithInvalidTypeIdField>();
+        });
 
-        Action action = () => mapping.IdMember = fieldWithInvalidTypeForId;
-
-        action.ShouldThrow<ArgumentOutOfRangeException>();
-        mapping.IdMember.ShouldNotBe(fieldWithInvalidTypeForId);
     }
 
     public class OverriddenIdWithInvalidTypeIdField

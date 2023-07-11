@@ -11,25 +11,31 @@ using Marten.Internal.CodeGeneration;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Linq;
-using Marten.Linq.Fields;
-using Marten.Linq.Filters;
+using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Marten.Linq.SqlGeneration.Filters;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Npgsql;
 using NpgsqlTypes;
-using Remotion.Linq;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Internal.Storage;
 
-public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId> where T : notnull where TId : notnull
+
+internal interface IHaveMetadataColumns
+{
+    MetadataColumn[] MetadataColumns();
+}
+
+public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMetadataColumns where T : notnull where TId : notnull
 {
     private readonly NpgsqlDbType _idType;
 
@@ -45,7 +51,6 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId> where T 
     {
         _mapping = document;
 
-        Fields = document;
         TableName = document.TableName;
 
         determineDefaultWhereFragment();
@@ -82,7 +87,15 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId> where T 
         HardDeleteFragment = new HardDelete(this);
 
         DuplicatedFields = _mapping.DuplicatedFields;
+
     }
+
+    MetadataColumn[] IHaveMetadataColumns.MetadataColumns()
+    {
+        return _mapping.Schema.Table.Columns.OfType<MetadataColumn>().ToArray();
+    }
+
+    public IQueryableMemberCollection QueryMembers => _mapping.QueryMembers;
 
     public void TruncateDocumentStorage(IMartenDatabase database)
     {
@@ -105,7 +118,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId> where T 
         var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
         try
         {
-            await database.RunSqlAsync(sql, ct: ct).ConfigureAwait(false);
+            await database.RunSqlAsync(sql, ct).ConfigureAwait(false);
         }
         catch (PostgresException e)
         {
@@ -126,7 +139,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId> where T 
 
     public Type DocumentType => _mapping.DocumentType;
 
-    public DuplicatedField[] DuplicatedFields { get; }
+    public IReadOnlyList<DuplicatedField> DuplicatedFields { get; }
 
     public ISqlFragment ByIdFilter(TId id)
     {
@@ -137,13 +150,13 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId> where T 
     {
         if (TenancyStyle == TenancyStyle.Conjoined)
         {
-            return new Deletion(this, HardDeleteFragment)
+            return new Deletion(this, HardDeleteFragment, CompoundWhereFragment.And(new SpecificTenantFilter(tenant), ByIdFilter(id)))
             {
-                Where = CompoundWhereFragment.And(new SpecificTenantFilter(tenant), ByIdFilter(id)), Id = id
+                Id = id
             };
         }
 
-        return new Deletion(this, HardDeleteFragment) { Where = ByIdFilter(id), Id = id };
+        return new Deletion(this, HardDeleteFragment, ByIdFilter(id)) { Id = id };
     }
 
     public void EjectById(IMartenSession session, object id)
@@ -235,20 +248,23 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId> where T 
     {
         if (TenancyStyle == TenancyStyle.Conjoined)
         {
-            return new Deletion(this, DeleteFragment)
+            return new Deletion(this, DeleteFragment, CompoundWhereFragment.And(new SpecificTenantFilter(tenant), ByIdFilter(id)))
             {
-                Where = CompoundWhereFragment.And(new SpecificTenantFilter(tenant), ByIdFilter(id)), Id = id
+                Id = id
             };
         }
 
-        return new Deletion(this, DeleteFragment) { Where = ByIdFilter(id), Id = id };
+        return new Deletion(this, DeleteFragment, ByIdFilter(id))
+        {
+            Id = id
+        };
     }
 
     public IOperationFragment DeleteFragment { get; }
 
     public IOperationFragment HardDeleteFragment { get; }
 
-    public ISqlFragment FilterDocuments(QueryModel? model, ISqlFragment query, IMartenSession session)
+    public ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession session)
     {
         var extras = extraFilters(query, session).ToList();
 
@@ -266,8 +282,6 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId> where T 
         return _defaultWhere;
     }
 
-    public IFieldMapping Fields { get; }
-
 
     public abstract T? Load(TId id, IMartenSession session);
     public abstract Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);
@@ -279,9 +293,14 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId> where T 
     public abstract TId Identity(T document);
 
 
-    public void WriteSelectClause(CommandBuilder sql)
+    public void Apply(CommandBuilder sql)
     {
         sql.Append(_selectClause);
+    }
+
+    bool ISqlFragment.Contains(string sqlText)
+    {
+        return false;
     }
 
     public string[] SelectFields()
@@ -291,12 +310,12 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId> where T 
 
     public abstract ISelector BuildSelector(IMartenSession session);
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, Statement statement,
-        Statement currentStatement)
+    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
+        ISqlFragment currentStatement)
     {
         var selector = (ISelector<T>)BuildSelector(session);
 
-        return LinqHandlerBuilder.BuildHandler<T, TResult>(selector, statement);
+        return LinqQueryParser.BuildHandler<T, TResult>(selector, statement);
     }
 
     public ISelectClause UseStatistics(QueryStatistics statistics)

@@ -10,9 +10,9 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
+using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Util;
-using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Events.Aggregation;
 
@@ -169,12 +169,12 @@ internal class AggregateVersioning<T>: IAggregateVersioning, IAggregateVersionin
 
     public void Override(Expression<Func<T, int>> expression)
     {
-        VersionMember = FindMembers.Determine(expression).Single();
+        VersionMember = MemberFinder.Determine(expression).Single();
     }
 
     public void Override(Expression<Func<T, long>> expression)
     {
-        VersionMember = FindMembers.Determine(expression).Single();
+        VersionMember = MemberFinder.Determine(expression).Single();
     }
 
     public long GetVersion(T aggregate)

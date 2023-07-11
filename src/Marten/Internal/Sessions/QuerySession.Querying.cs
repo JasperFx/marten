@@ -33,7 +33,7 @@ public partial class QuerySession
             Database.EnsureStorageExists(typeof(T));
         }
 
-        var provider = new MartenLinqQueryProvider(this);
+        var provider = new MartenLinqQueryProvider(this, typeof(T));
         return provider.ExecuteHandler(handler);
     }
 
@@ -48,7 +48,7 @@ public partial class QuerySession
             await Database.EnsureStorageExistsAsync(typeof(T), token).ConfigureAwait(false);
         }
 
-        var provider = new MartenLinqQueryProvider(this);
+        var provider = new MartenLinqQueryProvider(this, typeof(T));
         return await provider.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
     }
 

@@ -13,7 +13,6 @@ using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
-using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Events.Schema;
 
@@ -82,7 +81,7 @@ internal class StreamTableColumn: TableColumn, IStreamTableColumn
         "varchar")
     {
         _memberExpression = memberExpression;
-        _member = FindMembers.Determine(memberExpression).Single();
+        _member = MemberFinder.Determine(memberExpression).Single();
         var memberType = _member.GetMemberType();
         Type = PostgresqlProvider.Instance.GetDatabaseType(memberType, EnumStorage.AsInteger);
         NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(memberType);

@@ -26,9 +26,9 @@ internal class EntityMetadataQueryHandler: IQueryHandler<DocumentMetadata>
 
         SourceType = storage.DocumentType;
 
-        if (storage.Fields is DocumentMapping m)
+        if (storage is IHaveMetadataColumns m)
         {
-            _columns = m.Schema.Table.Columns.OfType<MetadataColumn>().ToArray();
+            _columns = m.MetadataColumns();
         }
         else
         {

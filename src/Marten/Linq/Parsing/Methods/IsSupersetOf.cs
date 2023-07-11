@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Marten.Linq.Fields;
+using Marten.Linq.Members;
 using NpgsqlTypes;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -13,25 +13,27 @@ internal class IsSupersetOf: IMethodCallParser
     public bool Matches(MethodCallExpression expression)
     {
         var method = expression.Method;
-        return IsMartenLinqExtension(method) ||
-               IsISetMethod(method);
+        return isMartenLinqExtension(method) ||
+               isISetMethod(method);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
+    public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
+        MethodCallExpression expression)
     {
-        var locator = mapping.FieldFor(expression).JSONBLocator;
+        var member = memberCollection.MemberFor(expression.Object ?? expression.Arguments[0]);
+        var locator = member.JSONBLocator;
         var values = expression.Arguments.Last().Value();
 
         var json = options.Serializer().ToJson(values);
         return new CustomizableWhereFragment($"{locator} @> ?", "?", new CommandParameter(json, NpgsqlDbType.Jsonb));
     }
 
-    private static bool IsMartenLinqExtension(MethodInfo method)
+    private static bool isMartenLinqExtension(MethodInfo method)
     {
         return method.Name == nameof(LinqExtensions.IsSupersetOf) && method.DeclaringType == typeof(LinqExtensions);
     }
 
-    private static bool IsISetMethod(MethodInfo method)
+    private static bool isISetMethod(MethodInfo method)
     {
         return method.Name == "IsSupersetOf" &&
                method.DeclaringType

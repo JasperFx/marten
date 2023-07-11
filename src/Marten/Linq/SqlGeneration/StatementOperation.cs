@@ -9,31 +9,32 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
-using Marten.Linq.Parsing;
-using Remotion.Linq.Clauses;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
-internal class StatementOperation: DocumentStatement, IStorageOperation
+internal class StatementOperation: Statement, IStorageOperation
 {
     private readonly IOperationFragment _operation;
+    private readonly IDocumentStorage _storage;
 
-    public StatementOperation(IDocumentStorage storage, IOperationFragment operation): base(storage)
+    public StatementOperation(IDocumentStorage storage, IOperationFragment operation)
     {
+        _storage = storage;
         _operation = operation;
         DocumentType = storage.SourceType;
     }
 
+    public StatementOperation(IDocumentStorage storage, IOperationFragment operation, ISqlFragment where): this(storage,
+        operation)
+    {
+        Wheres.Add(where);
+    }
+
     public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
     {
-        if (Previous != null)
-        {
-            Top().Configure(builder);
-            return;
-        }
-        configure(builder);
+        Apply(builder);
     }
 
     public Type DocumentType { get; }
@@ -53,21 +54,36 @@ internal class StatementOperation: DocumentStatement, IStorageOperation
         return _operation.Role();
     }
 
-    protected override void configure(CommandBuilder builder)
+    protected override void configure(CommandBuilder sql)
     {
-        _operation.Apply(builder);
-        writeWhereClause(builder);
+        _operation.Apply(sql);
+        writeWhereClause(sql);
+    }
+
+    protected void writeWhereClause(CommandBuilder sql)
+    {
+        if (Wheres.Any())
+        {
+            sql.Append(" where ");
+            Wheres[0].Apply(sql);
+            for (var i = 1; i < Wheres.Count; i++)
+            {
+                sql.Append(" and ");
+                Wheres[i].Apply(sql);
+            }
+        }
     }
 
     public ISqlFragment ApplyFiltering<T>(DocumentSessionBase session, Expression<Func<T, bool>> expression)
     {
-        var queryExpression = session.Query<T>().Where(expression).Expression;
-        var model = MartenQueryParser.Flyweight.GetParsedQuery(queryExpression);
-        var where = model.BodyClauses.OfType<WhereClause>().Single();
-        WhereClauses.Add(where);
+        Expression body = expression;
+        if (expression is LambdaExpression l)
+        {
+            body = l.Body;
+        }
 
-        CompileLocal(session);
+        ParseWhereClause(new[] { body }, session, _storage.QueryMembers, _storage);
 
-        return Where;
+        return Wheres.SingleOrDefault();
     }
 }
