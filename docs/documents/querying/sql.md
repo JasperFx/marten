@@ -50,15 +50,25 @@ a document body, but in that case you will need to supply the full SQL statement
 var sumResults = await session
     .QueryAsync<int>("select count(*) from mt_doc_target");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_by_sql.cs#L343-L348' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_by_full_sql' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_by_sql.cs#L358-L363' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_by_full_sql' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+When querying single JSONB properties into a primitive/value type, you'll need to cast the value to the respective postgres type:
+
+<!-- snippet: sample_using-queryasync-casting -->
+<a id='snippet-sample_using-queryasync-casting'></a>
+```cs
+var times = await session.QueryAsync<DateTimeOffset>("SELECT (data ->> 'ModifiedAt')::timestamptz from mt_doc_user");
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_by_sql.cs#L324-L328' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-queryasync-casting' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The basic rules for how Marten handles user-supplied queries are:
 
 * The `T` argument to `Query<T>()/QueryAsync<T>()` denotes the return value of each item
-* If the `T` is a simple, scalar value like a .Net `int`, the data is handled by reading the first
+* If the `T` is a [npgsql mapped type](https://www.npgsql.org/doc/types/basic.html) like a .Net `int` or `Guid`, the data is handled by reading the first
   field of the returned data
-* If the `T` is not a simple type, Marten will try to read the first field with the JSON serializer
+* If the `T` is not a mapped type, Marten will try to read the first field with the JSON serializer
   for the current `DocumentStore`
 * If the SQL starts with the `SELECT` keyword (and it's not case sensitive), the SQL supplied is used verbatim
 * If the supplied SQL does not start with a `SELECT` keyword, Marten assumes that the `T` is a document

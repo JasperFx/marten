@@ -50,6 +50,8 @@ public class User
 
     public int Age { get; set; }
 
+    public DateTimeOffset ModifiedAt { get; set; }
+
     public string ToJson()
     {
         return

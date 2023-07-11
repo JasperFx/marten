@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -297,7 +298,8 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
     public async Task query_with_select_in_query_async()
     {
         await using var session = theStore.LightweightSession();
-        var u = new User {FirstName = "Jeremy", LastName = "Miller"};
+        var time = DateTimeOffset.UtcNow;
+        var u = new User {FirstName = "Jeremy", LastName = "Miller", ModifiedAt = time};
         session.Store(u);
         await session.SaveChangesAsync();
 
@@ -313,6 +315,19 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
 
         user.LastName.ShouldBe("Miller");
         user.Id.ShouldBe(u.Id);
+
+
+        var ids = await session.QueryAsync<Guid>("SELECT id from mt_doc_user");
+        var id = ids.Single();
+        id.ShouldBe(u.Id);
+
+        #region sample_using-queryasync-casting
+
+        var times = await session.QueryAsync<DateTimeOffset>("SELECT (data ->> 'ModifiedAt')::timestamptz from mt_doc_user");
+
+        #endregion
+        var fetchedTime = times.Single();
+        fetchedTime.Second.ShouldBe(time.Second);
     }
 
     [Fact]
