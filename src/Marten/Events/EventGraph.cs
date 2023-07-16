@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,7 +28,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
 
     private readonly Cache<string, Type> _aggregateTypeByName;
 
-    private readonly Cache<string, EventMapping> _byEventName = new();
+    private readonly Cache<string, EventMapping?> _byEventName = new();
 
     private readonly Cache<Type, EventMapping> _events = new();
 
@@ -34,7 +36,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
 
     private readonly Ref<ImHashMap<string, Type>> _nameToType = Ref.Of(ImHashMap<string, Type>.Empty);
 
-    private string _databaseSchemaName;
+    private string? _databaseSchemaName;
 
     private DocumentStore _store;
     private StreamIdentity _streamIdentity = StreamIdentity.AsGuid;
@@ -51,7 +53,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
             return mapping;
         };
 
-        _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
+        _byEventName.OnMissing = name => AllEvents().FirstOrDefault(x => x.EventTypeName == name);
 
         _inlineProjections = new Lazy<IProjection[]>(() => options.Projections.BuildInlineProjections(_store));
 
@@ -270,7 +272,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
         return _events;
     }
 
-    internal EventMapping EventMappingFor(string eventType)
+    internal EventMapping? EventMappingFor(string eventType)
     {
         return _byEventName[eventType];
     }
@@ -282,6 +284,8 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
 
         foreach (var mapping in _byEventName)
         {
+            if(mapping is null)
+                continue;
             if (types.Contains(mapping.DocumentType))
             {
                 aliases.Add(mapping.Alias);
