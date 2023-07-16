@@ -29,7 +29,7 @@ public static class AsyncDaemonHealthCheckExtensions
     public static IHealthChecksBuilder AddMartenAsyncDaemonHealthCheck(this IHealthChecksBuilder builder, int maxEventLag = 100)
     {
         builder.Services.AddSingleton(new AsyncDaemonHealthCheckSettings(maxEventLag));
-        return builder.AddCheck<AsyncDaemonHealthCheck>(nameof(AsyncDaemonHealthCheck));
+        return builder.AddCheck<AsyncDaemonHealthCheck>(nameof(AsyncDaemonHealthCheck), tags: new[] {"Marten", "AsyncDaemon"});
     }
 
     /// <summary>
