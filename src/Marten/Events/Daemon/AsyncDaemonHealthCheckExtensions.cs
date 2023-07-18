@@ -29,7 +29,7 @@ public static class AsyncDaemonHealthCheckExtensions
     public static IHealthChecksBuilder AddMartenAsyncDaemonHealthCheck(this IHealthChecksBuilder builder, int maxEventLag = 100)
     {
         builder.Services.AddSingleton(new AsyncDaemonHealthCheckSettings(maxEventLag));
-        return builder.AddCheck<AsyncDaemonHealthCheck>(nameof(AsyncDaemonHealthCheck), tags: new[] {"Marten", "AsyncDaemon"});
+        return builder.AddCheck<AsyncDaemonHealthCheck>(nameof(AsyncDaemonHealthCheck), tags: new[] { "Marten", "AsyncDaemon" });
     }
 
     /// <summary>
@@ -59,7 +59,7 @@ public static class AsyncDaemonHealthCheckExtensions
             _store = store;
             _maxEventLag = settings.MaxEventLag;
         }
-
+        #region sample_addmartenasyncdaemonhealthcheck
         public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context,
                                                               CancellationToken cancellationToken = default)
         {
@@ -92,5 +92,6 @@ public static class AsyncDaemonHealthCheckExtensions
                 return HealthCheckResult.Unhealthy($"Unhealthy: {ex.Message}", ex);
             }
         }
+        #endregion
     }
 }
