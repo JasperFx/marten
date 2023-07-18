@@ -5,6 +5,7 @@ Marten supports a customizable [HealthChecks](https://learn.microsoft.com/en-us/
 > The healthcheck will only be checked against `Async` projections
 
 <!-- snippet: sample_AddMartenAsyncDaemonHealthCheck -->
+<a id='sample_AddMartenAsyncDaemonHealthCheck'></a>
 ```cs
 // Add HealthCheck
 Services.AddHealthChecks().AddMartenAsyncDaemonHealthCheck(maxEventLag: 500);
