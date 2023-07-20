@@ -9,7 +9,7 @@ Combine your Linq queries with raw SQL using the `MatchesSql(sql)` method like s
 public void query_with_matches_sql()
 {
     using var session = theStore.LightweightSession();
-    var u = new User {FirstName = "Eric", LastName = "Smith"};
+    var u = new User { FirstName = "Eric", LastName = "Smith" };
     session.Store(u);
     session.SaveChanges();
 
@@ -18,5 +18,5 @@ public void query_with_matches_sql()
     user.Id.ShouldBe(u.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_by_sql.cs#L260-L275' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_with_matches_sql' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_by_sql.cs#L263-L278' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_with_matches_sql' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
