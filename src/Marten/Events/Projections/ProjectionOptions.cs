@@ -178,7 +178,7 @@ public class ProjectionOptions: DaemonSettings
         var expression = singleStreamProjection<T>(ProjectionLifecycle.Live, asyncConfiguration);
 
         // Hack to address https://github.com/JasperFx/marten/issues/2610
-        _options.Storage.RemoveBuilderFor<T>();
+        _options.Storage.MappingFor(typeof(T)).SkipSchemaGeneration = true;
 
         return expression;
     }

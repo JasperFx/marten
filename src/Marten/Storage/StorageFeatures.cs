@@ -54,6 +54,9 @@ public class StorageFeatures: IFeatureSchema
     internal IEnumerable<DocumentMapping> AllDocumentMappings =>
         _documentMappings.Value.Enumerate().Select(x => x.Value);
 
+    internal IEnumerable<DocumentMapping> DocumentMappingsWithSchema =>
+        _documentMappings.Value.Enumerate().Where(x => !x.Value.SkipSchemaGeneration).Select(x => x.Value);
+
     void IFeatureSchema.WritePermissions(Migrator rules, TextWriter writer)
     {
         // Nothing
@@ -173,7 +176,6 @@ public class StorageFeatures: IFeatureSchema
     {
         if (!_documentMappings.Value.TryFind(documentType, out var value))
         {
-            var buildingList = new List<Type>();
             value = Build(documentType, _options);
             _documentMappings.Swap(d => d.AddOrUpdate(documentType, value));
         }
@@ -271,7 +273,7 @@ public class StorageFeatures: IFeatureSchema
 
         _mappings.Swap(d => d.AddOrUpdate(typeof(IEvent), new EventQueryMapping(_options)));
 
-        foreach (var mapping in _documentMappings.Value.Enumerate().Select(x => x.Value))
+        foreach (var mapping in DocumentMappingsWithSchema)
         {
             foreach (var subClass in mapping.SubClasses)
             {
@@ -290,8 +292,7 @@ public class StorageFeatures: IFeatureSchema
             MappingFor(typeof(DeadLetterEvent)).DatabaseSchemaName = _options.Events.DatabaseSchemaName;
         }
 
-        var mappings = _documentMappings.Value
-            .Enumerate().Select(x => x.Value)
+        var mappings = DocumentMappingsWithSchema
             .OrderBy(x => x.DocumentType.Name)
             .TopologicalSort(m => m.ReferencedTypes()
                 .Select(MappingFor));
@@ -321,7 +322,7 @@ public class StorageFeatures: IFeatureSchema
 
     internal bool SequenceIsRequired()
     {
-        return _documentMappings.Value.Enumerate().Select(x => x.Value).Any(x => x.IdStrategy.RequiresSequences);
+        return DocumentMappingsWithSchema.Any(x => x.IdStrategy.RequiresSequences);
     }
 
     internal IEnumerable<Type> GetTypeDependencies(Type type)
@@ -383,14 +384,5 @@ public class StorageFeatures: IFeatureSchema
                 _builders.Swap(d => d.AddOrUpdate(builder.DocumentType, builder));
             }
         }
-    }
-
-    internal void RemoveBuilderFor<T>()
-    {
-        _builders.Swap(d => d.Remove(typeof(T)));
-        _documentMappings.Swap(d => d.Remove(typeof(T)));
-        _features.Swap(d => d.Remove(typeof(T)));
-        _mappings.Swap(d => d.Remove(typeof(T)));
-
     }
 }
