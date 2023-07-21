@@ -65,7 +65,6 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
     private string _alias;
     private string _databaseSchemaName;
 
-
     private HiloSettings _hiloSettings;
     private MemberInfo _idMember;
 
@@ -113,6 +112,9 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
         }
     }
 
+    // TODO: This should be smarter, maybe nullable option for Schema or some other base type
+    internal bool SkipSchemaGeneration { get; set; }
+
     public MemberInfo IdMember
     {
         get => _idMember;
@@ -147,7 +149,6 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
     public virtual DbObjectName TableName => new(DatabaseSchemaName, $"{SchemaConstants.TablePrefix}{_alias}");
 
     public DocumentMetadataCollection Metadata { get; }
-
 
     public bool UseOptimisticConcurrency { get; set; }
 
@@ -191,6 +192,7 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
     public bool StructuralTyped { get; set; }
 
     public string DdlTemplate { get; set; }
+
     IReadOnlyHiloSettings IDocumentType.HiloSettings { get; }
 
     public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
@@ -198,7 +200,6 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
     IDocumentType IDocumentType.Root => this;
 
     public DuplicatedField[] DuplicatedFields => fields().OfType<DuplicatedField>().ToArray();
-
 
     public bool IsHierarchy()
     {
@@ -209,7 +210,6 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
     {
         return Indexes.OfType<DocumentIndex>().Where(x => x.Columns.Contains(column));
     }
-
 
     public string AliasFor(Type subclassType)
     {
@@ -329,7 +329,6 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
             : type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                 .OrderByDescending(x => x.DeclaringType == type).ToArray();
     }
-
 
     public DocumentIndex AddGinIndexToData()
     {

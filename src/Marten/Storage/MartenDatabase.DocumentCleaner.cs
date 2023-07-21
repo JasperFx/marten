@@ -83,7 +83,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
     public void DeleteDocumentsExcept(params Type[] documentTypes)
     {
-        var documentMappings = _options.Storage.AllDocumentMappings.Where(x => !documentTypes.Contains(x.DocumentType));
+        var documentMappings = _options.Storage.DocumentMappingsWithSchema.Where(x => !documentTypes.Contains(x.DocumentType));
         foreach (var mapping in documentMappings)
         {
             var storage = Providers.StorageFor(mapping.DocumentType);
@@ -93,7 +93,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
     public async Task DeleteDocumentsExceptAsync(CancellationToken ct, params Type[] documentTypes)
     {
-        var documentMappings = _options.Storage.AllDocumentMappings.Where(x => !documentTypes.Contains(x.DocumentType));
+        var documentMappings = _options.Storage.DocumentMappingsWithSchema.Where(x => !documentTypes.Contains(x.DocumentType));
         foreach (var mapping in documentMappings)
         {
             var storage = Providers.StorageFor(mapping.DocumentType);
