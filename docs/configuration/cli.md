@@ -2,7 +2,7 @@
 
 ::: warning
 The usage of Marten.CommandLine shown in this document is only valid for applications bootstrapped with the
-[generic host builder](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-3.1) with Marten registered in the application's IoC container.
+[generic host builder](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host) with Marten registered in the application's IoC container.
 :::
 
 There is a separate NuGet package called _Marten.CommandLine_ that can be used to quickly add command-line tooling directly to
