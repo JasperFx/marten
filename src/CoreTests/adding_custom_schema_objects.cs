@@ -1,8 +1,9 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
+using Marten.Exceptions;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -17,7 +18,7 @@ using Xunit;
 
 namespace CoreTests;
 
-public class adding_custom_schema_objects : OneOffConfigurationsContext
+public class adding_custom_schema_objects: OneOffConfigurationsContext
 {
     [Fact]
     public void extension_feature_is_not_active_without_any_extended_objects()
@@ -44,7 +45,9 @@ public class adding_custom_schema_objects : OneOffConfigurationsContext
     {
         // The schema is dropped when this method is called, so existing
         // tables would be dropped first
+
         #region sample_CustomSchemaTable
+
         StoreOptions(opts =>
         {
             opts.RegisterDocumentType<Target>();
@@ -56,6 +59,7 @@ public class adding_custom_schema_objects : OneOffConfigurationsContext
         });
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
         #endregion
 
 
@@ -70,6 +74,7 @@ public class adding_custom_schema_objects : OneOffConfigurationsContext
     public async Task enable_an_extension()
     {
         #region sample_CustomSchemaExtension
+
         StoreOptions(opts =>
         {
             opts.RegisterDocumentType<Target>();
@@ -82,6 +87,7 @@ public class adding_custom_schema_objects : OneOffConfigurationsContext
         });
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
         #endregion
 
         var session = theStore.QuerySession();
@@ -92,8 +98,11 @@ public class adding_custom_schema_objects : OneOffConfigurationsContext
     }
 
     [Fact]
-    public async Task enable_an_extension_with_multitenancy()
+    public async Task enable_an_extension_with_multitenancy_no_tenants_upfront_does_not_register_extension()
     {
+        const string tenantId = "unknownTenantSchemaObject";
+        await DropDatabaseIfExists(tenantId);
+
         StoreOptions(opts =>
         {
             opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString);
@@ -108,10 +117,68 @@ public class adding_custom_schema_objects : OneOffConfigurationsContext
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        var session = theStore.QuerySession("tenant");
+        Func<Task> queryWithNonExistingDB = async () =>
+        {
+            await using var session = theStore.QuerySession(tenantId);
+            await session.QueryAsync<bool>("select unaccent('Æ') = 'AE';");
+        };
+        var martenException = await queryWithNonExistingDB.ShouldThrowAsync<MartenCommandException>();
+        martenException.InnerException.ShouldNotBeNull();
+        martenException.InnerException.As<PostgresException>().ShouldSatisfyAllConditions(
+            e => e.SqlState.ShouldBe(PostgresErrorCodes.UndefinedFunction),
+            e => e.MessageText.ShouldBe("function unaccent(unknown) does not exist")
+        );
+    }
 
+    [Fact]
+    public async Task enable_an_extension_with_multitenancy_with_tenants_upfront_through_manual_apply()
+    {
+        const string tenantId = "unknownTenantSchemaObjectManual";
+        await DropDatabaseIfExists(tenantId);
+
+        StoreOptions(opts =>
+        {
+            opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString);
+            opts.RegisterDocumentType<Target>();
+
+            // Unaccent is an extension ships with postgresql
+            // and removes accents (diacritic signs) from strings
+            var extension = new Extension("unaccent");
+
+            opts.Storage.ExtendedSchemaObjects.Add(extension);
+        });
+
+        var tenant = await theStore.Tenancy.GetTenantAsync(tenantId);
+        await tenant.Database.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        await using var sessionNext = theStore.QuerySession(tenantId);
+        var result = await sessionNext.QueryAsync<bool>("select unaccent('Æ') = 'AE';");
+
+        result.First().ShouldBe(true);
+    }
+
+    [Fact]
+    public async Task enable_an_extension_with_multitenancy_with_tenants_upfront_through_config()
+    {
+        const string tenantId = "knownTenantSchemaObject";
+        await DropDatabaseIfExists(tenantId);
+
+        StoreOptions(opts =>
+        {
+            opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString).WithTenants(tenantId);
+            opts.RegisterDocumentType<Target>();
+
+            // Unaccent is an extension ships with postgresql
+            // and removes accents (diacritic signs) from strings
+            var extension = new Extension("unaccent");
+
+            opts.Storage.ExtendedSchemaObjects.Add(extension);
+        });
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var session = theStore.QuerySession(tenantId);
         var result = await session.QueryAsync<bool>("select unaccent('Æ') = 'AE';");
-
         result.First().ShouldBe(true);
     }
 
@@ -119,6 +186,7 @@ public class adding_custom_schema_objects : OneOffConfigurationsContext
     public async Task create_a_function()
     {
         #region sample_CustomSchemaFunction
+
         StoreOptions(opts =>
         {
             opts.RegisterDocumentType<Target>();
@@ -138,6 +206,7 @@ $f$  language sql immutable;
         });
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
         #endregion
 
         var session = theStore.QuerySession();
@@ -153,6 +222,7 @@ $f$  language sql immutable;
     public async Task create_a_sequence()
     {
         #region sample_CustomSchemaSequence
+
         StoreOptions(opts =>
         {
             opts.RegisterDocumentType<Target>();
@@ -164,6 +234,7 @@ $f$  language sql immutable;
         });
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
         #endregion
 
         var session = theStore.QuerySession();
@@ -172,5 +243,14 @@ $f$  language sql immutable;
         var valueAgain = await session.QueryAsync<int>("select nextval('banana_seq')");
 
         valueAgain.First().ShouldBe(value.First() + 1);
+    }
+
+    private async Task DropDatabaseIfExists(string databaseName)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        await conn.KillIdleSessions(databaseName);
+        await conn.DropDatabase(databaseName);
     }
 }
