@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
@@ -60,7 +59,7 @@ public class SingleServerMultiTenancyTests : IAsyncLifetime
         theTenancy.WithTenants("tenant4", "tenant5")
             .InDatabaseNamed("database2");
 
-        var databases = await theTenancy.BuildDatabases();
+        await theTenancy.BuildDatabases();
 
         var database = await theTenancy.FindOrCreateDatabase(databaseName);
         theTenancy.IsTenantStoredInCurrentDatabase(database, tenantId).ShouldBe(isContained);
