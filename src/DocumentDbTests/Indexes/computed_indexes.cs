@@ -8,6 +8,7 @@ using Marten.Testing;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql.Tables;
 using Xunit;
 
@@ -167,23 +168,36 @@ public class computed_indexes: OneOffConfigurationsContext
         var index = table.IndexFor("mt_doc_target_idx_stringstring_field");
 
         index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_stringstring_field ON computed_indexes.mt_doc_target USING btree (upper((data ->> 'String'), upper((data ->> 'StringField'))));");
-
-
     }
 
     [Fact]
-    public void creating_index_using_date_should_work()
+    public async Task creating_index_using_date_should_work()
     {
         StoreOptions(_ =>
         {
-            _.Schema.For<Target>().Index(x => x.Date);
+            _.Schema.For<ApiResponseRecord>().Index(x => x.RequestTimeUtc);
+            _.AutoCreateSchemaObjects = AutoCreate.All;
+        });
+        var diff = await theStore.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.CreateOrUpdate);
+
+        diff.ShouldBe(SchemaPatchDifference.Create);
+
+        var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(ApiResponseRecord));
+        var index = table.IndexFor("mt_doc_apiresponserecord_idx_request_time_utc");
+
+        index.ShouldNotBeNull();
+
+        index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_apiresponserecord_idx_request_time_utc ON computed_indexes.mt_doc_apiresponserecord USING btree (computed_indexes.mt_immutable_timestamp((data ->> 'RequestTimeUtc')));");
+
+        using var otherStore = SeparateStore(_ =>
+        {
+            _.Schema.For<ApiResponseRecord>().Index(x => x.RequestTimeUtc);
+            _.AutoCreateSchemaObjects = AutoCreate.All;
         });
 
-        var data = Target.GenerateRandomData(100).ToArray();
-        theStore.BulkInsert(data.ToArray());
-
+        var diff2 = await otherStore.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.CreateOrUpdate);
+        diff2.ShouldBe(SchemaPatchDifference.None);
     }
-
 
     [Fact]
     public async Task create_index_with_custom_name()
@@ -277,7 +291,13 @@ public class computed_indexes: OneOffConfigurationsContext
         var index = table.IndexFor("mt_doc_target_idx_user_idstring_list");
 
         index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_user_idstring_list ON computed_indexes.mt_doc_target USING btree (CAST(data ->> 'UserId' as uuid), CAST(data ->> 'StringList' as jsonb));");
-
     }
+}
 
+public class ApiResponseRecord
+{
+    public Guid Id { get; set; }
+    public string Request { get; set; }
+    public string Response { get; set; }
+    public DateTime RequestTimeUtc { get; set; }
 }
