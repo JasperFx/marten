@@ -815,7 +815,10 @@ public class full_text_index: OneOffConfigurationsContext
         // Look at updates after that
         var patch = await theStore.Storage.Database.CreateMigrationAsync();
 
-        Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patch.UpdateSql());
+        var patchSql = patch.UpdateSql();
+
+        Assert.DoesNotContain("drop index if exists full_text_index.mt_doc_user_idx_fts", patchSql);
+        Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patchSql);
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -833,10 +836,13 @@ public class full_text_index: OneOffConfigurationsContext
         // Look at updates after that
         var patch = await theStore.Storage.Database.CreateMigrationAsync();
 
-        Assert.DoesNotContain("drop index full_text_index.mt_doc_company_idx_fts", patch.UpdateSql());
+        var patchSql = patch.UpdateSql();
+
+        Assert.DoesNotContain("drop index if exists full_text_index.mt_doc_user_idx_fts", patchSql);
+        Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patchSql);
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task multifield_fts_index_comparison_must_take_into_account_automatic_cast()
     {
         StoreOptions(_ =>
@@ -851,7 +857,10 @@ public class full_text_index: OneOffConfigurationsContext
         // Look at updates after that
         var patch = await theStore.Storage.Database.CreateMigrationAsync();
 
-        Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patch.UpdateSql());
+        var patchSql = patch.UpdateSql();
+
+        Assert.DoesNotContain("drop index if exists full_text_index.mt_doc_user_idx_fts", patchSql);
+        Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patchSql);
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -867,17 +876,14 @@ public class full_text_index: OneOffConfigurationsContext
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         // Change indexed fields
-        var store = DocumentStore.For(_ =>
+        StoreOptions(_ =>
         {
-            _.Connection(ConnectionSource.ConnectionString);
-            _.DatabaseSchemaName = "fulltext";
-
             _.Schema.For<User>()
                 .FullTextIndex(x => x.FirstName, x => x.LastName);
-        });
+        }, false);
 
         // Look at updates after that
-        var patch = await store.Storage.Database.CreateMigrationAsync();
+        var patch = await theStore.Storage.Database.CreateMigrationAsync();
 
         Assert.Contains("drop index if exists full_text_index.mt_doc_user_idx_fts", patch.UpdateSql());
     }
