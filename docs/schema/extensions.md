@@ -51,6 +51,15 @@ Do note that when you use the `Add<T>()` syntax, Marten will pass along the curr
 
 While you *can* directly implement the `ISchemaObject` interface for something Marten doesn't already support. Marten provides an even easier extensibility mechanism to add custom database objects such as Postgres tables, functions and sequences using `StorageFeatures.ExtendedSchemaObjects` using [Weasel](https://github.com/JasperFx/weasel).
 
+::: warning
+Marten will apply **Schema Feature Extensions** automatically when you call `ApplyAllConfiguredChangesToDatabaseAsync` for:
+
+* single schema configuration,
+* [multi-tenancy per database](/configuration/multi-tenancy) with tenants known upfront.
+
+But it **won't apply them** for multi-tenancy per database with **unknown** tenants. If you cannot predict them, read the guidance on [dynamically applying changes to tenants databases](/configuration/multi-tenancy#dynamically-applying-changes-to-tenants-databases).
+:::
+
 ## Table
 
 Postgresql tables can be modeled with the `Table` class from `Weasel.Postgresql.Tables` as shown in this example below:
@@ -100,7 +109,7 @@ $f$  language sql immutable;
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L188-L210' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemafunction' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L190-L212' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemafunction' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Sequence
@@ -122,7 +131,7 @@ StoreOptions(opts =>
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L224-L238' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemasequence' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L226-L240' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemasequence' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Extension

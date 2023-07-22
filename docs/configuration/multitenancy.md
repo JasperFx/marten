@@ -89,13 +89,31 @@ _host = await Host.CreateDefaultBuilder()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_per_database_multitenancy.cs#L83-L108' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_single_server_multi_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Dynamically applying changes to tenants databases
+
+If you didn't call the `ApplyAllDatabaseChangesOnStartup` method, Marten would still try to create a database [upon the session creation](/documents/sessions). This action is invasive and can cause issues like timeouts, cold starts, or deadlocks. It also won't apply all defined changes upfront (so, e.g. [indexes](/documents/indexing), [custom schema extensions](/schema/extensions)).
+
+If you don't know the tenant upfront, you can create and apply changes dynamically by:
+
+<!-- snippet: sample_manual_single_tenancy_apply_changes -->
+<a id='snippet-sample_manual_single_tenancy_apply_changes'></a>
+```cs
+var tenant = await theStore.Tenancy.GetTenantAsync(tenantId);
+await tenant.Database.ApplyAllConfiguredChangesToDatabaseAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L151-L154' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_manual_single_tenancy_apply_changes' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+You can place this code somewhere in the tenant initialization code. For instance:
+
+* tenant setup procedure,
+* dedicated API endpoint
+* [custom session factory](/configuration/hostbuilder/#customizing-session-creation-globally), although that's not recommended for the reasons mentioned above. 
+
 ## Write your own tenancy strategy!
 
 :::tip
-It is strongly recommended that you first refer to the existing Marten options for per-database multi-tenancy
-before you write your own model. There are several helpers in the Marten codebase that will hopefully make
-this task easier. Failing all else, please feel free to ask questions in the [Marten's Discord channel](https://discord.gg/WMxrvegf8H) about custom
-multi-tenancy strategies.
+It is strongly recommended that you first refer to the existing Marten options for per-database multi-tenancy before you write your own model. There are several helpers in the Marten codebase that will hopefully make this task easier. Failing all else, please feel free to ask questions in the [Marten's Discord channel](https://discord.gg/WMxrvegf8H) about custom multi-tenancy strategies.
 :::
 
 The multi-tenancy strategy is pluggable. Start by implementing the `Marten.Storage.ITenancy` interface:

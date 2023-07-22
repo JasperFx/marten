@@ -148,8 +148,10 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
             opts.Storage.ExtendedSchemaObjects.Add(extension);
         });
 
+        #region sample_manual_single_tenancy_apply_changes
         var tenant = await theStore.Tenancy.GetTenantAsync(tenantId);
         await tenant.Database.ApplyAllConfiguredChangesToDatabaseAsync();
+        #endregion
 
         await using var sessionNext = theStore.QuerySession(tenantId);
         var result = await sessionNext.QueryAsync<bool>("select unaccent('Æ') = 'AE';");

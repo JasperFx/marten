@@ -44,7 +44,7 @@ The `AddMarten()` method will add these service registrations to your applicatio
 
 For more information, see:
 
-* [Dependency injection in ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-3.1) for more explanation about the service lifetime behavior.
+* [Dependency injection in ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection) for more explanation about the service lifetime behavior.
 * Check [identity map mechanics](/documents/identity) for an explanation of Marten session behavior
 * Check [storing documents and unit of work](/documents/sessions) for session basics
 
