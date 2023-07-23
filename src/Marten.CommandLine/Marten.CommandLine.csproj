@@ -31,7 +31,7 @@
         <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="JasperFx.CodeGeneration.Commands" Version="3.0.0" />
+        <PackageReference Include="JasperFx.CodeGeneration.Commands" Version="3.0.1" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
         <PackageReference Include="Oakton" Version="6.0.2" />
         <PackageReference Include="Weasel.CommandLine" Version="6.0.1" />

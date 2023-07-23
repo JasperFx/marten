@@ -842,7 +842,7 @@ public class full_text_index: OneOffConfigurationsContext
         Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patchSql);
     }
 
-    [Fact]
+    [PgVersionTargetedFact(MinimumVersion = "10.0")]
     public async Task multifield_fts_index_comparison_must_take_into_account_automatic_cast()
     {
         StoreOptions(_ =>

@@ -7,12 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Marten.AsyncDaemon.Testing\Marten.AsyncDaemon.Testing.csproj"/>
-        <ProjectReference Include="..\Marten\Marten.csproj"/>
+        <ProjectReference Include="..\Marten.AsyncDaemon.Testing\Marten.AsyncDaemon.Testing.csproj" />
+        <ProjectReference Include="..\Marten\Marten.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Lamar" Version="12.0.0"/>
-        <PackageReference Include="Spectre.Console" Version="0.46.0"/>
+        <PackageReference Include="Lamar" Version="12.0.0" />
+        <PackageReference Include="Spectre.Console" Version="0.47.0" />
     </ItemGroup>
 </Project>
