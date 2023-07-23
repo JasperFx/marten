@@ -23,13 +23,13 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
     </ItemGroup>
@@ -42,8 +42,8 @@
         <PackageReference Include="Npgsql.Json.NET" Version="7.0.4" />
         <PackageReference Include="Remotion.Linq" Version="2.2.0" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" Version="7.0.0" />
-        <PackageReference Include="Weasel.Postgresql" Version="6.0.1" />
-        <PackageReference Include="System.Text.Json" Version="7.0.2" />
+        <PackageReference Include="Weasel.Postgresql" Version="6.0.3" />
+        <PackageReference Include="System.Text.Json" Version="7.0.3" />
     </ItemGroup>
 
     <!--SourceLink specific settings-->
