@@ -108,7 +108,7 @@ You can place this code somewhere in the tenant initialization code. For instanc
 
 * tenant setup procedure,
 * dedicated API endpoint
-* [custom session factory](/configuration/hostbuilder/#customizing-session-creation-globally), although that's not recommended for the reasons mentioned above. 
+* [custom session factory](/configuration/hostbuilder#customizing-session-creation-globally), although that's not recommended for the reasons mentioned above. 
 
 ## Write your own tenancy strategy!
 
