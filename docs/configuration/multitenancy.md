@@ -91,7 +91,7 @@ _host = await Host.CreateDefaultBuilder()
 
 ## Dynamically applying changes to tenants databases
 
-If you didn't call the `ApplyAllDatabaseChangesOnStartup` method, Marten would still try to create a database [upon the session creation](/documents/sessions). This action is invasive and can cause issues like timeouts, cold starts, or deadlocks. It also won't apply all defined changes upfront (so, e.g. [indexes](/documents/indexing), [custom schema extensions](/schema/extensions)).
+If you didn't call the `ApplyAllDatabaseChangesOnStartup` method, Marten would still try to create a database [upon the session creation](/documents/sessions). This action is invasive and can cause issues like timeouts, cold starts, or deadlocks. It also won't apply all defined changes upfront (so, e.g. [indexes](/documents/indexing/), [custom schema extensions](/schema/extensions)).
 
 If you don't know the tenant upfront, you can create and apply changes dynamically by:
 
@@ -108,7 +108,7 @@ You can place this code somewhere in the tenant initialization code. For instanc
 
 * tenant setup procedure,
 * dedicated API endpoint
-* [custom session factory](/configuration/hostbuilder/#customizing-session-creation-globally), although that's not recommended for the reasons mentioned above. 
+* [custom session factory](/configuration/hostbuilder#customizing-session-creation-globally), although that's not recommended for the reasons mentioned above. 
 
 ## Write your own tenancy strategy!
 

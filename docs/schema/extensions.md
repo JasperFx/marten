@@ -55,9 +55,9 @@ While you *can* directly implement the `ISchemaObject` interface for something M
 Marten will apply **Schema Feature Extensions** automatically when you call `ApplyAllConfiguredChangesToDatabaseAsync` for:
 
 * single schema configuration,
-* [multi-tenancy per database](/configuration/multi-tenancy) with tenants known upfront.
+* [multi-tenancy per database](/configuration/multitenancy) with tenants known upfront.
 
-But it **won't apply them** for multi-tenancy per database with **unknown** tenants. If you cannot predict them, read the guidance on [dynamically applying changes to tenants databases](/configuration/multi-tenancy#dynamically-applying-changes-to-tenants-databases).
+But it **won't apply them** for multi-tenancy per database with **unknown** tenants. If you cannot predict them, read the guidance on [dynamically applying changes to tenants databases](/configuration/multitenancy#dynamically-applying-changes-to-tenants-databases).
 :::
 
 ## Table
