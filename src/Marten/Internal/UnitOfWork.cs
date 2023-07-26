@@ -299,7 +299,7 @@ internal class UnitOfWork: ISessionWorkTracker
             {
                 // Arbitrary order if one is a delete but the other is not, because this will force the sorting
                 // to try and compare these documents against others and fall in to the below checks.
-                return yIsDelete ? 1 : -1;
+                return yIsDelete ? -1 : 1;
             }
 
             if (xIsDelete)

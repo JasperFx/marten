@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -75,6 +75,67 @@ public class deleting_multiple_documents: IntegrationContext
             documentSession.SaveChanges();
         }
 
+        #endregion
+
+        using (var querySession = theStore.QuerySession())
+        {
+            // Assert the deleted documents no longer exist
+            querySession.Load<User>(user1.Id).ShouldBeNull();
+            querySession.Load<Company>(company1.Id).ShouldBeNull();
+
+            querySession.Load<Issue>(issue1.Id).Title.ShouldBe("Running low on coffee");
+        }
+    }
+
+    [Theory]
+    [SessionTypes]
+    public void delete_multiple_types_of_documents_with_delete_objects_within_same_session(DocumentTracking tracking)
+    {
+        using var session = OpenSession(tracking);
+
+        #region sample_DeleteObjects
+
+        // Store a mix of different document types
+        var user1 = new User { FirstName = "Jamie", LastName = "Vaughan" };
+        var issue1 = new Issue { Title = "Running low on coffee" };
+        var company1 = new Company { Name = "ECorp" };
+
+        session.StoreObjects(new object[] { user1, issue1, company1 });
+        session.DeleteObjects(new object[] { user1, company1 });
+        session.SaveChanges();
+
+        #endregion
+
+        using (var querySession = theStore.QuerySession())
+        {
+            // Assert the deleted documents no longer exist
+            querySession.Load<User>(user1.Id).ShouldBeNull();
+            querySession.Load<Company>(company1.Id).ShouldBeNull();
+
+            querySession.Load<Issue>(issue1.Id).Title.ShouldBe("Running low on coffee");
+        }
+    }
+
+    [Theory]
+    [SessionTypes]
+    public void delete_multiple_types_of_documents_with_generic_delete_within_single_session(DocumentTracking tracking)
+    {
+        using var session = OpenSession(tracking);
+
+        #region sample_DeleteObjects
+
+        // Store a mix of different document types
+        var user1 = new User { FirstName = "Jamie", LastName = "Vaughan" };
+        var issue1 = new Issue { Title = "Running low on coffee" };
+        var company1 = new Company { Name = "ECorp" };
+
+        session.StoreObjects(new object[] { user1, issue1, company1 });
+
+        session.Delete<User>(user1.Id);
+        session.Delete<Company>(company1.Id);
+
+        session.SaveChanges();
+        
         #endregion
 
         using (var querySession = theStore.QuerySession())
