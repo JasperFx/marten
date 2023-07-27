@@ -295,14 +295,7 @@ internal class UnitOfWork: ISessionWorkTracker
             var xIsDelete = x is IDeletion;
             var yIsDelete = y is IDeletion;
 
-            if (xIsDelete != yIsDelete)
-            {
-                // Arbitrary order if one is a delete but the other is not, because this will force the sorting
-                // to try and compare these documents against others and fall in to the below checks.
-                return yIsDelete ? -1 : 1;
-            }
-
-            if (xIsDelete)
+            if (xIsDelete && yIsDelete)
             {
                 // Both are deletes, so we need reverse topological order to inserts, updates and upserts
                 return yIndex.CompareTo(xIndex);
