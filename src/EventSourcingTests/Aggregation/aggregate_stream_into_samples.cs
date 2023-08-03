@@ -81,7 +81,7 @@ namespace EventSourcingTests.Aggregation
 
     public class CashRegisterRepository
     {
-        private IDocumentSession session;
+        private readonly IDocumentSession session;
 
         public CashRegisterRepository(IDocumentSession session)
         {

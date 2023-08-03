@@ -10,12 +10,12 @@ namespace EventSourcingTests;
 
 public class fetch_a_single_event_with_metadata: IntegrationContext
 {
-    private QuestStarted started = new QuestStarted { Name = "Find the Orb" };
-    private MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
-    private MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
-    private MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
+    private readonly QuestStarted started = new QuestStarted { Name = "Find the Orb" };
+    private readonly MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
+    private readonly MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
+    private readonly MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
 
-    private MembersJoined joined2 = new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
+    private readonly MembersJoined joined2 = new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
 
     [Fact]
     public void fetch_synchronously()

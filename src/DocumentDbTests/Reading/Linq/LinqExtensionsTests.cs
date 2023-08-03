@@ -9,7 +9,7 @@ namespace DocumentDbTests.Reading.Linq;
 
 public class LinqExtensionsTests
 {
-    private static int[] Ints = { 0, 1, 2, 3 };
+    private static readonly int[] Ints = { 0, 1, 2, 3 };
 
     private static readonly Guid[] Guids = { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
 

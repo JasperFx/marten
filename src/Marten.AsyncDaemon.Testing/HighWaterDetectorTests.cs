@@ -19,7 +19,7 @@ namespace Marten.AsyncDaemon.Testing;
 
 public class HighWaterDetectorTests: DaemonContext
 {
-    private HighWaterDetector theDetector;
+    private readonly HighWaterDetector theDetector;
 
     public HighWaterDetectorTests(ITestOutputHelper output) : base(output)
     {

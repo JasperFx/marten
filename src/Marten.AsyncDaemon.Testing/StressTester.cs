@@ -93,8 +93,8 @@ public class StressTester
 
 public class PublishService : BackgroundService
 {
-    private IDocumentStore _store;
-    private ILogger<PublishService> _logger;
+    private readonly IDocumentStore _store;
+    private readonly ILogger<PublishService> _logger;
     public PublishService(IDocumentStore store, ILogger<PublishService> logger)
     {
         _store = store;

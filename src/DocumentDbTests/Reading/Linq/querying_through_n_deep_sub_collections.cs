@@ -68,13 +68,13 @@ public class querying_through_n_deep_sub_collections : IntegrationContext
         public string Name { get; set; }
     }
 
-    private Top blueBill = new Top().WithMiddle(Colors.Blue, "Jack", "Bill");
-    private Top top2 = new Top().WithMiddle(Colors.Blue, "Jill");
-    private Top top3 = new Top().WithMiddle(Colors.Blue, "John");
-    private Top greenBill = new Top().WithMiddle(Colors.Green, "James", "Bill");
-    private Top top5 = new Top().WithMiddle(Colors.Blue, "Jimmy");
-    private Top top6 = new Top().WithMiddle(Colors.Green, "Jake");
-    private Top topNoBottoms = new Top().WithMiddle(Colors.Blue);
+    private readonly Top blueBill = new Top().WithMiddle(Colors.Blue, "Jack", "Bill");
+    private readonly Top top2 = new Top().WithMiddle(Colors.Blue, "Jill");
+    private readonly Top top3 = new Top().WithMiddle(Colors.Blue, "John");
+    private readonly Top greenBill = new Top().WithMiddle(Colors.Green, "James", "Bill");
+    private readonly Top top5 = new Top().WithMiddle(Colors.Blue, "Jimmy");
+    private readonly Top top6 = new Top().WithMiddle(Colors.Green, "Jake");
+    private readonly Top topNoBottoms = new Top().WithMiddle(Colors.Blue);
 
     public querying_through_n_deep_sub_collections(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
     {

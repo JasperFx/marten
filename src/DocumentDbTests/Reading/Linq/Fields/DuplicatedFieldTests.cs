@@ -14,7 +14,7 @@ namespace DocumentDbTests.Reading.Linq.Fields;
 
 public class DuplicatedFieldTests
 {
-    private DuplicatedField theField;
+    private readonly DuplicatedField theField;
 
     public DuplicatedFieldTests()
     {

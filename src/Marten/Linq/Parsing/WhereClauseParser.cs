@@ -195,7 +195,7 @@ internal partial class WhereClauseParser: RelinqExpressionVisitor, IWhereFragmen
         private readonly WhereClauseParser _parent;
         private readonly WhereClause[] _wheres;
 #pragma warning disable 414
-        private bool _isDistinct;
+        private readonly bool _isDistinct;
 #pragma warning restore 414
 
         public SubQueryFilterParser(WhereClauseParser parent, SubQueryExpression expression)

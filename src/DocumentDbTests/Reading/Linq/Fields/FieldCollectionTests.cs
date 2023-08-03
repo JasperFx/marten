@@ -14,7 +14,7 @@ namespace DocumentDbTests.Reading.Linq.Fields;
 
 public class FieldCollectionTests
 {
-    private StoreOptions theOptions = new StoreOptions();
+    private readonly StoreOptions theOptions = new StoreOptions();
 
 
 

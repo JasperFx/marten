@@ -15,17 +15,17 @@ namespace EventSourcingTests.Projections;
 
 public class inline_transformation_of_events: OneOffConfigurationsContext
 {
-    private QuestStarted started = new QuestStarted { Name = "Find the Orb" };
+    private readonly QuestStarted started = new QuestStarted { Name = "Find the Orb" };
 
-    private MembersJoined joined = new MembersJoined
+    private readonly MembersJoined joined = new MembersJoined
     {
         Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" }
     };
 
-    private MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
-    private MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
+    private readonly MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
+    private readonly MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
 
-    private MembersJoined joined2 =
+    private readonly MembersJoined joined2 =
         new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
 
     private async Task sample_usage()

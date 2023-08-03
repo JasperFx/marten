@@ -13,7 +13,7 @@ namespace Marten;
 
 public partial class StoreOptions: ICodeFileCollection
 {
-    private GenerationRules _rules;
+    private readonly GenerationRules _rules;
 
     /// <summary>
     ///     The main application assembly. By default this is the entry assembly for the application,
