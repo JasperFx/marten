@@ -36,7 +36,7 @@ export default withMermaid({
       {
         text: 'latest (v6.x)',
         items: [
-          { text: 'v5.x', link: 'https://marten-docs-v5.netlify.app', target: "_blank" }, 
+          { text: 'v5.x', link: 'https://marten-docs-v5.netlify.app', target: "_blank" },
           { text: 'v4.x', link: 'https://marten-docs-v4.netlify.app', target: "_blank" },
           { text: 'v3.x', link: 'https://martendb.io/v3/index.html', target: "_blank" }
         ]
@@ -84,11 +84,11 @@ export default withMermaid({
           collapsed: false,
           items: [
             { text: 'Bootstrap with HostBuilder', link: '/configuration/hostbuilder' },
-            { text: 'Configuring Document Storage', link: '/configuration/storeoptions' },               
+            { text: 'Configuring Document Storage', link: '/configuration/storeoptions' },
             { text: 'Json Serialization', link: '/configuration/json' },
             { text: 'Retry Policies', link: '/configuration/retries' },
             { text: 'Pre-Building Generated Types', link: '/configuration/prebuilding' },
-            { text: 'Command Line Tooling', link: '/configuration/cli' },      
+            { text: 'Command Line Tooling', link: '/configuration/cli' },
             { text: 'Development versus Production Usage', link: '/configuration/optimized_artifact_workflow' },
             { text: 'Multi-Tenancy with Database per Tenant', link: '/configuration/multitenancy' },
             { text: 'Environment Checks', link: '/configuration/environment-checks' },
@@ -97,7 +97,7 @@ export default withMermaid({
         },
         {
           text: 'Document Database',
-          collapsed: true,
+          collapsed: false,
           items: [
             { text: 'Marten as Document DB', link: '/documents/' },
             { text: 'Document Identity', link: '/documents/identity' },
@@ -107,7 +107,7 @@ export default withMermaid({
             { text: 'Storing Documents', link: '/documents/storing' },
             { text: 'Deleting Documents', link: '/documents/deletes' },
             {
-              text: 'Querying Documents', link: '/documents/querying/', collapsed: true, items: [
+              text: 'Querying Documents', link: '/documents/querying/', collapsed: false, items: [
                 { text: 'Loading Documents by Id', link: '/documents/querying/byid' },
                 { text: 'Querying Documents with Linq', link: '/documents/querying/linq/' },
                 { text: 'Supported Linq Operators', link: '/documents/querying/linq/operators' },
@@ -128,7 +128,7 @@ export default withMermaid({
             },
 
             {
-              text: 'Indexing Documents', link: '/documents/indexing/', collapsed: true, items: [
+              text: 'Indexing Documents', link: '/documents/indexing/', collapsed: false, items: [
                 { text: 'Calculated Indexes', link: '/documents/indexing/computed-indexes' },
                 { text: 'Duplicated Fields', link: '/documents/indexing/duplicated-fields' },
                 { text: 'Unique Indexes', link: '/documents/indexing/unique' },
@@ -152,7 +152,7 @@ export default withMermaid({
         },
         {
           text: 'Event Store',
-          collapsed: true,
+          collapsed: false,
           items: [
             { text: 'Marten as Event Store', link: '/events/' },
             { text: 'Quick Start', link: '/events/quickstart' },
@@ -192,14 +192,14 @@ export default withMermaid({
         },
         {
           text: 'Diagnostics',
-          collapsed: true,
+          collapsed: false,
           items: [
             { text: 'Diagnostics and Instrumentation', link: '/diagnostics' },
           ]
         },
         {
           text: 'Schema',
-          collapsed: true,
+          collapsed: false,
           items: [
             { text: 'Database Management', link: '/schema/' },
             { text: 'How Documents are Stored', link: '/schema/storage' },
@@ -211,14 +211,14 @@ export default withMermaid({
         },
         {
           text: 'Troubleshoot',
-          collapsed: true,
+          collapsed: false,
           items: [
             { text: 'FAQ & Troubleshooting', link: '/troubleshoot' }
           ]
         },
         {
           text: 'Scenarios',
-          collapsed: true,
+          collapsed: false,
           items: [
             {
               text: 'Aggregates, events and repositories',
@@ -244,7 +244,7 @@ export default withMermaid({
         },
         {
           text: 'Postgres for SQL Server users',
-          collapsed: true,
+          collapsed: false,
           items: [
             {
               text: 'Naming conventions',
