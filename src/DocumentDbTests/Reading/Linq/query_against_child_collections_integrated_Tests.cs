@@ -230,7 +230,7 @@ public class query_against_child_collections_integrated_Tests : OneOffConfigurat
         public string Case { get; set; }
     }
 
-    private Guid[] favAuthors = new Guid[] { Guid.NewGuid(), Guid.NewGuid() };
+    private readonly Guid[] favAuthors = new Guid[] { Guid.NewGuid(), Guid.NewGuid() };
 
     private void buildAuthorData()
     {

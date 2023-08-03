@@ -324,7 +324,7 @@ public class appending_events_workflow_specs
     public class TestCase : IDisposable
     {
         private readonly string _description;
-        private Lazy<DocumentStore> _store;
+        private readonly Lazy<DocumentStore> _store;
 
         public TestCase(string description, Action<EventGraph> config)
         {

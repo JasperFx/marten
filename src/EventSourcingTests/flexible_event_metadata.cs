@@ -11,9 +11,9 @@ namespace EventSourcingTests;
 
 public class flexible_event_metadata : OneOffConfigurationsContext
 {
-    private QuestStarted started = new QuestStarted { Name = "Find the Orb" };
-    private MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
-    private MonsterSlayed slayed = new MonsterSlayed { Name = "Troll" };
+    private readonly QuestStarted started = new QuestStarted { Name = "Find the Orb" };
+    private readonly MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
+    private readonly MonsterSlayed slayed = new MonsterSlayed { Name = "Troll" };
 
     [Fact]
     public async Task check_metadata_correlation_id_enabled()

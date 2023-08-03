@@ -40,8 +40,8 @@ public class StatementTests
 
 public class when_inserting_a_statement_before_an_unattached_statement
 {
-    private DummyStatement original;
-    private DummyStatement newRoot;
+    private readonly DummyStatement original;
+    private readonly DummyStatement newRoot;
 
     public when_inserting_a_statement_before_an_unattached_statement()
     {
@@ -84,9 +84,9 @@ public class when_inserting_a_statement_before_an_unattached_statement
 
 public class when_inserting_statement_in_front_of_statement_that_is_not_the_top
 {
-    private DummyStatement root = new DummyStatement();
-    private DummyStatement original = new DummyStatement();
-    private DummyStatement inserted = new DummyStatement();
+    private readonly DummyStatement root = new DummyStatement();
+    private readonly DummyStatement original = new DummyStatement();
+    private readonly DummyStatement inserted = new DummyStatement();
 
     public when_inserting_statement_in_front_of_statement_that_is_not_the_top()
     {

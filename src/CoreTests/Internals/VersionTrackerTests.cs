@@ -8,11 +8,11 @@ namespace CoreTests.Internals;
 
 public class VersionTrackerTests
 {
-    private StringDoc stringDoc = new StringDoc {Id = "bar"};
-    private IntDoc intDoc = new IntDoc{Id = 4};
-    private LongDoc longDoc = new LongDoc {Id = 5};
-    private GuidDoc guidDoc = new GuidDoc {Id = Guid.NewGuid()};
-    private VersionTracker theTracker = new VersionTracker();
+    private readonly StringDoc stringDoc = new StringDoc {Id = "bar"};
+    private readonly IntDoc intDoc = new IntDoc{Id = 4};
+    private readonly LongDoc longDoc = new LongDoc {Id = 5};
+    private readonly GuidDoc guidDoc = new GuidDoc {Id = Guid.NewGuid()};
+    private readonly VersionTracker theTracker = new VersionTracker();
 
     [Fact]
     public void can_retrieve_dictionary_for_document_type()

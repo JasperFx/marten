@@ -41,7 +41,7 @@ public class HiloSequenceTests : IntegrationContext
 {
 
     private readonly HiloSequence theSequence;
-    private Tenant theTenant;
+    private readonly Tenant theTenant;
 
     public HiloSequenceTests(DefaultStoreFixture fixture) : base(fixture)
     {

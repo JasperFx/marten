@@ -19,7 +19,7 @@ namespace IssueService.Controllers
 
     public class Issue
     {
-        private static Random _random = new Random();
+        private static readonly Random _random = new Random();
 
         public static Issue Random()
         {

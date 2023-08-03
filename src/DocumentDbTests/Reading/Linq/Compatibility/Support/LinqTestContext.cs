@@ -60,8 +60,8 @@ public abstract class LinqTestContext<TSelf>
         testCases.Add(comparison);
     }
 
-    private static string[] _methodNames = new string[] { "@where", nameof(ordered), nameof(unordered), nameof(selectInOrder) };
-    private static string[] _descriptions;
+    private static readonly string[] _methodNames = new string[] { "@where", nameof(ordered), nameof(unordered), nameof(selectInOrder) };
+    private static readonly string[] _descriptions;
 
     protected static string[] readDescriptions()
     {

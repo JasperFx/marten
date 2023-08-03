@@ -10,8 +10,8 @@ namespace Marten.Testing.Harness
 {
     public class TestOutputMartenLogger : IMartenLogger, IMartenSessionLogger, ILogger
     {
-        private ITestOutputHelper _output;
-        private static ITestOutputHelper _noopTestOutputHelper = new NoopTestOutputHelper();
+        private readonly ITestOutputHelper _output;
+        private static readonly ITestOutputHelper _noopTestOutputHelper = new NoopTestOutputHelper();
 
         public TestOutputMartenLogger(ITestOutputHelper output)
         {
