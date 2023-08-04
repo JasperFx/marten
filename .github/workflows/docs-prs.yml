@@ -33,3 +33,6 @@ jobs:
         name: Install cSpell
       - run: cspell --config ./docs/cSpell.json "docs/**/*.md"
         name: run cSpell
+
+      - name: Build docs
+        run: ./build.sh --no-color docs-import-v3
