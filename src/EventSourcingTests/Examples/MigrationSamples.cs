@@ -6,7 +6,7 @@ namespace EventSourcingTests.Examples;
 
 public class MigrationSamples
 {
-    private async Task configure()
+    private static async Task configure()
     {
         #region sample_configure-document-types-upfront
         using var store = DocumentStore.For(_ =>

@@ -6,7 +6,7 @@ namespace Marten.Testing.Examples;
 
 public class MigrationSamples
 {
-    private async Task configure()
+    private static async Task configure()
     {
         using var store = DocumentStore.For(_ =>
         {

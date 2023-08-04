@@ -35,7 +35,7 @@ internal class DocumentStorageBuilder
         return $"{style}{mapping.DocumentType.ToSuffixedTypeName("DocumentStorage")}";
     }
 
-    private Type determineOpenDocumentStorageType(StorageStyle style)
+    private static Type determineOpenDocumentStorageType(StorageStyle style)
     {
         switch (style)
         {

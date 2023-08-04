@@ -36,7 +36,7 @@ public class IdentityKeyGenerationTests : OneOffConfigurationsContext
 
     #endregion
 
-    private void sample_usage()
+    private static void sample_usage()
     {
         #region sample_using_IdentityKey
 

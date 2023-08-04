@@ -83,7 +83,7 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions
         }
     }
 
-    private async Task<bool> IsNotInPgDatabase(string catalog, string maintenanceDb, CancellationToken ct = default)
+    private static async Task<bool> IsNotInPgDatabase(string catalog, string maintenanceDb, CancellationToken ct = default)
     {
         var connection = new NpgsqlConnection(maintenanceDb);
         await using var _ = connection.ConfigureAwait(false);
@@ -120,7 +120,7 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions
         return false;
     }
 
-    private async Task CreateDbAsync(
+    private static async Task CreateDbAsync(
         string catalog,
         TenantDatabaseCreationExpressions config,
         bool dropExisting,

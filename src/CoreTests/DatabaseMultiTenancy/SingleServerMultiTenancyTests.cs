@@ -31,7 +31,7 @@ public class SingleServerMultiTenancyTests : IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    private async Task DropDatabaseIfExists(string databaseName)
+    private static async Task DropDatabaseIfExists(string databaseName)
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -40,7 +40,7 @@ public class SingleServerMultiTenancyTests : IAsyncLifetime
         await conn.DropDatabase(databaseName);
     }
 
-    private async Task<bool> DatabaseExists(string databaseName)
+    private static async Task<bool> DatabaseExists(string databaseName)
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();

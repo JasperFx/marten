@@ -41,7 +41,7 @@ public class AllComparisionFilter: ISqlFragment
         return _nestedFilter.Contains(sqlText);
     }
 
-    private void ApplyUsingComparisonFilter(CommandBuilder builder, ComparisonFilter comparisonFilter)
+    private static void ApplyUsingComparisonFilter(CommandBuilder builder, ComparisonFilter comparisonFilter)
     {
         switch (comparisonFilter.Left)
         {
@@ -94,7 +94,7 @@ public class AllComparisionFilter: ISqlFragment
         }
     }
 
-    private void ApplyUsingIsNullFilter(CommandBuilder builder, IsNullFilter comparisonFilter)
+    private static void ApplyUsingIsNullFilter(CommandBuilder builder, IsNullFilter comparisonFilter)
     {
         if (comparisonFilter.Field is not FieldBase field)
         {
