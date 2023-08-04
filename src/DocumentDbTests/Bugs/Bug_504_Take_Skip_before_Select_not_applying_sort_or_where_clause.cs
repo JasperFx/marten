@@ -14,7 +14,7 @@ namespace DocumentDbTests.Bugs;
 public class Bug_504_Take_Skip_before_Select_not_applying_sort_or_where_clause:
     IntegrationContext
 {
-    private IEnumerable<Target> Make(int count)
+    private static IEnumerable<Target> Make(int count)
     {
         for (var i = 0; i < count; i++)
         {

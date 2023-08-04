@@ -70,7 +70,7 @@ public class SequenceFactory: ISequences
         return true;
     }
 
-    private string GetSequenceName(Type documentType, HiloSettings settings)
+    private static string GetSequenceName(Type documentType, HiloSettings settings)
     {
         if (!string.IsNullOrEmpty(settings.SequenceName))
         {

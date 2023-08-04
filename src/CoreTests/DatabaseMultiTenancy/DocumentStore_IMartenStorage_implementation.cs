@@ -24,7 +24,7 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
     private IHost _host;
     private IDocumentStore theStore;
 
-    private async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
+    private static async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
     {
         var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 

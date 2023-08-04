@@ -30,7 +30,7 @@ public class LinqExtensionsTests
     public void IsOneOf_shows_if_value_is_contained_in_the_specified_collection_of_strings() =>
         IsOneOf_shows_if_value_is_contained_in_the_specified_collection(Strings);
 
-    private void IsOneOf_shows_if_value_is_contained_in_the_specified_collection<T>(T[] values)
+    private static void IsOneOf_shows_if_value_is_contained_in_the_specified_collection<T>(T[] values)
     {
         values[1].IsOneOf(values[1], values[2]).ShouldBeTrue();
         values[1].IsOneOf(values[2], values[1]).ShouldBeTrue();
@@ -52,7 +52,7 @@ public class LinqExtensionsTests
     public void In_shows_if_value_is_contained_in_the_specified_collection_of_strings() =>
         In_shows_if_value_is_contained_in_the_specified_collection(Strings);
 
-    private void In_shows_if_value_is_contained_in_the_specified_collection<T>(T[] values)
+    private static void In_shows_if_value_is_contained_in_the_specified_collection<T>(T[] values)
     {
         values[1].In(values[1], values[2]).ShouldBeTrue();
         values[1].In(values[2], values[1]).ShouldBeTrue();
@@ -74,7 +74,7 @@ public class LinqExtensionsTests
     public void IsSupersetOf_shows_if_collection_is_superset_of_the_specified_collection_of_strings() =>
         IsSupersetOf_shows_if_collection_is_superset_of_the_specified_collection(Strings);
 
-    private void IsSupersetOf_shows_if_collection_is_superset_of_the_specified_collection<T>(T[] values)
+    private static void IsSupersetOf_shows_if_collection_is_superset_of_the_specified_collection<T>(T[] values)
     {
         new[] { values[1], values[2], values[3] }.IsSupersetOf(values[1], values[2]).ShouldBeTrue();
         new[] { values[1], values[2], values[3] }.IsSupersetOf(values[2], values[3]).ShouldBeTrue();
@@ -100,7 +100,7 @@ public class LinqExtensionsTests
     public void IsSubsetOf_shows_if_collection_is_subset_of_the_specified_collection_of_strings() =>
         IsSubsetOf_shows_if_collection_is_subset_of_the_specified_collection(Strings);
 
-    private void IsSubsetOf_shows_if_collection_is_subset_of_the_specified_collection<T>(T[] values)
+    private static void IsSubsetOf_shows_if_collection_is_subset_of_the_specified_collection<T>(T[] values)
     {
         new[] { values[1], values[2] }.IsSubsetOf(values[1], values[2], values[3]).ShouldBeTrue();
         new[] { values[2], values[3] }.IsSubsetOf(values[1], values[2], values[3]).ShouldBeTrue();

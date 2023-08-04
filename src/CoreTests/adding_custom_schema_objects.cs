@@ -247,7 +247,7 @@ $f$  language sql immutable;
         valueAgain.First().ShouldBe(value.First() + 1);
     }
 
-    private async Task DropDatabaseIfExists(string databaseName)
+    private static async Task DropDatabaseIfExists(string databaseName)
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();

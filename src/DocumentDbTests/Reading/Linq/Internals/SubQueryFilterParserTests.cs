@@ -15,7 +15,7 @@ namespace DocumentDbTests.Reading.Linq.Internals;
 public class SubQueryFilterParserTests
 {
 
-    private SubQueryExpression forExpression(Expression<Func<Target, bool>> filter)
+    private static SubQueryExpression forExpression(Expression<Func<Target, bool>> filter)
     {
         Expression<Func<IQueryable<Target>, IQueryable<Target>>> query = q => q.Where(filter);
 

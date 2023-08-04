@@ -43,7 +43,7 @@ namespace EventSourcingTests.Bugs
             await RunTest(documentStore);
         }
 
-        private async Task RunTest(IDocumentStore documentStore)
+        private static async Task RunTest(IDocumentStore documentStore)
         {
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
 

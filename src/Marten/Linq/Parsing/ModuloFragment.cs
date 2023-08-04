@@ -40,7 +40,7 @@ internal class ModuloFragment: IComparableFragment, ISqlFragment
         return false;
     }
 
-    private ISqlFragment analyze(Expression expression, IFieldMapping fields)
+    private static ISqlFragment analyze(Expression expression, IFieldMapping fields)
     {
         if (expression is ConstantExpression c)
         {

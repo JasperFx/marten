@@ -91,7 +91,7 @@ public class HotCold_leadership_election: DaemonContext
         await CheckAllExpectedAggregatesAgainstActuals();
     }
 
-    private async Task assertIsRunning(ProjectionDaemon daemon, TimeSpan timeout)
+    private static async Task assertIsRunning(ProjectionDaemon daemon, TimeSpan timeout)
     {
         if (daemon.IsRunning) return;
 
@@ -107,7 +107,7 @@ public class HotCold_leadership_election: DaemonContext
         daemon.IsRunning.ShouldBeTrue();
     }
 
-    private async Task<ProjectionDaemon> findRunningDaemon(params ProjectionDaemon[] daemons)
+    private static async Task<ProjectionDaemon> findRunningDaemon(params ProjectionDaemon[] daemons)
     {
         var timeout = 5.Seconds();
 

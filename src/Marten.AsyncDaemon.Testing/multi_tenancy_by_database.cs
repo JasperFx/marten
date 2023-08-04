@@ -35,7 +35,7 @@ public class multi_tenancy_by_database : IAsyncLifetime
 
     public TestLogger<IProjection> Logger { get; set; }
 
-    private async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
+    private static async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
     {
         var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 

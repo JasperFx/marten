@@ -27,7 +27,7 @@ public class OrderedSelectComparison<T>: LinqTestCase
         assertSame(expected, actual);
     }
 
-    private void assertSame(T[] expected, T[] actual)
+    private static void assertSame(T[] expected, T[] actual)
     {
         actual.Length.ShouldBe(expected.Length, "The number of results");
 
