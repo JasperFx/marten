@@ -42,7 +42,7 @@ public async Task query_to_async_enumerable()
 ```
 
 ::: warning
-Be aware not to return the IAsyncEnumerable out of the scope in which the session that produces it is used. This would prevent the data base connection to be reused afterwards thus leading to a connection bleed.
+Be aware not to return the IAsyncEnumerable out of the scope in which the session that produces it is used. This would prevent the data base connection from being reused afterwards and thus leading to a connection bleed.
 :::
 
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/invoking_query_with_ToAsyncEnumerable.cs#L18-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_to_async_enumerable' title='Start of snippet'>anchor</a></sup>
