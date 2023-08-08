@@ -11,6 +11,7 @@ on:
       - master
     paths-ignore:
       - 'documentation/**'
+      - 'docs/**'
 
 env:
   config: Release
