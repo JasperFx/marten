@@ -314,7 +314,7 @@ For the daily operations, you don't need to know its whole history. It's enough 
 ```cs
 public class CashRegisterRepository
 {
-    private IDocumentSession session;
+    private readonly IDocumentSession session;
 
     public CashRegisterRepository(IDocumentSession session)
     {

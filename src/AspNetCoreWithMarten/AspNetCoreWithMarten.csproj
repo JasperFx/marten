@@ -7,15 +7,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Marten.AspNetCore\Marten.AspNetCore.csproj" />
-      <ProjectReference Include="..\Marten.CommandLine\Marten.CommandLine.csproj" />
-      <ProjectReference Include="..\Marten\Marten.csproj" />
+        <ProjectReference Include="..\Marten.AspNetCore\Marten.AspNetCore.csproj"/>
+        <ProjectReference Include="..\Marten.CommandLine\Marten.CommandLine.csproj"/>
+        <ProjectReference Include="..\Marten\Marten.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="MarkdownSnippets.MsBuild" Version="24.5.1">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-      </PackageReference>
+        <PackageReference Include="MarkdownSnippets.MsBuild" Version="25.0.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
 </Project>
