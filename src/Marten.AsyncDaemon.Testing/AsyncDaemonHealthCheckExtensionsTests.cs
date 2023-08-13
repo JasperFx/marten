@@ -16,7 +16,7 @@ using static Marten.Events.Daemon.AsyncDaemonHealthCheckExtensions;
 namespace Marten.AsyncDaemon.Testing;
 
 
-public class AsyncDaemonHealthCheckExtensionsTests : DaemonContext
+public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
 {
     private FakeHealthCheckBuilderStub builder = new();
 
@@ -122,7 +122,7 @@ public class AsyncDaemonHealthCheckExtensionsTests : DaemonContext
     }
 
     [Fact]
-    public async Task should_be_healty_with_one_projections_lagging()
+    public async Task should_be_unhealty_with_one_projection_lagging()
     {
         StoreOptions(x =>
         {
