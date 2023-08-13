@@ -42,7 +42,7 @@ public static class AsyncDaemonHealthCheckExtensions
     /// <summary>
     /// Health check implementation
     /// </summary>
-    internal class AsyncDaemonHealthCheck : IHealthCheck
+    internal class AsyncDaemonHealthCheck: IHealthCheck
     {
         /// <summary>
         /// The <see cref="DocumentStore"/> to check health for.
@@ -59,7 +59,6 @@ public static class AsyncDaemonHealthCheckExtensions
             _store = store;
             _maxEventLag = settings.MaxEventLag;
         }
-        #region sample_addmartenasyncdaemonhealthcheck
         public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context,
                                                               CancellationToken cancellationToken = default)
         {
@@ -92,6 +91,5 @@ public static class AsyncDaemonHealthCheckExtensions
                 return HealthCheckResult.Unhealthy($"Unhealthy: {ex.Message}", ex);
             }
         }
-        #endregion
     }
 }

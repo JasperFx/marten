@@ -4,8 +4,6 @@ Marten supports a customizable [HealthChecks](https://learn.microsoft.com/en-us/
 
 > The healthcheck will only be checked against `Async` projections
 
-<!-- snippet: sample_AddMartenAsyncDaemonHealthCheck -->
-<a id='sample_addmartenasyncdaemonhealthcheck'></a>
 ```cs
 // Add HealthCheck
 Services.AddHealthChecks().AddMartenAsyncDaemonHealthCheck(maxEventLag: 500);
@@ -13,5 +11,3 @@ Services.AddHealthChecks().AddMartenAsyncDaemonHealthCheck(maxEventLag: 500);
 // Map HealthCheck Endpoint
 app.MapHealthChecks("/health");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Daemon/AsyncDaemonHealthCheckExtensions.cs#L62-L95' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenasyncdaemonhealthcheck' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
