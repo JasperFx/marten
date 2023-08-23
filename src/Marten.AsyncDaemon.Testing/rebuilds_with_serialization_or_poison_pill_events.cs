@@ -6,6 +6,7 @@ using JasperFx.Core;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
+using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
@@ -80,23 +81,33 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
         deadLetters.Count.ShouldBe(badEventCount);
     }
 
-    [Fact]
-    public async Task rebuild_the_projection_skip_failed_events()
+
+    [Theory]
+    [InlineData(Tenancy.DefaultTenantId)]
+    [InlineData("CustomTenant")]
+    public async Task rebuild_the_projection_skip_failed_events(string tenantId)
     {
         FailingEvent.SerializationFails = false;
         SometimesFailingTripProjection.FailingEventFails = true;
 
         NumberOfStreams = 5;
+        UseTenant(tenantId);
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
         StoreOptions(x =>
         {
+            if (tenantId != Tenancy.DefaultTenantId)
+            {
+                x.Events.TenancyStyle = TenancyStyle.Conjoined;
+                x.Policies.AllDocumentsAreMultiTenanted();
+            }
+
             x.Projections.Add(new SometimesFailingTripProjection(), ProjectionLifecycle.Async);
             x.Projections.OnApplyEventException().SkipEvent();
         }, true);
 
-        var agent = await StartDaemon();
+        var agent = await StartDaemon(tenantId);
 
         await PublishSingleThreaded();
 
@@ -111,7 +122,9 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
         SometimesFailingTripProjection.FailingEventFails = false;
         await CheckAllExpectedAggregatesAgainstActuals();
 
-        var deadLetters = await theSession.Query<DeadLetterEvent>().Where(x => x.ProjectionName == "Trip")
+        var deadLetters = await theSession.ForTenant(tenantId)
+            .Query<DeadLetterEvent>()
+            .Where(x => x.ProjectionName == "Trip")
             .ToListAsync();
 
         var badEventCount = Streams.SelectMany(x => x.Events).OfType<FailingEvent>().Count();
