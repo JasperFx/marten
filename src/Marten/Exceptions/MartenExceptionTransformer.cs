@@ -4,11 +4,12 @@ using Marten.Services;
 using Npgsql;
 
 namespace Marten.Exceptions;
+#nullable enable
 
 [Obsolete("Replace w/ JasperFx.Core version")]
 internal static class MartenExceptionTransformer
 {
-    private static readonly ExceptionTransforms _transforms = new ExceptionTransforms();
+    private static readonly ExceptionTransforms _transforms = new();
 
     static MartenExceptionTransformer()
     {
@@ -16,6 +17,7 @@ internal static class MartenExceptionTransformer
         _transforms.AddTransform<MartenCommandNotSupportedExceptionTransform>();
         _transforms.AddTransform<UtcDateTimeUsageExceptionTransform>();
         _transforms.AddTransform<DateTimeUsageExceptionTransform>();
+        _transforms.AddTransform<InvalidConnectionStreamExceptionTransform>();
 
         _transforms.IfExceptionIs<PostgresException>()
             .If(e => e.SqlState == PostgresErrorCodes.SerializationFailure)
@@ -29,14 +31,14 @@ internal static class MartenExceptionTransformer
             });
     }
 
-    internal static NpgsqlCommand ReadNpgsqlCommand(this Exception ex)
+    internal static NpgsqlCommand? ReadNpgsqlCommand(this Exception ex)
     {
         return ex.Data.Contains(nameof(NpgsqlCommand))
-            ? (NpgsqlCommand)ex.Data[nameof(NpgsqlCommand)]
+            ? ex.Data[nameof(NpgsqlCommand)] as NpgsqlCommand
             : null;
     }
 
-    internal static void WrapAndThrow(NpgsqlCommand command, Exception exception)
+    internal static void WrapAndThrow(NpgsqlCommand? command, Exception exception)
     {
         if (command != null)
         {
