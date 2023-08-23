@@ -8,15 +8,15 @@ using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Projections;
+using Marten.Storage;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Logging;
 using Shouldly;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Marten.AsyncDaemon.Testing.TestingSupport;
 
-public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
+public abstract class DaemonContext: OneOffConfigurationsContext
 {
     protected DaemonContext(ITestOutputHelper output)
     {
@@ -42,12 +42,25 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
         return daemon;
     }
 
+    internal async Task<ProjectionDaemon> StartDaemon(string tenantId)
+    {
+        var daemon = (ProjectionDaemon)await theStore.BuildProjectionDaemonAsync(tenantId, Logger);
+
+        await daemon.StartAllShards();
+
+        _daemon = daemon;
+
+        return daemon;
+    }
+
     internal async Task<ProjectionDaemon> StartDaemonInHotColdMode()
     {
         theStore.Options.Projections.LeadershipPollingTime = 100;
 
-        var coordinator = new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
-        var daemon = new ProjectionDaemon(theStore, theStore.Tenancy.Default.Database, new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
+        var coordinator =
+            new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
+        var daemon = new ProjectionDaemon(theStore, theStore.Tenancy.Default.Database,
+            new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
 
         await daemon.UseCoordinator(coordinator);
 
@@ -60,8 +73,10 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
     internal async Task<ProjectionDaemon> StartAdditionalDaemonInHotColdMode()
     {
         theStore.Options.Projections.LeadershipPollingTime = 100;
-        var coordinator = new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
-        var daemon = new ProjectionDaemon(theStore, theStore.Tenancy.Default.Database, new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
+        var coordinator =
+            new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
+        var daemon = new ProjectionDaemon(theStore, theStore.Tenancy.Default.Database,
+            new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
 
         await daemon.UseCoordinator(coordinator);
 
@@ -76,7 +91,7 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
             timeout = 30.Seconds();
         }
 
-        return new ShardActionWatcher(_daemon.Tracker,shardName, action, timeout).Task;
+        return new ShardActionWatcher(_daemon.Tracker, shardName, action, timeout).Task;
     }
 
     public int NumberOfStreams
@@ -99,13 +114,18 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
         foreach (var stream in _streams.ToArray())
         {
             stream.TenantId = "a";
-            var other = new TripStream
-            {
-                TenantId = "b",
-                StreamId = stream.StreamId
-            };
+            var other = new TripStream { TenantId = "b", StreamId = stream.StreamId };
 
             _streams.Add(other);
+        }
+    }
+
+
+    public void UseTenant(string tenantId)
+    {
+        foreach (var stream in _streams.ToArray())
+        {
+            stream.TenantId = tenantId;
         }
     }
 
@@ -164,21 +184,18 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
             }
             else
             {
-                if (actuals.TryGetValue(stream.StreamId, out var actual))
-                {
-                    expected.ShouldBe(actual);
-                }
-                else
+                if (!actuals.TryGetValue(stream.StreamId, out var actual))
                 {
                     throw new Exception("Missing expected aggregate");
                 }
+
+                expected.ShouldBe(actual);
             }
         }
     }
 
     protected async Task<Dictionary<Guid, Trip>> LoadAllAggregatesFromDatabase(string tenantId = null)
     {
-
         if (string.IsNullOrEmpty(tenantId))
         {
             var data = await theSession.Query<Trip>().ToListAsync();
@@ -196,19 +213,16 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
 
     protected async Task PublishSingleThreaded()
     {
-
         var groups = _streams.GroupBy(x => x.TenantId).ToArray();
-        if (groups.Length > 1)
+        if (groups.Length > 1 || groups.Single().Key != Tenancy.DefaultTenantId)
         {
             foreach (var @group in groups)
             {
                 foreach (var stream in @group)
                 {
-                    await using (var session = theStore.LightweightSession(@group.Key))
-                    {
-                        session.Events.StartStream(stream.StreamId, stream.Events);
-                        await session.SaveChangesAsync();
-                    }
+                    await using var session = theStore.LightweightSession(group.Key);
+                    session.Events.StartStream(stream.StreamId, stream.Events);
+                    await session.SaveChangesAsync();
                 }
             }
         }
@@ -216,15 +230,11 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
         {
             foreach (var stream in _streams)
             {
-                await using (var session = theStore.LightweightSession())
-                {
-                    session.Events.StartStream(stream.StreamId, stream.Events);
-                    await session.SaveChangesAsync();
-                }
+                await using var session = theStore.LightweightSession();
+                session.Events.StartStream(stream.StreamId, stream.Events);
+                await session.SaveChangesAsync();
             }
         }
-
-
     }
 
     protected Task PublishMultiThreaded(int threads)
@@ -242,7 +252,7 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
 
     private List<EventPublisher> createPublishers(int threads)
     {
-        var streamsPerPublisher = (int) Math.Floor((double) _streams.Count / threads);
+        var streamsPerPublisher = (int)Math.Floor((double)_streams.Count / threads);
         var index = 0;
 
         var publishers = new List<EventPublisher>();
@@ -269,7 +279,9 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
     public class EventPublisher
     {
         private readonly DocumentStore _store;
-        private readonly TaskCompletionSource<bool> _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        private readonly TaskCompletionSource<bool> _completion =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public EventPublisher(DocumentStore store)
         {
@@ -302,7 +314,6 @@ public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
                         }
 
                         await session.SaveChangesAsync();
-
                     }
                 }
             }
@@ -345,7 +356,6 @@ internal class ShardActionWatcher: IObserver<ShardState>
 
     public void OnCompleted()
     {
-
     }
 
     public void OnError(Exception error)

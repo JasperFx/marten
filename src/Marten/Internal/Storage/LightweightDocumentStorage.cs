@@ -67,13 +67,11 @@ public abstract class LightweightDocumentStorage<T, TId>: DocumentStorage<T, TId
         var command = BuildLoadManyCommand(ids, session.TenantId);
         var selector = (ISelector<T>)BuildSelector(session);
 
-        await using (var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false))
+        await using var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
-            while (await reader.ReadAsync(token).ConfigureAwait(false))
-            {
-                var document = await selector.ResolveAsync(reader, token).ConfigureAwait(false);
-                list.Add(document);
-            }
+            var document = await selector.ResolveAsync(reader, token).ConfigureAwait(false);
+            list.Add(document);
         }
 
         return list;
