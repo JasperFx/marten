@@ -3,6 +3,7 @@ using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events;
 using Marten.Exceptions;
 
 namespace Marten.Services.Json.Transformations;
@@ -29,6 +30,15 @@ public class JsonTransformation
     public Func<ISerializer, DbDataReader, int, object> FromDbDataReader { get; }
     public Func<ISerializer, DbDataReader, int, CancellationToken, ValueTask<object>> FromDbDataReaderAsync { get; }
 }
+
+/// <summary>
+///     Defines  API for transformation to JSON payload. This is currently used for internal, low level processing.
+///     If you want to use it explicitly, check first
+///     <a href="https://martendb.io/events/versioning.html#namespace-migration">Event Versioning documentation</a>.
+/// </summary>
+public record ToJsonTransformation(
+    Func<IEvent, ISerializer, CancellationToken, ValueTask<(string, string)>> ToEventData
+);
 
 public static class JsonTransformations
 {

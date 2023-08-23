@@ -70,11 +70,18 @@ public abstract class EventMapping: IDocumentMapping, IEventType
         _defaultWhereFragment = filter;
 
         JsonTransformation(null);
+        ToJsonTransformation(null);
     }
 
     public Func<ISerializer, DbDataReader, IEvent> ReadEventData { get; private set; }
 
     public Func<ISerializer, DbDataReader, CancellationToken, Task<IEvent>> ReadEventDataAsync { get; private set; }
+
+    public Func<IEvent, ISerializer, CancellationToken, ValueTask<(string, string)>> SerializeEventData
+    {
+        get;
+        private set;
+    }
 
     public NpgsqlDbType IdType { get; } = NpgsqlDbType.Uuid;
     public TenancyStyle TenancyStyle { get; } = TenancyStyle.Single;
@@ -196,6 +203,13 @@ public abstract class EventMapping: IDocumentMapping, IEventType
 
                 return Wrap(data);
             };
+    }
+
+    public void ToJsonTransformation(ToJsonTransformation? jsonTransformation)
+    {
+        SerializeEventData = jsonTransformation == null
+            ? (@event, serializer, _) => ValueTask.FromResult((serializer.ToJson(@event.Data), @event.EventTypeName))
+            : jsonTransformation.ToEventData;
     }
 }
 

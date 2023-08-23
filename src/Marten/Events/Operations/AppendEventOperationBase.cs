@@ -12,8 +12,11 @@ namespace Marten.Events.Operations;
 // Leave public for codegen!
 public abstract class AppendEventOperationBase: IStorageOperation
 {
-    public AppendEventOperationBase(StreamAction stream, IEvent e)
+    private readonly EventMapping _eventMapping;
+
+    public AppendEventOperationBase(EventMapping eventMapping, StreamAction stream, IEvent e)
     {
+        _eventMapping = eventMapping;
         Stream = stream;
         Event = e;
     }

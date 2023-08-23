@@ -284,7 +284,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
 
         foreach (var mapping in _byEventName)
         {
-            if(mapping is null)
+            if (mapping is null)
                 continue;
             if (types.Contains(mapping.DocumentType))
             {
@@ -379,6 +379,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
         foreach (var mapping in _events)
         {
             mapping.JsonTransformation(null);
+            mapping.ToJsonTransformation(null);
         }
     }
 }
