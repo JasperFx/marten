@@ -2,6 +2,7 @@ using System;
 using Npgsql;
 
 namespace Marten.Exceptions;
+#nullable enable
 
 /// <summary>
 ///     Wraps the Postgres command exceptions. Unifies exception handling and brings additonal information.
@@ -16,9 +17,12 @@ public class MartenCommandException: MartenException
     /// </summary>
     /// <param name="command">failed Postgres command</param>
     /// <param name="innerException">internal exception details</param>
-    public MartenCommandException(NpgsqlCommand command, Exception innerException)
+    public MartenCommandException(NpgsqlCommand? command, Exception innerException)
         : base(ToMessage(command, innerException) + innerException.Message, innerException)
     {
+        if (command == null)
+            return;
+
         Command = new NpgsqlCommand
         {
             CommandText = command.CommandText,
@@ -39,11 +43,14 @@ public class MartenCommandException: MartenException
     /// <param name="innerException">internal exception details</param>
     /// <param name="prefix">prefix that will be added to message</param>
     public MartenCommandException(
-        NpgsqlCommand command,
+        NpgsqlCommand? command,
         Exception innerException,
         string prefix
     ): base(ToMessage(command, innerException, prefix) + innerException.Message, innerException)
     {
+        if (command == null)
+            return;
+
         Command = new NpgsqlCommand
         {
             CommandText = command.CommandText,
@@ -60,11 +67,13 @@ public class MartenCommandException: MartenException
     /// <summary>
     ///     Failed Postgres command
     /// </summary>
-    public NpgsqlCommand Command { get; }
+    public NpgsqlCommand? Command { get; }
 
-    protected static string ToMessage(NpgsqlCommand command,
+    protected static string ToMessage(
+        NpgsqlCommand? command,
         Exception innerException,
-        string prefix = null)
+        string? prefix = null
+    )
     {
         if (prefix != null)
         {
@@ -72,18 +81,14 @@ public class MartenCommandException: MartenException
         }
 
         var explanation = "";
-        if (innerException is NpgsqlException pgex)
-        {
-            if (pgex.InnerException is TimeoutException toex)
-            {
-                if (toex.Message == "Timeout during reading attempt")
-                {
-                    explanation = Environment.NewLine +
-                                  MaybeLockedRowsMessage + Environment.NewLine;
-                }
-            }
-        }
 
+        if (innerException is NpgsqlException
+            {
+                InnerException: TimeoutException { Message: "Timeout during reading attempt" }
+            })
+        {
+            explanation = Environment.NewLine + MaybeLockedRowsMessage + Environment.NewLine;
+        }
 
         return
             $"Marten Command Failure:${Environment.NewLine}{prefix}{explanation}{command?.CommandText}${Environment.NewLine}${Environment.NewLine}";
