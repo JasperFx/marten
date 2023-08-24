@@ -375,7 +375,8 @@ internal class ProjectionDaemon: IProjectionDaemon
     {
         var sessionOptions = SessionOptions.ForDatabase(Database);
         sessionOptions.AllowAnyTenant = true;
-        await using var session = await _store.LightweightSerializableSessionAsync(sessionOptions, token).ConfigureAwait(false);
+        await using var session =
+            await _store.LightweightSerializableSessionAsync(sessionOptions, token).ConfigureAwait(false);
         source.Options.Teardown(session);
 
         foreach (var shard in shards)
@@ -530,8 +531,8 @@ internal class ProjectionDaemon: IProjectionDaemon
         try
         {
             var deadLetterEvent = new DeadLetterEvent(@event, shardName, exception);
-            var session =
-                _store.LightweightSession(SessionOptions.ForDatabase(Database));
+            await using var session =
+                _store.LightweightSession(SessionOptions.ForDatabase(@event.TenantId, Database));
 
             await using (session.ConfigureAwait(false))
             {

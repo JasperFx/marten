@@ -213,6 +213,24 @@ public sealed class SessionOptions
     }
 
     /// <summary>
+    ///     Create a session for tenant within the supplied database
+    /// </summary>
+    /// <param name="tenantId"></param>
+    /// <param name="database"></param>
+    /// <returns></returns>
+    public static SessionOptions ForDatabase(string tenantId, IMartenDatabase database)
+    {
+        return new SessionOptions
+        {
+            Tenant = new Tenant(tenantId, database),
+            AllowAnyTenant = true,
+            OwnsConnection = true,
+            OwnsTransactionLifecycle = true,
+            Tracking = DocumentTracking.None
+        };
+    }
+
+    /// <summary>
     ///     Override the document tracking
     /// </summary>
     /// <param name="tracking"></param>
