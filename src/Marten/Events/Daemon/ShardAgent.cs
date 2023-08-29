@@ -485,11 +485,11 @@ internal class ShardAgent: IShardAgent, IObserver<ShardState>
             }
             finally
             {
-                batch.Dispose();
+                await batch.DisposeAsync().ConfigureAwait(false);
             }
         }
 
-        batch.Dispose();
+        await batch.DisposeAsync().ConfigureAwait(false);
 
         if (_cancellation.IsCancellationRequested)
         {

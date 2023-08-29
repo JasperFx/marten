@@ -14,11 +14,12 @@ using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Daemon;
+#nullable enable
 
 /// <summary>
 ///     Incrementally built batch command for projection updates
 /// </summary>
-public class ProjectionUpdateBatch: IUpdateBatch, IDisposable, ISessionWorkTracker
+public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable, ISessionWorkTracker
 {
     private readonly List<Type> _documentTypes = new();
     private readonly ShardExecutionMode _mode;
@@ -26,14 +27,19 @@ public class ProjectionUpdateBatch: IUpdateBatch, IDisposable, ISessionWorkTrack
     private readonly DaemonSettings _settings;
     private readonly CancellationToken _token;
     private Page _current;
-    private DocumentSessionBase _session;
+    private DocumentSessionBase? _session;
+
+    private IMartenSession Session
+    {
+        get => _session ?? throw new InvalidOperationException("Session already released");
+    }
 
     internal ProjectionUpdateBatch(EventGraph events, DaemonSettings settings,
-        DocumentSessionBase session, EventRange range, CancellationToken token, ShardExecutionMode mode)
+        DocumentSessionBase? session, EventRange range, CancellationToken token, ShardExecutionMode mode)
     {
         Range = range;
         _settings = settings;
-        _session = session;
+        _session = session ?? throw new ArgumentNullException(nameof(session));
         _token = token;
         _mode = mode;
         Queue = new ActionBlock<IStorageOperation>(processOperation,
@@ -51,12 +57,6 @@ public class ProjectionUpdateBatch: IUpdateBatch, IDisposable, ISessionWorkTrack
     public EventRange Range { get; }
 
     public ActionBlock<IStorageOperation> Queue { get; }
-
-    public void Dispose()
-    {
-        _session?.Dispose();
-        Queue.Complete();
-    }
 
     IEnumerable<IDeletion> IUnitOfWork.Deletions()
     {
@@ -247,6 +247,9 @@ public class ProjectionUpdateBatch: IUpdateBatch, IDisposable, ISessionWorkTrack
 
     private void startNewPage(IMartenSession session)
     {
+        if (_token.IsCancellationRequested)
+            return;
+
         _current = new Page(session);
         _pages.Add(_current);
     }
@@ -254,24 +257,53 @@ public class ProjectionUpdateBatch: IUpdateBatch, IDisposable, ISessionWorkTrack
     private void processOperation(IStorageOperation operation)
     {
         if (_token.IsCancellationRequested)
-        {
             return;
-        }
 
         _current.Append(operation);
 
         _documentTypes.Fill(operation.DocumentType);
 
-        if (_current.Count >= _session.Options.UpdateBatchSize)
+        if (!_token.IsCancellationRequested && _current.Count >= Session.Options.UpdateBatchSize)
         {
-            startNewPage(_session);
+            startNewPage(Session);
         }
     }
 
-    public async ValueTask CloseSession()
+
+    public ValueTask CloseSession() => DisposeAsync();
+
+    public void Dispose()
     {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Queue.Complete();
         foreach (var page in _pages) page.ReleaseSession();
-        await _session.DisposeAsync().ConfigureAwait(false);
+
+        if (_session != null)
+        {
+            await _session.DisposeAsync().ConfigureAwait(true);
+            _session = null;
+        }
+
+        Dispose(disposing: false);
+        GC.SuppressFinalize(this);
+    }
+
+    protected void Dispose(bool disposing)
+    {
+        if (!disposing)
+            return;
+
+        Queue.Complete();
+
+        foreach (var page in _pages) page.ReleaseSession();
+
+        _session?.Dispose();
+
         _session = null;
     }
 
@@ -281,7 +313,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IDisposable, ISessionWorkTrack
 
         private readonly NpgsqlCommand _command = new();
         private readonly List<IStorageOperation> _operations = new();
-        private IMartenSession _session;
+        private IMartenSession? _session;
 
 
         public Page(IMartenSession session)
@@ -296,7 +328,10 @@ public class ProjectionUpdateBatch: IUpdateBatch, IDisposable, ISessionWorkTrack
         public void Append(IStorageOperation operation)
         {
             Count++;
-            operation.ConfigureCommand(_builder, _session);
+            operation.ConfigureCommand(
+                _builder,
+                _session ?? throw new InvalidOperationException("Session already released!")
+            );
             _builder.Append(";");
             _operations.Add(operation);
         }
