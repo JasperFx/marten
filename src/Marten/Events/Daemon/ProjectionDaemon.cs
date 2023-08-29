@@ -382,7 +382,7 @@ internal class ProjectionDaemon: IProjectionDaemon
             session.QueueOperation(new DeleteProjectionProgress(_store.Events, shard.Name.Identity));
 
         // Rewind previous DeadLetterEvents because you're going to replay them all anyway
-        session.DeleteWhere<DeadLetterEvent>(x => x.ProjectionName == source.ProjectionName);
+        session.DeleteWhere<DeadLetterEvent>(x => x.AnyTenant() && x.ProjectionName == source.ProjectionName);
 
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
