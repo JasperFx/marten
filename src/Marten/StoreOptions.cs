@@ -394,7 +394,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     {
         Storage.BuildAllMappings();
 
-        Schema.For<DeadLetterEvent>().DatabaseSchemaName(Events.DatabaseSchemaName);
+        Schema.For<DeadLetterEvent>().DatabaseSchemaName(Events.DatabaseSchemaName).SingleTenanted();
 
         foreach (var mapping in Storage.AllDocumentMappings) mapping.CompileAndValidate();
     }
