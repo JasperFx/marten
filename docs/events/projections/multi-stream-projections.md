@@ -453,3 +453,94 @@ public class DayProjection: MultiStreamProjection<Day, int>
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/ViewProjectionTests.cs#L124-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Using Custom Grouper with Fan Out Feature for Event Projections
+
+In Marten, the `MultiStreamProjection` feature allows for complex transformations and aggregations of events. However, there might be scenarios where a single event in your domain carries information that is more suitable to be distributed across multiple instances of your projected read model. This is where the combination of a Custom Grouper and the Fan Out feature comes into play.
+
+### The Scenario
+
+Imagine you have a system where `EmployeeAllocated` events contain a list of allocations for specific days. The goal is to project this information into a monthly summary. 
+
+### Custom Projection with Custom Grouper
+
+The `MonthlyAllocationProjection` class uses a custom grouper for this transformation. Here, `TransformsEvent<EmployeeAllocated>()` indicates that events of type `EmployeeAllocated` will be used even if there are no direct handlers for this event type in the projection.
+
+<!-- snippet: snippet-sample_showing_registering_custom_grouper_with_fan_out -->
+<a id='snippet-sample_showing_registering_custom_grouper_with_fan_out'></a>
+```cs
+public class MonthlyAllocationProjection : MultiStreamProjection<MonthlyAllocation, string>
+{
+    public MonthlyAllocationProjection()
+    {
+        CustomGrouping(new MonthlyAllocationGrouper());
+        TransformsEvent<EmployeeAllocated>();
+    }
+
+    public void Apply(MonthlyAllocation allocation, EmployeeAllocatedInMonth @event)
+    {
+        // Apply logic here
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_grouper_with_events_transformation.cs' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Fan Out Using Custom Grouper
+
+The custom grouper, `MonthlyAllocationGrouper`, is responsible for the logic of how events are grouped and fan-out. 
+
+<!-- snippet: snippet-sample_showing_custom_grouper_with_fan_out -->
+<a id='snippet-sample_showing_custom_grouper_with_fan_out'></a>
+```cs
+public class MonthlyAllocationGrouper : IAggregateGrouper<string>
+{
+    public Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<string> grouping)
+    {
+        var monthlyAllocations = allocations
+            .SelectMany(@event => /*...*/)
+            .GroupBy(allocation => /*...*/)
+            .Select(monthlyAllocation => new
+            {
+                Key = $"{monthlyAllocation.Key.EmployeeId}|{monthlyAllocation.Key.Month:yyyy-MM-dd}",
+                Event = monthlyAllocation.Key.Source.WithData(
+                    new EmployeeAllocatedInMonth(
+                        monthlyAllocation.Key.EmployeeId,
+                        monthlyAllocation.Key.Month,
+                        monthlyAllocation.Select(a => a.Allocation).ToList()
+                    )
+                )
+            });
+            
+        foreach (var monthlyAllocation in monthlyAllocations)
+        {
+            grouping.AddEvents(
+                monthlyAllocation.Key,
+                new[] { monthlyAllocation.Event }
+            );
+        }
+
+        return Task.CompletedTask;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_grouper_with_events_transformation.cs' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Utilizing the `WithData()` Extension Method
+
+Inside the `Group()` method, `WithData()` is employed to create a new type of event (`EmployeeAllocatedInMonth`) that still carries some attributes from the original event. This is essential for creating more specialized projections.
+
+<!-- snippet: snippet-sample_showing_custom_grouper_with_fan_out_wrapping_new_event -->
+<a id='snippet-sample_showing_custom_grouper_with_fan_out_wrapping_new_event'></a>
+```cs
+Event = monthlyAllocation.Key.Source.WithData(
+    new EmployeeAllocatedInMonth(
+        monthlyAllocation.Key.EmployeeId,
+        monthlyAllocation.Key.Month,
+        monthlyAllocation.Select(a => a.Allocation).ToList()
+    )
+)
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_grouper_with_events_transformation.cs' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
