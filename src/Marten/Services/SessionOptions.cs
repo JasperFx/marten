@@ -200,17 +200,8 @@ public sealed class SessionOptions
     /// </summary>
     /// <param name="database"></param>
     /// <returns></returns>
-    public static SessionOptions ForDatabase(IMartenDatabase database)
-    {
-        return new SessionOptions
-        {
-            Tenant = new Tenant(Tenancy.DefaultTenantId, database),
-            AllowAnyTenant = true,
-            OwnsConnection = true,
-            OwnsTransactionLifecycle = true,
-            Tracking = DocumentTracking.None
-        };
-    }
+    public static SessionOptions ForDatabase(IMartenDatabase database) =>
+        ForDatabase(Tenancy.DefaultTenantId, database);
 
     /// <summary>
     ///     Create a session for tenant within the supplied database

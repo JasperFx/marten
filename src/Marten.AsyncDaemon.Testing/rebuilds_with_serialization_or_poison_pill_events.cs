@@ -122,7 +122,7 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
         SometimesFailingTripProjection.FailingEventFails = false;
         await CheckAllExpectedAggregatesAgainstActuals();
 
-        var deadLetters = await theSession.ForTenant(tenantId)
+        var deadLetters = await theSession
             .Query<DeadLetterEvent>()
             .Where(x => x.ProjectionName == "Trip")
             .ToListAsync();
