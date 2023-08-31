@@ -38,7 +38,6 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
         public double Hours { get; set; }
     }
 
-    #region sample_view-custom-grouper-with-multiple-result-records-multistream-projection
     public class MonthlyAllocationProjection: MultiStreamProjection<MonthlyAllocation, string>
     {
         public MonthlyAllocationProjection()
@@ -59,9 +58,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
             allocation.Hours += hours;
         }
     }
-    #endregion
 
-    #region sample_view-custom-grouper-with-multiple-result-records-aggregate-grouper
     public class MonthlyAllocationGrouper: IAggregateGrouper<string>
     {
         public Task Group(
@@ -92,7 +89,6 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
                     new
                     {
                         Key = $"{monthlyAllocation.Key.EmployeeId}|{monthlyAllocation.Key.Month:yyyy-MM-dd}",
-    #region sample_view-custom-grouper-with-multiple-result-records-with-data
                         Event = monthlyAllocation.Key.Source.WithData(
                             new EmployeeAllocatedInMonth(
                                 monthlyAllocation.Key.EmployeeId,
@@ -100,7 +96,6 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
                                 monthlyAllocation.Select(a => a.Allocation).ToList())
                         )
                     }
-    #endregion
                 );
 
             foreach (var monthlyAllocation in monthlyAllocations)
@@ -114,7 +109,6 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
             return Task.CompletedTask;
         }
     }
-    #endregion
 
     #endregion
 

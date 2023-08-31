@@ -466,19 +466,75 @@ Imagine you have a system where `EmployeeAllocated` events contain a list of all
 
 The `MonthlyAllocationProjection` class uses a custom grouper for this transformation. Here, `TransformsEvent<EmployeeAllocated>()` indicates that events of type `EmployeeAllocated` will be used even if there are no direct handlers for this event type in the projection.
 
-<!-- snippet: sample_view-custom-grouper-with-multiple-result-records-multistream-projection -->
+<!-- snippet: sample_view-custom-grouper-with-multiple-result-records -->
+```cs
+public class MonthlyAllocationProjection : MultiStreamProjection<MonthlyAllocation, string>
+{
+    public MonthlyAllocationProjection()
+    {
+        CustomGrouping(new MonthlyAllocationGrouper());
+        TransformsEvent<EmployeeAllocated>();
+    }
+
+    public void Apply(MonthlyAllocation allocation, EmployeeAllocatedInMonth @event)
+    {
+        // Apply logic here
+    }
+}
+```
 <!-- endSnippet -->
 
 ### Fan Out Using Custom Grouper
 
 The custom grouper, `MonthlyAllocationGrouper`, is responsible for the logic of how events are grouped and fan-out. 
 
-<!-- snippet: sample_view-custom-grouper-with-multiple-result-records-aggregate-grouper -->
+<!-- snippet: sample_view-custom-grouper-with-multiple-result-records -->
+```cs
+public class MonthlyAllocationGrouper : IAggregateGrouper<string>
+{
+    public Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<string> grouping)
+    {
+        var monthlyAllocations = allocations
+            .SelectMany(@event => /*...*/)
+            .GroupBy(allocation => /*...*/)
+            .Select(monthlyAllocation => new
+            {
+                Key = $"{monthlyAllocation.Key.EmployeeId}|{monthlyAllocation.Key.Month:yyyy-MM-dd}",
+                Event = monthlyAllocation.Key.Source.WithData(
+                    new EmployeeAllocatedInMonth(
+                        monthlyAllocation.Key.EmployeeId,
+                        monthlyAllocation.Key.Month,
+                        monthlyAllocation.Select(a => a.Allocation).ToList()
+                    )
+                )
+            });
+            
+        foreach (var monthlyAllocation in monthlyAllocations)
+        {
+            grouping.AddEvents(
+                monthlyAllocation.Key,
+                new[] { monthlyAllocation.Event }
+            );
+        }
+
+        return Task.CompletedTask;
+    }
+}
+```
 <!-- endSnippet -->
 
 ### Utilizing the `WithData()` Extension Method
 
 Inside the `Group()` method, `WithData()` is employed to create a new type of event (`EmployeeAllocatedInMonth`) that still carries some attributes from the original event. This is essential for creating more specialized projections.
 
-<!-- snippet: sample_view-custom-grouper-with-multiple-result-records-with-data -->
+<!-- snippet: sample_view-custom-grouper-with-multiple-result-records -->
+```cs
+Event = monthlyAllocation.Key.Source.WithData(
+    new EmployeeAllocatedInMonth(
+        monthlyAllocation.Key.EmployeeId,
+        monthlyAllocation.Key.Month,
+        monthlyAllocation.Select(a => a.Allocation).ToList()
+    )
+)
+```
 <!-- endSnippet -->
