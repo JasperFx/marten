@@ -466,8 +466,7 @@ Imagine you have a system where `EmployeeAllocated` events contain a list of all
 
 The `MonthlyAllocationProjection` class uses a custom grouper for this transformation. Here, `TransformsEvent<EmployeeAllocated>()` indicates that events of type `EmployeeAllocated` will be used even if there are no direct handlers for this event type in the projection.
 
-<!-- snippet: snippet-sample_showing_registering_custom_grouper_with_fan_out -->
-<a id='snippet-sample_showing_registering_custom_grouper_with_fan_out'></a>
+<!-- snippet: sample_view-custom-grouper-with-multiple-result-records -->
 ```cs
 public class MonthlyAllocationProjection : MultiStreamProjection<MonthlyAllocation, string>
 {
@@ -483,15 +482,13 @@ public class MonthlyAllocationProjection : MultiStreamProjection<MonthlyAllocati
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_grouper_with_events_transformation.cs' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Fan Out Using Custom Grouper
 
 The custom grouper, `MonthlyAllocationGrouper`, is responsible for the logic of how events are grouped and fan-out. 
 
-<!-- snippet: snippet-sample_showing_custom_grouper_with_fan_out -->
-<a id='snippet-sample_showing_custom_grouper_with_fan_out'></a>
+<!-- snippet: snippet-sample_view-custom-grouper-with-multiple-result-records -->
 ```cs
 public class MonthlyAllocationGrouper : IAggregateGrouper<string>
 {
@@ -524,15 +521,13 @@ public class MonthlyAllocationGrouper : IAggregateGrouper<string>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_grouper_with_events_transformation.cs' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Utilizing the `WithData()` Extension Method
 
 Inside the `Group()` method, `WithData()` is employed to create a new type of event (`EmployeeAllocatedInMonth`) that still carries some attributes from the original event. This is essential for creating more specialized projections.
 
-<!-- snippet: snippet-sample_showing_custom_grouper_with_fan_out_wrapping_new_event -->
-<a id='snippet-sample_showing_custom_grouper_with_fan_out_wrapping_new_event'></a>
+<!-- snippet: snippet-sample_view-custom-grouper-with-multiple-result-records -->
 ```cs
 Event = monthlyAllocation.Key.Source.WithData(
     new EmployeeAllocatedInMonth(
@@ -542,5 +537,4 @@ Event = monthlyAllocation.Key.Source.WithData(
     )
 )
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_grouper_with_events_transformation.cs' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
