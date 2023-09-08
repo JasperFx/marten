@@ -75,7 +75,7 @@ public abstract partial class DocumentSessionBase
         }
         catch (Exception)
         {
-            await tryApplyTombstoneEvents(token).ConfigureAwait(false);
+            await tryApplyTombstoneEventsAsync(token).ConfigureAwait(false);
 
             throw;
         }
@@ -147,15 +147,7 @@ public abstract partial class DocumentSessionBase
     {
         if (Options.EventGraph.TryCreateTombstoneBatch(this, out var tombstoneBatch))
         {
-            try
-            {
-                tombstoneBatch.ApplyChanges(this);
-                _retryPolicy.Execute(_connection.Commit);
-            }
-            catch (Exception e)
-            {
-                Logger.LogFailure(new NpgsqlCommand(), e);
-            }
+            Options.EventGraph.PostTombstones(tombstoneBatch);
         }
     }
 
@@ -186,25 +178,19 @@ public abstract partial class DocumentSessionBase
                 Logger.LogFailure(new NpgsqlCommand(), e);
             }
 
-            await tryApplyTombstoneEvents(token).ConfigureAwait(false);
+            await tryApplyTombstoneEventsAsync(token).ConfigureAwait(false);
 
             throw;
         }
     }
 
-    private async Task tryApplyTombstoneEvents(CancellationToken token)
+    private Task tryApplyTombstoneEventsAsync(CancellationToken token)
     {
         if (Options.EventGraph.TryCreateTombstoneBatch(this, out var tombstoneBatch))
         {
-            try
-            {
-                await tombstoneBatch.ApplyChangesAsync(this, token).ConfigureAwait(false);
-                await _retryPolicy.ExecuteAsync(() => _connection.CommitAsync(token), token).ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                Logger.LogFailure(new NpgsqlCommand(), e);
-            }
+            return Options.EventGraph.PostTombstonesAsync(tombstoneBatch);
         }
+
+        return Task.CompletedTask;
     }
 }

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Operations;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -14,6 +15,14 @@ namespace Marten.Events;
 
 public partial class EventGraph
 {
+    private RetryBlock<UpdateBatch> _tombstones;
+
+    private async Task executeTombstoneBlock(UpdateBatch batch, CancellationToken cancellationToken)
+    {
+        await using var session = (DocumentSessionBase)_store.LightweightSession();
+        await session.ExecuteBatchAsync(batch, cancellationToken).ConfigureAwait(false);
+    }
+
     internal void ProcessEvents(DocumentSessionBase session)
     {
         if (!session.WorkTracker.Streams.Any())
@@ -167,5 +176,15 @@ public partial class EventGraph
 
         batch = null;
         return false;
+    }
+
+    internal void PostTombstones(UpdateBatch tombstoneBatch)
+    {
+        _tombstones.Post(tombstoneBatch);
+    }
+
+    public Task PostTombstonesAsync(UpdateBatch tombstoneBatch)
+    {
+        return _tombstones.PostAsync(tombstoneBatch);
     }
 }

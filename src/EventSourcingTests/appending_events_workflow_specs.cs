@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -274,7 +275,19 @@ public class appending_events_workflow_specs
 
         if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
-            session2.Events.FetchStreamState(EstablishTombstoneStream.StreamId).ShouldNotBeNull();
+            var state = session2.Events.FetchStreamState(EstablishTombstoneStream.StreamId);
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            while (state == null && stopwatch.ElapsedMilliseconds < 5000)
+            {
+                Thread.Sleep(250);
+                state = session2.Events.FetchStreamState(EstablishTombstoneStream.StreamId);
+            }
+
+            stopwatch.Stop();
+
+            state.ShouldNotBeNull();
 
             var events = session2.Events.FetchStream(EstablishTombstoneStream.StreamId);
             events.Any().ShouldBeTrue();
@@ -285,7 +298,19 @@ public class appending_events_workflow_specs
         }
         else
         {
-            session2.Events.FetchStreamState(EstablishTombstoneStream.StreamKey).ShouldNotBeNull();
+            var state = session2.Events.FetchStreamState(EstablishTombstoneStream.StreamKey);
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            while (state == null && stopwatch.ElapsedMilliseconds < 5000)
+            {
+                Thread.Sleep(250);
+                state = session2.Events.FetchStreamState(EstablishTombstoneStream.StreamKey);
+            }
+
+            stopwatch.Stop();
+
+            state.ShouldNotBeNull();
 
             var events = session2.Events.FetchStream(EstablishTombstoneStream.StreamKey);
             events.Any().ShouldBeTrue();

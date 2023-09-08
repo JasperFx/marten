@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Events.Schema;
 using Marten.Exceptions;
@@ -15,13 +16,14 @@ using Marten.Internal;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
 using Marten.Util;
+using Microsoft.Extensions.Logging.Abstractions;
 using NpgsqlTypes;
 using Weasel.Core;
 using static Marten.Events.EventMappingExtensions;
 
 namespace Marten.Events;
 
-public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
+public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable
 {
     private readonly Cache<Type, string> _aggregateNameByType =
         new(type => type.Name.ToTableAlias());
@@ -40,6 +42,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
 
     private DocumentStore _store;
     private StreamIdentity _streamIdentity = StreamIdentity.AsGuid;
+    private readonly CancellationTokenSource _cancellation = new();
 
     internal EventGraph(StoreOptions options)
     {
@@ -376,9 +379,26 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
     internal void Initialize(DocumentStore store)
     {
         _store = store;
+
+        var logger = (_store.Options.Logger() as DefaultMartenLogger)?.Inner ?? NullLogger.Instance;
+
+
+        _tombstones = new RetryBlock<UpdateBatch>(executeTombstoneBlock, logger, _cancellation.Token);
         foreach (var mapping in _events)
         {
             mapping.JsonTransformation(null);
         }
+    }
+
+    private bool _isDisposed;
+
+    public void Dispose()
+    {
+        if (_isDisposed) return;
+        _isDisposed = true;
+
+        _cancellation.Cancel();
+        _cancellation.Dispose();
+        _tombstones?.SafeDispose();
     }
 }
