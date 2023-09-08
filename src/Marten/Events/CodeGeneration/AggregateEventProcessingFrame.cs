@@ -89,7 +89,7 @@ internal class AggregateEventProcessingFrame: EventProcessingFrame
                 else
                 {
                     var errorMessage =
-                        $"Projection for {AggregateType.FullName} should either have the Create Method or Constructor for event of type {SpecificEvent.VariableType.FullNameInCode()}, or {AggregateType.FullName} should have a Default Constructor.";
+                        $"Projection for {AggregateType.FullName} should either have a static Create method that returns the event type {SpecificEvent.VariableType.FullNameInCode()} or {AggregateType.FullName} should have either have a public, no argument constructor or a constructor function that takes the {SpecificEvent.VariableType.FullNameInCode()} as a parameter. This error occurs when Marten is trying to build a new aggregate, but the aggregate projection does not have a way to create a new aggregate from the first event in the event stream. A common cause is persisting events out of order according to your application's domain logic rules";
 
                     writer.Write(
                         $"if({Aggregate.Usage} == default) throw new {typeof(InvalidProjectionException).FullNameInCode()}(\"{errorMessage}\");");
