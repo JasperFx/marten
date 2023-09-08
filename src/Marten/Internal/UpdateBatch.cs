@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Exceptions;
 using JasperFx.Core.Reflection;
+using Marten.Exceptions;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Services;
@@ -54,7 +55,7 @@ public class UpdateBatch: IUpdateBatch
         }
         catch (Exception e)
         {
-            _operations.OfType<IExceptionTransform>().TransformAndThrow(e);
+            _operations.OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
         }
 
         throwExceptionsIfAny();
@@ -74,7 +75,7 @@ public class UpdateBatch: IUpdateBatch
             }
             catch (Exception e)
             {
-                _operations.OfType<IExceptionTransform>().TransformAndThrow(e);
+                _operations.OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
             }
         }
         else
@@ -97,7 +98,7 @@ public class UpdateBatch: IUpdateBatch
                 }
                 catch (Exception e)
                 {
-                    _operations.OfType<IExceptionTransform>().TransformAndThrow(e);
+                    _operations.OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
                 }
 
                 count += session.Options.UpdateBatchSize;
