@@ -12,8 +12,6 @@ using Xunit;
 
 namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
 {
-    #region sample_view-custom-grouper-with-multiple-result-records
-
     public record Allocation(
         DateOnly Day,
         double Hours
@@ -38,6 +36,9 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
         public double Hours { get; set; }
     }
 
+
+    #region sample_view-custom-grouper-with-transformation-projection
+
     public class MonthlyAllocationProjection: MultiStreamProjection<MonthlyAllocation, string>
     {
         public MonthlyAllocationProjection()
@@ -58,6 +59,10 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
             allocation.Hours += hours;
         }
     }
+
+    #endregion sample_view-custom-grouper-with-transformation-projection
+
+    #region sample_view-custom-grouper-with-transformation-grouper
 
     public class MonthlyAllocationGrouper: IAggregateGrouper<string>
     {
@@ -88,6 +93,8 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
                 .Select(monthlyAllocation =>
                     new
                     {
+                        #region sample_view-custom-grouper-with-transformation-grouper-with-data
+
                         Key = $"{monthlyAllocation.Key.EmployeeId}|{monthlyAllocation.Key.Month:yyyy-MM-dd}",
                         Event = monthlyAllocation.Key.Source.WithData(
                             new EmployeeAllocatedInMonth(
@@ -95,6 +102,8 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
                                 monthlyAllocation.Key.Month,
                                 monthlyAllocation.Select(a => a.Allocation).ToList())
                         )
+
+                        #endregion sample_view-custom-grouper-with-transformation-grouper-with-data
                     }
                 );
 
@@ -110,7 +119,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
         }
     }
 
-    #endregion
+    #endregion sample_view-custom-grouper-with-transformation-grouper
 
     public class custom_grouper_with_events_transformation: OneOffConfigurationsContext
     {
