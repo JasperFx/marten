@@ -31,6 +31,7 @@ internal class ProjectionDaemon: IProjectionDaemon
     private INodeCoordinator? _coordinator;
 
     private bool _isStopping;
+    private readonly RetryBlock<DeadLetterEvent> _deadLetterBlock;
 
     public ProjectionDaemon(DocumentStore store, IMartenDatabase database, IHighWaterDetector detector,
         ILogger logger)
@@ -44,6 +45,18 @@ internal class ProjectionDaemon: IProjectionDaemon
         _highWater = new HighWaterAgent(detector, Tracker, logger, store.Options.Projections, _cancellation.Token);
 
         Settings = store.Options.Projections;
+
+        _deadLetterBlock = new RetryBlock<DeadLetterEvent>(async (deadLetterEvent, token) =>
+        {
+            await using var session =
+                _store.LightweightSession(SessionOptions.ForDatabase(Database));
+
+            await using (session.ConfigureAwait(false))
+            {
+                session.Store(deadLetterEvent);
+                await session.SaveChangesAsync(_cancellation.Token).ConfigureAwait(false);
+            }
+        }, _logger, _cancellation.Token);
     }
 
     // Only for testing
@@ -207,6 +220,7 @@ internal class ProjectionDaemon: IProjectionDaemon
 
     public void Dispose()
     {
+        _deadLetterBlock.SafeDispose();
         _coordinator?.Dispose();
         Tracker?.As<IDisposable>().Dispose();
         _cancellation?.Dispose();
@@ -512,8 +526,10 @@ internal class ProjectionDaemon: IProjectionDaemon
                         "Skipping event #{Sequence} ({EventType}@{DatabaseIdentifier}) in shard '{ShardName}'",
                         skip.Event.Sequence, skip.Event.EventType.GetFullName(), parameters.Shard.Name,
                         Database.Identifier);
-                    await WriteSkippedEvent(skip.Event, parameters.Shard.Name, (ex as ApplyEventException)!)
-                        .ConfigureAwait(false);
+
+                    var exception = (ex as ApplyEventException)!;
+                    var deadLetterEvent = new DeadLetterEvent(skip.Event, parameters.Shard.Name, exception);
+                    await _deadLetterBlock.PostAsync(deadLetterEvent).ConfigureAwait(false);
 
                     await TryAction(parameters).ConfigureAwait(false);
                     break;
@@ -522,28 +538,6 @@ internal class ProjectionDaemon: IProjectionDaemon
                     // Don't do anything.
                     break;
             }
-        }
-    }
-
-    internal async Task WriteSkippedEvent(IEvent @event, ShardName shardName, ApplyEventException exception)
-    {
-        try
-        {
-            var deadLetterEvent = new DeadLetterEvent(@event, shardName, exception);
-            await using var session =
-                _store.LightweightSession(SessionOptions.ForDatabase(Database));
-
-            await using (session.ConfigureAwait(false))
-            {
-                session.Store(deadLetterEvent);
-                await session.SaveChangesAsync(_cancellation.Token).ConfigureAwait(false);
-            }
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Failed to write dead letter event {Event} to shard {ShardName}@{DatabaseIdentifier}",
-                @event,
-                shardName, Database.Identifier);
         }
     }
 
