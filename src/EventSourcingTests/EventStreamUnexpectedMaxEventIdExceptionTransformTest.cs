@@ -37,7 +37,7 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
             });
         };
 
-        Should.Throw<EventStreamUnexpectedMaxEventIdException>(forceEventStreamUnexpectedMaxEventIdException)
+        (await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(forceEventStreamUnexpectedMaxEventIdException))
             .Message.ShouldBe("duplicate key value violates unique constraint \"pk_mt_events_stream_and_version\"");
     }
 
