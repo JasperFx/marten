@@ -15,7 +15,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
     #region sample_view-custom-grouper-with-multiple-result-records
 
     public record Allocation(
-        DateTime Day,
+        DateOnly Day,
         double Hours
     );
 
@@ -26,7 +26,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
 
     public record EmployeeAllocatedInMonth(
         Guid EmployeeId,
-        DateTime Month,
+        DateOnly Month,
         List<Allocation> Allocations
     );
 
@@ -34,7 +34,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
     {
         public string Id { get; set; }
         public Guid EmployeeId { get; set; }
-        public DateTime Month { get; set; }
+        public DateOnly Month { get; set; }
         public double Hours { get; set; }
     }
 
@@ -120,20 +120,20 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
             var firstEmployeeId = Guid.NewGuid();
             var firstEmployeeAllocated = new EmployeeAllocated(firstEmployeeId, new List<Allocation>()
             {
-                new(new DateTime(2021, 9, 3), 9),
-                new(new DateTime(2021, 9, 4), 4),
-                new(new DateTime(2021, 10, 3), 10),
-                new(new DateTime(2021, 10, 4), 7),
+                new(new DateOnly(2021, 9, 3), 9),
+                new(new DateOnly(2021, 9, 4), 4),
+                new(new DateOnly(2021, 10, 3), 10),
+                new(new DateOnly(2021, 10, 4), 7),
             });
             theSession.Events.Append(firstEmployeeId, firstEmployeeAllocated);
 
             var secondEmployeeId = Guid.NewGuid();
             var secondEmployeeAllocated = new EmployeeAllocated(secondEmployeeId, new List<Allocation>()
             {
-                new(new DateTime(2021, 9, 3), 1),
-                new(new DateTime(2021, 9, 4), 2),
-                new(new DateTime(2021, 10, 3), 3),
-                new(new DateTime(2021, 10, 4), 8),
+                new(new DateOnly(2021, 9, 3), 1),
+                new(new DateOnly(2021, 9, 4), 2),
+                new(new DateOnly(2021, 10, 3), 3),
+                new(new DateOnly(2021, 10, 4), 8),
             });
 
             theSession.Events.Append(secondEmployeeId, secondEmployeeAllocated);
@@ -204,9 +204,9 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
 
     public static class DateTimeExtensionMethods
     {
-        public static DateTime ToStartOfMonth(this DateTime date)
+        public static DateOnly ToStartOfMonth(this DateOnly date)
         {
-            return new DateTime(date.Year, date.Month, 1);
+            return new DateOnly(date.Year, date.Month, 1);
         }
     }
 }
