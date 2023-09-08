@@ -15,7 +15,7 @@ public static DocumentStore For(Action<StoreOptions> configure)
     return new DocumentStore(options);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/DocumentStore.cs#L493-L503' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_documentstore.for' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/DocumentStore.cs#L494-L504' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_documentstore.for' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The major parts of `StoreOptions` are shown in the class diagram below:

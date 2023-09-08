@@ -93,6 +93,7 @@ public partial class DocumentStore: IDocumentStore
 
     public virtual void Dispose()
     {
+        (Options.Events as IDisposable).SafeDispose();
     }
 
     public AdvancedOperations Advanced { get; }
