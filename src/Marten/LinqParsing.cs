@@ -85,8 +85,7 @@ public class LinqParsing: IReadOnlyLinqParsing
     /// </summary>
     public readonly IList<IMethodCallParser> MethodCallParsers = new List<IMethodCallParser>();
 
-    private ImHashMap<Type, ImHashMap<string, IMethodCallParser>> _methodParsing =
-        ImHashMap<Type, ImHashMap<string, IMethodCallParser>>.Empty;
+    private ImHashMap<int, IMethodCallParser> _methodParsing = ImHashMap<int, IMethodCallParser>.Empty;
 
     internal LinqParsing()
     {
@@ -119,18 +118,13 @@ public class LinqParsing: IReadOnlyLinqParsing
 
     internal IMethodCallParser FindMethodParser(MethodCallExpression expression)
     {
-        if (_methodParsing.TryFind(expression.Method.DeclaringType, out var byName))
+        if (_methodParsing.TryFind(expression.Method.MetadataToken, out var parser))
         {
-            if (byName.TryFind(expression.Method.Name, out var p))
-            {
-                return p;
-            }
+            return parser;
         }
 
-        byName ??= ImHashMap<string, IMethodCallParser>.Empty;
-        var parser = determineMethodParser(expression);
-        byName = byName.AddOrUpdate(expression.Method.Name, parser);
-        _methodParsing = _methodParsing.AddOrUpdate(expression.Method.DeclaringType, byName);
+        parser = determineMethodParser(expression);
+        _methodParsing = _methodParsing.AddOrUpdate(expression.Method.MetadataToken, parser);
 
         return parser;
     }
