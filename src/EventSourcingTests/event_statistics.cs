@@ -11,12 +11,14 @@ public class event_statistics : IntegrationContext
 {
     public event_statistics(DefaultStoreFixture fixture) : base(fixture)
     {
-        theStore.Advanced.Clean.DeleteAllEventData();
+
     }
 
     [Fact]
     public async Task fetch_from_empty_store()
     {
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+
         var statistics = await theStore.Advanced.FetchEventStoreStatistics();
 
         statistics.EventCount.ShouldBe(0);
@@ -27,6 +29,8 @@ public class event_statistics : IntegrationContext
     [Fact]
     public async Task fetch_from_non_empty_event_store()
     {
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+
         theSession.Events.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
         theSession.Events.Append(Guid.NewGuid(), new AEvent(), new CEvent(), new DEvent());
         theSession.Events.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
