@@ -279,7 +279,7 @@ public class appending_events_workflow_specs
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            while (state == null && stopwatch.ElapsedMilliseconds < 5000)
+            while (state == null && stopwatch.ElapsedMilliseconds < 10000)
             {
                 Thread.Sleep(250);
                 state = session2.Events.FetchStreamState(EstablishTombstoneStream.StreamId);

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -180,7 +181,16 @@ public partial class EventGraph
 
     internal void PostTombstones(UpdateBatch tombstoneBatch)
     {
-        _tombstones.Post(tombstoneBatch);
+        try
+        {
+            using var session = (DocumentSessionBase)_store.LightweightSession();
+            session.ExecuteBatch(tombstoneBatch);
+        }
+        catch (Exception)
+        {
+            // The IMartenLogger will log the exception
+            _tombstones.Post(tombstoneBatch);
+        }
     }
 
     public Task PostTombstonesAsync(UpdateBatch tombstoneBatch)
