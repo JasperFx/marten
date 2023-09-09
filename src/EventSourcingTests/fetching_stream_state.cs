@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using EventSourcingTests.Projections;
 using Marten;
+using Marten.Schema.Identity;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -13,7 +14,7 @@ public class fetching_stream_state_before_aggregator_is_registered: IntegrationC
     [Fact]
     public async Task bug_705_order_of_operation()
     {
-        var streamId = Guid.NewGuid();
+        var streamId = CombGuidIdGeneration.NewGuid();
 
         await using (var session = theStore.LightweightSession())
         {
