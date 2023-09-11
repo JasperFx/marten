@@ -80,19 +80,30 @@ public class HighWaterAgentTests: DaemonContext
         await agent.StopAll();
     }
 
+
+
     [Fact]
-    public async Task ensures_all_gaps_are_delayed()
+    public async Task will_not_go_in_loop_when_sequence_is_advanced_but_gaps_from_high_water_to_end()
     {
         NumberOfStreams = 10;
         await PublishSingleThreaded();
-        theStore.Options.Projections.StaleSequenceThreshold = 10.Seconds();
-        await deleteEvents(NumberOfEvents-50, NumberOfEvents - 100);
-        var start = Stopwatch.StartNew();
+        theStore.Options.Projections.StaleSequenceThreshold = 1.Seconds();
+
         using var agent = await StartDaemon();
 
         await agent.Tracker.WaitForHighWaterMark(NumberOfEvents, 2.Minutes());
+        await agent.StopAll();
 
-        start.Elapsed.ShouldBeGreaterThan(TimeSpan.FromSeconds(20));
+        using (var conn = theStore.Storage.Database.CreateConnection())
+        {
+            await conn.OpenAsync();
+            await conn.CreateCommand($"SELECT setval('daemon.mt_events_sequence', {NumberOfEvents + 5});").ExecuteNonQueryAsync();
+            await conn.CloseAsync();
+        }
+
+        using var agent2 = await StartDaemon();
+
+        await agent2.Tracker.WaitForHighWaterMark(NumberOfEvents + 5);
     }
 
     private async Task deleteEvents(params long[] ids)

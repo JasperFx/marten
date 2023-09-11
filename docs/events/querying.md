@@ -228,7 +228,7 @@ public class fetching_stream_state: IntegrationContext
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/fetching_stream_state.cs#L84-L159' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetching_stream_state' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/fetching_stream_state.cs#L85-L160' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetching_stream_state' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Furthermore, `StreamState` contains metadata for when the stream was created, `StreamState.Created`, and when the stream was last updated, `StreamState.LastTimestamp`.

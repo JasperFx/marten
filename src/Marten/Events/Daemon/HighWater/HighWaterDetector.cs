@@ -1,5 +1,8 @@
+using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Projections;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -15,6 +18,7 @@ internal class HighWaterDetector: IHighWaterDetector
     private readonly NpgsqlParameter _newSeq;
     private readonly ISingleQueryRunner _runner;
     private readonly NpgsqlCommand _updateStatus;
+    private readonly ProjectionOptions _settings;
 
     public HighWaterDetector(ISingleQueryRunner runner, EventGraph graph, ILogger logger)
     {
@@ -27,6 +31,8 @@ internal class HighWaterDetector: IHighWaterDetector
             new NpgsqlCommand(
                 $"select {graph.DatabaseSchemaName}.mt_mark_event_progression('{ShardState.HighWaterMark}', :seq);");
         _newSeq = _updateStatus.AddNamedParameter("seq", 0L);
+
+        _settings = graph.Options.Projections;
     }
 
     public async Task<HighWaterStatistics> DetectInSafeZone(CancellationToken token)
@@ -40,9 +46,22 @@ internal class HighWaterDetector: IHighWaterDetector
         _logger.LogInformation(
             "Daemon projection high water detection skipping a gap in event sequence, determined that the 'safe harbor' sequence is at {SafeHarborSequence}",
             safeSequence);
+
         if (safeSequence.HasValue)
         {
             statistics.SafeStartMark = safeSequence.Value;
+        }
+        else if (statistics.TryGetStaleAge(out var time))
+        {
+            // This is for GH-2681. What if there's a gap
+            // from the last good spot and the latest sequence?
+            // Instead of doing this in an infinite loop, advance
+            // the sequence
+            if (time > _settings.StaleSequenceThreshold)
+            {
+                statistics.SafeStartMark = statistics.HighestSequence;
+                statistics.CurrentMark = statistics.HighestSequence;
+            }
         }
 
         await calculateHighWaterMark(statistics, token).ConfigureAwait(false);
@@ -54,7 +73,6 @@ internal class HighWaterDetector: IHighWaterDetector
     public async Task<HighWaterStatistics> Detect(CancellationToken token)
     {
         var statistics = await loadCurrentStatistics(token).ConfigureAwait(false);
-
 
         await calculateHighWaterMark(statistics, token).ConfigureAwait(false);
 

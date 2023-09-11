@@ -69,10 +69,10 @@ internal class HighWaterAgent: IDisposable
 
         try
         {
-            _current = await _detector.Detect(_token).ConfigureAwait(false);
-
-            if (_current.CurrentMark > 0)
+            var next = await _detector.Detect(_token).ConfigureAwait(false);
+            if (_current == null || next.CurrentMark > _current.CurrentMark)
             {
+                _current = next;
                 _tracker.MarkHighWater(_current.CurrentMark);
             }
         }
