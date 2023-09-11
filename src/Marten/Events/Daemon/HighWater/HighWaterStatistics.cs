@@ -32,6 +32,18 @@ internal class HighWaterStatistics
 
         return HighWaterStatus.Stale;
     }
+
+    public bool TryGetStaleAge(out TimeSpan timeSinceUpdate)
+    {
+        if (LastUpdated.HasValue)
+        {
+            timeSinceUpdate = Timestamp.Subtract(LastUpdated.Value);
+            return true;
+        }
+
+        timeSinceUpdate = default;
+        return false;
+    }
 }
 
 public enum HighWaterStatus
