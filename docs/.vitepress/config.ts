@@ -172,6 +172,7 @@ export default withMermaid({
                 { text: 'Event Projections', link: '/events/projections/event-projections' },
                 { text: 'Custom Projections', link: '/events/projections/custom' },
                 { text: 'Inline Projections', link: '/events/projections/inline' },
+                { text: 'Flat Table Projections', link: '/events/projections/flat' },
                 { text: 'Asynchronous Projections', link: '/events/projections/async-daemon' },
                 { text: 'Rebuilding Projections', link: '/events/projections/rebuilding' },
                 { text: 'Async Daemon HealthChecks', link: '/events/projections/healthchecks' },]
