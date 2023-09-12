@@ -62,7 +62,7 @@ done with the `AddProjectionWithServices<T>()` method shown below:
 <!-- snippet: sample_registering_projection_built_by_services -->
 <a id='snippet-sample_registering_projection_built_by_services'></a>
 ```cs
-using var host = await Host.CreateDefaultBuilder()
+using var host = await Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
     {
         services.AddSingleton<IPriceLookup, PriceLookup>();
