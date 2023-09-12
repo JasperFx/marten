@@ -171,6 +171,50 @@ public class build_aggregate_projection: DaemonContext
     }
 
     [Fact]
+    public async Task rebuild_the_projection_by_supplying_the_projection_type()
+    {
+        NumberOfStreams = 10;
+
+        Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
+
+        StoreOptions(x => x.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Async), true);
+
+        var agent = await StartDaemon();
+
+        await PublishSingleThreaded();
+
+        var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 30.Seconds());
+
+        await waiter;
+        Logger.LogDebug("About to rebuild Trip:All");
+        await agent.RebuildProjection(typeof(TestingSupport.TripProjection),CancellationToken.None);
+        Logger.LogDebug("Done rebuilding Trip:All");
+        await CheckAllExpectedAggregatesAgainstActuals();
+    }
+
+    [Fact]
+    public async Task rebuild_the_projection_by_supplying_the_projected_document_type()
+    {
+        NumberOfStreams = 10;
+
+        Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
+
+        StoreOptions(x => x.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Async), true);
+
+        var agent = await StartDaemon();
+
+        await PublishSingleThreaded();
+
+        var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 30.Seconds());
+
+        await waiter;
+        Logger.LogDebug("About to rebuild Trip:All");
+        await agent.RebuildProjection(typeof(Trip),CancellationToken.None);
+        Logger.LogDebug("Done rebuilding Trip:All");
+        await CheckAllExpectedAggregatesAgainstActuals();
+    }
+
+    [Fact]
     public async Task delete_when_delete_event_happens()
     {
         NumberOfStreams = 10;
