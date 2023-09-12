@@ -199,7 +199,16 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     /// <returns></returns>
     public ISerializer Serializer()
     {
-        return _serializer ?? SerializerFactory.New();
+        if (_serializer == null)
+        {
+            _serializer = SerializerFactory.New();
+            foreach (var configure in SerializationConfigurations)
+            {
+                configure(_serializer);
+            }
+        }
+
+        return _serializer;
     }
 
     /// <summary>
@@ -329,6 +338,10 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     public void Serializer<T>() where T : ISerializer, new()
     {
         _serializer = new T();
+        foreach (var configuration in SerializationConfigurations)
+        {
+            configuration(_serializer);
+        }
     }
 
     /// <summary>
