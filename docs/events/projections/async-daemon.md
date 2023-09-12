@@ -283,10 +283,18 @@ To interactively select which projections to rebuild, use:
 dotnet run -- projections -i --rebuild
 ```
 
-And lastly, to rebuild a single projection at a time, use:
+To rebuild a single projection at a time, use:
 
 ```bash
 dotnet run -- projections --rebuild -p [shard name]
+```
+
+If you are using multi-tenancy with multiple Marten databases, you can choose to rebuild the
+projections for only one tenant database -- but note that this will rebuild the entire database
+across all the tenants in that database -- by using the `--tenant` flag like so:
+
+```bash
+dotnet run -- projections --rebuild --tenant tenant1
 ```
 
 ## Using the Async Daemon from DocumentStore

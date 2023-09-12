@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
+using Marten.Storage;
 using Oakton.Internal.Conversion;
 
 namespace Marten.CommandLine.Commands.Projection;
@@ -63,7 +64,6 @@ public class ProjectionController
         {
             if (store.Shards.IsEmpty()) break;
 
-
             var shards = FilterShards(input, store);
             if (shards.IsEmpty())
             {
@@ -73,8 +73,17 @@ public class ProjectionController
                 break;
             }
 
-            var databases = await store.BuildDatabases().ConfigureAwait(false);
-            databases = FilterDatabases(input, databases);
+            IReadOnlyList<IProjectionDatabase> databases;
+            if (input.TenantFlag.IsNotEmpty())
+            {
+                var database = await store.InnerStore.Tenancy.FindOrCreateDatabase(input.TenantFlag).ConfigureAwait(false);
+                databases = new IProjectionDatabase[] { new ProjectionDatabase(store, (MartenDatabase)database) };
+            }
+            else
+            {
+                databases = await store.BuildDatabases().ConfigureAwait(false);
+                databases = FilterDatabases(input, databases);
+            }
 
             if (databases.IsEmpty())
             {
