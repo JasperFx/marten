@@ -45,12 +45,22 @@ public class using_multiple_document_stores_in_same_host : IDisposable
                 opts.GeneratedCodeMode = TypeLoadMode.Auto;
             });
 
-            services.AddMartenStore<ISecondStore>(opts =>
+            services.AddMartenStore<ISecondStore>(services =>
             {
+                var opts = new StoreOptions();
                 opts.Connection(ConnectionSource.ConnectionString);
                 opts.DatabaseSchemaName = "second_store";
+
+                return opts;
             });
         });
+    }
+
+    [Fact]
+    public void get_all_document_stores()
+    {
+        var allDocumentStores = theContainer.AllDocumentStores();
+        allDocumentStores.Count.ShouldBe(3);
     }
 
     [Fact]
