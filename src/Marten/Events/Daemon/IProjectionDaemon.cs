@@ -35,6 +35,24 @@ public interface IProjectionDaemon: IDisposable
     Task RebuildProjection<TView>(CancellationToken token);
 
     /// <summary>
+    ///     Rebuilds a single projection by projection type inline.
+    ///     Will timeout if a shard takes longer than 5 minutes.
+    /// </summary>
+    /// <param name="projectionType">The projection type</param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task RebuildProjection(Type projectionType, CancellationToken token);
+
+    /// <summary>
+    ///     Rebuilds a single projection by projection name inline
+    /// </summary>
+    /// <param name="projectionType">The projection type</param>
+    /// <param name="shardTimeout"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task RebuildProjection(Type projectionType, TimeSpan shardTimeout, CancellationToken token);
+
+    /// <summary>
     ///     Rebuilds a single projection by projection name inline
     /// </summary>
     /// <param name="projectionName"></param>

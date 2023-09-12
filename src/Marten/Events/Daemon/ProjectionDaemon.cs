@@ -233,6 +233,42 @@ internal class ProjectionDaemon: IProjectionDaemon
         return RebuildProjection<TView>(5.Minutes(), token);
     }
 
+    public Task RebuildProjection(Type projectionType, CancellationToken token)
+    {
+        return RebuildProjection(projectionType, 5.Minutes(), token);
+    }
+
+    public Task RebuildProjection(Type projectionType, TimeSpan shardTimeout, CancellationToken token)
+    {
+        if (projectionType.CanBeCastTo<IProjection>())
+        {
+            var projectionName = projectionType.FullNameInCode();
+            return RebuildProjection(projectionName, shardTimeout, token);
+        }
+
+        if (projectionType.CanBeCastTo<IProjectionSource>())
+        {
+            try
+            {
+                var projection = Activator.CreateInstance(projectionType);
+                if (projection is IProjectionSource wrapper)
+                    return RebuildProjection(wrapper.ProjectionName, shardTimeout, token);
+
+                throw new ArgumentOutOfRangeException(nameof(projectionType),
+                    $"Type {projectionType.FullNameInCode()} is not a valid projection type");
+            }
+            catch (Exception e)
+            {
+                throw new ArgumentOutOfRangeException(nameof(projectionType),
+                    $"No public default constructor for projection type {projectionType.FullNameInCode()}, you may need to supply the projection name instead");
+            }
+        }
+
+        // Assume this is an aggregate type name
+        return RebuildProjection(projectionType.NameInCode(), shardTimeout, token);
+
+    }
+
     public Task RebuildProjection<TView>(TimeSpan shardTimeout, CancellationToken token)
     {
         if (typeof(TView).CanBeCastTo(typeof(ProjectionBase)) && typeof(TView).HasDefaultConstructor())
