@@ -260,8 +260,6 @@ public static class MartenServiceCollectionExtensions
     public static MartenStoreExpression<T> AddMartenStore<T>(this IServiceCollection services,
         Action<StoreOptions> configure) where T : class, IDocumentStore
     {
-        services.AddSingleton<IDocumentStoreSource, DocumentStoreSource<T>>();
-
         return services.AddMartenStore<T>(s =>
         {
             var options = new StoreOptions();
@@ -282,6 +280,8 @@ public static class MartenServiceCollectionExtensions
     public static MartenStoreExpression<T> AddMartenStore<T>(this IServiceCollection services,
         Func<IServiceProvider, StoreOptions> configure) where T : class, IDocumentStore
     {
+        services.AddSingleton<IDocumentStoreSource, DocumentStoreSource<T>>();
+
         var stores = services.Select(x => x.ImplementationInstance).OfType<SecondaryDocumentStores>().FirstOrDefault();
         if (stores == null)
         {
