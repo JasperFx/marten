@@ -70,7 +70,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
 
     /// <summary>
     ///     Whether or Marten should attempt to create any missing database schema objects at runtime. This
-    ///     property is "All" by default for more efficient development, but can be set to lower values for production usage.
+    ///     property is "CreateOrUpdate" by default for more efficient development, but can be set to lower values for production usage.
     /// </summary>
     public AutoCreate AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
 
