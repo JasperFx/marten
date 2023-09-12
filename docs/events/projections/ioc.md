@@ -1,4 +1,4 @@
-## Projections and IoC Services
+# Projections and IoC Services
 
 ::: warning
 This functionality will only work with projection types that directly implement that `IProjection`
@@ -34,5 +34,4 @@ If the registration is a `Singleton`, Marten will use the application's IoC cont
 projection object once and add it to Marten's configuration at application start up time. If the
 registration is `Scoped` or `Transient`, Marten uses a proxy wrapper around `IProjection` that builds
 the projection object uniquely for each usage through scoped containers, and disposes the inner projection
-object at the end of the operation. 
-
+object at the end of the operation.
