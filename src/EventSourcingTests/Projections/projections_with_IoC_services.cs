@@ -25,7 +25,7 @@ public class projections_with_IoC_services
     {
         #region sample_registering_projection_built_by_services
 
-        using var host = await Host.CreateDefaultBuilder()
+        using var host = await Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
                 services.AddSingleton<IPriceLookup, PriceLookup>();
@@ -58,7 +58,7 @@ public class projections_with_IoC_services
     [Fact]
     public async Task use_projection_as_singleton_and_async()
     {
-        using var host = await Host.CreateDefaultBuilder()
+        using var host = await Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
                 services.AddSingleton<IPriceLookup, PriceLookup>();
@@ -94,7 +94,7 @@ public class projections_with_IoC_services
     [Fact]
     public async Task use_projection_as_scoped_and_inline()
     {
-        using var host = await Host.CreateDefaultBuilder()
+        using var host = await Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
                 services.AddSingleton<IPriceLookup, PriceLookup>();
