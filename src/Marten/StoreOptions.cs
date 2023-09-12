@@ -35,6 +35,8 @@ namespace Marten;
 /// </summary>
 public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
 {
+    internal readonly List<Action<ISerializer>> SerializationConfigurations = new();
+
     private readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, ChildDocument>> _childDocs
         = new();
 
@@ -284,6 +286,12 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     public void Serializer(ISerializer serializer)
     {
         _serializer = serializer;
+
+        // Reapply any serialization addons
+        foreach (var configure in SerializationConfigurations)
+        {
+            configure(_serializer);
+        }
     }
 
     /// <summary>
@@ -645,6 +653,20 @@ public class AdvancedOptions: IReadOnlyAdvancedOptions
         // Making the DDL generation be transactional can cause runtime errors.
         // Make the user opt into this
         Migrator.IsTransactional = false;
+    }
+
+    /// <summary>
+    /// Register configurations to the ISerializer that will be applied at the last
+    /// second to the application's serializer settings. This was meant for Marten
+    /// add ons
+    /// </summary>
+    /// <param name="configure"></param>
+    public void ModifySerializer(Action<ISerializer> configure)
+    {
+        // Apply it immediately...
+        configure(_storeOptions.Serializer());
+
+        _storeOptions.SerializationConfigurations.Add(configure);
     }
 
 
