@@ -175,6 +175,7 @@ export default withMermaid({
                 { text: 'Flat Table Projections', link: '/events/projections/flat' },
                 { text: 'Asynchronous Projections', link: '/events/projections/async-daemon' },
                 { text: 'Rebuilding Projections', link: '/events/projections/rebuilding' },
+                { text: 'Projections and IoC Services', link: '/events/projections/ioc' },
                 { text: 'Async Daemon HealthChecks', link: '/events/projections/healthchecks' },]
             },
 
