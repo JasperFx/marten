@@ -14,6 +14,12 @@ using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
 
+/// <summary>
+/// Helpful as a base class for more custom aggregation projections that are not supported
+/// by the Single/MultipleStreamProjections
+/// </summary>
+/// <typeparam name="TDoc"></typeparam>
+/// <typeparam name="TId"></typeparam>
 public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationRuntime<TDoc, TId>, IProjectionSource
 {
     private IDocumentStorage<TDoc, TId> _storage;

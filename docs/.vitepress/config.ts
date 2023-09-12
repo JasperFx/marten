@@ -174,6 +174,7 @@ export default withMermaid({
                 { text: 'Inline Projections', link: '/events/projections/inline' },
                 { text: 'Asynchronous Projections', link: '/events/projections/async-daemon' },
                 { text: 'Rebuilding Projections', link: '/events/projections/rebuilding' },
+                { text: 'Projections and IoC Services', link: '/events/projections/ioc' },
                 { text: 'Async Daemon HealthChecks', link: '/events/projections/healthchecks' },]
             },
 

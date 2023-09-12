@@ -9,6 +9,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
+using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Schema;
 using Marten.Services;
@@ -711,6 +712,43 @@ public static class MartenServiceCollectionExtensions
         {
             Services.EnsureMartenActivatorIsRegistered();
             Services.AddSingleton<IInitialData, T>();
+            return this;
+        }
+
+
+        /// <summary>
+        /// Add a projection to this application that requires IoC services. The projection itself will
+        /// be created with the application's IoC container
+        /// </summary>
+        /// <param name="lifecycle">The projection lifecycle for Marten</param>
+        /// <param name="lifetime">The IoC lifecycle for the projection instance. Note that the Transient lifetime will still be treated as Scoped</param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public MartenConfigurationExpression AddProjectionWithServices<T>(ProjectionLifecycle lifecycle, ServiceLifetime lifetime) where T : class, IProjection
+        {
+            switch (lifetime)
+            {
+                case ServiceLifetime.Singleton:
+                    Services.AddSingleton<T>();
+                    Services.ConfigureMarten((s, opts) =>
+                    {
+                        var projection = s.GetRequiredService<T>();
+                        opts.Projections.Add(projection, lifecycle);
+                    });
+                    break;
+
+                case ServiceLifetime.Transient:
+                case ServiceLifetime.Scoped:
+                    Services.AddScoped<T>();
+                    Services.ConfigureMarten((s, opts) =>
+                    {
+                        var projection = new ScopedProjectionWrapper<T>(s);
+                        opts.Projections.Add(projection, lifecycle);
+                    });
+                    break;
+            }
+
+
             return this;
         }
     }
