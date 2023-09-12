@@ -34,6 +34,9 @@ public class ProjectionInput: MartenInput
     [Description("If specified, only execute against the named Marten database within the specified store(s). Does not apply with only one store")]
     public string DatabaseFlag { get; set; }
 
+    [Description("If specified, only executes against the whole database containing this tenant")]
+    public string TenantFlag { get; set; }
+
     [Description("If specified, use this shard timeout value for daemon")]
     [FlagAlias("shard-timeout", 't')]
     public string ShardTimeoutFlag { get; set; }
