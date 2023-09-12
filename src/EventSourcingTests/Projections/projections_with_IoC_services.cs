@@ -17,7 +17,7 @@ using Shouldly;
 
 namespace EventSourcingTests.Projections;
 
-#if NET7_0_OR_GREATER
+
 public class projections_with_IoC_services
 {
     [Fact]
@@ -119,7 +119,7 @@ public class projections_with_IoC_services
 
     }
 }
-#endif
+
 
 public interface IPriceLookup
 {

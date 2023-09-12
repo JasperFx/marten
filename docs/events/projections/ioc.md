@@ -52,7 +52,7 @@ public class ProductProjection : CustomProjection<Product, Guid>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/projections_with_IoC_services.cs#L146-L184' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_productprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/projections_with_IoC_services.cs#L148-L186' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_productprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, we *want* to use this projection at runtime within Marten, and need to register the projection
@@ -62,7 +62,7 @@ done with the `AddProjectionWithServices<T>()` method shown below:
 <!-- snippet: sample_registering_projection_built_by_services -->
 <a id='snippet-sample_registering_projection_built_by_services'></a>
 ```cs
-using var host = await Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
+using var host = await Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
     {
         services.AddSingleton<IPriceLookup, PriceLookup>();
@@ -78,7 +78,7 @@ using var host = await Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
     })
     .StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/projections_with_IoC_services.cs#L25-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_projection_built_by_services' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/projections_with_IoC_services.cs#L26-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_projection_built_by_services' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that we're having to explicitly specify the projection lifecycle for the projection used within
