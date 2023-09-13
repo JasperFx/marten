@@ -18,6 +18,7 @@ using Shouldly;
 namespace EventSourcingTests.Projections;
 
 
+[Collection("ioc")]
 public class projections_with_IoC_services
 {
     [Fact]
