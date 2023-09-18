@@ -13,10 +13,10 @@ namespace Marten.Events.Daemon;
 public static class AsyncDaemonHealthCheckExtensions
 {
     /// <summary>
-    /// Adds a health check for Martens Async Daemon. 
+    /// Adds a health check for Martens Async Daemon.
     /// The health check will verify that no async projection progression is lagging behind more than the <paramref name="maxEventLag"/>
     /// The check will return <see cref="HealthCheckResult.Unhealthy"/> if any progression is more than <paramref name="maxEventLag"/> behind the highWaterMark OR if any exception is thrown while doing the check.
-    /// <example> 
+    /// <example>
     /// <code>
     /// Customized Injection Example: services.AddHealthChecks().AddAsyncDaemonHealthCheck(150);
     /// </code>
@@ -37,24 +37,24 @@ public static class AsyncDaemonHealthCheckExtensions
     /// </summary>
     /// <param name="MaxEventLag"></param>
     /// <returns></returns>
-    internal record AsyncDaemonHealthCheckSettings(int MaxEventLag);
+    public record AsyncDaemonHealthCheckSettings(int MaxEventLag);
 
     /// <summary>
     /// Health check implementation
     /// </summary>
-    internal class AsyncDaemonHealthCheck: IHealthCheck
+    public class AsyncDaemonHealthCheck: IHealthCheck
     {
         /// <summary>
         /// The <see cref="DocumentStore"/> to check health for.
         /// </summary>
-        private IDocumentStore _store;
+        private readonly IDocumentStore _store;
 
         /// <summary>
         /// The allowed event projection processing lag compared to the HighWaterMark.
         /// </summary>
-        private int _maxEventLag;
+        private readonly int _maxEventLag;
 
-        internal AsyncDaemonHealthCheck(IDocumentStore store, AsyncDaemonHealthCheckSettings settings)
+        public AsyncDaemonHealthCheck(IDocumentStore store, AsyncDaemonHealthCheckSettings settings)
         {
             _store = store;
             _maxEventLag = settings.MaxEventLag;
