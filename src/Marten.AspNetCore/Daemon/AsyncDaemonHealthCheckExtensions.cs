@@ -26,4 +26,65 @@ public static class AsyncDaemonHealthCheckExtensions
         builder.Services.AddSingleton(new AsyncDaemonHealthCheckSettings(maxEventLag));
         return builder.AddCheck<AsyncDaemonHealthCheck>(nameof(AsyncDaemonHealthCheck), tags: new[] { "Marten", "AsyncDaemon" });
     }
+
+    /// <summary>
+    /// Internal class used to DI settings to async daemon health check
+    /// </summary>
+    /// <param name="MaxEventLag"></param>
+    /// <returns></returns>
+    public record AsyncDaemonHealthCheckSettings(int MaxEventLag);
+
+    /// <summary>
+    /// Health check implementation
+    /// </summary>
+    public class AsyncDaemonHealthCheck: IHealthCheck
+    {
+        /// <summary>
+        /// The <see cref="DocumentStore"/> to check health for.
+        /// </summary>
+        private readonly IDocumentStore _store;
+
+        /// <summary>
+        /// The allowed event projection processing lag compared to the HighWaterMark.
+        /// </summary>
+        private readonly int _maxEventLag;
+
+        public AsyncDaemonHealthCheck(IDocumentStore store, AsyncDaemonHealthCheckSettings settings)
+        {
+            _store = store;
+            _maxEventLag = settings.MaxEventLag;
+        }
+        public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context,
+                                                              CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var projectionsToCheck = _store.Options
+                                               .Events
+                                               .Projections()
+                                               .Where(x => x.Lifecycle == ProjectionLifecycle.Async) // Only check async projections to avoid issus where inline progression counter is set.
+                                               .Select(x => $"{x.ProjectionName}:All")
+                                               .ToHashSet();
+
+                var allProgress = await _store.Advanced.AllProjectionProgress(token: cancellationToken).ConfigureAwait(true);
+
+                var highWaterMark = allProgress.First(x => string.Equals("HighWaterMark", x.ShardName));
+                var projectionMarks = allProgress.Where(x => !string.Equals("HighWaterMark", x.ShardName));
+
+                var unhealthy = projectionMarks
+                                .Where(x => projectionsToCheck.Contains(x.ShardName))
+                                .Where(x => x.Sequence <= highWaterMark.Sequence - _maxEventLag)
+                                .Select(x => x.ShardName)
+                                .ToArray();
+
+                return unhealthy.Any()
+                  ? HealthCheckResult.Unhealthy($"Unhealthy: Async projection sequence is more than {_maxEventLag} events behind for projection(s): {unhealthy.Join(", ")}")
+                  : HealthCheckResult.Healthy("Healthy");
+            }
+            catch (Exception ex)
+            {
+                return HealthCheckResult.Unhealthy($"Unhealthy: {ex.Message}", ex);
+            }
+        }
+    }
 }
