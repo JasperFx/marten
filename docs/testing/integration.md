@@ -73,45 +73,37 @@ public class IntegrationCollection : ICollectionFixture<AppFixture>
 <!-- endSnippet -->
 
 For integration testing, It can be beneficial to a have a slim base class like this one:
-<!-- snippet: sample_integration_streaming_example -->
-<a id='snippet-sample_integration_streaming_example'></a>
+<!-- snippet: sample_integration_context -->
+<a id='snippet-sample_integration_context'></a>
 ```cs
-[Collection("integration")]
-public class web_service_streaming_example: IntegrationContext
+public abstract class IntegrationContext : IAsyncLifetime
 {
-    private readonly IAlbaHost theHost;
-
-    public web_service_streaming_example(AppFixture fixture) : base(fixture)
+    protected IntegrationContext(AppFixture fixture)
     {
-        theHost = fixture.Host;
+        Host = fixture.Host;
+        Store = Host.Services.GetRequiredService<IDocumentStore>();
     }
-
-    [Fact]
-    public async Task stream_a_single_document_hit()
+     
+    public IAlbaHost Host { get; }
+    public IDocumentStore Store { get; }
+     
+    public async Task InitializeAsync()
     {
-        var issue = new Issue {Description = "It's bad"};
-
-        await using (var session = Store.LightweightSession())
-        {
-            session.Store(issue);
-            await session.SaveChangesAsync();
-        }
-
-        var result = await theHost.Scenario(s =>
-        {
-            s.Get.Url($"/issue/{issue.Id}");
-
-            s.StatusCodeShouldBe(200);
-            s.ContentTypeShouldBe("application/json");
-        });
-
-        var read = result.ReadAsJson<Issue>();
-
-        read.Description.ShouldBe(issue.Description);
+        // Using Marten, wipe out all data and reset the state
+        // back to exactly what we described in InitialAccountData
+        await Store.Advanced.ResetAllData();
+    }
+ 
+    // This is required because of the IAsyncLifetime 
+    // interface. Note that I do *not* tear down database
+    // state after the test. That's purposeful
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/Examples/web_service_streaming_tests.cs#L9-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_streaming_example' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/IntegrationContext.cs#L8-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_context' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Other than simply connecting real test fixtures to the ASP.Net Core system under test (the IAlbaHost), this `IntegrationContext` utilizes another bit of Marten functionality to completely reset the database state back to only the data defined by the InitialAccountData so that we always have known data in the database before tests execute.
