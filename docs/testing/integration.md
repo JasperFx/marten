@@ -215,7 +215,7 @@ There is still some discussion on how to leverage this: [Add testing helpers for
 
 // TODO
 
-There is yet to be a official way to do this and there are some issues with generated code: [Generated code creates conflicts whenever a new scheme is used on a new run #2731](https://github.com/JasperFx/marten/issues/2731)
+There is yet to be an official way to do this and there are some issues with generated code: [Generated code creates conflicts whenever a new scheme is used on a new run #2731](https://github.com/JasperFx/marten/issues/2731)
 
 ## Additional Tips
 
