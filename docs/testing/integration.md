@@ -49,7 +49,7 @@ public class IntegrationCollection : ICollectionFixture<AppFixture>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/IntegrationCollection.cs#L5-L10' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_collection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-For integration testing, It can be benifitial to a have a slim base class like this one:
+For integration testing, It can be beneficial to a have a slim base class like this one:
 <!-- snippet: sample_integration_streaming_example -->
 <a id='snippet-sample_integration_streaming_example'></a>
 ```cs
@@ -138,7 +138,7 @@ public class web_service_streaming_example: IntegrationContext
 
 ## Integrating with Wolverine
 
-Whenever wolverine's messaging is used within your application, actions may be delayed. Luckely there is a method to await Wolverine processing like this:
+Whenever wolverine's messaging is used within your application, actions may be delayed. Luckily there is a method to await Wolverine processing like this:
 
 ```cs
 // This method allows us to make HTTP calls into our system
@@ -182,7 +182,7 @@ updated.AccountId.ShouldBe(account.Id);
 updated.Balance.ShouldBe(1300);
 ```
 
-Furthermore it could be benefition to disable all external wolverine transports to test in isolation, by adding this to the Alba host setup:
+Furthermore it could be beneficial to disable all external wolverine transports to test in isolation, by adding this to the Alba host setup:
 
 ```cs
 services.DisableAllExternalWolverineTransports();
