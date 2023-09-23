@@ -108,7 +108,9 @@ public abstract class IntegrationContext : IAsyncLifetime
 
 Other than simply connecting real test fixtures to the ASP.Net Core system under test (the IAlbaHost), this `IntegrationContext` utilizes another bit of Marten functionality to completely reset the database state back to only the data defined by the InitialAccountData so that we always have known data in the database before tests execute.
 
-Finally, in your xUnit test file:
+## Integration test example
+
+Finally, in your xUnit test file, the actual example using the `IntegrationContext` and `AppFixture` we setup before:
 
 <!-- snippet: sample_integration_streaming_example -->
 <a id='snippet-sample_integration_streaming_example'></a>
