@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Alba;
-using IssueService;
 using IssueService.Controllers;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
@@ -10,34 +9,12 @@ using Xunit;
 
 namespace Marten.AspNetCore.Testing;
 
-public class AppFixture : IDisposable, IAsyncLifetime
-{
-    private IAlbaHost _host;
-
-    public void Dispose()
-    {
-        _host.Dispose();
-    }
-
-    public IAlbaHost Host => _host;
-
-    public async Task InitializeAsync()
-    {
-        _host = await Program.CreateHostBuilder(Array.Empty<string>())
-            .StartAlbaAsync();
-    }
-
-    public async Task DisposeAsync()
-    {
-        await _host.DisposeAsync();
-    }
-}
-
-public class web_service_streaming_tests : IClassFixture<AppFixture>
+[Collection("integration")]
+public class web_service_streaming_tests: IntegrationContext
 {
     private readonly IAlbaHost theHost;
 
-    public web_service_streaming_tests(AppFixture fixture)
+    public web_service_streaming_tests(AppFixture fixture) : base(fixture)
     {
         theHost = fixture.Host;
     }

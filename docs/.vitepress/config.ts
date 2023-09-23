@@ -194,6 +194,13 @@ export default withMermaid({
           ]
         },
         {
+          text: 'Testing',
+          collapsed: false,
+          items: [
+            { text: 'Integration Testing', link: '/testing/integration' },
+          ]
+        },
+        {
           text: 'Diagnostics',
           collapsed: false,
           items: [

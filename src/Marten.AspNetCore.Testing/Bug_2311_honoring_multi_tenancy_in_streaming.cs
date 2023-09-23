@@ -8,11 +8,12 @@ using Xunit;
 
 namespace Marten.AspNetCore.Testing;
 
-public class Bug_2311_honoring_multi_tenancy_in_streaming : IClassFixture<AppFixture>
+[Collection("integration")]
+public class Bug_2311_honoring_multi_tenancy_in_streaming: IntegrationContext
 {
     private readonly AppFixture _fixture;
 
-    public Bug_2311_honoring_multi_tenancy_in_streaming(AppFixture fixture)
+    public Bug_2311_honoring_multi_tenancy_in_streaming(AppFixture fixture) : base(fixture)
     {
         _fixture = fixture;
     }
@@ -24,15 +25,15 @@ public class Bug_2311_honoring_multi_tenancy_in_streaming : IClassFixture<AppFix
         await store.Advanced.Clean.DeleteAllDocumentsAsync();
 
         await using var sessionOne = store.LightweightSession("one");
-        sessionOne.Store(new Thing{Name = "Thor"});
-        sessionOne.Store(new Thing{Name = "Iron Man"});
-        sessionOne.Store(new Thing{Name = "Captain America"});
+        sessionOne.Store(new Thing { Name = "Thor" });
+        sessionOne.Store(new Thing { Name = "Iron Man" });
+        sessionOne.Store(new Thing { Name = "Captain America" });
         await sessionOne.SaveChangesAsync();
 
 
         await using var sessionTwo = store.LightweightSession("two");
-        sessionTwo.Store(new Thing{Name = "Hawkeye"});
-        sessionTwo.Store(new Thing{Name = "Black Widow"});
+        sessionTwo.Store(new Thing { Name = "Hawkeye" });
+        sessionTwo.Store(new Thing { Name = "Black Widow" });
         await sessionTwo.SaveChangesAsync();
 
 
@@ -40,6 +41,6 @@ public class Bug_2311_honoring_multi_tenancy_in_streaming : IClassFixture<AppFix
         result.Length.ShouldBe(3);
 
         result.Select(x => x.Name).OrderBy(x => x)
-            .ShouldBe(new []{"Captain America", "Iron Man", "Thor"});
+            .ShouldBe(new[] { "Captain America", "Iron Man", "Thor" });
     }
 }
