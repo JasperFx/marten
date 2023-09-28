@@ -12,7 +12,6 @@ internal class CreatedTimestampColumn: MetadataColumn<DateTimeOffset>, ISelectab
     {
         DefaultExpression = "(transaction_timestamp())";
         Type = "timestamp with time zone";
-        Enabled = false;
     }
 
     public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async,
