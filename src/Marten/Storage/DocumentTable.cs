@@ -39,6 +39,7 @@ internal class DocumentTable: Table
         AddIfActive(_mapping.Metadata.LastModified);
         AddIfActive(_mapping.Metadata.Version);
         AddIfActive(_mapping.Metadata.DotNetType);
+        AddIfActive(_mapping.Metadata.CreatedTimestamp);
 
         AddIfActive(_mapping.Metadata.CorrelationId);
         AddIfActive(_mapping.Metadata.CausationId);

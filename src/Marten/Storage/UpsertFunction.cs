@@ -110,20 +110,20 @@ internal class UpsertFunction: Function
             .Select(x => $"\"{x.Column}\" = {x.Arg}").Concat(systemUpdates).Join(", ");
 
         var insertColumns = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").ToList();
+        var valueListColumns = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.Arg).ToList();
 
         if (_mapping.Metadata.LastModified.Enabled)
         {
             insertColumns.Add(SchemaConstants.LastModifiedColumn);
+            valueListColumns.Add("transaction_timestamp()");
         }
-
-        var inserts = insertColumns.Join(", ");
-
-        var valueListColumns = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.Arg).ToList();
-        if (_mapping.Metadata.LastModified.Enabled)
+        if (_mapping.Metadata.CreatedTimestamp.Enabled)
         {
+            insertColumns.Add(SchemaConstants.CreatedTimestampColumn);
             valueListColumns.Add("transaction_timestamp()");
         }
 
+        var inserts = insertColumns.Join(", ");
         var valueList = valueListColumns.Join(", ");
 
         var whereClauses = new List<string>();
