@@ -692,6 +692,11 @@ public class MartenRegistry
                 new(_parent, m => m.LastModified);
 
             /// <summary>
+            ///     Optional metadata for the timestamp of when this document was created
+            /// </summary>
+            public Column<string> CreatedTimestamp => new(_parent, m => m.CreatedTimestamp);
+
+            /// <summary>
             ///     The stored tenant id of this document
             /// </summary>
             public Column<string> TenantId => new(_parent, m => m.TenantId);
