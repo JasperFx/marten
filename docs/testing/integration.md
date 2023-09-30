@@ -207,15 +207,87 @@ services.DisableAllExternalWolverineTransports();
 
 ## Testing Event Projections
 
-// TODO
+There is still some discussion on how to leverage this: [Add testing helpers for async projections #2624](https://github.com/JasperFx/marten/issues/2624), but in the mean time you could add this helper class to your `AppFixture` class:
 
-There is still some discussion on how to leverage this: [Add testing helpers for async projections #2624](https://github.com/JasperFx/marten/issues/2624)
+```cs
+/// <summary>
+/// 1. Start generation of projections
+/// 2. Wait for projections to be projected
+/// </summary>
+public async Task GenerateProjectionsAsync<TView>(CancellationToken cancellationToken)
+{
+    using var daemon = await Store.BuildProjectionDaemonAsync();
+    await daemon.StartAllShards();
+    await daemon.RebuildProjection<TView>(10.Seconds(), cancellationToken);
+}
+```
 
 ## Set-up a new database scheme for every test to avoid database cleanup
 
-// TODO
+To generate a scheme name for every test you could add this to your `AppFixture` class:
 
-There is yet to be an official way to do this and there are some issues with generated code: [Generated code creates conflicts whenever a new scheme is used on a new run #2731](https://github.com/JasperFx/marten/issues/2731)
+```cs
+public string SchemaName { get; } = "sch" + Guid.NewGuid().ToString().Replace("-", string.Empty);
+
+// ..
+
+public async Task InitializeAsync()
+{
+    Host = await AlbaHost.For<Program>(b =>
+    {
+         b.ConfigureServices((context, services) =>
+        {
+            services.Configure<MartenSettings>(x => {
+                x.SchemaName = SchemaName;
+            });
+        }
+    }
+}
+```
+SchemaName can not contain certain characters such as `-` and can not start with a number, so that's why it is not just a `Guid``.
+
+`MartenSettings` is a custom config class, you can customize any way you'd like:
+
+```cs
+public class MartenSettings
+{
+    public const string SECTION = "Marten";
+    public string? SchemaName { get; set; }
+    public bool FromTests { get; set; } = false;
+}
+```
+
+Now in your actual application you should configure the schema name:
+
+```cs
+services.AddMarten(sp =>
+{
+    var options = new StoreOptions();
+    var martenSettings = sp.GetRequiredService<IOptions<MartenSettings>>().Value;
+
+    if (!string.IsNullOrEmpty(martenSettings.SchemaName))
+    {
+        options.Events.DatabaseSchemaName = martenSettings.SchemaName;
+        options.DatabaseSchemaName = martenSettings.SchemaName;
+    }
+
+    return options;
+}
+```
+
+Keep note that Marten generates code on startup that contains the scheme name, so it could be beneficial to turn that off for your tests:
+
+```cs
+var martenSettings = configuration.GetSection(MartenSettings.SECTION).Get<MartenSettings>() ?? new MartenSettings();
+if (martenSettings.FromTests)
+{
+    martenConfiguration.ApplyAllDatabaseChangesOnStartup();
+}
+else
+{
+    martenConfiguration.OptimizeArtifactWorkflow(TypeLoadMode.Static);
+}
+```
 
 ## Additional Tips
 
