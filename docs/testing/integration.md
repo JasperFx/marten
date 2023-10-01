@@ -40,23 +40,35 @@ Then, set up your system under test (`AppFixture`) to use MartenDB:
 <!-- snippet: sample_integration_appfixture -->
 <a id='snippet-sample_integration_appfixture'></a>
 ```cs
-public class AppFixture : IAsyncLifetime
+public class AppFixture: IAsyncLifetime
 {
+    private string SchemaName { get; } = "sch" + Guid.NewGuid().ToString().Replace("-", string.Empty);
     public IAlbaHost Host { get; private set; }
 
     public async Task InitializeAsync()
     {
-        Host = await Program.CreateHostBuilder(Array.Empty<string>())
-            .StartAlbaAsync();
+        // This is bootstrapping the actual application using
+        // its implied Program.Main() set up
+        Host = await AlbaHost.For<Program>(b =>
+        {
+            b.ConfigureServices((context, services) =>
+            {
+                services.Configure<MartenSettings>(s =>
+                {
+                    s.FromTests = true;
+                    s.SchemaName = SchemaName;
+                });
+            });
+        });
     }
 
     public async Task DisposeAsync()
-    {
-        await Host.DisposeAsync();
+        {
+            await Host.DisposeAsync();
+        }
     }
-}
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L9-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_appfixture' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L10-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_appfixture' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To prevent spinning up the entire host (and database setup) for every test (in parallel) you could create a collection fixture to share between your tests:
@@ -153,6 +165,125 @@ public class web_service_streaming_example: IntegrationContext
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/Examples/web_service_streaming_tests.cs#L9-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_streaming_example' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Set-up a new database scheme for every test to avoid database cleanup
+
+To generate a scheme name for every test you could add this to your `AppFixture` class to generate a scheme name:
+
+<!-- snippet: sample_integration_scheme_name -->
+<a id='snippet-sample_integration_scheme_name'></a>
+```cs
+private string SchemaName { get; } = "sch" + Guid.NewGuid().ToString().Replace("-", string.Empty);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L13-L15' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_scheme_name' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+SchemaName can not contain certain characters such as `-` and can not start with a number, so that's why it is not just a `Guid``.
+
+You can configure your albahost to use this scheme name like this:
+
+<!-- snippet: sample_integration_configure_scheme_name -->
+<a id='snippet-sample_integration_configure_scheme_name'></a>
+```cs
+services.AddMarten(sp =>
+{
+    var options = new StoreOptions();
+    options.Connection(ConnectionSource.ConnectionString);
+    var martenSettings = sp.GetRequiredService<IOptions<MartenSettings>>().Value;
+
+    if (!string.IsNullOrEmpty(martenSettings.SchemaName))
+    {
+        options.Events.DatabaseSchemaName = martenSettings.SchemaName;
+        options.DatabaseSchemaName = martenSettings.SchemaName;
+    }
+
+    return options;
+}).UseLightweightSessions();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Startup.cs#L32-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_configure_scheme_name' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_integration_configure_scheme_name-1'></a>
+```cs
+Host = await AlbaHost.For<Program>(b =>
+{
+    b.ConfigureServices((context, services) =>
+    {
+        services.Configure<MartenSettings>(s =>
+        {
+            s.FromTests = true;
+            s.SchemaName = SchemaName;
+        });
+    });
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L22-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_configure_scheme_name-1' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`MartenSettings` is a custom config class, you can customize any way you'd like:
+
+<!-- snippet: sample_integration_settings -->
+<a id='snippet-sample_integration_settings'></a>
+```cs
+public class MartenSettings
+{
+    public const string SECTION = "Marten";
+    public string SchemaName { get; set; }
+    public bool FromTests { get; set; } = false;
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/MartenSettings.cs#L3-L10' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_settings' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Now in your actual application you should configure the schema name:
+
+<!-- snippet: sample_integration_configure_scheme_name -->
+<a id='snippet-sample_integration_configure_scheme_name'></a>
+```cs
+services.AddMarten(sp =>
+{
+    var options = new StoreOptions();
+    options.Connection(ConnectionSource.ConnectionString);
+    var martenSettings = sp.GetRequiredService<IOptions<MartenSettings>>().Value;
+
+    if (!string.IsNullOrEmpty(martenSettings.SchemaName))
+    {
+        options.Events.DatabaseSchemaName = martenSettings.SchemaName;
+        options.DatabaseSchemaName = martenSettings.SchemaName;
+    }
+
+    return options;
+}).UseLightweightSessions();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Startup.cs#L32-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_configure_scheme_name' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_integration_configure_scheme_name-1'></a>
+```cs
+Host = await AlbaHost.For<Program>(b =>
+{
+    b.ConfigureServices((context, services) =>
+    {
+        services.Configure<MartenSettings>(s =>
+        {
+            s.FromTests = true;
+            s.SchemaName = SchemaName;
+        });
+    });
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L22-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_configure_scheme_name-1' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Keep note that Marten can be configured to generate static code on startup that contains the scheme name, so it could be beneficial to turn that off for your integration tests:
+
+```cs
+var martenSettings = configuration.GetSection(MartenSettings.SECTION).Get<MartenSettings>() ?? new MartenSettings();
+if (martenSettings.FromTests)
+{
+    martenConfiguration.ApplyAllDatabaseChangesOnStartup();
+}
+else
+{
+    martenConfiguration.OptimizeArtifactWorkflow(TypeLoadMode.Static);
+}
+```
+
 ## Integrating with Wolverine
 
 Whenever wolverine's messaging is used within your application, actions may be delayed. Luckily there is a method to await Wolverine processing like this:
@@ -219,73 +350,6 @@ public async Task GenerateProjectionsAsync<TView>(CancellationToken cancellation
     using var daemon = await Store.BuildProjectionDaemonAsync();
     await daemon.StartAllShards();
     await daemon.RebuildProjection<TView>(10.Seconds(), cancellationToken);
-}
-```
-
-## Set-up a new database scheme for every test to avoid database cleanup
-
-To generate a scheme name for every test you could add this to your `AppFixture` class:
-
-```cs
-public string SchemaName { get; } = "sch" + Guid.NewGuid().ToString().Replace("-", string.Empty);
-
-// ..
-
-public async Task InitializeAsync()
-{
-    Host = await AlbaHost.For<Program>(b =>
-    {
-         b.ConfigureServices((context, services) =>
-        {
-            services.Configure<MartenSettings>(x => {
-                x.SchemaName = SchemaName;
-            });
-        }
-    }
-}
-```
-SchemaName can not contain certain characters such as `-` and can not start with a number, so that's why it is not just a `Guid``.
-
-`MartenSettings` is a custom config class, you can customize any way you'd like:
-
-```cs
-public class MartenSettings
-{
-    public const string SECTION = "Marten";
-    public string? SchemaName { get; set; }
-    public bool FromTests { get; set; } = false;
-}
-```
-
-Now in your actual application you should configure the schema name:
-
-```cs
-services.AddMarten(sp =>
-{
-    var options = new StoreOptions();
-    var martenSettings = sp.GetRequiredService<IOptions<MartenSettings>>().Value;
-
-    if (!string.IsNullOrEmpty(martenSettings.SchemaName))
-    {
-        options.Events.DatabaseSchemaName = martenSettings.SchemaName;
-        options.DatabaseSchemaName = martenSettings.SchemaName;
-    }
-
-    return options;
-}
-```
-
-Keep note that Marten generates code on startup that contains the scheme name, so it could be beneficial to turn that off for your tests:
-
-```cs
-var martenSettings = configuration.GetSection(MartenSettings.SECTION).Get<MartenSettings>() ?? new MartenSettings();
-if (martenSettings.FromTests)
-{
-    martenConfiguration.ApplyAllDatabaseChangesOnStartup();
-}
-else
-{
-    martenConfiguration.OptimizeArtifactWorkflow(TypeLoadMode.Static);
 }
 ```
 
