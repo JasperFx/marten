@@ -237,7 +237,9 @@ services.AddMarten(sp =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Startup.cs#L32-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_use_scheme_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: warning
 Keep note that Marten can be configured to generate static code on startup that contains the scheme name, so it could be beneficial to turn that off for your integration tests:
+:::
 
 ```cs
 var martenSettings = configuration.GetSection(MartenSettings.SECTION).Get<MartenSettings>() ?? new MartenSettings();
@@ -323,6 +325,6 @@ public async Task GenerateProjectionsAsync<TView>(CancellationToken cancellation
 ## Additional Tips
 
 1. **Parallel Execution**: xUnit runs tests in parallel. If your tests are not isolated, it could lead to unexpected behavior.
-2. **Database Clean-Up**: You may want to clean up or reset the database state before running each test.
+2. **Database Clean-Up**: You may want to clean up or reset the database state before running each test. Helpers are explained here: [Cleaning up database](/schema/cleaning).
 
 Feel free to consult the official documentation for [Alba](https://jasperfx.github.io/alba/), [Wolverine](https://wolverine.netlify.app/), and [xUnit](https://xunit.net/) for more in-depth information.
