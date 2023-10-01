@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 
 namespace IssueService;
@@ -28,7 +29,22 @@ public class Startup
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddMarten(ConnectionSource.ConnectionString).UseLightweightSessions();
+#region sample_integration_configure_scheme_name
+        services.AddMarten(sp =>
+        {
+            var options = new StoreOptions();
+            options.Connection(ConnectionSource.ConnectionString);
+            var martenSettings = sp.GetRequiredService<IOptions<MartenSettings>>().Value;
+
+            if (!string.IsNullOrEmpty(martenSettings.SchemaName))
+            {
+                options.Events.DatabaseSchemaName = martenSettings.SchemaName;
+                options.DatabaseSchemaName = martenSettings.SchemaName;
+            }
+
+            return options;
+        }).UseLightweightSessions();
+#endregion
         services.AddControllers();
         services.AddSwaggerGen(c =>
         {
