@@ -179,7 +179,7 @@ private string SchemaName { get; } = "sch" + Guid.NewGuid().ToString().Replace("
 
 SchemaName can not contain certain characters such as `-` and can not start with a number, so that's why it is not just a `Guid``.
 
-You can configure your albahost to use this scheme name like this:
+You can configure your host to use this scheme name like this:
 
 <!-- snippet: sample_integration_configure_scheme_name -->
 <a id='snippet-sample_integration_configure_scheme_name'></a>
