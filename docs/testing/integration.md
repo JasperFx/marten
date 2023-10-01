@@ -184,24 +184,6 @@ You can configure your host to use this scheme name like this:
 <!-- snippet: sample_integration_configure_scheme_name -->
 <a id='snippet-sample_integration_configure_scheme_name'></a>
 ```cs
-services.AddMarten(sp =>
-{
-    var options = new StoreOptions();
-    options.Connection(ConnectionSource.ConnectionString);
-    var martenSettings = sp.GetRequiredService<IOptions<MartenSettings>>().Value;
-
-    if (!string.IsNullOrEmpty(martenSettings.SchemaName))
-    {
-        options.Events.DatabaseSchemaName = martenSettings.SchemaName;
-        options.DatabaseSchemaName = martenSettings.SchemaName;
-    }
-
-    return options;
-}).UseLightweightSessions();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Startup.cs#L32-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_configure_scheme_name' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_integration_configure_scheme_name-1'></a>
-```cs
 Host = await AlbaHost.For<Program>(b =>
 {
     b.ConfigureServices((context, services) =>
@@ -214,7 +196,7 @@ Host = await AlbaHost.For<Program>(b =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L22-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_configure_scheme_name-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L22-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_configure_scheme_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `MartenSettings` is a custom config class, you can customize any way you'd like:
@@ -234,8 +216,8 @@ public class MartenSettings
 
 Now in your actual application you should configure the schema name:
 
-<!-- snippet: sample_integration_configure_scheme_name -->
-<a id='snippet-sample_integration_configure_scheme_name'></a>
+<!-- snippet: sample_integration_use_scheme_name -->
+<a id='snippet-sample_integration_use_scheme_name'></a>
 ```cs
 services.AddMarten(sp =>
 {
@@ -252,22 +234,7 @@ services.AddMarten(sp =>
     return options;
 }).UseLightweightSessions();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Startup.cs#L32-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_configure_scheme_name' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_integration_configure_scheme_name-1'></a>
-```cs
-Host = await AlbaHost.For<Program>(b =>
-{
-    b.ConfigureServices((context, services) =>
-    {
-        services.Configure<MartenSettings>(s =>
-        {
-            s.FromTests = true;
-            s.SchemaName = SchemaName;
-        });
-    });
-});
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L22-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_configure_scheme_name-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Startup.cs#L32-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_use_scheme_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Keep note that Marten can be configured to generate static code on startup that contains the scheme name, so it could be beneficial to turn that off for your integration tests:

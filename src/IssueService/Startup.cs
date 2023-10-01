@@ -29,7 +29,7 @@ public class Startup
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services)
     {
-#region sample_integration_configure_scheme_name
+#region sample_integration_use_scheme_name
         services.AddMarten(sp =>
         {
             var options = new StoreOptions();
