@@ -158,6 +158,15 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
         return AddItem(handler);
     }
 
+    public Task<StreamState> FetchStreamState(string streamKey)
+    {
+        _documentTypes.Add(typeof(IEvent));
+        var handler = _parent.EventStorage()
+            .QueryForStream(StreamAction.ForReference(streamKey, _parent.TenantId));
+
+        return AddItem(handler);
+    }
+
     public Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, long version = 0, DateTime? timestamp = null,
         long fromVersion = 0)
     {
@@ -166,6 +175,24 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
         var statement = new EventStatement(selector)
         {
             StreamId = streamId,
+            Version = version,
+            Timestamp = timestamp,
+            TenantId = _parent.TenantId,
+            FromVersion = fromVersion
+        };
+
+        IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
+
+        return AddItem(handler);
+    }
+
+    public Task<IReadOnlyList<IEvent>> FetchStream(string streamKey, long version = 0, DateTime? timestamp = null, long fromVersion = 0)
+    {
+        _documentTypes.Add(typeof(IEvent));
+        var selector = _parent.EventStorage();
+        var statement = new EventStatement(selector)
+        {
+            StreamKey = streamKey,
             Version = version,
             Timestamp = timestamp,
             TenantId = _parent.TenantId,
