@@ -55,7 +55,6 @@ public class AppFixture: IAsyncLifetime
             {
                 services.Configure<MartenSettings>(s =>
                 {
-                    s.FromTests = true;
                     s.SchemaName = SchemaName;
                 });
             });
@@ -68,7 +67,7 @@ public class AppFixture: IAsyncLifetime
         }
     }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L10-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_appfixture' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L10-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_appfixture' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To prevent spinning up the entire host (and database setup) for every test (in parallel) you could create a collection fixture to share between your tests:
@@ -190,13 +189,12 @@ Host = await AlbaHost.For<Program>(b =>
     {
         services.Configure<MartenSettings>(s =>
         {
-            s.FromTests = true;
             s.SchemaName = SchemaName;
         });
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L22-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_configure_scheme_name' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L22-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_configure_scheme_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `MartenSettings` is a custom config class, you can customize any way you'd like:
@@ -208,10 +206,9 @@ public class MartenSettings
 {
     public const string SECTION = "Marten";
     public string SchemaName { get; set; }
-    public bool FromTests { get; set; } = false;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/MartenSettings.cs#L3-L10' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_settings' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/MartenSettings.cs#L3-L9' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_settings' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now in your actual application you should configure the schema name:
@@ -238,20 +235,10 @@ services.AddMarten(sp =>
 <!-- endSnippet -->
 
 ::: warning
-Keep note that Marten can be configured to generate static code on startup that contains the scheme name, so it could be beneficial to turn that off for your integration tests:
+Keep note that Marten can be configured to generate static code on startup that contains the scheme name, so it could be beneficial to keep that turned off in the tests.
 :::
 
-```cs
-var martenSettings = configuration.GetSection(MartenSettings.SECTION).Get<MartenSettings>() ?? new MartenSettings();
-if (martenSettings.FromTests)
-{
-    martenConfiguration.ApplyAllDatabaseChangesOnStartup();
-}
-else
-{
-    martenConfiguration.OptimizeArtifactWorkflow(TypeLoadMode.Static);
-}
-```
+Alba hosts by default start with `ASPNETCORE_ENVIRONMENT=Development`, so the `AddMarten().OptimizeArtifactWorkflow()` option will not generate static code in that case as is explained here: [Development versus Production Usage](/configuration/optimized_artifact_workflow).
 
 ## Integrating with Wolverine
 
@@ -307,20 +294,9 @@ services.DisableAllExternalWolverineTransports();
 
 ## Testing Event Projections
 
-There is still some discussion on how to leverage this: [Add testing helpers for async projections #2624](https://github.com/JasperFx/marten/issues/2624), but in the mean time you could add this helper class to your `AppFixture` class:
+// TODO
 
-```cs
-/// <summary>
-/// 1. Start generation of projections
-/// 2. Wait for projections to be projected
-/// </summary>
-public async Task GenerateProjectionsAsync<TView>(CancellationToken cancellationToken)
-{
-    using var daemon = await Store.BuildProjectionDaemonAsync();
-    await daemon.StartAllShards();
-    await daemon.RebuildProjection<TView>(10.Seconds(), cancellationToken);
-}
-```
+There is still some discussion on how to leverage this: [Add testing helpers for async projections #2624](https://github.com/JasperFx/marten/issues/2624).
 
 ## Additional Tips
 
