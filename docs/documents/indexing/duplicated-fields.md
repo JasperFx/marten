@@ -29,7 +29,7 @@ public class Employee
     public string Department;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L27-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_attributes_on_document' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L34-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_attributes_on_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or by using the fluent interface off of `StoreOptions`:
@@ -73,7 +73,7 @@ var store = DocumentStore.For(options =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L51-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_indexexamples' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L58-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_indexexamples' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the case above, Marten would add an extra columns to the generated `mt_doc_user` table with `first_name` and `department`. Some users find duplicated fields to be useful for user supplied SQL queries.

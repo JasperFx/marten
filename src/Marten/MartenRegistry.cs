@@ -283,6 +283,18 @@ public class MartenRegistry
         }
 
         /// <summary>
+        ///     Creates an index on the predefined Created timestamp column
+        /// </summary>
+        /// <param name="configure"></param>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> IndexCreatedTimestamp(Action<DocumentIndex>? configure = null)
+        {
+            _builder.Alter = m => m.AddCreatedTimestampIndex(configure);
+
+            return this;
+        }
+
+        /// <summary>
         ///     Create a full text index
         /// </summary>
         /// <param name="regConfig"></param>
