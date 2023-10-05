@@ -349,6 +349,15 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
         return index;
     }
 
+    public DocumentIndex AddCreatedTimestampIndex(Action<DocumentIndex> configure = null)
+    {
+        var index = new DocumentIndex(this, SchemaConstants.CreatedTimestampColumn);
+        configure?.Invoke(index);
+        Indexes.Add(index);
+
+        return index;
+    }
+
     public DocumentIndex AddDeletedAtIndex(Action<DocumentIndex> configure = null)
     {
         if (DeleteStyle != DeleteStyle.SoftDelete)

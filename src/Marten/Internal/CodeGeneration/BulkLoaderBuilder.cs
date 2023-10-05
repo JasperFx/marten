@@ -86,13 +86,18 @@ public class BulkLoaderBuilder
         var table = _mapping.Schema.Table;
 
         var storageTable = table.Identifier.QualifiedName;
-        var columns = table.Columns.Where(x => x.Name != SchemaConstants.LastModifiedColumn)
+        var columns = table.Columns.Where(x => !(x.Name == SchemaConstants.LastModifiedColumn ||
+                                                x.Name == SchemaConstants.CreatedTimestampColumn))
             .Select(x => $"\\\"{x.Name}\\\"").Join(", ");
-        var selectColumns = table.Columns.Where(x => x.Name != SchemaConstants.LastModifiedColumn)
+        var selectColumns = table.Columns.Where(x => !(x.Name == SchemaConstants.LastModifiedColumn ||
+                                                    x.Name == SchemaConstants.CreatedTimestampColumn))
             .Select(x => $"{_tempTable}.\\\"{x.Name}\\\"").Join(", ");
 
         return
-            $"insert into {storageTable} ({columns}, {SchemaConstants.LastModifiedColumn}) (select {selectColumns}, transaction_timestamp() from {_tempTable} left join {storageTable} on {_tempTable}.id = {storageTable}.id where {storageTable}.id is null)";
+            $"insert into {storageTable} ({columns}, {SchemaConstants.LastModifiedColumn}, {SchemaConstants.CreatedTimestampColumn}) " +
+            $"(select {selectColumns}, transaction_timestamp(), transaction_timestamp() " +
+            $"from {_tempTable} left join {storageTable} on {_tempTable}.id = {storageTable}.id " +
+            $"where {storageTable}.id is null)";
     }
 
     public string OverwriteDuplicatesFromTempTable()
@@ -100,7 +105,8 @@ public class BulkLoaderBuilder
         var table = _mapping.Schema.Table;
         var storageTable = table.Identifier.QualifiedName;
 
-        var updates = table.Columns.Where(x => x.Name != "id" && x.Name != SchemaConstants.LastModifiedColumn)
+        var updates = table.Columns.Where(x => x.Name != "id" && !(x.Name == SchemaConstants.LastModifiedColumn ||
+                                                                    x.Name == SchemaConstants.CreatedTimestampColumn))
             .Select(x => $"{x.Name} = source.{x.Name}").Join(", ");
 
         return

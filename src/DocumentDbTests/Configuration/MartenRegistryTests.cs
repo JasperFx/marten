@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -29,6 +29,7 @@ public class MartenRegistryTests : OneOffConfigurationsContext
                 })
                 .GinIndexJsonData(x => x.Name = "my_gin_index")
                 .IndexLastModified(x => x.IsConcurrent = true)
+                .IndexCreatedTimestamp(x => x.IsConcurrent = true)
                 .SoftDeletedWithIndex(x => x.Method = IndexMethod.brin);
 
             _.Schema.For<User>().PropertySearching(PropertySearching.JSON_Locator_Only);
@@ -104,6 +105,16 @@ public class MartenRegistryTests : OneOffConfigurationsContext
         var mapping = theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>();
 
         var index = mapping.IndexesFor(SchemaConstants.LastModifiedColumn).Single();
+
+        index.IsConcurrent.ShouldBe(true);
+    }
+
+    [Fact]
+    public void mt_created_index_is_added()
+    {
+        var mapping = theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>();
+
+        var index = mapping.IndexesFor(SchemaConstants.CreatedTimestampColumn).Single();
 
         index.IsConcurrent.ShouldBe(true);
     }
