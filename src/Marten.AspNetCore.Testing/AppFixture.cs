@@ -26,7 +26,6 @@ public class AppFixture: IAsyncLifetime
             {
                 services.Configure<MartenSettings>(s =>
                 {
-                    s.FromTests = true;
                     s.SchemaName = SchemaName;
                 });
             });
