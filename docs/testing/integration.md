@@ -101,7 +101,6 @@ public abstract class IntegrationContext : IAsyncLifetime
     public async Task InitializeAsync()
     {
         // Using Marten, wipe out all data and reset the state
-        // back to exactly what we described in InitialAccountData
         await Store.Advanced.ResetAllData();
     }
  
@@ -114,7 +113,7 @@ public abstract class IntegrationContext : IAsyncLifetime
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/IntegrationContext.cs#L8-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_context' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/IntegrationContext.cs#L8-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_context' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Other than simply connecting real test fixtures to the ASP.Net Core system under test (the IAlbaHost), this `IntegrationContext` utilizes another bit of Marten functionality to completely reset the database state and then (re) applying the configured initial data so that we always have known data in the database before tests execute.

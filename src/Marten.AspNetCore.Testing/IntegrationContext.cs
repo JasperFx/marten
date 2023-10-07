@@ -20,7 +20,6 @@ public abstract class IntegrationContext : IAsyncLifetime
     public async Task InitializeAsync()
     {
         // Using Marten, wipe out all data and reset the state
-        // back to exactly what we described in InitialAccountData
         await Store.Advanced.ResetAllData();
     }
  
