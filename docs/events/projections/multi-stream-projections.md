@@ -400,8 +400,9 @@ create an aggregated view. As an example, a `Travel` event we use in Marten test
 <a id='snippet-sample_travel_movements'></a>
 ```cs
 public IList<Movement> Movements { get; set; } = new List<Movement>();
+public List<Stop> Stops { get; set; } = new();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/Travel.cs#L28-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_travel_movements' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/Travel.cs#L39-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_travel_movements' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In a sample `ViewProjection`, we do a "fan out" of the `Travel.Movements` members into separate events being processed through the projection:
@@ -421,6 +422,9 @@ public class DayProjection: MultiStreamProjection<Day, int>
         // on each Movement child of the Travel event
         // as if it were its own event
         FanOut<Travel, Movement>(x => x.Movements);
+
+        // You can also access Event data
+        FanOut<IEvent<Travel>, Stop>(x => x.Data.Stops);
 
         ProjectionName = "Day";
     }
@@ -449,9 +453,11 @@ public class DayProjection: MultiStreamProjection<Day, int>
                 throw new ArgumentOutOfRangeException();
         }
     }
+
+    public void Apply(Day day, Stop stop) => day.Stops++;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/ViewProjectionTests.cs#L124-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/ViewProjectionTests.cs#L131-L180' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Using Custom Grouper with Fan Out Feature for Event Projections
