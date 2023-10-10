@@ -104,11 +104,27 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
     /// <param name="mode">Should the fan out operation happen after grouping, or before? Default is after</param>
     /// <typeparam name="TEvent"></typeparam>
     /// <typeparam name="TChild"></typeparam>
-    public EventSlicer<TDoc, TId> FanOut<TEvent, TChild>(Func<TEvent, IEnumerable<TChild>> fanOutFunc,
-        FanoutMode mode = FanoutMode.AfterGrouping)
+    public EventSlicer<TDoc, TId> FanOut<TEvent, TChild>(Func<TEvent, IEnumerable<TChild>> fanOutFunc, FanoutMode mode = FanoutMode.AfterGrouping)
     {
-        var fanout = new FanOutOperator<TEvent, TChild>(fanOutFunc) { Mode = mode };
+        return FanOut(new FanOutEventDataOperator<TEvent, TChild>(fanOutFunc) { Mode = mode }, mode);
+    }
 
+    /// <summary>
+    ///     Apply "fan out" operations to the given TEvent type that inserts an enumerable of TChild events right behind the
+    ///     parent
+    ///     event in the event stream
+    /// </summary>
+    /// <param name="fanOutFunc"></param>
+    /// <param name="mode">Should the fan out operation happen after grouping, or before? Default is after</param>
+    /// <typeparam name="TEvent"></typeparam>
+    /// <typeparam name="TChild"></typeparam>
+    public EventSlicer<TDoc, TId> FanOut<TEvent, TChild>(Func<IEvent<TEvent>, IEnumerable<TChild>> fanOutFunc, FanoutMode mode = FanoutMode.AfterGrouping)
+    {
+        return FanOut(new FanOutEventOperator<TEvent, TChild>(fanOutFunc) { Mode = mode }, mode);
+    }
+
+    private EventSlicer<TDoc, TId> FanOut(IFanOutRule fanout, FanoutMode mode)
+    {
         switch (mode)
         {
             case FanoutMode.AfterGrouping:

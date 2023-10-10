@@ -45,6 +45,12 @@ public class TripStream
         }
     }
 
+    public static TimeOnly RandomTime()
+    {
+        var hour = Random.Next(0, 24);
+        return new TimeOnly(hour, 0, 0);
+    }
+
     public Guid StreamId = Guid.NewGuid();
 
     public readonly List<object> Events = new List<object>();

@@ -96,6 +96,11 @@ public class ViewProjectionTests: DaemonContext
                 .Where(x => x.Direction == Direction.East)
                 .Sum(x => x.Distance));
 
+            day.Stops.ShouldBe(matching
+                .OfType<Travel>()
+                .SelectMany(x => x.Stops)
+                .Count());
+
             day.Version.ShouldBeGreaterThan(0);
         }
     }
@@ -112,6 +117,8 @@ public class Day
 
     // how many trips ended on this day?
     public int Ended { get; set; }
+
+    public int Stops { get; set; }
 
     // how many miles did the active trips
     // drive in which direction on this day?
@@ -135,6 +142,9 @@ public class DayProjection: MultiStreamProjection<Day, int>
         // on each Movement child of the Travel event
         // as if it were its own event
         FanOut<Travel, Movement>(x => x.Movements);
+
+        // You can also access Event data
+        FanOut<IEvent<Travel>, Stop>(x => x.Data.Stops);
 
         ProjectionName = "Day";
     }
@@ -163,6 +173,8 @@ public class DayProjection: MultiStreamProjection<Day, int>
                 throw new ArgumentOutOfRangeException();
         }
     }
+
+    public void Apply(Day day, Stop stop) => day.Stops++;
 }
 
 #endregion

@@ -9,8 +9,8 @@ public class Travel : IDayEvent
     {
         var travel = new Travel {Day = day,};
 
-        var length = TripStream.Random.Next(1, 20);
-        for (var i = 0; i < length; i++)
+        var numberOfMovements = TripStream.Random.Next(1, 20);
+        for (var i = 0; i < numberOfMovements; i++)
         {
             var movement = new Movement
             {
@@ -18,6 +18,17 @@ public class Travel : IDayEvent
             };
 
             travel.Movements.Add(movement);
+        }
+
+        var numberOfStops = TripStream.Random.Next(1, 10);
+        for (var i = 0; i < numberOfStops; i++)
+        {
+            travel.Stops.Add(new Stop()
+            {
+                Time = TripStream.RandomTime(),
+                State = TripStream.RandomState(),
+                Duration = TripStream.Random.Next(10, 30)
+            });
         }
 
         return travel;
@@ -28,6 +39,7 @@ public class Travel : IDayEvent
     #region sample_Travel_Movements
 
     public IList<Movement> Movements { get; set; } = new List<Movement>();
+    public List<Stop> Stops { get; set; } = new();
 
     #endregion
 
