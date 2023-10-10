@@ -424,7 +424,7 @@ public class DayProjection: MultiStreamProjection<Day, int>
         FanOut<Travel, Movement>(x => x.Movements);
 
         // You can also access Event data
-        FanOut<IEvent<Travel>, Stop>(x => x.Data.Stops);
+        FanOutEvent<Travel, Stop>(x => x.Data.Stops);
 
         ProjectionName = "Day";
     }
@@ -454,7 +454,7 @@ public class DayProjection: MultiStreamProjection<Day, int>
         }
     }
 
-    public void Apply(Day day, Stop stop) => day.Stops++;
+    public void Apply(Day day, Stop e) => day.Stops++;
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/ViewProjectionTests.cs#L131-L180' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
