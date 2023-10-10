@@ -42,7 +42,7 @@ public class ViewProjectionTests: DaemonContext
         foreach (var slice in slices.SelectMany(x => x.Slices).ToArray())
         {
             var events = slice.Events();
-            events.All(x => x.Data is IDayEvent || x.Data is Movement).ShouldBeTrue();
+            events.All(x => x.Data is IDayEvent || x.Data is Movement || x.Data is Stop).ShouldBeTrue();
             events.Select(x => x.Data).OfType<IDayEvent>().All(x => x.Day == slice.Id)
                 .ShouldBeTrue();
 
@@ -51,9 +51,9 @@ public class ViewProjectionTests: DaemonContext
             {
                 var index = events.As<List<IEvent>>().IndexOf(travel);
 
-                for (var i = 0; i < travel.Data.Movements.Count; i++)
+                for (var i = 0; i < travel.Data.Stops.Count; i++)
                 {
-                    events.ElementAt(index + i + 1).Data.ShouldBeTheSameAs(travel.Data.Movements[i]);
+                    events.ElementAt(index + i + 1).Data.ShouldBeTheSameAs(travel.Data.Stops[i]);
                 }
             }
         }
