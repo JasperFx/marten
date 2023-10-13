@@ -175,7 +175,7 @@ public class ProjectionOptions: DaemonSettings
         Action<AsyncOptions> asyncConfiguration = null
     )
     {
-        var expression = singleStreamProjection<T>(ProjectionLifecycle.Live, asyncConfiguration);
+        var expression = singleStreamProjection<T>(ProjectionLifecycle.Live, null, asyncConfiguration);
 
         // Hack to address https://github.com/JasperFx/marten/issues/2610
         _options.Storage.MappingFor(typeof(T)).SkipSchemaGeneration = true;
@@ -190,17 +190,36 @@ public class ProjectionOptions: DaemonSettings
     /// <param name="lifecycle">Override the snapshot lifecycle. The default is Inline</param>
     /// <param name="asyncConfiguration">
     ///     Optional configuration including teardown instructions for the usage of this
-    ///     projection within the async projection daempon
+    ///     projection within the async projection daemon
     /// </param>
     /// <returns>The extended storage configuration for document T</returns>
     public MartenRegistry.DocumentMappingExpression<T> Snapshot<T>(
         SnapshotLifecycle lifecycle,
         Action<AsyncOptions> asyncConfiguration = null
     ) =>
-        singleStreamProjection<T>(lifecycle.Map(), asyncConfiguration);
+        singleStreamProjection<T>(lifecycle.Map(), null, asyncConfiguration);
+
+    /// <summary>
+    /// Perform automated snapshot on each event for selected entity type
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="lifecycle">Override the snapshot lifecycle. The default is Inline</param>
+    /// <param name="configureProjection">Use it to further customize the projection.</param>
+    /// <param name="asyncConfiguration">
+    ///     Optional configuration including teardown instructions for the usage of this
+    ///     projection within the async projection daemon
+    /// </param>
+    /// <returns>The extended storage configuration for document T</returns>
+    public MartenRegistry.DocumentMappingExpression<T> Snapshot<T>(
+        SnapshotLifecycle lifecycle,
+        Action<SingleStreamProjection<T>> configureProjection,
+        Action<AsyncOptions> asyncConfiguration = null
+    ) =>
+        singleStreamProjection<T>(lifecycle.Map(), configureProjection, asyncConfiguration);
 
     private MartenRegistry.DocumentMappingExpression<T> singleStreamProjection<T>(
         ProjectionLifecycle lifecycle,
+        Action<SingleStreamProjection<T>> configureProjection = null,
         Action<AsyncOptions> asyncConfiguration = null
     )
     {
@@ -208,6 +227,8 @@ public class ProjectionOptions: DaemonSettings
         var expression = _options.Schema.For<T>();
 
         var source = new SingleStreamProjection<T> { Lifecycle = lifecycle };
+
+        configureProjection?.Invoke(source);
 
         asyncConfiguration?.Invoke(source.Options);
 
