@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using FastExpressionCompiler;
 using JasperFx.CodeGeneration;
@@ -211,29 +212,24 @@ internal abstract class MethodCollection
     public static EventTypePatternMatchFrame AddEventHandling(Type aggregateType, IDocumentMapping mapping,
         params MethodCollection[] collections)
     {
-        var byType = new Dictionary<Type, EventProcessingFrame>();
-
-        var frames = new List<EventProcessingFrame>();
-
-        foreach (var collection in collections)
-        {
-            foreach (var slot in collection.Methods)
+        var frames = collections
+            .SelectMany(
+                collection => collection.Methods,
+                (collection, slot) => collection.CreateEventTypeHandler(aggregateType, mapping, slot)
+            )
+            .GroupBy(frame => frame.EventType)
+            .Select(eventTypeGroup =>
             {
-                var frame = collection.CreateEventTypeHandler(aggregateType, mapping, slot);
-                if (byType.TryGetValue(frame.EventType, out var container))
-                {
-                    container.Add((Frame)frame);
-                }
-                else
-                {
-                    container = new EventProcessingFrame(aggregateType, frame);
+                var container = new EventProcessingFrame(aggregateType, eventTypeGroup.First());
 
-                    byType.Add(frame.EventType, container);
-
-                    frames.Add(container);
+                foreach (var handlingFrame in eventTypeGroup.Skip(1))
+                {
+                    container.Add((Frame)handlingFrame);
                 }
-            }
-        }
+
+                return container;
+            })
+            .ToList();
 
         frames.Sort(new EventTypeComparer());
 
@@ -302,16 +298,44 @@ internal class EventTypeComparer: IComparer<EventProcessingFrame>
 {
     public int Compare(EventProcessingFrame x, EventProcessingFrame y)
     {
-        if (x.EventType.CanBeCastTo(y.EventType))
+        using var xh = GetTypeHierarchy(x.EventType).GetEnumerator();
+        using var yh = GetTypeHierarchy(y.EventType).GetEnumerator();
+
+        while (true)
         {
-            return -1;
+            var current = (
+                x: xh.MoveNext() ? xh.Current : null,
+                y: yh.MoveNext() ? yh.Current : null
+            );
+
+            switch (current)
+            {
+                case (null, null):
+                    return 0; //Not expected to get here
+                case (null, _):
+                    return 1; //Y is more derived, Y>X 
+                case (_, null):
+                    return -1; //X is more derived, Y<X
+                case (_, _):
+                    var comparison = StringComparer.OrdinalIgnoreCase.Compare(current.x.Name, current.y.Name);
+                    if (comparison != 0)
+                        return comparison;
+                    break;
+            }
+        }
+    }
+
+    private IEnumerable<Type> GetTypeHierarchy(Type type)
+    {
+        var hierarchy = new List<Type>(5);
+        while (type != null)
+        {
+            hierarchy.Add(type);
+            type = type.BaseType;
         }
 
-        if (y.EventType.CanBeCastTo(x.EventType))
-        {
-            return 1;
-        }
-
-        return 0;
+        return hierarchy
+            .AsEnumerable()
+            .Reverse();
     }
 }

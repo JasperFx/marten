@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using JasperFx.CodeGeneration;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Lamar.IoC.Instances;
 using Marten;
 using Marten.Events.Aggregation;
+using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
 using Marten.Internal.CodeGeneration;
 using Shouldly;
@@ -18,7 +20,7 @@ namespace EventSourcingTests.Projections.CodeGeneration;
 public class ProjectionCodeGenerationApplyOrderTests
 {
     [Fact]
-    public void Snapshot_GeneratesCodeFiles()
+    public void Snapshot_GeneratedCodeFile_Compiles()
     {
         var options = new StoreOptions();
         options.Connection("Dummy");
@@ -44,16 +46,14 @@ public class ProjectionCodeGenerationApplyOrderTests
         provider.ShouldNotBeNull();
     }
 
-    public class SomethingCreated
+    public class SomethingBase{}
+
+    public class SomethingCreated : SomethingAdded
     {
-        public SomethingCreated(Guid id)
-        {
-            Id = id;
-        }
-        public Guid Id { get; set; }
+        public SomethingCreated(Guid id) : base(id) { }
     }
 
-    public class SomethingAdded
+    public class SomethingAdded : SomethingBase
     {
         public SomethingAdded(Guid id)
         {
@@ -62,7 +62,7 @@ public class ProjectionCodeGenerationApplyOrderTests
         public Guid Id { get; set; }
     }
 
-    public class SomethingUpdated
+    public class SomethingUpdated : SomethingBase
     {
         public SomethingUpdated(Guid id, string somethingSomething)
         {
@@ -90,6 +90,8 @@ public class ProjectionCodeGenerationApplyOrderTests
         public string SomethingSomething { get; set; } 
 
         public static Something Create(SomethingCreated @event) => new(@event.Id);
+
+        public Something Apply(SomethingBase @event) => this;
 
         public Something Apply(SomethingAdded @event) => this;
 
