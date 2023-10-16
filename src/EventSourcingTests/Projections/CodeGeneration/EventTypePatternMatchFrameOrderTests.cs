@@ -17,7 +17,7 @@ using Xunit;
 namespace EventSourcingTests.Projections.CodeGeneration;
 
 
-public class EventTypePatternMatchFrameFrameOrderTests
+public class EventTypePatternMatchFrameOrderTests
 {
     [Theory]
     [MemberData(nameof(GetEventTypeCombinations))]
@@ -83,7 +83,7 @@ public class EventTypePatternMatchFrameFrameOrderTests
     }
 }
 
-internal static class EventTypePatternMatchFrameFrameOrderTestsExtensions
+internal static class EventTypePatternMatchFrameOrderTestsExtensions
 {
     internal static void ShouldHaveDerivedTypesBeforeBaseTypes(this Type[] types)
     {
