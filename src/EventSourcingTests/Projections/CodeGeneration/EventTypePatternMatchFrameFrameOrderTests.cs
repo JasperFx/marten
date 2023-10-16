@@ -17,11 +17,11 @@ using Xunit;
 namespace EventSourcingTests.Projections.CodeGeneration;
 
 
-public class EventTypeComparerTests
+public class EventTypePatternMatchFrameFrameOrderTests
 {
     [Theory]
     [MemberData(nameof(GetEventTypeCombinations))]
-    public void EventTypeComparer_WithCombinations_SortsAsExpected(TypeArrayData events) =>
+    public void SortByEventTypeHierarchy_WithCombinations_SortsAsExpected(TypeArrayData events) =>
         RunComparerTest(events);
 
     public static IEnumerable<object[]> GetEventTypeCombinations() =>
@@ -30,7 +30,7 @@ public class EventTypeComparerTests
 
     [Theory]
     [MemberData(nameof(GetEventTypePermutations))]
-    public void EventTypeComparer_WithPermutations_SortsAsExpected(TypeArrayData events) =>
+    public void SortByEventTypeHierarchy_WithPermutations_SortsAsExpected(TypeArrayData events) =>
         RunComparerTest(events);
 
     public static IEnumerable<object[]> GetEventTypePermutations() =>
@@ -38,14 +38,11 @@ public class EventTypeComparerTests
 
     private static void RunComparerTest(TypeArrayData events)
     {
-        var comparer = new EventTypeComparer();
-
         var frames = events.Data.ToDummyEventProcessingFrames();
-        frames.Sort(comparer);
+        var sortedFrames = EventTypePatternMatchFrame.SortByEventTypeHierarchy(frames);
 
-        var types = frames.Select(p => p.EventType).ToArray();
-
-        types.ShouldHaveDerivedTypesBeforeBaseTypes();
+        var eventTypes = sortedFrames.Select(p => p.EventType).ToArray();
+        eventTypes.ShouldHaveDerivedTypesBeforeBaseTypes();
     }
 
     private static IEnumerable<object[]> GetPermutationsEventsData(params Type[] events) =>
@@ -86,7 +83,7 @@ public class EventTypeComparerTests
     }
 }
 
-internal static class EventTypeComparerTestsExtensions
+internal static class EventTypePatternMatchFrameFrameOrderTestsExtensions
 {
     internal static void ShouldHaveDerivedTypesBeforeBaseTypes(this Type[] types)
     {

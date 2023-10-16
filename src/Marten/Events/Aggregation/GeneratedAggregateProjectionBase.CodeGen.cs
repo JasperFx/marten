@@ -220,7 +220,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
             eventHandlers[slot.EventType].Deletion = new ShouldDeleteFrame(slot);
 
         var frames = eventHandlers.OfType<EventProcessingFrame>().ToList();
-        frames.Sort(new EventTypeComparer());
+
         var patternMatching = new EventTypePatternMatchFrame(frames);
         method.Frames.Add(patternMatching);
 
