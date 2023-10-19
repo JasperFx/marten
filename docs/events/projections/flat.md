@@ -163,13 +163,13 @@ A couple notes on this version of the code:
 
 * `FlatFileProjection` is adding columns to its table based on the designated column mappings. 
   You can happily customize the `FlatFileProjection.Table` object to add indexes, constraints, or defaults.
-* Marten is able to apply schema migrations and manage the table from the `FlatFileProjection` as long as it’s registered with Marten
-* When you call `Map(x => x.ActivityType)`, Marten is by default mapping that to a kebab-cased derivation of the member 
+* Marten is able to apply schema migrations and manage the table from the `FlatFileProjection` as long as it’s registered with Marten.
+* When you call `Map(x => x.ActivityType)`, Marten is by default mapping that to a snake_cased derivation of the member 
   name for the column, so “activity_type”. You can explicitly map the column name yourself.
 * The call to `Map(expression)` chains a fluent builder for the table column if you want to further customize the table 
-  column with default values or constraints like the `NotNull()`
+  column with default values or constraints like the `NotNull()`.
 * In this case, I’m building a database row per event stream. The `FlatTableProjection` can also map to arbitrary 
-  members of each event type
+  members of each event type.
 * The `Project<T>(lambda)` configuration leads to a runtime, code generation of a Postgresql upsert command so 
   as to not be completely dependent upon events being captured in the exact right order. I think this will be more 
   robust in real life usage than the first, more explicit version.
