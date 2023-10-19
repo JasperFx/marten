@@ -25,7 +25,7 @@ namespace Marten;
 /// <summary>
 ///     The main entry way to using Marten
 /// </summary>
-public partial class DocumentStore: IDocumentStore
+public partial class DocumentStore: IDocumentStore, IAsyncDisposable
 {
     private readonly IMartenLogger _logger;
 
@@ -94,6 +94,20 @@ public partial class DocumentStore: IDocumentStore
     public virtual void Dispose()
     {
         (Options.Events as IDisposable).SafeDispose();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        if (Options.Events is IAsyncDisposable ad)
+        {
+            return ad.DisposeAsync();
+        }
+        else if (Options.Events is IDisposable d)
+        {
+            d.Dispose();
+        }
+
+        return ValueTask.CompletedTask;
     }
 
     public AdvancedOperations Advanced { get; }

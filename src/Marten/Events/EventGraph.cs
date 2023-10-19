@@ -23,7 +23,7 @@ using static Marten.Events.EventMappingExtensions;
 
 namespace Marten.Events;
 
-public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable
+public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable
 {
     private readonly Cache<Type, string> _aggregateNameByType =
         new(type => type.Name.ToTableAlias());
@@ -400,5 +400,18 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         _cancellation.Cancel();
         _cancellation.Dispose();
         _tombstones?.SafeDispose();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await _tombstones.DrainAsync().ConfigureAwait(false);
+        }
+        catch (TaskCanceledException)
+        {
+            // Ignore this
+        }
+        Dispose();
     }
 }
