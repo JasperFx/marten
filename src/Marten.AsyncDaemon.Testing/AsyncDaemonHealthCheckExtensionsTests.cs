@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.Internal;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
