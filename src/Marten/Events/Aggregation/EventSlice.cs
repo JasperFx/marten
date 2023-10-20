@@ -105,7 +105,7 @@ public class EventSlice<TDoc, TId>: IEventSlice, IComparer<IEvent>
     internal void FanOut<TSource, TChild>(Func<TSource, IEnumerable<TChild>> fanOutFunc)
     {
         reorderEvents();
-        _events.FanOutEventData(fanOutFunc);
+        _events.FanOut(fanOutFunc);
     }
 
     internal void ApplyFanOutRules(IEnumerable<IFanOutRule> rules)
