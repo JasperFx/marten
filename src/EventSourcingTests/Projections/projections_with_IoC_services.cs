@@ -3,10 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten;
-using Marten.Events;
 using Marten.Events.Aggregation;
-using Marten.Events.Daemon;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
 using Marten.Testing.Harness;
@@ -16,7 +13,6 @@ using Xunit;
 using Shouldly;
 
 namespace EventSourcingTests.Projections;
-
 
 [Collection("ioc")]
 public class projections_with_IoC_services
@@ -37,8 +33,10 @@ public class projections_with_IoC_services
                         opts.DatabaseSchemaName = "ioc";
                     })
                     // Note that this is chained after the call to AddMarten()
-                    .AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Singleton);
-
+                    .AddProjectionWithServices<ProductProjection>(
+                        ProjectionLifecycle.Inline,
+                        ServiceLifetime.Singleton
+                    );
             })
             .StartAsync();
 
@@ -46,20 +44,21 @@ public class projections_with_IoC_services
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
 
-        using var session = store.LightweightSession();
-        var streamId = session.Events.StartStream<Product>(new ProductRegistered("Ankle Socks", "Socks")).Id;
+        await using var session = store.LightweightSession();
+        var streamId = session.Events.StartStream<Product>(
+            new ProductRegistered("Ankle Socks", "Socks")
+        ).Id;
         await session.SaveChangesAsync();
 
         var product = await session.LoadAsync<Product>(streamId);
         product.Price.ShouldBeGreaterThan(0);
         product.Name.ShouldBe("Ankle Socks");
-
     }
 
     [Fact]
     public async Task use_projection_as_singleton_and_async()
     {
-        using var host = await Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
+        using var host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
                 services.AddSingleton<IPriceLookup, PriceLookup>();
@@ -68,16 +67,15 @@ public class projections_with_IoC_services
                     {
                         opts.Connection(ConnectionSource.ConnectionString);
                         opts.DatabaseSchemaName = "ioc";
+                        opts.Projections.DaemonLockId = 99123;
                     })
-                    .AddAsyncDaemon(DaemonMode.Solo)
                     .AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Async, ServiceLifetime.Singleton);
-
             }).StartAsync();
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
         await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
-        using var session = store.LightweightSession();
+        await using var session = store.LightweightSession();
         var streamId = session.Events.StartStream<Product>(new ProductRegistered("Ankle Socks", "Socks")).Id;
         await session.SaveChangesAsync();
 
@@ -87,9 +85,9 @@ public class projections_with_IoC_services
         await daemon.Tracker.WaitForShardState("Product:All", 1);
 
         var product = await session.LoadAsync<Product>(streamId);
+        product.ShouldNotBeNull();
         product.Price.ShouldBeGreaterThan(0);
         product.Name.ShouldBe("Ankle Socks");
-
     }
 
     [Fact]
@@ -105,22 +103,19 @@ public class projections_with_IoC_services
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "ioc";
                 }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped);
-
             }).StartAsync();
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
 
-        using var session = store.LightweightSession();
+        await using var session = store.LightweightSession();
         var streamId = session.Events.StartStream<Product>(new ProductRegistered("Ankle Socks", "Socks")).Id;
         await session.SaveChangesAsync();
 
         var product = await session.LoadAsync<Product>(streamId);
         product.Price.ShouldBeGreaterThan(0);
         product.Name.ShouldBe("Ankle Socks");
-
     }
 }
-
 
 public interface IPriceLookup
 {
@@ -148,7 +143,7 @@ public record ProductRegistered(string Name, string Category);
 
 #region sample_ProductProjection
 
-public class ProductProjection : CustomProjection<Product, Guid>
+public class ProductProjection: CustomProjection<Product, Guid>
 {
     private readonly IPriceLookup _lookup;
 
@@ -160,10 +155,14 @@ public class ProductProjection : CustomProjection<Product, Guid>
         ProjectionName = "Product";
     }
 
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<Product, Guid> slice, CancellationToken cancellation,
-        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
+    public override ValueTask ApplyChangesAsync(
+        DocumentSessionBase session,
+        EventSlice<Product, Guid> slice,
+        CancellationToken cancellation,
+        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline
+    )
     {
-        slice.Aggregate ??= new Product{Id = slice.Id};
+        slice.Aggregate ??= new Product { Id = slice.Id };
 
         foreach (var data in slice.AllData())
         {
