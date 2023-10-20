@@ -24,7 +24,7 @@ internal class FanOutEventDataOperator<TSource, TTarget>: FanOutOperator<TSource
 
     public override void Apply(List<IEvent> events)
     {
-        events.FanOutEventData(_fanOutFunc);
+        events.FanOut(_fanOutFunc);
     }
 }
 

@@ -104,7 +104,8 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
     /// <param name="mode">Should the fan out operation happen after grouping, or before? Default is after</param>
     /// <typeparam name="TEvent"></typeparam>
     /// <typeparam name="TChild"></typeparam>
-    public EventSlicer<TDoc, TId> FanOut<TEvent, TChild>(Func<TEvent, IEnumerable<TChild>> fanOutFunc, FanoutMode mode = FanoutMode.AfterGrouping)
+    public EventSlicer<TDoc, TId> FanOut<TEvent, TChild>(Func<TEvent, IEnumerable<TChild>> fanOutFunc,
+        FanoutMode mode = FanoutMode.AfterGrouping)
     {
         return FanOut(new FanOutEventDataOperator<TEvent, TChild>(fanOutFunc) { Mode = mode }, mode);
     }

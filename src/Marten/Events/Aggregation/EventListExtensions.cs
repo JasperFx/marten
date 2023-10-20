@@ -6,7 +6,7 @@ namespace Marten.Events.Aggregation;
 
 public static class EventListExtensions
 {
-    public static void FanOutEventData<TSource, TChild>(this List<IEvent> events,
+    public static void FanOut<TSource, TChild>(this List<IEvent> events,
         Func<TSource, IEnumerable<TChild>> fanOutFunc)
     {
         FanOut<TSource, TChild>(events, source => fanOutFunc(source.Data));
