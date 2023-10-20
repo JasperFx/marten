@@ -16,7 +16,7 @@ Let's say you have a custom aggregation projection like this one below that need
 <!-- snippet: sample_ProductProjection -->
 <a id='snippet-sample_productprojection'></a>
 ```cs
-public class ProductProjection : CustomProjection<Product, Guid>
+public class ProductProjection: CustomProjection<Product, Guid>
 {
     private readonly IPriceLookup _lookup;
 
@@ -28,10 +28,14 @@ public class ProductProjection : CustomProjection<Product, Guid>
         ProjectionName = "Product";
     }
 
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<Product, Guid> slice, CancellationToken cancellation,
-        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
+    public override ValueTask ApplyChangesAsync(
+        DocumentSessionBase session,
+        EventSlice<Product, Guid> slice,
+        CancellationToken cancellation,
+        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline
+    )
     {
-        slice.Aggregate ??= new Product{Id = slice.Id};
+        slice.Aggregate ??= new Product { Id = slice.Id };
 
         foreach (var data in slice.AllData())
         {
@@ -52,7 +56,7 @@ public class ProductProjection : CustomProjection<Product, Guid>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/projections_with_IoC_services.cs#L149-L187' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_productprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/projections_with_IoC_services.cs#L144-L186' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_productprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, we *want* to use this projection at runtime within Marten, and need to register the projection
@@ -73,12 +77,14 @@ using var host = await Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
                 opts.DatabaseSchemaName = "ioc";
             })
             // Note that this is chained after the call to AddMarten()
-            .AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Singleton);
-
+            .AddProjectionWithServices<ProductProjection>(
+                ProjectionLifecycle.Inline,
+                ServiceLifetime.Singleton
+            );
     })
     .StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/projections_with_IoC_services.cs#L27-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_projection_built_by_services' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/projections_with_IoC_services.cs#L23-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_projection_built_by_services' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that we're having to explicitly specify the projection lifecycle for the projection used within
