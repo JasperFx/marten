@@ -117,7 +117,7 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
     /// <param name="mode">Should the fan out operation happen after grouping, or before? Default is after</param>
     /// <typeparam name="TEvent"></typeparam>
     /// <typeparam name="TChild"></typeparam>
-    public void FanOutEvent<TEvent, TChild>(Func<IEvent<TEvent>, IEnumerable<TChild>> fanOutFunc,
+    public void FanOut<TEvent, TChild>(Func<IEvent<TEvent>, IEnumerable<TChild>> fanOutFunc,
         FanoutMode mode = FanoutMode.AfterGrouping) where TEvent : notnull
     {
         _defaultSlicer.FanOut(fanOutFunc, mode);

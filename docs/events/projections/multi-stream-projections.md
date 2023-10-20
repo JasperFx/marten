@@ -424,7 +424,7 @@ public class DayProjection: MultiStreamProjection<Day, int>
         FanOut<Travel, Movement>(x => x.Movements);
 
         // You can also access Event data
-        FanOutEvent<Travel, Stop>(x => x.Data.Stops);
+        FanOut<Travel, Stop>(x => x.Data.Stops);
 
         ProjectionName = "Day";
     }
