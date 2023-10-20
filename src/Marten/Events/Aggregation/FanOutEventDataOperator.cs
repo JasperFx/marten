@@ -22,10 +22,6 @@ internal class FanOutEventDataOperator<TSource, TTarget>: FanOutOperator<TSource
         _fanOutFunc = fanOutFunc;
     }
 
-    public FanoutMode Mode { get; set; } = FanoutMode.AfterGrouping;
-
-    public Type OriginatingType => typeof(TSource);
-
     public override void Apply(List<IEvent> events)
     {
         events.FanOutEventData(_fanOutFunc);
