@@ -12,12 +12,14 @@ namespace Marten.Internal.Sessions;
 internal class MartenControlledConnectionTransaction: IConnectionLifetime
 {
     protected readonly SessionOptions _options;
+    private readonly IRetryPolicy _retryPolicy;
 
 
-    public MartenControlledConnectionTransaction(SessionOptions options)
+    public MartenControlledConnectionTransaction(SessionOptions options, StoreOptions storeOptions)
     {
         _options = options;
         Connection = _options.Connection;
+        _retryPolicy = storeOptions.RetryPolicy();
     }
 
     public int CommandTimeout => _options.Timeout ?? Connection?.CommandTimeout ?? 30;
@@ -157,7 +159,7 @@ internal class MartenControlledConnectionTransaction: IConnectionLifetime
 
         if (Connection.State == ConnectionState.Closed)
         {
-            Connection.Open();
+            _retryPolicy.Execute(() => Connection.Open());
         }
     }
 
@@ -172,7 +174,7 @@ internal class MartenControlledConnectionTransaction: IConnectionLifetime
 
         if (Connection.State == ConnectionState.Closed)
         {
-            await Connection.OpenAsync(token).ConfigureAwait(false);
+            await _retryPolicy.ExecuteAsync(() => Connection.OpenAsync(token), token).ConfigureAwait(false);
         }
     }
 }

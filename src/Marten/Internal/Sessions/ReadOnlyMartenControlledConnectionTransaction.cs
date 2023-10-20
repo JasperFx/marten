@@ -10,7 +10,7 @@ internal class ReadOnlyMartenControlledConnectionTransaction: MartenControlledCo
 {
     private const string SetTransactionReadOnly = "SET TRANSACTION READ ONLY;";
 
-    public ReadOnlyMartenControlledConnectionTransaction(SessionOptions options): base(options)
+    public ReadOnlyMartenControlledConnectionTransaction(SessionOptions options, StoreOptions storeOptions): base(options, storeOptions)
     {
     }
 
