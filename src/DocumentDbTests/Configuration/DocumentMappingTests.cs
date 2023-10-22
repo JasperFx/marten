@@ -571,8 +571,7 @@ public class DocumentMappingTests
 
         table.Columns.Select(x => x.Name)
             .ShouldHaveTheSameElementsAs("id", "data", SchemaConstants.LastModifiedColumn,
-                SchemaConstants.VersionColumn, SchemaConstants.DotNetTypeColumn,
-                SchemaConstants.CreatedTimestampColumn, "first_name");
+                SchemaConstants.VersionColumn, SchemaConstants.DotNetTypeColumn, "first_name");
     }
 
     [Fact]
@@ -595,8 +594,7 @@ public class DocumentMappingTests
         var table = new DocumentTable(mapping);
         table.Columns.Select(x => x.Name)
             .ShouldHaveTheSameElementsAs("id", "data", SchemaConstants.LastModifiedColumn,
-                SchemaConstants.VersionColumn, SchemaConstants.DotNetTypeColumn,
-                SchemaConstants.CreatedTimestampColumn);
+                SchemaConstants.VersionColumn, SchemaConstants.DotNetTypeColumn);
     }
 
     [Fact]
