@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -63,6 +64,11 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
     {
         _inlineType = assembly.GetExportedTypes().FirstOrDefault(x => x.Name == _inlineAggregationHandlerType);
         _liveType = assembly.GetExportedTypes().FirstOrDefault(x => x.Name == _liveAggregationTypeName);
+
+        if (_liveGeneratedType != null)
+        {
+            Debug.WriteLine(_liveGeneratedType.SourceCode);
+        }
 
         return _inlineType != null && _liveType != null;
     }
@@ -220,7 +226,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
             eventHandlers[slot.EventType].Deletion = new ShouldDeleteFrame(slot);
 
         var frames = eventHandlers.OfType<EventProcessingFrame>().ToList();
-        frames.Sort(new EventTypeComparer());
+
         var patternMatching = new EventTypePatternMatchFrame(frames);
         method.Frames.Add(patternMatching);
 

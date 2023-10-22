@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Projections;
 using Marten.Events;
@@ -21,6 +22,8 @@ public class aggregateTo_linq_operator_tests: DestructiveIntegrationContext
         theSession.Events.StartStream<Quest>(_joined1, _departed1);
         theSession.Events.StartStream<Quest>(_joined2, _departed2);
         theSession.SaveChanges();
+
+        var events = theSession.Events.QueryAllRawEvents().ToList();
 
         var questParty = theSession.Events.QueryAllRawEvents()
             .AggregateTo<QuestParty>();
