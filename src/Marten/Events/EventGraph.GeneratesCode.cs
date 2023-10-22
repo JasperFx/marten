@@ -7,10 +7,10 @@ using JasperFx.CodeGeneration;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
 using Marten.Internal.Storage;
-using Marten.Util;
 
 namespace Marten.Events;
 
+#nullable enable
 public partial class EventGraph: ICodeFileCollection, ICodeFile
 {
     private readonly Type _storageType;

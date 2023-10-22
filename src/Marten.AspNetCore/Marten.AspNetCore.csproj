@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>Helpers for Marten-backed AspNetCore applications</Description>
-        <VersionPrefix>6.1.0</VersionPrefix>
+        <VersionPrefix>6.3.0</VersionPrefix>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
         <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
@@ -22,9 +22,9 @@
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     </ItemGroup>
-    
+
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="7.0.10"/>
+        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="7.0.12"/>
     </ItemGroup>
 
 
