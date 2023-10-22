@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
-using Marten.Util;
 
 namespace Marten.Internal.CompiledQueries;
 

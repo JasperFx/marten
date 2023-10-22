@@ -8,7 +8,6 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.RuntimeCompiler;
 using Marten.Schema;
-using Marten.Util;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -32,7 +31,7 @@ internal class SecondaryDocumentStores: ICodeFileCollection
     {
         get
         {
-            var rules = _files.FirstOrDefault().BuildStoreOptions(Services).CreateGenerationRules();
+            var rules = _files.First().BuildStoreOptions(Services).CreateGenerationRules();
 
             rules.GeneratedCodeOutputPath = rules.GeneratedCodeOutputPath.ParentDirectory().AppendPath("Stores");
 
