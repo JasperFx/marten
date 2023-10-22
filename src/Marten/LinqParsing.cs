@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using JasperFx.Core;
 using Marten.Events.Archiving;
+using Marten.Linq.CreatedTimestamp;
 using Marten.Linq.Fields;
 using Marten.Linq.LastModified;
 using Marten.Linq.MatchesSql;
@@ -64,6 +65,10 @@ public class LinqParsing: IReadOnlyLinqParsing
         // last modified
         new ModifiedSinceParser(),
         new ModifiedBeforeParser(),
+
+        // last modified
+        new CreatedSinceParser(),
+        new CreatedBeforeParser(),
 
         // matches sql
         new MatchesSqlParser(),

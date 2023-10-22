@@ -48,7 +48,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
     #endregion
 
     [Fact]
-    public async Task async_hit_returns_values()
+    public async Task hit_returns_values_async()
     {
         StoreOptions(_ =>
         {
@@ -76,5 +76,87 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
         metadata.DocumentType.ShouldBe("coffee_shop");
         metadata.Deleted.ShouldBeTrue();
         metadata.DeletedAt.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void created_timestamp_metadata_returns_default()
+    {
+        var shop = new CoffeeShop();
+
+        using (var session = theStore.LightweightSession())
+        {
+            session.Store(shop);
+            session.SaveChanges();
+        }
+
+        using (var session = theStore.QuerySession())
+        {
+            var metadata = session.MetadataFor(shop);
+
+            metadata.CreatedTimestamp.ShouldBe(default);
+        }
+    }
+
+    [Fact]
+    public async Task created_timestamp_metadata_returns_default_async()
+    {
+        var shop = new CoffeeShop();
+
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Store(shop);
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = theStore.QuerySession();
+        var metadata = await query.MetadataForAsync(shop);
+
+        metadata.CreatedTimestamp.ShouldBe(default);
+    }
+
+    [Fact]
+    public void created_timestamp_metadata_returns_timestamp()
+    {
+        StoreOptions(_ =>
+        {
+            _.Policies.ForAllDocuments(o => o.Metadata.CreatedTimestamp.Enabled = true);
+        });
+
+        var shop = new CoffeeShop();
+
+        using (var session = theStore.LightweightSession())
+        {
+            session.Store(shop);
+            session.SaveChanges();
+        }
+
+        using (var session = theStore.QuerySession())
+        {
+            var metadata = session.MetadataFor(shop);
+
+            metadata.CreatedTimestamp.ShouldNotBeNull();
+        }
+    }
+
+    [Fact]
+    public async Task created_timestamp_metadata_returns_timestamp_async()
+    {
+        StoreOptions(_ =>
+        {
+            _.Policies.ForAllDocuments(o => o.Metadata.CreatedTimestamp.Enabled = true);
+        });
+
+        var shop = new CoffeeShop();
+
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Store(shop);
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = theStore.QuerySession();
+        var metadata = await query.MetadataForAsync(shop);
+
+        metadata.CreatedTimestamp.ShouldNotBeNull();
     }
 }
