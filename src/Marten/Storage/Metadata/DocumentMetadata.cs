@@ -18,7 +18,7 @@ public class DocumentMetadata
     /// <summary>
     ///     Timestamp of when this document was created
     /// </summary>
-    public DateTimeOffset CreatedTimestamp { get; internal set; }
+    public DateTimeOffset CreatedAt { get; internal set; }
 
     /// <summary>
     ///     The current version of this document in the database

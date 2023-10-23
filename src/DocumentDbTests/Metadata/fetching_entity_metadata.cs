@@ -37,6 +37,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
 
             metadata.ShouldNotBeNull();
             metadata.CurrentVersion.ShouldNotBe(Guid.Empty);
+            metadata.CreatedAt.ShouldBe(default);
             metadata.LastModified.ShouldNotBe(default);
             metadata.DotNetType.ShouldBe(typeof(CoffeeShop).FullName);
             metadata.DocumentType.ShouldBeNull();
@@ -71,6 +72,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
 
         metadata.ShouldNotBeNull();
         metadata.CurrentVersion.ShouldNotBe(Guid.Empty);
+        metadata.CreatedAt.ShouldBe(default);
         metadata.LastModified.ShouldNotBe(default);
         metadata.DotNetType.ShouldBe(typeof(CoffeeShop).FullName);
         metadata.DocumentType.ShouldBe("coffee_shop");
@@ -92,8 +94,9 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
         using (var session = theStore.QuerySession())
         {
             var metadata = session.MetadataFor(shop);
+            metadata.ShouldNotBeNull();
 
-            metadata.CreatedTimestamp.ShouldBe(default);
+            metadata.CreatedAt.ShouldBe(default);
         }
     }
 
@@ -111,7 +114,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
         await using var query = theStore.QuerySession();
         var metadata = await query.MetadataForAsync(shop);
 
-        metadata.CreatedTimestamp.ShouldBe(default);
+        metadata.CreatedAt.ShouldBe(default);
     }
 
     [Fact]
@@ -119,7 +122,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
     {
         StoreOptions(_ =>
         {
-            _.Policies.ForAllDocuments(o => o.Metadata.CreatedTimestamp.Enabled = true);
+            _.Policies.ForAllDocuments(o => o.Metadata.CreatedAt.Enabled = true);
         });
 
         var shop = new CoffeeShop();
@@ -133,8 +136,9 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
         using (var session = theStore.QuerySession())
         {
             var metadata = session.MetadataFor(shop);
+            metadata.ShouldNotBeNull();
 
-            metadata.CreatedTimestamp.ShouldNotBeNull();
+            metadata.CreatedAt.ShouldNotBeNull();
         }
     }
 
@@ -143,7 +147,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
     {
         StoreOptions(_ =>
         {
-            _.Policies.ForAllDocuments(o => o.Metadata.CreatedTimestamp.Enabled = true);
+            _.Policies.ForAllDocuments(o => o.Metadata.CreatedAt.Enabled = true);
         });
 
         var shop = new CoffeeShop();
@@ -157,6 +161,6 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
         await using var query = theStore.QuerySession();
         var metadata = await query.MetadataForAsync(shop);
 
-        metadata.CreatedTimestamp.ShouldNotBeNull();
+        metadata.CreatedAt.ShouldNotBeNull();
     }
 }

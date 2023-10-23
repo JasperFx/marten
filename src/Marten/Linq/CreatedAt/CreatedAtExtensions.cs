@@ -1,9 +1,9 @@
 #nullable enable
 using System;
 
-namespace Marten.Linq.CreatedTimestamp;
+namespace Marten.Linq.CreatedAt;
 
-public static class CreatedTimestampExtensions
+public static class CreatedAtExtensions
 {
     /// <summary>
     ///     The search results should include documents created since given time (&gt;)

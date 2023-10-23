@@ -1,28 +1,27 @@
-using Marten;
-using Marten.Linq.CreatedTimestamp;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using System.Linq;
+using Marten.Linq.CreatedAt;
 using Weasel.Postgresql.Tables;
 using Xunit;
 
 namespace DocumentDbTests.Metadata;
 
-public class created_timestamp_queries: IntegrationContext
+public class created_timestamp_queries: OneOffConfigurationsContext
 {
     [Fact]
-    public void creates_btree_index_for_mt_created()
+    public void creates_btree_index_for_mt_created_at()
     {
         var mapping = DocumentMapping.For<Customer>();
-        var indexDefinition = mapping.Indexes.Cast<DocumentIndex>().Single(x => x.Columns.First() == SchemaConstants.CreatedTimestampColumn);
+        var indexDefinition = mapping.Indexes.Cast<DocumentIndex>().Single(x => x.Columns.First() == SchemaConstants.CreatedAtColumn);
 
         indexDefinition.Method.ShouldBe(IndexMethod.btree);
     }
 
     #region sample_index-created-timestamp-via-attribute
-    [IndexedCreatedTimestamp]
+    [IndexedCreatedAt]
     public class Customer
     {
     }
@@ -44,7 +43,10 @@ public class created_timestamp_queries: IntegrationContext
         session.Store(user3, user4);
         session.SaveChanges();
 
-        var epoch = session.MetadataFor(user4).CreatedTimestamp;
+        var metadata = session.MetadataFor(user4);
+        metadata.ShouldNotBeNull();
+
+        var epoch = metadata.CreatedAt;
 
         // no where clause
         session.Query<User>()
@@ -74,7 +76,10 @@ public class created_timestamp_queries: IntegrationContext
         session.Store(user1, user2);
         session.SaveChanges();
 
-        var epoch = session.MetadataFor(user2).CreatedTimestamp;
+        var metadata = session.MetadataFor(user2);
+        metadata.ShouldNotBeNull();
+
+        var epoch = metadata.CreatedAt;
         session.Store(user3, user4);
         session.SaveChanges();
 
@@ -95,8 +100,8 @@ public class created_timestamp_queries: IntegrationContext
             .ShouldBe("jack");
     }
 
-    public created_timestamp_queries(DefaultStoreFixture fixture) : base(fixture)
+    public created_timestamp_queries()
     {
-        fixture.Store.Options.Policies.ForAllDocuments(o => o.Metadata.CreatedTimestamp.Enabled = true);
+        StoreOptions(options => options.Policies.ForAllDocuments(o => o.Metadata.CreatedAt.Enabled = true));
     }
 }

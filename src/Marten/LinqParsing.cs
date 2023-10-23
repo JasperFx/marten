@@ -4,7 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using JasperFx.Core;
 using Marten.Events.Archiving;
-using Marten.Linq.CreatedTimestamp;
+using Marten.Linq.CreatedAt;
 using Marten.Linq.Fields;
 using Marten.Linq.LastModified;
 using Marten.Linq.MatchesSql;

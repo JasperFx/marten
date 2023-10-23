@@ -24,7 +24,7 @@ public class document_policies_for_metadata: OneOffConfigurationsContext
 
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Version.Enabled.ShouldBeTrue();
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModified.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CreatedTimestamp.Enabled.ShouldBeFalse();
+        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CreatedAt.Enabled.ShouldBeFalse();
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.TenantId.Enabled.ShouldBeTrue();
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.IsSoftDeleted.Enabled.ShouldBeTrue();
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.SoftDeletedAt.Enabled.ShouldBeTrue();
@@ -43,7 +43,7 @@ public class document_policies_for_metadata: OneOffConfigurationsContext
         {
             _.Policies.ForAllDocuments(x => x.Metadata.Version.Enabled = true);
             _.Policies.ForAllDocuments(x => x.Metadata.LastModified.Enabled = true);
-            _.Policies.ForAllDocuments(x => x.Metadata.CreatedTimestamp.Enabled = true);
+            _.Policies.ForAllDocuments(x => x.Metadata.CreatedAt.Enabled = true);
             _.Policies.ForAllDocuments(x => x.Metadata.TenantId.Enabled = true);
             _.Policies.ForAllDocuments(x => x.Metadata.IsSoftDeleted.Enabled = true);
             _.Policies.ForAllDocuments(x => x.Metadata.SoftDeletedAt.Enabled = true);
@@ -57,7 +57,7 @@ public class document_policies_for_metadata: OneOffConfigurationsContext
 
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Version.Enabled.ShouldBeTrue();
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModified.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CreatedTimestamp.Enabled.ShouldBeTrue();
+        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CreatedAt.Enabled.ShouldBeTrue();
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.TenantId.Enabled.ShouldBeTrue();
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.IsSoftDeleted.Enabled.ShouldBeTrue();
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.SoftDeletedAt.Enabled.ShouldBeTrue();
@@ -76,7 +76,7 @@ public class document_policies_for_metadata: OneOffConfigurationsContext
         {
             _.Policies.ForAllDocuments(x => x.Metadata.Version.Enabled = false);
             _.Policies.ForAllDocuments(x => x.Metadata.LastModified.Enabled = false);
-            _.Policies.ForAllDocuments(x => x.Metadata.CreatedTimestamp.Enabled = false);
+            _.Policies.ForAllDocuments(x => x.Metadata.CreatedAt.Enabled = false);
             _.Policies.ForAllDocuments(x => x.Metadata.TenantId.Enabled = false);
             _.Policies.ForAllDocuments(x => x.Metadata.IsSoftDeleted.Enabled = false);
             _.Policies.ForAllDocuments(x => x.Metadata.SoftDeletedAt.Enabled = false);
@@ -90,7 +90,7 @@ public class document_policies_for_metadata: OneOffConfigurationsContext
 
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Version.Enabled.ShouldBeFalse();
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModified.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CreatedTimestamp.Enabled.ShouldBeFalse();
+        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CreatedAt.Enabled.ShouldBeFalse();
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.TenantId.Enabled.ShouldBeFalse();
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.IsSoftDeleted.Enabled.ShouldBeFalse();
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.SoftDeletedAt.Enabled.ShouldBeFalse();
