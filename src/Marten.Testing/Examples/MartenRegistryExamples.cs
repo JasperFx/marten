@@ -25,7 +25,7 @@ public class MartenRegistryExamples
         #region sample_index-created-timestamp-via-fi
         DocumentStore.For(_ =>
         {
-            _.Schema.For<User>().IndexCreatedTimestamp();
+            _.Schema.For<User>().IndexCreatedAt();
         });
         #endregion
     }

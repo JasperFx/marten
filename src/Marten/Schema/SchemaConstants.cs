@@ -13,7 +13,7 @@ internal class SchemaConstants
     public const string LastModifiedColumn = "mt_last_modified";
     public const string DotNetTypeColumn = "mt_dotnet_type";
     public const string VersionColumn = "mt_version";
-    public const string CreatedTimestampColumn = "mt_created";
+    public const string CreatedAtColumn = "mt_created_at";
     public const string DeletedColumn = "mt_deleted";
     public const string DeletedAtColumn = "mt_deleted_at";
 

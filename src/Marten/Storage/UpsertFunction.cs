@@ -117,9 +117,9 @@ internal class UpsertFunction: Function
             insertColumns.Add(SchemaConstants.LastModifiedColumn);
             valueListColumns.Add("transaction_timestamp()");
         }
-        if (_mapping.Metadata.CreatedTimestamp.Enabled)
+        if (_mapping.Metadata.CreatedAt.Enabled)
         {
-            insertColumns.Add(SchemaConstants.CreatedTimestampColumn);
+            insertColumns.Add(SchemaConstants.CreatedAtColumn);
             valueListColumns.Add("transaction_timestamp()");
         }
 

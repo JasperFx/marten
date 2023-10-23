@@ -8,12 +8,12 @@ using Marten.Linq.Parsing;
 using Marten.Schema;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Linq.CreatedTimestamp;
+namespace Marten.Linq.CreatedAt;
 
-public class CreatedBeforeParser: IMethodCallParser
+public class CreatedSinceParser: IMethodCallParser
 {
     private static readonly MethodInfo _method =
-        typeof(CreatedTimestampExtensions).GetMethod(nameof(CreatedTimestampExtensions.CreatedBefore));
+        typeof(CreatedAtExtensions).GetMethod(nameof(CreatedAtExtensions.CreatedSince));
 
     public bool Matches(MethodCallExpression expression)
     {
@@ -24,6 +24,6 @@ public class CreatedBeforeParser: IMethodCallParser
     {
         var time = expression.Arguments.Last().Value().As<DateTimeOffset>();
 
-        return new WhereFragment($"d.{SchemaConstants.CreatedTimestampColumn} < ?", time);
+        return new WhereFragment($"d.{SchemaConstants.CreatedAtColumn} > ?", time);
     }
 }

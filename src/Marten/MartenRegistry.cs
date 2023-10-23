@@ -287,9 +287,9 @@ public class MartenRegistry
         /// </summary>
         /// <param name="configure"></param>
         /// <returns></returns>
-        public DocumentMappingExpression<T> IndexCreatedTimestamp(Action<DocumentIndex>? configure = null)
+        public DocumentMappingExpression<T> IndexCreatedAt(Action<DocumentIndex>? configure = null)
         {
-            _builder.Alter = m => m.AddCreatedTimestampIndex(configure);
+            _builder.Alter = m => m.AddCreatedAtIndex(configure);
 
             return this;
         }
@@ -706,7 +706,7 @@ public class MartenRegistry
             /// <summary>
             ///     Optional metadata for the timestamp of when this document was created
             /// </summary>
-            public Column<string> CreatedTimestamp => new(_parent, m => m.CreatedTimestamp);
+            public Column<string> CreatedAt => new(_parent, m => m.CreatedAt);
 
             /// <summary>
             ///     The stored tenant id of this document

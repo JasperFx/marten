@@ -349,9 +349,9 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
         return index;
     }
 
-    public DocumentIndex AddCreatedTimestampIndex(Action<DocumentIndex> configure = null)
+    public DocumentIndex AddCreatedAtIndex(Action<DocumentIndex> configure = null)
     {
-        var index = new DocumentIndex(this, SchemaConstants.CreatedTimestampColumn);
+        var index = new DocumentIndex(this, SchemaConstants.CreatedAtColumn);
         configure?.Invoke(index);
         Indexes.Add(index);
 

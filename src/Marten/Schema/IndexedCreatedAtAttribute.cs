@@ -7,10 +7,10 @@ namespace Marten.Schema;
 ///     Creates an index on the predefined Last Modified column
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
-public class IndexedCreatedTimestampAttribute: MartenAttribute
+public class IndexedCreatedAtAttribute: MartenAttribute
 {
     public override void Modify(DocumentMapping mapping)
     {
-        mapping.AddCreatedTimestampIndex();
+        mapping.AddCreatedAtIndex();
     }
 }

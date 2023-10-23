@@ -20,11 +20,11 @@ public class LastModifiedMetadataAttribute: MartenAttribute
 ///     Direct Marten to copy the created timestamp metadata to this member
 /// </summary>
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-public class CreatedTimestampMetadataAttribute: MartenAttribute
+public class CreatedAtMetadataAttribute: MartenAttribute
 {
     public override void Modify(DocumentMapping mapping, MemberInfo member)
     {
-        mapping.Metadata.CreatedTimestamp.Member = member;
+        mapping.Metadata.CreatedAt.Member = member;
     }
 }
 
