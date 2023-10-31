@@ -10,6 +10,7 @@ using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Services;
+using Marten.Sessions;
 using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
@@ -50,8 +51,10 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
         var storage = (IDocumentStorage<TDoc, TId>)martenSession.StorageFor<TDoc>();
         foreach (var slice in slices)
         {
-            slice.Aggregate = await storage.LoadAsync(slice.Id, martenSession, cancellation).ConfigureAwait(false);
-            await ApplyChangesAsync(martenSession, slice, cancellation).ConfigureAwait(false);
+            var tenantedSession = martenSession.UseTenancyBasedOnSliceAndStorage(storage, slice);
+
+            slice.Aggregate = await storage.LoadAsync(slice.Id, tenantedSession, cancellation).ConfigureAwait(false);
+            await ApplyChangesAsync(tenantedSession, slice, cancellation).ConfigureAwait(false);
         }
     }
 
