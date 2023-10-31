@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
+using Marten.Internal.Sessions;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -90,6 +93,43 @@ public class ConjoinedTenancyProjectionsTests: IntegrationContext
             resource.TotalResourcesCount.ShouldBe(2);
         }
     }
+
+    [Fact]
+    public async Task ForEventsAppendedToTenantedSession_CustomProjection()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
+
+            opts.Schema.For<CompanyLocation>().SoftDeleted();
+            opts.Projections.Add(new CompanyLocationCustomProjection(), ProjectionLifecycle.Inline);
+        });
+
+        var tenantId = Guid.NewGuid().ToString();
+        var companyLocationId = Guid.NewGuid();
+        var companyLocationName = "New York";
+
+        CompanyLocationCustomProjection.ExpectedTenant = tenantId;
+
+        // theSession is for the default-tenant
+        // we switch to another tenant, and append events there
+        // the projected document should also be saved for that other tenant, NOT the default-tenant
+        theSession.ForTenant(tenantId).Events.StartStream(companyLocationId, new CompanyLocationCreated(companyLocationName));
+
+        await theSession.SaveChangesAsync();
+
+        var defaultTenantCompanyLocations = await theSession.Query<CompanyLocation>().ToListAsync();
+        defaultTenantCompanyLocations.ShouldBeEmpty();
+
+        var otherTenantCompanyLocations = await theSession.ForTenant(tenantId).Query<CompanyLocation>().ToListAsync();
+        var singleCompanyLocation = otherTenantCompanyLocations.SingleOrDefault();
+
+        singleCompanyLocation.ShouldNotBeNull();
+        singleCompanyLocation.Id.ShouldBe(companyLocationId);
+        singleCompanyLocation.Name.ShouldBe(companyLocationName);
+    }
 }
 
 public record Event;
@@ -149,4 +189,62 @@ public class ResourcesGlobalSummaryProjection: MultiStreamProjection<ResourcesGl
 
     public void Apply(ResourceRemovedEvent e, ResourcesGlobalSummary resourceGlobal) =>
         resourceGlobal.TotalResourcesCount--;
+}
+
+public record CompanyLocation
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; }
+}
+public record CompanyLocationCreated(string Name);
+public record CompanyLocationUpdated(string NewName);
+public record CompanyLocationDeleted();
+
+public class CompanyLocationCustomProjection : CustomProjection<CompanyLocation, Guid>
+{
+    public static string ExpectedTenant;
+
+    public CompanyLocationCustomProjection()
+    {
+        this.AggregateByStream();
+
+        this.IncludeType<CompanyLocationCreated>();
+        this.IncludeType<CompanyLocationUpdated>();
+        this.IncludeType<CompanyLocationDeleted>();
+    }
+
+    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CompanyLocation, Guid> slice, CancellationToken cancellation, ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
+    {
+        var location = slice.Aggregate;
+
+        // The session and the slice should be for the same tenant
+        session.TenantId.ShouldBe(ExpectedTenant);
+        slice.Tenant.TenantId.ShouldBe(ExpectedTenant);
+        session.TenantId.ShouldBe(slice.Tenant.TenantId);
+
+        foreach (var data in slice.AllData())
+        {
+            switch (data)
+            {
+                case CompanyLocationCreated c:
+                    location = new CompanyLocation
+                    {
+                        Id = slice.Id,
+                        Name = c.Name,
+                    };
+                    session.Store(location);
+                    break;
+
+                case CompanyLocationUpdated u:
+                    location.Name = u.NewName;
+                    break;
+
+                case CompanyLocationDeleted d:
+                    session.Delete(location);
+                    break;
+            }
+        }
+
+        return ValueTask.CompletedTask;
+    }
 }
