@@ -36,16 +36,19 @@ public class UserMultiStreamProjection: MultiStreamProjection<UniqueUser, Guid>
 
 public class UniqueUser
 {
+    public const string EmailIndex = "email_index";
+    public const string FullNameIndex = "fullname_index";
+
     public Guid Id { get; set; }
 
     public string UserName { get; set; }
 
-    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField)]
+    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField, IndexName = EmailIndex)]
     public string Email { get; set; }
 
-    [UniqueIndex(IndexName = "fullname")] public string FirstName { get; set; }
+    [UniqueIndex(IndexName = FullNameIndex)] public string FirstName { get; set; }
 
-    [UniqueIndex(IndexName = "fullname")] public string Surname { get; set; }
+    [UniqueIndex(IndexName = FullNameIndex)] public string Surname { get; set; }
 }
 
 public class UniqueIndexTests: OneOffConfigurationsContext
@@ -83,14 +86,9 @@ public class UniqueIndexTests: OneOffConfigurationsContext
         session.Store(secondDocument);
 
         //3. Unique Exception Was thrown
-        try
-        {
-            session.SaveChanges();
-        }
-        catch (DocumentAlreadyExistsException exception)
-        {
-            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
-        }
+        var exception = Should.Throw<DocumentAlreadyExistsException>(() => session.SaveChanges());
+        exception.ConstraintName.ShouldBe(UniqueUser.FullNameIndex);
+        ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
     }
 
     [Fact]
@@ -109,14 +107,9 @@ public class UniqueIndexTests: OneOffConfigurationsContext
         session.Store(secondDocument);
 
         //3. Unique Exception Was thrown
-        try
-        {
-            session.SaveChanges();
-        }
-        catch (DocumentAlreadyExistsException exception)
-        {
-            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
-        }
+        var exception = Should.Throw<DocumentAlreadyExistsException>(() => session.SaveChanges());
+        exception.ConstraintName.ShouldBe(UniqueUser.EmailIndex);
+        ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
     }
 
     [Fact]
@@ -139,14 +132,9 @@ public class UniqueIndexTests: OneOffConfigurationsContext
         session.Events.Append(secondEvent.UserId, secondEvent);
 
         //3. Unique Exception Was thrown
-        try
-        {
-            session.SaveChanges();
-        }
-        catch (MartenCommandException exception)
-        {
-            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
-        }
+        var exception = Should.Throw<MartenCommandException>(() => session.SaveChanges());
+        exception.ConstraintName.ShouldBe(UniqueUser.FullNameIndex);
+        ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
     }
 
     [Fact]
@@ -166,13 +154,8 @@ public class UniqueIndexTests: OneOffConfigurationsContext
         session.Events.Append(secondEvent.UserId, secondEvent);
 
         //3. Unique Exception Was thrown
-        try
-        {
-            session.SaveChanges();
-        }
-        catch (DocumentAlreadyExistsException exception)
-        {
-            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
-        }
+        var exception = Should.Throw<DocumentAlreadyExistsException>(() => session.SaveChanges());
+        exception.ConstraintName.ShouldBe(UniqueUser.EmailIndex);
+        ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
     }
 }
