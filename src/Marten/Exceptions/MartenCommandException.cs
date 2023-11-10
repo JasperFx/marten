@@ -17,6 +17,32 @@ public class MartenCommandException: MartenException
     /// </summary>
     /// <param name="command">failed Postgres command</param>
     /// <param name="innerException">internal exception details</param>
+    public MartenCommandException(NpgsqlCommand? command, PostgresException innerException)
+        : base(ToMessage(command, innerException) + innerException.Message, innerException)
+    {
+        if (command == null)
+            return;
+
+        Command = new NpgsqlCommand
+        {
+            CommandText = command.CommandText,
+            CommandType = command.CommandType,
+            CommandTimeout = command.CommandTimeout
+        };
+
+        foreach (NpgsqlParameter parameter in command.Parameters)
+        {
+            Command.Parameters.Add(parameter.Clone());
+        }
+
+        ConstraintName = innerException.ConstraintName;
+    }
+
+    /// <summary>
+    ///     Creates MartenCommandException based on the command and innerException information with formatted message.
+    /// </summary>
+    /// <param name="command">failed Postgres command</param>
+    /// <param name="innerException">internal exception details</param>
     public MartenCommandException(NpgsqlCommand? command, Exception innerException)
         : base(ToMessage(command, innerException) + innerException.Message, innerException)
     {
@@ -34,6 +60,8 @@ public class MartenCommandException: MartenException
         {
             Command.Parameters.Add(parameter.Clone());
         }
+
+        ConstraintName = null;
     }
 
     /// <summary>
@@ -62,12 +90,16 @@ public class MartenCommandException: MartenException
         {
             Command.Parameters.Add(parameter);
         }
+
+        ConstraintName = null;
     }
 
     /// <summary>
     ///     Failed Postgres command
     /// </summary>
     public NpgsqlCommand? Command { get; }
+
+    public string? ConstraintName { get; }
 
     protected static string ToMessage(
         NpgsqlCommand? command,

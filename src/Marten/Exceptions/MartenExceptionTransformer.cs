@@ -19,7 +19,12 @@ internal static class MartenExceptionTransformer
 
         Transforms.IfExceptionIs<PostgresException>()
             .If(e => e.SqlState == PostgresErrorCodes.SerializationFailure)
-            .ThenTransformTo(e => throw new ConcurrentUpdateException(e));
+            .ThenTransformTo(e => throw new ConcurrentUpdateException(e))
+            .TransformTo(e =>
+            {
+                var command = e.ReadNpgsqlCommand();
+                return new MartenCommandException(command, e);
+            });
 
         Transforms.IfExceptionIs<NpgsqlException>()
             .TransformTo(e =>
