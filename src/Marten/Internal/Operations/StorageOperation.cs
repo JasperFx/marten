@@ -173,7 +173,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
             {
                 if (e.TableName == _tableName)
                 {
-                    transformed = new DocumentAlreadyExistsException(original, typeof(T), _id);
+                    transformed = new DocumentAlreadyExistsException(original, typeof(T), _id, e.ConstraintName ?? string.Empty);
                     return true;
                 }
             }

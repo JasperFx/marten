@@ -23,7 +23,7 @@ public sealed class InsertExceptionTransform<T>: IExceptionTransform
         if (original.Message?.IndexOf(ExpectedMessage, StringComparison.OrdinalIgnoreCase) > -1 &&
             original.Message?.IndexOf(tableName, StringComparison.Ordinal) > -1)
         {
-            transformed = new DocumentAlreadyExistsException(original, typeof(T), id);
+            transformed = new DocumentAlreadyExistsException(original, typeof(T), id, string.Empty);
             return true;
         }
 
