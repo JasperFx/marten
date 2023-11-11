@@ -11,7 +11,7 @@ Do note that all the various types of aggregated projections inherit from a comm
 1. [Single Stream Projections](/events/projections/aggregate-projections) combine events from a single stream into a single view.
 2. [Multi Stream Projections](/events/projections/multi-stream-projections) are a specialized form of projection that allows you to aggregate a view against arbitrary groupings of events across streams.
 3. [Event Projections](/events/projections/event-projections) are a recipe for building projections that create or delete one or more documents for a single event
-4. [Custom Projections](/events/projections/custom-aggregates) are a recipe for building aggregate projections that require more logic than
+4. [Custom Aggregations](/events/projections/custom-aggregates) are a recipe for building aggregate projections that require more logic than
    can be accomplished by the other aggregation types. Example usages are soft-deleted aggregate documents that maybe be recreated later or
    if you only apply events to an aggregate if the aggregate document previously existed.
 5. If one of the built in projection recipes doesn't fit what you want to do, you can happily build your own [custom projection](/events/projections/custom)
