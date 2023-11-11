@@ -36,7 +36,7 @@ public async Task load_event_stream_async(IDocumentSession session, Guid streamI
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L117-L145' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-fetch-stream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The data returned is a list of `IEvent` objects, where each is a strongly-typed `Event<T>` object shown below:
+The data returned is a list of `IEvent` objects, where each is a (internal) strongly-typed `Event<T>` object shown below:
 
 <!-- snippet: sample_IEvent -->
 <a id='snippet-sample_ievent'></a>

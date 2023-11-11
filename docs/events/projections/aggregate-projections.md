@@ -224,7 +224,7 @@ public class TripProjection: SingleStreamProjection<Trip>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripProjectionWithCustomName.cs#L43-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The `Create()` method has to return either the aggregate document type or `Task<T>` where `T` is the aggregate document type. There must be an argument for the specific event type or `Event<T>` where `T` is the event type if you need access to event metadata. You can also take in an `IQuerySession` if you need to look up additional data as part of the transformation or `IEvent` in addition to the exact event type just to get at event metadata.
+The `Create()` method has to return either the aggregate document type or `Task<T>` where `T` is the aggregate document type. There must be an argument for the specific event type or `IEvent<T>` where `T` is the event type if you need access to event metadata. You can also take in an `IQuerySession` if you need to look up additional data as part of the transformation or `IEvent` in addition to the exact event type just to get at event metadata.
 
 ## Applying Changes to the Aggregate Document
 
@@ -303,7 +303,7 @@ public class TripProjection: SingleStreamProjection<Trip>
 The `Apply()` methods can accept any combination of these arguments:
 
 1. The actual event type
-1. `Event<T>` where the `T` is the actual event type. Use this if you want access to the [event metadata](/events/metadata) like versions or timestamps.
+1. `IEvent<T>` where the `T` is the actual event type. Use this if you want access to the [event metadata](/events/metadata) like versions or timestamps.
 1. `IEvent` access the event metadata. It's perfectly valid to accept both `IEvent` for the metadata and the specific event type just out of convenience.
 1. `IQuerySession` if you need to do additional data lookups
 1. The aggregate type
@@ -405,7 +405,7 @@ public class TripProjection: SingleStreamProjection<Trip>
 The `ShouldDelete()` method can take any combination of these arguments:
 
 1. The actual event type
-1. `Event<T>` where the `T` is the actual event type. Use this if you want access to the [event metadata](/events/metadata) like versions or timestamps.
+1. `IEvent<T>` where the `T` is the actual event type. Use this if you want access to the [event metadata](/events/metadata) like versions or timestamps.
 1. `IQuerySession` if you need to do additional data lookups
 1. The aggregate type
 
