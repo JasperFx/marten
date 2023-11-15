@@ -18,7 +18,6 @@ Marten also provides .NET developers with an ACID-compliant event store with use
 
 Access docs [here](https://martendb.io/) and v3.x docs [here](https://martendb.io/v3).
 
-## Support Plans
 
 <div align="center">
     <img src="https://www.jasperfx.net/wp-content/uploads/2023/07/logo-alt-min.png" alt="JasperFx logo" width="70%">
