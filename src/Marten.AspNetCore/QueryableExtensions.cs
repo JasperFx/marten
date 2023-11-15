@@ -276,4 +276,32 @@ public static class QueryableExtensions
         stream.Position = 0;
         await stream.CopyToAsync(context.Response.Body, context.RequestAborted).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Write an raw SQL query result directly to the HttpContext
+    /// </summary>
+    /// <param name="session"></param>
+    /// <param name="sql"></param>
+    /// <param name="context"></param>
+    /// <param name="contentType"></param>
+    /// <param name="onFoundStatus">Defaults to 200</param>
+    /// <returns></returns>
+    public static async Task WriteJson(
+        this IQuerySession session,
+        string sql,
+        HttpContext context,
+        string contentType = "application/json",
+        int onFoundStatus = 200
+    )
+    {
+        var stream = new MemoryStream();
+        _ = await session.StreamJson<int>(stream, context.RequestAborted, sql).ConfigureAwait(false);
+
+        context.Response.StatusCode = onFoundStatus;
+        context.Response.ContentLength = stream.Length;
+        context.Response.ContentType = contentType;
+
+        stream.Position = 0;
+        await stream.CopyToAsync(context.Response.Body, context.RequestAborted).ConfigureAwait(false);
+    }
 }
