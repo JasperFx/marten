@@ -291,11 +291,12 @@ public static class QueryableExtensions
         string sql,
         HttpContext context,
         string contentType = "application/json",
-        int onFoundStatus = 200
+        int onFoundStatus = 200,
+        params object[] parameters
     )
     {
         var stream = new MemoryStream();
-        _ = await session.StreamJson<int>(stream, context.RequestAborted, sql).ConfigureAwait(false);
+        _ = await session.StreamJson<int>(stream, context.RequestAborted, sql, parameters).ConfigureAwait(false);
 
         context.Response.StatusCode = onFoundStatus;
         context.Response.ContentLength = stream.Length;

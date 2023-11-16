@@ -215,5 +215,22 @@ public class web_service_streaming_tests: IntegrationContext
         read.Length.ShouldBe(issues.Count(x => x.Open));
     }
 
+    [Theory]
+    [InlineData("value1", "value2")]
+    public async Task stream_a_json_with_raw_sql(string value1, string value2)
+    {
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/json/sql/{value1}/{value2}");
+            s.ContentTypeShouldBe("application/json");
+        });
 
+        var read = result.ReadAsJson<SimpleProperty[]>();
+
+        read.Length.ShouldBe(2);
+        read[0].Property.ShouldBe(value1);
+        read[1].Property.ShouldBe(value2);
+    }
+
+    internal record SimpleProperty(string Property);
 }
