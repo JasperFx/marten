@@ -45,6 +45,7 @@ export default withMermaid({
       { text: 'Document DB', link: '/documents/', activeMatch: '/documents/' },
       { text: 'Event Store', link: '/events/', activeMatch: '/events/' },
       { text: 'Migration', link: '/migration-guide' },
+      { text: 'Support Plans', link: 'https://www.jasperfx.net/support-plans/'},
       { text: 'Join Chat', link: 'https://discord.gg/WMxrvegf8H' },
     ],
 
