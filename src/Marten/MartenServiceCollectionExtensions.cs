@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -626,6 +627,7 @@ public static class MartenServiceCollectionExtensions
         ///     at runtime.
         /// </summary>
         /// <returns></returns>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete(
             "Please prefer the InitializeWith() approach for applying start up actions to a DocumentStore. This should not be used in combination with the asynchronous projections. WILL BE REMOVED IN MARTEN V6.")]
         public IDocumentStore InitializeStore()

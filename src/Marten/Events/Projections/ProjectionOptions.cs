@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -153,6 +154,7 @@ public class ProjectionOptions: DaemonSettings
     ///     projection within the async projection daempon
     /// </param>
     /// <returns>The extended storage configuration for document T</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     [Obsolete(
         "Please switch to Snapshot (in case of inline or async lifecycle) or LiveStreamAggregation method (for online lifecycle).")]
     public MartenRegistry.DocumentMappingExpression<T> SelfAggregate<T>(
