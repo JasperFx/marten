@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
@@ -211,6 +212,7 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
     }
 }
 
+[EditorBrowsable(EditorBrowsableState.Never)]
 [Obsolete("Please switch to CustomProjection<TDoc, TId> with the exact same syntax")]
 public abstract class CustomAggregation<TDoc, TId>: CustomProjection<TDoc, TId>
 {
