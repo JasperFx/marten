@@ -14,6 +14,7 @@ using Marten.Storage;
 using Marten.Storage.Metadata;
 using NpgsqlTypes;
 using Weasel.Core;
+using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using FindMembers = Marten.Linq.Parsing.FindMembers;
 
@@ -453,7 +454,7 @@ public class MartenRegistry
                 var foreignKey =
                     new ForeignKey($"{m.TableName.Name}_{duplicateField.ColumnName}_fkey")
                     {
-                        LinkedTable = new DbObjectName(schemaName ?? m.DatabaseSchemaName, tableName),
+                        LinkedTable = new PostgresqlObjectName(schemaName ?? m.DatabaseSchemaName, tableName),
                         ColumnNames = new[] { duplicateField.ColumnName },
                         LinkedNames = new[] { columnName }
                     };

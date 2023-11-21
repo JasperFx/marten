@@ -30,7 +30,7 @@ public class HiloSequence: ISequence
         _settings = settings;
     }
 
-    private DbObjectName GetNextFunction => new(_options.DatabaseSchemaName, "mt_get_next_hi");
+    private DbObjectName GetNextFunction => new PostgresqlObjectName(_options.DatabaseSchemaName, "mt_get_next_hi");
 
     public string EntityName { get; }
 

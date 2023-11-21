@@ -9,6 +9,7 @@ using Marten.Events.Projections.Flattened;
 using Marten.Exceptions;
 using Shouldly;
 using Weasel.Core;
+using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Xunit;
 
@@ -78,7 +79,7 @@ public class FlatTableProjectionTests
     [Fact]
     public void use_explicit_schema_name_2()
     {
-        var projection = new FlatTableProjection(new DbObjectName("special", "foo"));
+        var projection = new FlatTableProjection(new PostgresqlObjectName("special", "foo"));
         projection.Table.AddColumn<Guid>("id").AsPrimaryKey();
         projection.Delete<ValuesDeleted>();
 
@@ -112,7 +113,9 @@ public class FlatTableProjectionTests
         projection.Delete<ValuesDeleted>();
 
         var events = new EventGraph(new StoreOptions { DatabaseSchemaName = "fromdocstore" })
-            {DatabaseSchemaName = "FromEventGraph"};
+        {
+            DatabaseSchemaName = "FromEventGraph"
+        };
 
         var table = projection.As<IProjectionSchemaSource>()
             .CreateSchemaObjects(events).OfType<Table>().Single();
