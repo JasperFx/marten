@@ -28,10 +28,10 @@ While Marten is open source, [JasperFx Software offers paid support and consulti
 
 ## Help us keep working on this project 💚
 
-[Become a Sponsor on GitHub](https://github.com/sponsors/JasperFX)
+[Become a Sponsor on GitHub](https://github.com/sponsors/JasperFX) by sponsoring monthly or one time.
 
-<h4 align="center">Sponsors</h4>
-<p align="center">
+### Past Sponsors
+<p align="left">
     <a href="https://aws.amazon.com/dotnet" target="_blank" rel="noopener noreferrer">
     <picture>
       <source srcset="https://martendb.io/dotnet-aws.png" media="(prefers-color-scheme: dark)" height="72px" alt=".NET on AWS" />
