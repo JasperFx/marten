@@ -64,10 +64,10 @@ public class QuestParty
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/QuestParty.cs#L8-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-New in Marten 1.2 is the ability to use `Event<T>` metadata within your projections, assuming that you're not trying to run the aggregations inline.
+Marten provides the ability to use `IEvent<T>` metadata within your projections, assuming that you're not trying to run the aggregations inline.
 
-The syntax using the built in aggregation technique is to take in `Event<T>` as the argument to your `Apply(event)` methods,
-where `T` is the event type you're interested in:
+The syntax using the built in aggregation technique is to take in `IEvent<T>` as the argument to your `Apply(event)` methods,
+where `T` is the event type you're interested is covered in [Single Stream Projections](/events/projections/aggregate-projections).
 
 <!-- snippet: sample_QuestPartyWithEvents -->
 <a id='snippet-sample_questpartywithevents'></a>
