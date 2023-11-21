@@ -1,6 +1,6 @@
 name: Marten NuGet Manual Publish
 
-on: [workflow_dispatch]
+on: [ workflow_dispatch ]
 
 env:
   config: Release
@@ -14,12 +14,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Install .NET 7.0.x
+      - name: Install .NET 8.0.x
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 7.0.x
+          dotnet-version: 8.0.x
 
       - name: Run Pack
         run: ./build.sh --no-color pack

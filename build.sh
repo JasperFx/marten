@@ -8,11 +8,13 @@ for version in "${versions[@]}"; do
     target_framework="net6.0"
   elif [[ $version = 7.* ]]; then
     target_framework="net7.0"
+  elif [[ $version = 8.* ]]; then
+    target_framework="net8.0"
   fi
 done
 
 if [ -z "$target_framework" ]; then
-  echo "BUILD FAILURE: .NET 6 or .NET 7 SDK required to run build"
+  echo "BUILD FAILURE: .NET 6, .NET 7 or .NET 8 SDK required to run build"
   exit 1
 fi
 

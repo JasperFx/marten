@@ -12,10 +12,13 @@ foreach ($item in $versions) {
   elseif ($item.Value.StartsWith("7.")) {
     $target_framework = "net7.0"
   }
+  elseif ($item.Value.StartsWith("8.")) {
+    $target_framework = "net8.0"
+  }
 }
 
 if ([string]::IsNullOrEmpty($target_framework)) {
-    Write-Output "BUILD FAILURE: .NET 6 or .NET 7 SDK required to run build"
+    Write-Output "BUILD FAILURE: .NET 6, .NET 7 or .NET 8 SDK required to run build"
     exit 1
 }
 

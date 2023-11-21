@@ -47,7 +47,11 @@ internal class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner, IDispos
 
     public async Task Stop()
     {
+#if NET8_0
+        await _cancellation.CancelAsync().ConfigureAwait(false);
+#else
         _cancellation.Cancel();
+#endif
 
         if (_connection != null)
         {
@@ -145,7 +149,9 @@ internal class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner, IDispos
         catch (OperationCanceledException e)
         {
             conn?.SafeDispose();
-            _logger.LogWarning(e, "Operation was cancelled whilst trying to attain the async daemon lock for database {Database}", _database.Identifier);
+            _logger.LogWarning(e,
+                "Operation was cancelled whilst trying to attain the async daemon lock for database {Database}",
+                _database.Identifier);
 
             return false;
         }
