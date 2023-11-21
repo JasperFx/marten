@@ -17,4 +17,4 @@ if [ -z "$target_framework" ]; then
 fi
 
 echo "Using $target_framework"
-# dotnet run --project build/build.csproj -f $target_framework -c Release -- "$@"
+dotnet run --project build/build.csproj -f $target_framework -c Release -- "$@"
