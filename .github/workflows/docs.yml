@@ -42,7 +42,9 @@ jobs:
           node-version: ${{ env.node_version }}
 
       - name: Build & Deploy docs preview
-        run: ./build.sh --no-color publish-docs-preview
+        run: |
+          dotnet --version  
+          ./build.sh --no-color publish-docs-preview
         if: ${{ github.ref != 'refs/heads/master' && github.event.inputs.publish_docs == 'true' }}
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
