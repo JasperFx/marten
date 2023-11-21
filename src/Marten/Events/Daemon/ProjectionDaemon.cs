@@ -189,7 +189,11 @@ internal class ProjectionDaemon: IProjectionDaemon
             await _coordinator.Stop().ConfigureAwait(false);
         }
 
+#if NET8_0
+        await _cancellation.CancelAsync().ConfigureAwait(false);
+#else
         _cancellation.Cancel();
+#endif
         await _highWater.Stop().ConfigureAwait(false);
 
         foreach (var agent in _agents.Values)
@@ -266,7 +270,6 @@ internal class ProjectionDaemon: IProjectionDaemon
 
         // Assume this is an aggregate type name
         return RebuildProjection(projectionType.NameInCode(), shardTimeout, token);
-
     }
 
     public Task RebuildProjection<TView>(TimeSpan shardTimeout, CancellationToken token)

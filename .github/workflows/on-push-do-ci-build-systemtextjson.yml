@@ -1,4 +1,4 @@
-name: build_net6.0 pg12 System.Text.Json
+name: build_net8.0 pg12 System.Text.Json
 
 on:
   push:
@@ -41,9 +41,15 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
+    
+    strategy:
+      matrix:
+        dotnet_version: [ net7.0, net8.0 ]
+    
+    name: build_${{ matrix.dotnet_version }} pg12 System.Text.Json
+    
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install .NET 6.0.x
         uses: actions/setup-dotnet@v3
@@ -78,5 +84,5 @@ jobs:
         env:
           DEFAULT_SERIALIZER: "SystemTextJson"
           marten_testing_database: "Host=localhost;Port=5432;Database=${{ env.pg_db }};Username=${{ env.pg_user }}"
-        run: dotnet run --project build/build.csproj -f net7.0 -c Release -- ci
+        run: dotnet run --project build/build.csproj -f ${{ matrix.dotnet_version }} -c Release -- ci
         shell: bash

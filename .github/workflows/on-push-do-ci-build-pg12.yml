@@ -1,4 +1,4 @@
-name: build_net6.0 pg12
+name: build_net8.0 pg12
 
 on:
   push:
@@ -43,8 +43,8 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+
       - name: Install .NET 6.0.x
         uses: actions/setup-dotnet@v3
         with:
@@ -54,6 +54,11 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 7.0.x
+
+      - name: Install .NET 8.0.x
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
 
       - name: Install Node.js
         uses: actions/setup-node@v3
@@ -77,5 +82,5 @@ jobs:
       - name: Build
         env:
           marten_testing_database: "Host=localhost;Port=5432;Database=${{ env.pg_db }};Username=${{ env.pg_user }}"
-        run: dotnet run --project build/build.csproj -f net7.0 -c Release -- ci
+        run: dotnet run --project build/build.csproj -f net8.0 -c Release -- ci
         shell: bash

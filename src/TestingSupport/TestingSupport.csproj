@@ -1,24 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>default</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Marten\Marten.csproj" />
-        <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
-        <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
+        <ProjectReference Include="..\Marten\Marten.csproj"/>
+        <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj"/>
+        <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
-        <PackageReference Include="Jil" Version="3.0.0-alpha2" />
-        <PackageReference Include="Lamar" Version="7.1.1" />
-        <PackageReference Include="NSubstitute" Version="4.3.0" />
-        <PackageReference Include="Shouldly" Version="4.0.3" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0"/>
+        <PackageReference Include="Jil" Version="3.0.0-alpha2"/>
+        <PackageReference Include="Lamar" Version="7.1.1"/>
+        <PackageReference Include="NSubstitute" Version="4.3.0"/>
+        <PackageReference Include="Shouldly" Version="4.0.3"/>
     </ItemGroup>
 </Project>

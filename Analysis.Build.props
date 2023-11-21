@@ -16,7 +16,7 @@
             <ExcludeAssets>none</ExcludeAssets>
             <IncludeAssets>all</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="7.0.4">
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0">
             <PrivateAssets>all</PrivateAssets>
             <ExcludeAssets>none</ExcludeAssets>
             <IncludeAssets>all</IncludeAssets>

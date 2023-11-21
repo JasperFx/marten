@@ -366,13 +366,20 @@ internal class ShardAgent: IShardAgent, IObserver<ShardState>
         return group;
     }
 
-    public Task Stop(Exception? ex = null)
+    public async Task Stop(Exception? ex = null)
     {
         IsStopping = true;
 
         Logger.LogInformation("Stopping projection shard '{ProjectionShardIdentity}'", ProjectionShardIdentity);
 
-        _cancellationSource?.Cancel();
+        if (_cancellationSource != null)
+        {
+#if NET8_0
+            await _cancellationSource.CancelAsync().ConfigureAwait(false);
+#else
+            _cancellationSource.Cancel();
+#endif
+        }
 
         _commandBlock?.Complete();
         _loader?.Complete();
@@ -398,8 +405,6 @@ internal class ShardAgent: IShardAgent, IObserver<ShardState>
         });
 
         IsStopping = false;
-
-        return Task.CompletedTask;
     }
 
     public async Task Pause(TimeSpan timeout)

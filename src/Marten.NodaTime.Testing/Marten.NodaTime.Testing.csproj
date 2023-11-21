@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
         <RootNamespace>Marten.NodaTimePlugin.Testing</RootNamespace>
     </PropertyGroup>
 
@@ -17,7 +17,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="xunit" Version="2.6.2" />
+        <PackageReference Include="xunit" Version="2.6.2"/>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="MarkdownSnippets.MsBuild" Version="25.1.0">
