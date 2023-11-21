@@ -12,7 +12,7 @@ using Xunit;
 
 namespace CoreTests;
 
-public class DocumentCleanerTests : OneOffConfigurationsContext
+public class DocumentCleanerTests: OneOffConfigurationsContext
 {
     private IDocumentCleaner theCleaner => theStore.Advanced.Clean;
 
@@ -224,6 +224,5 @@ where s.sequence_name like ? and s.sequence_schema = any(?);", "mt_%", allSchema
         await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
         GetSequenceCount(theStore).ShouldBe(0);
-
     }
 }

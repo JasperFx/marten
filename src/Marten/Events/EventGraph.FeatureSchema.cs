@@ -16,8 +16,8 @@ namespace Marten.Events;
 
 public partial class EventGraph: IFeatureSchema
 {
-    internal DbObjectName ProgressionTable => new(DatabaseSchemaName, "mt_event_progression");
-    internal DbObjectName StreamsTable => new(DatabaseSchemaName, "mt_streams");
+    internal DbObjectName ProgressionTable => new PostgresqlObjectName(DatabaseSchemaName, "mt_event_progression");
+    internal DbObjectName StreamsTable => new PostgresqlObjectName(DatabaseSchemaName, "mt_streams");
 
 
     IEnumerable<Type> IFeatureSchema.DependentTypes()
@@ -44,7 +44,7 @@ public partial class EventGraph: IFeatureSchema
 
         #region sample_using-sequence
 
-        var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequence"))
+        var sequence = new Sequence(new PostgresqlObjectName(DatabaseSchemaName, "mt_events_sequence"))
         {
             Owner = eventsTable.Identifier, OwnerColumn = "seq_id"
         };
@@ -56,7 +56,7 @@ public partial class EventGraph: IFeatureSchema
         yield return new EventProgressionTable(DatabaseSchemaName);
 
         yield return new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint");
-        yield return Function.ForRemoval(new DbObjectName(DatabaseSchemaName, "mt_append_event"));
+        yield return Function.ForRemoval(new PostgresqlObjectName(DatabaseSchemaName, "mt_append_event"));
         yield return new ArchiveStreamFunction(this);
 
         foreach (var schemaSource in Options.Projections.All.OfType<IProjectionSchemaSource>())
