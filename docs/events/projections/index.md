@@ -67,7 +67,7 @@ public class QuestParty
 Marten provides the ability to use `IEvent<T>` metadata within your projections, assuming that you're not trying to run the aggregations inline.
 
 The syntax using the built in aggregation technique is to take in `IEvent<T>` as the argument to your `Apply(event)` methods,
-where `T` is the event type you're interested in:
+where `T` is the event type you're interested in [Single Stream Projections](/events/projections/aggregate-projections).
 
 <!-- snippet: sample_QuestPartyWithEvents -->
 <a id='snippet-sample_questpartywithevents'></a>
