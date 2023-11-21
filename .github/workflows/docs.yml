@@ -30,12 +30,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install .NET 7.0.x
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 7.0.x
-
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
@@ -43,7 +37,6 @@ jobs:
 
       - name: Build & Deploy docs preview
         run: |
-          dotnet --version  
           ./build.sh --no-color publish-docs-preview
         if: ${{ github.ref != 'refs/heads/master' && github.event.inputs.publish_docs == 'true' }}
         env:
@@ -52,7 +45,6 @@ jobs:
 
       - name: Build & Deploy docs
         run: |
-          dotnet --version
           ./build.sh --no-color publish-docs
         if: ${{ github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event.inputs.publish_docs == 'true') }}
         env:
