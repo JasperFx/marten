@@ -4,15 +4,21 @@ using EventSourcingTests.Projections;
 using Marten;
 using Marten.Services.Json;
 using Marten.Testing.Harness;
+using Npgsql;
 using Shouldly;
 using Xunit;
 
 namespace EventSourcingTests;
 
-public class flexible_event_metadata : OneOffConfigurationsContext
+public class flexible_event_metadata: OneOffConfigurationsContext
 {
     private readonly QuestStarted started = new QuestStarted { Name = "Find the Orb" };
-    private readonly MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
+
+    private readonly MembersJoined joined = new MembersJoined
+    {
+        Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" }
+    };
+
     private readonly MonsterSlayed slayed = new MonsterSlayed { Name = "Troll" };
 
     [Fact]
@@ -232,7 +238,7 @@ public class flexible_event_metadata : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
         // Should not throw System.NullReferenceException here
     }
-        
+
     [Fact]
     public async Task check_writing_empty_headers_newtonsoft_json()
     {
