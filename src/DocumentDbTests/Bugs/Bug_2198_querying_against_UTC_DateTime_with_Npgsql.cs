@@ -29,8 +29,6 @@ public class Bug_2198_querying_against_UTC_DateTime_with_Npgsql : BugIntegration
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(1, 2, 3);
         });
-
-
     }
 
     [Fact]

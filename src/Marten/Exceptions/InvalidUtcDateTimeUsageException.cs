@@ -9,10 +9,11 @@ internal class DateTimeUsageExceptionTransform: IExceptionTransform
     public bool TryTransform(Exception original, out Exception? transformed)
     {
         if (original is InvalidCastException ice &&
-            ice.Message.Contains("GetTextReader method is not supported for type timestamp without time zone"))
+            ice.Message.Contains(
+                "Reading as 'System.IO.TextReader' is not supported for fields having DataTypeName 'timestamp without time zone"))
         {
             transformed = new InvalidDateTimeUsageException(
-                "DateTime types are no longer usable with Npgsql 6 for this use case. If using a DateTime member for optimized querying, consider using a computed index instead. Or switch this member to DateTimeOffset or use NodaTime. See https://www.npgsql.org/efcore/release-notes/6.0.html",
+                "DateTime types are no longer usable with Npgsql for this use case. If using a DateTime member for optimized querying, consider using a computed index instead. Or switch this member to DateTimeOffset or use NodaTime. See https://www.npgsql.org/efcore/release-notes/6.0.html",
                 original);
             return true;
         }
@@ -42,7 +43,7 @@ internal class UtcDateTimeUsageExceptionTransform: IExceptionTransform
 {
     public bool TryTransform(Exception original, out Exception? transformed)
     {
-        if (original is InvalidCastException &&
+        if ((original is InvalidCastException or ArgumentException) &&
             original.Message.Contains("Cannot write DateTime with Kind=UTC to PostgreSQL"))
         {
             transformed = new InvalidUtcDateTimeUsageException(original);
