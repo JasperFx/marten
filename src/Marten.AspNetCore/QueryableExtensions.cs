@@ -59,15 +59,10 @@ public static class QueryableExtensions
         int onFoundStatus = 200
     )
     {
-        var stream = new MemoryStream();
-        await queryable.StreamJsonArray(stream, context.RequestAborted).ConfigureAwait(false);
-
         context.Response.StatusCode = onFoundStatus;
-        context.Response.ContentLength = stream.Length;
         context.Response.ContentType = contentType;
 
-        stream.Position = 0;
-        await stream.CopyToAsync(context.Response.Body, context.RequestAborted).ConfigureAwait(false);
+        await queryable.StreamJsonArray(context.Response.Body, context.RequestAborted).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -266,15 +261,10 @@ public static class QueryableExtensions
         int onFoundStatus = 200
         )
     {
-        var stream = new MemoryStream();
-        await session.StreamJsonMany(query, stream, context.RequestAborted).ConfigureAwait(false);
-
         context.Response.StatusCode = onFoundStatus;
-        context.Response.ContentLength = stream.Length;
         context.Response.ContentType = contentType;
 
-        stream.Position = 0;
-        await stream.CopyToAsync(context.Response.Body, context.RequestAborted).ConfigureAwait(false);
+        await session.StreamJsonMany(query, context.Response.Body, context.RequestAborted).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -285,7 +275,6 @@ public static class QueryableExtensions
     /// <param name="context"></param>
     /// <param name="contentType"></param>
     /// <param name="onFoundStatus">Defaults to 200</param>
-    /// <returns></returns>
     public static async Task WriteJson(
         this IQuerySession session,
         string sql,
@@ -295,14 +284,9 @@ public static class QueryableExtensions
         params object[] parameters
     )
     {
-        var stream = new MemoryStream();
-        _ = await session.StreamJson<int>(stream, context.RequestAborted, sql, parameters).ConfigureAwait(false);
-
         context.Response.StatusCode = onFoundStatus;
-        context.Response.ContentLength = stream.Length;
         context.Response.ContentType = contentType;
 
-        stream.Position = 0;
-        await stream.CopyToAsync(context.Response.Body, context.RequestAborted).ConfigureAwait(false);
+        await session.StreamJson<int>(context.Response.Body, context.RequestAborted, sql, parameters).ConfigureAwait(false);
     }
 }
