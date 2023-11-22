@@ -31,12 +31,12 @@
         <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
         <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
     </PropertyGroup>
-    
+
     <ItemGroup>
         <PackageReference Include="JasperFx.CodeGeneration.Commands" Version="3.4.0"/>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
         <PackageReference Include="Oakton" Version="6.1.0"/>
-        <PackageReference Include="Weasel.CommandLine" Version="7.0.0-alpha.1"/>
+        <PackageReference Include="Weasel.CommandLine" Version="7.0.0-alpha.2"/>
     </ItemGroup>
     <Import Project="../../Analysis.Build.props"/>
 </Project>
