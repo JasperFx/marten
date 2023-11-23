@@ -1,4 +1,5 @@
 # Marten
+
 ## .NET Transactional Document DB and Event Store on PostgreSQL
 
 [![Discord](https://img.shields.io/discord/1074998995086225460?color=blue&label=Chat%20on%20Discord)](https://discord.gg/WMxrvegf8H)
@@ -24,13 +25,14 @@ Access docs [here](https://martendb.io/) and v3.x docs [here](https://martendb.i
     <img src="https://www.jasperfx.net/wp-content/uploads/2023/07/logo-alt-min.png" alt="JasperFx logo" width="70%">
 </div>
 
-While Marten is open source, [JasperFx Software offers paid support and consulting contracts](https://bit.ly/3szhwT2) for Marten. 
+While Marten is open source, [JasperFx Software offers paid support and consulting contracts](https://bit.ly/3szhwT2) for Marten.
 
 ## Help us keep working on this project 💚
 
 [Become a Sponsor on GitHub](https://github.com/sponsors/JasperFX) by sponsoring monthly or one time.
 
 ### Past Sponsors
+
 <p align="left">
     <a href="https://aws.amazon.com/dotnet" target="_blank" rel="noopener noreferrer">
     <picture>
@@ -40,7 +42,6 @@ While Marten is open source, [JasperFx Software offers paid support and consulti
   </a>
 </p>
 
-
 ## Working with the Code
 
 Before getting started you will need the following in your environment:
@@ -49,14 +50,18 @@ Before getting started you will need the following in your environment:
 
 Available [here](https://dotnet.microsoft.com/download)
 
-**2. PostgreSQL 9.6 or above database with PLV8**
+**2. PostgreSQL 12 or above database**
 
-The fastest possible way to develop with Marten is to run PostgreSQL in a Docker container. Assuming that you have
-Docker running on your local box, type `dotnet run --framework net6.0 -- init-db` at the command line to spin up a Postgresql database with
-PLv8 enabled and configured in the database. The default Marten test configuration tries to find this database if no
+The fastest possible way to develop with Marten is to run PostgreSQL in a Docker container. Assuming that you have Docker running on your local box, type:
+`docker-compose up`
+or
+`dotnet run --framework net6.0 -- init-db`
+at the command line to spin up a Postgresql database withThe default Marten test configuration tries to find this database if no
 PostgreSQL database connection string is explicitly configured following the steps below:
 
-You need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
+**PLV8**
+
+If you'd like to use [Patching Api](https://martendb.io/documents/plv8.html#the-patching-api) you need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
 
 Ensure the following:
 
@@ -84,7 +89,7 @@ See more in [Contribution Guidelines](CONTRIBUTING.md).
 ### Build Commands
 
 | Description                         | Windows Commandline      | PowerShell               | Linux Shell             | DotNet CLI                                                |
-| ----------------------------------- | ------------------------ | ------------------------ | ----------------------- | --------------------------------------------------------- |
+|-------------------------------------|--------------------------|--------------------------|-------------------------|-----------------------------------------------------------|
 | Run restore, build and test         | `build.cmd`              | `build.ps1`              | `build.sh`              | `dotnet build src\Marten.sln`                             |
 | Run all tests including mocha tests | `build.cmd test`         | `build.ps1 test`         | `build.sh test`         | `dotnet run --project build/build.csproj -- test`         |
 | Run just mocha tests                | `build.cmd mocha`        | `build.ps1 mocha`        | `build.sh mocha`        | `dotnet run --project build/build.csproj -- mocha`        |
@@ -108,7 +113,6 @@ To aid in integration testing, Marten.Testing has a couple reusable base classes
 to make integration testing through Postgresql be more efficient and allow the xUnit.Net tests
 to run in parallel for better throughput.
 
-
 - `IntegrationContext` -- if most of the tests will use an out of the box configuration
   (i.e., no fluent interface configuration of any document types), use this base type. Warning though,
   this context type will **not** clean out the main `public` database schema between runs,
@@ -117,11 +121,11 @@ to run in parallel for better throughput.
   Postgresql schema objects in the `public` schema between tests. Use this sparingly please.
 - `OneOffConfigurationsContext` -- if a test suite will need to frequently re-configure
   the `DocumentStore`, this context is appropriate. You do *not* need to decorate any of these
-  test classes with the `[Collection]` attribute. This fixture will use an isolated schema using the name of the 
+  test classes with the `[Collection]` attribute. This fixture will use an isolated schema using the name of the
   test fixture type as the schema name
 - `BugIntegrationContext` -- the test harnesses for bugs tend to require custom `DocumentStore`
   configuration, and this context is a specialization of `OneOffConfigurationsContext` for
-  the *bugs* schema. 
+  the *bugs* schema.
 - `StoreFixture` and `StoreContext` are helpful if a series of tests use the same custom
   `DocumentStore` configuration. You'd need to write a subclass of `StoreFixture`, then use
   `StoreContext<YourNewStoreFixture>` as the base class to share the `DocumentStore` between
