@@ -114,7 +114,9 @@ internal class MartenBuild
 
         Target("test", DependsOn("test-base-lib", "test-core", "test-document-db", "test-event-sourcing", "test-cli", "test-codegen"));
 
-        Target("test-extension-libs", DependsOn("test-noda-time", "test-plv8", "test-aspnetcore"));
+        Target("test-extension-libs-without-plv8", DependsOn("test-noda-time", "test-aspnetcore"));
+
+        Target("test-extension-libs", DependsOn("test-extension-libs-without-plv8", "test-plv8"));
 
         Target("install-mdsnippets", IgnoreIfFailed(() =>
             Run("dotnet", $"tool install -g MarkdownSnippets.Tool")
