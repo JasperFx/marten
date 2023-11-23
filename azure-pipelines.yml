@@ -7,6 +7,7 @@ trigger:
     exclude:
       - docs/*
       - documentation/*
+      - .github/*
 
 pr:
   - master
@@ -48,7 +49,7 @@ variables:
 
 jobs:
   - job: build_dotnet
-    displayName: Build .NET $(dotnet_framework_version)
+    displayName: Build .NET
     # timeoutInMinutes: 20
     pool:
       vmImage: 'ubuntu-latest'
