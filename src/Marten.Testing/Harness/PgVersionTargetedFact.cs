@@ -28,6 +28,13 @@ namespace Marten.Testing.Harness
 
         static PgVersionTargetedFactDiscoverer()
         {
+            var versionFromEnv = Environment.GetEnvironmentVariable("postgresql_version");
+            if (!string.IsNullOrEmpty(versionFromEnv))
+            {
+                Version = Version.Parse(versionFromEnv);
+                return;
+            }
+
             // PG version does not change during test run so we can do static ctor
             using var c = new NpgsqlConnection(ConnectionSource.ConnectionString);
             c.Open();
