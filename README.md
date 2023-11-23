@@ -46,11 +46,11 @@ While Marten is open source, [JasperFx Software offers paid support and consulti
 
 Before getting started you will need the following in your environment:
 
-**1. .NET Core SDK 6.0+**
+### 1. .NET SDK 8.0+
 
 Available [here](https://dotnet.microsoft.com/download)
 
-**2. PostgreSQL 12 or above database**
+### 2. PostgreSQL 12 or above database
 
 The fastest possible way to develop with Marten is to run PostgreSQL in a Docker container. Assuming that you have Docker running on your local box, type:
 `docker-compose up`
@@ -59,7 +59,7 @@ or
 at the command line to spin up a Postgresql database withThe default Marten test configuration tries to find this database if no
 PostgreSQL database connection string is explicitly configured following the steps below:
 
-**PLV8**
+### PLV8
 
 If you'd like to use [Patching Api](https://martendb.io/documents/plv8.html#the-patching-api) you need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
 
@@ -72,6 +72,20 @@ _Help with PSQL/PLV8_
 
 - On Windows, see [this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html) for pre-built binaries of PLV8
 - On *nix, check [marten-local-db](https://github.com/eouw0o83hf/marten-local-db) for a Docker based PostgreSQL instance including PLV8.
+
+### Test Config Customization
+
+Some of our tests are run against a particular PostgreSQL version. If you'd like to run different database versions, you can do it by setting `POSTGRES_IMAGE` env variables, for instance:
+
+```bash
+POSTGRES_IMAGE=postgres:15.3-alpine docker compose up
+```
+
+Tests explorer should be able to detect database version automatically, but if it's not able to do it, you can enforce it by setting `postgresql_version` to a specific one (e.g.)
+
+```shell
+postgresql_version=15.3
+```
 
 Once you have the codebase and the connection string file, run the [build command](https://github.com/JasperFx/marten#build-commands) or use the dotnet CLI to restore and build the solution.
 

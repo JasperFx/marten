@@ -1,12 +1,11 @@
 version: '3'
 services:
   postgresql:
-    image: "ionx/postgres-plv8:12.2"
+    image: ${POSTGRES_IMAGE:-ionx/postgres-plv8:12.8}
     ports:
-     - "5432:5432"
+      - "5432:5432"
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
       POSTGRES_DB: marten_testing
       NAMEDATALEN: 100
-
