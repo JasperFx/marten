@@ -49,7 +49,7 @@ variables:
 
 jobs:
   - job: build_dotnet
-    displayName: Build .NET
+    displayName: Build .NET 8
     # timeoutInMinutes: 20
     pool:
       vmImage: 'ubuntu-latest'

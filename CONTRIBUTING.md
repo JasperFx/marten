@@ -1,4 +1,4 @@
-# Contributing to Marten 
+# Contributing to Marten
 
 We take Pull Requests!
 
@@ -9,7 +9,7 @@ We take Pull Requests!
 3. After your changes are ready, make sure that you covered your case with automated tests and verify that you have limited the number of breaking changes to a bare minimum.
 4. We also highly appreciate any relevant updates to the documentation.
 5. Make sure that your code is compiling and all automated tests are passing.
- 
+
 ## After you have sent Pull Request
 
 1. Make sure that you applied or answered all the feedback from the maintainers.
@@ -19,19 +19,23 @@ We take Pull Requests!
 ## Setup your work environment
 
 We try to limit the number of necessary setup to a minimum, but few steps are still needed:
- 
+
 **1. .NET Core SDK 6.0+**
 
 Available [here](https://dotnet.microsoft.com/download)
 
-**2. PostgreSQL 9.6 or above database with PLV8**
+**2. PostgreSQL 12 or above database**
 
-The fastest possible way to develop with Marten is to run PostgreSQL in a Docker container. Assuming that you have
-Docker running on your local box, type `dotnet run --framework net6.0 -- init-db` at the command line to spin up a Postgresql database with
-PLv8 enabled and configured in the database. The default Marten test configuration tries to find this database if no
+The fastest possible way to develop with Marten is to run PostgreSQL in a Docker container. Assuming that you have Docker running on your local box, type:
+`docker-compose up`
+or
+`dotnet run --framework net6.0 -- init-db`
+at the command line to spin up a Postgresql database withThe default Marten test configuration tries to find this database if no
 PostgreSQL database connection string is explicitly configured following the steps below:
 
-You need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
+**PLV8**
+
+If you'd like to use [Patching Api](https://martendb.io/documents/plv8.html#the-patching-api) you need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
 
 Ensure the following:
 
