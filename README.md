@@ -156,6 +156,19 @@ in a watched mode with growl turned on.
 
 Refer to build commands section to look up the commands to open the StoryTeller editor or run the StoryTeller specs.
 
+### Current Build Matrix
+
+| CI              | .NET | Postgres  |        plv8        | Serializer | 
+|-----------------|:----:|:---------:|:------------------:|:----------:|
+| GitHub Actions  |  6   |   12.8    | :white_check_mark: |    STJ     | 
+| GitHub Actions  |  6   | 15-alpine |        :x:         | Newtonsoft | 
+| GitHub Actions  |  7   |   12.8    | :white_check_mark: |  JSON.NET  | 
+| GitHub Actions  |  7   |  latest   |        :x:         |    STJ     | 
+| Azure Pipelines |  8   |   12.8    | :white_check_mark: |  JSON.NET  | 
+| Azure Pipelines |  8   |   12.8    | :white_check_mark: |    STJ     | 
+| Azure Pipelines |  8   | 15-alpine |        :x:         |    STJ     | 
+| Azure Pipelines |  8   |  latest   |        :x:         | Newtonsoft | 
+
 ## Documentation
 
 All the documentation is written in Markdown and the docs are published as a static site hosted in Netlify. v4.x and v3.x use different documentation tools hence are detailed below in separate sub-sections.

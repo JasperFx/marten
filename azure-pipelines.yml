@@ -65,11 +65,11 @@ jobs:
           plv8: true
         pg15:
           postgresService: pg15
-          serializer: Newtonsoft
+          serializer: SystemTextJson
           plv8: false
         pgLatest:
           postgresService: pgLatest
-          serializer: SystemTextJson
+          serializer: Newtonsoft
           plv8: false
     services:
       postgres: $[ variables['postgresService'] ]
