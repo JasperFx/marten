@@ -8,7 +8,29 @@ Marten allows you to add Linq parsing and querying support for your own custom m
 Using the (admittedly contrived) example from Marten's tests, say that you want to reuse a small part of a `Where()` clause across
 different queries for "IsBlue()." First, write the method you want to be recognized by Marten's Linq support:
 
-snippet: sample_IsBlue
+<!-- snippet: sample_IsBlue -->
+<a id='snippet-sample_isblue'></a>
+```cs
+public class IsBlue: IMethodCallParser
+{
+    private static readonly PropertyInfo _property = ReflectionHelper.GetProperty<ColorTarget>(x => x.Color);
+
+    public bool Matches(MethodCallExpression expression)
+    {
+        return expression.Method.Name == nameof(CustomExtensions.IsBlue);
+    }
+
+    public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
+        MethodCallExpression expression)
+    {
+        var locator = memberCollection.MemberFor(expression).TypedLocator;
+
+        return new WhereFragment($"{locator} = 'Blue'");
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/custom_linq_extensions.cs#L81-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_isblue' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Note a couple things here:
 
