@@ -13,7 +13,7 @@ using Xunit.Abstractions;
 
 namespace DocumentDbTests.Bugs;
 
-public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body : BugIntegrationContext
+public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body: BugIntegrationContext
 {
     private readonly ITestOutputHelper _output;
 
@@ -25,12 +25,11 @@ public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body : BugI
     [Fact]
     public async Task include_to_list_using_inner_join_and_paging()
     {
-
         var user1 = new User();
         var user2 = new User();
 
         var issue1 = new Issue { AssigneeId = user1.Id, Title = "1.Garage Door is busted" };
-        var issue2 = new Issue { AssigneeId = user2.Id, Title = "aaa. Garage Door is busted" };
+        var issue2 = new Issue { AssigneeId = user2.Id, Title = "AAA. Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "3. Garage Door is busted" };
         var issue4 = new Issue { AssigneeId = null, Title = "4. Garage Door is busted" };
 
@@ -49,19 +48,18 @@ public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body : BugI
             .Take(1)
             .ToListAsync();
 
-        issues.Count().ShouldBe(1);
+        issues.Count.ShouldBe(1);
         list.Count.ShouldBe(1);
     }
 
     [Fact]
     public async Task include_to_list_using_inner_join_and_paging_and_ordering()
     {
-
         var user1 = new User();
         var user2 = new User();
 
         var issue1 = new Issue { AssigneeId = user1.Id, Title = "BBB.Garage Door is busted" };
-        var issue2 = new Issue { AssigneeId = user2.Id, Title = "aaa. Garage Door is busted" };
+        var issue2 = new Issue { AssigneeId = user2.Id, Title = "AAA. Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "CCC. Garage Door is busted" };
         var issue4 = new Issue { AssigneeId = null, Title = "ddd. Garage Door is busted" };
 
@@ -118,12 +116,9 @@ public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body : BugI
     public async Task include_with_pagination()
     {
         var targets = Target.GenerateRandomData(80).ToArray();
-        var users = targets.Select(target =>
+        var users = targets.Select(target => new TargetUser
         {
-            return new TargetUser
-            {
-                TargetId = target.Id, Number = target.Number // this is random anyway
-            };
+            TargetId = target.Id, Number = target.Number // this is random anyway
         }).ToArray();
 
         await theStore.BulkInsertAsync(targets);
@@ -153,12 +148,11 @@ public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body : BugI
     [Fact]
     public async Task Bug_2243_include_to_list_using_inner_join_and_paging()
     {
-
         var user1 = new User();
         var user2 = new User();
 
         var issue1 = new Issue { AssigneeId = user1.Id, Title = "1.Garage Door is busted" };
-        var issue2 = new Issue { AssigneeId = user2.Id, Title = "aaa. Garage Door is busted" };
+        var issue2 = new Issue { AssigneeId = user2.Id, Title = "AAA. Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "3. Garage Door is busted" };
         var issue4 = new Issue { AssigneeId = null, Title = "4. Garage Door is busted" };
 
@@ -170,16 +164,15 @@ public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body : BugI
 
         var list = new List<User>();
 
-        QueryStatistics stats;
         var issues = await query.Query<Issue>()
-            .Stats(out stats)
+            .Stats(out var stats)
             .Include<User>(x => x.AssigneeId, list)
             .Where(x => x.AssigneeId.HasValue)
             .OrderBy(x => x.Title)
             .Take(1)
             .ToListAsync();
 
-        issues.Count().ShouldBe(1);
+        issues.Count.ShouldBe(1);
         list.Count.ShouldBe(1);
         stats.TotalResults.ShouldBe(3);
     }
@@ -189,7 +182,6 @@ public class TargetUser
 {
     public Guid Id { get; set; }
     public Guid TargetId { get; set; }
-
     public int Number { get; set; }
 }
 
