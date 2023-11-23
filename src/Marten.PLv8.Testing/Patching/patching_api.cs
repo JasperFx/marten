@@ -614,10 +614,14 @@ public class patching_api: OneOffConfigurationsContext
     [Fact]
     public void remove_primitive_element()
     {
+        var random = new Random();
         var target = Target.Random();
+        target.NumberArray = new[] { random.Next(0, 10), random.Next(0, 10), random.Next(0, 10) };
+        target.NumberArray = target.NumberArray.Distinct().ToArray();
+
         var initialCount = target.NumberArray.Length;
 
-        var random = new Random();
+
         var child = target.NumberArray[random.Next(0, initialCount)];
 
         theSession.Store(target);
@@ -641,10 +645,14 @@ public class patching_api: OneOffConfigurationsContext
     [Fact]
     public void remove_repeated_primitive_elements()
     {
+        var random = new Random();
         var target = Target.Random();
+        target.NumberArray = new[] { random.Next(0, 10), random.Next(0, 10), random.Next(0, 10) };
+        target.NumberArray = target.NumberArray.Distinct().ToArray();
+
         var initialCount = target.NumberArray.Length;
 
-        var random = new Random();
+
         var child = target.NumberArray[random.Next(0, initialCount)];
         var occurances = target.NumberArray.Count(e => e == child);
         if (occurances < 2)
