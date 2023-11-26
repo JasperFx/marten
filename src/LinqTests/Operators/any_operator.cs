@@ -42,6 +42,18 @@ public class any_operator: IntegrationContext
     }
 
     [Fact]
+    public async Task any_should_ignore_order()
+    {
+        theSession.Store(new Target { Number = 1 });
+        theSession.Store(new Target { Number = 2 });
+        theSession.Store(new Target { Number = 3 });
+        theSession.Store(new Target { Number = 4 });
+        await theSession.SaveChangesAsync();
+
+        (await theSession.Query<Target>().OrderBy(x => x.Number).AnyAsync()).ShouldBeTrue();
+    }
+
+    [Fact]
     public void any_hit_with_only_one_document()
     {
         theSession.Store(new Target { Number = 1 });

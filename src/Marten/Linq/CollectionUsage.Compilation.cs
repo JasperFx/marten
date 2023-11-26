@@ -254,6 +254,10 @@ public partial class CollectionUsage
                     break;
 
                 case Marten.Linq.Parsing.SingleValueMode.Count:
+                    // Invalid to be using OrderBy() while also using Count() in
+                    // PostgreSQL. Thank you Hot Chocolate.
+                    statement.Ordering.Expressions.Clear();
+
                     if (statement.IsDistinct)
                     {
                         throw new NotImplementedException("Not yet");
