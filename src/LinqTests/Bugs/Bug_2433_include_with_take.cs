@@ -5,9 +5,8 @@ using System.Threading.Tasks;
 using Marten.Pagination;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit;
 
-namespace DocumentDbTests.Bugs;
+namespace LinqTests.Bugs;
 
 public class Bug_2433_include_with_take: IntegrationContext
 {
