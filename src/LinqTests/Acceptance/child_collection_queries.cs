@@ -32,6 +32,12 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
         @where(x => x.NumberArray.Any());
 
         @where(x => x.StringArray != null && x.StringArray.Any(c => c.StartsWith("o")));
+
+        // These permutations come from GH-2401
+        @where(x => x.StringArray != null && x.String.Equals("Orange") && x.StringArray.Contains("Red"));
+        @where(x => x.StringArray != null && !x.StringArray.Contains("Red") && x.String.Equals("Orange"));
+        @where(x => x.StringArray != null && x.String.Equals("Orange") && !x.StringArray.Contains("Red"));
+        @where(x => x.StringArray != null && x.String.Equals("Orange") && x.StringArray.Contains("Red") && x.AnotherString.Equals("one"));
     }
 
     [Theory]
