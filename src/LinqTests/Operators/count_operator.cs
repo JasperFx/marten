@@ -22,6 +22,18 @@ public class count_operator: IntegrationContext
     }
 
     [Fact]
+    public async Task count_ignores_order_by()
+    {
+        theSession.Store(new Target { Number = 1 });
+        theSession.Store(new Target { Number = 2 });
+        theSession.Store(new Target { Number = 3 });
+        theSession.Store(new Target { Number = 4 });
+        await theSession.SaveChangesAsync();
+
+        (await theSession.Query<Target>().OrderBy(x => x.Number).CountAsync()).ShouldBe(4);
+    }
+
+    [Fact]
     public void long_count_without_any_where()
     {
         theSession.Store(new Target { Number = 1 });
