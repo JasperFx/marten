@@ -33,6 +33,8 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         _tableName = mapping.TableName.Name;
     }
 
+    public TId Id => _id;
+
     public object Document => _document;
 
     public IChangeTracker ToTracker(IMartenSession session)
