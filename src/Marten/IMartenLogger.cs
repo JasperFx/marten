@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections;
 using System.Diagnostics;
 using System.Linq;
 using Marten.Services;
@@ -87,7 +88,22 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
     {
         Console.WriteLine(command.CommandText);
         foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
-            Console.WriteLine($"  {p.ParameterName}: {p.Value}");
+            Console.WriteLine($"  {p.ParameterName}: {GetParameterValue(p)}");
+    }
+
+    private static object? GetParameterValue(NpgsqlParameter p)
+    {
+        if (p.Value is IList enumerable)
+        {
+            var result = "";
+            for (var i = 0; i < Math.Min(enumerable.Count, 5); i++)
+            {
+                result += $"[{i}] {enumerable[i]}; ";
+            }
+            if (enumerable.Count > 5) result += $" + {enumerable.Count - 5} more";
+            return result;
+        }
+        return p.Value;
     }
 
     public void LogFailure(NpgsqlCommand command, Exception ex)
