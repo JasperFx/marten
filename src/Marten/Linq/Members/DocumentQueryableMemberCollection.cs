@@ -101,4 +101,20 @@ internal class DocumentQueryableMemberCollection: IQueryableMemberCollection, IQ
     {
         return _members.Enumerate().Select(x => x.Value).GetEnumerator();
     }
+
+    public void RemoveAnyIdentityMember()
+    {
+        var newMembers = ImHashMap<string, IQueryableMember>.Empty;
+        foreach (var pair in _members.Enumerate())
+        {
+            if (pair.Value is IdMember)
+            {
+                continue;
+            }
+
+            newMembers = newMembers.AddOrUpdate(pair.Key, pair.Value);
+        }
+
+        _members = newMembers;
+    }
 }
