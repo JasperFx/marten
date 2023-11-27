@@ -213,6 +213,8 @@ public class UnitOfWork_PendingChanges_Functionality_Tests : IntegrationContext
             session2.PendingChanges.UpdatesFor<User>().Single()
                 .ShouldBe(user12);
 
+            session2.PendingChanges.Updates().Single().ShouldBe(user12);
+
             session2.PendingChanges.UpdatesFor<User>().ShouldNotContain(user22);
         }
     }
