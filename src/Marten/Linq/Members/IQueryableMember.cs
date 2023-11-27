@@ -20,12 +20,12 @@ public interface IQueryableMember: ISqlFragment
     /// <summary>
     ///     Postgresql locator that also casts the raw string data to the proper Postgresql type
     /// </summary>
-    string TypedLocator { get; }
+    string TypedLocator { get;}
 
     /// <summary>
     ///     Postgresql locator that returns the raw string value within the JSONB document
     /// </summary>
-    string RawLocator { get; }
+    string RawLocator { get;}
 
     /// <summary>
     ///     Locate the data for this field as JSONB

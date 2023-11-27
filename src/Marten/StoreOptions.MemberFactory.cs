@@ -5,6 +5,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Linq;
 using Marten.Linq.Members;
+using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Newtonsoft.Json.Linq;
 using Weasel.Postgresql;
@@ -23,6 +24,12 @@ public partial class StoreOptions
         }
 
         var memberType = member.GetMemberType();
+
+        return CreateQueryableMember(member, parent, memberType);
+    }
+
+    internal IQueryableMember CreateQueryableMember(MemberInfo member, IQueryableMember parent, Type? memberType)
+    {
         if (memberType == null)
             throw new ArgumentOutOfRangeException(nameof(member), $"Cannot determine member type for {member}");
 
@@ -66,7 +73,7 @@ public partial class StoreOptions
 
             if (elementType.IsValueTypeForQuerying())
             {
-                return new ValueCollectionMember(parent, casing, member);
+                return new ValueCollectionMember(this, parent, casing, member);
             }
 
             return new ChildCollectionMember(this, parent, casing, member);

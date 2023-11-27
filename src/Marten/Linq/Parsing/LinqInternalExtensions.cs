@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -8,6 +9,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.Members;
+using Marten.Linq.Members.ValueCollections;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -105,6 +107,11 @@ internal static class LinqInternalExtensions
     public static IQueryableMember MemberFor(this IHasChildrenMembers collection, Expression expression,
         string invalidExpression)
     {
+        if (collection is IValueCollectionMember valueCollection)
+        {
+            return valueCollection.Element;
+        }
+
         if (expression is ParameterExpression)
         {
             return new RootMember(expression.Type);

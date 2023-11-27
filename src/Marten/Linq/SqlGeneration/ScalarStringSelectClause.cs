@@ -58,7 +58,7 @@ internal class ScalarStringSelectClause: ISelectClause, IScalarSelectClause, ISe
     {
         sql.Append("select ");
         sql.Append(MemberName);
-        sql.Append(" from ");
+        sql.Append(" as data from ");
         sql.Append(FromObject);
         sql.Append(" as d");
     }

@@ -60,7 +60,7 @@ internal class DictionaryMember<TKey, TValue>: QueryableMember, IComparableMembe
 
     string ICollectionMember.ArrayLocator => throw new NotImplementedException();
 
-    SelectorStatement ICollectionMember.BuildChildStatement(CollectionUsage collectionUsage, IMartenSession session,
+    SelectorStatement ICollectionMember.BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
         SelectorStatement parentStatement)
     {
         throw new NotImplementedException();

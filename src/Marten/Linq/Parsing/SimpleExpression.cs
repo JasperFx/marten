@@ -6,6 +6,7 @@ using System.Reflection;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.Members;
+using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql.SqlGeneration;
@@ -50,9 +51,9 @@ internal class SimpleExpression: ExpressionVisitor
             //     Member = new WholeDataMember(queryableMembers.ElementType);
             //     return;
             case ParameterExpression:
-                if (queryableMembers is ValueCollectionMember collection)
+                if (queryableMembers is IValueCollectionMember collection)
                 {
-                    Member = collection.ElementMember;
+                    Member = collection.Element;
                     return;
                 }
 

@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -44,7 +45,7 @@ public partial class CollectionUsage
             }
         }
 
-        ProcessSingleValueModeIfAny(statement);
+        ProcessSingleValueModeIfAny(statement, session);
 
         compileNext(session, collection, statement);
 
@@ -62,11 +63,25 @@ public partial class CollectionUsage
     {
         var statement = new SelectorStatement
         {
-            SelectClause = selectClause ?? throw new ArgumentNullException(nameof(selectClause)),
-            Limit = _limit,
-            Offset = _offset,
-            IsDistinct = IsDistinct
+            SelectClause = selectClause ?? throw new ArgumentNullException(nameof(selectClause))
         };
+
+        ConfigureStatement(session, collection, statement);
+
+        if (IsDistinct)
+        {
+            statement.ApplySqlOperator("DISTINCT");
+        }
+
+        return statement;
+    }
+
+    internal Statement ConfigureStatement(IMartenSession session, IQueryableMemberCollection collection,
+        SelectorStatement statement)
+    {
+        statement.Limit = _limit;
+        statement.Offset = _offset;
+        statement.IsDistinct = IsDistinct;
 
         foreach (var ordering in OrderingExpressions)
             statement.Ordering.Expressions.Add(ordering.BuildExpression(collection));
@@ -88,14 +103,9 @@ public partial class CollectionUsage
             }
         }
 
-        ProcessSingleValueModeIfAny(statement);
+        ProcessSingleValueModeIfAny(statement, session);
 
         compileNext(session, collection, statement);
-
-        if (IsDistinct)
-        {
-            statement.ApplySqlOperator("DISTINCT");
-        }
 
         return statement.Top();
     }
@@ -162,18 +172,14 @@ public partial class CollectionUsage
 
 
         // THINK THIS IS TOO SOON. MUCH OF THE LOGIC NEEDS TO GO IN THIS INSTEAD!!!
-        var childStatement = collectionMember.BuildChildStatement(this, session, parentStatement);
-
-        childStatement.IsDistinct = IsDistinct;
-        childStatement.Limit = _limit;
-        childStatement.Offset = _offset;
+        var childStatement = collectionMember.BuildSelectManyStatement(this, session, parentStatement);
 
         if (IsDistinct)
         {
             if (childStatement.SelectClause is IScalarSelectClause c)
             {
                 c.ApplyOperator("DISTINCT");
-                parentStatement.InsertAfter(childStatement.SelectorStatement());
+                parentStatement.AddToEnd(childStatement.Top());
             }
             else if (childStatement.SelectClause is ICountClause count)
             {
@@ -195,7 +201,7 @@ public partial class CollectionUsage
         }
         else
         {
-            parentStatement.InsertAfter(childStatement);
+            parentStatement.AddToEnd(childStatement.Top());
         }
 
         compileNext(session, collectionMember as IQueryableMemberCollection, childStatement);
@@ -212,7 +218,7 @@ public partial class CollectionUsage
         }
     }
 
-    internal void ProcessSingleValueModeIfAny(SelectorStatement statement)
+    internal void ProcessSingleValueModeIfAny(SelectorStatement statement, IMartenSession session)
     {
         if (IsAny || SingleValueMode == Marten.Linq.Parsing.SingleValueMode.Any)
         {
@@ -260,9 +266,13 @@ public partial class CollectionUsage
 
                     if (statement.IsDistinct)
                     {
-                        throw new NotImplementedException("Not yet");
-                        // statement.ConvertToCommonTableExpression(_session);
-                        // statement = new CountStatement<int>(CurrentStatement);
+                        statement.ConvertToCommonTableExpression(session);
+                        var count = new SelectorStatement
+                        {
+                            SelectClause = new CountClause<int>(statement.ExportName)
+                        };
+
+                        statement.AddToEnd(count);
                     }
 
                     statement.SelectClause = new CountClause<int>(statement.SelectClause.FromObject);
@@ -270,11 +280,19 @@ public partial class CollectionUsage
                     break;
 
                 case Marten.Linq.Parsing.SingleValueMode.LongCount:
+                    // Invalid to be using OrderBy() while also using Count() in
+                    // PostgreSQL. Thank you Hot Chocolate.
+                    statement.Ordering.Expressions.Clear();
+
                     if (statement.IsDistinct)
                     {
-                        throw new NotImplementedException("Not yet");
-                        // statement.ConvertToCommonTableExpression(_session);
-                        // statement = new CountStatement<long>(CurrentStatement);
+                        statement.ConvertToCommonTableExpression(session);
+                        var count = new SelectorStatement
+                        {
+                            SelectClause = new CountClause<long>(statement.ExportName)
+                        };
+
+                        statement.AddToEnd(count);
                     }
 
                     statement.SelectClause = new CountClause<long>(statement.SelectClause.FromObject);

@@ -9,6 +9,7 @@ using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Linq.Members;
+using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;

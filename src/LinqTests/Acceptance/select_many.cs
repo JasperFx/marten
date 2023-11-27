@@ -628,7 +628,7 @@ select jsonb_array_elements(CAST(d.data ->> 'Children' as jsonb)) as data from m
     public async Task can_query_with_where_clause_and_count_after_the_select_many()
     {
         var targets = Target.GenerateRandomData(1000).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         await using var query = theStore.QuerySession();
 
@@ -644,7 +644,72 @@ select jsonb_array_elements(CAST(d.data ->> 'Children' as jsonb)) as data from m
         actual.ShouldBe(expected);
     }
 
+    [Fact]
+    public async Task select_many_on_value_collection_with_distinct_and_count()
+    {
+        // Addresses GH-2704
+        var targets = Target.GenerateRandomData(1000).ToArray();
+        await theStore.BulkInsertAsync(targets);
 
+        await using var query = theStore.QuerySession();
+        query.Logger = new TestOutputMartenLogger(_output);
+
+        var count = await query.Query<Target>().SelectMany(x => x.StringArray).Distinct().CountAsync();
+
+        var expected = targets.Where(x => x.StringArray != null).SelectMany(x => x.StringArray).Distinct().Count();
+
+        count.ShouldBe(expected);
+    }
+
+    [Fact]
+    public async Task select_many_on_value_collection_with_where_and_order_by()
+    {
+        // Addresses GH-2706
+        var targets = Target.GenerateRandomData(1000).ToArray();
+        await theStore.BulkInsertAsync(targets);
+
+        await using var query = theStore.QuerySession();
+        query.Logger = new TestOutputMartenLogger(_output);
+
+        var actual = await query.Query<Target>().Where(x => x.NumberArray != null)
+            .SelectMany(x => x.NumberArray)
+            .Where(x => x > 3)
+            .OrderBy(x => x)
+            .ToListAsync();
+
+        var expected = targets.Where(x => x.NumberArray != null)
+            .SelectMany(x => x.NumberArray)
+            .Where(x => x > 3)
+            .OrderBy(x => x).ToArray();
+
+        actual.ShouldHaveTheSameElementsAs(expected);
+
+    }
+
+    [Fact]
+    public async Task select_many_on_value_collection_with_where_and_order_by_on_strings()
+    {
+        // Addresses GH-2706
+        var targets = Target.GenerateRandomData(1000).ToArray();
+        await theStore.BulkInsertAsync(targets);
+
+        await using var query = theStore.QuerySession();
+        query.Logger = new TestOutputMartenLogger(_output);
+
+        var actual = await query.Query<Target>().Where(x => x.StringArray != null)
+            .SelectMany(x => x.StringArray)
+            .Where(x => x == "Green")
+            .OrderBy(x => x)
+            .ToListAsync();
+
+        var expected = targets.Where(x => x.StringArray != null)
+            .SelectMany(x => x.StringArray)
+            .Where(x => x == "Green")
+            .OrderBy(x => x).ToArray();
+
+        actual.ShouldHaveTheSameElementsAs(expected);
+
+    }
 
     public select_many(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
     {
