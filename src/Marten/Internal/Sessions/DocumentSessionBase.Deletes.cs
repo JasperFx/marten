@@ -17,6 +17,11 @@ public abstract partial class DocumentSessionBase
         assertNotDisposed();
         var documentStorage = StorageFor<T>();
 
+        if (documentStorage is IDocumentStorage<T, Guid> g) _workTracker.PurgeOperations<T, Guid>(g.Identity(entity));
+        if (documentStorage is IDocumentStorage<T, string> s) _workTracker.PurgeOperations<T, string>(s.Identity(entity));
+        if (documentStorage is IDocumentStorage<T, int> i) _workTracker.PurgeOperations<T, int>(i.Identity(entity));
+        if (documentStorage is IDocumentStorage<T, long> l) _workTracker.PurgeOperations<T, long>(l.Identity(entity));
+
         var deletion = documentStorage.DeleteForDocument(entity, TenantId);
         _workTracker.Add(deletion);
 
@@ -33,12 +38,14 @@ public abstract partial class DocumentSessionBase
         {
             _workTracker.Add(i.DeleteForId(id, TenantId));
 
+            _workTracker.PurgeOperations<T, int>(id);
             ejectById<T>(id);
         }
         else if (storage is IDocumentStorage<T, long> l)
         {
             _workTracker.Add(l.DeleteForId(id, TenantId));
 
+            _workTracker.PurgeOperations<T, long>(id);
             ejectById<T>((long)id);
         }
         else
@@ -53,6 +60,7 @@ public abstract partial class DocumentSessionBase
         var deletion = StorageFor<T, long>().DeleteForId(id, TenantId);
         _workTracker.Add(deletion);
 
+        _workTracker.PurgeOperations<T, long>(id);
         ejectById<T>(id);
     }
 
@@ -60,6 +68,7 @@ public abstract partial class DocumentSessionBase
     {
         assertNotDisposed();
         var deletion = StorageFor<T, Guid>().DeleteForId(id, TenantId);
+        _workTracker.PurgeOperations<T, Guid>(id);
         _workTracker.Add(deletion);
 
         ejectById<T>(id);
@@ -72,6 +81,7 @@ public abstract partial class DocumentSessionBase
         var deletion = StorageFor<T, string>().DeleteForId(id, TenantId);
         _workTracker.Add(deletion);
 
+        _workTracker.PurgeOperations<T, string>(id);
         ejectById<T>(id);
     }
 

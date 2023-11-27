@@ -189,6 +189,11 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         throw new NotSupportedException();
     }
 
+    public void PurgeOperations<T, TId>(TId id) where T : notnull
+    {
+        // Do nothing here
+    }
+
     void IUpdateBatch.ApplyChanges(IMartenSession session)
     {
         if (_token.IsCancellationRequested)

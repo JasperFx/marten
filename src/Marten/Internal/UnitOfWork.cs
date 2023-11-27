@@ -210,6 +210,11 @@ internal class UnitOfWork: ISessionWorkTracker
         Streams.Clear();
     }
 
+    public void PurgeOperations<T, TId>(TId id) where T : notnull
+    {
+        _operations.RemoveAll(op => op is StorageOperation<T, TId> storage && storage.Id.Equals(id));
+    }
+
     public bool TryFindStream(string streamKey, out StreamAction stream)
     {
         stream = Streams
