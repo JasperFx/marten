@@ -189,7 +189,11 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
 
         _idType = parent.StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
 
-        QueryMembers = new DocumentQueryableMemberCollection(this, parent.Options);
+        var members = new DocumentQueryableMemberCollection(this, parent.Options);
+        members.RemoveAnyIdentityMember();
+
+        QueryMembers = members;
+
     }
 
     public IQueryableMemberCollection QueryMembers { get; }
