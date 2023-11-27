@@ -55,7 +55,7 @@ internal class ChildCollectionMember: QueryableMember, ICollectionMember, IQuery
 
     public string ExplodeLocator { get; }
 
-    public SelectorStatement BuildChildStatement(CollectionUsage collectionUsage, IMartenSession session,
+    public SelectorStatement BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
         SelectorStatement parentStatement)
     {
         var selectClause =

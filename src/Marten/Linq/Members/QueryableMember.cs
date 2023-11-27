@@ -26,6 +26,8 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
     /// <param name="member"></param>
     protected QueryableMember(IQueryableMember parent, Casing casing, MemberInfo member)
     {
+        if (parent == null) throw new ArgumentNullException(nameof(parent));
+
         Member = member;
         MemberType = member.GetMemberType();
 
@@ -80,7 +82,7 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
 
     public IQueryableMember[] Ancestors { get; }
 
-    public string RawLocator { get; protected set; }
+    public string RawLocator { get; protected internal set; }
 
 
     public string NullTestLocator
@@ -89,7 +91,7 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
         protected set => _nullTestLocator = value;
     }
 
-    public string TypedLocator { get; protected set; }
+    public string TypedLocator { get; protected internal set; }
 
     /// <summary>
     ///     Locate the data for this field as JSONB

@@ -7,6 +7,7 @@ using System.Reflection;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;
+using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration;
 using Marten.Linq.SqlGeneration.Filters;
@@ -44,7 +45,7 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
     public string ArrayLocator => TypedLocator;
     public IQueryableMember ElementMember { get; }
 
-    public SelectorStatement BuildChildStatement(CollectionUsage collectionUsage, IMartenSession session,
+    public SelectorStatement BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
         SelectorStatement parentStatement)
     {
         var statement = ElementType == typeof(string)
@@ -52,7 +53,7 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
             : typeof(ScalarSelectManyStatement<>).CloseAndBuildAs<SelectorStatement>(parentStatement,
                 session.Serializer, ElementType);
 
-        collectionUsage.ProcessSingleValueModeIfAny(statement);
+        collectionUsage.ProcessSingleValueModeIfAny(statement, session);
 
         return statement;
     }
