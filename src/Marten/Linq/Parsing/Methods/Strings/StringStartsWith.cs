@@ -60,13 +60,11 @@ internal class StringStartsWithFilter: ISqlFragment, ICompiledQueryAwareFilter
 
     public bool TryMatchValue(object value, MemberInfo member)
     {
-        if (_rawValue.Equals(value))
-        {
-            _queryMember = member;
-            return true;
-        }
+        if (!_rawValue.Equals(value))
+            return false;
 
-        return false;
+        _queryMember = member;
+        return true;
     }
 
     public void GenerateCode(GeneratedMethod method, int parameterIndex)
@@ -79,4 +77,3 @@ parameters[{parameterIndex}].Value = {maskedValue};
 ", NpgsqlDbType.Varchar);
     }
 }
-

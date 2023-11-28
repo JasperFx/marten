@@ -12,12 +12,25 @@ public class string_filtering: IntegrationContext
 {
     protected override Task fixtureSetup()
     {
-        var entry = new User() { FirstName = "Beeblebrox" };
-        var entry2 = new User() { FirstName = "Bee" };
-        var entry3 = new User() { FirstName = "Zaphod" };
-        var entry4 = new User() { FirstName = "Zap" };
+        var entry = new User { FirstName = "Beeblebrox", NickName = "Beebl" };
+        var entry2 = new User { FirstName = "Bee", NickName = "Bee" };
+        var entry3 = new User { FirstName = "Zaphod", NickName = "" };
+        var entry4 = new User { FirstName = "Zap", NickName = null };
 
         return theStore.BulkInsertAsync(new[] { entry, entry2, entry3, entry4 });
+    }
+
+    [Theory]
+    [InlineData("zap", StringComparison.OrdinalIgnoreCase, 1)]
+    [InlineData("Zap", StringComparison.CurrentCulture, 1)]
+    [InlineData("zap", StringComparison.CurrentCulture, 0)]
+    public void CanQueryByEquals(string search, StringComparison comparison, int expectedCount)
+    {
+        using var s = theStore.QuerySession();
+        var fromDb = s.Query<User>().Where(x => x.FirstName.Equals(search, comparison)).ToList();
+
+        Assert.Equal(expectedCount, fromDb.Count);
+        Assert.True(fromDb.All(x => x.FirstName.Equals(search, comparison)));
     }
 
     [Theory]
@@ -28,7 +41,21 @@ public class string_filtering: IntegrationContext
     {
         using var s = theStore.QuerySession();
         var fromDb = s.Query<User>().Where(x => !x.FirstName.Equals(search, comparison)).ToList();
+
         Assert.Equal(expectedCount, fromDb.Count);
+        Assert.True(fromDb.All(x => !x.FirstName.Equals(search, comparison)));
+    }
+
+    [Theory]
+    [InlineData("zap", StringComparison.OrdinalIgnoreCase, 2)]
+    [InlineData("zap", StringComparison.CurrentCulture, 0)]
+    public void CanQueryByContains(string search, StringComparison comparison, int expectedCount)
+    {
+        using var s = theStore.QuerySession();
+        var fromDb = s.Query<User>().Where(x => x.FirstName.Contains(search, comparison)).ToList();
+
+        Assert.Equal(expectedCount, fromDb.Count);
+        Assert.True(fromDb.All(x => x.FirstName.Contains(search, comparison)));
     }
 
     [Theory]
@@ -38,7 +65,21 @@ public class string_filtering: IntegrationContext
     {
         using var s = theStore.QuerySession();
         var fromDb = s.Query<User>().Where(x => !x.FirstName.Contains(search, comparison)).ToList();
+
         Assert.Equal(expectedCount, fromDb.Count);
+        Assert.True(fromDb.All(x => !x.FirstName.Contains(search, comparison)));
+    }
+
+    [Theory]
+    [InlineData("zap", StringComparison.OrdinalIgnoreCase, 2)]
+    [InlineData("zap", StringComparison.CurrentCulture, 0)]
+    public void CanQueryByStartsWith(string search, StringComparison comparison, int expectedCount)
+    {
+        using var s = theStore.QuerySession();
+        var fromDb = s.Query<User>().Where(x => x.FirstName.StartsWith(search, comparison)).ToList();
+
+        Assert.Equal(expectedCount, fromDb.Count);
+        Assert.True(fromDb.All(x => x.FirstName.StartsWith(search, comparison)));
     }
 
     [Theory]
@@ -48,7 +89,22 @@ public class string_filtering: IntegrationContext
     {
         using var s = theStore.QuerySession();
         var fromDb = s.Query<User>().Where(x => !x.FirstName.StartsWith(search, comparison)).ToList();
+
         Assert.Equal(expectedCount, fromDb.Count);
+        Assert.True(fromDb.All(x => !x.FirstName.StartsWith(search, comparison)));
+    }
+
+    [Theory]
+    [InlineData("hod", StringComparison.OrdinalIgnoreCase, 1)]
+    [InlineData("HOD", StringComparison.OrdinalIgnoreCase, 1)]
+    [InlineData("Hod", StringComparison.CurrentCulture, 0)]
+    public void CanQueryByEndsWith(string search, StringComparison comparison, int expectedCount)
+    {
+        using var s = theStore.QuerySession();
+        var fromDb = s.Query<User>().Where(x => x.FirstName.EndsWith(search, comparison)).ToList();
+
+        Assert.Equal(expectedCount, fromDb.Count);
+        Assert.True(fromDb.All(x => x.FirstName.EndsWith(search, comparison)));
     }
 
     [Theory]
@@ -59,16 +115,40 @@ public class string_filtering: IntegrationContext
     {
         using var s = theStore.QuerySession();
         var fromDb = s.Query<User>().Where(x => !x.FirstName.EndsWith(search, comparison)).ToList();
+
         Assert.Equal(expectedCount, fromDb.Count);
+        Assert.True(fromDb.All(x => !x.FirstName.EndsWith(search, comparison)));
+    }
+
+    [Fact]
+    public void CanQueryByIsNullOrEmpty()
+    {
+        using var s = theStore.QuerySession();
+        var fromDb = s.Query<User>().Where(x => string.IsNullOrEmpty(x.NickName)).ToList();
+
+        Assert.Equal(2, fromDb.Count);
+        Assert.True(fromDb.All(x => string.IsNullOrEmpty(x.NickName)));
+    }
+
+    [Fact]
+    public void CanQueryByNotIsNullOrEmpty()
+    {
+        using var s = theStore.QuerySession();
+        var fromDb = s.Query<User>().Where(x => !string.IsNullOrEmpty(x.NickName)).ToList();
+
+        Assert.Equal(2, fromDb.Count);
+        Assert.True(fromDb.All(x => !string.IsNullOrEmpty(x.NickName)));
     }
 
     [Theory]
     [InlineData("zap", "hod", StringComparison.OrdinalIgnoreCase, 1)]
     [InlineData("zap", "hod", StringComparison.CurrentCulture, 0)]
-    public void CanMixContainsAndNotContains(string contains, string notContains, StringComparison comparison, int expectedCount)
+    public void CanMixContainsAndNotContains(string contains, string notContains, StringComparison comparison,
+        int expectedCount)
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x => !x.FirstName.Contains(notContains, comparison) && x.FirstName.Contains(contains, comparison)).ToList();
+        var fromDb = s.Query<User>().Where(x =>
+            !x.FirstName.Contains(notContains, comparison) && x.FirstName.Contains(contains, comparison)).ToList();
         Assert.Equal(expectedCount, fromDb.Count);
     }
 
@@ -87,52 +167,57 @@ public class string_filtering: IntegrationContext
         using (var query = theStore.QuerySession())
         {
             #region sample_sample-linq-EqualsIgnoreCase
+
             query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("abc")).Id.ShouldBe(user1.Id);
             query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("aBc")).Id.ShouldBe(user1.Id);
+
             #endregion
+
             query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("def")).Id.ShouldBe(user2.Id);
 
             query.Query<User>().Any(x => x.UserName.EqualsIgnoreCase("abcd")).ShouldBeFalse();
         }
     }
 
-        [Fact]
-        public void can_search_case_insensitive_with_StringComparison()
+    [Fact]
+    public void can_search_case_insensitive_with_StringComparison()
+    {
+        var user = new User { UserName = "TEST_USER" };
+
+        using (var session = theStore.LightweightSession())
         {
-            var user = new User {UserName = "TEST_USER"};
-
-            using (var session = theStore.LightweightSession())
-            {
-                session.Store(user);
-                session.SaveChanges();
-            }
-
-            using (var query = theStore.QuerySession())
-            {
-                query.Query<User>().Single(x => x.UserName.Equals("test_user", StringComparison.InvariantCultureIgnoreCase)).Id.ShouldBe(user.Id);
-            }
+            session.Store(user);
+            session.SaveChanges();
         }
 
-        [Fact]
-        public void can_search_string_with_back_slash_case_insensitive_with_StringComparison()
+        using (var query = theStore.QuerySession())
         {
-            var user = new User {UserName = @"DOMAIN\TEST_USER"};
+            query.Query<User>().Single(x => x.UserName.Equals("test_user", StringComparison.InvariantCultureIgnoreCase))
+                .Id.ShouldBe(user.Id);
+        }
+    }
 
-            using (var session = theStore.LightweightSession())
-            {
-                session.Store(user);
-                session.SaveChanges();
-            }
+    [Fact]
+    public void can_search_string_with_back_slash_case_insensitive_with_StringComparison()
+    {
+        var user = new User { UserName = @"DOMAIN\TEST_USER" };
 
-            using (var query = theStore.QuerySession())
-            {
-                query.Query<User>().Single(x => x.UserName.Equals(@"domain\test_user", StringComparison.InvariantCultureIgnoreCase)).Id.ShouldBe(user.Id);
-            }
+        using (var session = theStore.LightweightSession())
+        {
+            session.Store(user);
+            session.SaveChanges();
         }
 
+        using (var query = theStore.QuerySession())
+        {
+            query.Query<User>()
+                .Single(x => x.UserName.Equals(@"domain\test_user", StringComparison.InvariantCultureIgnoreCase)).Id
+                .ShouldBe(user.Id);
+        }
+    }
 
 
-    public string_filtering(DefaultStoreFixture fixture) : base(fixture)
+    public string_filtering(DefaultStoreFixture fixture): base(fixture)
     {
     }
 }

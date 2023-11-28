@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json.Serialization;
 using JasperFx.Core;
 
+#nullable enable
 namespace Marten.Testing.Documents;
 
 public enum Colors
@@ -19,14 +20,12 @@ public class Target
 
     private static readonly string[] _strings =
     {
-        "Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Violet",
-        "Pink", "Gray", "Black"
+        "Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Violet", "Pink", "Gray", "Black"
     };
 
     private static readonly string[] _otherStrings =
     {
-        "one", "two", "three", "four", "five", "six", "seven", "eight",
-        "nine", "ten"
+        "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"
     };
 
     public static IEnumerable<Target> GenerateRandomData(int number)
@@ -53,7 +52,9 @@ public class Target
 
         target.Float = float.Parse(_random.NextDouble().ToString());
 
-        target.NumberArray = _random.Next(0, 10) > 8 ? new[] { _random.Next(0, 10), _random.Next(0, 10), _random.Next(0, 10) } : Array.Empty<int>();
+        target.NumberArray = _random.Next(0, 10) > 8
+            ? new[] { _random.Next(0, 10), _random.Next(0, 10), _random.Next(0, 10) }
+            : Array.Empty<int>();
 
         target.NumberArray = target.NumberArray.Distinct().ToArray();
 
@@ -165,6 +166,8 @@ public class Target
     public bool? NullableBoolean { get; set; }
     public Colors? NullableColor { get; set; }
 
+    public string? NullableString { get; set; }
+
     public IDictionary<string, string> StringDict { get; set; }
     public Dictionary<Guid, Guid> GuidDict { get; set; }
 
@@ -206,8 +209,14 @@ public class Squad
     public string Id { get; set; }
 }
 
-public class BasketballTeam : Squad { }
+public class BasketballTeam: Squad
+{
+}
 
-public class FootballTeam : Squad { }
+public class FootballTeam: Squad
+{
+}
 
-public class BaseballTeam : Squad { }
+public class BaseballTeam: Squad
+{
+}
