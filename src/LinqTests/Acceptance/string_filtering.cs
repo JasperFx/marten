@@ -12,10 +12,10 @@ public class string_filtering: IntegrationContext
 {
     protected override Task fixtureSetup()
     {
-        var entry = new User { FirstName = "Beeblebrox", NickName = "Beebl" };
-        var entry2 = new User { FirstName = "Bee", NickName = "Bee" };
-        var entry3 = new User { FirstName = "Zaphod", NickName = "" };
-        var entry4 = new User { FirstName = "Zap", NickName = null };
+        var entry = new User { FirstName = "Beeblebrox", Nickname = "" };
+        var entry2 = new User { FirstName = "Bee", Nickname = "   " };
+        var entry3 = new User { FirstName = "Zaphod", Nickname = "Zaph" };
+        var entry4 = new User { FirstName = "Zap", Nickname = null };
 
         return theStore.BulkInsertAsync(new[] { entry, entry2, entry3, entry4 });
     }
@@ -124,20 +124,40 @@ public class string_filtering: IntegrationContext
     public void CanQueryByIsNullOrEmpty()
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x => string.IsNullOrEmpty(x.NickName)).ToList();
+        var fromDb = s.Query<User>().Where(x => string.IsNullOrEmpty(x.Nickname)).ToList();
 
         Assert.Equal(2, fromDb.Count);
-        Assert.True(fromDb.All(x => string.IsNullOrEmpty(x.NickName)));
+        Assert.True(fromDb.All(x => string.IsNullOrEmpty(x.Nickname)));
     }
 
     [Fact]
     public void CanQueryByNotIsNullOrEmpty()
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x => !string.IsNullOrEmpty(x.NickName)).ToList();
+        var fromDb = s.Query<User>().Where(x => !string.IsNullOrEmpty(x.Nickname)).ToList();
 
         Assert.Equal(2, fromDb.Count);
-        Assert.True(fromDb.All(x => !string.IsNullOrEmpty(x.NickName)));
+        Assert.True(fromDb.All(x => !string.IsNullOrEmpty(x.Nickname)));
+    }
+
+    [Fact]
+    public void CanQueryByIsNullOrWhiteSpace()
+    {
+        using var s = theStore.QuerySession();
+        var fromDb = s.Query<User>().Where(x => string.IsNullOrWhiteSpace(x.Nickname)).ToList();
+
+        Assert.Equal(3, fromDb.Count);
+        Assert.True(fromDb.All(x => string.IsNullOrWhiteSpace(x.Nickname)));
+    }
+
+    [Fact]
+    public void CanQueryByNotIsNullOrWhiteSpace()
+    {
+        using var s = theStore.QuerySession();
+        var fromDb = s.Query<User>().Where(x => !string.IsNullOrWhiteSpace(x.Nickname)).ToList();
+
+        Assert.Single(fromDb);
+        Assert.True(fromDb.All(x => !string.IsNullOrWhiteSpace(x.Nickname)));
     }
 
     [Theory]
@@ -149,7 +169,40 @@ public class string_filtering: IntegrationContext
         using var s = theStore.QuerySession();
         var fromDb = s.Query<User>().Where(x =>
             !x.FirstName.Contains(notContains, comparison) && x.FirstName.Contains(contains, comparison)).ToList();
+
         Assert.Equal(expectedCount, fromDb.Count);
+        Assert.True(fromDb.All(x =>
+            !x.FirstName.Contains(notContains, comparison) && x.FirstName.Contains(contains, comparison)));
+    }
+
+    [Theory]
+    [InlineData("hod", StringComparison.OrdinalIgnoreCase, 1)]
+    [InlineData("HOD", StringComparison.OrdinalIgnoreCase, 1)]
+    [InlineData("Hod", StringComparison.CurrentCulture, 2)]
+    public void CanMixNotEndsWithWithNotIsNullOrEmpty(string search, StringComparison comparison,
+        int expectedCount)
+    {
+        using var s = theStore.QuerySession();
+        var fromDb = s.Query<User>()
+            .Where(x => !x.FirstName.EndsWith(search, comparison) && !string.IsNullOrEmpty(x.Nickname)).ToList();
+
+        Assert.Equal(expectedCount, fromDb.Count);
+        Assert.True(
+            fromDb.All(x => !x.FirstName.EndsWith(search, comparison) && !string.IsNullOrEmpty(x.Nickname)));
+    }
+
+    [Theory]
+    [InlineData("zap", StringComparison.OrdinalIgnoreCase, 1)]
+    [InlineData("zap", StringComparison.CurrentCulture, 0)]
+    public void CanMixStartsWithAndIsNullOrWhiteSpace(string search, StringComparison comparison, int expectedCount)
+    {
+        using var s = theStore.QuerySession();
+        var fromDb = s.Query<User>()
+            .Where(x => x.FirstName.StartsWith(search, comparison) && string.IsNullOrWhiteSpace(x.Nickname)).ToList();
+
+        Assert.Equal(expectedCount, fromDb.Count);
+        Assert.True(
+            fromDb.All(x => x.FirstName.StartsWith(search, comparison) && string.IsNullOrWhiteSpace(x.Nickname)));
     }
 
     [Fact]

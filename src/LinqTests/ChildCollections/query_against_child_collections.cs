@@ -34,8 +34,8 @@ public class query_against_child_collections: OneOffConfigurationsContext
         targets[9].Children[0].Number = 6;
         targets[12].Children[0].Number = 6;
 
-        targets[9].Children[0].NullableString = "";
-        targets[12].Children[0].NullableString = Guid.NewGuid().ToString();
+        targets[9].Children.Each(c => c.NullableString = "");
+        targets[12].Children.Each(c => c.NullableString = Guid.NewGuid().ToString());
 
         targets[5].Children[0].Double = -1;
         targets[9].Children[0].Double = -1;
@@ -87,7 +87,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_query_with_an_any_operator_and_string_IsNullOrEmpty()
+    public void can_query_with_an_any_operator_and_string_NotIsNullOrEmpty()
     {
         buildUpTargetData();
 
@@ -99,9 +99,25 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         results
             .Select(x => x.Id)
-            .OrderBy(x => x)
             .ShouldHaveSingleItem()
             .ShouldBe(targets[12].Id);
+    }
+
+    [Fact]
+    public void can_query_with_an_any_operator_and_string_IsNullOrWhitespace()
+    {
+        buildUpTargetData();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        var results = theSession.Query<Target>()
+            .Where(x => x.Children.Any(c => string.IsNullOrWhiteSpace(c.NullableString)))
+            .ToArray();
+
+        var ids = results.Select(x => x.Id).ToArray();
+
+        ids.Length.ShouldBe(targets.Length - 1);
+        ids.ShouldNotContain(targets[12].Id);
     }
 
     [Fact]
