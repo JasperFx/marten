@@ -261,7 +261,7 @@ public interface IMartenSessionLogger
     public void OnBeforeExecute(NpgsqlCommand command);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L10-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_imartenlogger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L11-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_imartenlogger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To apply these logging abstractions, you can either plug your own `IMartenLogger` into the `StoreOptions` object and allow that default logger to create the individual session loggers:
@@ -314,7 +314,22 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
     {
         Console.WriteLine(command.CommandText);
         foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
-            Console.WriteLine($"  {p.ParameterName}: {p.Value}");
+            Console.WriteLine($"  {p.ParameterName}: {GetParameterValue(p)}");
+    }
+
+    private static object? GetParameterValue(NpgsqlParameter p)
+    {
+        if (p.Value is IList enumerable)
+        {
+            var result = "";
+            for (var i = 0; i < Math.Min(enumerable.Count, 5); i++)
+            {
+                result += $"[{i}] {enumerable[i]}; ";
+            }
+            if (enumerable.Count > 5) result += $" + {enumerable.Count - 5} more";
+            return result;
+        }
+        return p.Value;
     }
 
     public void LogFailure(NpgsqlCommand command, Exception ex)
@@ -344,7 +359,7 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L68-L120' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_consolemartenlogger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L69-L136' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_consolemartenlogger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Accessing Diagnostics

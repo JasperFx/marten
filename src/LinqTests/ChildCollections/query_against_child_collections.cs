@@ -13,7 +13,7 @@ using Xunit.Abstractions;
 
 namespace LinqTests.ChildCollections;
 
-public class query_against_child_collections : OneOffConfigurationsContext
+public class query_against_child_collections: OneOffConfigurationsContext
 {
     private readonly ITestOutputHelper _output;
 
@@ -34,6 +34,9 @@ public class query_against_child_collections : OneOffConfigurationsContext
         targets[9].Children[0].Number = 6;
         targets[12].Children[0].Number = 6;
 
+        targets[9].Children[0].NullableString = "";
+        targets[12].Children[0].NullableString = Guid.NewGuid().ToString();
+
         targets[5].Children[0].Double = -1;
         targets[9].Children[0].Double = -1;
         targets[12].Children[0].Double = 10;
@@ -42,11 +45,7 @@ public class query_against_child_collections : OneOffConfigurationsContext
 
         var child = targets[10].Children[0];
         child.Color = Colors.Blue;
-        child.Inner = new Target
-        {
-            Number = -2,
-            Color = Colors.Blue
-        };
+        child.Inner = new Target { Number = -2, Color = Colors.Blue };
 
         theSession.Store(targets);
 
@@ -74,15 +73,35 @@ public class query_against_child_collections : OneOffConfigurationsContext
         theSession.Logger = new TestOutputMartenLogger(_output);
 
         #region sample_any-query-through-child-collections
+
         var results = theSession.Query<Target>()
             .Where(x => x.Children.Any(_ => _.Number == 6))
             .ToArray();
+
         #endregion
 
         results
             .Select(x => x.Id)
             .OrderBy(x => x)
             .ShouldHaveTheSameElementsAs(new[] { targets[5].Id, targets[9].Id, targets[12].Id }.OrderBy(x => x));
+    }
+
+    [Fact]
+    public void can_query_with_an_any_operator_and_string_IsNullOrEmpty()
+    {
+        buildUpTargetData();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        var results = theSession.Query<Target>()
+            .Where(x => x.Children.Any(c => !string.IsNullOrEmpty(c.NullableString)))
+            .ToArray();
+
+        results
+            .Select(x => x.Id)
+            .OrderBy(x => x)
+            .ShouldHaveSingleItem()
+            .ShouldBe(targets[12].Id);
     }
 
     [Fact]
@@ -93,10 +112,12 @@ public class query_against_child_collections : OneOffConfigurationsContext
         theSession.Logger = new TestOutputMartenLogger(_output);
 
         #region sample_any-query-through-child-collection-with-and
+
         var results = theSession
             .Query<Target>()
             .Where(x => x.Children.Any(_ => _.Number == 6 && _.Double == -1))
             .ToArray();
+
         #endregion
 
         results
@@ -188,7 +209,7 @@ public class query_against_child_collections : OneOffConfigurationsContext
         public string Value { get; set; }
     }
 
-    public class FindOuterByInner : ICompiledQuery<Outer, Outer>
+    public class FindOuterByInner: ICompiledQuery<Outer, Outer>
     {
         public string Type { get; private set; }
 
@@ -246,7 +267,7 @@ public class query_against_child_collections : OneOffConfigurationsContext
         theSession.Store(new Article
         {
             Long = 1,
-            CategoryArray = new [] { "sports", "finance", "health" },
+            CategoryArray = new[] { "sports", "finance", "health" },
             CategoryList = new List<string> { "sports", "finance", "health" },
             AuthorArray = favAuthors,
             Published = true,
@@ -254,15 +275,13 @@ public class query_against_child_collections : OneOffConfigurationsContext
 
         theSession.Store(new Article
         {
-            Long = 2,
-            CategoryArray = new [] { "sports", "astrology" },
-            AuthorArray = favAuthors.Take(1).ToArray(),
+            Long = 2, CategoryArray = new[] { "sports", "astrology" }, AuthorArray = favAuthors.Take(1).ToArray(),
         });
 
         theSession.Store(new Article
         {
             Long = 3,
-            CategoryArray = new [] { "health", "finance" },
+            CategoryArray = new[] { "health", "finance" },
             CategoryList = new List<string> { "sports", "health" },
             AuthorArray = favAuthors.Skip(1).ToArray(),
         });
@@ -270,7 +289,7 @@ public class query_against_child_collections : OneOffConfigurationsContext
         theSession.Store(new Article
         {
             Long = 4,
-            CategoryArray = new [] { "health", "astrology" },
+            CategoryArray = new[] { "health", "astrology" },
             AuthorList = new List<Guid> { Guid.NewGuid() },
             Published = true,
         });
@@ -278,7 +297,7 @@ public class query_against_child_collections : OneOffConfigurationsContext
         theSession.Store(new Article
         {
             Long = 5,
-            CategoryArray = new [] { "sports", "nested" },
+            CategoryArray = new[] { "sports", "nested" },
             AuthorList = new List<Guid> { Guid.NewGuid(), favAuthors[1] },
         });
 
@@ -286,10 +305,7 @@ public class query_against_child_collections : OneOffConfigurationsContext
         {
             Long = 6,
             AuthorArray = new Guid[] { favAuthors[0], Guid.NewGuid() },
-            ReferencedArticle = new Article
-            {
-                CategoryArray = new [] { "nested" },
-            }
+            ReferencedArticle = new Article { CategoryArray = new[] { "nested" }, }
         });
         theSession.SaveChanges();
     }
@@ -299,7 +315,7 @@ public class query_against_child_collections : OneOffConfigurationsContext
     {
         buildAuthorData();
 
-        var interests = new [] { "finance", "astrology" };
+        var interests = new[] { "finance", "astrology" };
         var res = theSession.Query<Article>()
             .Where(x => x.CategoryArray.Any(s => interests.Contains(s)))
             .OrderBy(x => x.Long)
@@ -317,7 +333,7 @@ public class query_against_child_collections : OneOffConfigurationsContext
     {
         buildAuthorData();
 
-        var interests = new [] { "health", "astrology" };
+        var interests = new[] { "health", "astrology" };
         var res = theSession.Query<Article>()
             .Where(x => x.CategoryList.Any(s => interests.Contains(s)))
             .OrderBy(x => x.Long)
@@ -333,7 +349,7 @@ public class query_against_child_collections : OneOffConfigurationsContext
     {
         buildAuthorData();
 
-        var interests = new [] { "nested" };
+        var interests = new[] { "nested" };
         var res = theSession.Query<Article>()
             .Where(x => x.ReferencedArticle.CategoryArray.Any(s => interests.Contains(s)))
             .OrderBy(x => x.Long)
@@ -348,7 +364,7 @@ public class query_against_child_collections : OneOffConfigurationsContext
     {
         buildAuthorData();
 
-        var interests = new [] { "finance", "astrology" };
+        var interests = new[] { "finance", "astrology" };
         var res = theSession.Query<Article>()
             .Where(x => x.CategoryArray.Any(s => interests.Contains(s)) && x.Published)
             .OrderBy(x => x.Long)
@@ -408,9 +424,9 @@ public class query_against_child_collections : OneOffConfigurationsContext
     [Fact]
     public void query_against_number_array()
     {
-        var doc1 = new DocWithArrays { Numbers = new [] { 1, 2, 3 } };
-        var doc2 = new DocWithArrays { Numbers = new [] { 3, 4, 5 } };
-        var doc3 = new DocWithArrays { Numbers = new [] { 5, 6, 7 } };
+        var doc1 = new DocWithArrays { Numbers = new[] { 1, 2, 3 } };
+        var doc2 = new DocWithArrays { Numbers = new[] { 3, 4, 5 } };
+        var doc3 = new DocWithArrays { Numbers = new[] { 5, 6, 7 } };
 
         theSession.Store(doc1, doc2, doc3);
 
@@ -421,12 +437,14 @@ public class query_against_child_collections : OneOffConfigurationsContext
     }
 
     [Fact]
+
     #region sample_query_against_string_array
+
     public void query_against_string_array()
     {
-        var doc1 = new DocWithArrays { Strings = new [] { "a", "b", "c" } };
-        var doc2 = new DocWithArrays { Strings = new [] { "c", "d", "e" } };
-        var doc3 = new DocWithArrays { Strings = new [] { "d", "e", "f" } };
+        var doc1 = new DocWithArrays { Strings = new[] { "a", "b", "c" } };
+        var doc2 = new DocWithArrays { Strings = new[] { "c", "d", "e" } };
+        var doc3 = new DocWithArrays { Strings = new[] { "d", "e", "f" } };
 
         theSession.Store(doc1);
         theSession.Store(doc2);
@@ -443,9 +461,9 @@ public class query_against_child_collections : OneOffConfigurationsContext
     [Fact]
     public void query_against_string_array_with_Any()
     {
-        var doc1 = new DocWithArrays { Strings = new [] { "a", "b", "c" } };
-        var doc2 = new DocWithArrays { Strings = new [] { "c", "d", "e" } };
-        var doc3 = new DocWithArrays { Strings = new [] { "d", "e", "f" } };
+        var doc1 = new DocWithArrays { Strings = new[] { "a", "b", "c" } };
+        var doc2 = new DocWithArrays { Strings = new[] { "c", "d", "e" } };
+        var doc3 = new DocWithArrays { Strings = new[] { "d", "e", "f" } };
 
         theSession.Store(doc1);
         theSession.Store(doc2);
@@ -460,9 +478,9 @@ public class query_against_child_collections : OneOffConfigurationsContext
     [Fact]
     public void query_against_string_array_with_Length()
     {
-        var doc1 = new DocWithArrays { Strings = new [] { "a", "b", "c" } };
-        var doc2 = new DocWithArrays { Strings = new [] { "c", "d", "e" } };
-        var doc3 = new DocWithArrays { Strings = new [] { "d", "e", "f", "g" } };
+        var doc1 = new DocWithArrays { Strings = new[] { "a", "b", "c" } };
+        var doc2 = new DocWithArrays { Strings = new[] { "c", "d", "e" } };
+        var doc3 = new DocWithArrays { Strings = new[] { "d", "e", "f", "g" } };
 
         theSession.Store(doc1);
         theSession.Store(doc2);
@@ -479,9 +497,9 @@ public class query_against_child_collections : OneOffConfigurationsContext
     [Fact]
     public void query_against_string_array_with_Count_method()
     {
-        var doc1 = new DocWithArrays { Strings = new [] { "a", "b", "c" } };
-        var doc2 = new DocWithArrays { Strings = new [] { "c", "d", "e" } };
-        var doc3 = new DocWithArrays { Strings = new [] { "d", "e", "f", "g" } };
+        var doc1 = new DocWithArrays { Strings = new[] { "a", "b", "c" } };
+        var doc2 = new DocWithArrays { Strings = new[] { "c", "d", "e" } };
+        var doc3 = new DocWithArrays { Strings = new[] { "d", "e", "f", "g" } };
 
         theSession.Store(doc1);
         theSession.Store(doc2);
@@ -496,9 +514,18 @@ public class query_against_child_collections : OneOffConfigurationsContext
     [Fact]
     public void query_against_date_array()
     {
-        var doc1 = new DocWithArrays { Dates = new[] { DateTime.Today, DateTime.Today.AddDays(1), DateTime.Today.AddDays(2) } };
-        var doc2 = new DocWithArrays { Dates = new[] { DateTime.Today.AddDays(2), DateTime.Today.AddDays(3), DateTime.Today.AddDays(4) } };
-        var doc3 = new DocWithArrays { Dates = new[] { DateTime.Today.AddDays(4), DateTime.Today.AddDays(5), DateTime.Today.AddDays(6) } };
+        var doc1 = new DocWithArrays
+        {
+            Dates = new[] { DateTime.Today, DateTime.Today.AddDays(1), DateTime.Today.AddDays(2) }
+        };
+        var doc2 = new DocWithArrays
+        {
+            Dates = new[] { DateTime.Today.AddDays(2), DateTime.Today.AddDays(3), DateTime.Today.AddDays(4) }
+        };
+        var doc3 = new DocWithArrays
+        {
+            Dates = new[] { DateTime.Today.AddDays(4), DateTime.Today.AddDays(5), DateTime.Today.AddDays(6) }
+        };
 
         theSession.Store(doc1);
         theSession.Store(doc2);
@@ -528,6 +555,7 @@ public class query_against_child_collections : OneOffConfigurationsContext
     }
 
     #region sample_query_any_string_array
+
     [Fact]
     public void query_against_number_list_with_any()
     {
@@ -553,6 +581,7 @@ public class query_against_child_collections : OneOffConfigurationsContext
     #endregion
 
     #region sample_query_against_number_list_with_count_method
+
     [Fact]
     public void query_against_number_list_with_count_method()
     {

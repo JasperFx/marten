@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
 
+#nullable enable
+
 namespace Marten.Testing.Documents;
 
 #region sample_NoSetterDocument
@@ -34,20 +36,15 @@ public class User
     public List<Friend> Friends { get; set; }
 
     public string[] Roles { get; set; }
-
     public Guid Id { get; set; }
-
     public string UserName { get; set; }
-
     public string FirstName { get; set; }
     public string LastName { get; set; }
 
+    public string? NickName { get; set; }
     public bool Internal { get; set; }
-
     public string Department { get; set; } = "";
-
-    public string FullName => "{0} {1}".ToFormat(FirstName, LastName);
-
+    public string FullName => $"{FirstName} {LastName}";
     public int Age { get; set; }
 
     public DateTimeOffset ModifiedAt { get; set; }
@@ -125,8 +122,6 @@ public class UserWithReadonlyCollectionWithPrivateSetter
         Collection = collection.ToList();
     }
 }
-
-
 
 public class Post
 {

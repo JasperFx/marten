@@ -39,6 +39,7 @@ public class LinqParsing: IReadOnlyLinqParsing
         new StringContains(),
         new StringEndsWith(),
         new StringStartsWith(),
+        new StringIsNullOrEmpty(),
         new StringEquals(),
         new SimpleEqualsParser(),
         new AnySubQueryParser(),
