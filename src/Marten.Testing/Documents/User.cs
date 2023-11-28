@@ -41,7 +41,7 @@ public class User
     public string FirstName { get; set; }
     public string LastName { get; set; }
 
-    public string? NickName { get; set; }
+    public string? Nickname { get; set; }
     public bool Internal { get; set; }
     public string Department { get; set; } = "";
     public string FullName => $"{FirstName} {LastName}";
