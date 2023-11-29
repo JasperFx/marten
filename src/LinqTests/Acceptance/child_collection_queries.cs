@@ -46,6 +46,18 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
         @where(x => x.Children.IsEmpty()).NoCteUsage();
         @where(x => !x.Children.IsEmpty()).NoCteUsage();
 
+        // Deeper Child value collections
+        @where(x => x.Inner != null && x.Inner.Children != null && x.Inner.NumberArray.Any()).NoCteUsage();
+        @where(x => x.Inner != null && x.Inner.Children != null && !x.Inner.NumberArray.Any()).NoCteUsage();
+        @where(x => x.Inner != null && x.Inner.Children != null && x.Inner.NumberArray.IsEmpty()).NoCteUsage();
+        @where(x => x.Inner != null && x.Inner.Children != null && !x.Inner.NumberArray.IsEmpty()).NoCteUsage();
+
+        // Deeper Any or IsEmpty
+        @where(x => x.Inner != null && x.Inner.Children != null && x.Inner.Children.Any()).NoCteUsage();
+        @where(x => x.Inner != null && x.Inner.Children != null && !x.Inner.Children.Any()).NoCteUsage();
+        @where(x => x.Inner != null && x.Inner.Children != null && x.Inner.Children.IsEmpty()).NoCteUsage();
+        @where(x => x.Inner != null && x.Inner.Children != null && !x.Inner.Children.IsEmpty()).NoCteUsage();
+
         @where(x => x.StringArray != null && x.StringArray.Any(c => c.StartsWith("o")));
 
         // These permutations come from GH-2401
