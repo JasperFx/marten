@@ -136,6 +136,13 @@ public class where_clauses: LinqTestContext<where_clauses>
         @where(x => !x.Flag);
         @where(x => !x.Flag == true);
         @where(x => !x.Flag == false);
+
+        // Comparing multiple fields
+        @where(x => x.Number == x.AnotherNumber);
+        @where(x => x.Number < x.AnotherNumber);
+        @where(x => x.Number > x.AnotherNumber);
+        @where(x => x.Number <= x.AnotherNumber);
+        @where(x => x.Number >= x.AnotherNumber);
     }
 
     [Theory]
