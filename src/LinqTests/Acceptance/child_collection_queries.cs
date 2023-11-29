@@ -1,7 +1,12 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using LinqTests.Acceptance.Support;
+using Marten;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
+using Shouldly;
 using Xunit.Abstractions;
 
 namespace LinqTests.Acceptance;
@@ -28,8 +33,18 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
         // CTE + filter has to stay at the bottom level
         @where(x => x.Color == Colors.Blue || x.Children.Any(c => c.String.StartsWith("o")));
 
+
         // Child value collections
-        @where(x => x.NumberArray.Any());
+        @where(x => x.NumberArray.Any()).NoCteUsage();
+        @where(x => !x.NumberArray.Any()).NoCteUsage();
+        @where(x => x.NumberArray.IsEmpty()).NoCteUsage();
+        @where(x => !x.NumberArray.IsEmpty()).NoCteUsage();
+
+        // Any or IsEmpty
+        @where(x => x.Children.Any()).NoCteUsage();
+        @where(x => !x.Children.Any()).NoCteUsage();
+        @where(x => x.Children.IsEmpty()).NoCteUsage();
+        @where(x => !x.Children.IsEmpty()).NoCteUsage();
 
         @where(x => x.StringArray != null && x.StringArray.Any(c => c.StartsWith("o")));
 
@@ -45,6 +60,101 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
     public Task run_query(string description)
     {
         return assertTestCase(description, Fixture.Store);
+    }
+
+    // TODO -- make NumberArray and StringArray be duplicated fields
+
+
+
+    public class child_collection_is_empty_or_any: OneOffConfigurationsContext
+{
+    private readonly ITestOutputHelper _output;
+
+    public child_collection_is_empty_or_any(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
+    protected async Task withData()
+    {
+        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
+        var targets = Target.GenerateRandomData(5).ToArray();
+        EmptyNumberArray = targets[0];
+        EmptyNumberArray.NumberArray = Array.Empty<int>();
+
+        HasNumberArray = targets[1];
+        HasNumberArray.NumberArray = new[] { 1, 2, 3 };
+
+        NullNumberArray = targets[2];
+        NullNumberArray.NumberArray = null;
+
+        EmptyChildren = targets[3];
+        EmptyChildren.Children = Array.Empty<Target>();
+
+        NullChildren = targets[4];
+        NullChildren.Children = null;
+
+        await theStore.BulkInsertAsync(targets);
+    }
+
+    public Target HasNumberArray { get; set; }
+
+    public Target NullChildren { get; set; }
+
+    public Target NullNumberArray { get; set; }
+
+    public Target EmptyChildren { get; set; }
+
+    public Target EmptyNumberArray { get; set; }
+
+    [Fact]
+    public async Task is_empty_with_value_collection()
+    {
+        await withData();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        var results = await theSession
+            .Query<Target>()
+            .Where(x => x.NumberArray.IsEmpty())
+            .ToListAsync();
+
+        results.ShouldContain(NullNumberArray);
+        results.ShouldContain(EmptyNumberArray);
+        results.ShouldNotContain(HasNumberArray);
+    }
+
+    [Fact]
+    public async Task is_not_empty_with_value_collection()
+    {
+        await withData();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        var results = await theSession
+            .Query<Target>()
+            .Where(x => !x.NumberArray.IsEmpty())
+            .ToListAsync();
+
+        results.ShouldNotContain(NullNumberArray);
+        results.ShouldNotContain(EmptyNumberArray);
+        results.ShouldContain(HasNumberArray);
+    }
+}
+}
+
+
+
+internal static class TargetExtensions
+{
+    public static void ShouldContain(this IEnumerable<Target> targets, Target target)
+    {
+        targets.Any(x => x.Id == target.Id).ShouldBeTrue();
+    }
+
+    public static void ShouldNotContain(this IEnumerable<Target> targets, Target target)
+    {
+        targets.Any(x => x.Id == target.Id).ShouldBeFalse();
     }
 }
 

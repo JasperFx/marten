@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 using FastExpressionCompiler;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -229,9 +230,26 @@ internal static class LinqInternalExtensions
                 builder.Append(ancestor.JsonPathSegment);
                 builder.Append(".");
             }
-
-            builder.Append(member.JsonPathSegment);
         }
+
+        builder.Append(member.JsonPathSegment);
+    }
+
+    public static string WriteJsonPath(this IQueryableMember member)
+    {
+        // I judged it unnecessary to use a StringBuilder
+        var jsonPath = "";
+        foreach (var ancestor in member.Ancestors)
+        {
+            if (ancestor.JsonPathSegment.IsNotEmpty())
+            {
+                jsonPath += ancestor.JsonPathSegment;
+                jsonPath += ".";
+            }
+        }
+
+        jsonPath += member.JsonPathSegment;
+        return jsonPath;
     }
 
     public static string AddJsonPathParameter(this IDictionary<string, object> dict, object value)
