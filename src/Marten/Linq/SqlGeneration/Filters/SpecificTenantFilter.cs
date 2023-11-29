@@ -1,3 +1,4 @@
+using Marten.Schema.Arguments;
 using Marten.Storage.Metadata;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -20,6 +21,27 @@ internal class SpecificTenantFilter: ISqlFragment
     {
         builder.Append($"d.{TenantIdColumn.Name} = ");
         builder.AppendParameter(_tenantId);
+    }
+
+    public bool Contains(string sqlText)
+    {
+        return false;
+    }
+}
+
+internal class DefaultTenantFilter: ISqlFragment
+{
+    private readonly string _tenantId;
+
+    public DefaultTenantFilter(string tenantId)
+    {
+        _tenantId = tenantId;
+    }
+
+    public void Apply(CommandBuilder builder)
+    {
+        builder.Append($"d.{TenantIdColumn.Name} = :{TenantIdArgument.ArgName}");
+        builder.AddNamedParameter(TenantIdArgument.ArgName, _tenantId);
     }
 
     public bool Contains(string sqlText)
