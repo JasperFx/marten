@@ -14,12 +14,12 @@ using Xunit.Abstractions;
 
 namespace LinqTests.Compiled;
 
-public class compiled_query_Tests: IntegrationContext
+public class compiled_queries: IntegrationContext
 {
     private User _user1;
     private User _user5;
 
-    public compiled_query_Tests(DefaultStoreFixture fixture): base(fixture)
+    public compiled_queries(DefaultStoreFixture fixture): base(fixture)
     {
     }
 
@@ -501,6 +501,10 @@ public class when_compiled_queries_are_used_in_multi_tenancy: OneOffConfiguratio
         query.Logger = new TestOutputMartenLogger(_output);
         var user = await query.QueryAsync(new UserByUsernameWithFields { UserName = "han" });
         user.Id.ShouldBe(hanOne.Id);
+
+        await using var query2 = theStore.QuerySession("two");
+        var user2 = await query2.QueryAsync(new UserByUsernameWithFields { UserName = "han" });
+        user2.Id.ShouldBe(hanTwo.Id);
     }
 }
 

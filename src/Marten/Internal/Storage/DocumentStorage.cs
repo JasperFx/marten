@@ -364,7 +364,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
         if (TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant())
         {
-            yield return new SpecificTenantFilter(session.TenantId);
+            yield return new DefaultTenantFilter(session.TenantId);
         }
     }
 
