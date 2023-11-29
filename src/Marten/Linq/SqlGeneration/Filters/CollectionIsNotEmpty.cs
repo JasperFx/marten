@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Marten.Linq.Members;
+using Marten.Linq.Parsing;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -8,9 +9,13 @@ namespace Marten.Linq.SqlGeneration.Filters;
 
 internal class CollectionIsNotEmpty: IReversibleWhereFragment, ICollectionAware, ICollectionAwareFilter
 {
+    private readonly string _text;
+
     public CollectionIsNotEmpty(ICollectionMember member)
     {
         CollectionMember = member;
+        var jsonPath = member.WriteJsonPath();
+        _text = $"d.data @? '$ ? (@.{jsonPath} != null && @.{jsonPath}.size() > 0)'";
     }
 
     public bool CanReduceInChildCollection()
@@ -61,11 +66,7 @@ internal class CollectionIsNotEmpty: IReversibleWhereFragment, ICollectionAware,
 
     public void Apply(CommandBuilder builder)
     {
-        builder.Append("(");
-        builder.Append(CollectionMember.JSONBLocator);
-        builder.Append(" is not null and jsonb_array_length(");
-        builder.Append(CollectionMember.JSONBLocator);
-        builder.Append(") > 0)");
+        builder.Append(_text);
     }
 
     public bool Contains(string sqlText)
