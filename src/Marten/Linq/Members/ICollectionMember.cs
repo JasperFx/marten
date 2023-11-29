@@ -28,4 +28,7 @@ public interface ICollectionMember: IQueryableMember
     ISqlFragment ParseWhereForAll(MethodCallExpression body, IReadOnlyStoreOptions options);
 
     ISqlFragment ParseWhereForContains(MethodCallExpression body, IReadOnlyStoreOptions options);
+
+    ISqlFragment IsEmpty { get; }
+    ISqlFragment NotEmpty { get; }
 }

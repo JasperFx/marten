@@ -25,7 +25,13 @@ internal class DictionaryMember<TKey, TValue>: QueryableMember, IComparableMembe
     {
         RawLocator = $"{parent.JSONBLocator} ->> '{MemberName}'";
         TypedLocator = $"{parent.JSONBLocator} -> '{MemberName}'";
+
+        IsEmpty = new CollectionIsEmpty(this);
+        NotEmpty = new CollectionIsNotEmpty(this);
     }
+
+    public ISqlFragment IsEmpty { get; }
+    public ISqlFragment NotEmpty { get; }
 
     public IQueryableMember MemberForKey(object keyValue)
     {

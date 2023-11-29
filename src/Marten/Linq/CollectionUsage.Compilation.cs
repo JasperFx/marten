@@ -126,7 +126,7 @@ public partial class CollectionUsage
             {
                 if (SingleValueMode == Marten.Linq.Parsing.SingleValueMode.Any)
                 {
-                    var filter = new CollectionIsNotEmpty(collectionMember);
+                    var filter = collectionMember.NotEmpty;
                     selection.Wheres.Add(filter);
                     selection.SelectClause = new AnySelectClause(selection.SelectClause.FromObject);
                 }
