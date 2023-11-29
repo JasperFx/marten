@@ -43,7 +43,7 @@ internal class AnySubQueryParser: IMethodCallParser
                 // Any(filter)
                 memberExpression = expression.Object ?? expression.Arguments[0];
                 member = (ICollectionMember)memberCollection.MemberFor(memberExpression);
-                return new CollectionIsNotEmpty(member);
+                return member.NotEmpty;
             }
         }
 

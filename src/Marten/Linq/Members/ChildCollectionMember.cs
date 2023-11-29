@@ -38,7 +38,13 @@ internal class ChildCollectionMember: QueryableMember, ICollectionMember, IQuery
 
         ArrayLocator = $"CAST(ARRAY(SELECT jsonb_array_elements(CAST({RawLocator} as jsonb))) as jsonb[])";
         ExplodeLocator = $"unnest({ArrayLocator})";
+
+        IsEmpty = new CollectionIsEmpty(this);
+        NotEmpty = new CollectionIsNotEmpty(this);
     }
+
+    public ISqlFragment IsEmpty { get; }
+    public ISqlFragment NotEmpty { get; }
 
     public string ArrayLocator { get; set; }
 

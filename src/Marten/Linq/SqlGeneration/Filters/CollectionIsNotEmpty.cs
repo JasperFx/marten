@@ -76,6 +76,6 @@ internal class CollectionIsNotEmpty: IReversibleWhereFragment, ICollectionAware,
 
     public ISqlFragment Reverse()
     {
-        return new CollectionIsEmpty(CollectionMember);
+        return CollectionMember.IsEmpty;
     }
 }

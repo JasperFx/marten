@@ -36,10 +36,18 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
         ElementMember = new SimpleElementMember(ElementType, pgType);
 
         _count = new CollectionLengthMember(this);
+
+        IsEmpty = new WhereFragment($"({RawLocator} is null or jsonb_array_length({JSONBLocator}) = 0)");
+        NotEmpty = new WhereFragment($"({RawLocator} is not null and jsonb_array_length({JSONBLocator}) > 0)");
     }
 
     private readonly WholeDataMember _wholeDataMember;
     private readonly CollectionLengthMember _count;
+
+
+    public ISqlFragment IsEmpty { get; }
+    public ISqlFragment NotEmpty { get; }
+
     public Type ElementType { get; }
     public string ExplodeLocator { get; }
     public string ArrayLocator => TypedLocator;

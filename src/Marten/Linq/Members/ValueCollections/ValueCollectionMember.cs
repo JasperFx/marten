@@ -49,7 +49,13 @@ internal class ValueCollectionMember: QueryableMember, ICollectionMember, IValue
         Element = new SimpleElementMember(ElementType, pgType);
 
         SelectManyUsage = new SelectManyValueCollection(this, member, ElementType, storeOptions);
+
+        IsEmpty = new CollectionIsEmpty(this);
+        NotEmpty = new CollectionIsNotEmpty(this);
     }
+
+    public ISqlFragment IsEmpty { get; }
+    public ISqlFragment NotEmpty { get; }
 
     public SelectManyValueCollection SelectManyUsage { get;}
 

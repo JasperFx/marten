@@ -20,7 +20,7 @@ internal class CollectionIsEmpty: IReversibleWhereFragment
 
     public ISqlFragment Reverse()
     {
-        return new CollectionIsNotEmpty(_member);
+        return _member.NotEmpty;
     }
 
     public void Apply(CommandBuilder builder)
