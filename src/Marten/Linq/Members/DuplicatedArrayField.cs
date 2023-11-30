@@ -37,8 +37,8 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
 
         _count = new CollectionLengthMember(this);
 
-        IsEmpty = new WhereFragment($"({RawLocator} is null or jsonb_array_length({JSONBLocator}) = 0)");
-        NotEmpty = new WhereFragment($"({RawLocator} is not null and jsonb_array_length({JSONBLocator}) > 0)");
+        IsEmpty = new ArrayIsEmptyFilter(this);
+        NotEmpty = new ArrayIsNotEmptyFilter(this);
     }
 
     private readonly WholeDataMember _wholeDataMember;
@@ -126,5 +126,59 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
     public IEnumerator<IQueryableMember> GetEnumerator()
     {
         throw new NotSupportedException();
+    }
+}
+
+internal class ArrayIsEmptyFilter: IReversibleWhereFragment
+{
+    private readonly DuplicatedArrayField _member;
+    private readonly string _text;
+
+    public ArrayIsEmptyFilter(DuplicatedArrayField member)
+    {
+        _member = member;
+        _text = $"({member.RawLocator} is null or coalesce(array_length({member.RawLocator}, 1), 0) = 0)";
+    }
+
+    public void Apply(CommandBuilder builder)
+    {
+        builder.Append(_text);
+    }
+
+    public bool Contains(string sqlText)
+    {
+        return false;
+    }
+
+    public ISqlFragment Reverse()
+    {
+        return _member.NotEmpty;
+    }
+}
+
+internal class ArrayIsNotEmptyFilter: IReversibleWhereFragment
+{
+    private readonly string _text;
+    private readonly DuplicatedArrayField _member;
+
+    public ArrayIsNotEmptyFilter(DuplicatedArrayField member)
+    {
+        _text = $"coalesce(array_length({member.RawLocator}, 1), 0) > 0";
+        _member = member;
+    }
+
+    public void Apply(CommandBuilder builder)
+    {
+        builder.Append(_text);
+    }
+
+    public bool Contains(string sqlText)
+    {
+        return false;
+    }
+
+    public ISqlFragment Reverse()
+    {
+        return _member.IsEmpty;
     }
 }

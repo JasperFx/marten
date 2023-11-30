@@ -20,7 +20,8 @@ public class DefaultQueryFixture: TargetSchemaFixture
                 .Duplicate(x => x.Date)
                 .Duplicate(x => x.Double)
                 .Duplicate(x => x.Flag)
-                .Duplicate(x => x.Color);
+                .Duplicate(x => x.Color)
+                .Duplicate(x => x.NumberArray);
         });
     }
 
