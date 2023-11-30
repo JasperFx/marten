@@ -74,7 +74,13 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
         return assertTestCase(description, Fixture.Store);
     }
 
-    // TODO -- make NumberArray and StringArray be duplicated fields
+
+    [Theory]
+    [MemberData(nameof(GetDescriptions))]
+    public Task with_duplicated_fields(string description)
+    {
+        return assertTestCase(description, Fixture.DuplicatedFieldStore);
+    }
 
 
 
