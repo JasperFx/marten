@@ -33,7 +33,7 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
 
         var innerPgType = PostgresqlProvider.Instance.GetDatabaseType(ElementType, EnumStorage.AsInteger);
         var pgType = PostgresqlProvider.Instance.HasTypeMapping(ElementType) ? innerPgType + "[]" : "jsonb";
-        ElementMember = new SimpleElementMember(ElementType, pgType);
+        Element = new SimpleElementMember(ElementType, pgType);
 
         _count = new CollectionLengthMember(this);
 
@@ -51,7 +51,7 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
     public Type ElementType { get; }
     public string ExplodeLocator { get; }
     public string ArrayLocator => TypedLocator;
-    public IQueryableMember ElementMember { get; }
+    public IQueryableMember Element { get; }
 
     public SelectorStatement BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
         SelectorStatement parentStatement)

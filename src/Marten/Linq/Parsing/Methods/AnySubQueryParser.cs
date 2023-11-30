@@ -73,6 +73,23 @@ internal class AnySubQueryParser: IMethodCallParser
             return true;
         }
 
+        if (type.Closes(typeof(ICollection<>))) return true;
+
+        if (type.Closes(typeof(IDictionary<,>)))
+        {
+            return true;
+        }
+
+        if (type.Closes(typeof(Dictionary<,>.KeyCollection)))
+        {
+            return true;
+        }
+
+        if (type.Closes(typeof(Dictionary<,>.ValueCollection)))
+        {
+            return true;
+        }
+
         return type.Closes(typeof(IReadOnlyList<>));
     }
 }

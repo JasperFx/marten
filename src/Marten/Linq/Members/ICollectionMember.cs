@@ -31,4 +31,5 @@ public interface ICollectionMember: IQueryableMember
 
     ISqlFragment IsEmpty { get; }
     ISqlFragment NotEmpty { get; }
+
 }

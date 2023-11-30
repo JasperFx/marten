@@ -112,7 +112,7 @@ public void query_against_string_array()
         .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L457-L475' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_string_array' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L472-L490' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_string_array' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten also allows you to query over IEnumerables using the Any method for equality (similar to Contains):
@@ -142,7 +142,7 @@ public void query_against_number_list_with_any()
         .Count(x => x.Numbers.Any()).ShouldBe(3);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L573-L597' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_any_string_array' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L588-L612' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_any_string_array' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As of 1.2, you can also query against the `Count()` or `Length` of a child collection with the normal comparison
@@ -170,7 +170,7 @@ public void query_against_number_list_with_count_method()
         .Single(x => x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L599-L620' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_number_list_with_count_method' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L614-L635' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_number_list_with_count_method' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## IsOneOf

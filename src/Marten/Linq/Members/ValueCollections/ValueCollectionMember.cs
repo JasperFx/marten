@@ -25,6 +25,11 @@ internal class ValueCollectionMember: QueryableMember, ICollectionMember, IValue
     public ValueCollectionMember(StoreOptions storeOptions, IQueryableMember parent, Casing casing, MemberInfo member): base(parent, casing,
         member)
     {
+        if (member is ElementMember element)
+        {
+            MemberType = element.ReflectedType!;
+        }
+
         ElementType = MemberType.DetermineElementType();
         var rawLocator = RawLocator;
         var innerPgType = PostgresqlProvider.Instance.GetDatabaseType(ElementType, EnumStorage.AsInteger);

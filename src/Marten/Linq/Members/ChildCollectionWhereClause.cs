@@ -16,6 +16,8 @@ internal class ChildCollectionWhereClause: IWhereFragmentHolder
         _fragment = fragment;
     }
 
+    public ISqlFragment Fragment => _fragment;
+
     public static bool TryBuildInlineFragment(ISqlFragment fragment, ICollectionMember collectionMember,
         ISerializer serializer, out ICollectionAwareFilter filter)
     {

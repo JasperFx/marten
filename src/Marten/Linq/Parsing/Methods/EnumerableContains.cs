@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
+using Marten.Exceptions;
 using Marten.Linq.Members;
+using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.QueryHandlers;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -30,8 +32,14 @@ internal class EnumerableContains: IMethodCallParser
             return new WhereFragment($"{collectionMember.TypedLocator} = ANY(?)", constant.Value);
         }
 
-        var member = memberCollection.MemberFor(expression.Object ?? expression.Arguments[0]);
-        var collection = (ICollectionMember)member;
+        var collection = memberCollection as ICollectionMember ??
+                         memberCollection.MemberFor(expression.Object ?? expression.Arguments[0]) as ICollectionMember;
+
+        if (collection == null)
+        {
+            throw new BadLinqExpressionException(
+                $"Marten is not (yet) able to parse '{expression}' as part of a Contains() query for this member");
+        }
 
         return collection.ParseWhereForContains(expression, options);
     }

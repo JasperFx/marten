@@ -113,7 +113,9 @@ internal class ChildCollectionMember: QueryableMember, ICollectionMember, IQuery
 
     public ISqlFragment ParseWhereForContains(MethodCallExpression body, IReadOnlyStoreOptions options)
     {
-        throw new NotImplementedException();
+        throw new BadLinqExpressionException(
+            "Marten does not (yet) support contains queries through collections of element type " +
+            ElementType.FullNameInCode());
     }
 
 

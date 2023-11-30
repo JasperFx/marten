@@ -5,6 +5,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Linq;
 using Marten.Linq.Members;
+using Marten.Linq.Members.Dictionaries;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Newtonsoft.Json.Linq;
@@ -47,7 +48,7 @@ public partial class StoreOptions
         if (memberType.Closes(typeof(IDictionary<,>)))
         {
             var fieldType = typeof(DictionaryMember<,>).MakeGenericType(memberType!.GetGenericArguments());
-            return (IQueryableMember)Activator.CreateInstance(fieldType, parent, casing, member)!;
+            return (IQueryableMember)Activator.CreateInstance(fieldType, this, parent, casing, member)!;
         }
 
         if (memberType!.IsEnum)

@@ -104,7 +104,7 @@ public class Target
                 target.Children[i] = Random();
             }
 
-            target.StringDict = Enumerable.Range(0, _random.Next(1, 10)).ToDictionary(i => $"key{i}", i => $"value{i}");
+            target.StringDict = Enumerable.Range(0, _random.Next(0, 10)).ToDictionary(i => $"key{i}", i => $"value{i}");
             target.String = _strings[_random.Next(0, 10)];
             target.OtherGuid = Guid.NewGuid();
         }
