@@ -706,7 +706,7 @@ public class MartenRegistry
             /// <summary>
             ///     Optional metadata for the timestamp of when this document was created
             /// </summary>
-            public Column<string> CreatedAt => new(_parent, m => m.CreatedAt);
+            public Column<DateTimeOffset> CreatedAt => new(_parent, m => m.CreatedAt);
 
             /// <summary>
             ///     The stored tenant id of this document
