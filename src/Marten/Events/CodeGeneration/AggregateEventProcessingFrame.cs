@@ -84,7 +84,7 @@ internal class AggregateEventProcessingFrame: EventProcessingFrame
                 }
                 else if (defaultConstructor?.IsPublic == false)
                 {
-                    writer.Write($"{Aggregate.Usage} ??= AggregateBuilder();");
+                    writer.Write($"{Aggregate.Usage} ??= ({AggregateType.FullNameInCode()}){typeof(Activator).FullNameInCode()}.{nameof(Activator.CreateInstance)}(typeof({AggregateType.FullNameInCode()}), true);");
                 }
                 else
                 {
