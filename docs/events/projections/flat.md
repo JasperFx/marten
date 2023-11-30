@@ -26,7 +26,7 @@ public record ImportFinished(DateTimeOffset Finished);
 
 public record ImportFailed;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/FlatTableProjection.cs#L9-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_flat_table_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/FlatTableProjection.cs#L12-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_flat_table_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 At some point, we’re going to want to apply some metrics to the execution history to understand the average size of the 
@@ -80,7 +80,7 @@ public class ImportSqlProjection: EventProjection
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/FlatTableProjection.cs#L30-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_import_sql_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/FlatTableProjection.cs#L33-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_import_sql_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A couple notes about the code above:
@@ -156,7 +156,7 @@ public class FlatImportProjection: FlatTableProjection
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/FlatTableProjection.cs#L76-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_flat_import_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/FlatTableProjection.cs#L88-L141' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_flat_import_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A couple notes on this version of the code:

@@ -2,7 +2,10 @@ using System;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Flattened;
+using Marten.Util;
+using Shouldly;
 using Weasel.Postgresql.Tables;
+using Xunit;
 
 namespace Marten.Testing.Examples;
 
@@ -72,6 +75,15 @@ public class ImportSqlProjection: EventProjection
 #endregion
 
 
+public class KebabNamingTests
+{
+    [Fact]
+    public void get_the_name_with_underscores()
+    {
+        "ActivityType".ToSnakeCase().ShouldBe("activity_type");
+    }
+}
+
 
 #region sample_flat_import_projection
 
@@ -89,7 +101,7 @@ public class FlatImportProjection: FlatTableProjection
         Project<ImportStarted>(map =>
         {
             // Set values in the table from the event
-            map.Map(x => x.ActivityType).NotNull();
+            map.Map(x => x.ActivityType);
             map.Map(x => x.CustomerId);
             map.Map(x => x.PlannedSteps, "total_steps")
                 .DefaultValue(0);
