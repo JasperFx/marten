@@ -4,6 +4,7 @@ using JasperFx.Core;
 using Marten;
 using Marten.Linq;
 using Marten.Linq.Members;
+using Marten.Linq.Members.Dictionaries;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Testing.Documents;

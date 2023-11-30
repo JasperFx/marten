@@ -24,6 +24,16 @@ internal class SelectManyValueCollection: IValueCollectionMember
         Element = element;
     }
 
+    public SelectManyValueCollection(Type elementType, IQueryableMember parentMember, StoreOptions options)
+    {
+        ElementType = elementType;
+        var elementMember = new ElementMember(typeof(ICollection<>).MakeGenericType(elementType), elementType);
+        var element = (QueryableMember)options.CreateQueryableMember(elementMember, parentMember, elementType);
+        element.RawLocator = element.TypedLocator = "data";
+
+        Element = element;
+    }
+
     public IQueryableMember Element { get; }
 
     public IQueryableMember FindMember(MemberInfo member)

@@ -119,7 +119,7 @@ public class FlatImportProjection: FlatTableProjection
         Project<ImportStarted>(map =>
         {
             // Set values in the table from the event
-            map.Map(x => x.ActivityType).NotNull();
+            map.Map(x => x.ActivityType);
             map.Map(x => x.CustomerId);
             map.Map(x => x.PlannedSteps, "total_steps")
                 .DefaultValue(0);

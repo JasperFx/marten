@@ -76,6 +76,8 @@ internal static class LinqInternalExtensions
     {
         if (expression is ParameterExpression)
         {
+            if (collection is IValueCollectionMember collectionMember) return collectionMember.Element;
+
             return new RootMember(expression.Type);
         }
 
@@ -233,6 +235,19 @@ internal static class LinqInternalExtensions
         }
 
         builder.Append(member.JsonPathSegment);
+    }
+
+    public static IEnumerable<string> JsonPathSegments(this IQueryableMember member)
+    {
+        foreach (var ancestor in member.Ancestors)
+        {
+            if (ancestor.JsonPathSegment.IsNotEmpty())
+            {
+                yield return ancestor.JsonPathSegment;
+            }
+        }
+
+        yield return member.JsonPathSegment;
     }
 
     public static string WriteJsonPath(this IQueryableMember member)

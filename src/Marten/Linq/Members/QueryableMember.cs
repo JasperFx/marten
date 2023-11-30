@@ -5,6 +5,7 @@ using System.Reflection;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
+using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Marten.Linq.Parsing.Operators;
 using Marten.Linq.SqlGeneration.Filters;
@@ -98,7 +99,7 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
     /// </summary>
     public string JSONBLocator { get; set; }
 
-    public Type MemberType { get; }
+    public Type MemberType { get; protected set; }
 
     public virtual string BuildOrderingExpression(Ordering ordering, CasingRule casingRule)
     {

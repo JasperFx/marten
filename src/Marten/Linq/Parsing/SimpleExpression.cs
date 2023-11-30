@@ -6,6 +6,7 @@ using System.Reflection;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.Members;
+using Marten.Linq.Members.Dictionaries;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.SqlGeneration.Filters;
@@ -270,7 +271,8 @@ internal class SimpleExpression: ExpressionVisitor
             Comparable = collection.ParseComparableForCount(node.Arguments.Last());
             return null;
         }
-        else if (node.Method.Name == "get_Item" && node.Method.DeclaringType.Closes(typeof(IDictionary<,>)))
+
+        if (node.Method.Name == "get_Item" && node.Method.DeclaringType.Closes(typeof(IDictionary<,>)))
         {
             var dictMember = (IDictionaryMember)_queryableMembers.MemberFor(node.Object);
             var key = node.Arguments[0].Value();

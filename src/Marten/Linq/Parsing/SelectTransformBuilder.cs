@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core;
 using Marten.Linq.Members;
+using Marten.Linq.Members.Dictionaries;
 using Marten.Util;
 
 namespace Marten.Linq.Parsing;

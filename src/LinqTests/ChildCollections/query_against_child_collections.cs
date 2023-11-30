@@ -453,6 +453,21 @@ public class query_against_child_collections: OneOffConfigurationsContext
     }
 
     [Fact]
+    public void query_against_number_array_count()
+    {
+        var doc1 = new DocWithArrays { Numbers = new[] { 1, 2, 3 } };
+        var doc2 = new DocWithArrays { Numbers = new[] { 3, 4, 5 } };
+        var doc3 = new DocWithArrays { Numbers = new[] { 5, 6, 7, 8 } };
+
+        theSession.Store(doc1, doc2, doc3);
+
+        theSession.SaveChanges();
+
+        theSession.Query<DocWithArrays>().Where(x => x.Numbers.Length == 4).ToArray()
+            .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc3.Id);
+    }
+
+    [Fact]
 
     #region sample_query_against_string_array
 

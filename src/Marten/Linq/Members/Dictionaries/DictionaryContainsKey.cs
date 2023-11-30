@@ -1,15 +1,13 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
-using Marten.Linq.Members;
+using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Linq.Parsing.Methods;
+namespace Marten.Linq.Members.Dictionaries;
 
-[Obsolete]
 internal class DictionaryContainsKey: IMethodCallParser
 {
     public bool Matches(MethodCallExpression expression)
@@ -29,6 +27,6 @@ internal class DictionaryContainsKey: IMethodCallParser
         var member = memberCollection.MemberFor(expression.Object);
         var constant = expression.Arguments.Single().ReduceToConstant();
 
-        return new ContainmentWhereFilter(member, constant, options.Serializer());
+        return new DictionaryContainsKeyFilter((IDictionaryMember)member, options.Serializer(), constant);
     }
 }

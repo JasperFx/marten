@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using LinqTests.Acceptance.Support;
 using Xunit.Abstractions;
@@ -143,6 +144,24 @@ public class where_clauses: LinqTestContext<where_clauses>
         @where(x => x.Number > x.AnotherNumber);
         @where(x => x.Number <= x.AnotherNumber);
         @where(x => x.Number >= x.AnotherNumber);
+
+
+        // Dictionaries
+        @where(x => x.StringDict.ContainsKey("key0"));
+
+        var kvp = new KeyValuePair<string, string>("key0", "value0");
+        @where(x => x.StringDict.Contains(kvp));
+        @where(x => x.StringDict.Values.Contains("value3"));
+        @where(x => x.StringDict.Keys.Contains("key2"));
+        @where(x => x.StringDict.Values.Any(v => v.EndsWith("3")));
+        @where(x => x.StringDict.Keys.Any(v => v.EndsWith("3")));
+        @where(x => x.StringDict.Any());
+        @where(x => !x.StringDict.Any());
+        @where(x => x.StringDict.Any(p => p.Key == "key1"));
+        @where(x => x.StringDict.Any(p => p.Value == "value2"));
+
+        @where(x => x.StringDict.Count > 2);
+        @where(x => x.StringDict.Count() == 2);
     }
 
     [Theory]

@@ -11,6 +11,12 @@ internal class ElementMember: MemberInfo
         ReflectedType = elementType;
     }
 
+    public ElementMember(Type declaringType, Type reflectedType)
+    {
+        DeclaringType = declaringType;
+        ReflectedType = reflectedType;
+    }
+
     public override object[] GetCustomAttributes(bool inherit)
     {
         return Array.Empty<object>();

@@ -9,6 +9,7 @@ using Marten.Linq.CreatedAt;
 using Marten.Linq.LastModified;
 using Marten.Linq.MatchesSql;
 using Marten.Linq.Members;
+using Marten.Linq.Members.Dictionaries;
 using Marten.Linq.Parsing;
 using Marten.Linq.Parsing.Methods;
 using Marten.Linq.Parsing.Methods.FullText;
@@ -82,7 +83,6 @@ public class LinqParsing: IReadOnlyLinqParsing
 
         // dictionaries
         new DictionaryContainsKey(),
-        //new DictionaryContains(),
 
         // full text search
         new Search(),

@@ -15,7 +15,7 @@ internal class SimpleElementMember: IQueryableMember, IComparableMember
     {
         MemberType = memberType;
         PgType = pgType;
-        TypedLocator = $"CAST(data as {pgType})";
+        RawLocator = TypedLocator = "data";
         MemberName = "Element";
     }
 
