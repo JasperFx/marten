@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
-using Marten.Schema;
 using Shouldly;
 using Xunit;
 
