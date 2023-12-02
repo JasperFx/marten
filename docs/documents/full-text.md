@@ -317,13 +317,38 @@ var result = await session
     .Where(x => x.UserName.NgramSearch(term))
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L51-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L52-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_ngram_search-1'></a>
 ```cs
+var store = DocumentStore.For(_ =>
+{
+    _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
+
+    _.DatabaseSchemaName = "ngram_test";
+
+    // This creates an ngram index
+    _.Schema.For<User>().NgramIndex(x => x.UserName);
+});
+
+await using var session = store.LightweightSession();
+
+string term = null;
+for (var i = 1; i < 4; i++)
+{
+    var guid = $"{Guid.NewGuid():N}";
+    term ??= guid.Substring(5);
+
+    var newUser = new User(i, $"Test user {guid}");
+
+    session.Store(newUser);
+}
+
+await session.SaveChangesAsync();
+
 var result = await session
     .Query<User>()
     .Where(x => x.UserName.NgramSearch(term))
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L91-L96' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L67-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
