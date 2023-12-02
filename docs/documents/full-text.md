@@ -326,7 +326,7 @@ var store = DocumentStore.For(_ =>
 
     _.DatabaseSchemaName = "ngram_test";
 
-    // This creates an ngram index
+    // This creates an ngram index for efficient sub string based matching
     _.Schema.For<User>().NgramIndex(x => x.UserName);
 });
 
