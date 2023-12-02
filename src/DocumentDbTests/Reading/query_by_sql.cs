@@ -379,4 +379,23 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
         var sum = sumResults.Single();
         sum.ShouldBe(4);
     }
+
+    [Fact]
+    public async Task can_query_using_with_select()
+    {
+        await using var session = theStore.LightweightSession();
+        var time = DateTimeOffset.UtcNow;
+        var u = new User { FirstName = "Jeremy", LastName = "Miller", ModifiedAt = time, Age = 28 };
+        session.Store(u);
+        await session.SaveChangesAsync();
+
+        var users =
+            await
+                session.QueryAsync<User>(
+                    "with my_with_query as (select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy') select data from my_with_query");
+        var user = users.Single();
+
+        user.LastName.ShouldBe("Miller");
+        user.Id.ShouldBe(u.Id);
+    }
 }
