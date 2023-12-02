@@ -17,12 +17,14 @@ public class NgramIndex: IndexDefinition
     public const string DefaultRegConfig = "english";
     public const string DefaultDataConfig = "data";
     private readonly DbObjectName _table;
+    private readonly string _databaseSchemaName;
 
     private string _dataConfig;
     private readonly string _indexName;
 
     public NgramIndex(DocumentMapping mapping, string dataConfig = null, string indexName = null)
     {
+        _databaseSchemaName = mapping.DatabaseSchemaName;
         _table = mapping.TableName;
         DataConfig = dataConfig;
         _indexName = indexName;
@@ -46,7 +48,7 @@ public class NgramIndex: IndexDefinition
 
     public override string[] Columns
     {
-        get => new[] { $"mt_grams_vector( {_dataConfig})" };
+        get => new[] { $"{_databaseSchemaName}.mt_grams_vector( {_dataConfig})" };
         set
         {
             // nothing

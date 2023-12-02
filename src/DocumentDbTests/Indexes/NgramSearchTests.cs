@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
+using Marten.Schema;
 using Shouldly;
 using Xunit;
 
@@ -30,7 +31,7 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
 
             // This creates
-            _.Schema.For<User>().Index(x => x.UserName);
+            _.Schema.For<User>().NgramIndex(x => x.UserName);
         });
 
         await using var session = store.LightweightSession();
@@ -63,14 +64,15 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
     [Fact]
     public async Task test_ngram_search_returns_data_using_db_schema()
     {
+        #region sample_ngram_search
         var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
 
             _.DatabaseSchemaName = "ngram_test";
 
-            // This creates
-            _.Schema.For<User>().Index(x => x.UserName);
+            // This creates an ngram index for efficient sub string based matching
+            _.Schema.For<User>().NgramIndex(x => x.UserName);
         });
 
         await using var session = store.LightweightSession();
@@ -88,7 +90,6 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
 
         await session.SaveChangesAsync();
 
-        #region sample_ngram_search
         var result = await session
             .Query<User>()
             .Where(x => x.UserName.NgramSearch(term))
