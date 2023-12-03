@@ -165,4 +165,9 @@ In some cases where you load a specific extension like [PostGIS](https://postgis
 Marten provides a mechanism via `DocumentStore.Advanced` to invoke `ReloadTypes()` as needed as per the use case at hand. `store.Advanced.ReloadTypes()` will run this for all tenant databases. There is also a method to run it for a specific tenant database using `Store.Advanced.ReloadTypes(tenanId)`.
 
 <!-- snippet: sample_reload-types -->
+<a id='snippet-sample_reload-types'></a>
+```cs
+await theStore.Advanced.ReloadTypes();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/ability_to_add_custom_pg_type_fetch_data.cs#L23-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_reload-types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

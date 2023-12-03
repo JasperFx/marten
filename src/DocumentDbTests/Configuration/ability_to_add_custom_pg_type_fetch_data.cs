@@ -20,7 +20,9 @@ public class ability_to_add_custom_pg_type_fetch_data: OneOffConfigurationsConte
             await cmd.ExecuteNonQueryAsync();
         }
 
+        #region sample_reload-types
         await theStore.Advanced.ReloadTypes();
+        #endregion
 
         await using (var conn = theStore.CreateConnection())
         {
