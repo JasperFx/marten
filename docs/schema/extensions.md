@@ -159,3 +159,10 @@ await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L76-L91' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemaextension' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+In some cases where you load a specific extension like [PostGIS](https://postgis.net/), it uses custom Postgres types like `geometry` and other custom types. Npgsql typically caches the type mappings so after installing the extension or when you create any new custom Postgres types, it is required to reload the cache for Npgsql to recognize those custom Postgres types. Npgsql provides a handy function `NpgsqlConnection.ReloadTypes()`.
+
+Marten provides a mechanism via `DocumentStore.Advanced` to invoke `ReloadTypes()` as needed as per the use case at hand. `store.Advanced.ReloadTypes()` will run this for all tenant databases. There is also a method to run it for a specific tenant database using `Store.Advanced.ReloadTypes(tenanId)`.
+
+<!-- snippet: sample_reload-types -->
+<!-- endSnippet -->

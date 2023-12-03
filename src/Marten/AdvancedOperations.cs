@@ -153,4 +153,27 @@ public class AdvancedOperations
 
         return scenario.Execute(ct);
     }
+
+    /// <summary>
+    /// Reload types to flush Npgsql cache for a tenant
+    /// </summary>
+    /// <param name="tenantId"></param>
+    /// <typeparam name="T"></typeparam>
+    public async Task ReloadTypes(string tenantId)
+    {
+        var tenant = await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
+        await tenant.Database.ReloadTypesAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Reload types to flush Npgsql cache across all databases
+    /// </summary>
+    /// <param name="floor"></param>
+    /// <typeparam name="T"></typeparam>
+    public async Task ReloadTypes()
+    {
+        var databases = await _store.Tenancy.BuildDatabases().ConfigureAwait(false);
+        foreach (var database in databases.OfType<IMartenDatabase>())
+            await database.ReloadTypesAsync().ConfigureAwait(false);
+    }
 }

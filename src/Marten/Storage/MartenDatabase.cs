@@ -76,6 +76,13 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
         return await expected.FetchExistingAsync(conn).ConfigureAwait(false);
     }
 
+    public async Task ReloadTypesAsync()
+    {
+        await using var conn = CreateConnection();
+        await conn.OpenAsync().ConfigureAwait(false);
+        await conn.ReloadTypesAsync().ConfigureAwait(false);
+    }
+
 
     public override IFeatureSchema[] BuildFeatureSchemas()
     {

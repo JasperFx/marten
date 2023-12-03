@@ -108,4 +108,10 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     /// <returns></returns>
     Task<long> ProjectionProgressFor(ShardName name,
         CancellationToken token = default);
+
+    /// <summary>
+    /// Reload types to flush Npgsql cache
+    /// </summary>
+    /// <returns></returns>
+    Task ReloadTypesAsync();
 }

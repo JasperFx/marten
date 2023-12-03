@@ -222,4 +222,9 @@ internal class StandinDatabase: IMartenDatabase
     {
         throw new NotImplementedException();
     }
+
+    public Task ReloadTypesAsync()
+    {
+        throw new NotImplementedException();
+    }
 }
