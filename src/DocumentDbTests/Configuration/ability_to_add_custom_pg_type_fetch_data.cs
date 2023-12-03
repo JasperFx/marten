@@ -12,6 +12,7 @@ public class ability_to_add_custom_pg_type_fetch_data: OneOffConfigurationsConte
     [Fact]
     public async Task can_register_a_custom_feature_and_reload_types()
     {
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
         await using (var conn = theStore.CreateConnection())
         {
             await conn.OpenAsync();
