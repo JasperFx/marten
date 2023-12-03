@@ -68,19 +68,22 @@ public class NgramIndex: IndexDefinition
             return SchemaConstants.MartenPrefix + lowerValue.ToLowerInvariant();
         }
 
-        var arrowIndex = _dataConfig.IndexOf("->>", StringComparison.InvariantCultureIgnoreCase);
+        var indexFieldName = _dataConfig.ToLowerInvariant();
+        indexFieldName = indexFieldName.Split(new[] { " as " }, StringSplitOptions.None)[0];
+        indexFieldName = indexFieldName
+            .Replace("cast(", string.Empty)
+            .Replace("data", string.Empty)
+            .Replace(" ", string.Empty)
+            .Replace("'", string.Empty)
+            .Replace("->>", string.Empty)
+            .Replace("->", string.Empty);
 
-        var indexFieldName = arrowIndex != -1
-            ? _dataConfig.Substring(arrowIndex + 3).Trim().Replace("'", string.Empty).ToLowerInvariant()
-            : _dataConfig;
         return $"{_table.Name}_idx_ngram_{indexFieldName}";
     }
 
     private static string GetDataConfig(DocumentMapping mapping, MemberInfo[] members)
     {
-        var dataConfig = members
-            .Select(m => $"{mapping.QueryMembers.MemberFor(members).TypedLocator.Replace("d.", "")}")
-            .Join(" || ' ' || ");
+        var dataConfig = $"{mapping.QueryMembers.MemberFor(members).TypedLocator.Replace("d.", "")}";
 
         return $"{dataConfig}";
     }
