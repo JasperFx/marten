@@ -148,6 +148,41 @@ public class computed_indexes: OneOffConfigurationsContext
         index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_user_idflag ON computed_indexes.mt_doc_target USING btree (CAST(data ->> 'UserId' as uuid), CAST(data ->> 'Flag' as boolean));");
     }
 
+    public static void configuration_samples()
+    {
+        #region sample_multi_column_index
+
+        var store = DocumentStore.For(opts =>
+        {
+            // This creates a single index against both FirstName and ListName
+            opts.Schema.For<User>().Index(x => new { x.FirstName, x.LastName });
+        });
+
+        #endregion
+    }
+
+    [Fact]
+    public async Task create_multi_property_index_with_complex_expression()
+    {
+        StoreOptions(_ =>
+        {
+            var columns = new Expression<Func<Target, object>>[]
+            {
+                x => x.UserId,
+                x => x.Flag
+            };
+            _.Schema.For<Target>().Index(x => new {x.UserId, x.Flag});
+        });
+
+        var data = Target.GenerateRandomData(100).ToArray();
+        await theStore.BulkInsertAsync(data.ToArray());
+
+        var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
+        var index = table.IndexFor("mt_doc_target_idx_user_idflag");
+
+        index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_user_idflag ON computed_indexes.mt_doc_target USING btree (CAST(data ->> 'UserId' as uuid), CAST(data ->> 'Flag' as boolean));");
+    }
+
     [Fact]
     public async Task create_multi_property_string_index_with_casing()
     {
