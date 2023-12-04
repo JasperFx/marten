@@ -17,6 +17,12 @@ public class Ordering
 
     public CasingRule CasingRule { get; set; } = CasingRule.CaseSensitive;
 
+    /// <summary>
+    /// Refers to whether or not this ordering is transformed such that it cannot
+    /// be combined with a Distinct(Select()) usage
+    /// </summary>
+    public bool IsTransformed { get; set; }
+
     public string BuildExpression(IQueryableMemberCollection collection)
     {
         var member = collection.MemberFor(Expression, "Invalid OrderBy() expression");

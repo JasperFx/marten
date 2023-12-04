@@ -15,7 +15,7 @@ public class OrderingOperator: LinqOperator
     public override void Apply(ILinqQuery query, MethodCallExpression expression)
     {
         var usage = query.CollectionUsageFor(expression);
-        var newOrdering = new Ordering(expression.Arguments[1], Direction);
+        var ordering = new Ordering(expression.Arguments[1], Direction);
         if (expression.Arguments.Count == 3)
         {
             var comparer = expression.Arguments[2].Value() as StringComparer;
@@ -23,10 +23,12 @@ public class OrderingOperator: LinqOperator
             if (comparer == StringComparer.OrdinalIgnoreCase || comparer == StringComparer.CurrentCultureIgnoreCase ||
                 comparer == StringComparer.InvariantCultureIgnoreCase)
             {
-                newOrdering.CasingRule = CasingRule.CaseInsensitive;
+                ordering.CasingRule = CasingRule.CaseInsensitive;
             }
+
+            ordering.IsTransformed = true;
         }
 
-        usage.OrderingExpressions.Insert(0, newOrdering);
+        usage.OrderingExpressions.Insert(0, ordering);
     }
 }
