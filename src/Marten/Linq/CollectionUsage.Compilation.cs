@@ -2,6 +2,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -51,6 +52,12 @@ public partial class CollectionUsage
 
         if (IsDistinct)
         {
+            if (SelectExpression != null && OrderingExpressions.Any(x => x.IsTransformed))
+            {
+                throw new BadLinqExpressionException(
+                    "Marten is unable to build a query with a Distinct() + Select() + a 'transformed' OrderBy(). You will have to resort to SQL for this query");
+            }
+
             statement.ApplySqlOperator("DISTINCT");
         }
 
