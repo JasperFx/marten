@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -760,6 +761,18 @@ public class DocumentMapping<T>: DocumentMapping
     /// <param name="configure"></param>
     public void Index(Expression<Func<T, object>> expression, Action<ComputedIndex> configure = null)
     {
+        if (expression.Body is NewExpression newExpression)
+        {
+            var members = newExpression.Arguments
+                .Select(FindMembers.Determine).ToArray();
+
+            var index = new ComputedIndex(this, members);
+            configure?.Invoke(index);
+            Indexes.Add(index);
+            return;
+        }
+
+
         Index(new[] { expression }, configure);
     }
 
