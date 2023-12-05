@@ -22,4 +22,5 @@ public class order_by_clauses: LinqTestContext<order_by_clauses>
         ordered(t => t.OrderBy(x => x.String).Skip(2));
         ordered(t => t.OrderBy(x => x.String).Take(2).Skip(2));
     }
+
 }

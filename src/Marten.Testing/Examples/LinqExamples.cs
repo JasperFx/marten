@@ -77,6 +77,7 @@ public class LinqExamples
         session.Query<Target>().Where(x => x.String.Contains("soMeThiNg", StringComparison.OrdinalIgnoreCase));
 
         session.Query<Target>().Where(x => x.String.Equals("ThE SaMe ThInG", StringComparison.OrdinalIgnoreCase));
+
     }
 
     #endregion
@@ -92,6 +93,9 @@ public class LinqExamples
 
         // You can use multiple order by's
         session.Query<Target>().OrderBy(x => x.Date).ThenBy(x => x.Number);
+
+        // If you're brave, you can even use raw SQL literals as of Marten v7!
+        session.Query<Target>().OrderBySql("substring(d.data -> 'String', 1, 2)");
     }
 
     #endregion

@@ -99,8 +99,7 @@ public class DuplicatedField: IQueryableMember, IComparableMember
     public string JsonPathSegment => throw new NotSupportedException();
     public string BuildOrderingExpression(Ordering ordering, CasingRule casingRule)
     {
-        // TODO -- memoize or intern this. Watch if this is a string!!!
-        if (ordering.Direction == OrderingDirection.Desc) return "d.id desc";
+        if (ordering.Direction == OrderingDirection.Desc) return $"{TypedLocator} desc";
 
         return TypedLocator;
     }

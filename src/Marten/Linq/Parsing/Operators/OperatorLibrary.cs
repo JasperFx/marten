@@ -16,17 +16,20 @@ internal class OperatorLibrary
         Add<LastOperator>();
         Add<LastOrDefaultOperator>();
 
-        AddOrdering("OrderBy", OrderingDirection.Asc);
-        AddOrdering("ThenBy", OrderingDirection.Asc);
+        AddOrdering(nameof(QueryableExtensions.OrderBy), OrderingDirection.Asc);
+        AddOrdering(nameof(QueryableExtensions.ThenBy), OrderingDirection.Asc);
 
-        AddOrdering("OrderByDescending", OrderingDirection.Desc);
-        AddOrdering("ThenByDescending", OrderingDirection.Desc);
+        AddOrdering(nameof(QueryableExtensions.OrderByDescending), OrderingDirection.Desc);
+        AddOrdering(nameof(QueryableExtensions.ThenByDescending), OrderingDirection.Desc);
 
         Add<SelectManyOperator>();
         Add<SelectOperator>();
         Add<AnyOperator>();
         Add<DistinctOperator>();
         Add<IncludeOperator>();
+
+        Add<OrderBySqlOperator>();
+        Add<ThenBySqlOperator>();
 
         foreach (var mode in Enum.GetValues<SingleValueMode>()) addSingleValueMode(mode);
     }
