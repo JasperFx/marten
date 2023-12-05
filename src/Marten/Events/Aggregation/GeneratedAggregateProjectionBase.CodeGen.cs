@@ -82,7 +82,6 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
 
         assembly.Rules.ReferenceTypes(_applyMethods.ReferencedTypes().ToArray());
         assembly.Rules.ReferenceTypes(_createMethods.ReferencedTypes().ToArray());
-        assembly.Rules.ReferenceTypes(_createDefaultMethod.ReferencedTypes().ToArray());
         assembly.Rules.ReferenceTypes(_shouldDeleteMethods.ReferencedTypes().ToArray());
 
         // Walk the assembly dependencies for the projection and aggregate types,
@@ -171,7 +170,6 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         _inlineGeneratedType = assembly.AddType(_inlineAggregationHandlerType, inlineBaseType);
 
         _createMethods.BuildCreateMethod(_inlineGeneratedType, _aggregateMapping);
-        _createDefaultMethod.BuildCreateDefaultMethod(_inlineGeneratedType, _aggregateMapping);
 
         _inlineGeneratedType.AllInjectedFields.Add(new InjectedField(GetType()));
 
@@ -179,7 +177,6 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
 
         _inlineGeneratedType.Setters.AddRange(_applyMethods.Setters());
         _inlineGeneratedType.Setters.AddRange(_createMethods.Setters());
-        _inlineGeneratedType.Setters.AddRange(_createDefaultMethod.Setters());
         _inlineGeneratedType.Setters.AddRange(_shouldDeleteMethods.Setters());
     }
 
@@ -209,13 +206,6 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         foreach (var slot in _applyMethods.Methods) eventHandlers[slot.EventType].Apply = new ApplyMethodCall(slot);
 
         foreach (var slot in _createMethods.Methods)
-        {
-            eventHandlers[slot.EventType].CreationFrame = slot.Method is ConstructorInfo
-                ? new AggregateConstructorFrame(slot)
-                : new CreateAggregateFrame(slot);
-        }
-
-        foreach (var slot in _createDefaultMethod.Methods)
         {
             eventHandlers[slot.EventType].CreationFrame = slot.Method is ConstructorInfo
                 ? new AggregateConstructorFrame(slot)
@@ -270,12 +260,10 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         _liveGeneratedType.AllInjectedFields.Add(new InjectedField(GetType()));
 
         _createMethods.BuildCreateMethod(_liveGeneratedType, _aggregateMapping);
-        _createDefaultMethod.BuildCreateDefaultMethod(_liveGeneratedType, _aggregateMapping);
         _applyMethods.BuildApplyMethod(_liveGeneratedType, _aggregateMapping);
 
         _liveGeneratedType.Setters.AddRange(_applyMethods.Setters());
         _liveGeneratedType.Setters.AddRange(_createMethods.Setters());
-        _liveGeneratedType.Setters.AddRange(_createDefaultMethod.Setters());
         _liveGeneratedType.Setters.AddRange(_shouldDeleteMethods.Setters());
     }
 }

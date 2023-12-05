@@ -21,7 +21,6 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
     internal readonly ApplyMethodCollection _applyMethods;
 
     internal readonly CreateMethodCollection _createMethods;
-    internal readonly CreateDefaultMethod _createDefaultMethod;
     private readonly string _inlineAggregationHandlerType;
     private readonly string _liveAggregationTypeName;
     internal readonly ShouldDeleteMethodCollection _shouldDeleteMethods;
@@ -37,7 +36,6 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
     protected GeneratedAggregateProjectionBase(AggregationScope scope): base(typeof(T).NameInCode())
     {
         _createMethods = new CreateMethodCollection(GetType(), typeof(T));
-        _createDefaultMethod = new CreateDefaultMethod(GetType(), typeof(T));
         _applyMethods = new ApplyMethodCollection(GetType(), typeof(T));
         _shouldDeleteMethods = new ShouldDeleteMethodCollection(GetType(), typeof(T));
 
