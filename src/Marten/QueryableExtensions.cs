@@ -4,10 +4,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Linq;
+using Marten.Linq.Parsing.Operators;
 using Marten.Services.BatchQuerying;
 using Npgsql;
 
@@ -699,4 +701,36 @@ public static class QueryableExtensions
     }
 
     #endregion
+
+    private static MethodInfo _orderBySqlMethod = typeof(QueryableExtensions).GetMethod(nameof(OrderBySql),
+        BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic);
+
+    private static MethodInfo _thenBySqlMethod = typeof(QueryableExtensions).GetMethod(nameof(ThenBySql),
+        BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic);
+
+    /// <summary>
+    /// Supply literal SQL fragments to be placed in the generated SQL for this LINQ query.
+    /// You can supply the "desc" suffix here
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static IQueryable<T> OrderBySql<T>(this IQueryable<T> queryable, string sql)
+    {
+        return queryable.Provider.CreateQuery<T>(Expression.Call(null, _orderBySqlMethod.MakeGenericMethod(typeof(T)), queryable.Expression,
+            Expression.Constant(sql)));
+    }
+
+    /// <summary>
+    /// Supply literal SQL fragments to be placed in the generated SQL for this LINQ query
+    /// You can supply the "desc" suffix here
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static IQueryable<T> ThenBySql<T>(this IQueryable<T> queryable, string sql)
+    {
+        return queryable.Provider.CreateQuery<T>(Expression.Call(null, _thenBySqlMethod.MakeGenericMethod(typeof(T)), queryable.Expression,
+            Expression.Constant(sql)));
+    }
 }

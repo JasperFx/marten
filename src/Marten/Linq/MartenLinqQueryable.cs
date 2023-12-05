@@ -13,6 +13,7 @@ using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
+using Marten.Linq.Parsing.Operators;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Npgsql;
