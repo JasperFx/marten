@@ -129,6 +129,12 @@ To create aggregate projections that include events in multiple streams, see [Cr
 
 ## Aggregate Creation
 
+::: tip
+As of Marten 7, if your aggregation projection has both a `Create()` function or constructor for an event type, and
+an `Apply()` method for the same event type, Marten will only call one or the other method depending on whether the
+aggregate already exists **but never both** for one single event.
+:::
+
 Aggregates can initially be created behind the scenes by Marten if there's a no-arg constructor function on the aggregate
 document type -- which doesn't have to be public by the way.
 

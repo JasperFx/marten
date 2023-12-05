@@ -70,6 +70,11 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
             Debug.WriteLine(_liveGeneratedType.SourceCode);
         }
 
+        if (_inlineGeneratedType != null)
+        {
+            Debug.WriteLine(_inlineGeneratedType.SourceCode);
+        }
+
         return _inlineType != null && _liveType != null;
     }
 

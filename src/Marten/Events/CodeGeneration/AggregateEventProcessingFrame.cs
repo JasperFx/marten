@@ -68,34 +68,31 @@ internal class AggregateEventProcessingFrame: EventProcessingFrame
             writer.Write("return null;");
         }
 
-        CreationFrame?.GenerateCode(method, writer);
-
-        if (Apply != null)
+        if (Apply == null)
         {
-            if (CreationFrame == null)
+            if (CreationFrame != null)
             {
-                var defaultConstructor = AggregateType.GetConstructor(
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes,
-                    null);
-
-                if (defaultConstructor?.IsPublic == true)
-                {
-                    writer.Write($"{Aggregate.Usage} ??= new {AggregateType.FullNameInCode()}();");
-                }
-                else if (defaultConstructor?.IsPublic == false)
-                {
-                    writer.Write($"{Aggregate.Usage} ??= ({AggregateType.FullNameInCode()}){typeof(Activator).FullNameInCode()}.{nameof(Activator.CreateInstance)}(typeof({AggregateType.FullNameInCode()}), true);");
-                }
-                else
-                {
-                    var errorMessage =
-                        $"Projection for {AggregateType.FullName} should either have a static Create method that returns the event type {SpecificEvent.VariableType.FullNameInCode()} or {AggregateType.FullName} should have either have a public, no argument constructor or a constructor function that takes the {SpecificEvent.VariableType.FullNameInCode()} as a parameter. This error occurs when Marten is trying to build a new aggregate, but the aggregate projection does not have a way to create a new aggregate from the first event in the event stream. A common cause is persisting events out of order according to your application's domain logic rules";
-
-                    writer.Write(
-                        $"if({Aggregate.Usage} == default) throw new {typeof(InvalidProjectionException).FullNameInCode()}(\"{errorMessage}\");");
-                }
+                CreationFrame.GenerateCode(method, writer);
             }
+            else
+            {
+                writer.Write($"{Aggregate.Usage} ??= CreateDefault(evt);");
+            }
+        }
+        else if (CreationFrame != null)
+        {
+            writer.Write($"BLOCK:if ({Aggregate.Usage} == null)");
 
+            CreationFrame.GenerateCode(method, writer);
+
+            writer.FinishBlock();
+            writer.WriteElse();
+            Apply.GenerateCode(method, writer);
+            writer.FinishBlock();
+        }
+        else // Have an Apply() method and no Create()
+        {
+            writer.Write($"{Aggregate.Usage} ??= CreateDefault(evt);");
             Apply.GenerateCode(method, writer);
         }
 
