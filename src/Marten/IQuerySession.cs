@@ -12,6 +12,7 @@ using Marten.Services.BatchQuerying;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using Npgsql;
+using Weasel.Postgresql.Tables.Indexes;
 
 namespace Marten;
 
@@ -457,7 +458,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
-    IReadOnlyList<TDoc> Search<TDoc>(string queryText, string regConfig = FullTextIndex.DefaultRegConfig);
+    IReadOnlyList<TDoc> Search<TDoc>(string queryText, string regConfig = FullTextIndexDefinition.DefaultRegConfig);
 
     /// <summary>
     ///     Performs an asynchronous full text search against <typeparamref name="TDoc" />
@@ -470,7 +471,8 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
-    Task<IReadOnlyList<TDoc>> SearchAsync<TDoc>(string queryText, string regConfig = FullTextIndex.DefaultRegConfig,
+    Task<IReadOnlyList<TDoc>> SearchAsync<TDoc>(string queryText,
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig,
         CancellationToken token = default);
 
     /// <summary>
@@ -484,7 +486,8 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
-    IReadOnlyList<TDoc> PlainTextSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig);
+    IReadOnlyList<TDoc> PlainTextSearch<TDoc>(string searchTerm,
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig);
 
     /// <summary>
     ///     Performs an asynchronous full text search against <typeparamref name="TDoc" /> using the 'plainto_tsquery' function
@@ -498,7 +501,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
     Task<IReadOnlyList<TDoc>> PlainTextSearchAsync<TDoc>(string searchTerm,
-        string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default);
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig, CancellationToken token = default);
 
     /// <summary>
     ///     Performs a full text search against <typeparamref name="TDoc" /> using the 'phraseto_tsquery' search function
@@ -511,7 +514,8 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
-    IReadOnlyList<TDoc> PhraseSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig);
+    IReadOnlyList<TDoc> PhraseSearch<TDoc>(string searchTerm,
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig);
 
     /// <summary>
     ///     Performs an asynchronous full text search against <typeparamref name="TDoc" /> using the 'phraseto_tsquery' search
@@ -526,7 +530,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
     Task<IReadOnlyList<TDoc>> PhraseSearchAsync<TDoc>(string searchTerm,
-        string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default);
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig, CancellationToken token = default);
 
     /// <summary>
     ///     Performs a full text search against <typeparamref name="TDoc" /> using the 'websearch_to_tsquery' search function
@@ -543,7 +547,8 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     Supported from Postgres 11
     ///     See: https://www.postgresql.org/docs/11/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
-    IReadOnlyList<TDoc> WebStyleSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig);
+    IReadOnlyList<TDoc> WebStyleSearch<TDoc>(string searchTerm,
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig);
 
     /// <summary>
     ///     Performs an asynchronous full text search against <typeparamref name="TDoc" /> using the 'websearch_to_tsquery'
@@ -563,7 +568,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     See: https://www.postgresql.org/docs/11/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
     Task<IReadOnlyList<TDoc>> WebStyleSearchAsync<TDoc>(string searchTerm,
-        string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default);
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig, CancellationToken token = default);
 
 
     /// <summary>

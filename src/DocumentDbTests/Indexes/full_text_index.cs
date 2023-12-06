@@ -12,6 +12,7 @@ using Npgsql;
 using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
+using Weasel.Postgresql.Tables.Indexes;
 using Xunit;
 
 namespace DocumentDbTests.Indexes;
@@ -703,7 +704,7 @@ public class full_text_index: OneOffConfigurationsContext
             .ShouldContainIndexDefinitionFor<Book>(
                 tableName: "full_text_index.mt_doc_book",
                 indexName: $"mt_doc_book_idx_fts",
-                regConfig: FullTextIndex.DefaultRegConfig,
+                regConfig: FullTextIndexDefinition.DefaultRegConfig,
                 dataConfig: $"data"
             );
     }
@@ -719,7 +720,7 @@ public class full_text_index: OneOffConfigurationsContext
             .ShouldContainIndexDefinitionFor<UserProfile>(
                 tableName: "full_text_index.mt_doc_userprofile",
                 indexName: $"mt_doc_userprofile_idx_fts",
-                regConfig: FullTextIndex.DefaultRegConfig,
+                regConfig: FullTextIndexDefinition.DefaultRegConfig,
                 dataConfig: $"((data ->> '{nameof(UserProfile.Information)}'))"
             );
     }
@@ -751,7 +752,7 @@ public class full_text_index: OneOffConfigurationsContext
             .ShouldContainIndexDefinitionFor<Article>(
                 tableName: "full_text_index.mt_doc_article",
                 indexName: $"mt_doc_article_idx_fts",
-                regConfig: FullTextIndex.DefaultRegConfig,
+                regConfig: FullTextIndexDefinition.DefaultRegConfig,
                 dataConfig: $"((data ->> '{nameof(Article.Heading)}') || ' ' || (data ->> '{nameof(Article.Text)}'))"
             );
     }
@@ -780,7 +781,7 @@ public class full_text_index: OneOffConfigurationsContext
             .ShouldContainIndexDefinitionFor<BlogPost>(
                 tableName: "full_text_index.mt_doc_blogpost",
                 indexName: $"mt_doc_blogpost_idx_fts",
-                regConfig: FullTextIndex.DefaultRegConfig,
+                regConfig: FullTextIndexDefinition.DefaultRegConfig,
                 dataConfig: $"((data ->> '{nameof(BlogPost.EnglishText)}'))"
             );
 

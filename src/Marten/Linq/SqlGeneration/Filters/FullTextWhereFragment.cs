@@ -3,6 +3,7 @@ using Marten.Linq.Parsing.Methods.FullText;
 using Marten.Schema;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
+using Weasel.Postgresql.Tables.Indexes;
 
 namespace Marten.Linq.SqlGeneration.Filters;
 
@@ -14,7 +15,7 @@ internal class FullTextWhereFragment: ISqlFragment
     private readonly string _searchTerm;
 
     public FullTextWhereFragment(DocumentMapping mapping, FullTextSearchFunction searchFunction, string searchTerm,
-        string regConfig = FullTextIndex.DefaultRegConfig)
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig)
     {
         _regConfig = regConfig;
 
@@ -42,14 +43,14 @@ internal class FullTextWhereFragment: ISqlFragment
     {
         if (mapping == null)
         {
-            return FullTextIndex.DefaultDataConfig;
+            return FullTextIndexDefinition.DataDocumentConfig;
         }
 
         return mapping
             .Indexes
-            .OfType<FullTextIndex>()
+            .OfType<FullTextIndexDefinition>()
             .Where(i => i.RegConfig == regConfig)
             .Select(i => i.DataConfig)
-            .FirstOrDefault() ?? FullTextIndex.DefaultDataConfig;
+            .FirstOrDefault() ?? FullTextIndexDefinition.DataDocumentConfig;
     }
 }

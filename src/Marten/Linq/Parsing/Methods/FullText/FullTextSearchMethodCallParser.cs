@@ -4,6 +4,7 @@ using Marten.Linq.Members;
 using Marten.Linq.SqlGeneration.Filters;
 using Marten.Schema;
 using Weasel.Postgresql.SqlGeneration;
+using Weasel.Postgresql.Tables.Indexes;
 
 namespace Marten.Linq.Parsing.Methods.FullText;
 
@@ -55,7 +56,7 @@ internal abstract class FullTextSearchMethodCallParser: IMethodCallParser
 
         var regConfig = expression.Arguments.Count > 2
             ? expression.Arguments[2].Value() as string
-            : FullTextIndex.DefaultRegConfig;
+            : FullTextIndexDefinition.DefaultRegConfig;
 
         return new FullTextWhereFragment(
             memberCollection as DocumentMapping,

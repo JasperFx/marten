@@ -8,18 +8,19 @@ using System.Text.RegularExpressions;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
-using Marten.Linq;
 using Marten.Linq.Members;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Schema.Indexing.FullText;
 using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
+using Weasel.Postgresql.Tables.Indexes;
 
 namespace Marten.Schema;
 
@@ -75,7 +76,8 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     {
         if (documentType.IsSimple())
         {
-            throw new ArgumentOutOfRangeException(nameof(documentType),"This type cannot be used as a Marten document");
+            throw new ArgumentOutOfRangeException(nameof(documentType),
+                "This type cannot be used as a Marten document");
         }
 
         StoreOptions = storeOptions ?? throw new ArgumentNullException(nameof(storeOptions));
@@ -453,10 +455,12 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
     /// </remarks>
-    public FullTextIndex AddFullTextIndex(string regConfig = FullTextIndex.DefaultRegConfig,
-        Action<FullTextIndex> configure = null)
+    public FullTextIndexDefinition AddFullTextIndex(
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig,
+        Action<FullTextIndexDefinition> configure = null
+    )
     {
-        var index = new FullTextIndex(this, regConfig);
+        var index = FullTextIndexDefinitionFactory.From(this, regConfig);
         configure?.Invoke(index);
 
         return AddFullTextIndexIfDoesNotExist(index);
@@ -470,17 +474,22 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
     /// </remarks>
-    public FullTextIndex AddFullTextIndex(MemberInfo[][] members, string regConfig = FullTextIndex.DefaultRegConfig,
-        string indexName = null)
+    public FullTextIndexDefinition AddFullTextIndex(
+        MemberInfo[][] members,
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig,
+        string indexName = null
+    )
     {
-        var index = new FullTextIndex(this, regConfig, members) { Name = indexName };
+        var index = FullTextIndexDefinitionFactory.From(this, regConfig);
+        if (indexName != null)
+            index.Name = indexName;
 
         return AddFullTextIndexIfDoesNotExist(index);
     }
 
-    private FullTextIndex AddFullTextIndexIfDoesNotExist(FullTextIndex index)
+    private FullTextIndexDefinition AddFullTextIndexIfDoesNotExist(FullTextIndexDefinition index)
     {
-        var existing = Indexes.OfType<FullTextIndex>().FirstOrDefault(x => x.Name == index.Name);
+        var existing = Indexes.OfType<FullTextIndexDefinition>().FirstOrDefault(x => x.Name == index.Name);
         if (existing != null)
         {
             return existing;
@@ -532,7 +541,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     {
         var member = DocumentType.GetProperty(memberName) ?? (MemberInfo)DocumentType.GetField(memberName);
 
-        return AddForeignKey(new MemberInfo[]{member}, referenceType);
+        return AddForeignKey(new MemberInfo[] { member }, referenceType);
     }
 
     public DocumentForeignKey AddForeignKey(MemberInfo[] members, Type referenceType)
@@ -832,7 +841,7 @@ public class DocumentMapping<T>: DocumentMapping
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
     /// </remarks>
-    public FullTextIndex FullTextIndex(string regConfig, params Expression<Func<T, object>>[] expressions)
+    public FullTextIndexDefinition FullTextIndex(string regConfig, params Expression<Func<T, object>>[] expressions)
     {
         return AddFullTextIndex(
             expressions
