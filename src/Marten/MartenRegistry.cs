@@ -16,6 +16,7 @@ using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
+using Weasel.Postgresql.Tables.Indexes;
 
 namespace Marten;
 
@@ -300,8 +301,10 @@ public class MartenRegistry
         /// <param name="regConfig"></param>
         /// <param name="configure"></param>
         /// <returns></returns>
-        public DocumentMappingExpression<T> FullTextIndex(string regConfig = Schema.FullTextIndex.DefaultRegConfig,
-            Action<FullTextIndex>? configure = null)
+        public DocumentMappingExpression<T> FullTextIndex(
+            string regConfig = FullTextIndexDefinition.DefaultRegConfig,
+            Action<FullTextIndexDefinition>? configure = null
+        )
         {
             _builder.Alter = m => m.AddFullTextIndex(regConfig, configure);
             return this;
@@ -312,9 +315,9 @@ public class MartenRegistry
         /// </summary>
         /// <param name="configure"></param>
         /// <returns></returns>
-        public DocumentMappingExpression<T> FullTextIndex(Action<FullTextIndex> configure)
+        public DocumentMappingExpression<T> FullTextIndex(Action<FullTextIndexDefinition> configure)
         {
-            _builder.Alter = m => m.AddFullTextIndex(Schema.FullTextIndex.DefaultRegConfig, configure);
+            _builder.Alter = m => m.AddFullTextIndex(FullTextIndexDefinition.DefaultRegConfig, configure);
             return this;
         }
 
@@ -325,7 +328,7 @@ public class MartenRegistry
         /// <returns></returns>
         public DocumentMappingExpression<T> FullTextIndex(params Expression<Func<T, object>>[] expressions)
         {
-            FullTextIndex(Schema.FullTextIndex.DefaultRegConfig, expressions);
+            FullTextIndex(FullTextIndexDefinition.DefaultRegConfig, expressions);
             return this;
         }
 
@@ -346,12 +349,12 @@ public class MartenRegistry
         /// </summary>
         /// <param name="expressions"></param>
         /// <returns></returns>
-        public DocumentMappingExpression<T> FullTextIndex(Action<FullTextIndex> configure,
+        public DocumentMappingExpression<T> FullTextIndex(Action<FullTextIndexDefinition> configure,
             params Expression<Func<T, object>>[] expressions)
         {
             _builder.Alter = m =>
             {
-                var index = m.FullTextIndex(Schema.FullTextIndex.DefaultRegConfig, expressions);
+                var index = m.FullTextIndex(FullTextIndexDefinition.DefaultRegConfig, expressions);
                 configure(index);
                 var temp = index;
             };
