@@ -128,7 +128,7 @@ public static class QueryableExtensions
     public static IAsyncEnumerable<T> ToAsyncEnumerable<T>(this IQueryable<T> queryable,
         CancellationToken token = default)
     {
-        return queryable.As<IMartenQueryable<T>>().ToAsyncEnumerable(token);
+        return queryable.As<MartenLinqQueryable<T>>().ToAsyncEnumerable(token);
     }
 
 
@@ -733,6 +733,23 @@ public static class QueryableExtensions
         return queryable.Provider.CreateQuery<T>(Expression.Call(null, _thenBySqlMethod.MakeGenericMethod(typeof(T)), queryable.Expression,
             Expression.Constant(sql)));
     }
+
+    /// <summary>
+    ///     Retrieve the total number of persisted rows in the database that match this
+    ///     query. Useful for server side paging.
+    /// </summary>
+    /// <param name="stats"></param>
+    /// <returns></returns>
+    public static IQueryable<T> Stats<T>(this IQueryable<T> queryable, out QueryStatistics stats)
+    {
+        // TODO -- make this be an expression here!
+        var martenQueryable = queryable.As<MartenLinqQueryable<T>>();
+        martenQueryable.Statistics = new QueryStatistics();
+        stats = martenQueryable.Statistics;
+
+        return queryable;
+    }
+
 
 
 }
