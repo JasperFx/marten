@@ -10,8 +10,6 @@ namespace Marten.Linq;
 
 public interface IMartenQueryable
 {
-    QueryStatistics Statistics { get; }
-
     Task<IReadOnlyList<TResult>> ToListAsync<TResult>(CancellationToken token);
 
     Task<bool> AnyAsync(CancellationToken token);
