@@ -27,7 +27,7 @@ public static class QueryableExtensions
     public static QueryPlan Explain<T>(this IQueryable<T> queryable,
         Action<IConfigureExplainExpressions>? configureExplain = null)
     {
-        return queryable.As<IMartenQueryable<T>>().Explain(configureExplain: configureExplain);
+        return queryable.As<MartenLinqQueryable<T>>().Explain(configureExplain: configureExplain);
     }
 
     #region ToList
@@ -42,7 +42,7 @@ public static class QueryableExtensions
     public static Task<IReadOnlyList<T>> ToListAsync<T>(this IQueryable<T> queryable,
         CancellationToken token = default)
     {
-        return queryable.As<IMartenQueryable>().ToListAsync<T>(token);
+        return queryable.As<MartenLinqQueryable<T>>().ToListAsync<T>(token);
     }
 
     #endregion ToList
@@ -206,7 +206,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.As<IMartenQueryable>().AnyAsync(token);
+        return source.As<MartenLinqQueryable<TSource>>().AnyAsync(token);
     }
 
     public static Task<bool> AnyAsync<TSource>(
@@ -240,7 +240,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.Select(expression).As<IMartenQueryable>().SumAsync<TResult>(token);
+        return source.Select(expression).As<MartenLinqQueryable<TResult>>().SumAsync<TResult>(token);
     }
 
     public static Task<TResult> MaxAsync<TSource, TResult>(
@@ -252,7 +252,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.Select(expression).As<IMartenQueryable>().MaxAsync<TResult>(token);
+        return source.Select(expression).As<MartenLinqQueryable<TResult>>().MaxAsync<TResult>(token);
     }
 
     public static Task<TResult> MinAsync<TSource, TResult>(
@@ -264,7 +264,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.Select(expression).As<IMartenQueryable>().MinAsync<TResult>(token);
+        return source.Select(expression).As<MartenLinqQueryable<TResult>>().MinAsync<TResult>(token);
     }
 
     public static Task<double> AverageAsync<TSource, TMember>(
@@ -276,7 +276,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.Select(expression).As<IMartenQueryable>().AverageAsync(token);
+        return source.Select(expression).As<MartenLinqQueryable<TMember>>().AverageAsync(token);
     }
 
     #endregion Aggregate Functions
@@ -292,7 +292,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.As<IMartenQueryable>().CountAsync(token);
+        return source.As<MartenLinqQueryable<TSource>>().CountAsync(token);
     }
 
     public static Task<int> CountAsync<TSource>(
@@ -322,7 +322,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.As<IMartenQueryable>().CountLongAsync(token);
+        return source.As<MartenLinqQueryable<TSource>>().CountLongAsync(token);
     }
 
     public static Task<long> LongCountAsync<TSource>(
@@ -356,7 +356,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.As<IMartenQueryable>().FirstAsync<TSource>(token);
+        return source.As<MartenLinqQueryable<TSource>>().FirstAsync<TSource>(token);
     }
 
     public static Task<TSource> FirstAsync<TSource>(
@@ -386,7 +386,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.As<IMartenQueryable>().FirstOrDefaultAsync<TSource>(token);
+        return source.As<MartenLinqQueryable<TSource>>().FirstOrDefaultAsync<TSource>(token);
     }
 
     public static Task<TSource?> FirstOrDefaultAsync<TSource>(
@@ -420,7 +420,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.As<IMartenQueryable>().SingleAsync<TSource>(token);
+        return source.As<MartenLinqQueryable<TSource>>().SingleAsync<TSource>(token);
     }
 
     public static Task<TSource> SingleAsync<TSource>(
@@ -450,7 +450,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.As<IMartenQueryable>().SingleOrDefaultAsync<TSource>(token);
+        return source.As<MartenLinqQueryable<TSource>>().SingleOrDefaultAsync<TSource>(token);
     }
 
     public static Task<TSource?> SingleOrDefaultAsync<TSource>(
@@ -733,4 +733,6 @@ public static class QueryableExtensions
         return queryable.Provider.CreateQuery<T>(Expression.Call(null, _thenBySqlMethod.MakeGenericMethod(typeof(T)), queryable.Expression,
             Expression.Constant(sql)));
     }
+
+
 }
