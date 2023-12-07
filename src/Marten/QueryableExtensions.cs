@@ -740,14 +740,14 @@ public static class QueryableExtensions
     /// </summary>
     /// <param name="stats"></param>
     /// <returns></returns>
-    public static IQueryable<T> Stats<T>(this IQueryable<T> queryable, out QueryStatistics stats)
+    public static IMartenQueryable<T> Stats<T>(this IQueryable<T> queryable, out QueryStatistics stats)
     {
         // TODO -- make this be an expression here!
         var martenQueryable = queryable.As<MartenLinqQueryable<T>>();
         martenQueryable.Statistics = new QueryStatistics();
         stats = martenQueryable.Statistics;
 
-        return queryable;
+        return martenQueryable;
     }
 
 
