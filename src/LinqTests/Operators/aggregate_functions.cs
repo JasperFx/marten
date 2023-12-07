@@ -33,7 +33,7 @@ public class aggregate_functions : IntegrationContext
         theSession.Store(new Target { Color = Colors.Green, Number = 3 });
         theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
         var maxNumber = await theSession.Query<Target>().MaxAsync(t => t.Number);
         maxNumber.ShouldBe(42);
     }

@@ -303,7 +303,8 @@ The `Patch.Remove()` operation removes the given item from a child collection:
 <!-- snippet: sample_remove_primitive_element -->
 <a id='snippet-sample_remove_primitive_element'></a>
 ```cs
-[Fact]public void remove_primitive_element()
+[Fact]
+public void remove_primitive_element()
 {
     var random = new Random();
     var target = Target.Random();
