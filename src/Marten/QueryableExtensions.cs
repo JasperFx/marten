@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Linq;
+using Marten.Linq.Includes;
 using Marten.Linq.Parsing.Operators;
 using Marten.Services.BatchQuerying;
 using Npgsql;
@@ -748,6 +749,20 @@ public static class QueryableExtensions
         stats = martenQueryable.Statistics;
 
         return martenQueryable;
+    }
+
+    internal static readonly MethodInfo IncludePlanMethod =
+        typeof(QueryableExtensions).GetMethod(nameof(IncludePlan), BindingFlags.Static | BindingFlags.NonPublic);
+
+    internal static IMartenQueryable<T> IncludePlan<T>(this IQueryable<T> queryable, IIncludePlan include)
+    {
+        // TODO -- this should be temporary!
+        queryable.Provider.As<MartenLinqQueryProvider>().AllIncludes.Add(include);
+
+        var method = IncludePlanMethod.MakeGenericMethod(typeof(T));
+        var methodCallExpression = Expression.Call(null, method, queryable.Expression, Expression.Constant(include));
+
+        return (IMartenQueryable<T>)queryable.Provider.CreateQuery<T>(methodCallExpression);
     }
 
 
