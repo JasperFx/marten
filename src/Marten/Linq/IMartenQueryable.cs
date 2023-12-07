@@ -44,13 +44,4 @@ public interface IMartenQueryable<T>: IQueryable<T>
     IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
         IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey : notnull;
 
-    /// <summary>
-    ///     Retrieve the total number of persisted rows in the database that match this
-    ///     query. Useful for server side paging.
-    /// </summary>
-    /// <param name="stats"></param>
-    /// <returns></returns>
-    IMartenQueryable<T> Stats(out QueryStatistics stats);
-
-
 }

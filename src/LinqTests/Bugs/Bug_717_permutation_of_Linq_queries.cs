@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Marten;
 using Marten.Linq;
 using Marten.Testing.Harness;
 

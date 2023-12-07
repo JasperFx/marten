@@ -23,7 +23,7 @@ internal class BatchedQueryable<T>: IBatchedQueryable<T> where T : class
 
     public IBatchedQueryable<T> Stats(out QueryStatistics stats)
     {
-        Inner = Inner.Stats(out stats);
+        Inner = Inner.As<IMartenQueryable<T>>().Stats(out stats).As<IMartenQueryable<T>>();
         return this;
     }
 
