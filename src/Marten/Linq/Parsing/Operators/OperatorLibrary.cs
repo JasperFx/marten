@@ -26,7 +26,8 @@ internal class OperatorLibrary
         Add<SelectOperator>();
         Add<AnyOperator>();
         Add<DistinctOperator>();
-        Add<IncludeOperator>();
+        Add<IncludeOperator>(); // TODO -- is this necessary?
+        Add<IncludePlanOperator>();
 
         Add<OrderBySqlOperator>();
         Add<ThenBySqlOperator>();

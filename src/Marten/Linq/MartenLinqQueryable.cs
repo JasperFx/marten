@@ -5,9 +5,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
@@ -163,12 +165,13 @@ internal class MartenLinqQueryable<T>: IOrderedQueryable<T>, IMartenQueryable<T>
         return conn.ExplainQuery(Session.Serializer, command, configureExplain)!;
     }
 
+
+
     public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback)
         where TInclude : notnull
     {
         var include = BuildInclude(idSource, callback);
-        MartenProvider.AllIncludes.Add(include);
-        return this;
+        return this.IncludePlan(include);
     }
 
     public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list)
@@ -181,8 +184,7 @@ internal class MartenLinqQueryable<T>: IOrderedQueryable<T>, IMartenQueryable<T>
         IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey : notnull
     {
         var include = BuildInclude(idSource, dictionary);
-        MartenProvider.AllIncludes.Add(include);
-        return this;
+        return this.IncludePlan(include);
     }
 
     public IMartenQueryable<T> Stats(out QueryStatistics stats)

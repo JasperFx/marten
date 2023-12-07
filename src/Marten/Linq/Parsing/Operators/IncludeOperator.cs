@@ -17,3 +17,21 @@ internal class IncludeOperator: LinqOperator
         usage.IncludeExpressions.Add(expression);
     }
 }
+
+internal class IncludePlanOperator: LinqOperator
+{
+    public IncludePlanOperator(): base("IncludePlan")
+    {
+    }
+
+    public override void Apply(ILinqQuery query, MethodCallExpression expression)
+    {
+        // Should be IMartenQueryable<T>
+        // var elementType = (expression.Object ?? expression.Arguments[0]).Type.GetGenericArguments()[0];
+        //
+        // var usage = query.CollectionUsageFor(elementType);
+        // usage.IncludeExpressions.Add(expression);
+
+        // TODO -- do something here!
+    }
+}
