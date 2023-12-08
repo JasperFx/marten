@@ -1,8 +1,4 @@
 using System.Linq;
-using JasperFx.Core;
-using Marten.Internal.Storage;
-using Marten.Linq.Includes;
-using Marten.Linq.Members;
 using Marten.Linq.SqlGeneration;
 
 namespace Marten.Linq.Parsing;
@@ -33,38 +29,10 @@ internal partial class LinqQueryParser
             _collectionUsages.Last().SingleValueMode = ValueMode;
         }
 
-        var statement = top.BuildTopStatement(Session, collection, documentStorage);
+        var statement = top.BuildTopStatement(Session, collection, documentStorage, _provider.Statistics);
         var selectionStatement = statement.SelectorStatement();
 
-
-        parseIncludeExpressions(top, collection);
-
-        if (_provider.AllIncludes.Any())
-        {
-            var inner = statement.Top();
-
-            if (inner is SelectorStatement { SelectClause: IDocumentStorage storage } select)
-            {
-                select.SelectClause = storage.SelectClauseWithDuplicatedFields;
-            }
-
-            var temp = new TemporaryTableStatement(inner, Session);
-            foreach (var include in _provider.AllIncludes) include.AppendStatement(temp, Session);
-
-            temp.AddToEnd(new PassthroughSelectStatement(temp.ExportName, selectionStatement.SelectClause));
-
-
-            // Deal with query statistics
-            if (_provider.Statistics != null)
-            {
-                selectionStatement.SelectClause = selectionStatement.SelectClause.UseStatistics(_provider.Statistics);
-            }
-
-            return new StatementQuery(selectionStatement, temp);
-        }
-
-
-        // Deal with query statistics
+        // Deal with query statistics at the last minute
         if (_provider.Statistics != null)
         {
             selectionStatement.SelectClause = selectionStatement.SelectClause.UseStatistics(_provider.Statistics);
@@ -72,20 +40,6 @@ internal partial class LinqQueryParser
 
         return new StatementQuery(selectionStatement, selectionStatement.Top());
     }
-
-    private void parseIncludeExpressions(CollectionUsage top, IQueryableMemberCollection collection)
-    {
-        if (_hasParsedIncludes)
-        {
-            return;
-        }
-
-        _hasParsedIncludes = true;
-
-        top.ParseIncludes(collection, Session);
-        _provider.AllIncludes.AddRange(top.Includes);
-    }
-
 
     internal record struct StatementQuery(SelectorStatement MainSelector, Statement Top);
 }

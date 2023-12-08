@@ -30,9 +30,6 @@ internal class MartenLinqQueryProvider: IQueryProvider
 
     internal QueryStatistics Statistics { get; set; }
 
-    [Obsolete("Try to move to CollectionUsage later!")]
-    internal IList<IIncludePlan> AllIncludes { get; } = new List<IIncludePlan>();
-
     public IQueryable CreateQuery(Expression expression)
     {
         throw new NotSupportedException();
