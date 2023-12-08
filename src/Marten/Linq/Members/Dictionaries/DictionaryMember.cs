@@ -94,8 +94,8 @@ internal class DictionaryMember<TKey, TValue>: QueryableMember, IComparableMembe
 
     string ICollectionMember.ArrayLocator => throw new NotImplementedException();
 
-    SelectorStatement ICollectionMember.BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
-        SelectorStatement parentStatement)
+    Statement ICollectionMember.BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
+        SelectorStatement parentStatement, QueryStatistics statistics)
     {
         throw new BadLinqExpressionException(
             "Sorry, Marten can not (yet) explode dictionary pairs in a LINQ SelectMany() expression, you will have to do that in memory");
