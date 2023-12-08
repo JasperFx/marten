@@ -196,11 +196,6 @@ internal class LinqQueryParser: ExpressionVisitor, ILinqQuery
         var statement = top.BuildTopStatement(Session, collection, documentStorage);
         var selectionStatement = statement.SelectorStatement();
 
-        // Deal with query statistics
-        if (_provider.Statistics != null)
-        {
-            selectionStatement.SelectClause = selectionStatement.SelectClause.UseStatistics(_provider.Statistics);
-        }
 
         parseIncludeExpressions(top, collection);
 
@@ -218,7 +213,21 @@ internal class LinqQueryParser: ExpressionVisitor, ILinqQuery
 
             temp.AddToEnd(new PassthroughSelectStatement(temp.ExportName, selectionStatement.SelectClause));
 
+
+            // Deal with query statistics
+            if (_provider.Statistics != null)
+            {
+                selectionStatement.SelectClause = selectionStatement.SelectClause.UseStatistics(_provider.Statistics);
+            }
+
             return new StatementQuery(selectionStatement, temp);
+        }
+
+
+        // Deal with query statistics
+        if (_provider.Statistics != null)
+        {
+            selectionStatement.SelectClause = selectionStatement.SelectClause.UseStatistics(_provider.Statistics);
         }
 
         return new StatementQuery(selectionStatement, selectionStatement.Top());
