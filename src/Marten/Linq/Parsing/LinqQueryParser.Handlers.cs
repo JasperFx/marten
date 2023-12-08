@@ -38,10 +38,12 @@ internal partial class LinqQueryParser
 
         var handler = buildHandlerForCurrentStatement<TResult>(statements.Top, statements.MainSelector);
 
-        if (_provider.AllIncludes.Any())
+        var includes = _collectionUsages.SelectMany(x => x.Includes).ToArray();
+
+        if (includes.Any())
         {
             return new IncludeQueryHandler<TResult>(handler,
-                _provider.AllIncludes.Select(x => x.BuildReader(Session)).ToArray());
+                includes.Select(x => x.BuildReader(Session)).ToArray());
         }
 
         return handler;
@@ -71,10 +73,12 @@ internal partial class LinqQueryParser
             statements.MainSelector.SelectClause.BuildHandler<IReadOnlyList<T>>(Session, statements.Top,
                 statements.MainSelector);
 
-        if (_provider.AllIncludes.Any())
+        var includes = _collectionUsages.SelectMany(x => x.Includes).ToArray();
+
+        if (includes.Any())
         {
             return new IncludeQueryHandler<IReadOnlyList<T>>(handler,
-                _provider.AllIncludes.Select(x => x.BuildReader(Session)).ToArray());
+                includes.Select(x => x.BuildReader(Session)).ToArray());
         }
 
         return handler;

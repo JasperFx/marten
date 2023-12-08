@@ -82,9 +82,15 @@ internal partial class LinqQueryParser: ExpressionVisitor, ILinqQuery
         if (_collectionUsages.Any())
         {
             yield return _collectionUsages[0].ElementType;
-        }
 
-        foreach (var plan in _provider.AllIncludes) yield return plan.DocumentType;
+            foreach (var collectionUsage in _collectionUsages)
+            {
+                foreach (var include in collectionUsage.Includes)
+                {
+                    yield return include.DocumentType;
+                }
+            }
+        }
     }
 
     protected override Expression VisitMethodCall(MethodCallExpression node)

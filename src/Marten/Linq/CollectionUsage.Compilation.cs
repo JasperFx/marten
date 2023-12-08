@@ -1,16 +1,15 @@
 #nullable enable
 
 using System;
-using System.Diagnostics;
 using System.Linq;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Storage;
+using Marten.Linq.Includes;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration;
-using Marten.Linq.SqlGeneration.Filters;
 
 namespace Marten.Linq;
 
@@ -19,17 +18,51 @@ public partial class CollectionUsage
     private bool _hasCompiledMany;
 
     public Statement BuildTopStatement(IMartenSession session, IQueryableMemberCollection collection,
-        IDocumentStorage storage)
+        IDocumentStorage storage, QueryStatistics? statistics)
     {
+        Statement top;
+
         var statement = new SelectorStatement
         {
             SelectClause = storage, Limit = _limit, Offset = _offset, IsDistinct = IsDistinct
         };
 
+        top = statement;
+
         foreach (var ordering in OrderingExpressions)
+        {
             statement.Ordering.Expressions.Add(ordering.BuildExpression(collection));
+        }
 
         statement.ParseWhereClause(WhereExpressions, session, collection, storage);
+
+        // TODO -- cut in here to make the includes
+        ParseIncludes(collection, session);
+        if (Includes.Any())
+        {
+            var inner = statement.Top();
+            var selectionStatement = inner.SelectorStatement();
+
+            if (inner is SelectorStatement { SelectClause: IDocumentStorage } select)
+            {
+                select.SelectClause = storage.SelectClauseWithDuplicatedFields;
+            }
+
+            // QueryStatistics has to be applied to the inner, selector statement
+            if (statistics != null)
+            {
+                var innerSelect = inner.SelectorStatement();
+                innerSelect.SelectClause = innerSelect.SelectClause.UseStatistics(statistics);
+            }
+
+            var temp = new TemporaryTableStatement(inner, session);
+            foreach (var include in Includes) include.AppendStatement(temp, session);
+
+            temp.AddToEnd(new PassthroughSelectStatement(temp.ExportName, selectionStatement.SelectClause));
+
+            top = temp;
+            statement = top.SelectorStatement();
+        }
 
         if (SelectExpression != null)
         {
@@ -46,7 +79,13 @@ public partial class CollectionUsage
             }
         }
 
-        ProcessSingleValueModeIfAny(statement, session);
+        // Deal with query statistics at the last minute
+        if (statistics != null)
+        {
+            statement.SelectClause = statement.SelectClause.UseStatistics(statistics);
+        }
+
+        ProcessSingleValueModeIfAny(statement.SelectorStatement(), session);
 
         compileNext(session, collection, statement);
 

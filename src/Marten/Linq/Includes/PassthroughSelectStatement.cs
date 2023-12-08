@@ -3,13 +3,14 @@ using Weasel.Postgresql;
 
 namespace Marten.Linq.Includes;
 
-internal class PassthroughSelectStatement: Statement
+internal class PassthroughSelectStatement: SelectorStatement
 {
     private readonly ISelectClause _innerSelectClause;
 
     public PassthroughSelectStatement(string tableName, ISelectClause innerSelectClause)
     {
         _innerSelectClause = innerSelectClause;
+        SelectClause = _innerSelectClause;
         TableName = tableName;
     }
 
