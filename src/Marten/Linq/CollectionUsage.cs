@@ -27,7 +27,7 @@ public partial class CollectionUsage
     public bool IsDistinct { get; set; }
     public CollectionUsage Inner { get; internal set; }
     public Expression SelectMany { get; set; }
-    public List<MethodCallExpression> IncludeExpressions { get; } = new();
+
 
     public void WriteLimit(int limit)
     {

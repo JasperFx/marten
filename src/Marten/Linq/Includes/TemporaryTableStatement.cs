@@ -4,7 +4,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Linq.Includes;
 
-internal class TemporaryTableStatement: Statement
+public class TemporaryTableStatement: Statement
 {
     public TemporaryTableStatement(Statement inner, IMartenSession session)
     {

@@ -1,13 +1,12 @@
-using System;
-using System.Diagnostics;
+using System.Linq;
 using System.Linq.Expressions;
+using Marten.Linq.Includes;
 
 namespace Marten.Linq.Parsing.Operators;
 
-// This exists strictly for compiled queries. This is not shocking!!!
-internal class IncludeOperator: LinqOperator
+internal class IncludePlanOperator: LinqOperator
 {
-    public IncludeOperator(): base("Include")
+    public IncludePlanOperator(): base("IncludePlan")
     {
     }
 
@@ -17,6 +16,7 @@ internal class IncludeOperator: LinqOperator
         var elementType = (expression.Object ?? expression.Arguments[0]).Type.GetGenericArguments()[0];
 
         var usage = query.CollectionUsageFor(elementType);
-        usage.IncludeExpressions.Add(expression);
+
+        usage.Includes.Add((IIncludePlan)expression.Arguments.Last().ReduceToConstant().Value);
     }
 }
