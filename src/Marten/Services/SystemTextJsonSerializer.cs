@@ -136,7 +136,11 @@ public class SystemTextJsonSerializer: ISerializer
             var jsonNamingPolicy = _casing switch
             {
                 Casing.CamelCase => JsonNamingPolicy.CamelCase,
+#if NET8_0
+                Casing.SnakeCase => JsonNamingPolicy.SnakeCaseLower,
+#else
                 Casing.SnakeCase => new JsonSnakeCaseNamingPolicy(),
+#endif
                 _ => null
             };
 
