@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -232,46 +233,8 @@ internal class LinqQueryParser: ExpressionVisitor, ILinqQuery
 
         _hasParsedIncludes = true;
 
-        foreach (var expression in top.IncludeExpressions)
-        {
-            var member = expression.Arguments.Count == 3
-                ? collection.MemberFor(expression.Arguments[1])
-                : collection.MemberFor(expression.Arguments[0]);
-            var receiver = expression.Arguments.Last().Value();
-
-            var genericArguments = receiver.GetType().GetGenericArguments();
-            if (receiver.GetType().Closes(typeof(IList<>)))
-            {
-                var includedType = genericArguments[0];
-                var storage = Session.StorageFor(includedType);
-
-                var type = typeof(ListIncludePlan<>).MakeGenericType(includedType);
-                var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver);
-
-                _provider.AllIncludes.Add(plan);
-            }
-            else if (receiver.GetType().Closes(typeof(Action<>)))
-            {
-                var includedType = genericArguments[0];
-                var storage = Session.StorageFor(includedType);
-
-                var type = typeof(IncludePlan<>).MakeGenericType(includedType);
-                var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver);
-
-                _provider.AllIncludes.Add(plan);
-            }
-            else
-            {
-                var idType = genericArguments[0];
-                var includedType = genericArguments[1];
-                var storage = Session.StorageFor(includedType);
-
-                var type = typeof(DictionaryIncludePlan<,>).MakeGenericType(includedType, idType);
-                var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver);
-
-                _provider.AllIncludes.Add(plan);
-            }
-        }
+        top.ParseIncludes(collection, Session);
+        _provider.AllIncludes.AddRange(top.Includes);
     }
 
     public void BuildDiagnosticCommand(FetchType fetchType, CommandBuilder sql)

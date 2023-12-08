@@ -756,9 +756,6 @@ public static class QueryableExtensions
 
     internal static IMartenQueryable<T> IncludePlan<T>(this IQueryable<T> queryable, IIncludePlan include)
     {
-        // TODO -- this should be temporary!
-        queryable.Provider.As<MartenLinqQueryProvider>().AllIncludes.Add(include);
-
         var method = IncludePlanMethod.MakeGenericMethod(typeof(T));
         var methodCallExpression = Expression.Call(null, method, queryable.Expression, Expression.Constant(include));
 

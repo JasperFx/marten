@@ -3,7 +3,7 @@ using Marten.Internal;
 
 namespace Marten.Linq.Includes;
 
-internal interface IIncludePlan
+public interface IIncludePlan
 {
     Type DocumentType { get; }
     IIncludeReader BuildReader(IMartenSession session);
