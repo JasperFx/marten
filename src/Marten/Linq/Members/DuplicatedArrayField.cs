@@ -53,8 +53,8 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
     public string ArrayLocator => TypedLocator;
     public IQueryableMember Element { get; }
 
-    public SelectorStatement BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
-        SelectorStatement parentStatement)
+    public Statement BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
+        SelectorStatement parentStatement, QueryStatistics statistics)
     {
         var statement = ElementType == typeof(string)
             ? new ScalarSelectManyStringStatement(parentStatement)

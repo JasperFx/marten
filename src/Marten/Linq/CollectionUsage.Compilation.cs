@@ -36,7 +36,6 @@ public partial class CollectionUsage
 
         statement.ParseWhereClause(WhereExpressions, session, collection, storage);
 
-        // TODO -- cut in here to make the includes
         ParseIncludes(collection, session);
         if (Includes.Any())
         {
@@ -87,7 +86,7 @@ public partial class CollectionUsage
 
         ProcessSingleValueModeIfAny(statement.SelectorStatement(), session);
 
-        compileNext(session, collection, statement);
+        statement = compileNext(session, collection, statement, statistics).SelectorStatement();
 
         if (IsDistinct)
         {
@@ -105,14 +104,14 @@ public partial class CollectionUsage
 
 
     public Statement BuildStatement(IMartenSession session, IQueryableMemberCollection collection,
-        ISelectClause selectClause)
+        ISelectClause selectClause, QueryStatistics? statistics)
     {
         var statement = new SelectorStatement
         {
             SelectClause = selectClause ?? throw new ArgumentNullException(nameof(selectClause))
         };
 
-        ConfigureStatement(session, collection, statement);
+        ConfigureStatement(session, collection, statement, statistics);
 
         if (IsDistinct)
         {
@@ -123,7 +122,7 @@ public partial class CollectionUsage
     }
 
     internal Statement ConfigureStatement(IMartenSession session, IQueryableMemberCollection collection,
-        SelectorStatement statement)
+        SelectorStatement statement, QueryStatistics? statistics)
     {
         statement.Limit = _limit;
         statement.Offset = _offset;
@@ -151,14 +150,14 @@ public partial class CollectionUsage
 
         ProcessSingleValueModeIfAny(statement, session);
 
-        compileNext(session, collection, statement);
+        compileNext(session, collection, statement, statistics);
 
         return statement.Top();
     }
 
 
-    private void compileNext(IMartenSession session, IQueryableMemberCollection collection,
-        SelectorStatement statement)
+    private Statement compileNext(IMartenSession session, IQueryableMemberCollection collection,
+        SelectorStatement statement, QueryStatistics? statistics)
     {
         if (SelectMany != null)
         {
@@ -186,26 +185,28 @@ public partial class CollectionUsage
                 else
                 {
                     var next = new CollectionUsage(_options, collectionMember.MemberType);
-                    next.CompileSelectMany(session, this, selection, collectionMember);
+                    return next.CompileSelectMany(session, this, selection, collectionMember, statistics);
                 }
             }
             else
             {
-                Inner.CompileSelectMany(session, this, selection, collectionMember);
+                return Inner.CompileSelectMany(session, this, selection, collectionMember, statistics);
             }
         }
         else
         {
-            Inner?.CompileAsChild(this, statement);
+            Inner?.CompileAsChild(this);
         }
+
+        return statement;
     }
 
-    public void CompileSelectMany(IMartenSession session, CollectionUsage parent,
-        SelectorStatement parentStatement, ICollectionMember collectionMember)
+    public Statement CompileSelectMany(IMartenSession session, CollectionUsage parent,
+        SelectorStatement parentStatement, ICollectionMember collectionMember, QueryStatistics? statistics)
     {
         if (_hasCompiledMany)
         {
-            return;
+            return parentStatement;
         }
 
         _hasCompiledMany = true;
@@ -218,31 +219,57 @@ public partial class CollectionUsage
 
 
         // THINK THIS IS TOO SOON. MUCH OF THE LOGIC NEEDS TO GO IN THIS INSTEAD!!!
-        var childStatement = collectionMember.BuildSelectManyStatement(this, session, parentStatement);
+        var childStatement = collectionMember.BuildSelectManyStatement(this, session, parentStatement, statistics);
+        var childSelector = childStatement.SelectorStatement();
+
+        // ParseIncludes(collection, session);
+        // if (Includes.Any())
+        // {
+        //     var inner = statement.Top();
+        //     var selectionStatement = inner.SelectorStatement();
+        //
+        //     if (inner is SelectorStatement { SelectClause: IDocumentStorage } select)
+        //     {
+        //         select.SelectClause = storage.SelectClauseWithDuplicatedFields;
+        //     }
+        //
+        //     // QueryStatistics has to be applied to the inner, selector statement
+        //     if (statistics != null)
+        //     {
+        //         var innerSelect = inner.SelectorStatement();
+        //         innerSelect.SelectClause = innerSelect.SelectClause.UseStatistics(statistics);
+        //     }
+        //
+        //     var temp = new TemporaryTableStatement(inner, session);
+        //     foreach (var include in Includes) include.AppendStatement(temp, session);
+        //
+        //     temp.AddToEnd(new PassthroughSelectStatement(temp.ExportName, selectionStatement.SelectClause));
+        //
+        //     top = temp;
+        //     statement = top.SelectorStatement();
+        // }
 
         if (IsDistinct)
         {
-            if (childStatement.SelectClause is IScalarSelectClause c)
+            if (childSelector.SelectClause is IScalarSelectClause c)
             {
                 c.ApplyOperator("DISTINCT");
                 parentStatement.AddToEnd(childStatement.Top());
             }
-            else if (childStatement.SelectClause is ICountClause count)
+            else if (childSelector.SelectClause is ICountClause count)
             {
                 if (collectionMember is IQueryableMemberCollection members)
                 {
                     // It places itself at the back in this constructor function
                     var distinct = new DistinctSelectionStatement(parentStatement, count, session);
-                    compileNext(session, members, distinct.SelectorStatement());
+                    compileNext(session, members, distinct.SelectorStatement(), statistics);
                 }
                 else
                 {
                     throw new BadLinqExpressionException("See https://github.com/JasperFx/marten/issues/2704");
                 }
 
-
-
-                return;
+                return parentStatement;
             }
         }
         else
@@ -250,10 +277,10 @@ public partial class CollectionUsage
             parentStatement.AddToEnd(childStatement.Top());
         }
 
-        compileNext(session, collectionMember as IQueryableMemberCollection, childStatement);
+        return compileNext(session, collectionMember as IQueryableMemberCollection, childSelector, statistics);
     }
 
-    public void CompileAsChild(CollectionUsage parent, SelectorStatement parentStatement)
+    public void CompileAsChild(CollectionUsage parent)
     {
         if (ElementType.IsSimple() || ElementType == typeof(Guid) || ElementType == typeof(Guid?))
         {

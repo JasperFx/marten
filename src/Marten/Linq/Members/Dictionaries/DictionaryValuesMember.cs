@@ -56,8 +56,8 @@ internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IVal
         return Element;
     }
 
-    public SelectorStatement BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
-        SelectorStatement parentStatement)
+    public Statement BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
+        SelectorStatement parentStatement, QueryStatistics statistics)
     {
         var statement = ElementType == typeof(string)
             ? new ScalarSelectManyStringStatement(parentStatement)
@@ -72,11 +72,11 @@ internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IVal
             var selectorStatement = new SelectorStatement { SelectClause = statement.SelectClause.As<IScalarSelectClause>().CloneToOtherTable(statement.ExportName) };
             statement.AddToEnd(selectorStatement);
 
-            collectionUsage.ConfigureStatement(session, SelectManyUsage, selectorStatement);
+            collectionUsage.ConfigureStatement(session, SelectManyUsage, selectorStatement, statistics);
             return selectorStatement;
         }
 
-        collectionUsage.ConfigureStatement(session, SelectManyUsage, statement);
+        collectionUsage.ConfigureStatement(session, SelectManyUsage, statement, statistics);
 
         return statement;
     }

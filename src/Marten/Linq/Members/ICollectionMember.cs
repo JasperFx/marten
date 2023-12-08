@@ -17,8 +17,8 @@ public interface ICollectionMember: IQueryableMember
 
     string ArrayLocator { get;  }
 
-    SelectorStatement BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
-        SelectorStatement parentStatement);
+    Statement BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
+        SelectorStatement parentStatement, QueryStatistics statistics);
 
     ISelectClause BuildSelectClauseForExplosion(string fromObject);
     ISqlFragment ParseWhereForAny(Expression body, IReadOnlyStoreOptions options);
