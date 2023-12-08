@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 
+#if NET6_0 || NET7_0
 namespace Marten.Services.Json;
 
 // OD: Should not be needed after .NET 6.0 (based on https://github.com/dotnet/runtime/issues/782#issuecomment-673029718)
@@ -83,3 +84,4 @@ internal sealed class JsonSnakeCaseNamingPolicy: JsonNamingPolicy
         return builder.ToString();
     }
 }
+#endif
