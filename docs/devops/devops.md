@@ -216,16 +216,16 @@ In this section, we'll discuss setting up GitHub Actions for building and testin
 
 4. **Report Generation**: Optionally, add steps to generate and publish test reports, which can be useful for analyzing test failures and maintaining test quality.
 
-```dockerfile
-      - uses: dorny/test-reporter@v1
-        if: ${{ env.SKIP_TESTS == 'false' && (success() || failure()) }}
-        with:
-          name: Testreport
-          path: "**/*.trx"
-          reporter: dotnet-trx
-          list-suites: 'failed'
-          list-tests: 'failed'
-```
+    ```dockerfile
+        - uses: dorny/test-reporter@v1
+            if: ${{ env.SKIP_TESTS == 'false' && (success() || failure()) }}
+            with:
+                name: Testreport
+                path: "**/*.trx"
+                reporter: dotnet-trx
+                list-suites: 'failed'
+                list-tests: 'failed'
+    ```
 
 5. **Integration with Other Tools**: If you're using tools like SonarQube for code quality analysis or Docker for containerization, integrate these into your workflow.
 
@@ -327,7 +327,8 @@ Octopus Deploy is a deployment automation tool that helps in deploying applicati
 - **Step to Deploy to EKS**: Add a step in Octopus to deploy the application to Amazon EKS. This step will reference the Docker image of your application.
 - **Kubernetes YAML**: Prepare the Kubernetes deployment YAML file. This file should define the deployment, service, and any other Kubernetes resources required for your application.
   
-  For example, the deployment part of the YAML may look like:
+For example, the deployment part of the YAML may look like:
+
 ```yaml
   apiVersion: apps/v1
   kind: Deployment
