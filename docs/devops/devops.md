@@ -328,7 +328,7 @@ Octopus Deploy is a deployment automation tool that helps in deploying applicati
 - **Kubernetes YAML**: Prepare the Kubernetes deployment YAML file. This file should define the deployment, service, and any other Kubernetes resources required for your application.
   
   For example, the deployment part of the YAML may look like:
-  ```yaml
+```yaml
   apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -354,7 +354,7 @@ Octopus Deploy is a deployment automation tool that helps in deploying applicati
           image: myapp/application:${TAG} # TAG is dynamically replaced by Octopus
           ports:
           - containerPort: 80
-  ```
+```
 
 ### 3. Using Migrations as an Init Container
 
