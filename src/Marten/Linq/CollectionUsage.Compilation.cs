@@ -88,6 +88,7 @@ public partial class CollectionUsage
 
         statement = compileNext(session, collection, statement, statistics).SelectorStatement();
 
+        // THIS CAN BE A PROBLEM IF IT'S DONE TOO SOON
         if (IsDistinct)
         {
             if (SelectExpression != null && OrderingExpressions.Any(x => x.IsTransformed))
@@ -103,7 +104,7 @@ public partial class CollectionUsage
     }
 
 
-    public Statement BuildStatement(IMartenSession session, IQueryableMemberCollection collection,
+    public Statement BuildSelectManyStatement(IMartenSession session, IQueryableMemberCollection collection,
         ISelectClause selectClause, QueryStatistics? statistics)
     {
         var statement = new SelectorStatement
@@ -111,7 +112,7 @@ public partial class CollectionUsage
             SelectClause = selectClause ?? throw new ArgumentNullException(nameof(selectClause))
         };
 
-        ConfigureStatement(session, collection, statement, statistics);
+        ConfigureSelectManyStatement(session, collection, statement, statistics);
 
         if (IsDistinct)
         {
@@ -121,7 +122,7 @@ public partial class CollectionUsage
         return statement;
     }
 
-    internal Statement ConfigureStatement(IMartenSession session, IQueryableMemberCollection collection,
+    internal Statement ConfigureSelectManyStatement(IMartenSession session, IQueryableMemberCollection collection,
         SelectorStatement statement, QueryStatistics? statistics)
     {
         statement.Limit = _limit;
@@ -147,6 +148,8 @@ public partial class CollectionUsage
                 statement.Offset ??= Inner._offset;
             }
         }
+
+        // Add Includes here!
 
         ProcessSingleValueModeIfAny(statement, session);
 
