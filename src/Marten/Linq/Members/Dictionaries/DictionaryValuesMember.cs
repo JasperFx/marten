@@ -72,11 +72,11 @@ internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IVal
             var selectorStatement = new SelectorStatement { SelectClause = statement.SelectClause.As<IScalarSelectClause>().CloneToOtherTable(statement.ExportName) };
             statement.AddToEnd(selectorStatement);
 
-            collectionUsage.ConfigureStatement(session, SelectManyUsage, selectorStatement, statistics);
+            collectionUsage.ConfigureSelectManyStatement(session, SelectManyUsage, selectorStatement, statistics);
             return selectorStatement;
         }
 
-        collectionUsage.ConfigureStatement(session, SelectManyUsage, statement, statistics);
+        collectionUsage.ConfigureSelectManyStatement(session, SelectManyUsage, statement, statistics);
 
         return statement;
     }

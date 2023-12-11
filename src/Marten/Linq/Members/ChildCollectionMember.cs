@@ -66,7 +66,7 @@ internal class ChildCollectionMember: QueryableMember, ICollectionMember, IQuery
     {
         var selectClause =
             typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(parentStatement.ExportName, ElementType);
-        return collectionUsage.BuildStatement(session, this, selectClause, statistics);
+        return collectionUsage.BuildSelectManyStatement(session, this, selectClause, statistics);
     }
 
     public ISelectClause BuildSelectClauseForExplosion(string fromObject)
