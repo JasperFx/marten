@@ -61,12 +61,12 @@ internal class ChildCollectionMember: QueryableMember, ICollectionMember, IQuery
 
     public string ExplodeLocator { get; }
 
-    public Statement BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
+    public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
         SelectorStatement parentStatement, QueryStatistics statistics)
     {
         var selectClause =
             typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(parentStatement.ExportName, ElementType);
-        return collectionUsage.BuildSelectManyStatement(session, this, selectClause, statistics);
+        return collectionUsage.BuildSelectManyStatement(session, this, selectClause, statistics, parentStatement);
     }
 
     public ISelectClause BuildSelectClauseForExplosion(string fromObject)

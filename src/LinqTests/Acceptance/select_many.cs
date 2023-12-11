@@ -59,6 +59,7 @@ public class select_many : IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
+            query.Logger = new TestOutputMartenLogger(_output);
             query
                 .Query<ProductWithList>()
                 .SelectMany(x => x.Tags)
@@ -83,6 +84,7 @@ public class select_many : IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
+            query.Logger = new TestOutputMartenLogger(_output);
             query
                 .Query<ProductWithList>()
                 .SelectMany(x => x.Tags)
@@ -108,6 +110,7 @@ public class select_many : IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
+            query.Logger = new TestOutputMartenLogger(_output);
             var distinct = query.Query<ProductWithList>().SelectMany(x => x.Tags).Distinct().ToList();
 
             distinct.OrderBy(x => x).ShouldHaveTheSameElementsAs("a", "b", "c", "d", "e", "f");

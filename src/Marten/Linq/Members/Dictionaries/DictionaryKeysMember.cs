@@ -48,13 +48,15 @@ internal class DictionaryKeysMember: QueryableMember, ICollectionMember, IValueC
 
     public override string LocatorForIncludedDocumentId { get; }
 
-    public Statement BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
+    public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
         SelectorStatement parentStatement, QueryStatistics statistics)
     {
         var statement = ElementType == typeof(string)
             ? new ScalarSelectManyStringStatement(parentStatement)
             : typeof(ScalarSelectManyStatement<>).CloseAndBuildAs<SelectorStatement>(parentStatement,
                 session.Serializer, ElementType);
+
+        parentStatement.AddToEnd(statement);
 
         // If the collection has any Where() or OrderBy() usages, you'll need an extra statement
         if (collectionUsage.OrderingExpressions.Any() || collectionUsage.WhereExpressions.Any())
@@ -64,13 +66,11 @@ internal class DictionaryKeysMember: QueryableMember, ICollectionMember, IValueC
             var selectorStatement = new SelectorStatement { SelectClause = statement.SelectClause.As<IScalarSelectClause>().CloneToOtherTable(statement.ExportName) };
             statement.AddToEnd(selectorStatement);
 
-            collectionUsage.ConfigureSelectManyStatement(session, SelectManyUsage, selectorStatement, statistics);
-            return selectorStatement;
+            return collectionUsage.ConfigureSelectManyStatement(session, SelectManyUsage, selectorStatement, statistics).SelectorStatement();
         }
 
-        collectionUsage.ConfigureSelectManyStatement(session, SelectManyUsage, statement, statistics);
+        return collectionUsage.ConfigureSelectManyStatement(session, SelectManyUsage, statement, statistics).SelectorStatement();
 
-        return statement;
     }
 
     public ISelectClause BuildSelectClauseForExplosion(string fromObject)

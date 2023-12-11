@@ -84,7 +84,7 @@ public partial class CollectionUsage
             statement.SelectClause = statement.SelectClause.UseStatistics(statistics);
         }
 
-        ProcessSingleValueModeIfAny(statement.SelectorStatement(), session);
+        ProcessSingleValueModeIfAny(statement.SelectorStatement(), session, collection, statistics);
 
         statement = compileNext(session, collection, statement, statistics).SelectorStatement();
 
@@ -105,14 +105,16 @@ public partial class CollectionUsage
 
 
     public Statement BuildSelectManyStatement(IMartenSession session, IQueryableMemberCollection collection,
-        ISelectClause selectClause, QueryStatistics? statistics)
+        ISelectClause selectClause, QueryStatistics? statistics, SelectorStatement parentStatement)
     {
         var statement = new SelectorStatement
         {
             SelectClause = selectClause ?? throw new ArgumentNullException(nameof(selectClause))
         };
 
-        ConfigureSelectManyStatement(session, collection, statement, statistics);
+        parentStatement.AddToEnd(statement);
+
+        statement = ConfigureSelectManyStatement(session, collection, statement, statistics).SelectorStatement();
 
         if (IsDistinct)
         {
@@ -125,6 +127,8 @@ public partial class CollectionUsage
     internal Statement ConfigureSelectManyStatement(IMartenSession session, IQueryableMemberCollection collection,
         SelectorStatement statement, QueryStatistics? statistics)
     {
+        Statement top = statement.Top();
+
         statement.Limit = _limit;
         statement.Offset = _offset;
         statement.IsDistinct = IsDistinct;
@@ -133,6 +137,28 @@ public partial class CollectionUsage
             statement.Ordering.Expressions.Add(ordering.BuildExpression(collection));
 
         statement.ParseWhereClause(WhereExpressions, session, collection);
+
+        ParseIncludes(collection, session);
+        if (Includes.Any())
+        {
+            var inner = statement.Top();
+            var selectionStatement = inner.SelectorStatement();
+
+            // QueryStatistics has to be applied to the inner, selector statement
+            if (statistics != null)
+            {
+                var innerSelect = inner.SelectorStatement();
+                innerSelect.SelectClause = innerSelect.SelectClause.UseStatistics(statistics);
+            }
+
+            var temp = new TemporaryTableStatement(inner, session);
+            foreach (var include in Includes) include.AppendStatement(temp, session);
+
+            temp.AddToEnd(new PassthroughSelectStatement(temp.ExportName, selectionStatement.SelectClause));
+
+            top = temp;
+            statement = top.SelectorStatement();
+        }
 
         if (SelectExpression != null)
         {
@@ -149,13 +175,11 @@ public partial class CollectionUsage
             }
         }
 
-        // Add Includes here!
-
-        ProcessSingleValueModeIfAny(statement, session);
+        ProcessSingleValueModeIfAny(statement, session, collection, statistics);
 
         compileNext(session, collection, statement, statistics);
 
-        return statement.Top();
+        return top;
     }
 
 
@@ -222,63 +246,31 @@ public partial class CollectionUsage
 
 
         // THINK THIS IS TOO SOON. MUCH OF THE LOGIC NEEDS TO GO IN THIS INSTEAD!!!
-        var childStatement = collectionMember.BuildSelectManyStatement(this, session, parentStatement, statistics);
+        var childStatement = collectionMember.AttachSelectManyStatement(this, session, parentStatement, statistics);
         var childSelector = childStatement.SelectorStatement();
 
-        // ParseIncludes(collection, session);
-        // if (Includes.Any())
+        // if (IsDistinct)
         // {
-        //     var inner = statement.Top();
-        //     var selectionStatement = inner.SelectorStatement();
-        //
-        //     if (inner is SelectorStatement { SelectClause: IDocumentStorage } select)
+        //     if (childSelector.SelectClause is IScalarSelectClause c)
         //     {
-        //         select.SelectClause = storage.SelectClauseWithDuplicatedFields;
+        //         c.ApplyOperator("DISTINCT");
         //     }
-        //
-        //     // QueryStatistics has to be applied to the inner, selector statement
-        //     if (statistics != null)
+        //     else if (childSelector.SelectClause is ICountClause count)
         //     {
-        //         var innerSelect = inner.SelectorStatement();
-        //         innerSelect.SelectClause = innerSelect.SelectClause.UseStatistics(statistics);
+        //         if (collectionMember is IQueryableMemberCollection members)
+        //         {
+        //             // It places itself at the back in this constructor function
+        //             var distinct = new DistinctSelectionStatement(childSelector, count, session);
+        //             compileNext(session, members, distinct.SelectorStatement(), statistics);
+        //         }
+        //         else
+        //         {
+        //             throw new BadLinqExpressionException("See https://github.com/JasperFx/marten/issues/2704");
+        //         }
+        //
+        //         return childSelector.Top();
         //     }
-        //
-        //     var temp = new TemporaryTableStatement(inner, session);
-        //     foreach (var include in Includes) include.AppendStatement(temp, session);
-        //
-        //     temp.AddToEnd(new PassthroughSelectStatement(temp.ExportName, selectionStatement.SelectClause));
-        //
-        //     top = temp;
-        //     statement = top.SelectorStatement();
         // }
-
-        if (IsDistinct)
-        {
-            if (childSelector.SelectClause is IScalarSelectClause c)
-            {
-                c.ApplyOperator("DISTINCT");
-                parentStatement.AddToEnd(childStatement.Top());
-            }
-            else if (childSelector.SelectClause is ICountClause count)
-            {
-                if (collectionMember is IQueryableMemberCollection members)
-                {
-                    // It places itself at the back in this constructor function
-                    var distinct = new DistinctSelectionStatement(parentStatement, count, session);
-                    compileNext(session, members, distinct.SelectorStatement(), statistics);
-                }
-                else
-                {
-                    throw new BadLinqExpressionException("See https://github.com/JasperFx/marten/issues/2704");
-                }
-
-                return parentStatement;
-            }
-        }
-        else
-        {
-            parentStatement.AddToEnd(childStatement.Top());
-        }
 
         return compileNext(session, collectionMember as IQueryableMemberCollection, childSelector, statistics);
     }
@@ -294,7 +286,8 @@ public partial class CollectionUsage
         }
     }
 
-    internal void ProcessSingleValueModeIfAny(SelectorStatement statement, IMartenSession session)
+    internal void ProcessSingleValueModeIfAny(SelectorStatement statement, IMartenSession session,
+        IQueryableMemberCollection? members, QueryStatistics? statistics)
     {
         if (IsAny || SingleValueMode == Marten.Linq.Parsing.SingleValueMode.Any)
         {
@@ -343,12 +336,14 @@ public partial class CollectionUsage
                     if (statement.IsDistinct)
                     {
                         statement.ConvertToCommonTableExpression(session);
+                        statement.ApplyAggregateOperator("DISTINCT");
                         var count = new SelectorStatement
                         {
                             SelectClause = new CountClause<int>(statement.ExportName)
                         };
 
                         statement.AddToEnd(count);
+                        return;
                     }
 
                     statement.SelectClause = new CountClause<int>(statement.SelectClause.FromObject);
@@ -363,12 +358,14 @@ public partial class CollectionUsage
                     if (statement.IsDistinct)
                     {
                         statement.ConvertToCommonTableExpression(session);
+                        statement.ApplyAggregateOperator("DISTINCT");
                         var count = new SelectorStatement
                         {
                             SelectClause = new CountClause<long>(statement.ExportName)
                         };
 
                         statement.AddToEnd(count);
+                        return;
                     }
 
                     statement.SelectClause = new CountClause<long>(statement.SelectClause.FromObject);
@@ -392,6 +389,26 @@ public partial class CollectionUsage
 
                 default:
                     throw new NotImplementedException($"Whoa pardner, don't have this {SingleValueMode} yet!");
+            }
+        }
+        else if (statement.IsDistinct)
+        {
+            if (statement.SelectClause is IScalarSelectClause c)
+            {
+                c.ApplyOperator("DISTINCT");
+            }
+            else if (statement.SelectClause is ICountClause count)
+            {
+                if (members != null)
+                {
+                    // It places itself at the back in this constructor function
+                    var distinct = new DistinctSelectionStatement(statement, count, session);
+                    compileNext(session, members, distinct.SelectorStatement(), statistics);
+                }
+                else
+                {
+                    throw new BadLinqExpressionException("See https://github.com/JasperFx/marten/issues/2704");
+                }
             }
         }
     }

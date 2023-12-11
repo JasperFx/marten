@@ -53,7 +53,7 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
     public string ArrayLocator => TypedLocator;
     public IQueryableMember Element { get; }
 
-    public Statement BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
+    public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
         SelectorStatement parentStatement, QueryStatistics statistics)
     {
         var statement = ElementType == typeof(string)
@@ -61,7 +61,7 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
             : typeof(ScalarSelectManyStatement<>).CloseAndBuildAs<SelectorStatement>(parentStatement,
                 session.Serializer, ElementType);
 
-        collectionUsage.ProcessSingleValueModeIfAny(statement, session);
+        collectionUsage.ProcessSingleValueModeIfAny(statement, session, null, statistics);
 
         return statement;
     }
