@@ -56,7 +56,7 @@ internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IVal
         return Element;
     }
 
-    public Statement BuildSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
+    public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
         SelectorStatement parentStatement, QueryStatistics statistics)
     {
         var statement = ElementType == typeof(string)
@@ -67,18 +67,19 @@ internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IVal
         // If the collection has any Where() or OrderBy() usages, you'll need an extra statement
         if (collectionUsage.OrderingExpressions.Any() || collectionUsage.WhereExpressions.Any())
         {
+            parentStatement.AddToEnd(statement);
             statement.ConvertToCommonTableExpression(session);
 
             var selectorStatement = new SelectorStatement { SelectClause = statement.SelectClause.As<IScalarSelectClause>().CloneToOtherTable(statement.ExportName) };
             statement.AddToEnd(selectorStatement);
 
-            collectionUsage.ConfigureSelectManyStatement(session, SelectManyUsage, selectorStatement, statistics);
-            return selectorStatement;
+            return collectionUsage.ConfigureSelectManyStatement(session, SelectManyUsage, selectorStatement, statistics).SelectorStatement();
         }
 
-        collectionUsage.ConfigureSelectManyStatement(session, SelectManyUsage, statement, statistics);
+        parentStatement.AddToEnd(statement);
 
-        return statement;
+        return collectionUsage.ConfigureSelectManyStatement(session, SelectManyUsage, statement, statistics).SelectorStatement();
+
     }
 
     public ISelectClause BuildSelectClauseForExplosion(string fromObject)
