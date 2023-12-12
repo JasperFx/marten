@@ -19,6 +19,6 @@ internal class TenantIsOneOf: IMethodCallParser
         MethodCallExpression expression)
     {
         var values = expression.Arguments.Last().Value().As<string[]>();
-        return new TenantIsOneOfWhereFragment(values);
+        return new TenantIsOneOfFilter(values);
     }
 }

@@ -5,13 +5,13 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration.Filters;
 
-internal class TenantIsOneOfWhereFragment: ISqlFragment, ITenantWhereFragment
+internal class TenantIsOneOfFilter: ISqlFragment, ITenantFilter
 {
     private static readonly string _filter = $"{TenantIdColumn.Name} = ANY(:?)";
 
     private readonly string[] _values;
 
-    public TenantIsOneOfWhereFragment(string[] values)
+    public TenantIsOneOfFilter(string[] values)
     {
         _values = values;
     }

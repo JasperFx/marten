@@ -4,6 +4,8 @@ using Marten.Internal.Storage;
 using Marten.Linq.Members;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Marten.Linq.SqlGeneration.Filters;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Includes;
 
@@ -28,10 +30,15 @@ internal class IncludePlan<T>: IIncludePlan
         return new IncludeReader<T>(_callback, selector);
     }
 
-    public void AppendStatement(TemporaryTableStatement tempTable, IMartenSession martenSession)
+    public void AppendStatement(TemporaryTableStatement tempTable, IMartenSession martenSession,
+        ITenantFilter tenantFilter)
     {
         var selector = new SelectorStatement { SelectClause = _storage };
-        var filter = new IdInIncludedDocumentIdentifierFilter(tempTable.ExportName, _connectingMember);
+        ISqlFragment filter = new IdInIncludedDocumentIdentifierFilter(tempTable.ExportName, _connectingMember);
+        if (tenantFilter != null)
+        {
+            filter = CompoundWhereFragment.And(tenantFilter, filter);
+        }
 
         var wrapped = _storage.FilterDocuments(filter, martenSession);
         selector.Wheres.Add(wrapped);
