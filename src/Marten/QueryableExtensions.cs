@@ -12,6 +12,7 @@ using Marten.Linq;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing.Operators;
 using Marten.Services.BatchQuerying;
+using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using Npgsql;
 
 namespace Marten;
@@ -540,7 +541,7 @@ public static class QueryableExtensions
             : ApplyOrder(queryable, property, "OrderBy");
     }
 
-    private static void GetSortProperty(ref string property, out string sortOrder)
+    internal static void GetSortProperty(ref string property, out string sortOrder)
     {
         var propParts = property.Split(' ').Take(2).ToArray();
 
@@ -554,6 +555,31 @@ public static class QueryableExtensions
             property = propParts[0];
             sortOrder = "asc";
         }
+    }
+
+    internal static readonly MethodInfo OrderByFieldNameAndComparerMethod = typeof(QueryableExtensions)
+        .GetMethods(BindingFlags.Public | BindingFlags.Static).Where(x => x.Name == nameof(OrderBy)).Single(x =>
+        {
+            var parameters = x.GetParameters();
+            return parameters.Length == 3 && parameters[1].ParameterType == typeof(string) &&
+                   parameters[2].ParameterType == typeof(StringComparer);
+        });
+
+
+    /// <summary>
+    /// Order by a single property name or [property name] [asc/desc] and a StringComparer value
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <param name="property"></param>
+    /// <param name="comparer"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static IOrderedQueryable<T> OrderBy<T>(this IQueryable<T> queryable, string property, StringComparer comparer)
+    {
+        var call = Expression.Call(null, OrderByFieldNameAndComparerMethod.MakeGenericMethod(typeof(T)), queryable.Expression,
+            Expression.Constant(property), Expression.Constant(comparer));
+
+        return (IOrderedQueryable<T>)queryable.Provider.CreateQuery<T>(call);
     }
 
     /// <summary>
@@ -676,7 +702,7 @@ public static class QueryableExtensions
         return (IBatchedOrderedQueryable<T>)result;
     }
 
-    private static LambdaExpression CompileOrderBy<T>(string property, out Type targetType)
+    internal static LambdaExpression CompileOrderBy<T>(string property, out Type targetType)
     {
         var props = property.Split('.');
         targetType = typeof(T);

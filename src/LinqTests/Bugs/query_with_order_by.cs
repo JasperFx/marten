@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -81,6 +82,18 @@ public class query_with_order_by: IntegrationContext
                 sql.ShouldNotContain("lower", Case.Insensitive);
             }
         }
+    }
+
+    [Fact]
+    public void query_by_property_name_and_string_comparer()
+    {
+        theSession.Query<Target>().OrderBy("String", StringComparer.Ordinal)
+            .ToCommand()
+            .CommandText.ShouldBe("select d.id, d.data from public.mt_doc_target as d order by d.data ->> 'String';");
+
+        theSession.Query<Target>().OrderBy("String", StringComparer.OrdinalIgnoreCase)
+            .ToCommand()
+            .CommandText.ShouldBe("select d.id, d.data from public.mt_doc_target as d order by lower(d.data ->> 'String');");
     }
 
     [Fact]

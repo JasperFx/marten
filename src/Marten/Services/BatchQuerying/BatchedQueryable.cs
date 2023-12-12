@@ -60,6 +60,12 @@ internal class BatchedQueryable<T>: IBatchedQueryable<T> where T : class
         return new TransformedBatchQueryable<TValue>(_parent, Inner.Select(selection).As<IMartenQueryable<TValue>>());
     }
 
+    public IBatchedQueryable<T> OrderBy(string property, StringComparer comparer)
+    {
+        Inner = Inner.OrderBy(property, comparer).As<IMartenQueryable<T>>();
+        return this;
+    }
+
     public IBatchedQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback)
         where TInclude : class
     {
