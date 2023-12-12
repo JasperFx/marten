@@ -15,7 +15,19 @@ public class OrderingOperator: LinqOperator
     public override void Apply(ILinqQuery query, MethodCallExpression expression)
     {
         var usage = query.CollectionUsageFor(expression);
-        var ordering = new Ordering(expression.Arguments[1], Direction);
+        var memberArgument = expression.Arguments[1];
+
+        var ordering = new Ordering(memberArgument, Direction);
+        if (expression.Arguments[1].Type == typeof(string))
+        {
+            var property = (string)expression.Arguments[1].ReduceToConstant().Value;
+            QueryableExtensions.GetSortProperty(ref property, out var sortOrder);
+            ordering.Direction = sortOrder == "asc" ? OrderingDirection.Asc : OrderingDirection.Desc;
+            ordering.MemberName = property;
+
+        }
+
+
         if (expression.Arguments.Count == 3)
         {
             var comparer = expression.Arguments[2].Value() as StringComparer;
