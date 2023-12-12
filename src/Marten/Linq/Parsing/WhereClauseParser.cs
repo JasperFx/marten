@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq.Expressions;
 using Marten.Exceptions;
 using Marten.Linq.Members;
@@ -49,6 +50,13 @@ public class WhereClauseParser: ExpressionVisitor
     {
         if (node.Type == typeof(bool))
         {
+            // Check if it's a literal field. See https://github.com/JasperFx/marten/issues/2850
+            if (node.TryToParseConstant(out var constant))
+            {
+                _holder.Register(constant.Value.Equals(true) ? new WhereFragment("true") : new WhereFragment("false"));
+                return null;
+            }
+
             var field = _members.MemberFor(node);
             if (field is IBooleanField b)
             {
@@ -63,18 +71,6 @@ public class WhereClauseParser: ExpressionVisitor
         }
 
         return base.VisitMember(node);
-    }
-
-    private IQueryableMember? findHoldingMember(SimpleExpression? @object, SimpleExpression[] arguments)
-    {
-        if (@object?.Member != null) return @object.Member;
-
-        foreach (var argument in arguments)
-        {
-            if (argument.Member != null) return argument.Member;
-        }
-
-        return null;
     }
 
     protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -161,6 +157,10 @@ public class WhereClauseParser: ExpressionVisitor
             _holder = original;
 
             return returnValue;
+        }
+        else if (node.NodeType == ExpressionType.OrElse)
+        {
+            Debug.WriteLine(node);
         }
 
         return null;
