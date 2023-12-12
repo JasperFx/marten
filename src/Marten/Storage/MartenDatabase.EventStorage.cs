@@ -91,7 +91,7 @@ select last_value from {_options.Events.DatabaseSchemaName}.mt_events_sequence;
         var builder = new CommandBuilder();
         handler.ConfigureCommand(builder, null);
 
-        await using var reader = await builder.ExecuteReaderAsync(conn, token).ConfigureAwait(false);
+        await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
         return await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
     }
 
@@ -120,7 +120,7 @@ select last_value from {_options.Events.DatabaseSchemaName}.mt_events_sequence;
         var builder = new CommandBuilder();
         handler.ConfigureCommand(builder, null);
 
-        await using var reader = await builder.ExecuteReaderAsync(conn, token).ConfigureAwait(false);
+        await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
         var state = await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
 
         return state?.Sequence ?? 0;

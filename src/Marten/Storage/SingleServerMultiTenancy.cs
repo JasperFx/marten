@@ -3,7 +3,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Schema;
+using Npgsql;
 using Weasel.Core.Migrations;
+using Weasel.Postgresql.Connections;
 using Weasel.Postgresql.Migrations;
 
 namespace Marten.Storage;
@@ -28,6 +30,7 @@ public interface ISingleServerMultiTenancy
 internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDatabase>, ITenancy,
     ISingleServerMultiTenancy
 {
+    private readonly INpgsqlDataSourceFactory _dataSourceFactory;
     private readonly StoreOptions _options;
 
     private readonly Dictionary<string, string> _tenantToDatabase = new();
@@ -37,8 +40,13 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
 
     private ImHashMap<string, Tenant> _tenants = ImHashMap<string, Tenant>.Empty;
 
-    public SingleServerMultiTenancy(string masterConnectionString, StoreOptions options): base(masterConnectionString)
+    public SingleServerMultiTenancy(
+        INpgsqlDataSourceFactory dataSourceFactory,
+        NpgsqlDataSource npgsqlDataSource,
+        StoreOptions options
+    ): base(dataSourceFactory, npgsqlDataSource)
     {
+        _dataSourceFactory = dataSourceFactory;
         _options = options;
         Cleaner = new CompositeDocumentCleaner(this);
     }
@@ -132,8 +140,8 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
         return AllDatabases();
     }
 
-    protected override MartenDatabase buildDatabase(string databaseName, string connectionString)
+    protected override MartenDatabase buildDatabase(string databaseName, NpgsqlDataSource npgsqlDataSource)
     {
-        return new MartenDatabase(_options, new ConnectionFactory(connectionString), databaseName);
+        return new MartenDatabase(_options, npgsqlDataSource, databaseName);
     }
 }
