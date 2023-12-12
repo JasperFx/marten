@@ -70,9 +70,11 @@ public partial class CollectionUsage
 
             if (Inner != null)
             {
+                Inner.CompileAsChild(this);
+
                 IsAny = IsAny || Inner.IsAny;
                 SingleValueMode ??= Inner.SingleValueMode;
-                IsDistinct = Inner.IsDistinct;
+                statement.IsDistinct = IsDistinct = Inner.IsDistinct;
                 statement.Limit ??= Inner._limit;
                 statement.Offset ??= Inner._offset;
             }
@@ -96,8 +98,6 @@ public partial class CollectionUsage
                 throw new BadLinqExpressionException(
                     "Marten is unable to build a query with a Distinct() + Select() + a 'transformed' OrderBy(). You will have to resort to SQL for this query");
             }
-
-            statement.ApplySqlOperator("DISTINCT");
         }
 
         return statement.Top();
@@ -212,12 +212,12 @@ public partial class CollectionUsage
                 else
                 {
                     var next = new CollectionUsage(_options, collectionMember.MemberType);
-                    return next.CompileSelectMany(session, this, selection, collectionMember, statistics);
+                    return next.CompileSelectMany(session, selection, collectionMember, statistics);
                 }
             }
             else
             {
-                return Inner.CompileSelectMany(session, this, selection, collectionMember, statistics);
+                return Inner.CompileSelectMany(session, selection, collectionMember, statistics);
             }
         }
         else
@@ -228,7 +228,7 @@ public partial class CollectionUsage
         return statement;
     }
 
-    public Statement CompileSelectMany(IMartenSession session, CollectionUsage parent,
+    public Statement CompileSelectMany(IMartenSession session,
         SelectorStatement parentStatement, ICollectionMember collectionMember, QueryStatistics? statistics)
     {
         if (_hasCompiledMany)
@@ -248,29 +248,6 @@ public partial class CollectionUsage
         // THINK THIS IS TOO SOON. MUCH OF THE LOGIC NEEDS TO GO IN THIS INSTEAD!!!
         var childStatement = collectionMember.AttachSelectManyStatement(this, session, parentStatement, statistics);
         var childSelector = childStatement.SelectorStatement();
-
-        // if (IsDistinct)
-        // {
-        //     if (childSelector.SelectClause is IScalarSelectClause c)
-        //     {
-        //         c.ApplyOperator("DISTINCT");
-        //     }
-        //     else if (childSelector.SelectClause is ICountClause count)
-        //     {
-        //         if (collectionMember is IQueryableMemberCollection members)
-        //         {
-        //             // It places itself at the back in this constructor function
-        //             var distinct = new DistinctSelectionStatement(childSelector, count, session);
-        //             compileNext(session, members, distinct.SelectorStatement(), statistics);
-        //         }
-        //         else
-        //         {
-        //             throw new BadLinqExpressionException("See https://github.com/JasperFx/marten/issues/2704");
-        //         }
-        //
-        //         return childSelector.Top();
-        //     }
-        // }
 
         return compileNext(session, collectionMember as IQueryableMemberCollection, childSelector, statistics);
     }
