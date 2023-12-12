@@ -25,6 +25,7 @@ using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
+using Weasel.Postgresql.Connections;
 
 namespace Marten;
 
@@ -35,6 +36,8 @@ namespace Marten;
 /// </summary>
 public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
 {
+    internal INpgsqlDataSourceFactory dataSourceFactory = new DefaultNpgsqlDataSourceFactory();
+
     internal readonly List<Action<ISerializer>> SerializationConfigurations = new();
 
     private readonly IList<IDocumentPolicy> _policies = new List<IDocumentPolicy>
@@ -273,7 +276,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     /// <param name="connectionString"></param>
     public void Connection(string connectionString)
     {
-        Tenancy = new DefaultTenancy(new ConnectionFactory(connectionString), this);
+        Tenancy = new DefaultTenancy(new ConnectionFactory(dataSourceFactory, connectionString), this);
     }
 
     /// <summary>
@@ -282,7 +285,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     /// <param name="connectionSource"></param>
     public void Connection(Func<string> connectionSource)
     {
-        Tenancy = new DefaultTenancy(new ConnectionFactory(connectionSource), this);
+        Tenancy = new DefaultTenancy(new ConnectionFactory(dataSourceFactory, connectionSource), this);
     }
 
     /// <summary>
@@ -497,7 +500,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     public ISingleServerMultiTenancy MultiTenantedWithSingleServer(string masterConnectionString)
     {
         Advanced.DefaultTenantUsageEnabled = false;
-        var tenancy = new SingleServerMultiTenancy(masterConnectionString, this);
+        var tenancy =
+            new SingleServerMultiTenancy(dataSourceFactory, dataSourceFactory.Create(masterConnectionString), this);
         Tenancy = tenancy;
 
         return tenancy;
@@ -512,7 +516,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     public void MultiTenantedDatabases(Action<IStaticMultiTenancy> configure)
     {
         Advanced.DefaultTenantUsageEnabled = false;
-        var tenancy = new StaticMultiTenancy(this);
+        var tenancy = new StaticMultiTenancy(dataSourceFactory, this);
         Tenancy = tenancy;
 
         configure(tenancy);

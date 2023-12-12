@@ -18,6 +18,7 @@ using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Weasel.Core.Migrations;
+using Weasel.Postgresql.Connections;
 using IsolationLevel = System.Data.IsolationLevel;
 
 namespace Marten;
@@ -28,6 +29,7 @@ namespace Marten;
 public partial class DocumentStore: IDocumentStore, IAsyncDisposable
 {
     private readonly IMartenLogger _logger;
+    private readonly INpgsqlDataSourceFactory dataSourceFactory;
 
     /// <summary>
     ///     Creates a new DocumentStore with the supplied StoreOptions
@@ -35,6 +37,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
     /// <param name="options"></param>
     public DocumentStore(StoreOptions options)
     {
+        dataSourceFactory = options.dataSourceFactory;
         options.ApplyConfiguration();
         options.Validate();
 
@@ -93,21 +96,27 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
 
     public virtual void Dispose()
     {
-        (Options.Events as IDisposable).SafeDispose();
+        (dataSourceFactory as IDisposable)?.SafeDispose();
+        (Options.Events as IDisposable)?.SafeDispose();
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
+        if (dataSourceFactory is IAsyncDisposable dsad)
+        {
+            await dsad.DisposeAsync().ConfigureAwait(false);
+        }
+
         if (Options.Events is IAsyncDisposable ad)
         {
-            return ad.DisposeAsync();
+            await ad.DisposeAsync().ConfigureAwait(false);
+            return;
         }
-        else if (Options.Events is IDisposable d)
+
+        if (Options.Events is IDisposable d)
         {
             d.Dispose();
         }
-
-        return ValueTask.CompletedTask;
     }
 
     public AdvancedOperations Advanced { get; }

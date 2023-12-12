@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using Npgsql;
+using Weasel.Postgresql.Connections;
 
 namespace Marten;
 
@@ -9,6 +10,7 @@ namespace Marten;
 /// </summary>
 public class ConnectionFactory: IConnectionFactory
 {
+    private readonly INpgsqlDataSourceFactory _npgsqlDataSourceFactory;
     private readonly Lazy<string> _connectionString;
 
     /// <summary>
@@ -16,8 +18,9 @@ public class ConnectionFactory: IConnectionFactory
     ///     for a Postgresql database
     /// </summary>
     /// <param name="connectionSource"></param>
-    public ConnectionFactory(Func<string> connectionSource)
+    public ConnectionFactory(INpgsqlDataSourceFactory npgsqlDataSourceFactory, Func<string> connectionSource)
     {
+        _npgsqlDataSourceFactory = npgsqlDataSourceFactory;
         _connectionString = new Lazy<string>(connectionSource);
     }
 
@@ -25,13 +28,15 @@ public class ConnectionFactory: IConnectionFactory
     ///     Supply the connection string to the Postgresql database directly
     /// </summary>
     /// <param name="connectionString"></param>
-    public ConnectionFactory(string connectionString)
+    public ConnectionFactory(INpgsqlDataSourceFactory npgsqlDataSourceFactory, string connectionString)
     {
+        _npgsqlDataSourceFactory = npgsqlDataSourceFactory;
         _connectionString = new Lazy<string>(() => connectionString);
     }
 
     public NpgsqlConnection Create()
     {
-        return new NpgsqlConnection(_connectionString.Value);
+        var dataSource = _npgsqlDataSourceFactory.Create(_connectionString.Value);
+        return dataSource.CreateConnection();
     }
 }

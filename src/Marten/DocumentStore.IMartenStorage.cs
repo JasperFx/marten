@@ -64,6 +64,6 @@ public partial class DocumentStore: IMartenStorage
 
     private MartenDatabase nulloDatabase()
     {
-        return new MartenDatabase(Options, new ConnectionFactory(string.Empty), "NULLO");
+        return new MartenDatabase(Options, new ConnectionFactory(dataSourceFactory, string.Empty), "NULLO");
     }
 }

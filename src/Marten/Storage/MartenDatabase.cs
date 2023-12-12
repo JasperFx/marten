@@ -6,6 +6,7 @@ using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
+using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
@@ -22,8 +23,25 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
 
     private Lazy<SequenceFactory> _sequences;
 
-    public MartenDatabase(StoreOptions options, IConnectionFactory factory, string identifier)
-        : base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, identifier, factory.Create)
+    public MartenDatabase(
+        StoreOptions options,
+        IConnectionFactory connectionFactory,
+        string identifier
+    ): base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, identifier, connectionFactory.Create)
+    {
+        _features = options.Storage;
+        _options = options;
+
+        resetSequences();
+
+        Providers = options.Providers;
+    }
+
+    public MartenDatabase(
+        StoreOptions options,
+        NpgsqlDataSource npgsqlDataSource,
+        string identifier
+    ): base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, identifier, npgsqlDataSource)
     {
         _features = options.Storage;
         _options = options;

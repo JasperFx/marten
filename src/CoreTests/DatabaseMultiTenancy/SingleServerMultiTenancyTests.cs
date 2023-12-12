@@ -6,13 +6,15 @@ using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
+using Weasel.Postgresql.Connections;
 using Xunit;
 
 namespace CoreTests.DatabaseMultiTenancy;
 
 [CollectionDefinition("multi-tenancy", DisableParallelization = true)]
-public class SingleServerMultiTenancyTests : IAsyncLifetime
+public class SingleServerMultiTenancyTests: IAsyncLifetime
 {
+    private DefaultNpgsqlDataSourceFactory dataSourceFactory = new();
     private SingleServerMultiTenancy theTenancy;
 
     public async Task InitializeAsync()
@@ -23,7 +25,9 @@ public class SingleServerMultiTenancyTests : IAsyncLifetime
         await DropDatabaseIfExists("database1");
         await DropDatabaseIfExists("database2");
 
-        theTenancy = new SingleServerMultiTenancy(ConnectionSource.ConnectionString, new StoreOptions());
+        var dataSource = dataSourceFactory.Create(ConnectionSource.ConnectionString);
+
+        theTenancy = new SingleServerMultiTenancy(dataSourceFactory, dataSource, new StoreOptions());
     }
 
     public Task DisposeAsync()
