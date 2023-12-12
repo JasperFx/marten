@@ -199,7 +199,7 @@ internal class HighWaterAgent: IDisposable
 
     public async Task CheckNow()
     {
-        var statistics = await _detector.Detect(_token).ConfigureAwait(false);
+        var statistics = await _detector.DetectInSafeZone(_token).ConfigureAwait(false);
         var initialHighMark = statistics.HighestSequence;
 
         // Get out of here if you're at the initial, empty state
