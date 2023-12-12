@@ -5,7 +5,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing.Methods;
 
-internal class AnyTenant: WhereFragment, IMethodCallParser, ITenantWhereFragment
+internal class AnyTenant: WhereFragment, IMethodCallParser, ITenantFilter
 {
     public AnyTenant(): base("1=1")
     {

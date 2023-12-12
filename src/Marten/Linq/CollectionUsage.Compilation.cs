@@ -10,6 +10,7 @@ using Marten.Linq.Includes;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration;
+using Marten.Linq.SqlGeneration.Filters;
 
 namespace Marten.Linq;
 
@@ -42,6 +43,10 @@ public partial class CollectionUsage
             var inner = statement.Top();
             var selectionStatement = inner.SelectorStatement();
 
+            ITenantFilter? tenantWhereFragment = null;
+            selectionStatement.TryFindTenantAwareFilter(out tenantWhereFragment);
+
+
             if (inner is SelectorStatement { SelectClause: IDocumentStorage } select)
             {
                 select.SelectClause = storage.SelectClauseWithDuplicatedFields;
@@ -55,7 +60,7 @@ public partial class CollectionUsage
             }
 
             var temp = new TemporaryTableStatement(inner, session);
-            foreach (var include in Includes) include.AppendStatement(temp, session);
+            foreach (var include in Includes) include.AppendStatement(temp, session, tenantWhereFragment);
 
             temp.AddToEnd(new PassthroughSelectStatement(temp.ExportName, selectionStatement.SelectClause));
 
@@ -144,6 +149,8 @@ public partial class CollectionUsage
             var inner = statement.Top();
             var selectionStatement = inner.SelectorStatement();
 
+            selectionStatement.TryFindTenantAwareFilter(out var tenantWhereFragment);
+
             // QueryStatistics has to be applied to the inner, selector statement
             if (statistics != null)
             {
@@ -152,7 +159,7 @@ public partial class CollectionUsage
             }
 
             var temp = new TemporaryTableStatement(inner, session);
-            foreach (var include in Includes) include.AppendStatement(temp, session);
+            foreach (var include in Includes) include.AppendStatement(temp, session, tenantWhereFragment);
 
             temp.AddToEnd(new PassthroughSelectStatement(temp.ExportName, selectionStatement.SelectClause));
 

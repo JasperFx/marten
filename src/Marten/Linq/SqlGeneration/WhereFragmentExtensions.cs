@@ -9,7 +9,7 @@ internal static class WhereFragmentExtensions
 {
     public static bool SpecifiesTenant(this ISqlFragment fragment)
     {
-        if (fragment is ITenantWhereFragment)
+        if (fragment is ITenantFilter)
         {
             return true;
         }
@@ -25,6 +25,40 @@ internal static class WhereFragmentExtensions
             }
         }
 
+        return false;
+    }
+
+    public static bool TryFindTenantAwareFilter(this ISqlFragment fragment, out ITenantFilter tenantFilter)
+    {
+        if (fragment is SelectorStatement statement)
+        {
+            foreach (var where in statement.Wheres)
+            {
+                if (where.TryFindTenantAwareFilter(out tenantFilter))
+                {
+                    return true;
+                }
+            }
+        }
+
+        if (fragment is ITenantFilter f)
+        {
+            tenantFilter = f;
+            return true;
+        }
+
+        if (fragment is CompoundWhereFragment cwf)
+        {
+            foreach (var child in cwf.Children)
+            {
+                if (child.TryFindTenantAwareFilter(out tenantFilter))
+                {
+                    return true;
+                }
+            }
+        }
+
+        tenantFilter = default;
         return false;
     }
 
