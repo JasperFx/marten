@@ -202,6 +202,13 @@ export default withMermaid({
           ]
         },
         {
+          text: 'DevOps',
+          collapsed: false,
+          items: [
+            { text: 'DevOps', link: '/devops/devops' },
+          ]
+        },
+        {
           text: 'Diagnostics',
           collapsed: false,
           items: [
