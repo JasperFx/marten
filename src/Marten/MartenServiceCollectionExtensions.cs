@@ -19,8 +19,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
+using Weasel.Postgresql.Connections;
 
 namespace Marten;
 
@@ -629,6 +631,36 @@ public static class MartenServiceCollectionExtensions
         /// <returns></returns>
         public MartenConfigurationExpression UseDirtyTrackedSessions() =>
             BuildSessionsWith<DirtyTrackedSessionFactory>();
+
+        /// <summary>
+        /// Use configured NpgsqlDataSource from DI container
+        /// </summary>
+        /// <param name="serviceKey">NpgsqlDataSource service key as registered in DI</param>
+        /// <returns></returns>
+        public MartenConfigurationExpression UseNpgsqlDataSource(object? serviceKey = null) =>
+            UseNpgsqlDataSource(connectionString => new NpgsqlDataSourceBuilder(connectionString));
+
+        /// <summary>
+        /// Use configured NpgsqlDataSource from DI container
+        /// </summary>
+        /// <param name="dataSourceBuilderFactory">configuration of the data source builder</param>
+        /// <param name="serviceKey">NpgsqlDataSource service key as registered in DI</param>
+        /// <returns></returns>
+        public MartenConfigurationExpression UseNpgsqlDataSource(
+            Func<string, NpgsqlDataSourceBuilder> dataSourceBuilderFactory,
+            object? serviceKey = null
+        )
+        {
+            Services.ConfigureMarten((sp, opts) =>
+                opts.DataSourceFactory(new SingleNpgsqlDataSourceFactory(
+                    dataSourceBuilderFactory,
+                    serviceKey != null
+                        ? sp.GetRequiredKeyedService<NpgsqlDataSource>(serviceKey)
+                        : sp.GetRequiredService<NpgsqlDataSource>())
+                )
+            );
+            return this;
+        }
 
         /// <summary>
         ///     Eagerly build the application's DocumentStore during application
