@@ -328,5 +328,5 @@ var store = DocumentStore.For(_ =>
     _.NameDataLength = 100;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L284-L293' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting-name-data-length' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L286-L295' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting-name-data-length' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

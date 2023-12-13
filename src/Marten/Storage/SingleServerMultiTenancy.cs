@@ -30,7 +30,6 @@ public interface ISingleServerMultiTenancy
 internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDatabase>, ITenancy,
     ISingleServerMultiTenancy
 {
-    private readonly INpgsqlDataSourceFactory _dataSourceFactory;
     private readonly StoreOptions _options;
 
     private readonly Dictionary<string, string> _tenantToDatabase = new();
@@ -46,7 +45,6 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
         StoreOptions options
     ): base(dataSourceFactory, npgsqlDataSource)
     {
-        _dataSourceFactory = dataSourceFactory;
         _options = options;
         Cleaner = new CompositeDocumentCleaner(this);
     }
