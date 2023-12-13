@@ -9,13 +9,13 @@ using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
 using Weasel.Core;
+using Weasel.Postgresql.Connections;
 using Xunit;
 
 namespace CoreTests;
 
 public class StoreOptionsTests
 {
-
     [Fact]
     public void DefaultAutoCreateShouldBeCreateOrUpdate()
     {
@@ -37,6 +37,7 @@ public class StoreOptionsTests
     public void using_auto_create_field()
     {
         #region sample_AutoCreateSchemaObjects
+
         var store = DocumentStore.For(opts =>
         {
             // Marten will create any new objects that are missing,
@@ -60,6 +61,7 @@ public class StoreOptionsTests
             // not reflecting the Marten configuration
             opts.AutoCreateSchemaObjects = AutoCreate.None;
         });
+
         #endregion
     }
 
@@ -80,7 +82,7 @@ public class StoreOptionsTests
             options.Connection(ConnectionSource.ConnectionString);
             options.RegisterDocumentType<User>();
             options.RegisterDocumentType(typeof(Company));
-            options.RegisterDocumentTypes(new[] {typeof(Target), typeof(Issue)});
+            options.RegisterDocumentTypes(new[] { typeof(Target), typeof(Issue) });
         });
 
         store.Options.Storage.AllDocumentMappings.OrderBy(x => x.DocumentType.Name)
@@ -291,5 +293,66 @@ public class StoreOptionsTests
         });
 
         #endregion
+    }
+
+    [Fact]
+    public void SettingConnectionString_ShouldSetupDefaultNpgsqlDataSourceFactory()
+    {
+        // Given
+        // When
+        using var store = DocumentStore.For(ConnectionSource.ConnectionString);
+
+        // Then
+        store.Options.NpgsqlDataSourceFactory.ShouldBeOfType<DefaultNpgsqlDataSourceFactory>();
+    }
+
+    [Fact]
+    public void SettingConnectionDataSource_ShouldRespectCurrentTenancySettings()
+    {
+        // Given
+        var options = new StoreOptions();
+        options.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString);
+
+        // When
+        options.Connection(new NpgsqlDataSourceBuilder(ConnectionSource.ConnectionString).Build());
+
+        // Then
+        options.NpgsqlDataSourceFactory.ShouldBeOfType<SingleNpgsqlDataSourceFactory>();
+        options.Tenancy.ShouldBeOfType<SingleServerMultiTenancy>();
+    }
+
+    [Fact]
+    public void SettingCustomDataSourceFactory_ShouldRespectDefaultTenancySettings()
+    {
+        // Given
+        var options = new StoreOptions();
+
+        // When
+        options.DataSourceFactory(new DummyNpgsqlDataSourceFactory());
+
+        // Then
+        options.NpgsqlDataSourceFactory.ShouldBeOfType<DummyNpgsqlDataSourceFactory>();
+        options.Tenancy.ShouldBeOfType<DefaultTenancy>();
+    }
+
+    [Fact]
+    public void SettingCustomDataSourceFactory_ShouldRespectCurrentTenancySettings()
+    {
+        // Given
+        var options = new StoreOptions();
+        options.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString);
+
+        // When
+        options.DataSourceFactory(new DummyNpgsqlDataSourceFactory());
+
+        // Then
+        options.NpgsqlDataSourceFactory.ShouldBeOfType<DummyNpgsqlDataSourceFactory>();
+        options.Tenancy.ShouldBeOfType<SingleServerMultiTenancy>();
+    }
+
+    private class DummyNpgsqlDataSourceFactory: INpgsqlDataSourceFactory
+    {
+        public NpgsqlDataSource Create(string connectionString) =>
+            throw new NotImplementedException();
     }
 }
