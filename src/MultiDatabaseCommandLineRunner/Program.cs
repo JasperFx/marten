@@ -35,8 +35,10 @@ public class Program
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                     opts.DatabaseSchemaName = "cli";
 
-                    opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
-                        .WithTenants("chiefs", "chargers", "broncos", "raiders");
+                    opts.MultiTenantedWithSingleServer(
+                        ConnectionSource.ConnectionString,
+                        t => t.WithTenants("chiefs", "chargers", "broncos", "raiders")
+                    );
 
                     // This is important, setting this option tells Marten to
                     // *try* to use pre-generated code at runtime

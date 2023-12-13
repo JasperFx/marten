@@ -7,7 +7,6 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Lamar;
 using Marten;
-using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Sessions;
@@ -54,7 +53,8 @@ public class MartenServiceCollectionExtensionsTests
     {
         using var container = Container.For(x =>
         {
-            x.AddMarten(provider => {
+            x.AddMarten(provider =>
+            {
                 var options = new StoreOptions();
                 options.Connection(ConnectionSource.ConnectionString);
                 options.Logger(new TestOutputMartenLogger(null));
@@ -112,7 +112,6 @@ public class MartenServiceCollectionExtensionsTests
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.SetApplicationProject(GetType().Assembly);
                 });
-
             }).Build();
 
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
@@ -133,7 +132,8 @@ public class MartenServiceCollectionExtensionsTests
 
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
         store.Options.ApplicationAssembly.ShouldBe(Assembly.GetEntryAssembly());
-        store.Options.GeneratedCodeOutputPath.TrimEnd(Path.DirectorySeparatorChar).ShouldBe(AppContext.BaseDirectory.AppendPath("Internal", "Generated").TrimEnd(Path.DirectorySeparatorChar));
+        store.Options.GeneratedCodeOutputPath.TrimEnd(Path.DirectorySeparatorChar).ShouldBe(AppContext.BaseDirectory
+            .AppendPath("Internal", "Generated").TrimEnd(Path.DirectorySeparatorChar));
 
         var rules = store.Options.CreateGenerationRules();
         rules.ApplicationAssembly.ShouldBe(store.Options.ApplicationAssembly);
@@ -212,7 +212,8 @@ public class MartenServiceCollectionExtensionsTests
         instance.ImplementationType.ShouldBe(typeof(MartenActivator));
         instance.Lifetime.ShouldBe(ServiceLifetime.Singleton);
 
-        await Assert.ThrowsAsync<DatabaseValidationException>(() => container.GetAllInstances<IHostedService>().First().StartAsync(default));
+        await Assert.ThrowsAsync<DatabaseValidationException>(() =>
+            container.GetAllInstances<IHostedService>().First().StartAsync(default));
     }
 
     [Fact]
@@ -298,6 +299,23 @@ public class MartenServiceCollectionExtensionsTests
         store.Options.Events.DatabaseSchemaName.ShouldBe("random");
     }
 
+    [Fact]
+    public async Task use_npgsql_data_source()
+    {
+        await using var container = Container.For(x =>
+        {
+            x.AddNpgsqlDataSource(ConnectionSource.ConnectionString);
+
+            x.AddMarten()
+                .UseLightweightSessions()
+                .UseNpgsqlDataSource();
+        });
+
+        await using var session = container.GetInstance<IDocumentSession>();
+        Func<bool> Call(IDocumentSession s) => () => s.Query<Target>().Any();
+        Call(session).ShouldNotThrow();
+    }
+
     public class SpecialBuilder: ISessionFactory
     {
         private readonly IDocumentStore _store;
@@ -324,7 +342,8 @@ public class MartenServiceCollectionExtensionsTests
         public bool BuiltSession { get; set; }
     }
 
-    private static void ShouldHaveAllTheExpectedRegistrations(Container container, ServiceLifetime factoryLifetime = ServiceLifetime.Singleton)
+    private static void ShouldHaveAllTheExpectedRegistrations(Container container,
+        ServiceLifetime factoryLifetime = ServiceLifetime.Singleton)
     {
         container.Model.For<IDocumentStore>().Default.Lifetime.ShouldBe(ServiceLifetime.Singleton);
         container.Model.For<IDocumentSession>().Default.Lifetime.ShouldBe(ServiceLifetime.Scoped);
@@ -339,6 +358,4 @@ public class MartenServiceCollectionExtensionsTests
 
         container.GetInstance<IDatabaseSource>().ShouldBeTheSameAs(store.As<DocumentStore>().Tenancy);
     }
-
-
 }

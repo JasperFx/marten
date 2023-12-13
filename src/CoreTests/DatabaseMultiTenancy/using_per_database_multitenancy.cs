@@ -31,7 +31,7 @@ public class using_per_database_multitenancy: IAsyncLifetime
 
     public class MySpecialTenancy: ITenancy
 
-        #endregion
+    #endregion
 
     {
         public ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
@@ -90,14 +90,16 @@ public class using_per_database_multitenancy: IAsyncLifetime
                     opts
                         // You have to specify a connection string for "administration"
                         // with rights to provision new databases on the fly
-                        .MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
+                        .MultiTenantedWithSingleServer(
+                            ConnectionSource.ConnectionString,
+                            t => t
+                                // You can map multiple tenant ids to a single named database
+                                .WithTenants("tenant1", "tenant2").InDatabaseNamed("database1")
 
-                        // You can map multiple tenant ids to a single named database
-                        .WithTenants("tenant1", "tenant2").InDatabaseNamed("database1")
-
-                        // Just declaring that there are additional tenant ids that should
-                        // have their own database
-                        .WithTenants("tenant3", "tenant4"); // own database
+                                // Just declaring that there are additional tenant ids that should
+                                // have their own database
+                                .WithTenants("tenant3", "tenant4") // own database
+                        );
 
 
                     opts.RegisterDocumentType<User>();

@@ -112,7 +112,7 @@ $f$  language sql immutable;
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L192-L214' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemafunction' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L195-L217' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemafunction' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Sequence
@@ -134,7 +134,7 @@ StoreOptions(opts =>
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L228-L242' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemasequence' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L231-L245' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemasequence' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Extension
