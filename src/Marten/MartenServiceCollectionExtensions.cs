@@ -154,6 +154,20 @@ public static class MartenServiceCollectionExtensions
     ///     to your application with the given Postgresql connection string and Marten
     ///     defaults
     /// </summary>
+    /// <remarks>
+    /// You need to configure connection settings through DI, e.g. by calling `UseNpgsqlDataSource`
+    /// and configuring `NpqsqlDataSource` with `AddNpgsqlDataSource` from `Npgsql.DependencyInjection`
+    /// </remarks>
+    /// <param name="services"></param>
+    /// <returns></returns>
+    public static MartenConfigurationExpression AddMarten(this IServiceCollection services) =>
+        services.AddMarten(new StoreOptions());
+
+    /// <summary>
+    ///     Add Marten IDocumentStore, IDocumentSession, and IQuerySession service registrations
+    ///     to your application with the given Postgresql connection string and Marten
+    ///     defaults
+    /// </summary>
     /// <param name="services"></param>
     /// <param name="connectionString">The connection string to your application's Postgresql database</param>
     /// <returns></returns>

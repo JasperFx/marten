@@ -72,21 +72,23 @@ _host = await Host.CreateDefaultBuilder()
             opts
                 // You have to specify a connection string for "administration"
                 // with rights to provision new databases on the fly
-                .MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
+                .MultiTenantedWithSingleServer(
+                    ConnectionSource.ConnectionString,
+                    t => t
+                        // You can map multiple tenant ids to a single named database
+                        .WithTenants("tenant1", "tenant2").InDatabaseNamed("database1")
 
-                // You can map multiple tenant ids to a single named database
-                .WithTenants("tenant1", "tenant2").InDatabaseNamed("database1")
-
-                // Just declaring that there are additional tenant ids that should
-                // have their own database
-                .WithTenants("tenant3", "tenant4"); // own database
+                        // Just declaring that there are additional tenant ids that should
+                        // have their own database
+                        .WithTenants("tenant3", "tenant4") // own database
+                );
 
             opts.RegisterDocumentType<User>();
             opts.RegisterDocumentType<Target>();
         }).ApplyAllDatabaseChangesOnStartup();
     }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_per_database_multitenancy.cs#L83-L108' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_single_server_multi_tenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DatabaseMultiTenancy/using_per_database_multitenancy.cs#L83-L110' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_single_server_multi_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Dynamically applying changes to tenants databases

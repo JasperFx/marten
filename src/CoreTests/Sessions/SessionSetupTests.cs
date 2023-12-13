@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using Marten;
-using Marten.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Npgsql;

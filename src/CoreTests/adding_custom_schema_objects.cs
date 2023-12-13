@@ -169,7 +169,10 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
 
         StoreOptions(opts =>
         {
-            opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString).WithTenants(tenantId);
+            opts.MultiTenantedWithSingleServer(
+                ConnectionSource.ConnectionString,
+                t => t.WithTenants(tenantId)
+            );
             opts.RegisterDocumentType<Target>();
 
             // Unaccent is an extension ships with postgresql

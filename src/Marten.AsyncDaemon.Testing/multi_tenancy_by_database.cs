@@ -21,7 +21,7 @@ using Xunit.Abstractions;
 
 namespace Marten.AsyncDaemon.Testing;
 
-public class multi_tenancy_by_database : IAsyncLifetime
+public class multi_tenancy_by_database: IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
     private IHost _host;
@@ -67,8 +67,6 @@ public class multi_tenancy_by_database : IAsyncLifetime
         _host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
-
-
                 services.AddSingleton<ILogger<IProjection>>(Logger);
 
                 services.AddMarten(opts =>
@@ -76,16 +74,18 @@ public class multi_tenancy_by_database : IAsyncLifetime
                     opts.DatabaseSchemaName = "multi_tenancy_daemon";
 
                     opts
-                        .MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
-                        .WithTenants("tenant1").InDatabaseNamed("database1")
-                        .WithTenants("tenant3", "tenant4"); // own database
+                        .MultiTenantedWithSingleServer(
+                            ConnectionSource.ConnectionString,
+                            t =>
+                                t.WithTenants("tenant1").InDatabaseNamed("database1")
+                                    .WithTenants("tenant3", "tenant4") // own database
+                        );
 
 
                     opts.RegisterDocumentType<User>();
                     opts.RegisterDocumentType<Target>();
 
                     opts.Projections.Add<AllGood>(ProjectionLifecycle.Async);
-
                 }).ApplyAllDatabaseChangesOnStartup().AddAsyncDaemon(DaemonMode.Solo);
             }).StartAsync();
 
@@ -159,9 +159,9 @@ public class multi_tenancy_by_database : IAsyncLifetime
         await (await theStore.Storage.FindOrCreateDatabase("tenant3")).Tracker.WaitForShardState("AllGood:All", 4);
         await (await theStore.Storage.FindOrCreateDatabase("tenant4")).Tracker.WaitForShardState("AllGood:All", 4);
 
-        (await session1.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate{Id = id, ACount = 1, BCount = 2});
-        (await session3.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate{Id = id, ACount = 2, BCount = 2});
-        (await session4.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate{Id = id, ACount = 1, BCount = 3});
+        (await session1.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate { Id = id, ACount = 1, BCount = 2 });
+        (await session3.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate { Id = id, ACount = 2, BCount = 2 });
+        (await session4.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate { Id = id, ACount = 1, BCount = 3 });
     }
 }
 
@@ -174,13 +174,7 @@ public class AllSync: SingleStreamProjection<MyAggregate>
 
     public MyAggregate Create(CreateEvent @event)
     {
-        return new MyAggregate
-        {
-            ACount = @event.A,
-            BCount = @event.B,
-            CCount = @event.C,
-            DCount = @event.D
-        };
+        return new MyAggregate { ACount = @event.A, BCount = @event.B, CCount = @event.C, DCount = @event.D };
     }
 
     public void Apply(AEvent @event, MyAggregate aggregate)
@@ -228,18 +222,11 @@ public class AllGood: SingleStreamProjection<MyAggregate>
     [MartenIgnore]
     public void RandomMethodName()
     {
-
     }
 
     public MyAggregate Create(CreateEvent @event)
     {
-        return new MyAggregate
-        {
-            ACount = @event.A,
-            BCount = @event.B,
-            CCount = @event.C,
-            DCount = @event.D
-        };
+        return new MyAggregate { ACount = @event.A, BCount = @event.B, CCount = @event.C, DCount = @event.D };
     }
 
     public void Apply(AEvent @event, MyAggregate aggregate)
@@ -293,7 +280,8 @@ public class MyAggregate
 
     protected bool Equals(MyAggregate other)
     {
-        return Id.Equals(other.Id) && ACount == other.ACount && BCount == other.BCount && CCount == other.CCount && DCount == other.DCount && ECount == other.ECount;
+        return Id.Equals(other.Id) && ACount == other.ACount && BCount == other.BCount && CCount == other.CCount &&
+               DCount == other.DCount && ECount == other.ECount;
     }
 
     public override bool Equals(object obj)
@@ -323,7 +311,8 @@ public class MyAggregate
 
     public override string ToString()
     {
-        return $"{nameof(Id)}: {Id}, {nameof(ACount)}: {ACount}, {nameof(BCount)}: {BCount}, {nameof(CCount)}: {CCount}, {nameof(DCount)}: {DCount}, {nameof(ECount)}: {ECount}";
+        return
+            $"{nameof(Id)}: {Id}, {nameof(ACount)}: {ACount}, {nameof(BCount)}: {BCount}, {nameof(CCount)}: {CCount}, {nameof(DCount)}: {DCount}, {nameof(ECount)}: {ECount}";
     }
 }
 
@@ -332,7 +321,7 @@ public interface ITabulator
     void Apply(MyAggregate aggregate);
 }
 
-public class AEvent : ITabulator
+public class AEvent: ITabulator
 {
     // Necessary for a couple tests. Let it go.
     public Guid Id { get; set; }
@@ -345,7 +334,7 @@ public class AEvent : ITabulator
     public Guid Tracker { get; } = Guid.NewGuid();
 }
 
-public class BEvent : ITabulator
+public class BEvent: ITabulator
 {
     public void Apply(MyAggregate aggregate)
     {
@@ -353,7 +342,7 @@ public class BEvent : ITabulator
     }
 }
 
-public class CEvent : ITabulator
+public class CEvent: ITabulator
 {
     public void Apply(MyAggregate aggregate)
     {
@@ -361,14 +350,17 @@ public class CEvent : ITabulator
     }
 }
 
-public class DEvent : ITabulator
+public class DEvent: ITabulator
 {
     public void Apply(MyAggregate aggregate)
     {
         aggregate.DCount++;
     }
 }
-public class EEvent {}
+
+public class EEvent
+{
+}
 
 public class CreateEvent
 {

@@ -153,8 +153,10 @@ public static class Program
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                     opts.DatabaseSchemaName = "cli";
 
-                    opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
-                        .WithTenants("tenant1", "tenant2", "tenant3");
+                    opts.MultiTenantedWithSingleServer(
+                        ConnectionSource.ConnectionString,
+                        t => t.WithTenants("tenant1", "tenant2", "tenant3")
+                    );
 
                     // This is important, setting this option tells Marten to
                     // *try* to use pre-generated code at runtime
@@ -192,7 +194,7 @@ public static class Program
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L28-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L28-L95' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Okay, after all that, there should be a new command line option called `codegen` for your project. Assuming
