@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
@@ -15,7 +14,6 @@ using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Linq;
-using Marten.Linq.Members;
 using Marten.Metadata;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
@@ -254,9 +252,13 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     /// <summary>
     ///     Get or set the tenancy model for this DocumentStore
     /// </summary>
-    public ITenancy Tenancy { get; set; } = null!;
+    public ITenancy Tenancy
+    {
+        get => _tenancy.Value;
+        set => _tenancy = new Lazy<ITenancy>(() => value);
+    }
 
-    private Func<INpgsqlDataSourceFactory, ITenancy> TenancyDefinition { get; set; } = null!;
+    private Lazy<ITenancy> _tenancy = new();
 
     IReadOnlyEventStoreOptions IReadOnlyStoreOptions.Events => EventGraph;
 
@@ -281,14 +283,14 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
         NpgsqlDataSourceFactory = dataSourceFactory;
     }
 
-
     /// <summary>
     ///     Supply the connection string to the Postgresql database
     /// </summary>
     /// <param name="connectionString"></param>
     public void Connection(string connectionString)
     {
-        Tenancy = new DefaultTenancy(new ConnectionFactory(NpgsqlDataSourceFactory, connectionString), this);
+        _tenancy = new Lazy<ITenancy>(() =>
+            new DefaultTenancy(new ConnectionFactory(NpgsqlDataSourceFactory, connectionString), this));
     }
 
     /// <summary>
@@ -298,7 +300,9 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     [Obsolete("User version with connection string")]
     public void Connection(Func<string> connectionSource)
     {
-        Tenancy = new DefaultTenancy(new ConnectionFactory(NpgsqlDataSourceFactory, connectionSource), this);
+        _tenancy = new Lazy<ITenancy>(() =>
+            new DefaultTenancy(new ConnectionFactory(NpgsqlDataSourceFactory, connectionSource), this)
+        );
     }
 
     /// <summary>
@@ -309,8 +313,11 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     [Obsolete("User version with connection string or provide custom data source factory")]
     public void Connection(Func<NpgsqlConnection> source)
     {
-        Tenancy = new DefaultTenancy(new LambdaConnectionFactory(source), this);
+        _tenancy = new Lazy<ITenancy>(() =>
+            new DefaultTenancy(new LambdaConnectionFactory(source), this)
+        );
     }
+
 
     /// <summary>
     ///     Supply a mechanism for resolving an NpgsqlConnection object based on the NpgsqlDataSource
@@ -321,8 +328,27 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     /// <param name="dataSource"></param>
     public void Connection(NpgsqlDataSource dataSource)
     {
-        NpgsqlDataSourceFactory = new SingleNpgsqlDataSourceFactory(cs => new NpgsqlDataSourceBuilder(cs), dataSource);
-        Tenancy = new DefaultTenancy(new ConnectionFactory(NpgsqlDataSourceFactory, dataSource.ConnectionString), this);
+        NpgsqlDataSourceFactory = new SingleNpgsqlDataSourceFactory(
+            connectionString => new NpgsqlDataSourceBuilder(connectionString),
+            dataSource
+        );
+    }
+
+    /// <summary>
+    ///     Supply a mechanism for resolving an NpgsqlConnection object based on the NpgsqlDataSource
+    /// </summary>
+    /// <remarks>
+    ///     When doing that you need to handle data source disposal.
+    /// </remarks>
+    /// <param name="dataSourceBuilderFactory"></param>
+    /// <param name="dataSource"></param>
+    public void Connection(
+        Func<string, NpgsqlDataSourceBuilder> dataSourceBuilderFactory,
+        NpgsqlDataSource dataSource
+    )
+    {
+        NpgsqlDataSourceFactory =
+            new SingleNpgsqlDataSourceFactory(cs => new NpgsqlDataSourceBuilder(cs), dataSource);
     }
 
     /// <summary>
