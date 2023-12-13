@@ -637,8 +637,17 @@ public static class MartenServiceCollectionExtensions
         /// </summary>
         /// <param name="serviceKey">NpgsqlDataSource service key as registered in DI</param>
         /// <returns></returns>
-        public MartenConfigurationExpression UseNpgsqlDataSource(object? serviceKey = null) =>
-            UseNpgsqlDataSource(connectionString => new NpgsqlDataSourceBuilder(connectionString));
+        public MartenConfigurationExpression UseNpgsqlDataSource(object? serviceKey = null)
+        {
+            Services.ConfigureMarten((sp, opts) =>
+                opts.Connection(
+                    serviceKey != null
+                        ? sp.GetRequiredKeyedService<NpgsqlDataSource>(serviceKey)
+                        : sp.GetRequiredService<NpgsqlDataSource>()
+                )
+            );
+            return this;
+        }
 
         /// <summary>
         /// Use configured NpgsqlDataSource from DI container
@@ -652,11 +661,11 @@ public static class MartenServiceCollectionExtensions
         )
         {
             Services.ConfigureMarten((sp, opts) =>
-                opts.DataSourceFactory(new SingleNpgsqlDataSourceFactory(
+                opts.Connection(
                     dataSourceBuilderFactory,
                     serviceKey != null
                         ? sp.GetRequiredKeyedService<NpgsqlDataSource>(serviceKey)
-                        : sp.GetRequiredService<NpgsqlDataSource>())
+                        : sp.GetRequiredService<NpgsqlDataSource>()
                 )
             );
             return this;

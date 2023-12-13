@@ -403,8 +403,8 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         logger ??= new NulloLogger();
 
         var database = tenantIdOrDatabaseIdentifier.IsEmpty()
-            ? Options.Tenancy.Default.Database
-            : Options.Tenancy.GetTenant(tenantIdOrDatabaseIdentifier).Database;
+            ? Tenancy.Default.Database
+            : Tenancy.GetTenant(tenantIdOrDatabaseIdentifier).Database;
         var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(database), Events, logger);
 
         return new ProjectionDaemon(this, database, detector, logger);
@@ -420,8 +420,8 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         logger ??= new NulloLogger();
 
         var database = tenantIdOrDatabaseIdentifier.IsEmpty()
-            ? Options.Tenancy.Default.Database
-            : await Options.Tenancy.FindOrCreateDatabase(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
+            ? Tenancy.Default.Database
+            : await Tenancy.FindOrCreateDatabase(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
 
         await database.EnsureStorageExistsAsync(typeof(IEvent)).ConfigureAwait(false);
 

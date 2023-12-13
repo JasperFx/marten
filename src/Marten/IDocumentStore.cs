@@ -7,7 +7,6 @@ using System.Transactions;
 using Marten.Events.Daemon;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
-using Weasel.Core.Migrations;
 using IsolationLevel = System.Data.IsolationLevel;
 
 namespace Marten;
