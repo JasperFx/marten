@@ -37,7 +37,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
     /// <param name="options"></param>
     public DocumentStore(StoreOptions options)
     {
-        dataSourceFactory = options.dataSourceFactory;
+        dataSourceFactory = options.NpgsqlDataSourceFactory;
         options.ApplyConfiguration();
         options.Validate();
 

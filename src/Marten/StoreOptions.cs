@@ -36,7 +36,8 @@ namespace Marten;
 /// </summary>
 public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
 {
-    internal INpgsqlDataSourceFactory dataSourceFactory = new DefaultNpgsqlDataSourceFactory();
+    internal INpgsqlDataSourceFactory NpgsqlDataSourceFactory { get; private set; } =
+        new DefaultNpgsqlDataSourceFactory();
 
     internal readonly List<Action<ISerializer>> SerializationConfigurations = new();
 
@@ -255,6 +256,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     /// </summary>
     public ITenancy Tenancy { get; set; } = null!;
 
+    private Func<INpgsqlDataSourceFactory, ITenancy> TenancyDefinition { get; set; } = null!;
+
     IReadOnlyEventStoreOptions IReadOnlyStoreOptions.Events => EventGraph;
 
     IReadOnlyLinqParsing IReadOnlyStoreOptions.Linq => Linq;
@@ -269,6 +272,15 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
         CreateDatabases = configure ?? throw new ArgumentNullException(nameof(configure));
     }
 
+    /// <summary>
+    ///     Sets custom `NpgsqlDataSource` factory to manage database connections
+    /// </summary>
+    /// <param name="dataSourceFactory"></param>
+    public void DataSourceFactory(INpgsqlDataSourceFactory dataSourceFactory)
+    {
+        NpgsqlDataSourceFactory = dataSourceFactory;
+    }
+
 
     /// <summary>
     ///     Supply the connection string to the Postgresql database
@@ -276,16 +288,17 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     /// <param name="connectionString"></param>
     public void Connection(string connectionString)
     {
-        Tenancy = new DefaultTenancy(new ConnectionFactory(dataSourceFactory, connectionString), this);
+        Tenancy = new DefaultTenancy(new ConnectionFactory(NpgsqlDataSourceFactory, connectionString), this);
     }
 
     /// <summary>
     ///     Supply a source for the connection string to a Postgresql database
     /// </summary>
     /// <param name="connectionSource"></param>
+    [Obsolete("User version with connection string")]
     public void Connection(Func<string> connectionSource)
     {
-        Tenancy = new DefaultTenancy(new ConnectionFactory(dataSourceFactory, connectionSource), this);
+        Tenancy = new DefaultTenancy(new ConnectionFactory(NpgsqlDataSourceFactory, connectionSource), this);
     }
 
     /// <summary>
@@ -293,9 +306,23 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     ///     the Postgresql database
     /// </summary>
     /// <param name="source"></param>
+    [Obsolete("User version with connection string or provide custom data source factory")]
     public void Connection(Func<NpgsqlConnection> source)
     {
         Tenancy = new DefaultTenancy(new LambdaConnectionFactory(source), this);
+    }
+
+    /// <summary>
+    ///     Supply a mechanism for resolving an NpgsqlConnection object based on the NpgsqlDataSource
+    /// </summary>
+    /// <remarks>
+    ///     When doing that you need to handle data source disposal.
+    /// </remarks>
+    /// <param name="dataSource"></param>
+    public void Connection(NpgsqlDataSource dataSource)
+    {
+        NpgsqlDataSourceFactory = new SingleNpgsqlDataSourceFactory(cs => new NpgsqlDataSourceBuilder(cs), dataSource);
+        Tenancy = new DefaultTenancy(new ConnectionFactory(NpgsqlDataSourceFactory, dataSource.ConnectionString), this);
     }
 
     /// <summary>
@@ -501,7 +528,11 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     {
         Advanced.DefaultTenantUsageEnabled = false;
         var tenancy =
-            new SingleServerMultiTenancy(dataSourceFactory, dataSourceFactory.Create(masterConnectionString), this);
+            new SingleServerMultiTenancy(
+                NpgsqlDataSourceFactory,
+                NpgsqlDataSourceFactory.Create(masterConnectionString),
+                this
+            );
         Tenancy = tenancy;
 
         return tenancy;
@@ -516,7 +547,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     public void MultiTenantedDatabases(Action<IStaticMultiTenancy> configure)
     {
         Advanced.DefaultTenantUsageEnabled = false;
-        var tenancy = new StaticMultiTenancy(dataSourceFactory, this);
+        var tenancy = new StaticMultiTenancy(NpgsqlDataSourceFactory, this);
         Tenancy = tenancy;
 
         configure(tenancy);

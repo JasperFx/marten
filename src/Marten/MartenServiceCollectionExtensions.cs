@@ -169,7 +169,10 @@ public static class MartenServiceCollectionExtensions
     /// <param name="services"></param>
     /// <param name="options">The Marten configuration for this application</param>
     /// <returns></returns>
-    public static MartenConfigurationExpression AddMarten(this IServiceCollection services, StoreOptions options)
+    public static MartenConfigurationExpression AddMarten(
+        this IServiceCollection services,
+        StoreOptions options
+    )
     {
         services.AddMarten(s => options);
         return new MartenConfigurationExpression(services, options);
@@ -181,8 +184,10 @@ public static class MartenServiceCollectionExtensions
     /// </summary>
     /// <param name="optionSource">Func that will build out a StoreOptions with the applications IServiceProvider as the input</param>
     /// <returns></returns>
-    public static MartenConfigurationExpression AddMarten(this IServiceCollection services,
-        Func<IServiceProvider, StoreOptions> optionSource)
+    public static MartenConfigurationExpression AddMarten(
+        this IServiceCollection services,
+        Func<IServiceProvider, StoreOptions> optionSource
+    )
     {
         services.AddSingleton(s =>
         {
@@ -242,8 +247,10 @@ public static class MartenServiceCollectionExtensions
     /// <param name="services"></param>
     /// <param name="configure"></param>
     /// <returns></returns>
-    public static MartenConfigurationExpression AddMarten(this IServiceCollection services,
-        Action<StoreOptions> configure)
+    public static MartenConfigurationExpression AddMarten(
+        this IServiceCollection services,
+        Action<StoreOptions> configure
+    )
     {
         var options = new StoreOptions();
         configure(options);
@@ -259,8 +266,10 @@ public static class MartenServiceCollectionExtensions
     /// <param name="configure"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static MartenStoreExpression<T> AddMartenStore<T>(this IServiceCollection services,
-        Action<StoreOptions> configure) where T : class, IDocumentStore
+    public static MartenStoreExpression<T> AddMartenStore<T>(
+        this IServiceCollection services,
+        Action<StoreOptions> configure
+    ) where T : class, IDocumentStore
     {
         return services.AddMartenStore<T>(s =>
         {
@@ -726,7 +735,8 @@ public static class MartenServiceCollectionExtensions
         /// <param name="lifetime">The IoC lifecycle for the projection instance. Note that the Transient lifetime will still be treated as Scoped</param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public MartenConfigurationExpression AddProjectionWithServices<T>(ProjectionLifecycle lifecycle, ServiceLifetime lifetime) where T : class, IProjection
+        public MartenConfigurationExpression AddProjectionWithServices<T>(ProjectionLifecycle lifecycle,
+            ServiceLifetime lifetime) where T : class, IProjection
         {
             switch (lifetime)
             {
