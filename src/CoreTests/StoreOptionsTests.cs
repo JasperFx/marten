@@ -71,7 +71,7 @@ public class StoreOptionsTests
     {
         var e = Assert.Throws<InvalidOperationException>(() => DocumentStore.For(_ => { }));
 
-        Assert.Contains("Tenancy not specified", e.Message);
+        Assert.Contains("No tenancy is configured", e.Message);
     }
 
     [Fact]
@@ -326,6 +326,7 @@ public class StoreOptionsTests
     {
         // Given
         var options = new StoreOptions();
+        options.Connection(ConnectionSource.ConnectionString);
 
         // When
         options.DataSourceFactory(new DummyNpgsqlDataSourceFactory());
@@ -368,6 +369,6 @@ public class StoreOptionsTests
     private class DummyNpgsqlDataSourceFactory: INpgsqlDataSourceFactory
     {
         public NpgsqlDataSource Create(string connectionString) =>
-            throw new NotImplementedException();
+            new NpgsqlDataSourceBuilder(connectionString).Build();
     }
 }
