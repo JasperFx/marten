@@ -350,6 +350,21 @@ public class StoreOptionsTests
         options.Tenancy.ShouldBeOfType<SingleServerMultiTenancy>();
     }
 
+    [Fact]
+    public void SettingCustomDataSourceFactory_ShouldSetTenancyIfItsNotDefinedYet()
+    {
+        // Given
+        var options = new StoreOptions();
+
+        // When
+        options.DataSourceFactory(new DummyNpgsqlDataSourceFactory(), ConnectionSource.ConnectionString);
+
+        // Then
+        options.NpgsqlDataSourceFactory.ShouldBeOfType<DummyNpgsqlDataSourceFactory>();
+        options.Tenancy.ShouldBeOfType<DefaultTenancy>();
+    }
+
+
     private class DummyNpgsqlDataSourceFactory: INpgsqlDataSourceFactory
     {
         public NpgsqlDataSource Create(string connectionString) =>

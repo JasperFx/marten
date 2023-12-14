@@ -100,23 +100,10 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         (Options.Events as IDisposable)?.SafeDispose();
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        if (dataSourceFactory is IAsyncDisposable dsad)
-        {
-            await dsad.DisposeAsync().ConfigureAwait(false);
-        }
-
-        if (Options.Events is IAsyncDisposable ad)
-        {
-            await ad.DisposeAsync().ConfigureAwait(false);
-            return;
-        }
-
-        if (Options.Events is IDisposable d)
-        {
-            d.Dispose();
-        }
+        return DisposableExtensions
+            .MaybeDisposeAllAsync<object>([dataSourceFactory, Options.Events]);
     }
 
     public AdvancedOperations Advanced { get; }

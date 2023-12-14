@@ -6,8 +6,8 @@ Welcome to the Marten documentation! Join our friendly [Discord channel](https:/
 
 **Marten is a .NET library for building applications using
 a [document-based approach](https://en.wikipedia.org/wiki/Document-oriented_database)
-and [Event Sourcing](https://martinfowler.com/eaaDev/EventSourcing.html).
-** We're committed to removing boilerplate work and letting you focus on delivering business value.
+and [Event Sourcing](https://martinfowler.com/eaaDev/EventSourcing.html).**
+We're committed to removing boilerplate work and letting you focus on delivering business value.
 
 Under the hood, we're using [Postgresql](https://www.postgresql.org/), changing it into:
 

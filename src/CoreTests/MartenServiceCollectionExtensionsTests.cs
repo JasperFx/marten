@@ -302,18 +302,135 @@ public class MartenServiceCollectionExtensionsTests
     [Fact]
     public async Task use_npgsql_data_source()
     {
-        await using var container = Container.For(x =>
-        {
-            x.AddNpgsqlDataSource(ConnectionSource.ConnectionString);
+        var services = new ServiceCollection();
 
-            x.AddMarten()
-                .UseLightweightSessions()
-                .UseNpgsqlDataSource();
-        });
+        #region sample_using_UseNpgsqlDataSource
 
-        await using var session = container.GetInstance<IDocumentSession>();
+        services.AddNpgsqlDataSource(ConnectionSource.ConnectionString);
+
+        services.AddMarten()
+            .UseLightweightSessions()
+            .UseNpgsqlDataSource();
+
+        #endregion
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        await using var session = serviceProvider.GetService<IDocumentSession>();
         Func<bool> Call(IDocumentSession s) => () => s.Query<Target>().Any();
         Call(session).ShouldNotThrow();
+    }
+
+#if NET8_0
+    [Fact]
+    public async Task use_npgsql_data_source_with_keyed_registration()
+    {
+        var services = new ServiceCollection();
+
+        #region sample_using_UseNpgsqlDataSource_keyed
+
+        const string dataSourceKey = "marten_data_source";
+
+        services.AddNpgsqlDataSource(ConnectionSource.ConnectionString, serviceKey: dataSourceKey);
+
+        services.AddMarten()
+            .UseLightweightSessions()
+            .UseNpgsqlDataSource(dataSourceKey);
+
+        #endregion
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        await using var session = serviceProvider.GetService<IDocumentSession>();
+        Func<bool> Call(IDocumentSession s) => () => s.Query<Target>().Any();
+        Call(session).ShouldNotThrow();
+    }
+
+    [Fact]
+    public void use_npgsql_data_source_with_keyed_registration_should_fail_if_key_is_not_passed()
+    {
+        var services = new ServiceCollection();
+
+        services.AddNpgsqlDataSource(ConnectionSource.ConnectionString, serviceKey: "marten_data_source");
+
+        services.AddMarten()
+            .UseLightweightSessions()
+            .UseNpgsqlDataSource();
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        Action GetStore(IServiceProvider c) => () =>
+        {
+            using var store = c.GetService<IDocumentStore>();
+        };
+
+        var exc = GetStore(serviceProvider).ShouldThrow<InvalidOperationException>();
+        exc.Message.Contains("NpgsqlDataSource").ShouldBeTrue();
+    }
+
+    [Fact]
+    public void use_npgsql_data_source_with_registration_should_fail_if_key_is_passed()
+    {
+        var services = new ServiceCollection();
+
+        services.AddNpgsqlDataSource(ConnectionSource.ConnectionString);
+
+        services.AddMarten()
+            .UseLightweightSessions()
+            .UseNpgsqlDataSource("marten_data_source");
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        Action GetStore(IServiceProvider c) => () =>
+        {
+            using var store = c.GetService<IDocumentStore>();
+        };
+
+        var exc = GetStore(serviceProvider).ShouldThrow<InvalidOperationException>();
+        exc.Message.Contains("NpgsqlDataSource").ShouldBeTrue();
+    }
+#endif
+
+    [Fact]
+    public void use_npgsql_data_source_should_fail_if_data_source_is_not_registered()
+    {
+        var services = new ServiceCollection();
+
+        services.AddMarten()
+            .UseLightweightSessions()
+            .UseNpgsqlDataSource();
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        Action GetStore(IServiceProvider c) => () =>
+        {
+            using var store = c.GetService<IDocumentStore>();
+        };
+
+        var exc = GetStore(serviceProvider).ShouldThrow<InvalidOperationException>();
+        exc.Message.Contains("NpgsqlDataSource").ShouldBeTrue();
+    }
+
+
+    [Fact]
+    public void AddMarten_with_no_params_should_fail_if_UseNpgsqlDataSource_was_not_called()
+    {
+        var services = new ServiceCollection();
+
+        services.AddNpgsqlDataSource(ConnectionSource.ConnectionString);
+
+        services.AddMarten()
+            .UseLightweightSessions();
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        Action GetStore(IServiceProvider c) => () =>
+        {
+            using var store = c.GetService<IDocumentStore>();
+        };
+
+        var exc = GetStore(serviceProvider).ShouldThrow<InvalidOperationException>();
+        exc.Message.Contains("UseNpgsqlDataSource").ShouldBeTrue();
     }
 
     public class SpecialBuilder: ISessionFactory
