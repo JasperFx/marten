@@ -5,7 +5,6 @@ using System.Reflection;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
-using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Marten.Linq.Parsing.Operators;
 using Marten.Linq.SqlGeneration.Filters;

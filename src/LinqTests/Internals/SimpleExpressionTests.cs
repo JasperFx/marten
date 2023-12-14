@@ -150,4 +150,13 @@ public class SimpleExpressionTests
         member.RawLocator.ShouldBe("d.data -> 'StringDict' ->> 'foo'");
         member.TypedLocator.ShouldBe("d.data -> 'StringDict' ->> 'foo'");
     }
+
+    [Fact]
+    public void find_array_indexer_field_of_string()
+    {
+        var expression = parse(x => x.StringArray[0]);
+        var member = expression.Member.ShouldBeOfType<StringMember>();
+        member.RawLocator.ShouldBe("CAST(d.data ->> 'StringArray' as jsonb) ->> 0");
+        member.TypedLocator.ShouldBe("CAST(d.data ->> 'StringArray' as jsonb) ->> 0");
+    }
 }

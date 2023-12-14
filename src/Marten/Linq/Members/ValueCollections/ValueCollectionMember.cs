@@ -35,6 +35,8 @@ internal class ValueCollectionMember: QueryableMember, ICollectionMember, IValue
         var innerPgType = PostgresqlProvider.Instance.GetDatabaseType(ElementType, EnumStorage.AsInteger);
         var pgType = PostgresqlProvider.Instance.HasTypeMapping(ElementType) ? innerPgType + "[]" : "jsonb";
 
+        SimpleLocator = $"{parent.RawLocator} -> '{MemberName}'";
+
         RawLocator = $"CAST({rawLocator} as jsonb)";
         TypedLocator = $"CAST({rawLocator} as {pgType})";
 
@@ -58,6 +60,11 @@ internal class ValueCollectionMember: QueryableMember, ICollectionMember, IValue
         IsEmpty = new CollectionIsEmpty(this);
         NotEmpty = new CollectionIsNotEmpty(this);
     }
+
+    /// <summary>
+    /// Only used to craft children locators later
+    /// </summary>
+    public string SimpleLocator { get; }
 
     public ISqlFragment IsEmpty { get; }
     public ISqlFragment NotEmpty { get; }
@@ -162,13 +169,18 @@ internal class ValueCollectionMember: QueryableMember, ICollectionMember, IValue
         return $"CAST(ARRAY(SELECT jsonb_array_elements_text({RawLocator.Replace("d.", "")})) as {pgType})";
     }
 
-
     public override IQueryableMember FindMember(MemberInfo member)
     {
         if (member.Name == "Count" || member.Name == "Length")
         {
             return _count;
         }
+
+        // TODO -- this could be memoized a bit
+        if (member is ArrayIndexMember indexMember)
+            return ElementType == typeof(string)
+                ? StringMember.ForArrayIndex(this, indexMember)
+                : SimpleCastMember.ForArrayIndex(this, indexMember);
 
         return _wholeDataMember;
     }

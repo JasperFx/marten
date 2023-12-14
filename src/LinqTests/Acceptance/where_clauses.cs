@@ -162,6 +162,13 @@ public class where_clauses: LinqTestContext<where_clauses>
 
         @where(x => x.StringDict.Count > 2);
         @where(x => x.StringDict.Count() == 2);
+
+
+        @where(x => x.NumberArray != null && x.NumberArray.Length > 1 && x.NumberArray[1] == 3);
+        @where(x => x.StringArray != null && x.StringArray.Length > 2 && x.StringArray[2] == "Red");
+
+        @where(x => x.String.ToLower() == "red");
+        @where(x => x.String.ToUpper() == "RED");
     }
 
     [Theory]

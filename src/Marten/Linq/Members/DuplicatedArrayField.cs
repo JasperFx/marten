@@ -31,18 +31,19 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
 
         _wholeDataMember = new WholeDataMember(ElementType);
 
-        var innerPgType = PostgresqlProvider.Instance.GetDatabaseType(ElementType, EnumStorage.AsInteger);
-        var pgType = PostgresqlProvider.Instance.HasTypeMapping(ElementType) ? innerPgType + "[]" : "jsonb";
+        _innerPgType = PostgresqlProvider.Instance.GetDatabaseType(ElementType, EnumStorage.AsInteger);
+        var pgType = PostgresqlProvider.Instance.HasTypeMapping(ElementType) ? _innerPgType + "[]" : "jsonb";
         Element = new SimpleElementMember(ElementType, pgType);
 
-        _count = new CollectionLengthMember(this);
+        _count = new ArrayLengthMember(this);
 
         IsEmpty = new ArrayIsEmptyFilter(this);
         NotEmpty = new ArrayIsNotEmptyFilter(this);
     }
 
     private readonly WholeDataMember _wholeDataMember;
-    private readonly CollectionLengthMember _count;
+    private readonly ArrayLengthMember _count;
+    private string _innerPgType;
 
 
     public ISqlFragment IsEmpty { get; }
@@ -108,6 +109,25 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
         if (member.Name == "Count" || member.Name == "Length")
         {
             return _count;
+        }
+
+        // PostgreSQL arrays are 1 based!!!!!!!
+        if (member is ArrayIndexMember indexMember)
+        {
+            if (ElementType == typeof(string))
+            {
+                return new StringMember(this, Casing.Default, indexMember)
+                {
+                    RawLocator = $"{RawLocator}[{indexMember.Index + 1}]",
+                    TypedLocator = $"{RawLocator}[{indexMember.Index + 1}]"
+                };
+            }
+
+            return new SimpleCastMember(this, Casing.Default, member, _innerPgType)
+            {
+                RawLocator = $"{RawLocator}[{indexMember.Index + 1}]",
+                TypedLocator = $"CAST({RawLocator}[{indexMember.Index + 1}] as {_innerPgType})"
+            };
         }
 
         return _wholeDataMember;
@@ -180,5 +200,22 @@ internal class ArrayIsNotEmptyFilter: IReversibleWhereFragment
     public ISqlFragment Reverse()
     {
         return _member.IsEmpty;
+    }
+}
+
+internal class ArrayLengthMember: QueryableMember, IComparableMember
+{
+    public ArrayLengthMember(DuplicatedArrayField parent): base(parent, "Count", typeof(int))
+    {
+        RawLocator = TypedLocator = $"array_length({parent.RawLocator}, 1)";
+        Parent = parent;
+    }
+
+    public ICollectionMember Parent { get; }
+
+    public override ISqlFragment CreateComparison(string op, ConstantExpression constant)
+    {
+        var def = new CommandParameter(constant);
+        return new ComparisonFilter(this, def, op);
     }
 }
