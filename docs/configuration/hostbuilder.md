@@ -11,7 +11,6 @@ the IoC service registrations for your application in the `Startup.ConfigureServ
 
 <!-- snippet: sample_StartupConfigureServices -->
 <a id='snippet-sample_startupconfigureservices'></a>
-
 ```cs
 // This is the absolute, simplest way to integrate Marten into your
 // .NET application with Marten's default configuration
@@ -28,7 +27,6 @@ builder.Services.AddMarten(options =>
     }
 });
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L14-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -64,14 +62,12 @@ First, if you are using Marten completely out of the box with no customizations 
 
 <!-- snippet: sample_AddMartenByConnectionString -->
 <a id='snippet-sample_addmartenbyconnectionstring'></a>
-
 ```cs
 var connectionString = Configuration.GetConnectionString("postgres");
 
 // By only the connection string
 services.AddMarten(connectionString);
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByConnectionString/Startup.cs#L18-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbyconnectionstring' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -79,7 +75,6 @@ The second option is to supply a [nested closure](https://martinfowler.com/dslCa
 
 <!-- snippet: sample_AddMartenByNestedClosure -->
 <a id='snippet-sample_addmartenbynestedclosure'></a>
-
 ```cs
 var connectionString = Configuration.GetConnectionString("postgres");
 
@@ -92,7 +87,6 @@ services.AddMarten(opts =>
     // See https://martendb.io/configuration/optimized_artifact_workflow.html
     .OptimizeArtifactWorkflow();
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByNestedClosure/Startup.cs#L24-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbynestedclosure' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -100,7 +94,6 @@ Lastly, if you prefer, you can pass a Marten `StoreOptions` object to `AddMarten
 
 <!-- snippet: sample_AddMartenByStoreOptions -->
 <a id='snippet-sample_addmartenbystoreoptions'></a>
-
 ```cs
 var connectionString = Configuration.GetConnectionString("postgres");
 
@@ -114,7 +107,6 @@ services.AddMarten(options)
     // See https://martendb.io/configuration/optimized_artifact_workflow.html
     .OptimizeArtifactWorkflow();
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByStoreOptions/Startup.cs#L23-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbystoreoptions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -128,7 +120,6 @@ You can use the `AddNpgsqlDataSource` method from [Npgsql.DependencyInjection pa
 
 <!-- snippet: sample_using_UseNpgsqlDataSource -->
 <a id='snippet-sample_using_usenpgsqldatasource'></a>
-
 ```cs
 services.AddNpgsqlDataSource(ConnectionSource.ConnectionString);
 
@@ -136,7 +127,6 @@ services.AddMarten()
     .UseLightweightSessions()
     .UseNpgsqlDataSource();
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L307-L315' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -144,7 +134,6 @@ If you're on .NET 8 (and above), you can also use a dedicated [keyed registratio
 
 <!-- snippet: sample_using_UseNpgsqlDataSource -->
 <a id='snippet-sample_using_usenpgsqldatasource'></a>
-
 ```cs
 services.AddNpgsqlDataSource(ConnectionSource.ConnectionString);
 
@@ -152,7 +141,6 @@ services.AddMarten()
     .UseLightweightSessions()
     .UseNpgsqlDataSource();
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L307-L315' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -167,7 +155,6 @@ Fear not, Marten V5.0 introduced a new way to add or modify the Marten configura
 
 <!-- snippet: sample_AddUserModule -->
 <a id='snippet-sample_addusermodule'></a>
-
 ```cs
 public static IServiceCollection AddUserModule(this IServiceCollection services)
 {
@@ -184,7 +171,6 @@ public static IServiceCollection AddUserModule(this IServiceCollection services)
     return services;
 }
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L14-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addusermodule' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -192,7 +178,6 @@ And next, let's put that into context with its usage inside your application's b
 
 <!-- snippet: sample_using_configure_marten -->
 <a id='snippet-sample_using_configure_marten'></a>
-
 ```cs
 using var host = await Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
@@ -207,7 +192,6 @@ using var host = await Host.CreateDefaultBuilder()
         services.AddUserModule();
     }).StartAsync();
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L83-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_configure_marten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -216,7 +200,6 @@ service that implements the `IConfigureMarten` interface into the underlying IoC
 
 <!-- snippet: sample_IConfigureMarten -->
 <a id='snippet-sample_iconfiguremarten'></a>
-
 ```cs
 /// <summary>
 ///     Mechanism to register additional Marten configuration that is applied after AddMarten()
@@ -227,7 +210,6 @@ public interface IConfigureMarten
     void Configure(IServiceProvider services, StoreOptions options);
 }
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L839-L850' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -235,7 +217,6 @@ You could alternatively implement a custom `IConfigureMarten` (or `IConfigureMar
 
 <!-- snippet: sample_UserMartenConfiguration -->
 <a id='snippet-sample_usermartenconfiguration'></a>
-
 ```cs
 internal class UserMartenConfiguration: IConfigureMarten
 {
@@ -246,7 +227,6 @@ internal class UserMartenConfiguration: IConfigureMarten
     }
 }
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L64-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usermartenconfiguration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -254,7 +234,6 @@ and registering it in your IoC container something like this:
 
 <!-- snippet: sample_AddUserModule2 -->
 <a id='snippet-sample_addusermodule2'></a>
-
 ```cs
 public static IServiceCollection AddUserModule2(this IServiceCollection services)
 {
@@ -271,7 +250,6 @@ public static IServiceCollection AddUserModule2(this IServiceCollection services
     return services;
 }
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L36-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addusermodule2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -289,7 +267,6 @@ without the identity map behavior, use this syntax:
 
 <!-- snippet: sample_AddMartenWithLightweightSessions -->
 <a id='snippet-sample_addmartenwithlightweightsessions'></a>
-
 ```cs
 var connectionString = Configuration.GetConnectionString("postgres");
 
@@ -302,7 +279,6 @@ services.AddMarten(opts =>
     // session factory behavior
     .UseLightweightSessions();
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/LightweightSessions/Startup.cs#L23-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithlightweightsessions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -313,7 +289,6 @@ as shown in this example:
 
 <!-- snippet: sample_CustomSessionFactory -->
 <a id='snippet-sample_customsessionfactory'></a>
-
 ```cs
 public class CustomSessionFactory: ISessionFactory
 {
@@ -341,7 +316,6 @@ public class CustomSessionFactory: ISessionFactory
     }
 }
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L11-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customsessionfactory' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -349,7 +323,6 @@ To register the custom session factory, use the `BuildSessionsWith()` method as 
 
 <!-- snippet: sample_AddMartenWithCustomSessionCreation -->
 <a id='snippet-sample_addmartenwithcustomsessioncreation'></a>
-
 ```cs
 var connectionString = Configuration.GetConnectionString("postgres");
 
@@ -365,7 +338,6 @@ services.AddMarten(opts =>
     // session factory behavior
     .BuildSessionsWith<CustomSessionFactory>();
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L54-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -382,14 +354,12 @@ Taking the example of an ASP&#46;NET Core application, let's say that you have a
 
 <!-- snippet: sample_CorrelationIdWithISession -->
 <a id='snippet-sample_correlationidwithisession'></a>
-
 ```cs
 public interface ISession
 {
     Guid CorrelationId { get; set; }
 }
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L15-L20' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_correlationidwithisession' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -397,7 +367,6 @@ And a custom Marten session logger to add the correlation identifier to the log 
 
 <!-- snippet: sample_CorrelatedMartenLogger -->
 <a id='snippet-sample_correlatedmartenlogger'></a>
-
 ```cs
 public class CorrelatedMartenLogger: IMartenSessionLogger
 {
@@ -431,7 +400,6 @@ public class CorrelatedMartenLogger: IMartenSessionLogger
     }
 }
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L22-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_correlatedmartenlogger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -439,7 +407,6 @@ Now, let's move on to building out a custom session factory that will attach our
 
 <!-- snippet: sample_CustomSessionFactoryByScope -->
 <a id='snippet-sample_customsessionfactorybyscope'></a>
-
 ```cs
 public class ScopedSessionFactory: ISessionFactory
 {
@@ -473,7 +440,6 @@ public class ScopedSessionFactory: ISessionFactory
     }
 }
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L57-L89' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customsessionfactorybyscope' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -481,7 +447,6 @@ Lastly, let's register our new session factory, but this time we need to take ca
 
 <!-- snippet: sample_AddMartenWithCustomSessionCreationByScope -->
 <a id='snippet-sample_addmartenwithcustomsessioncreationbyscope'></a>
-
 ```cs
 var connectionString = Configuration.GetConnectionString("postgres");
 
@@ -496,7 +461,6 @@ services.AddMarten(opts =>
     // Chained helper to replace the CustomSessionFactory
     .BuildSessionsWith<ScopedSessionFactory>(ServiceLifetime.Scoped);
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L105-L118' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreationbyscope' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -510,7 +474,6 @@ Lastly, if desirable, you can force Marten to initialize the applications docume
 
 <!-- snippet: sample_AddMartenWithEagerInitialization -->
 <a id='snippet-sample_addmartenwitheagerinitialization'></a>
-
 ```cs
 var connectionString = Configuration.GetConnectionString("postgres");
 
@@ -523,7 +486,6 @@ services.AddMarten(connectionString)
     // Spin up the DocumentStore right this second!
     .InitializeWith();
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/EagerInitialization/Startup.cs#L19-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwitheagerinitialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -543,7 +505,6 @@ Marten V5.0 introduces a new feature to register additional Marten databases int
 
 <!-- snippet: sample_IInvoicingStore -->
 <a id='snippet-sample_iinvoicingstore'></a>
-
 ```cs
 // These marker interfaces *must* be public
 public interface IInvoicingStore : IDocumentStore
@@ -551,7 +512,6 @@ public interface IInvoicingStore : IDocumentStore
 
 }
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/MultipleDocumentStores.cs#L57-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iinvoicingstore' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -564,7 +524,6 @@ And now to bootstrap that separate store in our system:
 
 <!-- snippet: sample_bootstrapping_separate_Store -->
 <a id='snippet-sample_bootstrapping_separate_store'></a>
-
 ```cs
 using var host = Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
@@ -595,7 +554,6 @@ using var host = Host.CreateDefaultBuilder()
             .OptimizeArtifactWorkflow();
     }).StartAsync();
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/MultipleDocumentStores.cs#L14-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bootstrapping_separate_store' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
@@ -604,7 +562,6 @@ Marten `IDocumentStore` as shown below in an internal `InvoicingService`:
 
 <!-- snippet: sample_InvoicingService -->
 <a id='snippet-sample_invoicingservice'></a>
-
 ```cs
 public class InvoicingService
 {
@@ -627,6 +584,5 @@ public class InvoicingService
     }
 }
 ```
-
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/MultipleDocumentStores.cs#L67-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoicingservice' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
