@@ -20,7 +20,7 @@ using Weasel.Postgresql.Tables;
 
 namespace Marten.Linq.Members;
 
-public class DuplicatedField: IQueryableMember, IComparableMember
+public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenMembers
 {
     private readonly Func<object, object> _parseObject = o => o;
     private readonly bool useTimestampWithoutTimeZoneForDateTime;
@@ -161,11 +161,6 @@ public class DuplicatedField: IQueryableMember, IComparableMember
         return _parseObject(value);
     }
 
-    public bool ShouldUseContainmentOperator()
-    {
-        return false;
-    }
-
     string IQueryableMember.SelectorForDuplication(string pgType)
     {
         throw new NotSupportedException();
@@ -190,11 +185,6 @@ public class DuplicatedField: IQueryableMember, IComparableMember
     public string JSONBLocator { get; set; }
     public string LocatorForIncludedDocumentId => TypedLocator;
 
-    public string LocatorFor(string rootTableAlias)
-    {
-        return $"{rootTableAlias}.{_columnName}";
-    }
-
     public string TypedLocator { get; set; }
 
     void ISqlFragment.Apply(CommandBuilder builder)
@@ -208,11 +198,6 @@ public class DuplicatedField: IQueryableMember, IComparableMember
     }
 
     public Type MemberType => InnerMember.MemberType;
-
-    public string ToOrderExpression(Expression expression)
-    {
-        return TypedLocator;
-    }
 
     public string UpdateSqlFragment()
     {
@@ -234,4 +219,31 @@ public class DuplicatedField: IQueryableMember, IComparableMember
     }
 
 
+    public IQueryableMember FindMember(MemberInfo member)
+    {
+        // Only really using this for string ToLower() and ToUpper()
+        if (MemberType == typeof(string))
+        {
+            return member.Name switch
+            {
+                nameof(string.ToLower) => new StringMember(this, Casing.Default, member)
+                {
+                    RawLocator = $"lower({RawLocator})", TypedLocator = $"lower({RawLocator})"
+                },
+                nameof(string.ToUpper) => new StringMember(this, Casing.Default, member)
+                {
+                    RawLocator = $"upper({RawLocator})", TypedLocator = $"upper({RawLocator})"
+                },
+                _ => throw new BadLinqExpressionException($"Marten does not (yet) support the method {member.Name} in duplicated field querying")
+            };
+        }
+
+        throw new BadLinqExpressionException(
+            $"Marten does not (yet) support the method {member.Name} in duplicated field querying");
+    }
+
+    public void ReplaceMember(MemberInfo member, IQueryableMember queryableMember)
+    {
+        // Nothing
+    }
 }

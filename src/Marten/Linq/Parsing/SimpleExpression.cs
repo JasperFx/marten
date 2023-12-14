@@ -40,17 +40,7 @@ internal class SimpleExpression: ExpressionVisitor
                 HasConstant = true;
                 break;
 
-            // case PartialEvaluationExceptionExpression p:
-            // {
-            //     var inner = p.Exception;
-            //
-            //     throw new BadLinqExpressionException(
-            //         $"Error in value expression inside of the query for '{p.EvaluatedExpression}'. See the inner exception:",
-            //         inner);
-            // }
-            // case QuerySourceReferenceExpression:
-            //     Member = new WholeDataMember(queryableMembers.ElementType);
-            //     return;
+
             case ParameterExpression:
                 if (queryableMembers is IValueCollectionMember collection)
                 {
@@ -66,7 +56,7 @@ internal class SimpleExpression: ExpressionVisitor
                 }
                 catch (Exception e)
                 {
-                    throw new BadLinqExpressionException($"Whoa pardner, Marten could not parse '{expression}' with the SimpleExpression construct");
+                    throw new BadLinqExpressionException($"Whoa pardner, Marten could not parse '{expression}' with the SimpleExpression construct", e);
                 }
                 break;
         }
@@ -89,6 +79,11 @@ internal class SimpleExpression: ExpressionVisitor
         {
             Member = queryableMembers.MemberFor(Members.ToArray());
         }
+    }
+
+    public override Expression Visit(Expression node)
+    {
+        return base.Visit(node);
     }
 
     // Pretend for right now that there's only one of all of these
@@ -150,6 +145,8 @@ internal class SimpleExpression: ExpressionVisitor
     }
 
 
+
+
     protected override Expression VisitBinary(BinaryExpression node)
     {
         switch (node.NodeType)
@@ -159,6 +156,14 @@ internal class SimpleExpression: ExpressionVisitor
                 return null;
 
             case ExpressionType.ArrayIndex:
+                var index = (int)node.Right.ReduceToConstant().Value;
+                Members.Insert(0, new ArrayIndexMember(index));
+
+                if (node.Left is MemberExpression m)
+                {
+                    return VisitMember(m);
+                }
+
                 return base.VisitBinary(node);
 
             case ExpressionType.Equal:
