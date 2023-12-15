@@ -18,7 +18,6 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
 {
     private HasValueMember? _hasValue;
     private string _nullTestLocator;
-    private string _descendingOrderLocator;
 
     /// <summary>
     /// </summary>
@@ -36,7 +35,6 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
 
         JSONBLocator = $"CAST({RawLocator} as jsonb)";
         Ancestors = parent.Ancestors.Append(parent);
-        _descendingOrderLocator = $"{TypedLocator} desc";
     }
 
     protected QueryableMember(IQueryableMember parent, string memberName, Type memberType)
@@ -49,7 +47,7 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
         JSONBLocator = $"CAST({RawLocator} as jsonb)";
 
         Ancestors = parent.Ancestors.Append(parent);
-        _descendingOrderLocator = $"{TypedLocator} desc";
+
     }
 
     public MemberInfo Member { get; }
@@ -102,7 +100,7 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
 
     public virtual string BuildOrderingExpression(Ordering ordering, CasingRule casingRule)
     {
-        return ordering.Direction == OrderingDirection.Desc ? _descendingOrderLocator : TypedLocator;
+        return ordering.Direction == OrderingDirection.Desc ? $"{TypedLocator} desc" : TypedLocator;
     }
 
     void ISqlFragment.Apply(CommandBuilder builder)
