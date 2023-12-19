@@ -42,9 +42,8 @@ In addition, there are a couple other metadata tables you'll see in your schema:
 * `mt_streams` - Metadata about each event stream
 * `mt_event_progression` - A durable record about the progress of each async projection through the event store
 
-A couple functions that Marten uses internally:
+A function that Marten uses internally:
 
-* `mt_append_event` - Writes event data to the `mt_events` and `mt_streams` tables
 * `mt_mark_event_progression` - Updates the `mt_event_progression` table
 
 And lastly, there's a document type called `DeadLetterEvent` that Marten adds automatically to record information about
