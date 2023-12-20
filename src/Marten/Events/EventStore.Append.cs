@@ -38,6 +38,10 @@ internal partial class EventStore
         var eventStream = Append(stream, events);
         eventStream.ExpectedVersionOnServer = expectedVersion - eventStream.Events.Count;
 
+        if (eventStream.ExpectedVersionOnServer < 0)
+            throw new ArgumentOutOfRangeException(nameof(expectedVersion),
+                "The expected version cannot be less than the number of events being appended");
+
         return eventStream;
     }
 
