@@ -1,13 +1,19 @@
+using System;
+using System.Threading.Tasks;
+using EventSourcingTests.Projections;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace EventSourcingTests;
 
 public class asserting_on_expected_event_version_on_append: IntegrationContext
 {
+    private readonly ITestOutputHelper _output;
+
     [Fact]
     public void should_check_max_event_id_on_append()
     {
@@ -111,7 +117,50 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
         }
     }
 
-    public asserting_on_expected_event_version_on_append(DefaultStoreFixture fixture) : base(fixture)
+    [Fact]
+    public async Task should_check_max_event_id_on_append_to_empty_stream()
     {
+        var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
+
+        var stream = Guid.NewGuid();
+
+        // This should fail because it's expecting the version on the server to exist
+        // and be at 5 at the end of this
+        theSession.Events.Append(stream, 5, joined);
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        await Assert.ThrowsAsync<EventStreamUnexpectedMaxEventIdException>(async () => await theSession.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task happy_path_on_append_to_empty_stream()
+    {
+        var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
+
+        var stream = Guid.NewGuid();
+
+        // This should succeed because, yup, it puts you at exactly 1.
+        // This really should be done w/ StartStream(), but oh well
+        theSession.Events.Append(stream, 1, joined);
+
+        await theSession.SaveChangesAsync();
+    }
+
+    [Fact]
+    public void should_assert_that_the_expected_version_would_be_impossible()
+    {
+        var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
+
+        var stream = Guid.NewGuid();
+
+        Should.Throw<ArgumentOutOfRangeException>(() =>
+            theSession.Events.Append(stream, 1, joined, new MonsterSlayed { Name = "Gorgon" }));
+
+    }
+
+    public asserting_on_expected_event_version_on_append(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    {
+        _output = output;
     }
 }

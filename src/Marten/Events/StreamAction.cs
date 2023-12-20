@@ -311,6 +311,15 @@ public class StreamAction
 
             ExpectedVersionOnServer = currentVersion;
         }
+        else if (ExpectedVersionOnServer.HasValue)
+        {
+            // This is from trying to call Append() with an expected version on a non-existent stream
+            if (ExpectedVersionOnServer.Value != 0)
+            {
+                throw new EventStreamUnexpectedMaxEventIdException((object?)Key ?? Id, AggregateType,
+                    ExpectedVersionOnServer.Value, currentVersion);
+            }
+        }
 
         Version = Events.Last().Version;
     }
