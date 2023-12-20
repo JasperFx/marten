@@ -19,7 +19,7 @@ internal class CallUpsertFunctionFrame: MethodCall, IEventHandlingFrame
     public CallUpsertFunctionFrame(Type eventType, DbObjectName functionIdentifier, List<IColumnMap> columnMaps,
         MemberInfo[] members): base(typeof(IDocumentOperations), nameof(IDocumentOperations.QueueSqlCommand))
     {
-        _functionIdentifier = functionIdentifier;
+        _functionIdentifier = functionIdentifier ?? throw new ArgumentNullException(nameof(functionIdentifier));
         _columnMaps = columnMaps;
         _members = members;
         EventType = eventType;
