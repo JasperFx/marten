@@ -39,7 +39,7 @@ using (var session = store.QuerySession())
 With the configuration above, you can now query by `User` and get `AdminUser` and `SuperUser` documents as part of the results,
 or query directly for any of the subclasses to limit the query.
 
-The best description of what is possible with hierarchical storage is to read the [acceptance tests for this feature](https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs).
+The best description of what is possible with hierarchical storage is to read the [acceptance tests for this feature](https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs).
 
 There's a couple things to be aware of with type hierarchies:
 
