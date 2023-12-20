@@ -673,7 +673,7 @@ You can also use `TransformToJson()` inside of a [compiled query](/documents/que
 ### Document Transformations
 
 The persisted JSON documents in Marten are a reflection of your .Net classes. Great, that makes it absurdly easy to keep the database schema
-in synch with your application code at development time -- especially compared to the typical development process against a relational database.
+in sync with your application code at development time -- especially compared to the typical development process against a relational database.
 However, what happens when you really do need to make breaking changes or additions to a document type but you already have loads of
 persisted documents in your Marten database with the old structure?
 
