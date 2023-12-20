@@ -23,10 +23,11 @@ public partial class CollectionUsage
 
         foreach (var expression in IncludeExpressions)
         {
-            var member = expression.Arguments.Count == 3
-                ? collection.MemberFor(expression.Arguments[1])
-                : collection.MemberFor(expression.Arguments[0]);
-            var receiver = expression.Arguments.Last().Value();
+            var startingIndex = expression.Arguments[0] is UnaryExpression ? 0 : 1;
+
+            var member = collection.MemberFor(expression.Arguments[startingIndex]);
+
+            var receiver = expression.Arguments[startingIndex + 1].Value();
 
             var genericArguments = receiver.GetType().GetGenericArguments();
             if (receiver.GetType().Closes(typeof(IList<>)))
@@ -36,6 +37,11 @@ public partial class CollectionUsage
 
                 var type = typeof(ListIncludePlan<>).MakeGenericType(includedType);
                 var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver);
+
+                if (expression.Arguments.Count == 3)
+                {
+                    plan.Where = expression.Arguments[2];
+                }
 
                 Includes.Add(plan);
             }
@@ -47,6 +53,11 @@ public partial class CollectionUsage
                 var type = typeof(IncludePlan<>).MakeGenericType(includedType);
                 var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver);
 
+                if (expression.Arguments.Count == 3)
+                {
+                    plan.Where = expression.Arguments[2];
+                }
+
                 Includes.Add(plan);
             }
             else
@@ -57,6 +68,11 @@ public partial class CollectionUsage
 
                 var type = typeof(DictionaryIncludePlan<,>).MakeGenericType(includedType, idType);
                 var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver);
+
+                if (expression.Arguments.Count == 3)
+                {
+                    plan.Where = expression.Arguments[2];
+                }
 
                 Includes.Add(plan);
             }

@@ -5,17 +5,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
-using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
-using Marten.Linq.Parsing.Operators;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Npgsql;
@@ -50,26 +47,18 @@ internal class MartenLinqQueryable<T>: IOrderedQueryable<T>, IMartenQueryable<T>
         Expression = Expression.Constant(this);
     }
 
-    public MartenLinqQueryable(QuerySession session, Expression expression) : this(session, new MartenLinqQueryProvider(session, typeof(T)), expression)
+    public MartenLinqQueryable(QuerySession session, Expression expression): this(session,
+        new MartenLinqQueryProvider(session, typeof(T)), expression)
     {
-
     }
 
-    public IEnumerator<T> GetEnumerator ()
+    public QueryStatistics Statistics
     {
-        return Provider.Execute<IEnumerable<T>> (Expression).GetEnumerator();
+        get => MartenProvider.Statistics;
+        set => MartenProvider.Statistics = value;
     }
-
-    IEnumerator IEnumerable.GetEnumerator ()
-    {
-        return Provider.Execute<IEnumerable> (Expression).GetEnumerator();
-    }
-
-    public Type ElementType => typeof(T);
-    public IQueryProvider Provider { get; }
 
     public MartenLinqQueryProvider MartenProvider { get; }
-    public Expression Expression { get; }
 
     public QuerySession Session { get; }
 
@@ -78,11 +67,60 @@ internal class MartenLinqQueryable<T>: IOrderedQueryable<T>, IMartenQueryable<T>
         return new LinqQueryParser(MartenProvider, Session, Expression);
     }
 
-    public QueryStatistics Statistics
+
+    public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback)
+        where TInclude : notnull
     {
-        get => MartenProvider.Statistics;
-        set => MartenProvider.Statistics = value;
+        var include = BuildInclude(idSource, callback);
+        return this.IncludePlan(include);
     }
+
+    public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list)
+        where TInclude : notnull
+    {
+        return Include<TInclude>(idSource, list.Add);
+    }
+
+    public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list,
+        Expression<Func<TInclude, bool>> filter) where TInclude : notnull
+    {
+        return Include(idSource, list.Add, filter);
+    }
+
+    public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback, Expression<Func<TInclude, bool>> filter) where TInclude : notnull
+    {
+        var include = BuildInclude(idSource, callback, filter);
+        return this.IncludePlan(include);
+    }
+
+
+    public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
+        IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey : notnull
+    {
+        var include = BuildInclude(idSource, dictionary);
+        return this.IncludePlan(include);
+    }
+
+    public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource, IDictionary<TKey, TInclude> dictionary, Expression<Func<TInclude, bool>> filter) where TInclude : notnull where TKey : notnull
+    {
+        var include = BuildInclude(idSource, dictionary);
+        include.Where = filter;
+        return this.IncludePlan(include);
+    }
+
+    public IEnumerator<T> GetEnumerator()
+    {
+        return Provider.Execute<IEnumerable<T>>(Expression).GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return Provider.Execute<IEnumerable>(Expression).GetEnumerator();
+    }
+
+    public Type ElementType => typeof(T);
+    public IQueryProvider Provider { get; }
+    public Expression Expression { get; }
 
     public async Task<IReadOnlyList<TResult>> ToListAsync<TResult>(CancellationToken token)
     {
@@ -165,28 +203,6 @@ internal class MartenLinqQueryable<T>: IOrderedQueryable<T>, IMartenQueryable<T>
         return conn.ExplainQuery(Session.Serializer, command, configureExplain)!;
     }
 
-
-
-    public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback)
-        where TInclude : notnull
-    {
-        var include = BuildInclude(idSource, callback);
-        return this.IncludePlan(include);
-    }
-
-    public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list)
-        where TInclude : notnull
-    {
-        return Include<TInclude>(idSource, list.Add);
-    }
-
-    public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
-        IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey : notnull
-    {
-        var include = BuildInclude(idSource, dictionary);
-        return this.IncludePlan(include);
-    }
-
     public IMartenQueryable<T> Stats(out QueryStatistics stats)
     {
         Statistics = new QueryStatistics();
@@ -206,13 +222,17 @@ internal class MartenLinqQueryable<T>: IOrderedQueryable<T>, IMartenQueryable<T>
         return MartenProvider.StreamMany(Expression, destination, token);
     }
 
-    internal IIncludePlan BuildInclude<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback)
+    internal IIncludePlan BuildInclude<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback, Expression? where = null)
         where TInclude : notnull
     {
         var storage = (IDocumentStorage<TInclude>)Session.StorageFor(typeof(TInclude));
         var identityMember = Session.StorageFor(typeof(T)).QueryMembers.MemberFor(idSource);
 
-        var include = new IncludePlan<TInclude>(storage, identityMember, callback);
+        var include = new IncludePlan<TInclude>(storage, identityMember, callback)
+        {
+            Where = where
+        };
+
         return include;
     }
 
