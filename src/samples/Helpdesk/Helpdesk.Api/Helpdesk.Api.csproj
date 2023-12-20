@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Aspire.Npgsql" Version="8.0.0-preview.1.23557.2"/>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0"/>
         <PackageReference Include="Confluent.Kafka" Version="2.3.0"/>
         <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0"/>
@@ -17,5 +18,6 @@
         <ProjectReference Include="..\..\..\Marten.AspNetCore\Marten.AspNetCore.csproj"/>
         <ProjectReference Include="..\..\..\Marten.CommandLine\Marten.CommandLine.csproj"/>
         <ProjectReference Include="..\..\..\Marten\Marten.csproj"/>
+        <ProjectReference Include="..\Helpdesk.ServiceDefaults\Helpdesk.ServiceDefaults.csproj"/>
     </ItemGroup>
 </Project>
