@@ -7,13 +7,8 @@ using Xunit;
 
 namespace EventSourcingTests;
 
-public class event_statistics : IntegrationContext
+public class event_statistics : OneOffConfigurationsContext
 {
-    public event_statistics(DefaultStoreFixture fixture) : base(fixture)
-    {
-
-    }
-
     [Fact]
     public async Task fetch_from_empty_store()
     {
