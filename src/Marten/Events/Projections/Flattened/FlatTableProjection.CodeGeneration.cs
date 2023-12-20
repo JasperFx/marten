@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Events.CodeGeneration;
 
 namespace Marten.Events.Projections.Flattened;

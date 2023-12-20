@@ -30,6 +30,11 @@ public class StatementMap<T>: IEventHandler
 
     IEventHandlingFrame IEventHandler.BuildFrame(EventGraph events, Table table)
     {
+        if (_functionIdentifier == null)
+        {
+            createFunctionName(table);
+        }
+
         return new CallUpsertFunctionFrame(typeof(T), _functionIdentifier, _columnMaps,
             determinePkMembers(events).ToArray());
     }
@@ -42,10 +47,15 @@ public class StatementMap<T>: IEventHandler
 
     IEnumerable<ISchemaObject> IEventHandler.BuildObjects(EventGraph events, Table table)
     {
-        var functionName = $"mt_upsert_{table.Identifier.Name}_{typeof(T).NameInCode().Sanitize()}";
-        _functionIdentifier = new PostgresqlObjectName(table.Identifier.Schema, functionName);
+        createFunctionName(table);
 
         yield return new FlatTableUpsertFunction(_functionIdentifier, table, _columnMaps);
+    }
+
+    private void createFunctionName(Table table)
+    {
+        var functionName = $"mt_upsert_{table.Identifier.Name.ToLower()}_{typeof(T).NameInCode().ToLower().Sanitize()}";
+        _functionIdentifier = new PostgresqlObjectName(table.Identifier.Schema, functionName);
     }
 
     private IEnumerable<MemberInfo> determinePkMembers(EventGraph events)
