@@ -1,8 +1,13 @@
 # Including Related Documents
 
-## Join a Single Document
+## Include a Single Document
 
-Marten supports the ability to run include queries that execute a `join` SQL query behind the curtains, in order to fetch a referenced document as well as the queried document. Suppose you are querying for a github `Issue` that contains a property `AssigneeId`, which references the Id of the `User` assigned to the Issue. If you wish to fetch the `User` as well in one trip to the database, you can use the `.Include()` method like so:
+::: tip
+If you're interested, this functionality does not use SQL `JOIN` clauses, and has not since
+the V4 release.
+:::
+
+Marten supports the ability to run include queries that make a single database call in order to fetch a referenced document as well as the queried document. Suppose you are querying for a github `Issue` that contains a property `AssigneeId`, which references the Id of the `User` assigned to the Issue. If you wish to fetch the `User` as well in one trip to the database, you can use the `.Include()` method like so:
 
 <!-- snippet: sample_simple_include -->
 <a id='snippet-sample_simple_include'></a>
@@ -37,7 +42,7 @@ public void simple_include_for_a_single_document()
 
 The first parameter of the `Include()` method takes an expression that specifies the document properties on which the join will be done (`AssigneeId` in this case). The second parameter is the expression that will assign the fetched related document to a previously declared variable (`included` in our case). By default, Marten will use an inner join. This means that any `Issue` with no corresponding `User` (or no `AssigneeId`), will not be fetched. If you wish to override this behavior, you can add as a third parameter the enum `JoinType.LeftOuter`.
 
-## Join Many Documents
+## Include Many Documents
 
 If you wish to fetch a list of related documents, you can declare a `List<User>` variable and pass it as the second parameter. The `Include()` method should be appended with `ToList()` or `ToArray()`.
 
@@ -74,7 +79,37 @@ public void include_to_dictionary()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L474-L501' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+As of Marten V7, you can also filter the included documents in case of large data sets by
+supplying an extra filter argument on the included document type (essentially a `Where()` clause on just the
+included documents) like so:
+
+<!-- snippet: sample_filter_included_documents -->
+<a id='snippet-sample_filter_included_documents'></a>
+```cs
+[Fact]
+public async Task filter_included_documents_to_lambda()
+{
+    var list = new List<Target>();
+
+    var holders = await theSession.Query<TargetHolder>()
+        .Include<Target>(x => x.TargetId, x => list.Add(x), t => t.Color == Colors.Blue)
+        .ToListAsync();
+
+    list.Select(x => x.Color).Distinct()
+        .Single().ShouldBe(Colors.Blue);
+
+    list.Count.ShouldBe(Data.Count(x => x.Color == Colors.Blue));
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/includes_with_filtering_on_included_documents.cs#L49-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_filter_included_documents' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ## Include Multiple Document Types
+
+::: warning
+Marten can only filter the included documents, not sort them. You would have to 
+apply ordering in memory if so desired.
+:::
 
 Marten also allows you to chain multiple `Include()` calls:
 
