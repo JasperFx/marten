@@ -220,7 +220,7 @@ The basic idea in your tests is to:
 
 1. Start the async daemon running continuously
 1. Set up your desired system state by appending events as the test input
-2. Call the `WaitForNonStaleProjectionDataAsync()` method **before** checking the expected outcomes of the test
+1. Call the `WaitForNonStaleProjectionDataAsync()` method **before** checking the expected outcomes of the test
 
 There is also another overload to wait for just one tenant database in the case of using a database per tenant. The default
 overload **will wait for the daemon of all known databases to catch up to the latest sequence.**
