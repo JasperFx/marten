@@ -289,4 +289,5 @@ public static class QueryableExtensions
 
         await session.StreamJson<int>(context.Response.Body, context.RequestAborted, sql, parameters).ConfigureAwait(false);
     }
+
 }
