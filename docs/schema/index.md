@@ -53,6 +53,7 @@ All/None/CreateOnly/CreateOrUpdate rules as the table storage.**
 ## Overriding Schema Name
 
 By default marten will use the default `public` database scheme to create the document tables and function. You may, however, choose to set a different document store database schema name, like so:
+::: warning If you run code before shema changes and using `opts.GeneratedCodeMode = TypeLoadMode.Auto;` (by yourself or by `OptimizeArtifactWorkflow()` in dev env) schema won't change. You need to delete `Internal` folder manually to force regenerating code and schema changes.  :::
 
 ```cs
 StoreOptions.DatabaseSchemaName = "other";
