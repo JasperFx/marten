@@ -214,7 +214,30 @@ projections are caught up to the latest events posted at the time of the call.
 You can see the usage below from one of the Marten tests where we use that method to just wait until the running projection
 daemon has caught up:
 
-snippet: sample_using_WaitForNonStaleProjectionDataAsync
+<!-- snippet: sample_using_WaitForNonStaleProjectionDataAsync -->
+<a id='snippet-sample_using_waitfornonstaleprojectiondataasync'></a>
+```cs
+[Fact]
+public async Task run_simultaneously()
+{
+    StoreOptions(x => x.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
+
+    NumberOfStreams = 10;
+
+    var agent = await StartDaemon();
+
+    // This method publishes a random number of events
+    await PublishSingleThreaded();
+
+    // Wait for all projections to reach the highest event sequence point
+    // as of the time this method is called
+    await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
+
+    await CheckExpectedResults();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/event_projections_end_to_end.cs#L41-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_waitfornonstaleprojectiondataasync' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The basic idea in your tests is to:
 
