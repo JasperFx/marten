@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.AsyncDaemon.Testing.TestingSupport;
+using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -61,11 +62,10 @@ public class build_aggregate_projection: DaemonContext
 
 
         var shard = theStore.Options.Projections.AllShards().Single();
-        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 15.Seconds());
 
         await agent.StartShard(shard.Name.Identity, CancellationToken.None);
 
-        await waiter;
+        await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
 
         await CheckAllExpectedAggregatesAgainstActuals();
     }
@@ -161,9 +161,8 @@ public class build_aggregate_projection: DaemonContext
 
         await PublishSingleThreaded();
 
-        var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 30.Seconds());
+        await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
 
-        await waiter;
         Logger.LogDebug("About to rebuild Trip:All");
         await agent.RebuildProjection<Trip>(CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
@@ -183,9 +182,8 @@ public class build_aggregate_projection: DaemonContext
 
         await PublishSingleThreaded();
 
-        var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 30.Seconds());
+        await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
 
-        await waiter;
         Logger.LogDebug("About to rebuild Trip:All");
         await agent.RebuildProjection(typeof(TestingSupport.TripProjection),CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
@@ -205,9 +203,7 @@ public class build_aggregate_projection: DaemonContext
 
         await PublishSingleThreaded();
 
-        var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 30.Seconds());
-
-        await waiter;
+        await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
         Logger.LogDebug("About to rebuild Trip:All");
         await agent.RebuildProjection(typeof(Trip),CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
