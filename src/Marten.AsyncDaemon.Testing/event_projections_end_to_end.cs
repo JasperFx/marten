@@ -38,6 +38,8 @@ public class event_projections_end_to_end : DaemonContext
         filter.EventTypes.Single().ShouldBe(typeof(Travel));
     }
 
+    #region sample_using_WaitForNonStaleProjectionDataAsync
+
     [Fact]
     public async Task run_simultaneously()
     {
@@ -47,15 +49,17 @@ public class event_projections_end_to_end : DaemonContext
 
         var agent = await StartDaemon();
 
-        var waiter = agent.Tracker.WaitForShardState("Distance:All", NumberOfEvents, 15.Seconds());
-
+        // This method publishes a random number of events
         await PublishSingleThreaded();
 
-
-        await waiter;
+        // Wait for all projections to reach the highest event sequence point
+        // as of the time this method is called
+        await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
 
         await CheckExpectedResults();
     }
+
+    #endregion
 
     [Fact]
     public async Task run_simultaneously_multitenancy()
@@ -71,11 +75,9 @@ public class event_projections_end_to_end : DaemonContext
 
         var agent = await StartDaemon();
 
-        var waiter = agent.Tracker.WaitForShardState("Distance:All", NumberOfEvents, 15.Seconds());
-
         await PublishSingleThreaded();
 
-        await waiter;
+        await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
 
         await CheckExpectedResultsForTenants("a", "b");
     }

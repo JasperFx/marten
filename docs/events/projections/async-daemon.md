@@ -200,6 +200,31 @@ opts.Projections.OnApplyEventException()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L64-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_poison_pill' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Testing Async Projections
+
+::: tip
+This method works by polling the progress tables in the database, so it's usable regardless of where or how you've started
+up the async daemon in your code.
+:::
+
+Asynchronous projections can be a little rough to test because of the timing issues (is the daemon finished with my new events yet?).
+To that end, Marten V7 introduced an extension method called `IDocumentStore.WaitForNonStaleProjectionDataAsync()` to help your tests "wait" until any asynchronous
+projections are caught up to the latest events posted at the time of the call.
+
+You can see the usage below from one of the Marten tests where we use that method to just wait until the running projection
+daemon has caught up:
+
+snippet: sample_using_WaitForNonStaleProjectionDataAsync
+
+The basic idea in your tests is to:
+
+1. Start the async daemon running continuously
+1. Set up your desired system state by appending events as the test input
+2. Call the `WaitForNonStaleProjectionDataAsync()` method **before** checking the expected outcomes of the test
+
+There is also another overload to wait for just one tenant database in the case of using a database per tenant. The default
+overload **will wait for the daemon of all known databases to catch up to the latest sequence.**
+
 ## Diagnostics
 
 The following code shows the diagnostics support for the async daemon as it is today:
