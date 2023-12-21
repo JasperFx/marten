@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
@@ -22,6 +23,39 @@ public class SelectorVisitor: ExpressionVisitor
     public override Expression Visit(Expression node)
     {
         return base.Visit(node);
+    }
+
+    protected override Expression VisitMethodCall(MethodCallExpression node)
+    {
+        if (node.Method.Name == nameof(QueryableExtensions.ExplicitSql))
+        {
+            var sql = (string)node.Arguments.Last().ReduceToConstant().Value;
+
+            if (node.Type == typeof(string))
+            {
+                _statement.SelectClause =
+                    new NewScalarStringSelectClause(sql, _statement.SelectClause.FromObject);
+            }
+            else if (node.Type.IsSimple() || node.Type == typeof(Guid) ||
+                     node.Type == typeof(decimal) ||
+                     node.Type == typeof(DateTimeOffset))
+            {
+                _statement.SelectClause =
+                    typeof(NewScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(sql,
+                        _statement.SelectClause.FromObject,
+                        node.Type);
+            }
+            else
+            {
+                _statement.SelectClause =
+                    typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(_statement.SelectClause.FromObject,
+                        sql,
+                        node.Type);
+            }
+            return null;
+        }
+
+        return base.VisitMethodCall(node);
     }
 
     protected override Expression VisitUnary(UnaryExpression node)

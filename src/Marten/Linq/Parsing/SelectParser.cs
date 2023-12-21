@@ -1,9 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.Members.ValueCollections;
@@ -11,7 +9,6 @@ using Marten.Linq.SqlGeneration;
 using Marten.Util;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
-using BindingFlags = System.Reflection.BindingFlags;
 
 namespace Marten.Linq.Parsing;
 
@@ -123,6 +120,21 @@ internal class SelectParser: ExpressionVisitor
         _currentField = node.Member.Name;
 
         return base.VisitMemberBinding(node);
+    }
+
+    protected override Expression VisitMethodCall(MethodCallExpression node)
+    {
+        if (node.Method.Name == nameof(QueryableExtensions.ExplicitSql))
+        {
+            var sql = (string)node.Arguments.Last().ReduceToConstant().Value;
+            if (_currentField != null)
+            {
+                NewObject.Members[_currentField] = new LiteralSql(sql);
+                return null;
+            }
+        }
+
+        return base.VisitMethodCall(node);
     }
 
     protected override Expression VisitMember(MemberExpression node)

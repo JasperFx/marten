@@ -790,4 +790,16 @@ public static class QueryableExtensions
 
 
 
+    /// <summary>
+    /// For usage in LINQ Select() transforms by Marten to use user-supplied SQL for
+    /// transformations
+    /// </summary>
+    /// <param name="target"></param>
+    /// <param name="sql"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static T ExplicitSql<T>(this object target, string sql)
+    {
+        return default;
+    }
 }
