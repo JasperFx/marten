@@ -45,6 +45,25 @@ public class select_clause_usage: IntegrationContext
     }
 
     [Fact]
+    public async Task use_select_in_query_for_first_in_collection()
+    {
+        theSession.Store(new User { FirstName = "Hank", Roles = new []{"a", "b", "c"}});
+        theSession.Store(new User { FirstName = "Bill", Roles = new []{"d", "b", "c"} });
+        theSession.Store(new User { FirstName = "Sam", Roles = new []{"e", "b", "c"} });
+        theSession.Store(new User { FirstName = "Tom", Roles = new []{"f", "b", "c"} });
+
+        await theSession.SaveChangesAsync();
+
+        var data = await theSession
+            .Query<User>()
+            .OrderBy(x => x.FirstName)
+            .Select(x => new { Id = x.Id, Role = x.Roles[0] })
+            .ToListAsync();
+
+        data[0].Role.ShouldBe("d");
+    }
+
+    [Fact]
     public async Task use_select_in_query_for_one_field_async()
     {
         theSession.Store(new User { FirstName = "Hank" });

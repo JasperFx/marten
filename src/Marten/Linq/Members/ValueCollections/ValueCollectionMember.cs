@@ -17,7 +17,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members.ValueCollections;
 
-internal class ValueCollectionMember: QueryableMember, ICollectionMember, IValueCollectionMember
+internal class ValueCollectionMember: QueryableMember, ICollectionMember, IValueCollectionMember, ISelectableMember
 {
     private readonly IQueryableMember _count;
     private readonly WholeDataMember _wholeDataMember;
@@ -193,5 +193,10 @@ internal class ValueCollectionMember: QueryableMember, ICollectionMember, IValue
     public IEnumerator<IQueryableMember> GetEnumerator()
     {
         throw new NotSupportedException();
+    }
+
+    public void Apply(CommandBuilder builder, ISerializer serializer)
+    {
+        builder.Append(RawLocator);
     }
 }

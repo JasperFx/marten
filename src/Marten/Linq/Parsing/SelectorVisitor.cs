@@ -19,6 +19,11 @@ public class SelectorVisitor: ExpressionVisitor
         _serializer = serializer;
     }
 
+    public override Expression Visit(Expression node)
+    {
+        return base.Visit(node);
+    }
+
     protected override Expression VisitUnary(UnaryExpression node)
     {
         ToScalar(node);
@@ -72,12 +77,11 @@ public class SelectorVisitor: ExpressionVisitor
 
     public void ToSelectTransform(Expression selectExpression, ISerializer serializer)
     {
-        var builder = new SelectTransformBuilder(selectExpression, _collection, serializer);
-        var transformField = builder.SelectedFieldExpression;
+        var visitor = new SelectParser(_serializer, _collection, selectExpression);
 
         _statement.SelectClause =
-            typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(_statement.SelectClause.FromObject,
-                transformField,
+            typeof(SelectDataSelectClause<>).CloseAndBuildAs<ISelectClause>(_statement.SelectClause.FromObject,
+                visitor.NewObject,
                 selectExpression.Type);
     }
 }
