@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <Description>Document transforms and patching extension for Marten</Description>
-        <VersionPrefix>7.0.0-beta.2</VersionPrefix>
+        <VersionPrefix>7.0.0-beta.3</VersionPrefix>
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
