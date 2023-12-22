@@ -28,6 +28,11 @@ using JsonOptions = Microsoft.AspNetCore.Http.Json.JsonOptions;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Aspire
+builder
+    .AddServiceDefaults()
+    .AddNpgsqlDataSource("Incidents");
+// Configure Aspire
 
 builder.Services
     .AddEndpointsApiExplorer()
@@ -39,8 +44,6 @@ builder.Services
         var schemaName = Environment.GetEnvironmentVariable("SchemaName") ?? "Helpdesk";
         options.Events.DatabaseSchemaName = schemaName;
         options.DatabaseSchemaName = schemaName;
-        options.Connection(builder.Configuration.GetConnectionString("Incidents") ??
-                           throw new InvalidOperationException());
 
         options.UseDefaultSerialization(
             EnumStorage.AsString,
@@ -63,7 +66,8 @@ builder.Services
     })
     .OptimizeArtifactWorkflow(TypeLoadMode.Static)
     .UseLightweightSessions()
-    .AddAsyncDaemon(DaemonMode.Solo);
+    .AddAsyncDaemon(DaemonMode.Solo)
+    .UseNpgsqlDataSource("Incidents");
 
 builder.Services
     .AddCors(options =>

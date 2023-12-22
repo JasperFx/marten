@@ -93,6 +93,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Helpdesk.Api", "samples\Hel
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Helpdesk.Api.Tests", "samples\Helpdesk\Helpdesk.Api.Tests\Helpdesk.Api.Tests.csproj", "{B0629D41-CA4E-4123-BC98-79A04D708A3E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Helpdesk.AppHost", "samples\Helpdesk\Helpdesk.AppHost\Helpdesk.AppHost.csproj", "{A171427B-510C-442F-8C34-F123707F3589}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Helpdesk.ServiceDefaults", "samples\Helpdesk\Helpdesk.ServiceDefaults\Helpdesk.ServiceDefaults.csproj", "{9361E77C-BCAE-42B7-AFFB-3D05FAEF3884}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -219,6 +223,14 @@ Global
 		{B0629D41-CA4E-4123-BC98-79A04D708A3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B0629D41-CA4E-4123-BC98-79A04D708A3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B0629D41-CA4E-4123-BC98-79A04D708A3E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A171427B-510C-442F-8C34-F123707F3589}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A171427B-510C-442F-8C34-F123707F3589}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A171427B-510C-442F-8C34-F123707F3589}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A171427B-510C-442F-8C34-F123707F3589}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9361E77C-BCAE-42B7-AFFB-3D05FAEF3884}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9361E77C-BCAE-42B7-AFFB-3D05FAEF3884}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9361E77C-BCAE-42B7-AFFB-3D05FAEF3884}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9361E77C-BCAE-42B7-AFFB-3D05FAEF3884}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -255,5 +267,7 @@ Global
 		{F3DADE49-9C89-4F74-BCCE-7DAFD35675E9} = {79961196-DB50-4AD3-B749-D231799BCF2E}
 		{5E18DEBD-C768-4636-B167-7DA2A4954F43} = {F3DADE49-9C89-4F74-BCCE-7DAFD35675E9}
 		{B0629D41-CA4E-4123-BC98-79A04D708A3E} = {F3DADE49-9C89-4F74-BCCE-7DAFD35675E9}
+		{A171427B-510C-442F-8C34-F123707F3589} = {F3DADE49-9C89-4F74-BCCE-7DAFD35675E9}
+		{9361E77C-BCAE-42B7-AFFB-3D05FAEF3884} = {F3DADE49-9C89-4F74-BCCE-7DAFD35675E9}
 	EndGlobalSection
 EndGlobal
