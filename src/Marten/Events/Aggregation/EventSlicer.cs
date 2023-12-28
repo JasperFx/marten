@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Storage;
@@ -73,6 +74,16 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
 
     public EventSlicer<TDoc, TId> Identity<TEvent>(Func<TEvent, TId> identityFunc)
     {
+        var eventType = typeof(TEvent);
+        // Check if we are actually dealing with an IEvent<EventType>
+        if (eventType.IsGenericType && eventType.GetGenericTypeDefinition() == typeof(IEvent<>))
+        {
+            var actualEventType = eventType.GetGenericArguments().First();
+            var eventGrouperType = typeof(SingleStreamEventGrouper<,>).MakeGenericType( typeof(TId), actualEventType);
+            _groupers.Add((IGrouper<TId>) Activator.CreateInstance(eventGrouperType, identityFunc));
+            return this;
+        }
+
         _groupers.Add(new SingleStreamGrouper<TId, TEvent>(identityFunc));
         return this;
     }
