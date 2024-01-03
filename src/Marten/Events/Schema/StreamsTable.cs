@@ -22,17 +22,17 @@ internal class StreamsTable: Table
 
     public StreamsTable(EventGraph events): base(new PostgresqlObjectName(events.DatabaseSchemaName, TableName))
     {
-        var idColumn = events.StreamIdentity == StreamIdentity.AsGuid
-            ? new StreamTableColumn("id", x => x.Id)
-            : new StreamTableColumn("id", x => x.Key);
-
-        AddColumn(idColumn).AsPrimaryKey();
-
+        // Per https://github.com/JasperFx/marten/issues/2430, this needs to be first in the PK
         if (events.TenancyStyle == TenancyStyle.Conjoined)
         {
             AddColumn<TenantIdColumn>().AsPrimaryKey();
         }
 
+        var idColumn = events.StreamIdentity == StreamIdentity.AsGuid
+            ? new StreamTableColumn("id", x => x.Id)
+            : new StreamTableColumn("id", x => x.Key);
+
+        AddColumn(idColumn).AsPrimaryKey();
         AddColumn(new StreamTableColumn("type", x => x.AggregateTypeName)).AllowNulls();
 
         AddColumn(new StreamTableColumn("version", x => x.Version)).AllowNulls();
