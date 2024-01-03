@@ -25,14 +25,16 @@ internal class DocumentTable: Table
 
         var idColumn = new IdColumn(mapping);
 
-        AddColumn(idColumn).AsPrimaryKey();
-
+        // Per https://github.com/JasperFx/marten/issues/2430 the tenant_id needs to be first in
+        // PK
         if (mapping.TenancyStyle == TenancyStyle.Conjoined)
         {
             AddColumn(mapping.Metadata.TenantId).AsPrimaryKey();
 
             Indexes.Add(new DocumentIndex(mapping, TenantIdColumn.Name));
         }
+
+        AddColumn(idColumn).AsPrimaryKey();
 
         AddColumn<DataColumn>();
 
