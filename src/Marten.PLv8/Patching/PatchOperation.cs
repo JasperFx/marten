@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Marten.Internal.Operations;
@@ -33,9 +34,9 @@ internal class PatchFragment: IOperationFragment
 
     public bool PossiblyPolymorphic { get; }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
-        var patchParam = builder.AddParameter(_serializer.ToCleanJson(_patch), NpgsqlDbType.Jsonb);
+        var json = _serializer.ToCleanJson(_patch);
         if (_patch.TryGetValue("value", out var document))
         {
             var value = PossiblyPolymorphic ? _serializer.ToJsonWithTypes(document) : _serializer.ToJson(document);
@@ -47,26 +48,21 @@ internal class PatchFragment: IOperationFragment
             var patchJson = _serializer.ToJson(copy);
             var replacedValue = patchJson.Replace($"\"{VALUE_LOOKUP}\"", value);
 
-            patchParam = builder.AddParameter(replacedValue, NpgsqlDbType.Jsonb);
+            json = replacedValue;
         }
 
         builder.Append("update ");
         builder.Append(_storage.TableName.QualifiedName);
         builder.Append(" as d set data = ");
         builder.Append(_transform.Identifier.QualifiedName);
-        builder.Append("(data, :");
-        builder.Append(patchParam.ParameterName);
+        builder.Append("(data, ");
+        builder.AppendParameter(json, NpgsqlDbType.Jsonb);
         builder.Append("), ");
         builder.Append(SchemaConstants.LastModifiedColumn);
         builder.Append(" = (now() at time zone 'utc'), ");
         builder.Append(SchemaConstants.VersionColumn);
         builder.Append(" = ");
         builder.AppendParameter(CombGuidIdGeneration.NewGuid());
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public OperationRole Role()
@@ -92,13 +88,13 @@ internal class PatchOperation: StatementOperation, NoDataReturnedCall
         return OperationRole.Patch;
     }
 
-    protected override void configure(CommandBuilder builder)
+    protected override void configure(ICommandBuilder builder)
     {
         base.configure(builder);
         applyUpdates(builder);
     }
 
-    private void applyUpdates(CommandBuilder builder)
+    private void applyUpdates(ICommandBuilder builder)
     {
         var fields = _storage.DuplicatedFields;
         if (!fields.Any())
@@ -106,7 +102,8 @@ internal class PatchOperation: StatementOperation, NoDataReturnedCall
             return;
         }
 
-        builder.Append(";update ");
+        builder.StartNewCommand();
+        builder.Append("update ");
         builder.Append(_storage.TableName.QualifiedName);
         builder.Append(" as d set ");
 

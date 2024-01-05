@@ -36,7 +36,7 @@ internal class StringEqualsIgnoreCaseFilter : ISqlFragment
         Value = value;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(Member.RawLocator);
         builder.Append(StringComparisonParser.CaseInSensitiveLike);
@@ -44,8 +44,4 @@ internal class StringEqualsIgnoreCaseFilter : ISqlFragment
         builder.Append(StringComparisonParser.EscapeSuffix);
     }
 
-    public bool Contains(string sqlText)
-    {
-        return false;
-    }
 }

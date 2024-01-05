@@ -13,15 +13,10 @@ public class IsNotNullFilter: IReversibleWhereFragment
 
     public IQueryableMember Member { get; }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(Member.NullTestLocator);
         builder.Append(" is not null");
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return Member.Contains(sqlText);
     }
 
     public ISqlFragment Reverse()

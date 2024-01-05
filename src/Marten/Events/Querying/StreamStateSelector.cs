@@ -15,7 +15,7 @@ namespace Marten.Events.Querying;
 /// </summary>
 public abstract class StreamStateQueryHandler: IQueryHandler<StreamState>
 {
-    public abstract void ConfigureCommand(CommandBuilder builder, IMartenSession session);
+    public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
 
     public StreamState Handle(DbDataReader reader, IMartenSession session)
     {

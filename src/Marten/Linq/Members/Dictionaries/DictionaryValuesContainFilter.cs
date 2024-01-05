@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Marten.Exceptions;
 using Marten.Linq.SqlGeneration.Filters;
+using Weasel.Postgresql;
 using CommandBuilder = Weasel.Postgresql.CommandBuilder;
 using ConstantExpression = System.Linq.Expressions.ConstantExpression;
 using ISqlFragment = Weasel.Postgresql.SqlGeneration.ISqlFragment;
@@ -30,7 +31,7 @@ internal class DictionaryValuesContainFilter: ISqlFragment, ICollectionAware, IC
         _text = value is string s ? s : _serializer.ToCleanJson(value);
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append("jsonb_path_query_array(");
         builder.Append(_member.TypedLocator);
@@ -39,11 +40,6 @@ internal class DictionaryValuesContainFilter: ISqlFragment, ICollectionAware, IC
 
         builder.AppendParameter(_text);
         builder.Append(" = true");
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public bool CanReduceInChildCollection()
@@ -71,7 +67,7 @@ internal class DictionaryValuesContainFilter: ISqlFragment, ICollectionAware, IC
         throw new System.NotSupportedException();
     }
 
-    public void BuildJsonPathFilter(CommandBuilder builder, Dictionary<string, object> parameters)
+    public void BuildJsonPathFilter(ICommandBuilder builder, Dictionary<string, object> parameters)
     {
         throw new System.NotSupportedException();
     }

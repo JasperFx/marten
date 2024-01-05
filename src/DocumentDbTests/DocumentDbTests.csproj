@@ -153,10 +153,6 @@
         <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyCompiledNestedQueryCompiledQuerySource970855369.cs" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Folder Include="Internal\Generated\EventStore" />
-    </ItemGroup>
-
     <PropertyGroup>
         <NoWarn>xUnit1013</NoWarn>
     </PropertyGroup>

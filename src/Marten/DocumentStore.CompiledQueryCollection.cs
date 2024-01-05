@@ -40,7 +40,7 @@ internal class CompiledQueryCollection
             throw InvalidCompiledQueryException.ForCannotBeAsync(query.GetType());
         }
 
-        var plan = QueryCompiler.BuildPlan(session, query, _store.Options);
+        var plan = QueryCompiler.BuildQueryPlan(session, query);
         var file = new CompiledQueryCodeFile(query.GetType(), _store, plan, _tracking);
 
         var rules = _store.Options.CreateGenerationRules();
@@ -85,13 +85,13 @@ public partial class DocumentStore: ICodeFileCollection
 
         return Options.CompiledQueryTypes.SelectMany(x => new ICodeFile[]
         {
-            new CompiledQueryCodeFile(x, this, QueryCompiler.BuildPlan(lightweight, x, Options),
+            new CompiledQueryCodeFile(x, this, QueryCompiler.BuildQueryPlan(lightweight, x, Options),
                 DocumentTracking.None),
-            new CompiledQueryCodeFile(x, this, QueryCompiler.BuildPlan(identityMap, x, Options),
+            new CompiledQueryCodeFile(x, this, QueryCompiler.BuildQueryPlan(identityMap, x, Options),
                 DocumentTracking.IdentityOnly),
-            new CompiledQueryCodeFile(x, this, QueryCompiler.BuildPlan(dirty, x, Options),
+            new CompiledQueryCodeFile(x, this, QueryCompiler.BuildQueryPlan(dirty, x, Options),
                 DocumentTracking.DirtyTracking),
-            new CompiledQueryCodeFile(x, this, QueryCompiler.BuildPlan(readOnly, x, Options),
+            new CompiledQueryCodeFile(x, this, QueryCompiler.BuildQueryPlan(readOnly, x, Options),
                 DocumentTracking.QueryOnly)
         }).ToList();
     }

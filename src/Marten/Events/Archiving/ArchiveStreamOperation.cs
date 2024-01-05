@@ -20,7 +20,7 @@ internal class ArchiveStreamOperation: IStorageOperation
         _streamId = streamId;
     }
 
-    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         var parameter =
             builder.AppendWithParameters($"select {_events.DatabaseSchemaName}.{ArchiveStreamFunction.Name}(?)")[0];

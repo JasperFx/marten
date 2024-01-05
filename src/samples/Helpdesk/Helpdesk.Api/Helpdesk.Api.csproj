@@ -8,14 +8,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0"/>
-        <PackageReference Include="Confluent.Kafka" Version="2.3.0"/>
-        <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0"/>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+        <PackageReference Include="Confluent.Kafka" Version="2.3.0" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\Marten.AspNetCore\Marten.AspNetCore.csproj"/>
-        <ProjectReference Include="..\..\..\Marten.CommandLine\Marten.CommandLine.csproj"/>
-        <ProjectReference Include="..\..\..\Marten\Marten.csproj"/>
+        <ProjectReference Include="..\..\..\Marten.AspNetCore\Marten.AspNetCore.csproj" />
+        <ProjectReference Include="..\..\..\Marten.CommandLine\Marten.CommandLine.csproj" />
+        <ProjectReference Include="..\..\..\Marten\Marten.csproj" />
     </ItemGroup>
 </Project>

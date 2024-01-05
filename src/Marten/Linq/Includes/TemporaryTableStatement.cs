@@ -17,15 +17,15 @@ public class TemporaryTableStatement: Statement
 
     public Statement Inner { get; }
 
-    protected override void configure(CommandBuilder sql)
+    protected override void configure(ICommandBuilder sql)
     {
         sql.Append("drop table if exists ");
         sql.Append(ExportName);
-        sql.Append(";\n");
+        sql.StartNewCommand();
         sql.Append("create temp table ");
         sql.Append(ExportName);
-        sql.Append(" as (\n");
+        sql.Append(" as (");
         Inner.Apply(sql);
-        sql.Append("\n);\n");
+        sql.Append(");");
     }
 }

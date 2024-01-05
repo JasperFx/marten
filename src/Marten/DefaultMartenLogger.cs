@@ -46,6 +46,21 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
         }
     }
 
+    public void LogSuccess(NpgsqlBatch batch)
+    {
+        if (Inner.IsEnabled(LogLevel.Debug))
+        {
+            foreach (var command in batch.BatchCommands)
+            {
+                var message = "Marten executed, SQL: {SQL}\n{PARAMS}";
+                var parameters = command.Parameters.OfType<NpgsqlParameter>()
+                    .Select(p => $"  {p.ParameterName}: {p.Value}")
+                    .Join(Environment.NewLine);
+                Inner.LogDebug(message, _stopwatch?.ElapsedMilliseconds ?? 0, command.CommandText, parameters);
+            }
+        }
+    }
+
     public void LogFailure(NpgsqlCommand command, Exception ex)
     {
         _stopwatch?.Stop();
@@ -55,6 +70,21 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
             .Select(p => $"  {p.ParameterName}: {p.Value}")
             .Join(Environment.NewLine);
         Inner.LogError(ex, message, command.CommandText, parameters);
+    }
+
+    public void LogFailure(NpgsqlBatch batch, Exception ex)
+    {
+        _stopwatch?.Stop();
+
+        var message = "Marten encountered an exception executing \n{SQL}\n{PARAMS}";
+
+        foreach (var command in batch.BatchCommands)
+        {
+            var parameters = command.Parameters.OfType<NpgsqlParameter>()
+                .Select(p => $"  {p.ParameterName}: {p.Value}")
+                .Join(Environment.NewLine);
+            Inner.LogError(ex, message, command.CommandText, parameters);
+        }
     }
 
     public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)

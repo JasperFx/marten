@@ -43,7 +43,7 @@ internal class CollectionIsNotEmpty: IReversibleWhereFragment, ICollectionAware,
         return false;
     }
 
-    public void BuildJsonPathFilter(CommandBuilder builder, Dictionary<string, object> parameters)
+    public void BuildJsonPathFilter(ICommandBuilder builder, Dictionary<string, object> parameters)
     {
         // TODO -- come back to this later with
         throw new NotSupportedException();
@@ -64,14 +64,9 @@ internal class CollectionIsNotEmpty: IReversibleWhereFragment, ICollectionAware,
         return new DeepCollectionIsNotEmpty(path);
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(_text);
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public ISqlFragment Reverse()

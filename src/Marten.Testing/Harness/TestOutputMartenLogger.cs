@@ -59,6 +59,30 @@ namespace Marten.Testing.Harness
             _writer.WriteLine(command.CommandText);
         }
 
+        public void LogSuccess(NpgsqlBatch batch)
+        {
+            foreach (var command in batch.BatchCommands)
+            {
+                _output.WriteLine(command.CommandText);
+                int position = 0;
+                foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
+                {
+                    position++;
+                    _output.WriteLine($"  ${position}: {p.Value}");
+                }
+
+                Debug.WriteLine(command.CommandText);
+                position = 0;
+                foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
+                {
+                    position++;
+                    Debug.WriteLine($"  ${position}: {p.Value}");
+                }
+
+                _writer.WriteLine(command.CommandText);
+            }
+        }
+
         public void LogFailure(NpgsqlCommand command, Exception ex)
         {
             _output.WriteLine("Postgresql command failed!");
@@ -67,6 +91,24 @@ namespace Marten.Testing.Harness
             {
                 _output.WriteLine($"  {p.ParameterName}: {p.Value}");
             }
+            _output.WriteLine(ex.ToString());
+        }
+
+        public void LogFailure(NpgsqlBatch batch, Exception ex)
+        {
+            _output.WriteLine("Postgresql command failed!");
+
+            foreach (var command in batch.BatchCommands)
+            {
+                _output.WriteLine(command.CommandText);
+                int position = 0;
+                foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
+                {
+                    position++;
+                    _output.WriteLine($"  ${position}: {p.Value}");
+                }
+            }
+
             _output.WriteLine(ex.ToString());
         }
 

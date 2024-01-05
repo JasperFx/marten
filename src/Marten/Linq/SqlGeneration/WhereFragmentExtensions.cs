@@ -64,16 +64,6 @@ internal static class WhereFragmentExtensions
 
     public static bool SpecifiesEventArchivalStatus(this ISqlFragment query)
     {
-        if (query.Flatten().OfType<IArchiveFilter>().Any())
-        {
-            return true;
-        }
-
-        if (query.Contains(IsArchivedColumn.ColumnName))
-        {
-            return true;
-        }
-
-        return false;
+        return query.ContainsAny<IArchiveFilter>();
     }
 }

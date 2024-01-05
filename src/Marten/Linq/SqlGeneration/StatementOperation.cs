@@ -32,7 +32,7 @@ internal class StatementOperation: Statement, IStorageOperation
         Wheres.Add(where);
     }
 
-    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         Apply(builder);
     }
@@ -54,13 +54,13 @@ internal class StatementOperation: Statement, IStorageOperation
         return _operation.Role();
     }
 
-    protected override void configure(CommandBuilder sql)
+    protected override void configure(ICommandBuilder sql)
     {
         _operation.Apply(sql);
         writeWhereClause(sql);
     }
 
-    protected void writeWhereClause(CommandBuilder sql)
+    protected void writeWhereClause(ICommandBuilder sql)
     {
         if (Wheres.Any())
         {

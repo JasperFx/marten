@@ -1,5 +1,4 @@
-using System.Diagnostics;
-using Marten.Schema.Arguments;
+using System;
 using Marten.Storage.Metadata;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -8,23 +7,18 @@ namespace Marten.Linq.SqlGeneration.Filters;
 
 public class CurrentTenantFilter: ISqlFragment
 {
-    public static readonly string Filter = $"d.{TenantIdColumn.Name} = :{TenantIdArgument.ArgName}";
-
     public static readonly CurrentTenantFilter Instance = new();
 
-    public CurrentTenantFilter()
+    public void Apply(ICommandBuilder builder)
     {
-        Debug.WriteLine("Making one");
-    }
+        if (builder.TenantId.IsEmpty())
+        {
+            throw new ArgumentOutOfRangeException(nameof(builder), "There is no TenantId on this builder");
+        }
 
-    public void Apply(CommandBuilder builder)
-    {
-        builder.Append(Filter);
-        builder.AddNamedParameter(TenantIdArgument.ArgName, "");
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return Filter.Contains(sqlText);
+        builder.Append("d.");
+        builder.Append(TenantIdColumn.Name);
+        builder.Append(" = ");
+        builder.AppendParameter(builder.TenantId);
     }
 }

@@ -59,6 +59,16 @@ public class RecordingLogger : IMartenSessionLogger
     {
     }
 
+    public void LogSuccess(NpgsqlBatch batch)
+    {
+
+    }
+
+    public void LogFailure(NpgsqlBatch batch, Exception ex)
+    {
+
+    }
+
     public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
     {
         LastSession = session;

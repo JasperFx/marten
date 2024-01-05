@@ -19,16 +19,11 @@ internal class SelectDataSelectClause<T>: ISelectClause, IScalarSelectClause
 
     public ISqlFragment Selector { get; }
 
-    bool ISqlFragment.Contains(string sqlText)
-    {
-        return false;
-    }
-
     public Type SelectedType => typeof(T);
 
     public string FromObject { get; }
 
-    public void Apply(CommandBuilder sql)
+    public void Apply(ICommandBuilder sql)
     {
         sql.Append("select ");
 

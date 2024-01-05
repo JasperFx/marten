@@ -223,7 +223,7 @@ internal static class LinqInternalExtensions
     /// </summary>
     /// <param name="member"></param>
     /// <param name="builder"></param>
-    public static void WriteJsonPath(this IQueryableMember member, CommandBuilder builder)
+    public static void WriteJsonPath(this IQueryableMember member, ICommandBuilder builder)
     {
         foreach (var ancestor in member.Ancestors)
         {

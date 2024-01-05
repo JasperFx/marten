@@ -21,16 +21,11 @@ internal class StatsSelectClause<T>: ISelectClause
 
     public ISelectClause Inner { get; }
 
-    bool ISqlFragment.Contains(string sqlText)
-    {
-        return false;
-    }
-
     public Type SelectedType => Inner.SelectedType;
 
     public string FromObject => Inner.FromObject;
 
-    public void Apply(CommandBuilder sql)
+    public void Apply(ICommandBuilder sql)
     {
         sql.Append("select ");
         sql.Append(Inner.SelectFields().Join(", "));

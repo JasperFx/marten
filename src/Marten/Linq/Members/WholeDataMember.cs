@@ -15,14 +15,9 @@ internal class WholeDataMember: IQueryableMember
 
     public IQueryableMember[] Ancestors { get; } = Array.Empty<IQueryableMember>();
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append("data");
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public string MemberName => string.Empty;
@@ -69,14 +64,9 @@ internal class RootMember: IQueryableMember
 
     public IQueryableMember[] Ancestors { get; set; } = Array.Empty<IQueryableMember>();
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append("d.data");
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public string SelectorForDuplication(string pgType)

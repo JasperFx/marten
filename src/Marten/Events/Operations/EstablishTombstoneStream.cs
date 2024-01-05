@@ -60,7 +60,7 @@ DO NOTHING
         }
     }
 
-    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         var parameters = builder.AppendWithParameters(_sql);
         _configureParameter(parameters[0]);

@@ -23,13 +23,9 @@ internal class CollectionIsEmpty: IReversibleWhereFragment
         return _member.NotEmpty;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(_text);
     }
 
-    public bool Contains(string sqlText)
-    {
-        return false;
-    }
 }

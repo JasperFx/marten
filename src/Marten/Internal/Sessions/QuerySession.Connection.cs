@@ -172,22 +172,95 @@ public partial class QuerySession
     {
         return _connection.BeginTransactionAsync(token);
     }
-}
 
-public interface IConnectionLifetime: IAsyncDisposable, IDisposable
-{
-    NpgsqlConnection? Connection { get; }
-    void Apply(NpgsqlCommand command);
-    Task ApplyAsync(NpgsqlCommand command, CancellationToken token);
+    public int Execute(NpgsqlBatch batch)
+    {
+        RequestCount++;
 
-    void Commit();
-    Task CommitAsync(CancellationToken token);
+        _connection.Apply(batch);
 
-    void Rollback();
-    Task RollbackAsync(CancellationToken token);
+        try
+        {
+            var returnValue = _retryPolicy.Execute(batch.ExecuteNonQuery);
+            //Logger.LogSuccess(batch);
 
-    void EnsureConnected();
-    ValueTask EnsureConnectedAsync(CancellationToken token);
-    void BeginTransaction();
-    ValueTask BeginTransactionAsync(CancellationToken token);
+            return returnValue;
+        }
+        catch (Exception e)
+        {
+            handleCommandException(batch, e);
+            throw;
+        }
+    }
+
+    private void handleCommandException(NpgsqlBatch batch, Exception exception)
+    {
+        Logger.LogFailure(batch, exception);
+    }
+
+    public async Task<int> ExecuteAsync(NpgsqlBatch batch, CancellationToken token = new())
+    {
+        RequestCount++;
+
+        await _connection.ApplyAsync(batch, token).ConfigureAwait(false);
+
+        //Logger.OnBeforeExecute(command);
+
+        try
+        {
+            var returnValue = await _retryPolicy.ExecuteAsync(() => batch.ExecuteNonQueryAsync(token), token)
+                .ConfigureAwait(false);
+            Logger.LogSuccess(batch);
+
+            return returnValue;
+        }
+        catch (Exception e)
+        {
+            handleCommandException(batch, e);
+            throw;
+        }
+    }
+
+    public DbDataReader ExecuteReader(NpgsqlBatch batch)
+    {
+        _connection.Apply(batch);
+
+        RequestCount++;
+
+        try
+        {
+            var reader = batch.ExecuteReader();
+            Logger.LogSuccess(batch);
+            return reader;
+        }
+        catch (Exception e)
+        {
+            handleCommandException(batch, e);
+            throw;
+        }
+    }
+
+    public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, CancellationToken token = default)
+    {
+        await _connection.ApplyAsync(batch, token).ConfigureAwait(false);
+
+        //Logger.OnBeforeExecute(command);
+
+        RequestCount++;
+
+        try
+        {
+            var reader = await _retryPolicy.ExecuteAsync(() => batch.ExecuteReaderAsync(token), token)
+                .ConfigureAwait(false);
+
+            Logger.LogSuccess(batch);
+
+            return reader;
+        }
+        catch (Exception e)
+        {
+            handleCommandException(batch, e);
+            throw;
+        }
+    }
 }

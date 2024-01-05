@@ -35,7 +35,7 @@ internal class SubQueryFilter: ISubQueryFilter
         return this;
     }
 
-    void ISqlFragment.Apply(CommandBuilder builder)
+    void ISqlFragment.Apply(ICommandBuilder builder)
     {
         if (Not)
         {
@@ -50,11 +50,6 @@ internal class SubQueryFilter: ISubQueryFilter
         {
             builder.Append(")");
         }
-    }
-
-    bool ISqlFragment.Contains(string sqlText)
-    {
-        return false;
     }
 
     public void PlaceUnnestAbove(IMartenSession session, SelectorStatement statement,

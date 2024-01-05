@@ -105,7 +105,6 @@ internal class MartenLinqQueryProvider: IQueryProvider
             await EnsureStorageExistsAsync(parser, token).ConfigureAwait(false);
 
             var cmd = _session.BuildCommand(handler);
-            _session.TrySetTenantId(cmd);
 
             await using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
             return await handler.StreamJson(stream, reader, token).ConfigureAwait(false);
@@ -122,9 +121,9 @@ internal class MartenLinqQueryProvider: IQueryProvider
     {
         try
         {
-            var cmd = _session.BuildCommand(handler);
+            var batch = _session.BuildCommand(handler);
 
-            await using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            await using var reader = await _session.ExecuteReaderAsync(batch, token).ConfigureAwait(false);
             return await handler.HandleAsync(reader, _session, token).ConfigureAwait(false);
         }
         catch (Exception e)
@@ -165,7 +164,6 @@ internal class MartenLinqQueryProvider: IQueryProvider
         var statement = statements.Top;
 
         var cmd = _session.BuildCommand(statement);
-        _session.TrySetTenantId(cmd);
 
         await using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
         while (await reader.ReadAsync(token).ConfigureAwait(false))
@@ -182,8 +180,7 @@ internal class MartenLinqQueryProvider: IQueryProvider
 
         var statements = parser.BuildStatements();
 
-        var command = statements.Top.BuildCommand();
-        _session.TrySetTenantId(command);
+        var command = statements.Top.BuildCommand(_session);
 
         return await _session.StreamMany(command, destination, token).ConfigureAwait(false);
     }
@@ -197,9 +194,7 @@ internal class MartenLinqQueryProvider: IQueryProvider
 
         var statement = statements.Top;
         statements.MainSelector.Limit = 1;
-        var command = statement.BuildCommand();
-
-        _session.TrySetTenantId(command);
+        var command = statement.BuildCommand(_session);
 
         return await _session.StreamOne(command, destination, token).ConfigureAwait(false);
     }

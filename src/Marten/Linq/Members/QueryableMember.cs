@@ -103,14 +103,9 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
         return ordering.Direction == OrderingDirection.Desc ? $"{TypedLocator} desc" : TypedLocator;
     }
 
-    void ISqlFragment.Apply(CommandBuilder builder)
+    void ISqlFragment.Apply(ICommandBuilder builder)
     {
         builder.Append(TypedLocator);
-    }
-
-    bool ISqlFragment.Contains(string sqlText)
-    {
-        return false;
     }
 
     public virtual Dictionary<string, object> FindOrPlaceChildDictionaryForContainment(Dictionary<string, object> dict)

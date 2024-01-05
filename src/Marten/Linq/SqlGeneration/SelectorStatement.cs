@@ -25,7 +25,7 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
         Wheres.Add(fragment);
     }
 
-    protected override void configure(CommandBuilder sql)
+    protected override void configure(ICommandBuilder sql)
     {
         startCommonTableExpression(sql);
 

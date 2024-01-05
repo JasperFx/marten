@@ -40,6 +40,6 @@ internal class SimpleParameterFinder<T>: IParameterFinder
 
     private static IQueryMember<T>[] findMembers(CompiledQueryPlan plan)
     {
-        return plan.Parameters.OfType<IQueryMember<T>>().ToArray();
+        return plan.QueryMembers.OfType<IQueryMember<T>>().ToArray();
     }
 }

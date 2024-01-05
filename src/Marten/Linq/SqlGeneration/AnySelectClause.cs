@@ -20,7 +20,7 @@ public class AnySelectClause: ISelectClause, IQueryHandler<bool>
         FromObject = from;
     }
 
-    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         _topStatement.Apply(builder);
     }
@@ -52,17 +52,12 @@ public class AnySelectClause: ISelectClause, IQueryHandler<bool>
 
     public Type SelectedType => typeof(bool);
 
-    public void Apply(CommandBuilder sql)
+    public void Apply(ICommandBuilder sql)
     {
         sql.Append("select TRUE as result");
         sql.Append(" from ");
         sql.Append(FromObject);
         sql.Append(" as d");
-    }
-
-    bool ISqlFragment.Contains(string sqlText)
-    {
-        return false;
     }
 
     public string[] SelectFields()

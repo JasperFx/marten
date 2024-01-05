@@ -20,15 +20,9 @@ internal class AggregateTypeFilter: ISqlFragment
 
     public string Alias { get; }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
-        var parameter = builder.AddParameter(Alias, NpgsqlDbType.Varchar);
-        builder.Append("s.type = :");
-        builder.Append(parameter.ParameterName);
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
+        builder.Append("s.type = ");
+        builder.AppendParameter(Alias, NpgsqlDbType.Varchar);
     }
 }

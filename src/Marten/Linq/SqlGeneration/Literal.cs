@@ -11,13 +11,9 @@ namespace Marten.Linq.SqlGeneration;
 // TODO -- move this to Weasel itself
 public record LiteralSql(string Text) : ISqlFragment
 {
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(Text);
     }
 
-    public bool Contains(string sqlText)
-    {
-        return Text.Contains(sqlText);
-    }
 }

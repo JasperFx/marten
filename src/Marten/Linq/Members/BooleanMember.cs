@@ -4,7 +4,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;
 
-internal class BooleanMember: QueryableMember, IComparableMember, IBooleanField
+internal class BooleanMember: QueryableMember, IComparableMember, IBooleanMember
 {
     public BooleanMember(IQueryableMember parent, Casing casing, MemberInfo member, string pgType): base(parent,
         casing, member)

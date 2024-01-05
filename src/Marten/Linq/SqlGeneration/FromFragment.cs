@@ -22,13 +22,8 @@ internal class FromFragment: ISqlFragment
         }
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(_text);
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 }

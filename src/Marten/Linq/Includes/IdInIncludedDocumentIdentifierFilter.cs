@@ -15,7 +15,7 @@ internal class IdInIncludedDocumentIdentifierFilter: ISqlFragment
         _connectingMember = connectingMember;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append("d.id in (select ");
         builder.Append(_connectingMember.LocatorForIncludedDocumentId);
@@ -24,8 +24,4 @@ internal class IdInIncludedDocumentIdentifierFilter: ISqlFragment
         builder.Append(" as d)");
     }
 
-    public bool Contains(string sqlText)
-    {
-        return false;
-    }
 }

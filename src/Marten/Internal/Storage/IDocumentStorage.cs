@@ -15,6 +15,7 @@ using Marten.Schema.Arguments;
 using Marten.Schema.BulkLoading;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -134,12 +135,15 @@ public interface IDocumentStorage<T, TId>: IDocumentStorage<T> where T : notnull
 
 internal static class DocumentStoreExtensions
 {
-    public static void AddTenancyFilter(this IDocumentStorage storage, CommandBuilder sql, string tenantId)
+    public static void AddTenancyFilter(this IDocumentStorage storage, ICommandBuilder sql, string tenantId)
     {
         if (storage.TenancyStyle == TenancyStyle.Conjoined)
         {
-            sql.Append($" and {CurrentTenantFilter.Filter}");
-            sql.AddNamedParameter(TenantIdArgument.ArgName, tenantId);
+            sql.Append(" and ");
+            sql.Append("d.");
+            sql.Append(TenantIdColumn.Name);
+            sql.Append(" = ");
+            sql.AppendParameter(tenantId);
         }
     }
 }

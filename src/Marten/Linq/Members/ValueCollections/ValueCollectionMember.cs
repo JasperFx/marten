@@ -195,7 +195,7 @@ internal class ValueCollectionMember: QueryableMember, ICollectionMember, IValue
         throw new NotSupportedException();
     }
 
-    public void Apply(CommandBuilder builder, ISerializer serializer)
+    public void Apply(ICommandBuilder builder, ISerializer serializer)
     {
         builder.Append(RawLocator);
     }

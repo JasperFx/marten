@@ -162,7 +162,7 @@ internal class AllCollectionConditionFilter: ISubQueryFilter, IWhereFragmentHold
 
     public List<ISqlFragment> Wheres { get; } = new();
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         if (Not)
         {
@@ -177,11 +177,6 @@ internal class AllCollectionConditionFilter: ISubQueryFilter, IWhereFragmentHold
         {
             builder.Append(")");
         }
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     /// <summary>
@@ -242,7 +237,7 @@ internal class CompareAllWithinCollectionFilter: ISqlFragment
         _inner = inner;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         _inner.Right.Apply(builder);
         builder.Append(" ");
@@ -252,11 +247,6 @@ internal class CompareAllWithinCollectionFilter: ISqlFragment
         var locator = _inner.Member.TypedLocator.Replace("d.data", "unnest(data)");
         builder.Append(locator);
         builder.Append("))");
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 }
 
@@ -270,17 +260,12 @@ internal class AllMembersAreNullFilter: ISqlFragment
         _member = member;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append("true = ALL (select unnest(array(select ");
         var locator = _member.TypedLocator.Replace("d.data", "unnest(data)");
         builder.Append(locator);
         builder.Append(" )) is null)");
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 }
 
@@ -293,17 +278,12 @@ internal class AllMembersAreNotNullFilter: ISqlFragment
         _member = member;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append("true = ALL (array(select ");
         var locator = _member.TypedLocator.Replace("d.data", "unnest(data)");
         builder.Append(locator);
         builder.Append(" )) is not null)");
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 }
 

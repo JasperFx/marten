@@ -15,7 +15,7 @@ public interface ICollectionAware
     void PlaceIntoContainmentFilter(ContainmentWhereFilter filter);
 
     bool CanBeJsonPathFilter();
-    void BuildJsonPathFilter(CommandBuilder builder, Dictionary<string, object> parameters);
+    void BuildJsonPathFilter(ICommandBuilder builder, Dictionary<string, object> parameters);
 
     IEnumerable<DictionaryValueUsage> Values();
 

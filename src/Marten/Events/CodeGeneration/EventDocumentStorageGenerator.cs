@@ -108,7 +108,7 @@ internal static class EventDocumentStorageGenerator
             new Variable(typeof(StreamAction), nameof(UpdateStreamVersion.Stream)));
 
         configureCommand.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(SQL);",
-            Use.Type<CommandBuilder>());
+            Use.Type<ICommandBuilder>());
 
         configureCommand.SetParameterFromMember<StreamAction>(0, x => x.Version);
 
@@ -228,7 +228,7 @@ internal static class EventDocumentStorageGenerator
         var setter = streamQueryHandlerType.AddStringConstant("SQL", sql);
 
         var configureCommand = streamQueryHandlerType.MethodFor("ConfigureCommand");
-        configureCommand.Frames.Call<CommandBuilder>(x => x.AppendWithParameters(""), call =>
+        configureCommand.Frames.Call<ICommandBuilder>(x => x.AppendWithParameters(""), call =>
         {
             call.Arguments[0] = setter;
             call.ReturnAction = ReturnAction.Initialize;
@@ -264,7 +264,7 @@ internal static class EventDocumentStorageGenerator
         operationType.AddStringConstant("SQL", sql);
 
         configure.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(SQL);",
-            Use.Type<CommandBuilder>());
+            Use.Type<ICommandBuilder>());
 
         for (var i = 0; i < columns.Count; i++)
         {
@@ -293,7 +293,7 @@ internal static class EventDocumentStorageGenerator
         configureCommand.DerivedVariables.Add(new Variable(typeof(StreamAction), nameof(InsertStreamBase.Stream)));
 
         configureCommand.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(SQL);",
-            Use.Type<CommandBuilder>());
+            Use.Type<ICommandBuilder>());
 
         for (var i = 0; i < columns.Length; i++)
         {

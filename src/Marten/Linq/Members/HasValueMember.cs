@@ -10,7 +10,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;
 
-internal class HasValueMember: IQueryableMember, IComparableMember, IBooleanField
+internal class HasValueMember: IQueryableMember, IComparableMember, IBooleanMember
 {
     private readonly string _isNotNullSql;
     private readonly string _isNullSql;
@@ -57,14 +57,9 @@ internal class HasValueMember: IQueryableMember, IComparableMember, IBooleanFiel
 
     public string NullTestLocator => RawLocator;
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(_isNotNullSql);
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public string JsonPathSegment => "";

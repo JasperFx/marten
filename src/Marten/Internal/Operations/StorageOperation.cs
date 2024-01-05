@@ -42,7 +42,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         return new ChangeTracker<T>(session, _document);
     }
 
-    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         var parameters = builder.AppendWithParameters(CommandText());
         ConfigureParameters(parameters, _document, session);

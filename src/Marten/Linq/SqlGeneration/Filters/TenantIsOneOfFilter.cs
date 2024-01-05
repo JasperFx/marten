@@ -16,15 +16,12 @@ internal class TenantIsOneOfFilter: ISqlFragment, ITenantFilter
         _values = values;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
-        var param = builder.AddParameter(_values);
-        param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
-        builder.Append(_filter.Replace("?", param.ParameterName));
+        builder.Append(TenantIdColumn.Name);
+        builder.Append(" = ANY(");
+        builder.AppendParameter(_values, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
+        builder.Append(')');
     }
 
-    public bool Contains(string sqlText)
-    {
-        return _filter.Contains(sqlText);
-    }
 }

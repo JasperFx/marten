@@ -12,31 +12,31 @@
         <None Update="bin\**\*">
             <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </None>
-        <None Include="App.config"/>
+        <None Include="App.config" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Marten\Marten.csproj"/>
-        <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj"/>
-        <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj"/>
+        <ProjectReference Include="..\Marten\Marten.csproj" />
+        <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
+        <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0"/>
-        <PackageReference Include="Jil" Version="3.0.0-alpha2"/>
-        <PackageReference Include="Lamar" Version="12.1.0"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+        <PackageReference Include="Jil" Version="3.0.0-alpha2" />
+        <PackageReference Include="Lamar" Version="12.1.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.5.4">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="xunit" Version="2.6.2"/>
-        <PackageReference Include="NSubstitute" Version="5.1.0"/>
-        <PackageReference Include="Shouldly" Version="4.2.1"/>
+        <PackageReference Include="xunit" Version="2.6.2" />
+        <PackageReference Include="NSubstitute" Version="5.1.0" />
+        <PackageReference Include="Shouldly" Version="4.2.1" />
     </ItemGroup>
 
     <ItemGroup>
-        <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}"/>
+        <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
     </ItemGroup>
 
     <ItemGroup>
@@ -47,7 +47,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Properties"/>
+        <Folder Include="Properties" />
     </ItemGroup>
 
     <PropertyGroup>

@@ -23,7 +23,7 @@ internal class UpdateProjectionProgress: IStorageOperation
 
     public EventRange Range { get; }
 
-    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         var parameters =
             builder.AppendWithParameters(

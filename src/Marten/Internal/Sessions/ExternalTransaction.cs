@@ -46,6 +46,22 @@ internal class ExternalTransaction: IConnectionLifetime
         return Task.CompletedTask;
     }
 
+    public void Apply(NpgsqlBatch batch)
+    {
+        batch.Connection = Connection;
+        batch.Transaction = Transaction;
+        batch.Timeout = CommandTimeout;
+    }
+
+    public Task ApplyAsync(NpgsqlBatch batch, CancellationToken token)
+    {
+        batch.Connection = Connection;
+        batch.Transaction = Transaction;
+        batch.Timeout = CommandTimeout;
+
+        return Task.CompletedTask;
+    }
+
     public void Commit()
     {
         if (_options.OwnsTransactionLifecycle)

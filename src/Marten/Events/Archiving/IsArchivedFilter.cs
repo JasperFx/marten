@@ -1,18 +1,26 @@
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Archiving;
 
-internal class IsArchivedFilter: IArchiveFilter
+internal class IsArchivedFilter: IArchiveFilter, IReversibleWhereFragment
 {
     private static readonly string _sql = $"d.{IsArchivedColumn.ColumnName} = TRUE";
 
-    public void Apply(CommandBuilder builder)
+    public static readonly IsArchivedFilter Instance = new IsArchivedFilter();
+
+    private IsArchivedFilter()
     {
-        builder.Append(_sql);
+
     }
 
-    public bool Contains(string sqlText)
+    public ISqlFragment Reverse()
     {
-        return _sql.Contains(sqlText);
+        return IsNotArchivedFilter.Instance;
+    }
+
+    public void Apply(ICommandBuilder builder)
+    {
+        builder.Append(_sql);
     }
 }

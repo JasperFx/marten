@@ -24,11 +24,13 @@ internal class EventProgressWrite: IStorageOperation
         _number = number;
     }
 
-    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
-        var nameArg = builder.AddParameter(_key, NpgsqlDbType.Varchar);
-        var numberArg = builder.AddParameter(_number, NpgsqlDbType.Bigint);
-        builder.Append($"select {_sproc}(:{nameArg.ParameterName}, :{numberArg.ParameterName})");
+        builder.Append($"select {_sproc}(");
+        builder.AppendParameter(_key, NpgsqlDbType.Varchar);
+        builder.Append(", ");
+        builder.AppendParameter(_number, NpgsqlDbType.Bigint);
+        builder.Append(')');
     }
 
     public Type DocumentType => typeof(IEvent);

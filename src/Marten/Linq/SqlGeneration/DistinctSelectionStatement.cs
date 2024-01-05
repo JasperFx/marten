@@ -18,7 +18,7 @@ internal class DistinctSelectionStatement: Statement
         InsertAfter(selector);
     }
 
-    protected override void configure(CommandBuilder sql)
+    protected override void configure(ICommandBuilder sql)
     {
         startCommonTableExpression(sql);
         sql.Append("select distinct(data) from ");

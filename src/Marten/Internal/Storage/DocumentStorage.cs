@@ -81,15 +81,15 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
 
         _loaderSql =
-            $"select {fieldSelector} from {document.TableName.QualifiedName} as d where id = :id";
+            $"select {fieldSelector} from {document.TableName.QualifiedName} as d where id = $1";
 
         _loadArraySql =
-            $"select {fieldSelector} from {document.TableName.QualifiedName} as d where id = ANY(:ids)";
+            $"select {fieldSelector} from {document.TableName.QualifiedName} as d where id = ANY($1)";
 
         if (document.TenancyStyle == TenancyStyle.Conjoined)
         {
-            _loaderSql += $" and {CurrentTenantFilter.Filter}";
-            _loadArraySql += $" and {CurrentTenantFilter.Filter}";
+            _loaderSql += $" and d.{TenantIdColumn.Name} = $2";
+            _loadArraySql += $" and d.{TenantIdColumn.Name} = $2";
         }
 
         UseOptimisticConcurrency = document.UseOptimisticConcurrency;
@@ -298,7 +298,6 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         return _defaultWhere;
     }
 
-
     public abstract T? Load(TId id, IMartenSession session);
     public abstract Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);
 
@@ -309,14 +308,9 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     public abstract TId Identity(T document);
 
 
-    public void Apply(CommandBuilder sql)
+    public void Apply(ICommandBuilder sql)
     {
         sql.Append(_selectClause);
-    }
-
-    bool ISqlFragment.Contains(string sqlText)
-    {
-        return false;
     }
 
     public string[] SelectFields()
@@ -340,9 +334,41 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public abstract NpgsqlCommand BuildLoadCommand(TId id, string tenant);
+    public NpgsqlCommand BuildLoadCommand(TId id, string tenant)
+    {
+        return _mapping.TenancyStyle == TenancyStyle.Conjoined
+            ? new NpgsqlCommand(_loaderSql) {
+                Parameters = {
+                    new() { Value = id },
+                new() { Value = tenant }
+                }
+            }
+            : new NpgsqlCommand(_loaderSql)
+            {
+                Parameters =
+                {
+                    new() { Value = id }
+                }
+            };
+    }
 
-    public abstract NpgsqlCommand BuildLoadManyCommand(TId[] ids, string tenant);
+    public NpgsqlCommand BuildLoadManyCommand(TId[] ids, string tenant)
+    {
+        return _mapping.TenancyStyle == TenancyStyle.Conjoined
+            ? new NpgsqlCommand(_loadArraySql) {
+                Parameters = {
+                    new() { Value = ids },
+                    new() { Value = tenant }
+                }
+            }
+            : new NpgsqlCommand(_loadArraySql)
+            {
+                Parameters =
+                {
+                    new() { Value = ids }
+                }
+            };
+    }
 
     private void determineDefaultWhereFragment()
     {
@@ -357,7 +383,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query, IMartenSession session)
     {
-        if (_mapping.DeleteStyle == DeleteStyle.SoftDelete && !query.Contains(SchemaConstants.DeletedColumn))
+        if (_mapping.DeleteStyle == DeleteStyle.SoftDelete && !query.ContainsAny<ISoftDeletedFilter>())
         {
             yield return ExcludeSoftDeletedFilter.Instance;
         }
@@ -418,14 +444,9 @@ internal class DuplicatedFieldSelectClause: ISelectClause
         SelectedType = selectedType;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(_selector);
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return _selector.Contains(sqlText);
     }
 
     public string FromObject { get; }

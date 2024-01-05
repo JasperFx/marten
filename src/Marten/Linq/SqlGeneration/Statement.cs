@@ -1,4 +1,3 @@
-using System.Linq;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
@@ -24,21 +23,20 @@ public abstract partial class Statement: ISqlFragment
     public bool ReturnDefaultWhenEmpty { get; set; }
     public bool CanBeMultiples { get; set; }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         configure(builder);
         if (Next != null)
         {
+            if (Mode == StatementMode.Select)
+            {
+                builder.StartNewCommand();
+            }
+
             builder.Append(" ");
             Next.Apply(builder);
         }
     }
-
-    bool ISqlFragment.Contains(string sqlText)
-    {
-        return Wheres.Any(x => x.Contains(sqlText));
-    }
-
 
     public void InsertAfter(Statement descendent)
     {
@@ -97,30 +95,25 @@ public abstract partial class Statement: ISqlFragment
         Mode = StatementMode.CommonTableExpression;
     }
 
-    protected abstract void configure(CommandBuilder sql);
+    protected abstract void configure(ICommandBuilder sql);
 
-    protected void startCommonTableExpression(CommandBuilder sql)
+    protected void startCommonTableExpression(ICommandBuilder sql)
     {
         if (Mode == StatementMode.CommonTableExpression)
         {
             sql.Append(Previous == null ? "WITH " : " , ");
 
             sql.Append(ExportName);
-            sql.Append(" as (\n");
+            sql.Append(" as (");
         }
     }
 
-    protected void endCommonTableExpression(CommandBuilder sql, string suffix = null)
+    protected void endCommonTableExpression(ICommandBuilder sql, string suffix = null)
     {
         switch (Mode)
         {
             case StatementMode.Select:
                 sql.Append(";");
-
-                if (Next != null)
-                {
-                    sql.Append("\n");
-                }
 
                 return;
             case StatementMode.Inner:
@@ -132,14 +125,14 @@ public abstract partial class Statement: ISqlFragment
                     sql.Append(suffix);
                 }
 
-                sql.Append("\n)\n");
+                sql.Append(')');
                 break;
         }
     }
 
-    public NpgsqlCommand BuildCommand()
+    public NpgsqlCommand BuildCommand(IMartenSession session)
     {
-        var builder = new CommandBuilder();
+        var builder = new CommandBuilder(){TenantId = session.TenantId};
         Apply(builder);
 
         return builder.Compile();

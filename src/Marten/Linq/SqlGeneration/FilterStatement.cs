@@ -15,16 +15,11 @@ internal class SelectCtidSelectClause: ISelectClause
         FromObject = parent.ExportName;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append("select distinct ctid from ");
         builder.Append(FromObject);
         builder.Append(" as d");
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public string FromObject { get; }

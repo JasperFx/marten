@@ -45,7 +45,7 @@ internal class OneResultHandler<T>: IQueryHandler<T>, IMaybeStatefulHandler
         return new OneResultHandler<T>(null, selector, _canBeNull, _canBeMultiples);
     }
 
-    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         _statement.Apply(builder);
     }

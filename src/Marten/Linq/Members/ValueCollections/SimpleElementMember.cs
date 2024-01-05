@@ -35,14 +35,9 @@ internal class SimpleElementMember: IQueryableMember, IComparableMember
 
     public Type MemberType { get; }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append("data");
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public string NullTestLocator => RawLocator;

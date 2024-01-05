@@ -139,6 +139,16 @@ public class StoreOptionsTests
             LastCommand = command;
             LastException = ex;
         }
+
+        public void LogSuccess(NpgsqlBatch batch)
+        {
+
+        }
+
+        public void LogFailure(NpgsqlBatch batch, Exception ex)
+        {
+
+        }
     }
 
     public void using_console_logger()

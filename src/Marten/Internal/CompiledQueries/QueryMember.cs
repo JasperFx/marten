@@ -3,13 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using JasperFx.CodeGeneration;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
-using Marten.Util;
 using Npgsql;
-using NpgsqlTypes;
 using Weasel.Core;
-using Weasel.Postgresql;
 
 namespace Marten.Internal.CompiledQueries;
 
@@ -45,19 +41,19 @@ internal abstract class QueryMember<T>: IQueryMember<T>
         Value = GetValue(query);
     }
 
-    public void TryMatch(List<NpgsqlParameter> parameters, ICompiledQueryAwareFilter[] filters,
-        StoreOptions storeOptions)
+    public bool TryMatch(NpgsqlParameter parameter, StoreOptions options, ICompiledQueryAwareFilter[] filters,
+        out ICompiledQueryAwareFilter filter)
     {
         if (Type.IsEnum)
         {
-            var parameterValue = storeOptions.Serializer().EnumStorage == EnumStorage.AsInteger
+            var parameterValue = options.Serializer().EnumStorage == EnumStorage.AsInteger
                 ? Value.As<int>()
                 : (object)Value.ToString();
 
-            tryToFind(parameters, filters, parameterValue);
+            return tryToFind(parameter, filters, parameterValue, out filter);
         }
 
-        tryToFind(parameters, filters, Value);
+        return tryToFind(parameter, filters, Value, out filter);
     }
 
     public void TryWriteValue(UniqueValueSource valueSource, object query)
@@ -76,38 +72,25 @@ internal abstract class QueryMember<T>: IQueryMember<T>
 
     public MemberInfo Member { get; }
 
-    public List<CompiledParameterApplication> Usages { get; } = new();
-
-    public void GenerateCode(GeneratedMethod method, StoreOptions storeOptions)
+    private bool tryToFind(NpgsqlParameter parameter, ICompiledQueryAwareFilter[] filters,
+        object value, out ICompiledQueryAwareFilter? filterUsed)
     {
-        foreach (var usage in Usages)
+        if (filters.All(x => x.ParameterName != parameter.ParameterName) && value.Equals(parameter.Value))
         {
-            usage.GenerateCode(method, storeOptions, Member);
-        }
-    }
-
-    private bool tryToFind(List<NpgsqlParameter> parameters, ICompiledQueryAwareFilter[] filters,
-        object value)
-    {
-        for (var i = 0; i < parameters.Count; i++)
-        {
-            var parameter = parameters[i];
-            if (filters.All(x => x.ParameterName != parameter.ParameterName) && value.Equals(parameter.Value))
-            {
-                Usages.Add(new CompiledParameterApplication(i, null));
-            }
+            filterUsed = null;
+            return true;
         }
 
         foreach (var filter in filters)
         {
-            var parameter = parameters.FirstOrDefault(x => x.ParameterName == filter.ParameterName);
-            if (filter.TryMatchValue(value, Member))
+            if (filter.TryMatchValue(value, Member) && filter.ParameterName == parameter.ParameterName)
             {
-                var index = parameters.IndexOf(parameter);
-                Usages.Add(new CompiledParameterApplication(index, filter));
+                filterUsed = filter;
+                return true;
             }
         }
 
-        return Usages.Any();
+        filterUsed = default;
+        return false;
     }
 }

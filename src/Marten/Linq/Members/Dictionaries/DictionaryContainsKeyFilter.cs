@@ -31,7 +31,7 @@ internal class DictionaryContainsKeyFilter: ISqlFragment, ICompiledQueryAwareFil
         _member = member;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append("d.data #> '{");
         foreach (var segment in _member.JsonPathSegments())
@@ -44,17 +44,12 @@ internal class DictionaryContainsKeyFilter: ISqlFragment, ICompiledQueryAwareFil
         builder.Append("}' is not null");
     }
 
-    public bool Contains(string sqlText)
-    {
-        return false;
-    }
-
     public bool TryMatchValue(object value, MemberInfo member)
     {
         throw new BadLinqExpressionException("Marten does not (yet) support Dictionary.ContainsKey() in compiled queries");
     }
 
-    public void GenerateCode(GeneratedMethod method, int parameterIndex)
+    public void GenerateCode(GeneratedMethod method, int parameterIndex, string parametersVariableName)
     {
         throw new BadLinqExpressionException("Marten does not (yet) support Dictionary.ContainsKey() in compiled queries");
     }
