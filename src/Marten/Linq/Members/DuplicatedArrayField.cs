@@ -160,14 +160,9 @@ internal class ArrayIsEmptyFilter: IReversibleWhereFragment
         _text = $"({member.RawLocator} is null or coalesce(array_length({member.RawLocator}, 1), 0) = 0)";
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(_text);
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public ISqlFragment Reverse()
@@ -187,14 +182,9 @@ internal class ArrayIsNotEmptyFilter: IReversibleWhereFragment
         _member = member;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(_text);
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public ISqlFragment Reverse()

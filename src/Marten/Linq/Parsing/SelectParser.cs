@@ -184,7 +184,7 @@ internal class SelectParser: ExpressionVisitor
 
 public interface ISelectableMember
 {
-    void Apply(CommandBuilder builder, ISerializer serializer);
+    void Apply(ICommandBuilder builder, ISerializer serializer);
 }
 
 internal class NewObject : ISqlFragment
@@ -198,7 +198,7 @@ internal class NewObject : ISqlFragment
 
     public Dictionary<string, ISqlFragment> Members { get; } = new();
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(" jsonb_build_object(");
 
@@ -214,7 +214,7 @@ internal class NewObject : ISqlFragment
         builder.Append(") ");
     }
 
-    private void writeMember(CommandBuilder builder, KeyValuePair<string, ISqlFragment> pair)
+    private void writeMember(ICommandBuilder builder, KeyValuePair<string, ISqlFragment> pair)
     {
         builder.Append($"'{pair.Key.FormatCase(_serializer.Casing)}', ");
         if (pair.Value is ISelectableMember selectable)
@@ -227,8 +227,4 @@ internal class NewObject : ISqlFragment
         }
     }
 
-    public bool Contains(string sqlText)
-    {
-        return false;
-    }
 }

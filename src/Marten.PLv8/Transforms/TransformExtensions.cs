@@ -82,7 +82,7 @@ public static class TransformExtensions
 
         var statement = statements.Top;
         statements.MainSelector.Limit = 1;
-        var command = statement.BuildCommand();
+        var command = statement.BuildCommand(session);
 
         await session.StreamOne(command, destination, token).ConfigureAwait(false);
     }
@@ -118,7 +118,7 @@ public static class TransformExtensions
             new TransformSelectClause<string>(transform, statements.MainSelector.SelectClause);
 
         var statement = statements.Top;
-        var command = statement.BuildCommand();
+        var command = statement.BuildCommand(session);
 
         await session.StreamMany(command, destination, token).ConfigureAwait(false);
     }

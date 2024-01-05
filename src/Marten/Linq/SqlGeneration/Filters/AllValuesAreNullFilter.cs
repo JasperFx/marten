@@ -19,7 +19,7 @@ internal class AllValuesAreNullFilter: ISubQueryFilter
 
     public ICollectionMember Member { get; }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         if (Not)
         {
@@ -34,11 +34,6 @@ internal class AllValuesAreNullFilter: ISubQueryFilter
         {
             builder.Append(")");
         }
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     /// <summary>

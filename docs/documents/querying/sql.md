@@ -50,7 +50,7 @@ a document body, but in that case you will need to supply the full SQL statement
 var sumResults = await session
     .QueryAsync<int>("select count(*) from mt_doc_target");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_by_sql.cs#L372-L377' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_by_full_sql' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_by_sql.cs#L376-L381' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_by_full_sql' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 When querying single JSONB properties into a primitive/value type, you'll need to cast the value to the respective postgres type:
@@ -61,7 +61,7 @@ When querying single JSONB properties into a primitive/value type, you'll need t
 var times = await session.QueryAsync<DateTimeOffset>(
     "SELECT (data ->> 'ModifiedAt')::timestamptz from mt_doc_user");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_by_sql.cs#L326-L331' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-queryasync-casting' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_by_sql.cs#L330-L335' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-queryasync-casting' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The basic rules for how Marten handles user-supplied queries are:

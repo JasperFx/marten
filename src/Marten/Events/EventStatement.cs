@@ -38,7 +38,7 @@ internal class EventStatement: SelectorStatement
 
     public long FromVersion { get; set; }
 
-    protected override void configure(CommandBuilder builder)
+    protected override void configure(ICommandBuilder builder)
     {
         _storage.Apply(builder);
 

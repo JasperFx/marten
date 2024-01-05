@@ -26,15 +26,11 @@ internal sealed class EventTypeFilter: ISqlFragment
 
     public IReadOnlyCollection<Type> EventTypes { get; }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         var parameters = builder.AppendWithParameters("d.type = ANY(?)");
         parameters[0].NpgsqlDbType = NpgsqlDbType.Varchar | NpgsqlDbType.Array;
         parameters[0].Value = _typeNames;
     }
 
-    public bool Contains(string sqlText)
-    {
-        return false;
-    }
 }

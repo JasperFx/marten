@@ -6,7 +6,9 @@ using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
+using Marten.Linq.SqlGeneration.Filters;
 using Marten.Schema;
+using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SoftDeletes;
@@ -34,7 +36,24 @@ internal class DeletedSinceParser: IMethodCallParser
 
         var time = expression.Arguments.Last().Value().As<DateTimeOffset>();
 
-        return new WhereFragment($"d.{SchemaConstants.DeletedColumn} and d.{SchemaConstants.DeletedAtColumn} > ?",
-            time);
+        return new DeletedSinceFilter(time);
+    }
+}
+
+internal class DeletedSinceFilter: ISoftDeletedFilter
+{
+    private readonly DateTimeOffset _time;
+
+    private static readonly string _sql = $"d.{SchemaConstants.DeletedColumn} and d.{SchemaConstants.DeletedAtColumn} > ";
+
+    public DeletedSinceFilter(DateTimeOffset time)
+    {
+        _time = time;
+    }
+
+    public void Apply(ICommandBuilder builder)
+    {
+        builder.Append(_sql);
+        builder.AppendParameter(_time);
     }
 }

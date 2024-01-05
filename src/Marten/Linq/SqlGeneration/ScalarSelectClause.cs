@@ -48,16 +48,11 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
         return new ScalarSelectClause<double>(MemberName, FromObject);
     }
 
-    bool ISqlFragment.Contains(string sqlText)
-    {
-        return false;
-    }
-
     public Type SelectedType => typeof(T);
 
     public string FromObject { get; }
 
-    public void Apply(CommandBuilder sql)
+    public void Apply(ICommandBuilder sql)
     {
         sql.Append("select ");
         sql.Append(MemberName);

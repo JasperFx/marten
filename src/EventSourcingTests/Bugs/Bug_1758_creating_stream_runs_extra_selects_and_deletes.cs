@@ -49,6 +49,15 @@ public class Bug_1758_creating_stream_runs_extra_selects_and_deletes : BugIntegr
 
         public void LogSuccess(NpgsqlCommand command) => CommandTexts.Add(command.CommandText);
         public void LogFailure(NpgsqlCommand command, Exception ex) => CommandTexts.Add(command.CommandText);
+        public void LogSuccess(NpgsqlBatch batch)
+        {
+
+        }
+
+        public void LogFailure(NpgsqlBatch batch, Exception ex)
+        {
+
+        }
 
         public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
         {

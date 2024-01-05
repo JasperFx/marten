@@ -187,14 +187,9 @@ public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenM
 
     public string TypedLocator { get; set; }
 
-    void ISqlFragment.Apply(CommandBuilder builder)
+    void ISqlFragment.Apply(ICommandBuilder builder)
     {
         builder.Append(TypedLocator);
-    }
-
-    bool ISqlFragment.Contains(string sqlText)
-    {
-        return TypedLocator.Contains(sqlText);
     }
 
     public Type MemberType => InnerMember.MemberType;

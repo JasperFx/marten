@@ -23,7 +23,7 @@ internal class LoadByIdHandler<T, TId>: IQueryHandler<T>
         _id = id;
     }
 
-    public void ConfigureCommand(CommandBuilder sql, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder sql, IMartenSession session)
     {
         sql.Append("select ");
 

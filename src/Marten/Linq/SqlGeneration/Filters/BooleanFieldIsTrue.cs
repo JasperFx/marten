@@ -13,18 +13,13 @@ public class BooleanFieldIsTrue: IReversibleWhereFragment
         _member = member;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append("(");
         builder.Append(_member.RawLocator);
         builder.Append(" is not null and ");
         builder.Append(_member.TypedLocator);
         builder.Append(" = True)");
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return _member.RawLocator.Contains(sqlText);
     }
 
     public ISqlFragment Reverse()

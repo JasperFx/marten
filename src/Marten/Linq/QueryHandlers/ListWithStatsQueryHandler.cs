@@ -58,7 +58,7 @@ internal class ListWithStatsQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>, IQ
         return Handle(reader, session);
     }
 
-    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         _statement.Apply(builder);
     }

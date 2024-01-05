@@ -45,16 +45,11 @@ internal class ScalarStringSelectClause: ISelectClause, IScalarSelectClause, ISe
         throw new NotSupportedException();
     }
 
-    bool ISqlFragment.Contains(string sqlText)
-    {
-        return false;
-    }
-
     public Type SelectedType => typeof(string);
 
     public string FromObject { get; }
 
-    public void Apply(CommandBuilder sql)
+    public void Apply(ICommandBuilder sql)
     {
         sql.Append("select ");
         sql.Append(MemberName);

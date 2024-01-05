@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
@@ -10,10 +9,6 @@ using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
-using Marten.Linq.SqlGeneration;
-using Marten.Util;
-using Npgsql;
-using Weasel.Postgresql;
 
 namespace Marten.Internal.CompiledQueries;
 
@@ -124,7 +119,7 @@ internal class QueryCompiler
         Finders.Add(finder);
     }
 
-    public static CompiledQueryPlan BuildPlan(QuerySession session, Type queryType, StoreOptions storeOptions)
+    public static CompiledQueryPlan BuildQueryPlan(QuerySession session, Type queryType, StoreOptions storeOptions)
     {
         var querySignature = queryType.FindInterfaceThatCloses(typeof(ICompiledQuery<,>));
         if (querySignature == null)
@@ -140,13 +135,11 @@ internal class QueryCompiler
         return builder.BuildPlan(session, queryType, storeOptions);
     }
 
-    public static CompiledQueryPlan BuildPlan<TDoc, TOut>(QuerySession session, ICompiledQuery<TDoc, TOut> query,
-        StoreOptions storeOptions)
+    public static CompiledQueryPlan BuildQueryPlan<TDoc, TOut>(QuerySession session, ICompiledQuery<TDoc, TOut> query)
     {
         eliminateStringNulls(query);
 
-        var plan = new CompiledQueryPlan(query.GetType(), typeof(TOut));
-        plan.FindMembers();
+        var plan = new CompiledQueryPlan(query.GetType(), typeof(TOut)){TenantId = session.TenantId};
 
         assertValidityOfQueryType(plan, query.GetType());
 
@@ -154,10 +147,10 @@ internal class QueryCompiler
         var queryTemplate = plan.CreateQueryTemplate(query);
 
         var statistics = plan.GetStatisticsIfAny(query);
-        var (builder, statement) = BuildDatabaseCommand(session, queryTemplate, statistics, out var command);
+        var parser = BuildDatabaseCommand(session, queryTemplate, statistics, plan);
 
         plan.IncludePlans.AddRange(new List<IIncludePlan>());
-        var handler = builder.BuildHandler<TOut>();
+        var handler = parser.BuildHandler<TOut>();
         if (handler is IIncludeQueryHandler<TOut> i)
         {
             handler = i.Inner;
@@ -165,31 +158,33 @@ internal class QueryCompiler
 
         plan.HandlerPrototype = handler;
 
-        plan.ReadCommand(command, statement, storeOptions);
-
         return plan;
     }
 
-    internal static (LinqQueryParser, Statement) BuildDatabaseCommand<TDoc, TOut>(QuerySession session,
+    internal static LinqQueryParser BuildDatabaseCommand<TDoc, TOut>(QuerySession session,
         ICompiledQuery<TDoc, TOut> queryTemplate,
         QueryStatistics statistics,
-        out NpgsqlCommand command)
+        CompiledQueryPlan queryPlan)
     {
         Expression expression = queryTemplate.QueryIs();
-        if (expression is LambdaExpression lambda) expression = lambda.Body;
+        if (expression is LambdaExpression lambda)
+        {
+            expression = lambda.Body;
+        }
 
         var parser = new LinqQueryParser(
             new MartenLinqQueryProvider(session, typeof(TDoc)) { Statistics = statistics }, session,
             expression);
 
         var statements = parser.BuildStatements();
-        var builder = new CommandBuilder();
         var topStatement = statements.Top;
-        topStatement.Apply(builder);
+        topStatement.Apply(queryPlan);
 
-        command = builder.Compile();
+        var filters = topStatement.AllFilters().OfType<ICompiledQueryAwareFilter>().ToArray();
 
-        return (parser, topStatement);
+        queryPlan.MatchParameters(session.Options, filters);
+
+        return parser;
     }
 
     private static void eliminateStringNulls(object query)
@@ -245,7 +240,7 @@ internal class QueryCompiler
                     e);
             }
 
-            return QueryCompiler.BuildPlan(session, (ICompiledQuery<TDoc, TOut>)query, storeOptions);
+            return BuildQueryPlan(session, (ICompiledQuery<TDoc, TOut>)query);
         }
     }
 

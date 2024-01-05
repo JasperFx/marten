@@ -2,6 +2,8 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core.Reflection;
+using Marten.Linq.Parsing;
+using Marten.Linq.SqlGeneration.Filters;
 using Marten.Schema;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -30,7 +32,10 @@ public class EventQueryMapping: DocumentMapping
 
         registerQueryableMember(x => x.Version, "version");
         registerQueryableMember(x => x.Timestamp, "timestamp");
-        registerQueryableMember(x => x.IsArchived, "is_archived");
+
+        // Is archived needs to be a little different
+        var member = ReflectionHelper.GetProperty<IEvent>(x => x.IsArchived);
+        QueryMembers.ReplaceMember(member, new IsArchivedMember());
 
         registerQueryableMember(x => x.EventTypeName, "type");
         registerQueryableMember(x => x.DotNetTypeName, SchemaConstants.DotNetTypeColumn);

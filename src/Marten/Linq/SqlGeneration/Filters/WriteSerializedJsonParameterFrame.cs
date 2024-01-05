@@ -14,19 +14,22 @@ namespace Marten.Linq.SqlGeneration.Filters;
 
 internal class WriteSerializedJsonParameterFrame: SyncFrame
 {
+    private readonly string _parametersVariableName;
     private readonly int _parameterIndex;
     private readonly IDictionaryPart _declaration;
 
-    public WriteSerializedJsonParameterFrame(int parameterIndex, IDictionaryPart declaration)
+    public WriteSerializedJsonParameterFrame(string parametersVariableName, int parameterIndex,
+        IDictionaryPart declaration)
     {
+        _parametersVariableName = parametersVariableName;
         _parameterIndex = parameterIndex;
         _declaration = declaration;
     }
 
     public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
     {
-        writer.WriteLine($"parameters[{_parameterIndex}].Value = session.Serializer.ToCleanJson({_declaration.Write()});");
-        writer.WriteLine($"parameters[{_parameterIndex}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {typeof(NpgsqlDbType).FullNameInCode()}.{NpgsqlDbType.Jsonb};");
+        writer.WriteLine($"{_parametersVariableName}[{_parameterIndex}].Value = session.Serializer.ToCleanJson({_declaration.Write()});");
+        writer.WriteLine($"{_parametersVariableName}[{_parameterIndex}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {typeof(NpgsqlDbType).FullNameInCode()}.{NpgsqlDbType.Jsonb};");
 
         Next?.GenerateCode(method, writer);
     }

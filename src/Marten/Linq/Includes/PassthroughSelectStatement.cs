@@ -16,7 +16,7 @@ internal class PassthroughSelectStatement: SelectorStatement
 
     public string TableName { get; set; }
 
-    protected override void configure(CommandBuilder sql)
+    protected override void configure(ICommandBuilder sql)
     {
         sql.Append("select * from ");
         sql.Append(TableName);

@@ -21,7 +21,7 @@ internal class SingleEventQueryHandler: IQueryHandler<IEvent>
         _selector = selector;
     }
 
-    public void ConfigureCommand(CommandBuilder sql, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder sql, IMartenSession session)
     {
         _selector.Apply(sql);
 

@@ -32,8 +32,6 @@ public class validating_and_making_unique_query_class
     {
         var plan = new CompiledQueryPlan(typeof(QueryWithLots), typeof(Target));
 
-        plan.FindMembers();
-
         var invalids = plan.InvalidMembers;
         invalids.Select(x => x.Name).OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Flag", "NullableDate", "NullableNumber");
@@ -44,9 +42,7 @@ public class validating_and_making_unique_query_class
     {
         var plan = new CompiledQueryPlan(typeof(QueryWithLots), typeof(Target));
 
-        plan.FindMembers();
-
-        plan.Parameters.OfType<FieldQueryMember<DateTime>>()
+        plan.QueryMembers.OfType<FieldQueryMember<DateTime>>()
             .Count().ShouldBe(1);
     }
 
@@ -55,12 +51,10 @@ public class validating_and_making_unique_query_class
     {
         var plan = new CompiledQueryPlan(typeof(QueryWithLots), typeof(Target));
 
-        plan.FindMembers();
-
-        plan.Parameters.OfType<PropertyQueryMember<string>>()
+        plan.QueryMembers.OfType<PropertyQueryMember<string>>()
             .Count().ShouldBe(1);
 
-        plan.Parameters.OfType<PropertyQueryMember<int>>()
+        plan.QueryMembers.OfType<PropertyQueryMember<int>>()
             .Count().ShouldBe(1);
     }
 
@@ -80,8 +74,6 @@ public class validating_and_making_unique_query_class
     public void find_the_statistics_member()
     {
         var plan = new CompiledQueryPlan(typeof(PagedTargets), typeof(Target));
-
-        plan.FindMembers();
 
         plan.StatisticsMember.Name.ShouldBe("Statistics");
     }

@@ -9,18 +9,16 @@ namespace Marten.Internal.CompiledQueries;
 
 public abstract class StatelessCompiledQuery<TOut, TQuery>: IQueryHandler<TOut>
 {
-    protected readonly HardCodedParameters _hardcoded;
     private readonly IQueryHandler<TOut> _inner;
     protected readonly TQuery _query;
 
-    public StatelessCompiledQuery(IQueryHandler<TOut> inner, TQuery query, HardCodedParameters hardcoded)
+    public StatelessCompiledQuery(IQueryHandler<TOut> inner, TQuery query)
     {
         _inner = inner;
         _query = query;
-        _hardcoded = hardcoded;
     }
 
-    public abstract void ConfigureCommand(CommandBuilder builder, IMartenSession session);
+    public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
 
     public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
     {

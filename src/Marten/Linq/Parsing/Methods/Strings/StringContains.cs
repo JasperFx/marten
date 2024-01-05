@@ -51,7 +51,7 @@ internal class StringContainsFilter: ISqlFragment, ICompiledQueryAwareFilter
 
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(_member.RawLocator);
         builder.Append(_caseInsensitive ? StringComparisonParser.CaseInSensitiveLike : StringComparisonParser.CaseSensitiveLike);
@@ -61,11 +61,6 @@ internal class StringContainsFilter: ISqlFragment, ICompiledQueryAwareFilter
         builder.Append(StringComparisonParser.EscapeSuffix);
 
         ParameterName = builder.LastParameterName;
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public bool TryMatchValue(object value, MemberInfo member)
@@ -79,13 +74,13 @@ internal class StringContainsFilter: ISqlFragment, ICompiledQueryAwareFilter
         return false;
     }
 
-    public void GenerateCode(GeneratedMethod method, int parameterIndex)
+    public void GenerateCode(GeneratedMethod method, int parameterIndex, string parametersVariableName)
     {
         var maskedValue = $"ContainsString(_query.{_queryMember.Name})";
 
         method.Frames.Code($@"
-parameters[{parameterIndex}].NpgsqlDbType = {{0}};
-parameters[{parameterIndex}].Value = {maskedValue};
+{parametersVariableName}[{parameterIndex}].NpgsqlDbType = {{0}};
+{parametersVariableName}[{parameterIndex}].Value = {maskedValue};
 ", NpgsqlDbType.Varchar);
     }
 

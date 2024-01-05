@@ -10,7 +10,7 @@ namespace Marten.Linq.QueryHandlers;
 
 public interface IQueryHandler
 {
-    void ConfigureCommand(CommandBuilder builder, IMartenSession session);
+    void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
 }
 
 public interface IQueryHandler<T>: IQueryHandler

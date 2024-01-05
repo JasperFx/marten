@@ -47,7 +47,7 @@ internal class StringEndsWithFilter: ISqlFragment, ICompiledQueryAwareFilter
             : StringComparisonParser.CaseSensitiveLike;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(_member.RawLocator);
         builder.Append(_operator);
@@ -58,11 +58,6 @@ internal class StringEndsWithFilter: ISqlFragment, ICompiledQueryAwareFilter
         builder.Append(StringComparisonParser.EscapeSuffix);
 
         ParameterName = builder.LastParameterName;
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public bool TryMatchValue(object value, MemberInfo member)
@@ -76,13 +71,13 @@ internal class StringEndsWithFilter: ISqlFragment, ICompiledQueryAwareFilter
         return false;
     }
 
-    public void GenerateCode(GeneratedMethod method, int parameterIndex)
+    public void GenerateCode(GeneratedMethod method, int parameterIndex, string parametersVariableName)
     {
         var maskedValue = $"EndsWith(_query.{_queryMember.Name})";
 
         method.Frames.Code($@"
-parameters[{parameterIndex}].NpgsqlDbType = {{0}};
-parameters[{parameterIndex}].Value = {maskedValue};
+{parametersVariableName}[{parameterIndex}].NpgsqlDbType = {{0}};
+{parametersVariableName}[{parameterIndex}].Value = {maskedValue};
 ", NpgsqlDbType.Varchar);
     }
 

@@ -48,7 +48,6 @@ public abstract class MetadataColumn: TableColumn
             return;
         }
 
-
         mapping.DuplicateField(new[] { Member }, columnName: Name)
             .OnlyForSearching = true;
     }

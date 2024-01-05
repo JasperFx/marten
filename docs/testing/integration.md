@@ -302,4 +302,4 @@ There is still some discussion on how to leverage this: [Add testing helpers for
 1. **Parallel Execution**: xUnit runs tests in parallel. If your tests are not isolated, it could lead to unexpected behavior.
 2. **Database Clean-Up**: You may want to clean up or reset the database state before running each test. Helpers are explained here: [Cleaning up database](/schema/cleaning).
 
-Feel free to consult the official documentation for [Alba](https://jasperfx.github.io/alba/), [Wolverine](https://wolverine.netlify.app/), and [xUnit](https://xunit.net/) for more in-depth information.
+Feel fre

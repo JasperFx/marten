@@ -38,7 +38,7 @@ internal class EntityMetadataQueryHandler: IQueryHandler<DocumentMetadata>
 
     public Type SourceType { get; }
 
-    public void ConfigureCommand(CommandBuilder sql, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder sql, IMartenSession session)
     {
         sql.Append("select id, ");
 
@@ -48,9 +48,8 @@ internal class EntityMetadataQueryHandler: IQueryHandler<DocumentMetadata>
 
         sql.Append(" from ");
         sql.Append(_storage.TableName.QualifiedName);
-        sql.Append(" where id = :id");
-
-        sql.AddNamedParameter("id", _id);
+        sql.Append(" where id = ");
+        sql.AppendParameter(_id);
     }
 
     public DocumentMetadata Handle(DbDataReader reader, IMartenSession session)

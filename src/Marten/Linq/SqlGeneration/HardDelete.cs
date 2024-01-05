@@ -13,14 +13,9 @@ internal class HardDelete: IOperationFragment
         _sql = $"delete from {storage.TableName} as d";
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(_sql);
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return _sql.Contains(sqlText);
     }
 
     public OperationRole Role()

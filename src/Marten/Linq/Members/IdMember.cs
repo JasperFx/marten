@@ -47,14 +47,9 @@ internal class IdMember: IQueryableMember, IComparableMember
         throw new NotSupportedException();
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(TypedLocator);
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public string JsonPathSegment => "";

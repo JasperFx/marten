@@ -80,6 +80,8 @@ internal abstract class StringComparisonParser: IMethodCallParser
 
         var caseInsensitive = CaseInSensitiveComparisons.Contains(comparison);
 
+        value.DbType = NpgsqlDbType.Varchar;
+
         // TODO -- watch the NULL values!
         return buildFilter(caseInsensitive, member, value);
     }

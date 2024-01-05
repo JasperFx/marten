@@ -75,7 +75,6 @@ internal class DocumentStorageBuilder
             .Frames.Code($"return new {assembly.Namespace}.{selectorType.TypeName}({{0}}, {{1}});",
                 Use.Type<IMartenSession>(), Use.Type<DocumentMapping>());
 
-        buildLoaderCommands(type);
         writeNotImplementedStubs(type);
 
 
@@ -107,26 +106,6 @@ internal class DocumentStorageBuilder
             {
                 method.Frames.ThrowNotImplementedException();
             }
-        }
-    }
-
-    private void buildLoaderCommands(GeneratedType type)
-    {
-        var load = type.MethodFor("BuildLoadCommand");
-        var loadByArray = type.MethodFor("BuildLoadManyCommand");
-
-
-        if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
-        {
-            load.Frames.Code(
-                "return new NpgsqlCommand(_loaderSql).With(\"id\", id).With(TenantIdArgument.ArgName, tenant);");
-            loadByArray.Frames.Code(
-                "return new NpgsqlCommand(_loadArraySql).With(\"ids\", ids).With(TenantIdArgument.ArgName, tenant);");
-        }
-        else
-        {
-            load.Frames.Code("return new NpgsqlCommand(_loaderSql).With(\"id\", id);");
-            loadByArray.Frames.Code("return new NpgsqlCommand(_loadArraySql).With(\"ids\", ids);");
         }
     }
 

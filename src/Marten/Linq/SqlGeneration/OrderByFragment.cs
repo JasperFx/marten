@@ -9,7 +9,7 @@ public class OrderByFragment: ISqlFragment
 {
     public List<string> Expressions { get; } = new();
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         if (!Expressions.Any())
         {
@@ -25,8 +25,4 @@ public class OrderByFragment: ISqlFragment
         }
     }
 
-    public bool Contains(string sqlText)
-    {
-        return Expressions.Any(x => x.Contains(sqlText));
-    }
 }

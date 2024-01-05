@@ -17,16 +17,12 @@ internal class SpecificTenantFilter: ISqlFragment
         _tenantId = tenantId;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append($"d.{TenantIdColumn.Name} = ");
         builder.AppendParameter(_tenantId);
     }
 
-    public bool Contains(string sqlText)
-    {
-        return false;
-    }
 }
 
 internal class DefaultTenantFilter: ISqlFragment
@@ -38,14 +34,10 @@ internal class DefaultTenantFilter: ISqlFragment
         _tenantId = tenantId;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
-        builder.Append($"d.{TenantIdColumn.Name} = :{TenantIdArgument.ArgName}");
-        builder.AddNamedParameter(TenantIdArgument.ArgName, _tenantId);
+        builder.Append($"d.{TenantIdColumn.Name} = ");
+        builder.AppendParameter(_tenantId);
     }
 
-    public bool Contains(string sqlText)
-    {
-        return false;
-    }
 }

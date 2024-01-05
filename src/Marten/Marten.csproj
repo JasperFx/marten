@@ -45,8 +45,8 @@
         <!-- This is forced by Npgsql peer dependency -->
         <PackageReference Include="Npgsql.Json.NET" Version="8.0.0" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" Version="8.0.0" />
-        <PackageReference Include="Weasel.Postgresql" Version="7.0.0-alpha.6" />
         <PackageReference Include="System.Text.Json" Version="8.0.0" />
+        <PackageReference Include="Weasel.Postgresql" Version="7.0.0-alpha.7" />
     </ItemGroup>
 
     <!--SourceLink specific settings-->

@@ -10,21 +10,18 @@ namespace Marten.Internal.CompiledQueries;
 
 public abstract class ClonedCompiledQuery<TOut, TQuery>: IQueryHandler<TOut>
 {
-    protected readonly HardCodedParameters _hardcoded;
     private readonly IMaybeStatefulHandler _inner;
     protected readonly TQuery _query;
     private readonly QueryStatistics _statistics;
 
-    public ClonedCompiledQuery(IMaybeStatefulHandler inner, TQuery query, QueryStatistics statistics,
-        HardCodedParameters hardcoded)
+    public ClonedCompiledQuery(IMaybeStatefulHandler inner, TQuery query, QueryStatistics statistics)
     {
         _inner = inner;
         _query = query;
         _statistics = statistics;
-        _hardcoded = hardcoded;
     }
 
-    public abstract void ConfigureCommand(CommandBuilder builder, IMartenSession session);
+    public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
 
     public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
     {

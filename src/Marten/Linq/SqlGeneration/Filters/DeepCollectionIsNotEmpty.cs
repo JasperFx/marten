@@ -16,7 +16,7 @@ internal class DeepCollectionIsNotEmpty: ISqlFragment
 
     public List<IQueryableMember> Path { get; }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append("jsonb_array_length(jsonb_path_query_array(d.data, '$");
         foreach (var member in Path.Where(x => x.JsonPathSegment.IsNotEmpty()))
@@ -28,8 +28,4 @@ internal class DeepCollectionIsNotEmpty: ISqlFragment
         builder.Append("')) > 0");
     }
 
-    public bool Contains(string sqlText)
-    {
-        return false;
-    }
 }

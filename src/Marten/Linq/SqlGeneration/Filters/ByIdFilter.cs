@@ -14,16 +14,12 @@ public class ByIdFilter<T>: ISqlFragment
         _parameter = new CommandParameter(value, dbType);
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append("id = ");
         _parameter.Apply(builder);
     }
 
-    public bool Contains(string sqlText)
-    {
-        return false;
-    }
 }
 
 public class ByGuidFilter: ByIdFilter<Guid>

@@ -26,17 +26,11 @@ internal class FullTextWhereFragment: ISqlFragment
 
     // don't parameterize full-text search config as it ruins the performance with the query plan in PG
     private string Sql =>
-        $"to_tsvector('{_regConfig}'::regconfig, {_dataConfig}) @@ {_searchFunction}('{_regConfig}'::regconfig, :argSearchTerm)";
+        $"to_tsvector('{_regConfig}'::regconfig, {_dataConfig}) @@ {_searchFunction}('{_regConfig}'::regconfig, ?)";
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
-        builder.AddNamedParameter("argSearchTerm", _searchTerm);
-        builder.Append(Sql);
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return Sql.Contains(sqlText);
+        builder.AppendWithParameters(Sql)[0].Value = _searchTerm;
     }
 
     private static string GetDataConfig(DocumentMapping mapping, string regConfig)

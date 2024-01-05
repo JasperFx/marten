@@ -16,7 +16,7 @@ internal class AllValuesEqualFilter: ISqlFragment
         _member = member;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.AppendParameter(_constant.Value);
         builder.Append(" = ALL(");
@@ -24,8 +24,4 @@ internal class AllValuesEqualFilter: ISqlFragment
         builder.Append(")");
     }
 
-    public bool Contains(string sqlText)
-    {
-        return false;
-    }
 }

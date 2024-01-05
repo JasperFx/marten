@@ -48,6 +48,20 @@ public interface IMartenSessionLogger
     void LogFailure(NpgsqlCommand command, Exception ex);
 
     /// <summary>
+    ///     Log a command that executed successfully
+    /// </summary>
+    /// <param name="batch"></param>
+    void LogSuccess(NpgsqlBatch batch);
+
+    /// <summary>
+    ///     Log a batch that failed
+    /// </summary>
+    /// <param name="batch"></param>
+    /// <param name="ex"></param>
+    void LogFailure(NpgsqlBatch batch, Exception ex);
+
+
+    /// <summary>
     ///     Called immediately after committing an IDocumentSession
     ///     through SaveChanges() or SaveChangesAsync()
     /// </summary>
@@ -91,6 +105,16 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
             Console.WriteLine($"  {p.ParameterName}: {GetParameterValue(p)}");
     }
 
+    public void LogSuccess(NpgsqlBatch batch)
+    {
+        foreach (var command in batch.BatchCommands)
+        {
+            Console.WriteLine(command.CommandText);
+            foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
+                Console.WriteLine($"  {p.ParameterName}: {GetParameterValue(p)}");
+        }
+    }
+
     private static object? GetParameterValue(NpgsqlParameter p)
     {
         if (p.Value is IList enumerable)
@@ -108,12 +132,23 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
 
     public void LogFailure(NpgsqlCommand command, Exception ex)
     {
-        _stopwatch?.Stop();
-
         Console.WriteLine("Postgresql command failed!");
         Console.WriteLine(command.CommandText);
         foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
             Console.WriteLine($"  {p.ParameterName}: {p.Value}");
+        Console.WriteLine(ex);
+    }
+
+    public void LogFailure(NpgsqlBatch batch, Exception ex)
+    {
+        Console.WriteLine("Postgresql command failed!");
+        foreach (var command in batch.BatchCommands)
+        {
+            Console.WriteLine(command.CommandText);
+            foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
+                Console.WriteLine($"  {p.ParameterName}: {p.Value}");
+        }
+
         Console.WriteLine(ex);
     }
 

@@ -31,7 +31,7 @@ internal class ChildCollectionJsonPathCountFilter: ISqlFragment, ICompiledQueryA
         _filters = filters.ToArray();
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append("jsonb_array_length(jsonb_path_query_array(d.data, '$.");
         _member.WriteJsonPath(builder);
@@ -65,11 +65,6 @@ internal class ChildCollectionJsonPathCountFilter: ISqlFragment, ICompiledQueryA
         builder.AppendParameter(_constant.Value());
     }
 
-    public bool Contains(string sqlText)
-    {
-        return false;
-    }
-
     public bool TryMatchValue(object value, MemberInfo member)
     {
         _usages ??= _filters.SelectMany(x => x.Values()).ToList();
@@ -87,7 +82,7 @@ internal class ChildCollectionJsonPathCountFilter: ISqlFragment, ICompiledQueryA
     private bool _hasGenerated;
     private Dictionary<string, object> _dict;
 
-    public void GenerateCode(GeneratedMethod method, int parameterIndex)
+    public void GenerateCode(GeneratedMethod method, int parameterIndex, string parametersVariableName)
     {
         if (_hasGenerated)
         {
@@ -99,7 +94,7 @@ internal class ChildCollectionJsonPathCountFilter: ISqlFragment, ICompiledQueryA
         var top = new DictionaryDeclaration();
         top.ReadDictionary(_dict, _usages);
 
-        method.Frames.Add(new WriteSerializedJsonParameterFrame(parameterIndex, top));
+        method.Frames.Add(new WriteSerializedJsonParameterFrame(parametersVariableName, parameterIndex, top));
     }
 
     public string? ParameterName { get; private set; }

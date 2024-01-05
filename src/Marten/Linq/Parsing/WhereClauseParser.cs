@@ -58,7 +58,7 @@ public class WhereClauseParser: ExpressionVisitor
             }
 
             var field = _members.MemberFor(node);
-            if (field is IBooleanField b)
+            if (field is IBooleanMember b)
             {
                 _holder.Register(b.BuildIsTrueFragment());
             }

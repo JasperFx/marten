@@ -94,7 +94,7 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
         return false;
     }
 
-    public void BuildJsonPathFilter(CommandBuilder builder, Dictionary<string, object> parameters)
+    public void BuildJsonPathFilter(ICommandBuilder builder, Dictionary<string, object> parameters)
     {
         throw new NotSupportedException();
     }
@@ -106,7 +106,7 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
         throw new NotSupportedException();
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         var json = Usage == ContainmentUsage.Singular
             ? _serializer.ToCleanJson(_data)
@@ -126,11 +126,6 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
         {
             builder.Append(")");
         }
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public ISqlFragment Reverse()
@@ -166,7 +161,7 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
 
     private bool _hasGenerated;
 
-    public void GenerateCode(GeneratedMethod method, int parameterIndex)
+    public void GenerateCode(GeneratedMethod method, int parameterIndex, string parametersVariableName)
     {
         if (_hasGenerated)
         {
@@ -180,7 +175,7 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
 
         var part = Usage == ContainmentUsage.Singular ? (IDictionaryPart)top : new ArrayContainer(top);
 
-        method.Frames.Add(new WriteSerializedJsonParameterFrame(parameterIndex, part));
+        method.Frames.Add(new WriteSerializedJsonParameterFrame(parametersVariableName, parameterIndex, part));
     }
 
     public string ParameterName { get; private set; }

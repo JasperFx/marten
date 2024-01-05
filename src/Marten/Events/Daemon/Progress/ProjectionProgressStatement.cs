@@ -15,7 +15,7 @@ internal class ProjectionProgressStatement: Statement
 
     public ShardName Name { get; set; }
 
-    protected override void configure(CommandBuilder builder)
+    protected override void configure(ICommandBuilder builder)
     {
         builder.Append($"select name, last_seq_id from {_events.DatabaseSchemaName}.mt_event_progression");
         if (Name != null)

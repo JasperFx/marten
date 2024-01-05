@@ -6,6 +6,7 @@ using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace EventSourcingTests;
 
@@ -13,8 +14,11 @@ public class append_events_with_optimistic_or_exclusive_locks
 {
     public class append_events_optimistic_or_exclusive_with_guid_identity: OneOffConfigurationsContext
     {
-        public append_events_optimistic_or_exclusive_with_guid_identity()
+        private readonly ITestOutputHelper _output;
+
+        public append_events_optimistic_or_exclusive_with_guid_identity(ITestOutputHelper output)
         {
+            _output = output;
             theStore.Advanced.Clean.DeleteAllEventData();
         }
 
@@ -82,6 +86,8 @@ public class append_events_with_optimistic_or_exclusive_locks
         [Fact]
         public async Task append_exclusive_happy_path()
         {
+            theSession.Logger = new TestOutputMartenLogger(_output);
+
             var streamId = Guid.NewGuid();
             theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
             await theSession.SaveChangesAsync();

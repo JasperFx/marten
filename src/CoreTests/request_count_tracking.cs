@@ -136,6 +136,11 @@ public class RecordingLogger: IMartenSessionLogger
 
     public int OnBeforeExecuted { get; set; }
 
+    public void LogFailure(NpgsqlBatch batch, Exception ex)
+    {
+
+    }
+
     public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
     {
         LastSession = session;
@@ -158,5 +163,10 @@ public class RecordingLogger: IMartenSessionLogger
     {
         LastCommand = command;
         LastException = ex;
+    }
+
+    public void LogSuccess(NpgsqlBatch batch)
+    {
+
     }
 }

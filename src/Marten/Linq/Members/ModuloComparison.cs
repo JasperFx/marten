@@ -26,18 +26,13 @@ internal class ModuloOperator: IComparableMember, ISqlFragment
         return this;
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         _left.Apply(builder);
         builder.Append(" % ");
         _right.Apply(builder);
         builder.Append(_op);
         _value.Apply(builder);
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     private ISqlFragment analyze(Expression expression, IQueryableMemberCollection members)

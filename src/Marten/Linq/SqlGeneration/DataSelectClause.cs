@@ -39,16 +39,11 @@ internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause
         return new DataSelectClause<double>(FromObject, MemberName);
     }
 
-    bool ISqlFragment.Contains(string sqlText)
-    {
-        return false;
-    }
-
     public Type SelectedType => typeof(T);
 
     public string FromObject { get; }
 
-    public void Apply(CommandBuilder sql)
+    public void Apply(ICommandBuilder sql)
     {
         if (MemberName.IsNotEmpty())
         {

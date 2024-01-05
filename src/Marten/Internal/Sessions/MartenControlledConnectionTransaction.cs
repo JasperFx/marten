@@ -53,6 +53,15 @@ internal class MartenControlledConnectionTransaction: IConnectionLifetime
         command.CommandTimeout = CommandTimeout;
     }
 
+    public void Apply(NpgsqlBatch batch)
+    {
+        EnsureConnected();
+
+        batch.Connection = Connection;
+        batch.Transaction = Transaction;
+        batch.Timeout = CommandTimeout;
+    }
+
     public virtual void BeginTransaction()
     {
         EnsureConnected();
@@ -70,6 +79,15 @@ internal class MartenControlledConnectionTransaction: IConnectionLifetime
         command.Connection = Connection;
         command.Transaction = Transaction;
         command.CommandTimeout = CommandTimeout;
+    }
+
+    public async Task ApplyAsync(NpgsqlBatch batch, CancellationToken token)
+    {
+        await EnsureConnectedAsync(token).ConfigureAwait(false);
+
+        batch.Connection = Connection;
+        batch.Transaction = Transaction;
+        batch.Timeout = CommandTimeout;
     }
 
     public virtual async ValueTask BeginTransactionAsync(CancellationToken token)

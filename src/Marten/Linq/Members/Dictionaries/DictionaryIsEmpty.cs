@@ -16,14 +16,9 @@ internal class DictionaryIsEmpty: IReversibleWhereFragment
         _text = $"({parent.TypedLocator} is null or jsonb_array_length(jsonb_path_query_array(d.data, '$.{jsonPath}.keyvalue()')) = 0)";
     }
 
-    public void Apply(CommandBuilder builder)
+    public void Apply(ICommandBuilder builder)
     {
         builder.Append(_text);
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public ISqlFragment Reverse()

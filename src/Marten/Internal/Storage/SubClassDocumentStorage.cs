@@ -69,14 +69,9 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
     public string FromObject { get; }
     public Type SelectedType => typeof(T);
 
-    public void Apply(CommandBuilder sql)
+    public void Apply(ICommandBuilder sql)
     {
         _parent.Apply(sql);
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public string[] SelectFields()
@@ -107,7 +102,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
 
     public ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession session)
     {
-        var extras = extraFilters(query).ToArray();
+        var extras = extraFilters(query, session).ToArray();
 
         return query.CombineAnd(extras);
     }
@@ -261,18 +256,18 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.HardDeleteForDocument(document, tenantId);
     }
 
-    private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)
+    private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query, IMartenSession session)
     {
         yield return toBasicWhere();
 
-        if (_mapping.DeleteStyle == DeleteStyle.SoftDelete && !query.Contains(SchemaConstants.DeletedColumn))
+        if (_mapping.DeleteStyle == DeleteStyle.SoftDelete && !query.ContainsAny<ISoftDeletedFilter>())
         {
             yield return ExcludeSoftDeletedFilter.Instance;
         }
 
         if (_mapping.Parent.TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant())
         {
-            yield return CurrentTenantFilter.Instance;
+            yield return new SpecificTenantFilter(session.TenantId);
         }
     }
 

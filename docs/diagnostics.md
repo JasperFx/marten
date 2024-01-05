@@ -246,6 +246,19 @@ public interface IMartenSessionLogger
     void LogFailure(NpgsqlCommand command, Exception ex);
 
     /// <summary>
+    ///     Log a command that executed successfully
+    /// </summary>
+    /// <param name="batch"></param>
+    void LogSuccess(NpgsqlBatch batch);
+
+    /// <summary>
+    ///     Log a batch that failed
+    /// </summary>
+    /// <param name="batch"></param>
+    /// <param name="ex"></param>
+    void LogFailure(NpgsqlBatch batch, Exception ex);
+
+    /// <summary>
     ///     Called immediately after committing an IDocumentSession
     ///     through SaveChanges() or SaveChangesAsync()
     /// </summary>
@@ -261,7 +274,7 @@ public interface IMartenSessionLogger
     public void OnBeforeExecute(NpgsqlCommand command);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L11-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_imartenlogger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L11-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_imartenlogger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To apply these logging abstractions, you can either plug your own `IMartenLogger` into the `StoreOptions` object and allow that default logger to create the individual session loggers:
@@ -274,7 +287,7 @@ var store = DocumentStore.For(_ =>
     _.Logger(new ConsoleMartenLogger());
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L146-L153' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L156-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also directly apply a session logger to any `IQuerySession` or `IDocumentSession` like this:
@@ -286,7 +299,7 @@ using var session = store.LightweightSession();
 // Replace the logger for only this one session
 session.Logger = new RecordingLogger();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L155-L161' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L165-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The session logging is a different abstraction specifically so that you _could_ track database commands issued per session. In effect, my own shop is going to use this capability to understand what HTTP endpoints or service bus message handlers are being unnecessarily chatty in their database interactions. We also hope that the contextual logging of commands per document session makes it easier to understand how our systems behave.
@@ -317,6 +330,16 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
             Console.WriteLine($"  {p.ParameterName}: {GetParameterValue(p)}");
     }
 
+    public void LogSuccess(NpgsqlBatch batch)
+    {
+        foreach (var command in batch.BatchCommands)
+        {
+            Console.WriteLine(command.CommandText);
+            foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
+                Console.WriteLine($"  {p.ParameterName}: {GetParameterValue(p)}");
+        }
+    }
+
     private static object? GetParameterValue(NpgsqlParameter p)
     {
         if (p.Value is IList enumerable)
@@ -334,12 +357,23 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
 
     public void LogFailure(NpgsqlCommand command, Exception ex)
     {
-        _stopwatch?.Stop();
-
         Console.WriteLine("Postgresql command failed!");
         Console.WriteLine(command.CommandText);
         foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
             Console.WriteLine($"  {p.ParameterName}: {p.Value}");
+        Console.WriteLine(ex);
+    }
+
+    public void LogFailure(NpgsqlBatch batch, Exception ex)
+    {
+        Console.WriteLine("Postgresql command failed!");
+        foreach (var command in batch.BatchCommands)
+        {
+            Console.WriteLine(command.CommandText);
+            foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
+                Console.WriteLine($"  {p.ParameterName}: {p.Value}");
+        }
+
         Console.WriteLine(ex);
     }
 
@@ -359,7 +393,7 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L69-L136' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_consolemartenlogger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L83-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_consolemartenlogger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Accessing Diagnostics
@@ -415,7 +449,7 @@ The `IMartenLogger` can be swapped out on any `IQuerySession` or `IDocumentSessi
 // session to pipe Marten logging to the xUnit.Net output
 theSession.Logger = new TestOutputMartenLogger(_output);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L227-L233' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_logger_per_session' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L231-L237' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_logger_per_session' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Previewing the PostgreSQL Query Plan
