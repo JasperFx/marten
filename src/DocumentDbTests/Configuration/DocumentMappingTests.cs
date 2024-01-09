@@ -92,7 +92,7 @@ public class DocumentMappingTests
     }
 
     [Fact]
-    public void default_table_name_with_different_shema()
+    public void default_table_name_with_different_schema()
     {
         var mapping = DocumentMapping.For<User>("other");
         mapping.TableName.QualifiedName.ShouldBe("other.mt_doc_user");
