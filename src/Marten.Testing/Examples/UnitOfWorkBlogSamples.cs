@@ -39,10 +39,10 @@ public class UnitOfWorkBlogSamples: IntegrationContext
 
         // All of this was done in one batched command
         // in the same transaction
-        logger.Commands.Count.ShouldBe(1);
+        logger.Commands.Count.ShouldBe(5);
 
         // I'm just writing out the Sql executed here
-        var sql = logger.Commands.Single().CommandText;
+        var sql = logger.Commands[0].CommandText;
         Debug.WriteLine(sql);
     }
 

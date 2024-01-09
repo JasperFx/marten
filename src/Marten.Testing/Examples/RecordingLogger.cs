@@ -21,7 +21,10 @@ public class RecordingLogger: IMartenSessionLogger
 
     public void LogSuccess(NpgsqlBatch batch)
     {
-
+        foreach (var command in batch.BatchCommands)
+        {
+            Commands.Add(new NpgsqlCommand(command.CommandText));
+        }
     }
 
     public void LogFailure(NpgsqlBatch batch, Exception ex)
