@@ -11,7 +11,6 @@ namespace Marten.Internal.Sessions;
 
 public partial class QuerySession: IMartenSession, IQuerySession
 {
-    protected readonly IRetryPolicy _retryPolicy;
     private readonly DocumentStore _store;
 
     internal virtual DocumentTracking TrackingMode => DocumentTracking.QueryOnly;
@@ -70,8 +69,6 @@ public partial class QuerySession: IMartenSession, IQuerySession
         Serializer = store.Serializer;
         Options = store.Options;
 
-        _retryPolicy = Options.RetryPolicy();
-
         Events = CreateEventStore(store, tenant ?? sessionOptions.Tenant);
 
         Logger = store.Options.Logger().StartSession(this);
@@ -79,12 +76,25 @@ public partial class QuerySession: IMartenSession, IQuerySession
 
     public ConcurrencyChecks Concurrency { get; protected set; } = ConcurrencyChecks.Enabled;
 
-    public NpgsqlConnection? Connection
+    public NpgsqlConnection Connection
     {
         get
         {
-            _connection.EnsureConnected();
-            return _connection.Connection;
+            if (_connection is IAlwaysConnectedLifetime lifetime)
+            {
+                return lifetime.Connection;
+            }
+            else if (_connection is ITransactionStarter starter)
+            {
+                var l = starter.Start();
+                _connection = l;
+                return l.Connection;
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"The current lifetime {_connection} is neither a {nameof(IAlwaysConnectedLifetime)} nor a {nameof(ITransactionStarter)}");
+            }
         }
     }
 

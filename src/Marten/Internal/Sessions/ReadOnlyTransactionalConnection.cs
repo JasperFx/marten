@@ -6,11 +6,11 @@ using Weasel.Core;
 
 namespace Marten.Internal.Sessions;
 
-internal class ReadOnlyMartenControlledConnectionTransaction: MartenControlledConnectionTransaction
+internal class ReadOnlyTransactionalConnection: TransactionalConnection
 {
     private const string SetTransactionReadOnly = "SET TRANSACTION READ ONLY;";
 
-    public ReadOnlyMartenControlledConnectionTransaction(SessionOptions options, StoreOptions storeOptions): base(options, storeOptions)
+    public ReadOnlyTransactionalConnection(SessionOptions options): base(options)
     {
     }
 
@@ -18,7 +18,7 @@ internal class ReadOnlyMartenControlledConnectionTransaction: MartenControlledCo
     {
         EnsureConnected();
 
-        command.Connection = Connection;
+        command.Connection = _connection;
         command.Transaction = Transaction;
         command.CommandTimeout = CommandTimeout;
     }
@@ -27,7 +27,7 @@ internal class ReadOnlyMartenControlledConnectionTransaction: MartenControlledCo
     {
         await EnsureConnectedAsync(token).ConfigureAwait(false);
 
-        command.Connection = Connection;
+        command.Connection = _connection;
         command.Transaction = Transaction;
         command.CommandTimeout = CommandTimeout;
     }

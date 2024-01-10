@@ -144,8 +144,10 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream5:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream6:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForHighWaterMark(eventCount);
-        using var treeCommand = new NpgsqlCommand($"update {theStore.Events.DatabaseSchemaName}.mt_event_progression set last_seq_id = 0 where name = 'FakeStream6:All'", theSession.Connection);
-        await treeCommand.ExecuteScalarAsync();
+
+        using var treeCommand = new NpgsqlCommand($"update {theStore.Events.DatabaseSchemaName}.mt_event_progression set last_seq_id = 0 where name = 'FakeStream6:All'");
+
+        await theSession.ExecuteAsync(treeCommand);
 
         var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1));
 

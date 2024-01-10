@@ -107,7 +107,7 @@ public async Task filter_included_documents_to_lambda()
 ## Include Multiple Document Types
 
 ::: warning
-Marten can only filter the included documents, not sort them. You would have to 
+Marten can only filter the included documents, not sort them. You would have to
 apply ordering in memory if so desired.
 :::
 

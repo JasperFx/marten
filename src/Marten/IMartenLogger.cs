@@ -60,6 +60,14 @@ public interface IMartenSessionLogger
     /// <param name="ex"></param>
     void LogFailure(NpgsqlBatch batch, Exception ex);
 
+    /// <summary>
+    /// Log a message for generic errors
+    /// </summary>
+    /// <param name="ex"></param>
+    /// <param name="message"></param>
+    /// <param name="batch"></param>
+    void LogFailure(Exception ex, string message);
+
 
     /// <summary>
     ///     Called immediately after committing an IDocumentSession
@@ -78,7 +86,7 @@ public interface IMartenSessionLogger
     public void OnBeforeExecute(NpgsqlCommand command);
 
     /// <summary>
-    ///     Called just before a batch is to be executed. Use this to create
+    ///     Called just before a command is to be executed. Use this to create
     ///     performance logging of Marten operations
     /// </summary>
     /// <param name="command"></param>
@@ -157,6 +165,12 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
         }
 
         Console.WriteLine(ex);
+    }
+
+    public void LogFailure(Exception ex, string message)
+    {
+        Console.WriteLine("Failure: " + message);
+        Console.WriteLine(ex.ToString());
     }
 
     public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)

@@ -100,16 +100,19 @@ public sealed class SessionOptions
 
         if (OwnsConnection && OwnsTransactionLifecycle)
         {
-            var transaction = mode == CommandRunnerMode.ReadOnly
-                ? new ReadOnlyMartenControlledConnectionTransaction(this, store.Options)
-                : new MartenControlledConnectionTransaction(this, store.Options);
-
             if (IsolationLevel == IsolationLevel.Serializable)
             {
+                var transaction = mode == CommandRunnerMode.ReadOnly
+                    ? new ReadOnlyTransactionalConnection(this)
+                    : new TransactionalConnection(this);
                 transaction.BeginTransaction();
-            }
 
-            return transaction;
+                return transaction;
+            }
+            else
+            {
+                return new AutoClosingLifetime(this);
+            }
         }
 
 
@@ -126,7 +129,7 @@ public sealed class SessionOptions
 
         if (Connection != null)
         {
-            return new MartenControlledConnectionTransaction(this, store.Options);
+            return new TransactionalConnection(this);
         }
 
 
@@ -155,8 +158,8 @@ public sealed class SessionOptions
         if (OwnsConnection && OwnsTransactionLifecycle)
         {
             var transaction = mode == CommandRunnerMode.ReadOnly
-                ? new ReadOnlyMartenControlledConnectionTransaction(this, store.Options)
-                : new MartenControlledConnectionTransaction(this, store.Options);
+                ? new ReadOnlyTransactionalConnection(this)
+                : new TransactionalConnection(this);
 
             if (IsolationLevel == IsolationLevel.Serializable)
             {

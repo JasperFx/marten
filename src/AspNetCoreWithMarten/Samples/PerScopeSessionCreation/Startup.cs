@@ -61,6 +61,11 @@ public class CorrelatedMartenLogger: IMartenSessionLogger
 
     }
 
+    public void LogFailure(Exception ex, string message)
+    {
+
+    }
+
     public void OnBeforeExecute(NpgsqlBatch batch)
     {
 

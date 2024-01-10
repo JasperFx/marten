@@ -8,7 +8,7 @@ public class ConnectionSource: ConnectionFactory
     // Keep the default timeout pretty short
     public static readonly string ConnectionString = Environment.GetEnvironmentVariable("marten_testing_database")
                                                      ??
-                                                     "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5";
+                                                     "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5;Persist Security Info=true";
 
     static ConnectionSource()
     {

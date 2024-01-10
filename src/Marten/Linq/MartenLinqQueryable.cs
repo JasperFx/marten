@@ -200,6 +200,7 @@ internal class MartenLinqQueryable<T>: IOrderedQueryable<T>, IMartenQueryable<T>
         using var conn = Session.Database.CreateConnection();
         conn.Open();
         command.Connection = conn;
+        command.CommandTimeout = Session._connection.CommandTimeout;
         return conn.ExplainQuery(Session.Serializer, command, configureExplain)!;
     }
 
@@ -269,8 +270,6 @@ internal class MartenLinqQueryable<T>: IOrderedQueryable<T>, IMartenQueryable<T>
         command.CommandText = sql.ToString();
 
         foreach (var documentType in parser.DocumentTypes()) Session.Database.EnsureStorageExists(documentType);
-
-        Session._connection.Apply(command);
 
         return command;
     }

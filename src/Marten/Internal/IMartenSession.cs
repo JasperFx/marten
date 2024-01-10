@@ -67,21 +67,6 @@ public interface IMartenSession: IDisposable, IAsyncDisposable
     string NextTempTableName();
 
     /// <summary>
-    ///     Execute a single command against the database with this session's connection
-    /// </summary>
-    /// <param name="cmd"></param>
-    /// <returns></returns>
-    int Execute(NpgsqlCommand cmd);
-
-    /// <summary>
-    ///     Execute a single command against the database with this session's connection
-    /// </summary>
-    /// <param name="command"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new());
-
-    /// <summary>
     ///     Execute a single command against the database with this session's connection and return the results
     /// </summary>
     /// <param name="command"></param>
@@ -95,35 +80,4 @@ public interface IMartenSession: IDisposable, IAsyncDisposable
     /// <param name="token"></param>
     /// <returns></returns>
     Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default);
-
-
-    /// <summary>
-    ///     Execute a single batch against the database with this session's connection
-    /// </summary>
-    /// <param name="cmd"></param>
-    /// <returns></returns>
-    int Execute(NpgsqlBatch batch);
-
-    /// <summary>
-    ///     Execute a single command against the database with this session's connection
-    /// </summary>
-    /// <param name="command"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<int> ExecuteAsync(NpgsqlBatch batch, CancellationToken token = new());
-
-    /// <summary>
-    ///     Execute a single command against the database with this session's connection and return the results
-    /// </summary>
-    /// <param name="command"></param>
-    /// <returns></returns>
-    DbDataReader ExecuteReader(NpgsqlBatch batch);
-
-    /// <summary>
-    ///     Execute a single command against the database with this session's connection and return the results
-    /// </summary>
-    /// <param name="command"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, CancellationToken token = default);
 }

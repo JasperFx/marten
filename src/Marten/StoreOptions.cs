@@ -70,7 +70,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
 
     private IMartenLogger _logger = new NulloMartenLogger();
 
-    private IRetryPolicy _retryPolicy = new NulloRetryPolicy();
     private ISerializer? _serializer;
 
     /// <summary>
@@ -225,15 +224,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
         return _logger ?? new NulloMartenLogger();
     }
 
-    /// <summary>
-    ///     Retrieve the current retry policy for this DocumentStore
-    /// </summary>
-    /// <returns></returns>
-    public IRetryPolicy RetryPolicy()
-    {
-        return _retryPolicy ?? new NulloRetryPolicy();
-    }
-
     IReadOnlyList<IDocumentType> IReadOnlyStoreOptions.AllKnownDocumentTypes()
     {
         return Storage.AllDocumentMappings.OfType<IDocumentType>().ToList();
@@ -322,12 +312,11 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     ///     the Postgresql database
     /// </summary>
     /// <param name="source"></param>
-    [Obsolete("User version with connection string or provide custom data source factory")]
+    [Obsolete("Use one of the overloads that takes a connection string, an NpgsqlDataSource, or an INpgsqlDataSourceFactory. This will be removed in Marten 8")]
     public void Connection(Func<NpgsqlConnection> source)
     {
-        _tenancy = new Lazy<ITenancy>(() =>
-            new DefaultTenancy(new LambdaConnectionFactory(source), this)
-        );
+        throw new NotSupportedException(
+            "Use one of the overloads that takes a connection string, an NpgsqlDataSource, or an INpgsqlDataSourceFactory");
     }
 
 
@@ -428,15 +417,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     public void Logger(IMartenLogger logger)
     {
         _logger = logger;
-    }
-
-    /// <summary>
-    ///     Replace the Marten retry policy
-    /// </summary>
-    /// <param name="retryPolicy"></param>
-    public void RetryPolicy(IRetryPolicy retryPolicy)
-    {
-        _retryPolicy = retryPolicy;
     }
 
     /// <summary>

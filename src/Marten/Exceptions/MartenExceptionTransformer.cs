@@ -6,7 +6,6 @@ using Npgsql;
 namespace Marten.Exceptions;
 #nullable enable
 
-[Obsolete("Replace w/ JasperFx.Core version")]
 internal static class MartenExceptionTransformer
 {
     static MartenExceptionTransformer()
@@ -50,6 +49,16 @@ internal static class MartenExceptionTransformer
 
     internal static void WrapAndThrow(Exception exception)
     {
+        Transforms.TransformAndThrow(exception);
+    }
+
+    public static void WrapAndThrow(NpgsqlBatch batch, Exception exception)
+    {
+        if (batch != null)
+        {
+            exception.Data[nameof(NpgsqlBatch)] = batch;
+        }
+
         Transforms.TransformAndThrow(exception);
     }
 }

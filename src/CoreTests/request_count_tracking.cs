@@ -141,6 +141,11 @@ public class RecordingLogger: IMartenSessionLogger
 
     }
 
+    public void LogFailure(Exception ex, string message)
+    {
+
+    }
+
     public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
     {
         LastSession = session;
