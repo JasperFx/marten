@@ -1,4 +1,5 @@
 using Marten;
+using Marten.Services;
 using Marten.Testing.Documents;
 using Xunit.Abstractions;
 
@@ -23,7 +24,14 @@ public class DefaultQueryFixture: TargetSchemaFixture
                 .Duplicate(x => x.Color)
                 .Duplicate(x => x.NumberArray);
         });
+
+        SystemTextJsonStore = provisionStore("stj", o =>
+        {
+            o.Serializer<SystemTextJsonSerializer>();
+        });
     }
+
+    public DocumentStore SystemTextJsonStore { get; set; }
 
     public DocumentStore DuplicatedFieldStore { get; set; }
 

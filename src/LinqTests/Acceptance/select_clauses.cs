@@ -1,5 +1,6 @@
 using System;
 using System.Linq.Expressions;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using LinqTests.Acceptance.Support;
 using Marten.Testing.Documents;
@@ -54,10 +55,10 @@ public class select_clauses : LinqTestContext<select_clauses>
         select(x => new { Id = x.Id, Age = x.NumberArray[0] });
 
         select(x => new Person { Age = x.Number, Name = x.String });
-        select(x => new Person(x.String, x.Number));
+        select(x => new Person2(x.String, x.Number));
 
         select(x => new { Id = x.Id, Person = new Person { Age = x.Number, Name = x.String } });
-        select(x => new { Id = x.Id, Person = new Person(x.String, x.Number) });
+        select(x => new { Id = x.Id, Person = new Person2(x.String, x.Number) });
     }
 
     [Theory]
@@ -67,19 +68,36 @@ public class select_clauses : LinqTestContext<select_clauses>
         return assertTestCase(description, Fixture.Store);
     }
 
+    [Theory]
+    [MemberData(nameof(GetDescriptions))]
+    public Task run_query_with_stj(string description)
+    {
+        return assertTestCase(description, Fixture.SystemTextJsonStore);
+    }
+
     public class Person
     {
         public Person()
         {
         }
 
-        public Person(string name, int age)
+        public string Name { get; set; }
+        public int Age { get; set; }
+    }
+
+    public class Person2
+    {
+        [Newtonsoft.Json.JsonConstructor]
+        public Person2(string name, int age)
         {
             Name = name;
             Age = age;
         }
 
-        public string Name { get; set; }
-        public int Age { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get;  }
+
+        [JsonPropertyName("age")]
+        public int Age { get;  }
     }
 }
