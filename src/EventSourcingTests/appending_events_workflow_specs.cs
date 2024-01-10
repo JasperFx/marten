@@ -155,10 +155,10 @@ public class appending_events_workflow_specs
         await @case.Store.EnsureStorageExistsAsync(typeof(IEvent));
 
         var operation = new EstablishTombstoneStream(@case.Store.Events, Tenancy.DefaultTenantId);
-        await using var session = @case.Store.LightweightSession();
+        await using var session = (DocumentSessionBase)@case.Store.LightweightSession();
 
         var batch = new UpdateBatch(new []{operation});
-        await batch.ApplyChangesAsync((IMartenSession) session, CancellationToken.None);
+        await session.ExecuteBatchAsync(batch, CancellationToken.None);
 
         if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
@@ -179,11 +179,12 @@ public class appending_events_workflow_specs
         await @case.Store.EnsureStorageExistsAsync(typeof(IEvent));
 
         var operation = new EstablishTombstoneStream(@case.Store.Events, Tenancy.DefaultTenantId);
-        await using var session = @case.Store.LightweightSession();
+        await using var session = (DocumentSessionBase)@case.Store.LightweightSession();
 
         var batch = new UpdateBatch(new []{operation});
-        await batch.ApplyChangesAsync((IMartenSession) session, CancellationToken.None);
-        await batch.ApplyChangesAsync((IMartenSession) session, CancellationToken.None);
+
+        await session.ExecuteBatchAsync(batch, CancellationToken.None);
+        await session.ExecuteBatchAsync(batch, CancellationToken.None);
 
         if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
@@ -245,7 +246,7 @@ public class appending_events_workflow_specs
             }
         }
     }
-    
+
 
     public static IEnumerable<object[]> Data()
     {

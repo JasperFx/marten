@@ -133,11 +133,15 @@ public partial class EventGraph
             }
 
             foreach (var @event in stream.Events)
+            {
                 session.QueueOperation(storage.AppendEvent(this, session, stream, @event));
+            }
         }
 
         foreach (var projection in _inlineProjections.Value)
+        {
             await projection.ApplyAsync(session, session.WorkTracker.Streams.ToList(), token).ConfigureAwait(false);
+        }
     }
 
     internal bool TryCreateTombstoneBatch(DocumentSessionBase session, out UpdateBatch batch)

@@ -67,12 +67,6 @@ public interface IReadOnlyStoreOptions
     IMartenLogger Logger();
 
     /// <summary>
-    ///     Access to the configured retry policy
-    /// </summary>
-    /// <returns></returns>
-    IRetryPolicy RetryPolicy();
-
-    /// <summary>
     ///     Retrieve a list of all the currently known document types
     ///     in this Martne store
     /// </summary>

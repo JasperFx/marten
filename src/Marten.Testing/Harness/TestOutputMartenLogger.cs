@@ -112,6 +112,12 @@ namespace Marten.Testing.Harness
             _output.WriteLine(ex.ToString());
         }
 
+        public void LogFailure(Exception ex, string message)
+        {
+            _output.WriteLine("Failure: " + message);
+            _output.WriteLine(ex.ToString());
+        }
+
         public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
         {
             var lastCommit = commit;

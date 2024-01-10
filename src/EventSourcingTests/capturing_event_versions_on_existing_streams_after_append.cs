@@ -33,6 +33,11 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
 
         }
 
+        public void LogFailure(Exception ex, string message)
+        {
+
+        }
+
         public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
         {
             LastCommit = commit.Clone();

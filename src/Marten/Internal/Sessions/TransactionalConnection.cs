@@ -1,10 +1,13 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core;
 using JasperFx.Core.Exceptions;
 using Marten.Exceptions;
 using Marten.Services;
@@ -12,119 +15,201 @@ using Npgsql;
 
 namespace Marten.Internal.Sessions;
 
-internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLifetime
+internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnectedLifetime
 {
-    private readonly SessionOptions _options;
+    protected readonly SessionOptions _options;
+    protected NpgsqlConnection? _connection;
 
-    public ExternalTransaction(SessionOptions options)
+
+    public TransactionalConnection(SessionOptions options)
     {
-        if (options.Connection == null || options.Transaction == null)
-        {
-            throw new ArgumentOutOfRangeException(nameof(options),
-                "Neither the connection nor the transaction can be null in this usage");
-        }
-
-        Connection = options.Connection!;
-        Transaction = options.Transaction;
         _options = options;
+        _connection = _options.Connection;
+
+        CommandTimeout = _options.Timeout ?? _connection?.CommandTimeout ?? 30;
     }
 
-    public int CommandTimeout => _options.Timeout ?? Connection?.CommandTimeout ?? 30;
-
-    public NpgsqlTransaction Transaction { get; }
-
-    public ValueTask DisposeAsync()
+    public NpgsqlConnection Connection
     {
-        return new ValueTask();
+        get
+        {
+            EnsureConnected();
+            return _connection!;
+        }
+    }
+
+    public int CommandTimeout { get; }
+
+    public NpgsqlTransaction? Transaction { get; protected set; }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (Transaction != null)
+        {
+            await Transaction.DisposeAsync().ConfigureAwait(false);
+        }
+
+        if (_connection != null)
+        {
+            await _connection.DisposeAsync().ConfigureAwait(false);
+        }
     }
 
     public void Dispose()
     {
-        // Nothing
+        Transaction?.SafeDispose();
+        _connection?.SafeDispose();
     }
 
-    public void Apply(NpgsqlCommand command)
+    public virtual void Apply(NpgsqlCommand command)
     {
-        command.Connection = Connection;
+        EnsureConnected();
+
+        command.Connection = _connection;
         command.Transaction = Transaction;
         command.CommandTimeout = CommandTimeout;
-    }
-
-    public Task ApplyAsync(NpgsqlCommand command, CancellationToken token)
-    {
-        command.Connection = Connection;
-        command.Transaction = Transaction;
-        command.CommandTimeout = CommandTimeout;
-
-        return Task.CompletedTask;
     }
 
     public void Apply(NpgsqlBatch batch)
     {
-        batch.Connection = Connection;
+        EnsureConnected();
+
+        batch.Connection = _connection;
         batch.Transaction = Transaction;
         batch.Timeout = CommandTimeout;
     }
 
-    public Task ApplyAsync(NpgsqlBatch batch, CancellationToken token)
+    public virtual void BeginTransaction()
     {
-        batch.Connection = Connection;
+        EnsureConnected();
+        if (Transaction == null)
+        {
+            Transaction = _connection.BeginTransaction(_options.IsolationLevel);
+        }
+    }
+
+    // TODO -- this should be ValueTask
+    public virtual async Task ApplyAsync(NpgsqlCommand command, CancellationToken token)
+    {
+        await EnsureConnectedAsync(token).ConfigureAwait(false);
+
+        command.Connection = _connection;
+        command.Transaction = Transaction;
+        command.CommandTimeout = CommandTimeout;
+    }
+
+    public async Task ApplyAsync(NpgsqlBatch batch, CancellationToken token)
+    {
+        await EnsureConnectedAsync(token).ConfigureAwait(false);
+
+        batch.Connection = _connection;
         batch.Transaction = Transaction;
         batch.Timeout = CommandTimeout;
+    }
 
-        return Task.CompletedTask;
+    public virtual async ValueTask BeginTransactionAsync(CancellationToken token)
+    {
+        await EnsureConnectedAsync(token).ConfigureAwait(false);
+        Transaction ??= await _connection
+            .BeginTransactionAsync(_options.IsolationLevel, token).ConfigureAwait(false);
     }
 
     public void Commit()
     {
-        if (_options.OwnsTransactionLifecycle)
+        if (Transaction == null)
         {
-            Transaction.Commit();
+            throw new InvalidOperationException("Trying to commit a transaction that was never started");
         }
+
+        Transaction.Commit();
+        Transaction.Dispose();
+        Transaction = null;
+
+        _connection?.Close();
+        _connection = null;
     }
 
     public async Task CommitAsync(CancellationToken token)
     {
-        if (_options.OwnsTransactionLifecycle)
+        if (Transaction == null)
         {
-            await Transaction.CommitAsync(token).ConfigureAwait(false);
-            await Transaction.DisposeAsync().ConfigureAwait(false);
+            throw new InvalidOperationException("Trying to commit a transaction that was never started");
         }
+
+        await Transaction.CommitAsync(token).ConfigureAwait(false);
+        await Transaction.DisposeAsync().ConfigureAwait(false);
+        Transaction = null;
+
+        if (_connection != null)
+        {
+            await _connection.CloseAsync().ConfigureAwait(false);
+            await _connection.DisposeAsync().ConfigureAwait(false);
+        }
+
+        _connection = null;
     }
 
     public void Rollback()
     {
-        if (_options.OwnsTransactionLifecycle)
+        if (Transaction != null)
         {
             Transaction.Rollback();
+            Transaction.Dispose();
+            Transaction = null;
+
+            _connection?.Close();
+            _connection?.Dispose();
+            _connection = null;
         }
     }
 
-    public Task RollbackAsync(CancellationToken token)
+    public async Task RollbackAsync(CancellationToken token)
     {
-        if (_options.OwnsTransactionLifecycle)
+        if (Transaction != null)
         {
-            return Transaction.RollbackAsync(token);
+            await Transaction.RollbackAsync(token).ConfigureAwait(false);
+            await Transaction.DisposeAsync().ConfigureAwait(false);
+            Transaction = null;
+
+            if (_connection != null)
+            {
+                await _connection.CloseAsync().ConfigureAwait(false);
+                await _connection.DisposeAsync().ConfigureAwait(false);
+            }
+
+            _connection = null;
         }
-
-        return Task.CompletedTask;
     }
 
-    public NpgsqlConnection Connection { get; }
-
-    public void BeginTransaction()
-    {
-        // Nothing
-    }
-
-    public ValueTask BeginTransactionAsync(CancellationToken token)
-    {
-        return new ValueTask();
-    }
 
     public void EnsureConnected()
     {
-        // Nothing
+        if (_connection == null)
+        {
+#pragma warning disable CS8602
+            _connection = _options.Tenant.Database.CreateConnection();
+#pragma warning restore CS8602
+        }
+
+        if (_connection.State == ConnectionState.Closed)
+        {
+            _connection.Open();
+        }
+    }
+
+    public async ValueTask EnsureConnectedAsync(CancellationToken token)
+    {
+        if (_connection == null)
+        {
+#pragma warning disable CS8602
+            _connection = _options.Tenant.Database.CreateConnection();
+#pragma warning restore CS8602
+        }
+
+        if (_connection.State == ConnectionState.Closed)
+        {
+            await _connection.OpenAsync(token).ConfigureAwait(false);
+        }
     }
 
     public int Execute(NpgsqlCommand cmd, IMartenSessionLogger logger)
@@ -245,9 +330,6 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         }
     }
 
-
-
-
     public void ExecuteBatchPages(IReadOnlyList<OperationPage> pages, IMartenSessionLogger logger,
         List<Exception> exceptions)
     {
@@ -270,12 +352,14 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
 
         if (exceptions.Count == 1)
         {
+            Rollback();
             var ex = exceptions.Single();
             ExceptionDispatchInfo.Throw(ex);
         }
 
         if (exceptions.Any())
         {
+            Rollback();
             throw new AggregateException(exceptions);
         }
 
@@ -293,6 +377,7 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
                 var batch = page.Compile();
                 await using var reader = await ExecuteReaderAsync(batch, logger, token).ConfigureAwait(false);
                 await page.ApplyCallbacksAsync(reader, exceptions, token).ConfigureAwait(false);
+                await reader.CloseAsync().ConfigureAwait(false);
             }
         }
         catch (Exception e)
@@ -304,18 +389,17 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
 
         if (exceptions.Count == 1)
         {
+            await RollbackAsync(token).ConfigureAwait(false);
             var ex = exceptions.Single();
             ExceptionDispatchInfo.Throw(ex);
         }
 
         if (exceptions.Any())
         {
+            await RollbackAsync(token).ConfigureAwait(false);
             throw new AggregateException(exceptions);
         }
 
         await CommitAsync(token).ConfigureAwait(true);
     }
-
 }
-
-

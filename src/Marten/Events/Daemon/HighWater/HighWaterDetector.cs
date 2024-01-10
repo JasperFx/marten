@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core;
 using Marten.Events.Projections;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
@@ -119,7 +120,21 @@ internal class HighWaterDetector: IHighWaterDetector
     {
         // look for the current mark
         _gapDetector.Start = statistics.SafeStartMark;
-        var current = await _runner.Query(_gapDetector, token).ConfigureAwait(false);
+        long? current;
+        try
+        {
+            current = await _runner.Query(_gapDetector, token).ConfigureAwait(false);
+        }
+        catch (InvalidOperationException e)
+        {
+            if (e.Message.Contains("An open data reader exists for this command"))
+            {
+                await Task.Delay(250.Milliseconds(), token).ConfigureAwait(false);
+                current = await _runner.Query(_gapDetector, token).ConfigureAwait(false);
+            }
+
+            throw;
+        }
 
         if (current.HasValue)
         {

@@ -15,7 +15,7 @@ internal class ProjectionDocumentSession: DocumentSessionBase
         DocumentStore store,
         ISessionWorkTracker workTracker,
         SessionOptions sessionOptions
-    ): base(store, sessionOptions, new MartenControlledConnectionTransaction(sessionOptions, store.Options), workTracker)
+    ): base(store, sessionOptions, new TransactionalConnection(sessionOptions), workTracker)
     {
     }
 

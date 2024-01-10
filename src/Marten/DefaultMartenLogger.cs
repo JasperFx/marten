@@ -110,6 +110,11 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
         }
     }
 
+    public void LogFailure(Exception ex, string message)
+    {
+        Inner.LogError(ex, message);
+    }
+
     public void OnBeforeExecute(NpgsqlBatch batch)
     {
         if (Inner.IsEnabled(LogLevel.Debug))

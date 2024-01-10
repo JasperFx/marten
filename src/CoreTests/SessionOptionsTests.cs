@@ -184,6 +184,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
 
         using var query = theStore.QuerySession(options);
         var cmd = query.Query<FryGuy>().Explain();
+
         Assert.Equal(15, cmd.Command.CommandTimeout);
     }
 
