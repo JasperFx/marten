@@ -88,7 +88,7 @@ The configuration above creates an index like this:
 CREATE INDEX mt_doc_user_idx_first_namelast_name ON public.mt_doc_user USING btree (((data ->> 'FirstName'::text)), ((data ->> 'LastName'::text)))
 ```
 
-## Multi-Column Indexes <Badge type="tip" text="^7.0" />
+## Multi-Column Indexes <Badge type="tip" text="7.0" />
 
 You can specify multi-field computed indexes through anonymous types like so:
 
