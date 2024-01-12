@@ -1,12 +1,8 @@
-import { BUNDLED_LANGUAGES } from 'shiki'
-// @ts-expect-error
+
+import type { DefaultTheme, UserConfig } from "vitepress"
 import { withMermaid } from "vitepress-plugin-mermaid"
 
-// Include `cs` as alias for csharp
-BUNDLED_LANGUAGES
-  .find(lang => lang.id === 'csharp')!.aliases!.push('cs');
-
-export default withMermaid({
+const config: UserConfig<DefaultTheme.Config> = {
   base: '/',
   lang: 'en-US',
   title: 'Marten',
@@ -342,5 +338,7 @@ export default withMermaid({
       ]
     }
   }
-})
+}
+
+export default withMermaid(config)
 
