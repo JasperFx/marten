@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "@mermaid-js/mermaid-mindmap": "^9.3.0",
-    "chai": "^5.0.0",
+    "chai": "^4",
     "lodash": "^4.17.21",
     "mermaid": "^10",
     "mocha": "^10.2.0",
