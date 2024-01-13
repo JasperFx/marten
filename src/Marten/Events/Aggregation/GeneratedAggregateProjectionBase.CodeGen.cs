@@ -78,13 +78,29 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         return _inlineType != null && _liveType != null;
     }
 
+    /// <summary>
+    /// Prevent code generation bugs when multiple aggregates are code generated in parallel
+    /// Happens more often on dynamic code generation
+    /// </summary>
+    private static readonly object LockObjAssembleTypes = new();
+
     protected override void assembleTypes(GeneratedAssembly assembly, StoreOptions options)
+    {
+        lock (LockObjAssembleTypes)
+        {
+            ReferenceAssembliesAndTypes(assembly);
+            AddUsingNamespaces(assembly);
+            CheckAndSetAsyncFlag();
+            ValidateAndSetAggregateMapping(options);
+            BuildAggregationTypes(assembly);
+        }
+    }
+
+    private void ReferenceAssembliesAndTypes(GeneratedAssembly assembly)
     {
         assembly.Rules.ReferenceTypes(GetType());
         assembly.ReferenceAssembly(GetType().Assembly);
         assembly.ReferenceAssembly(typeof(T).Assembly);
-
-
         assembly.Rules.ReferenceTypes(_applyMethods.ReferencedTypes().ToArray());
         assembly.Rules.ReferenceTypes(_createMethods.ReferencedTypes().ToArray());
         assembly.Rules.ReferenceTypes(_shouldDeleteMethods.ReferencedTypes().ToArray());
@@ -92,22 +108,31 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         // Walk the assembly dependencies for the projection and aggregate types,
         // and this will catch generic type argument dependencies as well. For GH-2061
         assembly.Rules.ReferenceTypes(GetType(), typeof(T));
+    }
 
+    private static void AddUsingNamespaces(GeneratedAssembly assembly)
+    {
         assembly.UsingNamespaces.Add("System");
         assembly.UsingNamespaces.Add("System.Linq");
+    }
 
+    private void CheckAndSetAsyncFlag()
+    {
         _isAsync = _createMethods.IsAsync || _applyMethods.IsAsync;
+    }
 
+    private void ValidateAndSetAggregateMapping(StoreOptions options)
+    {
         _aggregateMapping = options.Storage.FindMapping(typeof(T));
-
-
         if (_aggregateMapping.IdMember == null)
         {
             throw new InvalidDocumentException(
                 $"No identity property or field can be determined for the aggregate '{typeof(T).FullNameInCode()}', but one is required to be used as an aggregate in projections");
         }
+    }
 
-
+    private void BuildAggregationTypes(GeneratedAssembly assembly)
+    {
         buildLiveAggregationType(assembly);
         buildInlineAggregationType(assembly);
     }
