@@ -19,7 +19,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid();
 
-        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        var stream = await TheSession.Events.FetchForWriting<SimpleAggregate>(streamId);
         stream.Aggregate.ShouldBeNull();
         stream.CurrentVersion.ShouldBe(0);
 
@@ -27,9 +27,9 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
         stream.AppendMany(new CEvent(), new CEvent());
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var document = await theSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
+        var document = await TheSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
         document.ACount.ShouldBe(1);
         document.BCount.ShouldBe(3);
         document.CCount.ShouldBe(2);
@@ -42,7 +42,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid();
 
-        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        var stream = await TheSession.Events.FetchForWriting<SimpleAggregate>(streamId);
         stream.Aggregate.ShouldBeNull();
         stream.CurrentVersion.ShouldBe(0);
 
@@ -50,15 +50,15 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
         stream.AppendMany(new CEvent(), new CEvent());
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var sameStream = theSession.Events.StartStream(streamId, new AEvent());
+        var sameStream = TheSession.Events.StartStream(streamId, new AEvent());
         await Exception<ExistingStreamIdCollisionException>.ShouldBeThrownByAsync(async () =>
         {
-            await theSession.SaveChangesAsync();
+            await TheSession.SaveChangesAsync();
         });
 
-        var document = await theSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
+        var document = await TheSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
         document.ACount.ShouldBe(1);
         document.BCount.ShouldBe(3);
         document.CCount.ShouldBe(2);
@@ -71,11 +71,11 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid();
 
-        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+        TheSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
             new CEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        var stream = await TheSession.Events.FetchForWriting<SimpleAggregate>(streamId);
         stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
@@ -99,11 +99,11 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid();
 
-        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+        TheSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
             new CEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        var stream = await TheSession.Events.FetchForWriting<SimpleAggregate>(streamId);
         stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
@@ -127,7 +127,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid().ToString();
 
-        var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
+        var stream = await TheSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
         stream.Aggregate.ShouldBeNull();
         stream.CurrentVersion.ShouldBe(0);
 
@@ -135,9 +135,9 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
         stream.AppendMany(new CEvent(), new CEvent());
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var document = await theSession.Events.AggregateStreamAsync<SimpleAggregateAsString>(streamId);
+        var document = await TheSession.Events.AggregateStreamAsync<SimpleAggregateAsString>(streamId);
         document.ACount.ShouldBe(1);
         document.BCount.ShouldBe(3);
         document.CCount.ShouldBe(2);
@@ -155,11 +155,11 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid().ToString();
 
-        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+        TheSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
             new CEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
+        var stream = await TheSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
         stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
@@ -185,11 +185,11 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid().ToString();
 
-        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+        TheSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
             new CEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
+        var stream = await TheSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
         stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
@@ -210,11 +210,11 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid();
 
-        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+        TheSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
             new CEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var stream = await theSession.Events.FetchForExclusiveWriting<SimpleAggregate>(streamId);
+        var stream = await TheSession.Events.FetchForExclusiveWriting<SimpleAggregate>(streamId);
         stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
@@ -235,9 +235,9 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid();
 
-        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+        TheSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
             new CEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
 
         await using var otherSession = theStore.LightweightSession();
@@ -246,7 +246,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         await Should.ThrowAsync<StreamLockedException>(async () =>
         {
             // Try to load it again, but it's locked
-            var stream = await theSession.Events.FetchForExclusiveWriting<SimpleAggregate>(streamId);
+            var stream = await TheSession.Events.FetchForExclusiveWriting<SimpleAggregate>(streamId);
         });
     }
 
@@ -261,11 +261,11 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid().ToString();
 
-        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+        TheSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
             new CEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var stream = await theSession.Events.FetchForExclusiveWriting<SimpleAggregateAsString>(streamId);
+        var stream = await TheSession.Events.FetchForExclusiveWriting<SimpleAggregateAsString>(streamId);
         stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
@@ -289,9 +289,9 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid().ToString();
 
-        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+        TheSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
             new CEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
 
         await using var otherSession = theStore.LightweightSession();
@@ -300,7 +300,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         await Should.ThrowAsync<StreamLockedException>(async () =>
         {
             // Try to load it again, but it's locked
-            var stream = await theSession.Events.FetchForExclusiveWriting<SimpleAggregateAsString>(streamId);
+            var stream = await TheSession.Events.FetchForExclusiveWriting<SimpleAggregateAsString>(streamId);
         });
     }
 
@@ -318,16 +318,16 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid();
 
-        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+        TheSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
             new CEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId, 6);
+        var stream = await TheSession.Events.FetchForWriting<SimpleAggregate>(streamId, 6);
         stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
         stream.AppendOne(new EEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
     }
 
     [Fact]
@@ -338,13 +338,13 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid();
 
-        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+        TheSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
             new CEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         await Should.ThrowAsync<ConcurrencyException>(async () =>
         {
-            var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId, 5);
+            var stream = await TheSession.Events.FetchForWriting<SimpleAggregate>(streamId, 5);
         });
     }
 
@@ -356,12 +356,12 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid();
 
-        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+        TheSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
             new CEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         // This should be fine
-        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId, 6);
+        var stream = await TheSession.Events.FetchForWriting<SimpleAggregate>(streamId, 6);
         stream.AppendOne(new EEvent());
 
         // Get in between and run other events in a different session
@@ -374,7 +374,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         // The version is now off
         await Should.ThrowAsync<ConcurrencyException>(async () =>
         {
-            await theSession.SaveChangesAsync();
+            await TheSession.SaveChangesAsync();
         });
     }
 
@@ -391,16 +391,16 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid().ToString();
 
-        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+        TheSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
             new CEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 6);
+        var stream = await TheSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 6);
         stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
         stream.AppendOne(new EEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
     }
 
     [Fact]
@@ -414,13 +414,13 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid().ToString();
 
-        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+        TheSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
             new CEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         await Should.ThrowAsync<ConcurrencyException>(async () =>
         {
-            var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 5);
+            var stream = await TheSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 5);
         });
     }
 
@@ -435,12 +435,12 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         var streamId = Guid.NewGuid().ToString();
 
-        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+        TheSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
             new CEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         // This should be fine
-        var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 6);
+        var stream = await TheSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 6);
         stream.AppendOne(new EEvent());
 
         // Get in between and run other events in a different session
@@ -453,7 +453,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         // The version is now off
         await Should.ThrowAsync<ConcurrencyException>(async () =>
         {
-            await theSession.SaveChangesAsync();
+            await TheSession.SaveChangesAsync();
         });
     }
 

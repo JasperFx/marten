@@ -27,7 +27,7 @@ public class custom_aggregation_in_async_daemon : OneOffConfigurationsContext
 
     private void appendCustomEvent(int number, char letter)
     {
-        theSession.Events.Append(Guid.NewGuid(), new CustomEvent(number, letter));
+        TheSession.Events.Append(Guid.NewGuid(), new CustomEvent(number, letter));
     }
 
     [Fact]
@@ -55,21 +55,21 @@ public class custom_aggregation_in_async_daemon : OneOffConfigurationsContext
         appendCustomEvent(1, 'a');
         appendCustomEvent(1, 'a');
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         using var daemon = await theStore.BuildProjectionDaemonAsync(logger:new TestLogger<IProjection>(_output));
         await daemon.StartAllShards();
 
         await  daemon.Tracker.WaitForShardState("Custom:All", 11);
 
-        var agg1 = await theSession.LoadAsync<CustomAggregate>(1);
+        var agg1 = await TheSession.LoadAsync<CustomAggregate>(1);
         agg1
             .ShouldBe(new CustomAggregate{Id = 1, ACount = 4, BCount = 1, CCount = 1, DCount = 1});
 
-        (await theSession.LoadAsync<CustomAggregate>(2))
+        (await TheSession.LoadAsync<CustomAggregate>(2))
             .ShouldBe(new CustomAggregate{Id = 2, ACount = 2, BCount = 0, CCount = 0, DCount = 0});
 
-        (await theSession.LoadAsync<CustomAggregate>(3))
+        (await TheSession.LoadAsync<CustomAggregate>(3))
             .ShouldBe(new CustomAggregate{Id = 3, ACount = 0, BCount = 1, CCount = 0, DCount = 1});
 
     }

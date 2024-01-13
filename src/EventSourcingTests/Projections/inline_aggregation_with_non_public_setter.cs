@@ -25,10 +25,10 @@ public class inline_aggregation_with_non_public_setter: OneOffConfigurationsCont
             _.Projections.Snapshot<QuestMonstersWithProtectedIdSetter>(SnapshotLifecycle.Inline);
         });
 
-        streamId = theSession.Events
+        streamId = TheSession.Events
             .StartStream<QuestMonstersWithBaseClass>(slayed1, slayed2).Id;
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
     }
 
     [Fact]
@@ -45,12 +45,12 @@ public class inline_aggregation_with_non_public_setter: OneOffConfigurationsCont
 
     private void VerifyProjection<T>() where T : IMonstersView
     {
-        var loadedView = theSession.Load<T>(streamId);
+        var loadedView = TheSession.Load<T>(streamId);
 
         loadedView.Id.ShouldBe(streamId);
         loadedView.Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
 
-        var queriedView = theSession.Query<T>()
+        var queriedView = TheSession.Query<T>()
             .Single(x => x.Id == streamId);
 
         queriedView.Id.ShouldBe(streamId);

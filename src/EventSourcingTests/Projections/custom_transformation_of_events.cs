@@ -46,21 +46,21 @@ public class project_events_from_multiple_streams_into_view: OneOffConfiguration
         var readerId = Guid.NewGuid();
 
         var readerSubscribed = new ReaderSubscribed(subscriptionId, newsletterId, readerId, "John Doe");
-        theSession.Events.StartStream<NewsletterSubscription>(streamId, readerSubscribed);
-        await theSession.SaveChangesAsync();
-        var subscription = await theSession.LoadAsync<NewsletterSubscription>(subscriptionId);
+        TheSession.Events.StartStream<NewsletterSubscription>(streamId, readerSubscribed);
+        await TheSession.SaveChangesAsync();
+        var subscription = await TheSession.LoadAsync<NewsletterSubscription>(subscriptionId);
         subscription.ShouldNotBeNull();
 
         var newsletterOpened = new NewsletterOpened(subscriptionId, DateTime.Now);
-        theSession.Events.Append(subscriptionId, newsletterOpened);
-        await theSession.SaveChangesAsync();
-        subscription = await theSession.LoadAsync<NewsletterSubscription>(subscriptionId);
+        TheSession.Events.Append(subscriptionId, newsletterOpened);
+        await TheSession.SaveChangesAsync();
+        subscription = await TheSession.LoadAsync<NewsletterSubscription>(subscriptionId);
         subscription.ShouldNotBeNull();
 
         var readerUnsubscribed = new ReaderUnsubscribed(subscriptionId);
-        theSession.Events.Append(subscriptionId, readerUnsubscribed);
-        await theSession.SaveChangesAsync();
-        subscription = await theSession.LoadAsync<NewsletterSubscription>(subscriptionId);
+        TheSession.Events.Append(subscriptionId, readerUnsubscribed);
+        await TheSession.SaveChangesAsync();
+        subscription = await TheSession.LoadAsync<NewsletterSubscription>(subscriptionId);
         subscription.ShouldBeNull();
 
     }

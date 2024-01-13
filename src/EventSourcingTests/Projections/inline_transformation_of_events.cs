@@ -49,7 +49,7 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
         // the call to SaveChangesAsync() and the resulting document update
         // of the new MonsterDefeated document will happen in the same database
         // transaction
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         #endregion
     }
@@ -67,18 +67,18 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
             _.Projections.Add(new MonsterDefeatedTransform(), ProjectionLifecycle.Inline);
         });
 
-        var streamId = theSession.Events
+        var streamId = TheSession.Events
             .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
         var monsterEvents =
-            theSession.Events.FetchStream(streamId).OfType<Event<MonsterSlayed>>().ToArray();
+            TheSession.Events.FetchStream(streamId).OfType<Event<MonsterSlayed>>().ToArray();
 
         monsterEvents.Length.ShouldBe(2); // precondition
 
         monsterEvents.Each(e =>
         {
-            var doc = theSession.Load<MonsterDefeated>(e.Id);
+            var doc = TheSession.Load<MonsterDefeated>(e.Id);
             doc.Monster.ShouldBe(e.Data.Name);
         });
     }
@@ -93,18 +93,18 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
             _.Projections.Add(new MonsterDefeatedTransform(), ProjectionLifecycle.Inline);
         });
 
-        var streamId = theSession.Events
+        var streamId = TheSession.Events
             .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
         var monsterEvents =
-            theSession.Events.FetchStream(streamId).OfType<Event<MonsterSlayed>>().ToArray();
+            TheSession.Events.FetchStream(streamId).OfType<Event<MonsterSlayed>>().ToArray();
 
         monsterEvents.Length.ShouldBe(2); // precondition
 
         monsterEvents.Each(e =>
         {
-            var doc = theSession.Load<MonsterDefeated>(e.Id);
+            var doc = TheSession.Load<MonsterDefeated>(e.Id);
             doc.Monster.ShouldBe(e.Data.Name);
         });
     }
@@ -133,18 +133,18 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
             _.Projections.Add(new MonsterDefeatedTransform(), ProjectionLifecycle.Inline);
         });
 
-        var streamId = theSession.Events
+        var streamId = TheSession.Events
             .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var monsterEvents =
-            (await theSession.Events.FetchStreamAsync(streamId)).OfType<Event<MonsterSlayed>>().ToArray();
+            (await TheSession.Events.FetchStreamAsync(streamId)).OfType<Event<MonsterSlayed>>().ToArray();
 
         monsterEvents.Length.ShouldBe(2); // precondition
 
         foreach (var e in monsterEvents)
         {
-            var doc = await theSession.LoadAsync<MonsterDefeated>(e.Id);
+            var doc = await TheSession.LoadAsync<MonsterDefeated>(e.Id);
             doc.Monster.ShouldBe(e.Data.Name);
         }
     }

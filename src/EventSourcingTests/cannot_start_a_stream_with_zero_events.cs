@@ -35,7 +35,7 @@ public class cannot_start_a_stream_with_zero_events : OneOffConfigurationsContex
 
         var ex = Should.Throw<EmptyEventStreamException>(() =>
         {
-            var streamId = theSession.Events.StartStream<IssuesList>(@event.IssueId);
+            var streamId = TheSession.Events.StartStream<IssuesList>(@event.IssueId);
         });
 
         ex.Message.ShouldContain("cannot be started without any events", Case.Insensitive);
@@ -50,7 +50,7 @@ public class cannot_start_a_stream_with_zero_events : OneOffConfigurationsContex
 
         var ex = Should.Throw<EmptyEventStreamException>(() =>
         {
-            var streamId = theSession.Events.StartStream<IssuesList>(@event.IssueId.ToString());
+            var streamId = TheSession.Events.StartStream<IssuesList>(@event.IssueId.ToString());
         });
 
         ex.Message.ShouldContain("cannot be started without any events", Case.Insensitive);
@@ -63,14 +63,14 @@ public class cannot_start_a_stream_with_zero_events : OneOffConfigurationsContex
 
         var @event = new IssueCreated { IssueId = Guid.NewGuid(), Description = "Description" };
 
-        theSession.Events.StartStream<IssuesList>(@event.IssueId.ToString(), @event);
-        await theSession.SaveChangesAsync();
+        TheSession.Events.StartStream<IssuesList>(@event.IssueId.ToString(), @event);
+        await TheSession.SaveChangesAsync();
 
         var ex = await Should.ThrowAsync<ExistingStreamIdCollisionException>(async () =>
         {
             // Do it again
-            theSession.Events.StartStream<IssuesList>(@event.IssueId.ToString(), @event);
-            await theSession.SaveChangesAsync();
+            TheSession.Events.StartStream<IssuesList>(@event.IssueId.ToString(), @event);
+            await TheSession.SaveChangesAsync();
         });
 
     }

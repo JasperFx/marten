@@ -16,18 +16,18 @@ public class stream_aggregation : OneOffConfigurationsContext
     public async Task create_with_static_create_method()
     {
         var user = new User {UserName = "jamesworthy"};
-        theSession.Store(user);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(user);
+        await TheSession.SaveChangesAsync();
 
         var stream = Guid.NewGuid();
-        theSession.Events.StartStream(stream, new UserStarted {UserId = user.Id});
-        await theSession.SaveChangesAsync();
+        TheSession.Events.StartStream(stream, new UserStarted {UserId = user.Id});
+        await TheSession.SaveChangesAsync();
 
         var query = theStore.QuerySession();
         var user2 = await query.LoadAsync<User>(user.Id);
         user2.ShouldNotBeNull();
 
-        var aggregate = await theSession.Events.AggregateStreamAsync<SpecialUsages>(stream);
+        var aggregate = await TheSession.Events.AggregateStreamAsync<SpecialUsages>(stream);
         aggregate.UserName.ShouldBe(user.UserName);
     }
 
@@ -35,10 +35,10 @@ public class stream_aggregation : OneOffConfigurationsContext
     public async Task create_with_private_constructor()
     {
         var stream = Guid.NewGuid();
-        theSession.Events.StartStream(stream, new AEvent());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.StartStream(stream, new AEvent());
+        await TheSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.AggregateStreamAsync<SpecialUsages>(stream);
+        var aggregate = await TheSession.Events.AggregateStreamAsync<SpecialUsages>(stream);
         aggregate.A.ShouldBe(1);
     }
 
@@ -46,10 +46,10 @@ public class stream_aggregation : OneOffConfigurationsContext
     public async Task create_with_event_constructor()
     {
         var stream = Guid.NewGuid();
-        theSession.Events.StartStream(stream, new BEvent());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.StartStream(stream, new BEvent());
+        await TheSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.AggregateStreamAsync<SpecialUsages>(stream);
+        var aggregate = await TheSession.Events.AggregateStreamAsync<SpecialUsages>(stream);
         aggregate.B.ShouldBe(1);
     }
 
@@ -57,10 +57,10 @@ public class stream_aggregation : OneOffConfigurationsContext
     public async Task use_immutable_apply()
     {
         var stream = Guid.NewGuid();
-        theSession.Events.StartStream(stream, new BEvent(), new AEvent(), new AEvent());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.StartStream(stream, new BEvent(), new AEvent(), new AEvent());
+        await TheSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.AggregateStreamAsync<SpecialUsages>(stream);
+        var aggregate = await TheSession.Events.AggregateStreamAsync<SpecialUsages>(stream);
         aggregate.B.ShouldBe(1);
         aggregate.A.ShouldBe(2);
     }
@@ -69,10 +69,10 @@ public class stream_aggregation : OneOffConfigurationsContext
     public async Task stream_id_is_set()
     {
         var stream = Guid.NewGuid();
-        theSession.Events.StartStream(stream, new BEvent(), new AEvent(), new AEvent());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.StartStream(stream, new BEvent(), new AEvent(), new AEvent());
+        await TheSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.AggregateStreamAsync<SpecialUsages>(stream);
+        var aggregate = await TheSession.Events.AggregateStreamAsync<SpecialUsages>(stream);
         aggregate.Id.ShouldBe(stream);
     }
 
@@ -86,10 +86,10 @@ public class stream_aggregation : OneOffConfigurationsContext
         });
 
         var stream = Guid.NewGuid().ToString();
-        theSession.Events.StartStream(stream, new BEvent(), new AEvent(), new AEvent());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.StartStream(stream, new BEvent(), new AEvent(), new AEvent());
+        await TheSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.AggregateStreamAsync<SpecialUsages>(stream);
+        var aggregate = await TheSession.Events.AggregateStreamAsync<SpecialUsages>(stream);
         aggregate.Key.ShouldBe(stream);
     }
 }

@@ -23,17 +23,17 @@ public class query_against_event_documents_Tests: OneOffConfigurationsContext
     [Fact]
     public void can_query_against_event_type()
     {
-        theSession.Events.StartStream<Quest>(joined1, departed1);
-        theSession.Events.StartStream<Quest>(joined2, departed2);
+        TheSession.Events.StartStream<Quest>(joined1, departed1);
+        TheSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
+        TheSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
+        TheSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
             .OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
-        theSession.Events.QueryRawEventDataOnly<MembersDeparted>()
+        TheSession.Events.QueryRawEventDataOnly<MembersDeparted>()
             .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
     }
 
@@ -44,24 +44,24 @@ public class query_against_event_documents_Tests: OneOffConfigurationsContext
     {
         StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 
-        theSession.Events.StartStream<Quest>(joined1, departed1);
-        theSession.Events.StartStream<Quest>(joined2, departed2);
+        TheSession.Events.StartStream<Quest>(joined1, departed1);
+        TheSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
+        TheSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
+        TheSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
             .OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
-        theSession.Events.QueryRawEventDataOnly<MembersDeparted>()
+        TheSession.Events.QueryRawEventDataOnly<MembersDeparted>()
             .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
     }
 
     [Fact]
     public async Task can_query_against_event_metadata()
     {
-        var sql = theSession.Events
+        var sql = TheSession.Events
             .QueryAllRawEvents()
             .Where(x => x.Sequence >= 123)
             .Where(x => x.EventTypeName == "SomethingHappenedEvent")
@@ -79,24 +79,24 @@ public class query_against_event_documents_Tests: OneOffConfigurationsContext
     {
         StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 
-        theSession.Events.StartStream<Quest>(joined1, departed1);
-        theSession.Events.StartStream<Quest>(joined2, departed2);
+        TheSession.Events.StartStream<Quest>(joined1, departed1);
+        TheSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
+        TheSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
+        TheSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
             .OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
-        theSession.Events.QueryRawEventDataOnly<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
+        TheSession.Events.QueryRawEventDataOnly<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
             .Single().Id.ShouldBe(departed2.Id);
     }
 
     [Fact]
     public void will_not_blow_up_if_searching_for_events_before_event_store_is_warmed_up()
     {
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().Any().ShouldBeFalse();
+        TheSession.Events.QueryRawEventDataOnly<MembersJoined>().Any().ShouldBeFalse();
     }
 
 
@@ -118,29 +118,29 @@ public class query_against_event_documents_Tests: OneOffConfigurationsContext
         theStore.StorageFeatures.FindMapping(typeof(MembersDeparted))
             .TableName.Schema.ShouldBe("query_against_event_documents_tests_events");
 
-        theSession.Events.StartStream<Quest>(joined1, departed1);
-        theSession.Events.StartStream<Quest>(joined2, departed2);
+        TheSession.Events.StartStream<Quest>(joined1, departed1);
+        TheSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
+        TheSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
+        TheSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
             .OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
-        theSession.Events.QueryRawEventDataOnly<MembersDeparted>()
+        TheSession.Events.QueryRawEventDataOnly<MembersDeparted>()
             .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
     }
 
     [Fact]
     public void can_fetch_all_events()
     {
-        theSession.Events.StartStream<Quest>(joined1, departed1);
-        theSession.Events.StartStream<Quest>(joined2, departed2);
+        TheSession.Events.StartStream<Quest>(joined1, departed1);
+        TheSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        var results = theSession.Events.QueryAllRawEvents().ToList();
+        var results = TheSession.Events.QueryAllRawEvents().ToList();
 
         results.Count.ShouldBe(4);
     }
@@ -161,14 +161,14 @@ public class query_against_event_documents_Tests: OneOffConfigurationsContext
     {
         var now = DateTimeOffset.UtcNow;
 
-        theSession.Events.StartStream<Quest>(joined1, departed1);
-        theSession.Events.StartStream<Quest>(joined2, departed2);
+        TheSession.Events.StartStream<Quest>(joined1, departed1);
+        TheSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
         var past = now.AddSeconds(-1);
 
-        var results = theSession.Events.QueryAllRawEvents().Where(x => x.Timestamp > past).ToList();
+        var results = TheSession.Events.QueryAllRawEvents().Where(x => x.Timestamp > past).ToList();
 
         results.Count.ShouldBe(4);
     }
@@ -176,17 +176,17 @@ public class query_against_event_documents_Tests: OneOffConfigurationsContext
     [Fact]
     public void can_fetch_all_events_before_now()
     {
-        theSession.Events.StartStream<Quest>(joined1, departed1);
-        theSession.Events.StartStream<Quest>(joined2, departed2);
+        TheSession.Events.StartStream<Quest>(joined1, departed1);
+        TheSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        var dbNow = (DateTime)theSession.Connection.CreateCommand().Sql("select now();").ExecuteScalar();
+        var dbNow = (DateTime)TheSession.Connection.CreateCommand().Sql("select now();").ExecuteScalar();
         var now = new DateTimeOffset(dbNow).AddSeconds(5);
 
-        var all = theSession.Events.QueryAllRawEvents().ToList();
+        var all = TheSession.Events.QueryAllRawEvents().ToList();
 
-        var results = theSession.Events.QueryAllRawEvents()
+        var results = TheSession.Events.QueryAllRawEvents()
             .Where(x => x.Timestamp < now).ToList();
 
         results.Count.ShouldBe(4);
@@ -195,36 +195,36 @@ public class query_against_event_documents_Tests: OneOffConfigurationsContext
     [Fact]
     public void can_fetch_events_by_sequence()
     {
-        theSession.Events.StartStream<Quest>(joined1, departed1);
-        theSession.Events.StartStream<Quest>(joined2, departed2);
+        TheSession.Events.StartStream<Quest>(joined1, departed1);
+        TheSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Events.QueryAllRawEvents()
+        TheSession.Events.QueryAllRawEvents()
             .Count(x => x.Sequence <= 2).ShouldBe(2);
     }
 
     [Fact]
     public void can_fetch_by_version()
     {
-        theSession.Events.StartStream<Quest>(joined1, departed1);
-        theSession.Events.StartStream<Quest>(joined2, departed2);
+        TheSession.Events.StartStream<Quest>(joined1, departed1);
+        TheSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Events.QueryAllRawEvents()
+        TheSession.Events.QueryAllRawEvents()
             .Count(x => x.Version == 1).ShouldBe(2);
     }
 
     [Fact]
     public void can_search_by_stream()
     {
-        var stream1 = theSession.Events.StartStream<Quest>(joined1, departed1).Id;
-        var stream2 = theSession.Events.StartStream<Quest>(joined2, departed2).Id;
+        var stream1 = TheSession.Events.StartStream<Quest>(joined1, departed1).Id;
+        var stream2 = TheSession.Events.StartStream<Quest>(joined2, departed2).Id;
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Events.QueryAllRawEvents()
+        TheSession.Events.QueryAllRawEvents()
             .Count(x => x.StreamId == stream1).ShouldBe(2);
     }
 

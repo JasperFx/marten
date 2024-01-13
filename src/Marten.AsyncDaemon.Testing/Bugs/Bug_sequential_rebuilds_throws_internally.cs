@@ -29,10 +29,10 @@ public class Bug_sequential_rebuilds_throws_internally: BugIntegrationContext
 
         var stream = Guid.NewGuid();
 
-        theSession.Events.StartStream(stream,
+        TheSession.Events.StartStream(stream,
             new CreatedEvent(Guid.NewGuid(), Guid.NewGuid().ToString()));
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var events = new List<UpdatedEvent>();
 
@@ -41,8 +41,8 @@ public class Bug_sequential_rebuilds_throws_internally: BugIntegrationContext
             events.Add(new UpdatedEvent(stream, $"event-value-{i}"));
         }
 
-        theSession.Events.Append(stream, events);
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(stream, events);
+        await TheSession.SaveChangesAsync();
 
         using var logger = _output.BuildLogger();
         using var daemon1 = await theStore.BuildProjectionDaemonAsync(logger: logger);

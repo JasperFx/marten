@@ -66,8 +66,8 @@ public class when_skipping_events_in_daemon : DaemonContext
             .OfType<object>()
             .ToArray();
 
-        theSession.Events.StartStream(Guid.NewGuid(), events);
-        await theSession.SaveChangesAsync();
+        TheSession.Events.StartStream(Guid.NewGuid(), events);
+        await TheSession.SaveChangesAsync();
 
         await daemon.Tracker.WaitForHighWaterMark(theNames.Length);
 
@@ -95,7 +95,7 @@ public class when_skipping_events_in_daemon : DaemonContext
     {
         await PublishTheEvents();
 
-        var names = await theSession.Query<NamedDocument>()
+        var names = await TheSession.Query<NamedDocument>()
             .OrderBy(x => x.Name)
             .Select(x => x.Name)
             .ToListAsync();
@@ -113,7 +113,7 @@ public class when_skipping_events_in_daemon : DaemonContext
     {
         await PublishTheEvents();
 
-        var jNames = await theSession.LoadAsync<NamesByLetter>("J");
+        var jNames = await TheSession.LoadAsync<NamesByLetter>("J");
 
         jNames.Names.OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Jack", "Jane", "Jeremy", "Jill");
@@ -124,8 +124,8 @@ public class when_skipping_events_in_daemon : DaemonContext
     {
         await PublishTheEvents();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
-        var skipped = await theSession.Query<DeadLetterEvent>().ToListAsync();
+        TheSession.Logger = new TestOutputMartenLogger(_output);
+        var skipped = await TheSession.Query<DeadLetterEvent>().ToListAsync();
 
 
 

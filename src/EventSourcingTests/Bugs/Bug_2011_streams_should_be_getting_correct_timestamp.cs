@@ -17,28 +17,28 @@ public class Bug_2011_streams_should_be_getting_correct_timestamp : BugIntegrati
         var stream3 = Guid.NewGuid();
         var stream4 = Guid.NewGuid();
 
-        theSession.Events.Append(stream1, new QuestStarted { Name = "One" });
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(stream1, new QuestStarted { Name = "One" });
+        await TheSession.SaveChangesAsync();
 
         await Task.Delay(25);
 
-        theSession.Events.Append(stream2, new QuestStarted { Name = "Two" });
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(stream2, new QuestStarted { Name = "Two" });
+        await TheSession.SaveChangesAsync();
 
         await Task.Delay(500);
 
-        theSession.Events.Append(stream3, new QuestStarted { Name = "Three" });
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(stream3, new QuestStarted { Name = "Three" });
+        await TheSession.SaveChangesAsync();
 
         await Task.Delay(500);
 
-        theSession.Events.Append(stream4, new QuestStarted { Name = "Four" });
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(stream4, new QuestStarted { Name = "Four" });
+        await TheSession.SaveChangesAsync();
 
-        var s1 = await theSession.Events.FetchStreamStateAsync(stream1);
-        var s2 = await theSession.Events.FetchStreamStateAsync(stream2);
-        var s3 = await theSession.Events.FetchStreamStateAsync(stream3);
-        var s4 = await theSession.Events.FetchStreamStateAsync(stream4);
+        var s1 = await TheSession.Events.FetchStreamStateAsync(stream1);
+        var s2 = await TheSession.Events.FetchStreamStateAsync(stream2);
+        var s3 = await TheSession.Events.FetchStreamStateAsync(stream3);
+        var s4 = await TheSession.Events.FetchStreamStateAsync(stream4);
 
         var dates = new DateTimeOffset[] { s1.Created, s2.Created, s3.Created, s4.Created };
         dates.Distinct().Count().ShouldBe(4);

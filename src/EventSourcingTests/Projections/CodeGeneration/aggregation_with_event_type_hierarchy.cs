@@ -28,31 +28,31 @@ public class aggregation_with_event_type_hierarchy: OneOffConfigurationsContext
     {
         var id = Guid.NewGuid();
 
-        var stream = theSession.Events.StartStream<Something>(
+        var stream = TheSession.Events.StartStream<Something>(
             id,
             new SomethingCreated(id),
             new SomethingAdded(id),
             new SomethingUpdated(id)
         );
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        var something = theSession.Load<Something>(id);
+        var something = TheSession.Load<Something>(id);
 
         something.Id.ShouldBe(id);
         something.Value.ShouldBe(SomethingUpdated.DefaultValue);
         something.AddedCount.ShouldBe(1);
 
-        theSession.Events.Append(id, new SomethingManuallySynched(id));
-        theSession.SaveChanges();
+        TheSession.Events.Append(id, new SomethingManuallySynched(id));
+        TheSession.SaveChanges();
 
-        something = theSession.Load<Something>(id);
+        something = TheSession.Load<Something>(id);
         something.Value.ShouldBe(SomethingManuallySynched.DefaultValue);
 
-        theSession.Events.Append(id, new SomethingAutoSynched(id));
-        theSession.SaveChanges();
+        TheSession.Events.Append(id, new SomethingAutoSynched(id));
+        TheSession.SaveChanges();
 
-        something = theSession.Load<Something>(id);
+        something = TheSession.Load<Something>(id);
         something.Value.ShouldBe(SomethingAutoSynched.DefaultValue);
     }
 
@@ -61,7 +61,7 @@ public class aggregation_with_event_type_hierarchy: OneOffConfigurationsContext
     {
         var id = Guid.NewGuid();
 
-        var stream = theSession.Events.StartStream<Something>(
+        var stream = TheSession.Events.StartStream<Something>(
             id,
             new SomethingCreated(id),
             new SomethingUpdated(id),
@@ -69,9 +69,9 @@ public class aggregation_with_event_type_hierarchy: OneOffConfigurationsContext
             new SomethingUnmappedEvent(id)
         );
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        var something = theSession.Load<Something>(id);
+        var something = TheSession.Load<Something>(id);
 
         something.Id.ShouldBe(id);
         something.Value.ShouldBe(SomethingUpdated.DefaultValue);

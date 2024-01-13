@@ -29,10 +29,10 @@ public class projection_progression_operations : OneOffConfigurationsContext
         var operation2 = new InsertProjectionProgress(theStore.Events,
             new EventRange( new ShardName("two"), 25));
 
-        theSession.QueueOperation(operation1);
-        theSession.QueueOperation(operation2);
+        TheSession.QueueOperation(operation1);
+        TheSession.QueueOperation(operation2);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var progress1 = await theStore.Advanced.ProjectionProgressFor(new ShardName("one"));
         progress1.ShouldBe(12);
@@ -47,14 +47,14 @@ public class projection_progression_operations : OneOffConfigurationsContext
         var insertProjectionProgress = new InsertProjectionProgress(theStore.Events,
             new EventRange( new ShardName("three"), 12));
 
-        theSession.QueueOperation(insertProjectionProgress);
-        await theSession.SaveChangesAsync();
+        TheSession.QueueOperation(insertProjectionProgress);
+        await TheSession.SaveChangesAsync();
 
         var updateProjectionProgress =
             new UpdateProjectionProgress(theStore.Events, new EventRange(new ShardName("three"), 12, 50));
 
-        theSession.QueueOperation(updateProjectionProgress);
-        await theSession.SaveChangesAsync();
+        TheSession.QueueOperation(updateProjectionProgress);
+        await TheSession.SaveChangesAsync();
 
         var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("three"));
         progress.ShouldBe(50);
@@ -64,23 +64,23 @@ public class projection_progression_operations : OneOffConfigurationsContext
     public async Task Bug_2201_update_successfully_but_have_deletion_next()
     {
         var target = Target.Random();
-        theSession.Store(target);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(target);
+        await TheSession.SaveChangesAsync();
 
         var insertProjectionProgress = new InsertProjectionProgress(theStore.Events,
             new EventRange( new ShardName("three"), 12));
 
 
-        theSession.QueueOperation(insertProjectionProgress);
+        TheSession.QueueOperation(insertProjectionProgress);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var updateProjectionProgress =
             new UpdateProjectionProgress(theStore.Events, new EventRange(new ShardName("three"), 12, 50));
 
-        theSession.QueueOperation(updateProjectionProgress);
-        theSession.Delete(target);
-        await theSession.SaveChangesAsync();
+        TheSession.QueueOperation(updateProjectionProgress);
+        TheSession.Delete(target);
+        await TheSession.SaveChangesAsync();
 
         var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("three"));
         progress.ShouldBe(50);
@@ -92,15 +92,15 @@ public class projection_progression_operations : OneOffConfigurationsContext
         var insertProjectionProgress = new InsertProjectionProgress(theStore.Events,
             new EventRange(new ShardName("four"), 12));
 
-        theSession.QueueOperation(insertProjectionProgress);
-        await theSession.SaveChangesAsync();
+        TheSession.QueueOperation(insertProjectionProgress);
+        await TheSession.SaveChangesAsync();
 
         var updateProjectionProgress = new UpdateProjectionProgress(theStore.Events, new EventRange(new ShardName("four"), 5, 50));
 
         var ex = await Should.ThrowAsync<ProgressionProgressOutOfOrderException>(async () =>
         {
-            theSession.QueueOperation(updateProjectionProgress);
-            await theSession.SaveChangesAsync();
+            TheSession.QueueOperation(updateProjectionProgress);
+            await TheSession.SaveChangesAsync();
         });
 
         ex.Message.ShouldContain("four", StringComparisonOption.Default);
@@ -119,10 +119,10 @@ public class projection_progression_operations : OneOffConfigurationsContext
         var operation2 = new InsertProjectionProgress(theStore.Events,
             new EventRange(new ShardName("six"), 25));
 
-        theSession.QueueOperation(operation1);
-        theSession.QueueOperation(operation2);
+        TheSession.QueueOperation(operation1);
+        TheSession.QueueOperation(operation2);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var progressions = await theStore.Advanced.AllProjectionProgress();
 

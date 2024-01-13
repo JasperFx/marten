@@ -12,10 +12,10 @@ public class Bug_2528_projections_should_handle_each_event_once: BugIntegrationC
     public async Task projection_with_create_method_should_use_create_not_apply()
     {
         var streamId = Guid.NewGuid();
-        theSession.Events.Append(streamId, new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(streamId, new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
+        await TheSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.AggregateStreamAsync<CounterWithCreate>(streamId);
+        var aggregate = await TheSession.Events.AggregateStreamAsync<CounterWithCreate>(streamId);
 
         Assert.NotNull(aggregate);
         Assert.Equal(streamId, aggregate.Id);
@@ -27,10 +27,10 @@ public class Bug_2528_projections_should_handle_each_event_once: BugIntegrationC
     public async Task projection_with_default_ctor_should_use_apply()
     {
         var streamId = Guid.NewGuid();
-        theSession.Events.Append(streamId, new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(streamId, new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
+        await TheSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.AggregateStreamAsync<CounterWithDefaultCtor>(streamId);
+        var aggregate = await TheSession.Events.AggregateStreamAsync<CounterWithDefaultCtor>(streamId);
 
         Assert.NotNull(aggregate);
         Assert.Equal(streamId, aggregate.Id);
@@ -42,10 +42,10 @@ public class Bug_2528_projections_should_handle_each_event_once: BugIntegrationC
     public async Task projection_with_create_and_ctor_should_use_create_on_event_match()
     {
         var streamId = Guid.NewGuid();
-        theSession.Events.Append(streamId, new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(streamId, new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
+        await TheSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.AggregateStreamAsync<CounterWithCreateAndDefaultCtor>(streamId);
+        var aggregate = await TheSession.Events.AggregateStreamAsync<CounterWithCreateAndDefaultCtor>(streamId);
 
         Assert.NotNull(aggregate);
         Assert.Equal(streamId, aggregate.Id);
@@ -57,10 +57,10 @@ public class Bug_2528_projections_should_handle_each_event_once: BugIntegrationC
     public async Task projection_with_create_and_ctor_should_use_default_ctor_on_no_event_match()
     {
         var streamId = Guid.NewGuid();
-        theSession.Events.Append(streamId, new UnrelatedEvent(), new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(streamId, new UnrelatedEvent(), new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
+        await TheSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.AggregateStreamAsync<CounterWithCreateAndDefaultCtor>(streamId);
+        var aggregate = await TheSession.Events.AggregateStreamAsync<CounterWithCreateAndDefaultCtor>(streamId);
 
         Assert.NotNull(aggregate);
         Assert.Equal(streamId, aggregate.Id);

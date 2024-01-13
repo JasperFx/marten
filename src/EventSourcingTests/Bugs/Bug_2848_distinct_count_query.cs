@@ -12,7 +12,7 @@ public class Bug_2848_distinct_count_query : BugIntegrationContext
     [Fact]
     public async Task can_make_the_query()
     {
-        await theSession.Events.QueryAllRawEvents()
+        await TheSession.Events.QueryAllRawEvents()
             .Where(x => x.MaybeArchived())
             .Select(x => x.StreamKey)
             .Distinct()

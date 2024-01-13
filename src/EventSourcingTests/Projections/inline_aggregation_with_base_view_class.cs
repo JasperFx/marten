@@ -24,10 +24,10 @@ public class inline_aggregation_with_base_view_class: OneOffConfigurationsContex
             _.Projections.Snapshot<QuestMonstersWithBaseClassAndIdOverloadedWithNew>(SnapshotLifecycle.Inline);
         });
 
-        streamId = theSession.Events
+        streamId = TheSession.Events
             .StartStream<QuestMonstersWithBaseClass>(slayed1, slayed2).Id;
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
     }
 
     [Fact]
@@ -50,13 +50,13 @@ public class inline_aggregation_with_base_view_class: OneOffConfigurationsContex
 
     private void VerifyProjection<T>() where T : IMonstersView
     {
-        var loadedView = theSession.Load<T>(streamId);
+        var loadedView = TheSession.Load<T>(streamId);
 
         loadedView.ShouldNotBeNull();
         loadedView.Id.ShouldBe(streamId);
         loadedView.Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
 
-        var queriedView = theSession.Query<T>()
+        var queriedView = TheSession.Query<T>()
             .Single(x => x.Id == streamId);
 
         queriedView.Id.ShouldBe(streamId);

@@ -19,14 +19,14 @@ public class when_using_inline_lambdas_to_define_immutable_projection : OneOffCo
         var user1 = new User {UserName = "Creator"};
         var user2 = new User {UserName = "Updater"};
 
-        theSession.Store(user1, user2);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(user1, user2);
+        await TheSession.SaveChangesAsync();
 
         var streamId = Guid.NewGuid();
-        theSession.Events.Append(streamId, new UserStartedRecord(streamId, user1.Id), new UserUpdatedRecord(streamId, user2.Id));
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(streamId, new UserStartedRecord(streamId, user1.Id), new UserUpdatedRecord(streamId, user2.Id));
+        await TheSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.AggregateStreamAsync<MyAggregateRecord>(streamId);
+        var aggregate = await TheSession.Events.AggregateStreamAsync<MyAggregateRecord>(streamId);
 
         aggregate.Created.ShouldBe(user1.UserName);
         aggregate.UpdatedBy.ShouldBe(user2.UserName);

@@ -86,12 +86,12 @@ public class custom_grouper_with_document_session: OneOffConfigurationsContext
         // --------------------------------
 
         var freeLicenseCreated = new LicenseCreated(Guid.NewGuid(), "Free Licence");
-        theSession.Events.Append(freeLicenseCreated.LicenseId, freeLicenseCreated);
+        TheSession.Events.Append(freeLicenseCreated.LicenseId, freeLicenseCreated);
 
         var premiumLicenseCreated = new LicenseCreated(Guid.NewGuid(), "Premium Licence");
-        theSession.Events.Append(premiumLicenseCreated.LicenseId, premiumLicenseCreated);
+        TheSession.Events.Append(premiumLicenseCreated.LicenseId, premiumLicenseCreated);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         // --------------------------------
         // Create Users
@@ -103,18 +103,18 @@ public class custom_grouper_with_document_session: OneOffConfigurationsContext
         // --------------------------------
 
         var annaRegistered = new UserRegistered(Guid.NewGuid(), "Anna");
-        theSession.Events.Append(annaRegistered.UserId, annaRegistered);
+        TheSession.Events.Append(annaRegistered.UserId, annaRegistered);
 
         var johnRegistered = new UserRegistered(Guid.NewGuid(), "John");
-        theSession.Events.Append(johnRegistered.UserId, johnRegistered);
+        TheSession.Events.Append(johnRegistered.UserId, johnRegistered);
 
         var maggieRegistered = new UserRegistered(Guid.NewGuid(), "Maggie");
-        theSession.Events.Append(maggieRegistered.UserId, maggieRegistered);
+        TheSession.Events.Append(maggieRegistered.UserId, maggieRegistered);
 
         var alanRegistered = new UserRegistered(Guid.NewGuid(), "Alan");
-        theSession.Events.Append(alanRegistered.UserId, alanRegistered);
+        TheSession.Events.Append(alanRegistered.UserId, alanRegistered);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         // --------------------------------
         // Assign users' licences
@@ -125,21 +125,21 @@ public class custom_grouper_with_document_session: OneOffConfigurationsContext
 
         var annaAssignedToPremiumLicense =
             new UserLicenseAssigned(annaRegistered.UserId, premiumLicenseCreated.LicenseId);
-        theSession.Events.Append(annaRegistered.UserId, annaAssignedToPremiumLicense);
+        TheSession.Events.Append(annaRegistered.UserId, annaAssignedToPremiumLicense);
 
         var johnAssignedToFreeLicense =
             new UserLicenseAssigned(johnRegistered.UserId, freeLicenseCreated.LicenseId);
-        theSession.Events.Append(johnRegistered.UserId, johnAssignedToFreeLicense);
+        TheSession.Events.Append(johnRegistered.UserId, johnAssignedToFreeLicense);
 
         var maggieAssignedToPremiumLicense =
             new UserLicenseAssigned(maggieRegistered.UserId, premiumLicenseCreated.LicenseId);
-        theSession.Events.Append(maggieAssignedToPremiumLicense.UserId, maggieAssignedToPremiumLicense);
+        TheSession.Events.Append(maggieAssignedToPremiumLicense.UserId, maggieAssignedToPremiumLicense);
 
         var alanAssignedToFreeLicense =
             new UserLicenseAssigned(alanRegistered.UserId, freeLicenseCreated.LicenseId);
-        theSession.Events.Append(alanAssignedToFreeLicense.UserId, alanAssignedToFreeLicense);
+        TheSession.Events.Append(alanAssignedToFreeLicense.UserId, alanAssignedToFreeLicense);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         // --------------------------------
         // Assign feature toggle to license
@@ -151,19 +151,19 @@ public class custom_grouper_with_document_session: OneOffConfigurationsContext
         var loginFeatureToggle = "Login";
         var loginFeatureToggledOnFreeLicense =
             new LicenseFeatureToggled(freeLicenseCreated.LicenseId, loginFeatureToggle);
-        theSession.Events.Append(loginFeatureToggledOnFreeLicense.LicenseId, loginFeatureToggledOnFreeLicense);
+        TheSession.Events.Append(loginFeatureToggledOnFreeLicense.LicenseId, loginFeatureToggledOnFreeLicense);
 
         var loginFeatureToggledOnPremiumLicense =
             new LicenseFeatureToggled(premiumLicenseCreated.LicenseId, loginFeatureToggle);
-        theSession.Events.Append(loginFeatureToggledOnPremiumLicense.LicenseId,
+        TheSession.Events.Append(loginFeatureToggledOnPremiumLicense.LicenseId,
             loginFeatureToggledOnPremiumLicense);
 
         var inviteFeatureToggle = "Invite";
         var inviteToggledOnPremiumLicense =
             new LicenseFeatureToggled(premiumLicenseCreated.LicenseId, inviteFeatureToggle);
-        theSession.Events.Append(inviteToggledOnPremiumLicense.LicenseId, inviteToggledOnPremiumLicense);
+        TheSession.Events.Append(inviteToggledOnPremiumLicense.LicenseId, inviteToggledOnPremiumLicense);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         // --------------------------------
         // Check users' feature toggles
@@ -172,25 +172,25 @@ public class custom_grouper_with_document_session: OneOffConfigurationsContext
         // John, Alan   => Free    => Login
         // --------------------------------
 
-        var annaFeatureToggles = await theSession.LoadAsync<UserFeatureToggles>(annaRegistered.UserId);
+        var annaFeatureToggles = await TheSession.LoadAsync<UserFeatureToggles>(annaRegistered.UserId);
         annaFeatureToggles.ShouldNotBeNull();
         annaFeatureToggles.Id.ShouldBe(annaRegistered.UserId);
         annaFeatureToggles.LicenseId.ShouldBe(premiumLicenseCreated.LicenseId);
         annaFeatureToggles.FeatureToggles.ShouldHaveTheSameElementsAs(loginFeatureToggle, inviteFeatureToggle);
 
-        var maggieFeatureToggles = await theSession.LoadAsync<UserFeatureToggles>(maggieRegistered.UserId);
+        var maggieFeatureToggles = await TheSession.LoadAsync<UserFeatureToggles>(maggieRegistered.UserId);
         maggieFeatureToggles.ShouldNotBeNull();
         maggieFeatureToggles.Id.ShouldBe(maggieRegistered.UserId);
         maggieFeatureToggles.LicenseId.ShouldBe(premiumLicenseCreated.LicenseId);
         maggieFeatureToggles.FeatureToggles.ShouldHaveTheSameElementsAs(loginFeatureToggle, inviteFeatureToggle);
 
-        var johnFeatureToggles = await theSession.LoadAsync<UserFeatureToggles>(johnRegistered.UserId);
+        var johnFeatureToggles = await TheSession.LoadAsync<UserFeatureToggles>(johnRegistered.UserId);
         johnFeatureToggles.ShouldNotBeNull();
         johnFeatureToggles.Id.ShouldBe(johnRegistered.UserId);
         johnFeatureToggles.LicenseId.ShouldBe(freeLicenseCreated.LicenseId);
         johnFeatureToggles.FeatureToggles.ShouldHaveTheSameElementsAs(loginFeatureToggle);
 
-        var alanFeatureToggles = await theSession.LoadAsync<UserFeatureToggles>(alanRegistered.UserId);
+        var alanFeatureToggles = await TheSession.LoadAsync<UserFeatureToggles>(alanRegistered.UserId);
         alanFeatureToggles.ShouldNotBeNull();
         alanFeatureToggles.Id.ShouldBe(alanRegistered.UserId);
         alanFeatureToggles.LicenseId.ShouldBe(freeLicenseCreated.LicenseId);

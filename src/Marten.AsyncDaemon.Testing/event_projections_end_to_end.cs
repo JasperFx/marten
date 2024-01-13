@@ -103,7 +103,7 @@ public class event_projections_end_to_end : DaemonContext
 
     private Task CheckExpectedResults()
     {
-        return CheckExpectedResults(theSession);
+        return CheckExpectedResults(TheSession);
     }
 
     private async Task CheckExpectedResultsForTenants(params string[] tenants)

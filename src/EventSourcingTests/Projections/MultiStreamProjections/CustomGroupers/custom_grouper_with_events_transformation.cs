@@ -134,7 +134,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
                 new(new DateOnly(2021, 10, 3), 10),
                 new(new DateOnly(2021, 10, 4), 7),
             });
-            theSession.Events.Append(firstEmployeeId, firstEmployeeAllocated);
+            TheSession.Events.Append(firstEmployeeId, firstEmployeeAllocated);
 
             var secondEmployeeId = Guid.NewGuid();
             var secondEmployeeAllocated = new EmployeeAllocated(secondEmployeeId, new List<Allocation>()
@@ -145,14 +145,14 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
                 new(new DateOnly(2021, 10, 4), 8),
             });
 
-            theSession.Events.Append(secondEmployeeId, secondEmployeeAllocated);
+            TheSession.Events.Append(secondEmployeeId, secondEmployeeAllocated);
 
-            await theSession.SaveChangesAsync();
+            await TheSession.SaveChangesAsync();
 
             var firstEmployeeSeptemberId = $"{firstEmployeeId}|2021-09-01";
 
             var firstEmployeeSeptemberAllocations =
-                await theSession.LoadAsync<MonthlyAllocation>(firstEmployeeSeptemberId);
+                await TheSession.LoadAsync<MonthlyAllocation>(firstEmployeeSeptemberId);
             firstEmployeeSeptemberAllocations.ShouldNotBeNull();
             firstEmployeeSeptemberAllocations.Id.ShouldBe(firstEmployeeSeptemberId);
             firstEmployeeSeptemberAllocations.EmployeeId.ShouldBe(firstEmployeeId);
@@ -164,7 +164,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
 
             var firstEmployeeOctoberId = $"{firstEmployeeId}|2021-10-01";
 
-            var firstEmployeeOctoberAllocations = await theSession.LoadAsync<MonthlyAllocation>(firstEmployeeOctoberId);
+            var firstEmployeeOctoberAllocations = await TheSession.LoadAsync<MonthlyAllocation>(firstEmployeeOctoberId);
             firstEmployeeOctoberAllocations.ShouldNotBeNull();
             firstEmployeeOctoberAllocations.Id.ShouldBe(firstEmployeeOctoberId);
             firstEmployeeOctoberAllocations.EmployeeId.ShouldBe(firstEmployeeId);
@@ -178,7 +178,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
             var secondEmployeeSeptemberId = $"{secondEmployeeId}|2021-09-01";
 
             var secondEmployeeSeptemberAllocations =
-                await theSession.LoadAsync<MonthlyAllocation>(secondEmployeeSeptemberId);
+                await TheSession.LoadAsync<MonthlyAllocation>(secondEmployeeSeptemberId);
             secondEmployeeSeptemberAllocations.ShouldNotBeNull();
             secondEmployeeSeptemberAllocations.Id.ShouldBe(secondEmployeeSeptemberId);
             secondEmployeeSeptemberAllocations.EmployeeId.ShouldBe(secondEmployeeId);
@@ -191,7 +191,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
             var secondEmployeeOctoberId = $"{secondEmployeeId}|2021-10-01";
 
             var secondEmployeeOctoberAllocations =
-                await theSession.LoadAsync<MonthlyAllocation>(secondEmployeeOctoberId);
+                await TheSession.LoadAsync<MonthlyAllocation>(secondEmployeeOctoberId);
             secondEmployeeOctoberAllocations.ShouldNotBeNull();
             secondEmployeeOctoberAllocations.Id.ShouldBe(secondEmployeeOctoberId);
             secondEmployeeOctoberAllocations.EmployeeId.ShouldBe(secondEmployeeId);

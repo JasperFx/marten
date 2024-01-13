@@ -33,11 +33,11 @@ public class ViewProjectionTests: DaemonContext
         NumberOfStreams = 10;
         await PublishMultiThreaded(3);
 
-        var allEvents = await theSession.Events.QueryAllRawEvents().ToListAsync();
+        var allEvents = await TheSession.Events.QueryAllRawEvents().ToListAsync();
 
         var slicer = new DayProjection().Slicer;
 
-        var slices = await slicer.SliceAsyncEvents(theSession, allEvents.ToList());
+        var slices = await slicer.SliceAsyncEvents(TheSession, allEvents.ToList());
 
         foreach (var slice in slices.SelectMany(x => x.Slices).ToArray())
         {
@@ -77,9 +77,9 @@ public class ViewProjectionTests: DaemonContext
 
         await agent.Tracker.WaitForShardState("Day:All", NumberOfEvents, 30.Seconds());
 
-        var days = await theSession.Query<Day>().ToListAsync();
+        var days = await TheSession.Query<Day>().ToListAsync();
 
-        var allEvents = await theSession.Events.QueryAllRawEvents().ToListAsync();
+        var allEvents = await TheSession.Events.QueryAllRawEvents().ToListAsync();
         var dayEvents = allEvents.Select(x => x.Data).OfType<IDayEvent>();
         var groups = dayEvents.GroupBy(x => x.Day).ToList();
 

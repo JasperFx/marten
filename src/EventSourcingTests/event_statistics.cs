@@ -26,13 +26,13 @@ public class event_statistics : OneOffConfigurationsContext
     {
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
-        theSession.Events.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
-        theSession.Events.Append(Guid.NewGuid(), new AEvent(), new CEvent(), new DEvent());
-        theSession.Events.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
-        theSession.Events.Append(Guid.NewGuid(), new BEvent(), new CEvent(), new DEvent());
-        theSession.Events.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
+        TheSession.Events.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
+        TheSession.Events.Append(Guid.NewGuid(), new AEvent(), new CEvent(), new DEvent());
+        TheSession.Events.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
+        TheSession.Events.Append(Guid.NewGuid(), new BEvent(), new CEvent(), new DEvent());
+        TheSession.Events.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var statistics = await theStore.Advanced.FetchEventStoreStatistics();
 

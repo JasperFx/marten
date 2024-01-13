@@ -100,9 +100,9 @@ public class flat_table_projection_with_stream_id_identifier_end_to_end: OneOffC
     {
         var streamId = Guid.NewGuid();
         var valuesSet = new ValuesSet { A = 3, B = 4, C = 5, D = 6 };
-        theSession.Events.Append(streamId, valuesSet);
+        TheSession.Events.Append(streamId, valuesSet);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var data = await findData(streamId);
 
@@ -119,15 +119,15 @@ public class flat_table_projection_with_stream_id_identifier_end_to_end: OneOffC
     public async Task set_values_on_existing_row()
     {
         var streamId = Guid.NewGuid();
-        theSession.Events.Append(streamId, new ValuesSet { A = 1, B = 2, C = 3, D = 4 });
+        TheSession.Events.Append(streamId, new ValuesSet { A = 1, B = 2, C = 3, D = 4 });
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var valuesSet = new ValuesSet { A = 3, B = 4, C = 5, D = 6 };
 
-        theSession.Events.Append(streamId, valuesSet);
+        TheSession.Events.Append(streamId, valuesSet);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var data = await findData(streamId);
 
@@ -144,15 +144,15 @@ public class flat_table_projection_with_stream_id_identifier_end_to_end: OneOffC
     public async Task increment_values_on_existing_row()
     {
         var streamId = Guid.NewGuid();
-        theSession.Events.Append(streamId, new ValuesSet { A = 1, B = 2, C = 3, D = 4 });
+        TheSession.Events.Append(streamId, new ValuesSet { A = 1, B = 2, C = 3, D = 4 });
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var valuesAdded = new ValuesAdded { A = 3, B = 4, C = 5, D = 6 };
 
-        theSession.Events.Append(streamId, valuesAdded);
+        TheSession.Events.Append(streamId, valuesAdded);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var data = await findData(streamId);
 
@@ -169,15 +169,15 @@ public class flat_table_projection_with_stream_id_identifier_end_to_end: OneOffC
     public async Task decrement_values_on_existing_row()
     {
         var streamId = Guid.NewGuid();
-        theSession.Events.Append(streamId, new ValuesSet { A = 10, B = 10, C = 10, D = 10 });
+        TheSession.Events.Append(streamId, new ValuesSet { A = 10, B = 10, C = 10, D = 10 });
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var valuesAdded = new ValuesSubtracted { A = 3, B = 4, C = 5, D = 6 };
 
-        theSession.Events.Append(streamId, valuesAdded);
+        TheSession.Events.Append(streamId, valuesAdded);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var data = await findData(streamId);
 
@@ -191,12 +191,12 @@ public class flat_table_projection_with_stream_id_identifier_end_to_end: OneOffC
     public async Task delete_a_row()
     {
         var streamId = Guid.NewGuid();
-        theSession.Events.Append(streamId, new ValuesSet { A = 10, B = 10, C = 10, D = 10 });
+        TheSession.Events.Append(streamId, new ValuesSet { A = 10, B = 10, C = 10, D = 10 });
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        theSession.Events.Append(streamId, new ValuesDeleted());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(streamId, new ValuesDeleted());
+        await TheSession.SaveChangesAsync();
 
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();

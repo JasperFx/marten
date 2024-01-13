@@ -17,7 +17,7 @@ public abstract class OneOffConfigurationsContext : IDisposable
         SchemaName = GetType().Name.ToLower().Sanitize();
         Helper = new(SchemaName, ConnectionSource.ConnectionString);
     }
-
+    
     public DocumentStore SeparateStore(Action<StoreOptions> configure = null) => Helper.SeparateStore(configure);
 
     public DocumentStore StoreOptions(Action<StoreOptions> configure, bool cleanAll = true) => Helper.StoreOptions(configure, cleanAll);

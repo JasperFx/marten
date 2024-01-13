@@ -24,8 +24,8 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
 
     internal async Task executeAfterLoadingEvents(Action<IEventStore> loadEvents)
     {
-        loadEvents(theSession.Events);
-        await theSession.SaveChangesAsync();
+        loadEvents(TheSession.Events);
+        await TheSession.SaveChangesAsync();
 
         var fetcher = new EventFetcher(theStore, null, theStore.Tenancy.Default.Database, theFilters.ToArray());
         await fetcher.Load(theRange, default);
@@ -42,7 +42,7 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
             e.Append(stream, new AEvent(), new BEvent(), new CEvent(), new DEvent());
         });
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         theRange.Events.Count.ShouldBe(4);
         var @event = theRange.Events[0];
@@ -63,7 +63,7 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
             e.Append(stream, new AEvent(), new BEvent(), new CEvent(), new DEvent());
         });
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         theRange.Events.Count.ShouldBe(4);
         var @event = theRange.Events[0];

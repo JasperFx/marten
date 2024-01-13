@@ -43,18 +43,18 @@ public class inline_aggregation_with_private_constructor: OneOffConfigurationsCo
     {
         var slayed1 = new MonsterSlayed { Name = "Troll" };
         var slayed2 = new MonsterSlayed { Name = "Dragon" };
-        var streamId = theSession.Events
+        var streamId = TheSession.Events
             .StartStream(slayed1, slayed2).Id;
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        var loadedView = theSession.Load<T>(streamId);
+        var loadedView = TheSession.Load<T>(streamId);
 
         loadedView.ShouldNotBeNull();
         loadedView!.Id.ShouldBe(streamId);
         loadedView.Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
 
-        var queriedView = theSession.Query<T>()
+        var queriedView = TheSession.Query<T>()
             .Single(x => x.Id == streamId);
 
         queriedView.Id.ShouldBe(streamId);

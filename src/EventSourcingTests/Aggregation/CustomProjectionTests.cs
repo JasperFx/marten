@@ -117,7 +117,7 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
 {
     private void appendCustomEvent(int number, char letter)
     {
-        theSession.Events.Append(Guid.NewGuid(), new CustomEvent(number, letter));
+        TheSession.Events.Append(Guid.NewGuid(), new CustomEvent(number, letter));
     }
 
     [Fact]
@@ -140,16 +140,16 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
         appendCustomEvent(1, 'a');
         appendCustomEvent(1, 'a');
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var agg1 = await theSession.LoadAsync<CustomAggregate>(1);
+        var agg1 = await TheSession.LoadAsync<CustomAggregate>(1);
         agg1
             .ShouldBe(new CustomAggregate{Id = 1, ACount = 4, BCount = 1, CCount = 1, DCount = 1});
 
-        (await theSession.LoadAsync<CustomAggregate>(2))
+        (await TheSession.LoadAsync<CustomAggregate>(2))
             .ShouldBe(new CustomAggregate{Id = 2, ACount = 2, BCount = 0, CCount = 0, DCount = 0});
 
-        (await theSession.LoadAsync<CustomAggregate>(3))
+        (await TheSession.LoadAsync<CustomAggregate>(3))
             .ShouldBe(new CustomAggregate{Id = 3, ACount = 0, BCount = 1, CCount = 0, DCount = 1});
 
     }
@@ -174,15 +174,15 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
         appendCustomEvent(1, 'a');
         appendCustomEvent(1, 'a');
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Load<CustomAggregate>(1)
+        TheSession.Load<CustomAggregate>(1)
             .ShouldBe(new CustomAggregate{Id = 1, ACount = 4, BCount = 1, CCount = 1, DCount = 1});
 
-        theSession.Load<CustomAggregate>(2)
+        TheSession.Load<CustomAggregate>(2)
             .ShouldBe(new CustomAggregate{Id = 2, ACount = 2, BCount = 0, CCount = 0, DCount = 0});
 
-        theSession.Load<CustomAggregate>(3)
+        TheSession.Load<CustomAggregate>(3)
             .ShouldBe(new CustomAggregate{Id = 3, ACount = 0, BCount = 1, CCount = 0, DCount = 1});
 
     }
@@ -332,10 +332,10 @@ public class using_custom_aggregate_with_soft_deletes_and_update_only_events : O
         var stream = Guid.NewGuid();
 
         // This should do nothing because the aggregate isn't started yet
-        theSession.Events.StartStream(stream, new Increment(), new Increment());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.StartStream(stream, new Increment(), new Increment());
+        await TheSession.SaveChangesAsync();
 
-        (await theSession.LoadAsync<StartAndStopAggregate>(stream)).ShouldBeNull();
+        (await TheSession.LoadAsync<StartAndStopAggregate>(stream)).ShouldBeNull();
     }
 
     [Fact]
@@ -344,10 +344,10 @@ public class using_custom_aggregate_with_soft_deletes_and_update_only_events : O
         var stream = Guid.NewGuid();
 
         // This should do nothing because the aggregate isn't started yet
-        theSession.Events.StartStream(stream, new Start(), new Increment(), new Increment());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.StartStream(stream, new Start(), new Increment(), new Increment());
+        await TheSession.SaveChangesAsync();
 
-        var aggregate = await theSession.LoadAsync<StartAndStopAggregate>(stream);
+        var aggregate = await TheSession.LoadAsync<StartAndStopAggregate>(stream);
         aggregate.Count.ShouldBe(2);
     }
 
@@ -357,16 +357,16 @@ public class using_custom_aggregate_with_soft_deletes_and_update_only_events : O
         var stream = Guid.NewGuid();
 
         // This should do nothing because the aggregate isn't started yet
-        theSession.Events.StartStream(stream, new Start(), new Increment(), new Increment());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.StartStream(stream, new Start(), new Increment(), new Increment());
+        await TheSession.SaveChangesAsync();
 
-        var aggregate = await theSession.LoadAsync<StartAndStopAggregate>(stream);
+        var aggregate = await TheSession.LoadAsync<StartAndStopAggregate>(stream);
         aggregate.ShouldNotBeNull();
 
-        theSession.Events.Append(stream, new Increment(), new End(), new Increment());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(stream, new Increment(), new End(), new Increment());
+        await TheSession.SaveChangesAsync();
 
-        aggregate = await theSession.LoadAsync<StartAndStopAggregate>(stream);
+        aggregate = await TheSession.LoadAsync<StartAndStopAggregate>(stream);
         aggregate.Count.ShouldBe(3);
         aggregate.Deleted.ShouldBeTrue();
     }

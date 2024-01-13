@@ -18,10 +18,10 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
     {
         StoreOptions(opts => opts.Projections.Add(new SampleSingleStream(), ProjectionLifecycle.Live));
 
-        var stream = theSession.Events.StartStream(new AEvent(), new BEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        var stream = TheSession.Events.StartStream(new AEvent(), new BEvent(), new CEvent());
+        await TheSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.AggregateStreamAsync<MyAggregate>(stream.Id);
+        var aggregate = await TheSession.Events.AggregateStreamAsync<MyAggregate>(stream.Id);
         aggregate.Version.ShouldBe(3);
     }
 
@@ -30,10 +30,10 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
     {
         StoreOptions(opts => opts.Projections.Add(new SampleSingleStream(), ProjectionLifecycle.Inline));
 
-        var stream = theSession.Events.StartStream(new AEvent(), new BEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        var stream = TheSession.Events.StartStream(new AEvent(), new BEvent(), new CEvent());
+        await TheSession.SaveChangesAsync();
 
-        var aggregate = await theSession.LoadAsync<MyAggregate>(stream.Id);
+        var aggregate = await TheSession.LoadAsync<MyAggregate>(stream.Id);
         aggregate.Version.ShouldBe(3);
     }
 
@@ -42,15 +42,15 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
     {
         StoreOptions(opts => opts.Projections.Add(new SampleSingleStream(), ProjectionLifecycle.Async));
 
-        var stream = theSession.Events.StartStream(new AEvent(), new BEvent(), new CEvent());
-        await theSession.SaveChangesAsync();
+        var stream = TheSession.Events.StartStream(new AEvent(), new BEvent(), new CEvent());
+        await TheSession.SaveChangesAsync();
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllShards();
 
         await daemon.WaitForNonStaleData(5.Seconds());
 
-        var aggregate = await theSession.LoadAsync<MyAggregate>(stream.Id);
+        var aggregate = await TheSession.LoadAsync<MyAggregate>(stream.Id);
         aggregate.Version.ShouldBe(3);
     }
 
@@ -120,11 +120,11 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
     {
         StoreOptions(opts => opts.Projections.Snapshot<MyAggregateWithDifferentVersionProperty>(SnapshotLifecycle.Inline));
 
-        var stream = theSession.Events.StartStream(new AEvent(), new AEvent(), new AEvent());
-        await theSession.SaveChangesAsync();
+        var stream = TheSession.Events.StartStream(new AEvent(), new AEvent(), new AEvent());
+        await TheSession.SaveChangesAsync();
 
 
-        var aggregate = await theSession.LoadAsync<MyAggregateWithDifferentVersionProperty>(stream.Id);
+        var aggregate = await TheSession.LoadAsync<MyAggregateWithDifferentVersionProperty>(stream.Id);
         aggregate.SpecialVersion.ShouldBe(3);
     }
 

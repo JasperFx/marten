@@ -19,18 +19,18 @@ public class end_to_end_with_flat_table_projections : DaemonContext
     public async Task run_asynchronously()
     {
         var streamId = Guid.NewGuid();
-        theSession.Events.Append(streamId, new EventSourcingTests.Projections.Flattened.ValuesSet { A = 10, B = 10, C = 10, D = 10 });
+        TheSession.Events.Append(streamId, new EventSourcingTests.Projections.Flattened.ValuesSet { A = 10, B = 10, C = 10, D = 10 });
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var valuesAdded = new EventSourcingTests.Projections.Flattened.ValuesSubtracted
         {
             A = 3, B = 4, C = 5, D = 6
         };
 
-        theSession.Events.Append(streamId, valuesAdded);
+        TheSession.Events.Append(streamId, valuesAdded);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
 

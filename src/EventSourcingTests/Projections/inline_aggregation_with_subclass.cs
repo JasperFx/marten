@@ -24,10 +24,10 @@ public class inline_aggregation_with_subclass: OneOffConfigurationsContext
     {
         var description = "FooDescription";
 
-        var streamId = theSession.Events.StartStream(new FooACreated { Description = description }).Id;
-        theSession.SaveChanges();
+        var streamId = TheSession.Events.StartStream(new FooACreated { Description = description }).Id;
+        TheSession.SaveChanges();
 
-        var fooInstance = theSession.Query<FooA>().Single(x => x.Id == streamId);
+        var fooInstance = TheSession.Query<FooA>().Single(x => x.Id == streamId);
 
         fooInstance.Id.ShouldBe(streamId);
         fooInstance.Description.ShouldBe(description);
@@ -38,10 +38,10 @@ public class inline_aggregation_with_subclass: OneOffConfigurationsContext
     {
         var description = "FooDescription";
 
-        var streamId = theSession.Events.StartStream(new FooACreated { Description = description }).Id;
-        theSession.SaveChanges();
+        var streamId = TheSession.Events.StartStream(new FooACreated { Description = description }).Id;
+        TheSession.SaveChanges();
 
-        var fooInstance = theSession.Query<FooBase>().Single(x => x.Id == streamId);
+        var fooInstance = TheSession.Query<FooBase>().Single(x => x.Id == streamId);
 
         fooInstance.Id.ShouldBe(streamId);
         fooInstance.ShouldBeOfType<FooA>();

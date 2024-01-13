@@ -139,7 +139,7 @@ namespace EventSourcingTests.Aggregation
 
             #region sample_aggregate-stream-into-state-default
 
-            await theSession.Events.AggregateStreamAsync(
+            await TheSession.Events.AggregateStreamAsync(
                 streamId,
                 state: baseState,
                 fromVersion: baseStateVersion
@@ -154,11 +154,11 @@ namespace EventSourcingTests.Aggregation
 
             var state = new FinancialAccount();
 
-            (await theSession.Events.AggregateStreamAsync<FinancialAccount>(
+            (await TheSession.Events.AggregateStreamAsync<FinancialAccount>(
                 notExistingStreamId
             )).ShouldBeNull();
 
-            (await theSession.Events.AggregateStreamAsync(
+            (await TheSession.Events.AggregateStreamAsync(
                 notExistingStreamId,
                 state: state
             )).ShouldBe(state);
@@ -191,20 +191,20 @@ namespace EventSourcingTests.Aggregation
             }
 
             var closedCashierShift =
-                await theSession.Events.AggregateStreamAsync<FinancialAccount>(
+                await TheSession.Events.AggregateStreamAsync<FinancialAccount>(
                     financialAccountId
                 );
 
             var (openedCashierShift, cashierShiftOpened) =
                 OpenAccountingMonth(closedCashierShift!);
 
-            var repository = new CashRegisterRepository(theSession);
+            var repository = new CashRegisterRepository(TheSession);
 
             await repository.Store(openedCashierShift, cashierShiftOpened);
 
             #endregion
 
-            var snapshot = await theSession.LoadAsync<FinancialAccount>(financialAccountId);
+            var snapshot = await TheSession.LoadAsync<FinancialAccount>(financialAccountId);
 
             snapshot.ShouldNotBeNull();
             snapshot.Id.ShouldBe(financialAccountId);

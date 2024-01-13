@@ -26,13 +26,13 @@ public class flexible_event_metadata: OneOffConfigurationsContext
     {
         StoreOptions(_ => _.Events.MetadataConfig.CorrelationIdEnabled = true);
         const string correlationId = "test-correlation-id";
-        theSession.CorrelationId = correlationId;
+        TheSession.CorrelationId = correlationId;
 
-        var streamId = theSession.Events
+        var streamId = TheSession.Events
             .StartStream<QuestParty>(started, joined, slayed).Id;
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var events = await theSession.Events.FetchStreamAsync(streamId);
+        var events = await TheSession.Events.FetchStreamAsync(streamId);
         foreach (var @event in events)
         {
             @event.CorrelationId.ShouldBe(correlationId);
@@ -44,12 +44,12 @@ public class flexible_event_metadata: OneOffConfigurationsContext
     {
         StoreOptions(_ => _.Events.MetadataConfig.CorrelationIdEnabled = true);
         const string correlationId = "test-correlation-id";
-        theSession.CorrelationId = correlationId;
+        TheSession.CorrelationId = correlationId;
 
-        var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed).Id;
-        await theSession.SaveChangesAsync();
+        var streamId = TheSession.Events.StartStream<QuestParty>(started, joined, slayed).Id;
+        await TheSession.SaveChangesAsync();
 
-        var events = await theSession.Events.QueryAllRawEvents()
+        var events = await TheSession.Events.QueryAllRawEvents()
             .Where(x => x.CorrelationId == correlationId)
             .ToListAsync();
 
@@ -64,13 +64,13 @@ public class flexible_event_metadata: OneOffConfigurationsContext
     {
         // note: by default CorrelationId meta data is not enabled
         const string correlationId = "test-correlation-id";
-        theSession.CorrelationId = correlationId;
+        TheSession.CorrelationId = correlationId;
 
-        var streamId = theSession.Events
+        var streamId = TheSession.Events
             .StartStream<QuestParty>(started, joined, slayed).Id;
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var events = await theSession.Events.FetchStreamAsync(streamId);
+        var events = await TheSession.Events.FetchStreamAsync(streamId);
         foreach (var @event in events)
         {
             @event.CorrelationId.ShouldBeNullOrEmpty();
@@ -82,13 +82,13 @@ public class flexible_event_metadata: OneOffConfigurationsContext
     {
         StoreOptions(_ => _.Events.MetadataConfig.CausationIdEnabled = true);
         const string causationId = "test-causation-id";
-        theSession.CausationId = causationId;
+        TheSession.CausationId = causationId;
 
-        var streamId = theSession.Events
+        var streamId = TheSession.Events
             .StartStream<QuestParty>(started, joined, slayed).Id;
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var events = await theSession.Events.FetchStreamAsync(streamId);
+        var events = await TheSession.Events.FetchStreamAsync(streamId);
         foreach (var @event in events)
         {
             @event.CausationId.ShouldBe(causationId);
@@ -100,12 +100,12 @@ public class flexible_event_metadata: OneOffConfigurationsContext
     {
         StoreOptions(_ => _.Events.MetadataConfig.CausationIdEnabled = true);
         const string causationId = "test-causation-id";
-        theSession.CausationId = causationId;
+        TheSession.CausationId = causationId;
 
-        var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed).Id;
-        await theSession.SaveChangesAsync();
+        var streamId = TheSession.Events.StartStream<QuestParty>(started, joined, slayed).Id;
+        await TheSession.SaveChangesAsync();
 
-        var events = await theSession.Events.QueryAllRawEvents()
+        var events = await TheSession.Events.QueryAllRawEvents()
             .Where(x => x.CausationId == causationId)
             .ToListAsync();
 
@@ -120,13 +120,13 @@ public class flexible_event_metadata: OneOffConfigurationsContext
     {
         // note: by default CausationId meta data is not enabled
         const string causationId = "test-causation-id";
-        theSession.CausationId = causationId;
+        TheSession.CausationId = causationId;
 
-        var streamId = theSession.Events
+        var streamId = TheSession.Events
             .StartStream<QuestParty>(started, joined, slayed).Id;
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var events = await theSession.Events.FetchStreamAsync(streamId);
+        var events = await TheSession.Events.FetchStreamAsync(streamId);
         foreach (var @event in events)
         {
             @event.CausationId.ShouldBeNullOrEmpty();
@@ -139,13 +139,13 @@ public class flexible_event_metadata: OneOffConfigurationsContext
         StoreOptions(_ => _.Events.MetadataConfig.HeadersEnabled = true);
         const string userDefinedMetadataName = "my-custom-metadata";
         const string userDefinedMetadataValue = "my-custom-metadata-value";
-        theSession.SetHeader(userDefinedMetadataName, userDefinedMetadataValue);
+        TheSession.SetHeader(userDefinedMetadataName, userDefinedMetadataValue);
 
-        var streamId = theSession.Events
+        var streamId = TheSession.Events
             .StartStream<QuestParty>(started, joined, slayed).Id;
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var events = await theSession.Events.FetchStreamAsync(streamId);
+        var events = await TheSession.Events.FetchStreamAsync(streamId);
         foreach (var @event in events)
         {
             var retrievedVal = @event.GetHeader(userDefinedMetadataName).ToString();
@@ -159,13 +159,13 @@ public class flexible_event_metadata: OneOffConfigurationsContext
         // note: by default user defined meta data is not enabled
         const string userDefinedMetadataName = "my-custom-metadata";
         const string userDefinedMetadataValue = "my-custom-metadata-value";
-        theSession.SetHeader(userDefinedMetadataName, userDefinedMetadataValue);
+        TheSession.SetHeader(userDefinedMetadataName, userDefinedMetadataValue);
 
-        var streamId = theSession.Events
+        var streamId = TheSession.Events
             .StartStream<QuestParty>(started, joined, slayed).Id;
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var events = await theSession.Events.FetchStreamAsync(streamId);
+        var events = await TheSession.Events.FetchStreamAsync(streamId);
         foreach (var @event in events)
         {
             @event.GetHeader(userDefinedMetadataName).ShouldBeNull();
@@ -179,15 +179,15 @@ public class flexible_event_metadata: OneOffConfigurationsContext
         StoreOptions(_ => _.Events.MetadataConfig.HeadersEnabled = true);
         const string userDefinedMetadata1Name = "my-custom-metadata-1";
         const string userDefinedMetadata1Value = "my-custom-metadata-1-value";
-        theSession.SetHeader(userDefinedMetadata1Name, userDefinedMetadata1Value);
+        TheSession.SetHeader(userDefinedMetadata1Name, userDefinedMetadata1Value);
 
-        var streamId = theSession.Events
+        var streamId = TheSession.Events
             .StartStream<QuestParty>(started, joined, slayed).Id;
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
 
         const string userDefinedMetadata2Name = "my-custom-metadata-2";
-        var events = await theSession.Events.FetchStreamAsync(streamId);
+        var events = await TheSession.Events.FetchStreamAsync(streamId);
         foreach (var @event in events)
         {
             @event.GetHeader(userDefinedMetadata2Name).ShouldBeNull();
@@ -200,20 +200,20 @@ public class flexible_event_metadata: OneOffConfigurationsContext
         StoreOptions(_ => _.Events.MetadataConfig.EnableAll());
 
         const string correlationId = "test-correlation-id";
-        theSession.CorrelationId = correlationId;
+        TheSession.CorrelationId = correlationId;
 
         const string causationId = "test-causation-id";
-        theSession.CausationId = causationId;
+        TheSession.CausationId = causationId;
 
         const string userDefinedMetadataName = "my-custom-metadata";
         const string userDefinedMetadataValue = "my-custom-metadata-value";
-        theSession.SetHeader(userDefinedMetadataName, userDefinedMetadataValue);
+        TheSession.SetHeader(userDefinedMetadataName, userDefinedMetadataValue);
 
-        var streamId = theSession.Events
+        var streamId = TheSession.Events
             .StartStream<QuestParty>(started, joined, slayed).Id;
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var events = await theSession.Events.FetchStreamAsync(streamId);
+        var events = await TheSession.Events.FetchStreamAsync(streamId);
         foreach (var @event in events)
         {
             @event.CorrelationId.ShouldBe(correlationId);
@@ -233,9 +233,9 @@ public class flexible_event_metadata: OneOffConfigurationsContext
             _.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
         });
 
-        var streamId = theSession.Events
+        var streamId = TheSession.Events
             .StartStream<QuestParty>(started).Id;
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
         // Should not throw System.NullReferenceException here
     }
 
@@ -248,9 +248,9 @@ public class flexible_event_metadata: OneOffConfigurationsContext
             _.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
         });
 
-        var streamId = theSession.Events
+        var streamId = TheSession.Events
             .StartStream<QuestParty>(started).Id;
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
         // Should not throw System.NullReferenceException here
     }
 }

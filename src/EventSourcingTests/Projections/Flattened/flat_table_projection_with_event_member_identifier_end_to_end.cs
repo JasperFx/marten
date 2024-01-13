@@ -100,9 +100,9 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
             D = 6,
             Name = "red"
         };
-        theSession.Events.Append(streamId, valuesSet);
+        TheSession.Events.Append(streamId, valuesSet);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var data = await findData("red");
 
@@ -121,7 +121,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
         var streamId = Guid.NewGuid().ToString();
         var guid = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
-        theSession.Events.Append(streamId, new ValuesSet
+        TheSession.Events.Append(streamId, new ValuesSet
         {
             A = 1,
             B = 2,
@@ -132,7 +132,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
             Time = now
         });
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var valuesSet = new ValuesSet
         {
@@ -145,9 +145,9 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
             Time = now
         };
 
-        theSession.Events.Append(streamId, valuesSet);
+        TheSession.Events.Append(streamId, valuesSet);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var data = await findData("blue");
 
@@ -167,7 +167,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
     public async Task increment_values_on_existing_row()
     {
         var streamId = Guid.NewGuid().ToString();
-        theSession.Events.Append(streamId, new ValuesSet
+        TheSession.Events.Append(streamId, new ValuesSet
         {
             A = 1,
             B = 2,
@@ -176,7 +176,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
             Name = "green"
         });
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var valuesAdded = new ValuesAdded
         {
@@ -187,9 +187,9 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
             Name = "green"
         };
 
-        theSession.Events.Append(streamId, valuesAdded);
+        TheSession.Events.Append(streamId, valuesAdded);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var data = await findData("green");
 
@@ -206,7 +206,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
     public async Task decrement_values_on_existing_row()
     {
         var streamId = Guid.NewGuid().ToString();
-        theSession.Events.Append(streamId, new ValuesSet
+        TheSession.Events.Append(streamId, new ValuesSet
         {
             A = 10,
             B = 10,
@@ -215,7 +215,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
             Name = "orange"
         });
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var valuesAdded = new ValuesSubtracted
         {
@@ -226,9 +226,9 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
             Name = "orange"
         };
 
-        theSession.Events.Append("orange", valuesAdded);
+        TheSession.Events.Append("orange", valuesAdded);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var data = await findData("orange");
 
@@ -245,7 +245,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
         var time = DateTimeOffset.UtcNow;
 
         var streamId = Guid.NewGuid().ToString();
-        theSession.Events.Append(streamId, new ValuesSet
+        TheSession.Events.Append(streamId, new ValuesSet
         {
             A = 10,
             B = 10,
@@ -256,10 +256,10 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
             Time = time
         });
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        theSession.Events.Append(streamId, new ValuesDeleted { Name = "purple" });
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(streamId, new ValuesDeleted { Name = "purple" });
+        await TheSession.SaveChangesAsync();
 
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();

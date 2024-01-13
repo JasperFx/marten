@@ -32,11 +32,11 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
         }, true);
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
-        theSession.ForTenant("one").Events.StartStream("s1", new AEvent(), new BEvent());
-        theSession.ForTenant("two").Events.StartStream("s1", new CEvent(), new DEvent(), new QuestStarted());
+        TheSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.ForTenant("one").Events.StartStream("s1", new AEvent(), new BEvent());
+        TheSession.ForTenant("two").Events.StartStream("s1", new CEvent(), new DEvent(), new QuestStarted());
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         await using var queryOne = theStore.QuerySession("one");
         var eventsOne = await queryOne.Events.FetchStreamAsync("s1");
@@ -61,12 +61,12 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
         var streamId = Guid.NewGuid();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
-        theSession.ForTenant("one").Events.StartStream(streamId, new AEvent(), new BEvent());
-        theSession.ForTenant("two").Events.StartStream(streamId, new CEvent(), new DEvent(), new QuestStarted());
+        TheSession.ForTenant("one").Events.StartStream(streamId, new AEvent(), new BEvent());
+        TheSession.ForTenant("two").Events.StartStream(streamId, new CEvent(), new DEvent(), new QuestStarted());
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         await using var queryOne = theStore.QuerySession("one");
         var eventsOne = await queryOne.Events.FetchStreamAsync(streamId);

@@ -73,7 +73,7 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
         FailingEvent.SerializationFails = false;
         await CheckAllExpectedAggregatesAgainstActuals();
 
-        var deadLetters = await theSession.Query<DeadLetterEvent>()
+        var deadLetters = await TheSession.Query<DeadLetterEvent>()
             .Where(x => x.ShardName == "All" && x.ProjectionName == "Trip")
             .ToListAsync();
 
@@ -122,7 +122,7 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
         SometimesFailingTripProjection.FailingEventFails = false;
         await CheckAllExpectedAggregatesAgainstActuals();
 
-        var deadLetters = await theSession
+        var deadLetters = await TheSession
             .Query<DeadLetterEvent>()
             .Where(x => x.ProjectionName == "Trip")
             .ToListAsync();

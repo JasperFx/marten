@@ -23,11 +23,11 @@ public class Bug_2666_create_or_apply_but_not_both_should_apply : BugIntegration
         await theAsyncDaemon.StartAllShards();
 
         var streamId = Guid.NewGuid();
-        theSession.Events.Append(streamId, new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(streamId, new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
+        await TheSession.SaveChangesAsync();
         await theAsyncDaemon.WaitForNonStaleData(5.Seconds());
 
-        var aggregate = await theSession.Query<CounterWithCreate>().FirstOrDefaultAsync(x => x.Id == streamId).ConfigureAwait(false);
+        var aggregate = await TheSession.Query<CounterWithCreate>().FirstOrDefaultAsync(x => x.Id == streamId).ConfigureAwait(false);
 
         Assert.NotNull(aggregate);
         Assert.Equal(streamId, aggregate.Id);
@@ -46,11 +46,11 @@ public class Bug_2666_create_or_apply_but_not_both_should_apply : BugIntegration
         await theAsyncDaemon.StartAllShards();
 
         var streamId = Guid.NewGuid();
-        theSession.Events.Append(streamId, new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(streamId, new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
+        await TheSession.SaveChangesAsync();
         await theAsyncDaemon.WaitForNonStaleData(5.Seconds());
 
-        var aggregate = await theSession.Query<CounterWithDefaultCtor>().FirstOrDefaultAsync(x => x.Id == streamId);
+        var aggregate = await TheSession.Query<CounterWithDefaultCtor>().FirstOrDefaultAsync(x => x.Id == streamId);
 
         Assert.NotNull(aggregate);
         Assert.Equal(streamId, aggregate.Id);
@@ -69,11 +69,11 @@ public class Bug_2666_create_or_apply_but_not_both_should_apply : BugIntegration
         await theAsyncDaemon.StartAllShards();
 
         var streamId = Guid.NewGuid();
-        theSession.Events.Append(streamId, new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(streamId, new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
+        await TheSession.SaveChangesAsync();
         await theAsyncDaemon.WaitForNonStaleData(5.Seconds());
 
-        var aggregate = await theSession.Query<CounterWithCreateAndDefaultCtor>().Where(x => x.Id == streamId).FirstOrDefaultAsync();
+        var aggregate = await TheSession.Query<CounterWithCreateAndDefaultCtor>().Where(x => x.Id == streamId).FirstOrDefaultAsync();
 
         Assert.NotNull(aggregate);
         Assert.Equal(streamId, aggregate.Id);
@@ -95,11 +95,11 @@ public class Bug_2666_create_or_apply_but_not_both_should_apply : BugIntegration
 
         // The projection doesn't do anything unless impacted by an event it cares about,
         // so I added an empty handler for UnrelatedEvent
-        theSession.Events.Append(streamId, new UnrelatedEvent(), new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(streamId, new UnrelatedEvent(), new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
+        await TheSession.SaveChangesAsync();
         await theAsyncDaemon.WaitForNonStaleData(5.Seconds());
 
-        var aggregate = await theSession.Query<CounterWithCreateAndDefaultCtor>().FirstOrDefaultAsync(x => x.Id == streamId);
+        var aggregate = await TheSession.Query<CounterWithCreateAndDefaultCtor>().FirstOrDefaultAsync(x => x.Id == streamId);
 
         Assert.NotNull(aggregate);
         Assert.Equal(0, aggregate.CreateCounter);

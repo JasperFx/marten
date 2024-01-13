@@ -34,18 +34,18 @@ public class inline_aggregation_with_custom_projection_configuration : OneOffCon
         });
 
         var todoId = Guid.NewGuid();
-        theSession.Events.StartStream<TodoAggregate>(todoId, new TodoCreated(todoId, "Write code"));
-        theSession.SaveChanges();
+        TheSession.Events.StartStream<TodoAggregate>(todoId, new TodoCreated(todoId, "Write code"));
+        TheSession.SaveChanges();
 
         // Make sure the document has been created
-        theSession.Load<TodoAggregate>(todoId).ShouldNotBeNull();
+        TheSession.Load<TodoAggregate>(todoId).ShouldNotBeNull();
 
         // Append the delete
-        theSession.Events.Append(todoId, new TodoDeleted(todoId));
-        theSession.SaveChanges();
+        TheSession.Events.Append(todoId, new TodoDeleted(todoId));
+        TheSession.SaveChanges();
 
         // Make sure the document now has been deleted
-        theSession.Load<TodoAggregate>(todoId).ShouldBeNull();
+        TheSession.Load<TodoAggregate>(todoId).ShouldBeNull();
     }
 }
 

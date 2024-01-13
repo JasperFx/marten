@@ -34,9 +34,9 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
         await daemon.StartAllShards();
 
         // prove async daemon works on happy path
-        theSession.Events.StartStream(Guid.NewGuid().ToString(),
+        TheSession.Events.StartStream(Guid.NewGuid().ToString(),
             new CreatedEvent(Guid.NewGuid().ToString(), Guid.NewGuid().ToString()));
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         await daemon.WaitForNonStaleData(10.Seconds());
 
@@ -46,10 +46,10 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
         try
         {
 
-            theSession.Events.StartStream(Guid.NewGuid().ToString(),
+            TheSession.Events.StartStream(Guid.NewGuid().ToString(),
                 new UpdatedEvent(Guid.NewGuid().ToString(), Guid.NewGuid().ToString()));
 
-            await theSession.SaveChangesAsync();
+            await TheSession.SaveChangesAsync();
         }
         catch (ApplyEventException e)
         {
@@ -86,11 +86,11 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
         await daemon.StartAllShards();
 
         // prove async daemon works on happy path
-        theSession.Events.StartStream(Guid.NewGuid().ToString(),
+        TheSession.Events.StartStream(Guid.NewGuid().ToString(),
             new CreatedEvent(Guid.NewGuid().ToString(), Guid.NewGuid().ToString()));
 
         // ReSharper disable once MethodHasAsyncOverload
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
         await daemon.WaitForNonStaleData(10.Seconds());
 
@@ -100,11 +100,11 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
         try
         {
 
-            theSession.Events.StartStream(Guid.NewGuid().ToString(),
+            TheSession.Events.StartStream(Guid.NewGuid().ToString(),
                 new UpdatedEvent(Guid.NewGuid().ToString(), Guid.NewGuid().ToString()));
 
             // ReSharper disable once MethodHasAsyncOverload
-            theSession.SaveChanges();
+            TheSession.SaveChanges();
         }
         catch (ApplyEventException e)
         {

@@ -148,7 +148,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext
 
         foreach (var stream in _streams)
         {
-            var expected = await theSession.Events.AggregateStreamAsync<Trip>(stream.StreamId);
+            var expected = await TheSession.Events.AggregateStreamAsync<Trip>(stream.StreamId);
 
             if (expected == null)
             {
@@ -198,7 +198,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext
     {
         if (string.IsNullOrEmpty(tenantId))
         {
-            var data = await theSession.Query<Trip>().ToListAsync();
+            var data = await TheSession.Query<Trip>().ToListAsync();
             var dict = data.ToDictionary(x => x.Id);
             return dict;
         }

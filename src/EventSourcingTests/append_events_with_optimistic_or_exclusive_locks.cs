@@ -28,7 +28,7 @@ public class append_events_with_optimistic_or_exclusive_locks
             var streamId = Guid.NewGuid();
             var ex = await Should.ThrowAsync<NonExistentStreamException>(async () =>
             {
-                await theSession.Events.AppendOptimistic(streamId, new AEvent(), new BEvent());
+                await TheSession.Events.AppendOptimistic(streamId, new AEvent(), new BEvent());
             });
 
             ex.Id.ShouldBe(streamId);
@@ -38,13 +38,13 @@ public class append_events_with_optimistic_or_exclusive_locks
         public async Task append_optimistic_happy_path()
         {
             var streamId = Guid.NewGuid();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            TheSession.Events.StartStream(streamId, new AEvent(), new BEvent());
+            await TheSession.SaveChangesAsync();
 
-            await theSession.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            await TheSession.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
+            await TheSession.SaveChangesAsync();
 
-            var state = await theSession.Events.FetchStreamStateAsync(streamId);
+            var state = await TheSession.Events.FetchStreamStateAsync(streamId);
             state.Version.ShouldBe(4);
         }
 
@@ -52,11 +52,11 @@ public class append_events_with_optimistic_or_exclusive_locks
         public async Task append_optimistic_sad_path_with_concurrency_issue()
         {
             var streamId = Guid.NewGuid();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            TheSession.Events.StartStream(streamId, new AEvent(), new BEvent());
+            await TheSession.SaveChangesAsync();
 
             // Fetch the expected version
-            await theSession.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
+            await TheSession.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
 
             await using (var session = theStore.LightweightSession())
             {
@@ -67,7 +67,7 @@ public class append_events_with_optimistic_or_exclusive_locks
             // Should fail a concurrency check
             await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(async () =>
             {
-                await theSession.SaveChangesAsync();
+                await TheSession.SaveChangesAsync();
             });
         }
 
@@ -77,7 +77,7 @@ public class append_events_with_optimistic_or_exclusive_locks
             var streamId = Guid.NewGuid();
             var ex = await Should.ThrowAsync<NonExistentStreamException>(async () =>
             {
-                await theSession.Events.AppendExclusive(streamId, new AEvent(), new BEvent());
+                await TheSession.Events.AppendExclusive(streamId, new AEvent(), new BEvent());
             });
 
             ex.Id.ShouldBe(streamId);
@@ -86,16 +86,16 @@ public class append_events_with_optimistic_or_exclusive_locks
         [Fact]
         public async Task append_exclusive_happy_path()
         {
-            theSession.Logger = new TestOutputMartenLogger(_output);
+            TheSession.Logger = new TestOutputMartenLogger(_output);
 
             var streamId = Guid.NewGuid();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            TheSession.Events.StartStream(streamId, new AEvent(), new BEvent());
+            await TheSession.SaveChangesAsync();
 
-            await theSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            await TheSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
+            await TheSession.SaveChangesAsync();
 
-            var state = await theSession.Events.FetchStreamStateAsync(streamId);
+            var state = await TheSession.Events.FetchStreamStateAsync(streamId);
             state.Version.ShouldBe(4);
         }
 
@@ -103,11 +103,11 @@ public class append_events_with_optimistic_or_exclusive_locks
         public async Task append_exclusive_sad_path_with_concurrency_issue()
         {
             var streamId = Guid.NewGuid();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            TheSession.Events.StartStream(streamId, new AEvent(), new BEvent());
+            await TheSession.SaveChangesAsync();
 
             // Fetch the expected version
-            await theSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
+            await TheSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
 
             await using (var session = theStore.LightweightSession())
             {
@@ -126,11 +126,11 @@ public class append_events_with_optimistic_or_exclusive_locks
         public async Task append_exclusive_sad_path_with_concurrency_issue_2()
         {
             var streamId = Guid.NewGuid();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            TheSession.Events.StartStream(streamId, new AEvent(), new BEvent());
+            await TheSession.SaveChangesAsync();
 
             // Fetch the expected version
-            await theSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
+            await TheSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
 
             await using (var session = theStore.LightweightSession())
             {
@@ -157,7 +157,7 @@ public class append_events_with_optimistic_or_exclusive_locks
             var streamId = Guid.NewGuid().ToString();
             var ex = await Should.ThrowAsync<NonExistentStreamException>(async () =>
             {
-                await theSession.Events.AppendOptimistic(streamId, new AEvent(), new BEvent());
+                await TheSession.Events.AppendOptimistic(streamId, new AEvent(), new BEvent());
             });
 
             ex.Id.ShouldBe(streamId);
@@ -167,13 +167,13 @@ public class append_events_with_optimistic_or_exclusive_locks
         public async Task append_optimistic_happy_path()
         {
             var streamId = Guid.NewGuid().ToString();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            TheSession.Events.StartStream(streamId, new AEvent(), new BEvent());
+            await TheSession.SaveChangesAsync();
 
-            await theSession.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            await TheSession.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
+            await TheSession.SaveChangesAsync();
 
-            var state = await theSession.Events.FetchStreamStateAsync(streamId);
+            var state = await TheSession.Events.FetchStreamStateAsync(streamId);
             state.Version.ShouldBe(4);
         }
 
@@ -181,11 +181,11 @@ public class append_events_with_optimistic_or_exclusive_locks
         public async Task append_optimistic_sad_path_with_concurrency_issue()
         {
             var streamId = Guid.NewGuid().ToString();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            TheSession.Events.StartStream(streamId, new AEvent(), new BEvent());
+            await TheSession.SaveChangesAsync();
 
             // Fetch the expected version
-            await theSession.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
+            await TheSession.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
 
             await using (var session = theStore.LightweightSession())
             {
@@ -196,7 +196,7 @@ public class append_events_with_optimistic_or_exclusive_locks
             // Should fail a concurrency check
             await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(async () =>
             {
-                await theSession.SaveChangesAsync();
+                await TheSession.SaveChangesAsync();
             });
         }
 
@@ -206,7 +206,7 @@ public class append_events_with_optimistic_or_exclusive_locks
             var streamId = Guid.NewGuid().ToString();
             var ex = await Should.ThrowAsync<NonExistentStreamException>(async () =>
             {
-                await theSession.Events.AppendExclusive(streamId, new AEvent(), new BEvent());
+                await TheSession.Events.AppendExclusive(streamId, new AEvent(), new BEvent());
             });
 
             ex.Id.ShouldBe(streamId);
@@ -216,13 +216,13 @@ public class append_events_with_optimistic_or_exclusive_locks
         public async Task append_exclusive_happy_path()
         {
             var streamId = Guid.NewGuid().ToString();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            TheSession.Events.StartStream(streamId, new AEvent(), new BEvent());
+            await TheSession.SaveChangesAsync();
 
-            await theSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            await TheSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
+            await TheSession.SaveChangesAsync();
 
-            var state = await theSession.Events.FetchStreamStateAsync(streamId);
+            var state = await TheSession.Events.FetchStreamStateAsync(streamId);
             state.Version.ShouldBe(4);
         }
 
@@ -230,11 +230,11 @@ public class append_events_with_optimistic_or_exclusive_locks
         public async Task append_exclusive_sad_path_with_concurrency_issue()
         {
             var streamId = Guid.NewGuid().ToString();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            TheSession.Events.StartStream(streamId, new AEvent(), new BEvent());
+            await TheSession.SaveChangesAsync();
 
             // Fetch the expected version
-            await theSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
+            await TheSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
 
             await using (var session = theStore.LightweightSession())
             {
@@ -253,11 +253,11 @@ public class append_events_with_optimistic_or_exclusive_locks
         public async Task append_exclusive_sad_path_with_concurrency_issue_2()
         {
             var streamId = Guid.NewGuid().ToString();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            TheSession.Events.StartStream(streamId, new AEvent(), new BEvent());
+            await TheSession.SaveChangesAsync();
 
             // Fetch the expected version
-            await theSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
+            await TheSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
 
             await using (var session = theStore.LightweightSession())
             {

@@ -39,10 +39,10 @@ public class EventProjectionTests: OneOffConfigurationsContext
         UseProjection<SimpleProjection>();
 
         var stream = Guid.NewGuid();
-        theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
+        TheSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
             new UserCreated { UserName = "two" });
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
         using var query = theStore.QuerySession();
 
@@ -50,8 +50,8 @@ public class EventProjectionTests: OneOffConfigurationsContext
             .ToList()
             .ShouldHaveTheSameElementsAs("one", "two");
 
-        theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
-        theSession.SaveChanges();
+        TheSession.Events.Append(stream, new UserDeleted { UserName = "one" });
+        TheSession.SaveChanges();
 
         query.Query<User>()
             .OrderBy(x => x.UserName)
@@ -66,10 +66,10 @@ public class EventProjectionTests: OneOffConfigurationsContext
         UseProjection<LambdaProjection>();
 
         var stream = Guid.NewGuid();
-        theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
+        TheSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
             new UserCreated { UserName = "two" });
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
         using var query = theStore.QuerySession();
 
@@ -77,8 +77,8 @@ public class EventProjectionTests: OneOffConfigurationsContext
             .ToList()
             .ShouldHaveTheSameElementsAs("one", "two");
 
-        theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
-        theSession.SaveChanges();
+        TheSession.Events.Append(stream, new UserDeleted { UserName = "one" });
+        TheSession.SaveChanges();
 
         query.Query<User>()
             .OrderBy(x => x.UserName)
@@ -93,10 +93,10 @@ public class EventProjectionTests: OneOffConfigurationsContext
         UseProjection<SimpleCreatorProjection>();
 
         var stream = Guid.NewGuid();
-        theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
+        TheSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
             new UserCreated { UserName = "two" });
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
         using var query = theStore.QuerySession();
 
@@ -104,8 +104,8 @@ public class EventProjectionTests: OneOffConfigurationsContext
             .ToList()
             .ShouldHaveTheSameElementsAs("one", "two");
 
-        theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
-        theSession.SaveChanges();
+        TheSession.Events.Append(stream, new UserDeleted { UserName = "one" });
+        TheSession.SaveChanges();
 
         query.Query<User>()
             .OrderBy(x => x.UserName)
@@ -120,10 +120,10 @@ public class EventProjectionTests: OneOffConfigurationsContext
         UseProjection<SimpleTransformProjectionUsingMetadata>();
 
         var stream = Guid.NewGuid();
-        theSession.Events.Append(stream, new UserCreated { UserName = "one" },
+        TheSession.Events.Append(stream, new UserCreated { UserName = "one" },
             new UserCreated { UserName = "two" });
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
     }
 
     [Fact]
@@ -136,13 +136,13 @@ public class EventProjectionTests: OneOffConfigurationsContext
         });
 
         var stream = Guid.NewGuid().ToString();
-        theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
+        TheSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
             new UserCreated { UserName = "two" });
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Events.Append(stream, new UserCreated { UserName = "three" });
-        theSession.SaveChanges();
+        TheSession.Events.Append(stream, new UserCreated { UserName = "three" });
+        TheSession.SaveChanges();
     }
 
     [Fact]
@@ -151,10 +151,10 @@ public class EventProjectionTests: OneOffConfigurationsContext
         UseProjection<SimpleTransformProjection>();
 
         var stream = Guid.NewGuid();
-        theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
+        TheSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
             new UserCreated { UserName = "two" });
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
         using var query = theStore.QuerySession();
 
@@ -162,8 +162,8 @@ public class EventProjectionTests: OneOffConfigurationsContext
             .ToList()
             .ShouldHaveTheSameElementsAs("one", "two");
 
-        theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
-        theSession.SaveChanges();
+        TheSession.Events.Append(stream, new UserDeleted { UserName = "one" });
+        TheSession.SaveChanges();
 
         query.Query<User>()
             .OrderBy(x => x.UserName)

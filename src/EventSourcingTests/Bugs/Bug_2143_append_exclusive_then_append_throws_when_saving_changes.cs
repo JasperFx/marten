@@ -15,7 +15,7 @@ public class Bug_2143_append_exclusive_then_append_throws_when_saving_changes : 
     {
         _output = output;
 
-        theSession.Logger = new TestOutputMartenLogger(output);
+        TheSession.Logger = new TestOutputMartenLogger(output);
     }
 
     [Fact]
@@ -23,16 +23,16 @@ public class Bug_2143_append_exclusive_then_append_throws_when_saving_changes : 
     {
         var streamId = Guid.NewGuid();
 
-        theSession.Events.Append(streamId, new QuestStarted { Name = "One" });
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(streamId, new QuestStarted { Name = "One" });
+        await TheSession.SaveChangesAsync();
 
         await Task.Delay(25);
 
-        await theSession.Events.AppendExclusive(streamId);
-        theSession.Events.Append(streamId, new QuestStarted { Name = "Two" }, new QuestStarted { Name = "Three" });
-        await theSession.SaveChangesAsync();
+        await TheSession.Events.AppendExclusive(streamId);
+        TheSession.Events.Append(streamId, new QuestStarted { Name = "Two" }, new QuestStarted { Name = "Three" });
+        await TheSession.SaveChangesAsync();
 
-        var streamState = await theSession.Events.FetchStreamStateAsync(streamId);
+        var streamState = await TheSession.Events.FetchStreamStateAsync(streamId);
 
         streamState.Version.ShouldBe(3);
     }

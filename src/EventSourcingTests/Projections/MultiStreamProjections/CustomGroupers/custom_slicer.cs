@@ -71,12 +71,12 @@ public class custom_slicer: OneOffConfigurationsContext
         // --------------------------------
 
         var regularUsersGroupCreated = new UserGroupCreated(Guid.NewGuid(), "Regular Users");
-        theSession.Events.Append(regularUsersGroupCreated.GroupId, regularUsersGroupCreated);
+        TheSession.Events.Append(regularUsersGroupCreated.GroupId, regularUsersGroupCreated);
 
         var adminUsersGroupCreated = new UserGroupCreated(Guid.NewGuid(), "Admin Users");
-        theSession.Events.Append(adminUsersGroupCreated.GroupId, adminUsersGroupCreated);
+        TheSession.Events.Append(adminUsersGroupCreated.GroupId, adminUsersGroupCreated);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         // --------------------------------
         // Create Users
@@ -88,18 +88,18 @@ public class custom_slicer: OneOffConfigurationsContext
         // --------------------------------
 
         var annaRegistered = new UserRegistered(Guid.NewGuid(), "Anna");
-        theSession.Events.Append(annaRegistered.UserId, annaRegistered);
+        TheSession.Events.Append(annaRegistered.UserId, annaRegistered);
 
         var johnRegistered = new UserRegistered(Guid.NewGuid(), "John");
-        theSession.Events.Append(johnRegistered.UserId, johnRegistered);
+        TheSession.Events.Append(johnRegistered.UserId, johnRegistered);
 
         var maggieRegistered = new UserRegistered(Guid.NewGuid(), "Maggie");
-        theSession.Events.Append(maggieRegistered.UserId, maggieRegistered);
+        TheSession.Events.Append(maggieRegistered.UserId, maggieRegistered);
 
         var alanRegistered = new UserRegistered(Guid.NewGuid(), "Alan");
-        theSession.Events.Append(alanRegistered.UserId, alanRegistered);
+        TheSession.Events.Append(alanRegistered.UserId, alanRegistered);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         // --------------------------------
         // Assign users to Groups
@@ -110,15 +110,15 @@ public class custom_slicer: OneOffConfigurationsContext
 
         var annaAndMaggieAssignedToAdminUsersGroup = new MultipleUsersAssignedToGroup(adminUsersGroupCreated.GroupId,
             new List<Guid> {annaRegistered.UserId, maggieRegistered.UserId});
-        theSession.Events.Append(annaAndMaggieAssignedToAdminUsersGroup.GroupId,
+        TheSession.Events.Append(annaAndMaggieAssignedToAdminUsersGroup.GroupId,
             annaAndMaggieAssignedToAdminUsersGroup);
 
         var johnAndAlanAssignedToRegularUsersGroup = new MultipleUsersAssignedToGroup(regularUsersGroupCreated.GroupId,
             new List<Guid> {johnRegistered.UserId, alanRegistered.UserId});
-        theSession.Events.Append(johnAndAlanAssignedToRegularUsersGroup.GroupId,
+        TheSession.Events.Append(johnAndAlanAssignedToRegularUsersGroup.GroupId,
             johnAndAlanAssignedToRegularUsersGroup);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         // --------------------------------
         // Check users' groups assignment
@@ -127,22 +127,22 @@ public class custom_slicer: OneOffConfigurationsContext
         // John, Alan   => Regular
         // --------------------------------
 
-        var annaGroupAssignment = await theSession.LoadAsync<UserGroupsAssignment>(annaRegistered.UserId);
+        var annaGroupAssignment = await TheSession.LoadAsync<UserGroupsAssignment>(annaRegistered.UserId);
         annaGroupAssignment.ShouldNotBeNull();
         annaGroupAssignment.Id.ShouldBe(annaRegistered.UserId);
         annaGroupAssignment.Groups.ShouldHaveTheSameElementsAs(adminUsersGroupCreated.GroupId);
 
-        var maggieGroupAssignment = await theSession.LoadAsync<UserGroupsAssignment>(maggieRegistered.UserId);
+        var maggieGroupAssignment = await TheSession.LoadAsync<UserGroupsAssignment>(maggieRegistered.UserId);
         maggieGroupAssignment.ShouldNotBeNull();
         maggieGroupAssignment.Id.ShouldBe(maggieRegistered.UserId);
         maggieGroupAssignment.Groups.ShouldHaveTheSameElementsAs(adminUsersGroupCreated.GroupId);
 
-        var johnGroupAssignment = await theSession.LoadAsync<UserGroupsAssignment>(johnRegistered.UserId);
+        var johnGroupAssignment = await TheSession.LoadAsync<UserGroupsAssignment>(johnRegistered.UserId);
         johnGroupAssignment.ShouldNotBeNull();
         johnGroupAssignment.Id.ShouldBe(johnRegistered.UserId);
         johnGroupAssignment.Groups.ShouldHaveTheSameElementsAs(regularUsersGroupCreated.GroupId);
 
-        var alanGroupAssignment = await theSession.LoadAsync<UserGroupsAssignment>(alanRegistered.UserId);
+        var alanGroupAssignment = await TheSession.LoadAsync<UserGroupsAssignment>(alanRegistered.UserId);
         alanGroupAssignment.ShouldNotBeNull();
         alanGroupAssignment.Id.ShouldBe(alanRegistered.UserId);
         alanGroupAssignment.Groups.ShouldHaveTheSameElementsAs(regularUsersGroupCreated.GroupId);

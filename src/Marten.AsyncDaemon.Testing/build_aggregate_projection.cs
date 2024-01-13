@@ -137,8 +137,8 @@ public class build_aggregate_projection: DaemonContext
 
         // This should be gone after a rebuild
         var trip = new Trip();
-        theSession.Store(trip);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(trip);
+        await TheSession.SaveChangesAsync();
 
         await agent.RebuildProjection("TripCustomName", CancellationToken.None);
 
@@ -230,11 +230,11 @@ public class build_aggregate_projection: DaemonContext
         {
             if (stream.Events.OfType<TripAborted>().Any())
             {
-                (await theSession.LoadAsync<Trip>(stream.StreamId)).ShouldBeNull();
+                (await TheSession.LoadAsync<Trip>(stream.StreamId)).ShouldBeNull();
             }
             else
             {
-                (await theSession.LoadAsync<Trip>(stream.StreamId)).ShouldNotBeNull();
+                (await TheSession.LoadAsync<Trip>(stream.StreamId)).ShouldNotBeNull();
             }
         }
     }
@@ -259,15 +259,15 @@ public class build_aggregate_projection: DaemonContext
 
         await waiter;
 
-        var days = await theSession.Query<Trip>().ToListAsync();
+        var days = await TheSession.Query<Trip>().ToListAsync();
 
         var notCriticalBreakdownStream = days[0].Id;
         var criticalBreakdownStream = days[1].Id;
 
-        theSession.Events.Append(notCriticalBreakdownStream, new Breakdown { IsCritical = false });
-        theSession.Events.Append(criticalBreakdownStream, new Breakdown { IsCritical = true });
+        TheSession.Events.Append(notCriticalBreakdownStream, new Breakdown { IsCritical = false });
+        TheSession.Events.Append(criticalBreakdownStream, new Breakdown { IsCritical = true });
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var waiter2 = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents + 2), 300.Seconds());
 
@@ -310,12 +310,12 @@ public class build_aggregate_projection: DaemonContext
         await waiter1;
 
         // This should not trigger a delete
-        theSession.Events.Append(shortTrip.StreamId, new VacationOver());
+        TheSession.Events.Append(shortTrip.StreamId, new VacationOver());
 
         // This should trigger a delete
-        theSession.Events.Append(longTrip.StreamId, new VacationOver());
+        TheSession.Events.Append(longTrip.StreamId, new VacationOver());
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var totalNumberOfEvents = initialCount + 2;
         var waiter2 = agent.Tracker.WaitForShardState(new ShardState("Trip:All", totalNumberOfEvents), 30.Seconds());
