@@ -22,7 +22,7 @@ public class Bug_550_schema_diff_with_precision: BugIntegrationContext
             _.Schema.For<DocWithPrecision>().Duplicate(x => x.Name, "character varying (100)");
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         var store = SeparateStore(_ =>
         {

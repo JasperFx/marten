@@ -17,7 +17,7 @@ public class updating_by_batch : OneOffConfigurationsContext
         var targets = Target.GenerateRandomData(100).ToArray();
         StoreOptions(_ => _.UpdateBatchSize = 10);
 
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         session.Store(targets);
         session.SaveChanges();
 
@@ -32,7 +32,7 @@ public class updating_by_batch : OneOffConfigurationsContext
 
         var targets = Target.GenerateRandomData(100).ToArray();
 
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
         session.Store(targets);
         await session.SaveChangesAsync();
 
@@ -48,7 +48,7 @@ public class updating_by_batch : OneOffConfigurationsContext
             _.UpdateBatchSize = 10;
         });
 
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         session.DeleteWhere<Target>(t => t.Id != Guid.Empty);
         session.Store(targets);
 
@@ -63,7 +63,7 @@ public class updating_by_batch : OneOffConfigurationsContext
         var targets = Target.GenerateRandomData(100).ToArray();
         StoreOptions(_ => _.UpdateBatchSize = 10);
 
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
         session.DeleteWhere<Target>(x => x.Id != Guid.Empty);
         session.Store(targets);
 

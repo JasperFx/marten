@@ -50,7 +50,7 @@ public class end_to_end_document_hierarchy_usage_Tests: OneOffConfigurationsCont
 
     protected IDocumentSession identitySessionWithData()
     {
-        var session = theStore.IdentitySession();
+        var session = TheStore.IdentitySession();
         session.Store(user1, user2, admin1, admin2, super1, super2);
 
         session.SaveChanges();

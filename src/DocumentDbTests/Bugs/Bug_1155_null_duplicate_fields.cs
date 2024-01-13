@@ -19,7 +19,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
             _.Schema.For<Target>().Duplicate(t => t.NullableColor);
         });
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(new Target
             {
@@ -30,7 +30,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
             session.SaveChanges();
         }
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             session.Query<Target>().Where(x => x.Number == 1)
                 .ToArray()
@@ -48,7 +48,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
             _.Schema.For<Target>().Duplicate(t => t.Inner.Color);
         });
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(new Target
             {
@@ -59,7 +59,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
             session.SaveChanges();
         }
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             session.Query<Target>().Where(x => x.Number == 1)
                 .ToArray()
@@ -77,7 +77,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
             _.Schema.For<Target>().Duplicate(t => t.NullableColor);
         });
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(new Target
             {
@@ -88,7 +88,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
             session.SaveChanges();
         }
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             session.Query<Target>().Where(x => x.Number == 1)
                 .ToArray()
@@ -106,7 +106,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
             _.Schema.For<Target>().Duplicate(t => t.Inner.Color);
         });
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(new Target
             {
@@ -117,7 +117,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
             session.SaveChanges();
         }
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             session.Query<Target>().Where(x => x.Number == 1)
                 .ToArray()
@@ -131,7 +131,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
     {
         StoreOptions(_ => _.Schema.For<Target>().Duplicate(t => t.Inner.Number));
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(new Target
             {
@@ -142,7 +142,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
             session.SaveChanges();
         }
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             session.Query<Target>().Where(x => x.Number == 1)
                 .ToArray()
@@ -156,7 +156,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
     {
         StoreOptions(_ => _.Schema.For<Target>().Duplicate(t => t.Inner.Number));
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(new Target
             {
@@ -167,7 +167,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
             session.SaveChanges();
         }
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             session.Query<Target>().Where(x => x.Number == 1)
                 .ToArray()
@@ -181,7 +181,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
     {
         StoreOptions(_ => _.Schema.For<Target>().Duplicate(t => t.Inner.Number));
 
-        theStore.BulkInsertDocuments(new[]
+        TheStore.BulkInsertDocuments(new[]
         {
             new Target
             {
@@ -190,7 +190,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
             }
         });
 
-        using var session = theStore.QuerySession();
+        using var session = TheStore.QuerySession();
         session.Query<Target>().Where(x => x.Number == 1)
             .ToArray()
             .Select(x => x.Number)

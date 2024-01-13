@@ -15,7 +15,7 @@ public class DocumentIdStrategyTests: OneOffConfigurationsContext
     [Fact]
     public void uses_no_id_generation_for_non_public_id()
     {
-        theStore.StorageFeatures.MappingFor(typeof(DocumentWithNonPublicId)).As<DocumentMapping>().IdStrategy
+        TheStore.StorageFeatures.MappingFor(typeof(DocumentWithNonPublicId)).As<DocumentMapping>().IdStrategy
             .ShouldBeOfType<CombGuidIdGeneration>();
     }
 
@@ -29,7 +29,7 @@ public class DocumentIdStrategyTests: OneOffConfigurationsContext
     [Fact]
     public void uses_no_id_generation_without_id_setter()
     {
-        theStore.StorageFeatures.MappingFor(typeof(DocumentWithoutIdSetter)).As<DocumentMapping>().IdStrategy
+        TheStore.StorageFeatures.MappingFor(typeof(DocumentWithoutIdSetter)).As<DocumentMapping>().IdStrategy
             .ShouldBeOfType<NoOpIdGeneration>();
     }
 

@@ -22,7 +22,7 @@ public class Bug_2523_using_query_on_custom_storage_table: BugIntegrationContext
             opts.Storage.Add<CustomTableStorage>();
         });
 
-        var store = theStore;
+        var store = TheStore;
 
         await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 

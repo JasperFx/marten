@@ -24,19 +24,19 @@ public class Bug_2169_concurrency_error : BugIntegrationContext
             SomeIntData = 0,
         };
 
-        await using( var session = theStore.LightweightSession())
+        await using( var session = TheStore.LightweightSession())
         {
             session.Store(newObject);
             await session.SaveChangesAsync();
         }
 
         var rehydratedObject = new TestObject();
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             rehydratedObject = await session.LoadAsync<TestObject>(newObject.Id);
         }
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Store(rehydratedObject);
             //throws ConcurrencyException

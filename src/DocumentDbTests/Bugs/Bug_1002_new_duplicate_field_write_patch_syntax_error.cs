@@ -19,7 +19,7 @@ public class Bug_1002_new_duplicate_field_write_patch_syntax_error: BugIntegrati
             _.Schema.For<Bug_1002>();
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         var store = SeparateStore(_ =>
         {

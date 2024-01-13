@@ -25,7 +25,7 @@ public class Bug_1060_invalid_cast_exception_on_doc_with_subclass: BugIntegratio
         var issue = new Issue { Id = System.Guid.NewGuid(), ReporterId = user.Id };
         var issue2 = new Issue { Id = System.Guid.NewGuid(), ReporterId = admin.Id };
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(user);
             session.Store(admin);

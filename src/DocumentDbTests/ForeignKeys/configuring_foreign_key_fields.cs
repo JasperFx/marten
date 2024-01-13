@@ -14,7 +14,7 @@ public class configuring_foreign_key_fields : OneOffConfigurationsContext
     [Fact]
     public void should_get_foreign_key_from_attribute()
     {
-        theStore.StorageFeatures.MappingFor(typeof(Issue))
+        TheStore.StorageFeatures.MappingFor(typeof(Issue))
             .As<DocumentMapping>()
             .ForeignKeys
             .ShouldContain(x => x.ColumnNames[0] == "user_id");
@@ -40,7 +40,7 @@ public class configuring_foreign_key_fields : OneOffConfigurationsContext
     [Fact]
     public void should_allow_self_reference()
     {
-        theStore.StorageFeatures.MappingFor(typeof(Employee))
+        TheStore.StorageFeatures.MappingFor(typeof(Employee))
             .As<DocumentMapping>()
             .ForeignKeys
             .ShouldContain(x => x.ColumnNames[0] == "manager_id");

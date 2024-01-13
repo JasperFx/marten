@@ -273,17 +273,17 @@ We urge caution about this functionality because it requires a search against th
 [Fact]
 public void can_query_against_event_type()
 {
-    theSession.Events.StartStream<Quest>(joined1, departed1);
-    theSession.Events.StartStream<Quest>(joined2, departed2);
+    TheSession.Events.StartStream<Quest>(joined1, departed1);
+    TheSession.Events.StartStream<Quest>(joined2, departed2);
 
-    theSession.SaveChanges();
+    TheSession.SaveChanges();
 
-    theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
-    theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
+    TheSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
+    TheSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
         .OrderBy(x => x)
         .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
-    theSession.Events.QueryRawEventDataOnly<MembersDeparted>()
+    TheSession.Events.QueryRawEventDataOnly<MembersDeparted>()
         .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
 }
 ```

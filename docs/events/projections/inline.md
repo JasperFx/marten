@@ -45,7 +45,7 @@ var streamId = session.Events
 // the call to SaveChangesAsync() and the resulting document update
 // of the new MonsterDefeated document will happen in the same database
 // transaction
-await theSession.SaveChangesAsync();
+await TheSession.SaveChangesAsync();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/inline_transformation_of_events.cs#L33-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usage_of_inline_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

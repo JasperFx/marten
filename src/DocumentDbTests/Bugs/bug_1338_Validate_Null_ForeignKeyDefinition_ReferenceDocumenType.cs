@@ -17,7 +17,7 @@ public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType: B
     [Fact]
     public void StorageFeatures_AllActiveFeatures_Should_Not_Throw_With_ExternalForeignKeyDefinitions()
     {
-        theStore.StorageFeatures.AllActiveFeatures(theStore.Tenancy.Default.Database).All(x => x != null)
+        TheStore.StorageFeatures.AllActiveFeatures(TheStore.Tenancy.Default.Database).All(x => x != null)
             .ShouldBeTrue();
     }
 
@@ -40,7 +40,7 @@ public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType: B
                 .ForeignKey(x => x.ForeignId, _.DatabaseSchemaName, "external_table", "id");
         }, false);
 
-        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(ClassWithExternalForeignKey));
+        await TheStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(ClassWithExternalForeignKey));
     }
 
     public Task DisposeAsync()
@@ -59,7 +59,7 @@ public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType: B
         //  UnitOfWork.shouldSort()
         //  and finally, the function that we want to regression test"
         //  UnitOfWork.GetTypeDependencies(ClassWithExternalForeignKey)
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
         session.Insert(new ClassWithExternalForeignKey { Id = 1, ForeignId = 1 });
         await session.SaveChangesAsync();
     }

@@ -58,13 +58,13 @@ public class CombGuidIdGenerationTests: OneOffConfigurationsContext
         });
 
 
-        StoreUser(theStore, "User1");
+        StoreUser(TheStore, "User1");
         Thread.Sleep(4); //we need some time inbetween to ensure the timepart of the CombGuid is different
-        StoreUser(theStore, "User2");
+        StoreUser(TheStore, "User2");
         Thread.Sleep(4);
-        StoreUser(theStore, "User3");
+        StoreUser(TheStore, "User3");
 
-        var users = GetUsers(theStore);
+        var users = GetUsers(TheStore);
 
         var id1 = FormatIdAsByteArrayString(users, "User1");
         var id2 = FormatIdAsByteArrayString(users, "User2");
@@ -86,9 +86,9 @@ public class CombGuidIdGenerationTests: OneOffConfigurationsContext
             #endregion
         });
 
-        theStore.StorageFeatures.MappingFor(typeof(UserWithGuid)).As<DocumentMapping>().IdStrategy
+        TheStore.StorageFeatures.MappingFor(typeof(UserWithGuid)).As<DocumentMapping>().IdStrategy
             .ShouldBeOfType<CombGuidIdGeneration>();
-        theStore.StorageFeatures.MappingFor(typeof(UserWithGuid2)).As<DocumentMapping>().IdStrategy
+        TheStore.StorageFeatures.MappingFor(typeof(UserWithGuid2)).As<DocumentMapping>().IdStrategy
             .ShouldBeOfType<CombGuidIdGeneration>();
     }
 

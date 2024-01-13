@@ -21,7 +21,7 @@ namespace DocumentDbTests.Bugs
                     .Duplicate(x => x.SecondColumn);
             });
 
-            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.CreateOrUpdate);
+            await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.CreateOrUpdate);
 
             var theMapping = DocumentMapping.For<Bug1982.TestDoc>(SchemaName);
 
@@ -34,7 +34,7 @@ namespace DocumentDbTests.Bugs
                     .ExecuteNonQueryAsync();
             }
 
-            await Should.NotThrowAsync(async () => await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.CreateOrUpdate));
+            await Should.NotThrowAsync(async () => await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.CreateOrUpdate));
         }
     }
 }

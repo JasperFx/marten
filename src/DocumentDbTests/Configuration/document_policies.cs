@@ -29,14 +29,14 @@ public class document_policies: OneOffConfigurationsContext
     [Fact]
     public void applies_to_all_document_types_that_are_not_otherwise_configured()
     {
-        theStore.StorageFeatures.MappingFor(typeof(Target)).UseOptimisticConcurrency.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(Issue)).UseOptimisticConcurrency.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(Target)).UseOptimisticConcurrency.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(Issue)).UseOptimisticConcurrency.ShouldBeTrue();
     }
 
     [Fact]
     public void can_be_overridden_by_explicits()
     {
-        theStore.StorageFeatures.MappingFor(typeof(User)).UseOptimisticConcurrency.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(User)).UseOptimisticConcurrency.ShouldBeFalse();
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class document_policies: OneOffConfigurationsContext
             _.Policies.ForAllDocuments(x => x.TenancyStyle = TenancyStyle.Single);
         });
 
-        theStore.StorageFeatures.MappingFor(typeof(TenantedDoc))
+        TheStore.StorageFeatures.MappingFor(typeof(TenantedDoc))
             .TenancyStyle.ShouldBe(TenancyStyle.Conjoined);
     }
 
@@ -64,7 +64,7 @@ public class document_policies: OneOffConfigurationsContext
             #endregion
         });
 
-        theStore.StorageFeatures.MappingFor(typeof(Target))
+        TheStore.StorageFeatures.MappingFor(typeof(Target))
             .TenancyStyle.ShouldBe(TenancyStyle.Conjoined);
     }
 
@@ -81,7 +81,7 @@ public class document_policies: OneOffConfigurationsContext
             #endregion
         });
 
-        theStore.StorageFeatures.MappingFor(typeof(Target))
+        TheStore.StorageFeatures.MappingFor(typeof(Target))
             .TenancyStyle.ShouldBe(TenancyStyle.Single);
     }
 

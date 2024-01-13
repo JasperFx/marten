@@ -21,7 +21,7 @@ public class Bug_495_concurrent_check_by_not_first_loading_from_the_session: Bug
     {
         var id = "foo/" + Guid.NewGuid().ToString("n");
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(new Foo { Id = id });
 
@@ -30,7 +30,7 @@ public class Bug_495_concurrent_check_by_not_first_loading_from_the_session: Bug
 
         Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
         {
-            using (var session = theStore.LightweightSession())
+            using (var session = TheStore.LightweightSession())
             {
                 session.Store(new Foo { Id = id });
 

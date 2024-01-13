@@ -38,7 +38,7 @@ public class created_timestamp_queries: OneOffConfigurationsContext
         var user3 = new User { UserName = "baz" };
         var user4 = new User { UserName = "jack" };
 
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         session.Store(user1, user2);
         session.SaveChanges();
 
@@ -74,7 +74,7 @@ public class created_timestamp_queries: OneOffConfigurationsContext
         var user3 = new User { UserName = "baz" };
         var user4 = new User { UserName = "jack" };
 
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         session.Store(user1, user2);
         session.SaveChanges();
 

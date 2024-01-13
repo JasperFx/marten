@@ -22,7 +22,7 @@ public class Bug_628_fk_from_doc_to_itself: BugIntegrationContext
             _.Schema.For<Category>().ForeignKey<Category>(x => x.ParentId);
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
     }
 
 }

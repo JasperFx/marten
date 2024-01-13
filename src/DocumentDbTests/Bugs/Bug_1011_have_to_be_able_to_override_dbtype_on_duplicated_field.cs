@@ -19,7 +19,7 @@ public class Bug_1011_have_to_be_able_to_override_dbtype_on_duplicated_field: Bu
                 dbType: NpgsqlDbType.Timestamp);
         });
 
-        var field = theStore.StorageFeatures.MappingFor(typeof(DocWithDateTimeField))
+        var field = TheStore.StorageFeatures.MappingFor(typeof(DocWithDateTimeField))
             .DuplicatedFields.Single();
 
         field.DbType.ShouldBe(NpgsqlDbType.Timestamp);
@@ -35,7 +35,7 @@ public class Bug_1011_have_to_be_able_to_override_dbtype_on_duplicated_field: Bu
                 dbType: NpgsqlDbType.Timestamp);
         });
 
-        var field = theStore.StorageFeatures.MappingFor(typeof(DocWithDateTimeField))
+        var field = TheStore.StorageFeatures.MappingFor(typeof(DocWithDateTimeField))
             .DuplicatedFields.Single();
 
         field.DbType.ShouldBe(NpgsqlDbType.Timestamp);

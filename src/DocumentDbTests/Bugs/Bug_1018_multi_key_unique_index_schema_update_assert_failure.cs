@@ -29,8 +29,8 @@ public class Bug_1018_multi_key_unique_index_schema_update_assert_failure: BugIn
                 .UniqueIndex(UniqueIndexType.DuplicatedField, x => x.Field1, x => x.Field2);
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
     }
 
 }

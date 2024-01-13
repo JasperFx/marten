@@ -28,8 +28,8 @@ public class Bug_PR_1412_spaces_in_table_name_cause_schema_patch_to_fail: BugInt
         });
         await Should.NotThrowAsync(async () =>
         {
-            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-            await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+            await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+            await TheStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         });
     }
 
@@ -43,8 +43,8 @@ public class Bug_PR_1412_spaces_in_table_name_cause_schema_patch_to_fail: BugInt
         });
         await Should.NotThrowAsync(async () =>
         {
-            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-            await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+            await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+            await TheStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         });
     }
 
@@ -58,8 +58,8 @@ public class Bug_PR_1412_spaces_in_table_name_cause_schema_patch_to_fail: BugInt
         });
         await Should.NotThrowAsync(async () =>
         {
-            await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-            await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+            await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+            await TheStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         });
     }
 

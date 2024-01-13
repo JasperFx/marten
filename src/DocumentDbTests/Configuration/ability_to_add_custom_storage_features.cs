@@ -22,8 +22,8 @@ public class ability_to_add_custom_storage_features: OneOffConfigurationsContext
             _.Storage.Add<FakeStorage>();
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-        (await theStore.Tenancy.Default.Database.SchemaTables()).Any(x => x.Name == "mt_fake_table")
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        (await TheStore.Tenancy.Default.Database.SchemaTables()).Any(x => x.Name == "mt_fake_table")
             .ShouldBeTrue();
     }
 

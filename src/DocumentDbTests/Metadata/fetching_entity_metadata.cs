@@ -25,13 +25,13 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
     {
         var shop = new CoffeeShop();
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(shop);
             session.SaveChanges();
         }
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             var metadata = session.MetadataFor(shop);
 
@@ -58,7 +58,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
 
         var shop = new CoffeeShop();
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Store(shop);
             await session.SaveChangesAsync();
@@ -67,7 +67,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
             await session.SaveChangesAsync();
         }
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
         var metadata = await query.MetadataForAsync(shop);
 
         metadata.ShouldNotBeNull();
@@ -85,13 +85,13 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
     {
         var shop = new CoffeeShop();
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(shop);
             session.SaveChanges();
         }
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             var metadata = session.MetadataFor(shop);
             metadata.ShouldNotBeNull();
@@ -105,13 +105,13 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
     {
         var shop = new CoffeeShop();
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Store(shop);
             await session.SaveChangesAsync();
         }
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
         var metadata = await query.MetadataForAsync(shop);
 
         metadata.CreatedAt.ShouldBe(default);
@@ -127,13 +127,13 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
 
         var shop = new CoffeeShop();
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(shop);
             session.SaveChanges();
         }
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             var metadata = session.MetadataFor(shop);
             metadata.ShouldNotBeNull();
@@ -152,13 +152,13 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
 
         var shop = new CoffeeShop();
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Store(shop);
             await session.SaveChangesAsync();
         }
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
         var metadata = await query.MetadataForAsync(shop);
 
         metadata.CreatedAt.ShouldNotBeNull();

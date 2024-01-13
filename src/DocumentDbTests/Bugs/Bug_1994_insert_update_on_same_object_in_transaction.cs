@@ -25,7 +25,7 @@ public class Bug_1994_insert_update_on_same_object_in_transaction: BugIntegratio
 
         var user1 = new User();
 
-        await using var session1 = theStore.LightweightSession();
+        await using var session1 = TheStore.LightweightSession();
         session1.Logger = new TestOutputMartenLogger(_output);
 
         session1.Insert(user1);

@@ -27,10 +27,10 @@ public class Bug_1416_foreign_key_with_document_alias : BugIntegrationContext
                 .DocumentAlias("alias_name");
         });
 
-        var sql = theStore.Storage.Database.ToDatabaseScript();
+        var sql = TheStore.Storage.Database.ToDatabaseScript();
         sql.ShouldContain("ADD CONSTRAINT mt_doc_alias_name_related_id_fkey");
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
     }
 }

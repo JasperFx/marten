@@ -11,7 +11,7 @@ namespace DocumentDbTests.Bugs
         [Fact]
         public void can_select_from_the_same_table()
         {
-            using var session = theStore.LightweightSession();
+            using var session = TheStore.LightweightSession();
             var product1 = new Area1.Product { Name = "Paper", Price = 10 };
             session.Store(product1);
             session.SaveChanges();

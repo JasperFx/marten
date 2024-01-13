@@ -28,7 +28,7 @@ public class Bug_961_custom_identity_field_with_fk: BugIntegrationContext
             _.Schema.For<Document>().ForeignKey<FkTarget>(a => a.TargetId);
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
     }
 
 }

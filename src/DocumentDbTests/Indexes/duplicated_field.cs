@@ -41,13 +41,13 @@ public class duplicated_field: OneOffConfigurationsContext
         var document = Target.Random();
         document.Color = Colors.Red;
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Insert(document);
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var documentFromDb = query.Load<Target>(document.Id);
 
@@ -74,13 +74,13 @@ public class duplicated_field: OneOffConfigurationsContext
             NonNullableDuplicateFieldViaAttribute = DateTime.Now
         };
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Insert(document);
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var documentFromDb = query.Load<NonNullableDuplicateFieldTestDoc>(document.Id);
 
@@ -107,13 +107,13 @@ public class duplicated_field: OneOffConfigurationsContext
             Id = Guid.NewGuid()
         };
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Insert(document);
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var documentFromDb = query.Load<NullableDuplicateFieldTestDoc>(document.Id);
 
@@ -145,7 +145,7 @@ public class duplicated_field: OneOffConfigurationsContext
             })
             .ToArray();
 
-        var success = () => theStore.BulkInsert(successModels, BulkInsertMode.OverwriteExisting);
+        var success = () => TheStore.BulkInsert(successModels, BulkInsertMode.OverwriteExisting);
         success.ShouldNotThrow();
     }
 
@@ -202,7 +202,7 @@ public class duplicated_field: OneOffConfigurationsContext
             _.Schema.For<Organization>().Duplicate(x => x.Time2, pgType: "timestamp");
         });
 
-        var documentMapping = theStore.StorageFeatures.MappingFor(typeof(Organization)).As<DocumentMapping>();
+        var documentMapping = TheStore.StorageFeatures.MappingFor(typeof(Organization)).As<DocumentMapping>();
         documentMapping.DuplicatedFields.Single(x => x.MemberName == "Time2")
             .PgType.ShouldBe("timestamp");
     }
@@ -292,9 +292,9 @@ public class duplicated_field: OneOffConfigurationsContext
             config.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime = false;
         });
 
-        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+        await TheStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
-        await theStore.BulkInsertDocumentsAsync(new Application[]
+        await TheStore.BulkInsertDocumentsAsync(new Application[]
         {
             new Application
             {
@@ -304,7 +304,7 @@ public class duplicated_field: OneOffConfigurationsContext
             new Application()
         });
 
-        await theStore.BulkInsertDocumentsAsync(new Application[]
+        await TheStore.BulkInsertDocumentsAsync(new Application[]
         {
             new Application {Status = new Status {StatusType = StatusType.Unknown}},
             new Application()
@@ -338,16 +338,16 @@ public class duplicated_field: OneOffConfigurationsContext
             opts.AutoCreateSchemaObjects = AutoCreate.All;
         });
 
-        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+        await TheStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
         var app = await theSession.Query<Application>().FirstOrDefaultAsync();
 
-        await theStore.BulkInsertDocumentsAsync(new Application[]
+        await TheStore.BulkInsertDocumentsAsync(new Application[]
         {
             new Application {Status = new Status {StatusType = StatusType.Unknown}},
             new Application()
         });
-        await theStore.BulkInsertDocumentsAsync(new Application[]
+        await TheStore.BulkInsertDocumentsAsync(new Application[]
         {
             new Application {Status = new Status {StatusType = StatusType.Unknown}},
             new Application()

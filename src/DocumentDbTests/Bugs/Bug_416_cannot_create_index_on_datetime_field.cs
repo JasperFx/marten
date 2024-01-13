@@ -11,7 +11,7 @@ public class Bug_416_cannot_create_index_on_datetime_field: BugIntegrationContex
     {
         StoreOptions(_ => _.Schema.For<Target>().Index(x => x.Date));
 
-        theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(Target));
+        TheStore.Tenancy.Default.Database.EnsureStorageExists(typeof(Target));
     }
 
 }

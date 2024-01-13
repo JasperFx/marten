@@ -49,12 +49,12 @@ public class computed_indexes: OneOffConfigurationsContext
         StoreOptions(_ => _.Schema.For<Target>().Index(x => x.Number));
 
         var data = Target.GenerateRandomData(100).ToArray();
-        await theStore.BulkInsertAsync(data.ToArray());
+        await TheStore.BulkInsertAsync(data.ToArray());
 
-        var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
+        var table = await TheStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
         table.HasIndex("mt_doc_target_idx_number").ShouldBeTrue();
 
-        await using var session = theStore.QuerySession();
+        await using var session = TheStore.QuerySession();
         var cmd = session.Query<Target>().Where(x => x.Number == 3)
             .ToCommand();
 
@@ -140,9 +140,9 @@ public class computed_indexes: OneOffConfigurationsContext
         });
 
         var data = Target.GenerateRandomData(100).ToArray();
-        await theStore.BulkInsertAsync(data.ToArray());
+        await TheStore.BulkInsertAsync(data.ToArray());
 
-        var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
+        var table = await TheStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
         var index = table.IndexFor("mt_doc_target_idx_user_idflag");
 
         index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_user_idflag ON computed_indexes.mt_doc_target USING btree (CAST(data ->> 'UserId' as uuid), CAST(data ->> 'Flag' as boolean));");
@@ -175,9 +175,9 @@ public class computed_indexes: OneOffConfigurationsContext
         });
 
         var data = Target.GenerateRandomData(100).ToArray();
-        await theStore.BulkInsertAsync(data.ToArray());
+        await TheStore.BulkInsertAsync(data.ToArray());
 
-        var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
+        var table = await TheStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
         var index = table.IndexFor("mt_doc_target_idx_user_idflag");
 
         index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_user_idflag ON computed_indexes.mt_doc_target USING btree (CAST(data ->> 'UserId' as uuid), CAST(data ->> 'Flag' as boolean));");
@@ -197,9 +197,9 @@ public class computed_indexes: OneOffConfigurationsContext
         });
 
         var data = Target.GenerateRandomData(100).ToArray();
-        await theStore.BulkInsertAsync(data.ToArray());
+        await TheStore.BulkInsertAsync(data.ToArray());
 
-        var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
+        var table = await TheStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
         var index = table.IndexFor("mt_doc_target_idx_stringstring_field");
 
         index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_stringstring_field ON computed_indexes.mt_doc_target USING btree (upper((data ->> 'String'), upper((data ->> 'StringField'))));");
@@ -213,11 +213,11 @@ public class computed_indexes: OneOffConfigurationsContext
             _.Schema.For<ApiResponseRecord>().Index(x => x.RequestTimeUtc);
             _.AutoCreateSchemaObjects = AutoCreate.All;
         });
-        var diff = await theStore.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.CreateOrUpdate);
+        var diff = await TheStore.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.CreateOrUpdate);
 
         diff.ShouldBe(SchemaPatchDifference.Create);
 
-        var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(ApiResponseRecord));
+        var table = await TheStore.Tenancy.Default.Database.ExistingTableFor(typeof(ApiResponseRecord));
         var index = table.IndexFor("mt_doc_apiresponserecord_idx_request_time_utc");
 
         index.ShouldNotBeNull();
@@ -244,7 +244,7 @@ public class computed_indexes: OneOffConfigurationsContext
 
         var testString = "MiXeD cAsE sTrInG";
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             var item = Target.GenerateRandomData(1).First();
             item.String = testString;
@@ -252,7 +252,7 @@ public class computed_indexes: OneOffConfigurationsContext
             await session.SaveChangesAsync();
         }
 
-        (await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target)))
+        (await TheStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target)))
             .HasIndex("mt_banana_index_created_by_nigel");
 
     }
@@ -285,7 +285,7 @@ public class computed_indexes: OneOffConfigurationsContext
     {
         StoreOptions(_ => _.Schema.For<Target>().Index(x => x.StringList));
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             var item = Target.GenerateRandomData(1).First();
             item.StringList.Add("item1");
@@ -294,7 +294,7 @@ public class computed_indexes: OneOffConfigurationsContext
             await session.SaveChangesAsync();
         }
 
-        var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
+        var table = await TheStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
         var index = table.IndexFor("mt_doc_target_idx_string_list");
 
         index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_string_list ON computed_indexes.mt_doc_target USING btree (CAST(data ->> 'StringList' as jsonb));");
@@ -312,7 +312,7 @@ public class computed_indexes: OneOffConfigurationsContext
 
         StoreOptions(_ => _.Schema.For<Target>().Index(columns));
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             var item = Target.GenerateRandomData(1).First();
             item.UserId = Guid.NewGuid();
@@ -322,7 +322,7 @@ public class computed_indexes: OneOffConfigurationsContext
             await session.SaveChangesAsync();
         }
 
-        var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
+        var table = await TheStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
         var index = table.IndexFor("mt_doc_target_idx_user_idstring_list");
 
         index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_user_idstring_list ON computed_indexes.mt_doc_target USING btree (CAST(data ->> 'UserId' as uuid), CAST(data ->> 'StringList' as jsonb));");

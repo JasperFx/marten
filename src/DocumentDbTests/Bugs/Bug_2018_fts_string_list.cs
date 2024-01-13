@@ -32,7 +32,7 @@ public class Bug_2018_fts_string_list: BugIntegrationContext
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
     public void can_do_index_with_full_text_search()
     {
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         session.Store(new BugFullTextSearchFields()
         {
             Id = Guid.NewGuid(),

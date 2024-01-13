@@ -22,18 +22,18 @@ public class document_policies_for_metadata: OneOffConfigurationsContext
     {
         StoreOptions(_ => { });
 
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Version.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModified.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CreatedAt.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.TenantId.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.IsSoftDeleted.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.SoftDeletedAt.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.DocumentType.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.DotNetType.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CausationId.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CorrelationId.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModifiedBy.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Headers.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Version.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModified.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CreatedAt.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.TenantId.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.IsSoftDeleted.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.SoftDeletedAt.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.DocumentType.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.DotNetType.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CausationId.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CorrelationId.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModifiedBy.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Headers.Enabled.ShouldBeFalse();
     }
 
     [Fact]
@@ -55,18 +55,18 @@ public class document_policies_for_metadata: OneOffConfigurationsContext
             _.Policies.ForAllDocuments(x => x.Metadata.Headers.Enabled = true);
         });
 
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Version.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModified.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CreatedAt.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.TenantId.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.IsSoftDeleted.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.SoftDeletedAt.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.DocumentType.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.DocumentType.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CausationId.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CorrelationId.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModifiedBy.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Headers.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Version.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModified.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CreatedAt.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.TenantId.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.IsSoftDeleted.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.SoftDeletedAt.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.DocumentType.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.DocumentType.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CausationId.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CorrelationId.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModifiedBy.Enabled.ShouldBeTrue();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Headers.Enabled.ShouldBeTrue();
     }
 
     [Fact]
@@ -88,18 +88,18 @@ public class document_policies_for_metadata: OneOffConfigurationsContext
             _.Policies.ForAllDocuments(x => x.Metadata.Headers.Enabled = false);
         });
 
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Version.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModified.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CreatedAt.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.TenantId.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.IsSoftDeleted.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.SoftDeletedAt.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.DocumentType.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.DocumentType.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CausationId.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CorrelationId.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModifiedBy.Enabled.ShouldBeFalse();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Headers.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Version.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModified.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CreatedAt.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.TenantId.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.IsSoftDeleted.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.SoftDeletedAt.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.DocumentType.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.DocumentType.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CausationId.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CorrelationId.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModifiedBy.Enabled.ShouldBeFalse();
+        TheStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Headers.Enabled.ShouldBeFalse();
     }
 
     public class UserMetadata

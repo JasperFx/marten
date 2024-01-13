@@ -225,7 +225,7 @@ Marten also allows aggregating the stream into a specific entity instance. This 
 <!-- snippet: sample_aggregate-stream-into-state-default -->
 <a id='snippet-sample_aggregate-stream-into-state-default'></a>
 ```cs
-await theSession.Events.AggregateStreamAsync(
+await TheSession.Events.AggregateStreamAsync(
     streamId,
     state: baseState,
     fromVersion: baseStateVersion
@@ -379,14 +379,14 @@ Then append event and store snapshot on opening accounting month:
 }
 
 var closedCashierShift =
-    await theSession.Events.AggregateStreamAsync<FinancialAccount>(
+    await TheSession.Events.AggregateStreamAsync<FinancialAccount>(
         financialAccountId
     );
 
 var (openedCashierShift, cashierShiftOpened) =
     OpenAccountingMonth(closedCashierShift!);
 
-var repository = new CashRegisterRepository(theSession);
+var repository = new CashRegisterRepository(TheSession);
 
 await repository.Store(openedCashierShift, cashierShiftOpened);
 ```

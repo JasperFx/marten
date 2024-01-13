@@ -43,12 +43,12 @@ public class reset_all_data_usage : OneOffConfigurationsContext
         });
 
         #region sample_reset_all_data
-        theStore.Advanced.InitialDataCollection.Add(new Users());
+        TheStore.Advanced.InitialDataCollection.Add(new Users());
 
-        await theStore.Advanced.ResetAllData();
+        await TheStore.Advanced.ResetAllData();
         #endregion
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             var user = new User { UserName = "five" };
             session.Store(user);
@@ -61,9 +61,9 @@ public class reset_all_data_usage : OneOffConfigurationsContext
             await session.SaveChangesAsync();
         }
 
-        await theStore.Advanced.ResetAllData();
+        await TheStore.Advanced.ResetAllData();
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
 
         var names = await query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName).ToListAsync();
 

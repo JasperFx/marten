@@ -27,16 +27,16 @@ namespace DocumentDbTests.Metadata
                     .SoftDeleted();
             });
 
-            theStore.StorageFeatures.MappingFor(typeof(DocWithMeta))
+            TheStore.StorageFeatures.MappingFor(typeof(DocWithMeta))
                 .Metadata.Version.Member.Name.ShouldBe(nameof(DocWithMeta.Version));
 
-            theStore.StorageFeatures.MappingFor(typeof(DocWithMeta))
+            TheStore.StorageFeatures.MappingFor(typeof(DocWithMeta))
                 .Metadata.LastModified.Member.Name.ShouldBe(nameof(DocWithMeta.LastModified));
 
-            theStore.StorageFeatures.MappingFor(typeof(DocWithMeta))
+            TheStore.StorageFeatures.MappingFor(typeof(DocWithMeta))
                 .Metadata.IsSoftDeleted.Member.Name.ShouldBe(nameof(DocWithMeta.Deleted));
 
-            theStore.StorageFeatures.MappingFor(typeof(DocWithMeta))
+            TheStore.StorageFeatures.MappingFor(typeof(DocWithMeta))
                 .Metadata.SoftDeletedAt.Member.Name.ShouldBe(nameof(DocWithMeta.DeletedAt));
 
         }
@@ -44,10 +44,10 @@ namespace DocumentDbTests.Metadata
         [Fact]
         public void set_the_metadata_projections_via_attributes()
         {
-            theStore.StorageFeatures.MappingFor(typeof(DocWithAttributeMeta))
+            TheStore.StorageFeatures.MappingFor(typeof(DocWithAttributeMeta))
                 .Metadata.Version.Member.Name.ShouldBe(nameof(DocWithAttributeMeta.Version));
 
-            theStore.StorageFeatures.MappingFor(typeof(DocWithAttributeMeta))
+            TheStore.StorageFeatures.MappingFor(typeof(DocWithAttributeMeta))
                 .Metadata.LastModified.Member.Name.ShouldBe(nameof(DocWithAttributeMeta.LastModified));
 
         }
@@ -63,14 +63,14 @@ namespace DocumentDbTests.Metadata
 
             var doc = new DocWithMeta();
 
-            using (var session = theStore.LightweightSession())
+            using (var session = TheStore.LightweightSession())
             {
                 session.Store(doc);
                 session.MetadataFor(doc).ShouldBeNull();
                 session.SaveChanges();
             }
 
-            using (var session = theStore.LightweightSession())
+            using (var session = TheStore.LightweightSession())
             {
                 var loaded = session.Load<DocWithMeta>(doc.Id);
                 ShouldBeTestExtensions.ShouldNotBe(loaded.LastModified, DateTimeOffset.MinValue);
@@ -82,7 +82,7 @@ namespace DocumentDbTests.Metadata
         {
             var doc = new DocWithAttributeMeta();
 
-            using (var session = theStore.LightweightSession())
+            using (var session = TheStore.LightweightSession())
             {
                 doc.LastModified = DateTime.UtcNow.AddYears(-1);
                 doc.Version = Guid.Empty;
@@ -91,7 +91,7 @@ namespace DocumentDbTests.Metadata
                 session.SaveChanges();
             }
 
-            using (var session = theStore.LightweightSession())
+            using (var session = TheStore.LightweightSession())
             {
                 var loaded = session.Load<DocWithAttributeMeta>(doc.Id);
                 loaded.DocType.ShouldBeNull();
@@ -115,7 +115,7 @@ namespace DocumentDbTests.Metadata
             var include = new IncludedDocWithMeta();
             var doc = new DocWithMeta();
 
-            using (var session = theStore.LightweightSession())
+            using (var session = TheStore.LightweightSession())
             {
                 session.Store(include);
                 doc.IncludedDocId = include.Id;
@@ -125,7 +125,7 @@ namespace DocumentDbTests.Metadata
                 session.SaveChanges();
             }
 
-            using (var session = theStore.LightweightSession())
+            using (var session = TheStore.LightweightSession())
             {
                 IncludedDocWithMeta loadedInclude = null;
                 var loaded = session.Query<DocWithMeta>().Include<IncludedDocWithMeta>(d => d.IncludedDocId, i => loadedInclude = i).Single(d => d.Id == doc.Id);
@@ -148,14 +148,14 @@ namespace DocumentDbTests.Metadata
             var doc = new DocWithMeta();
             DateTimeOffset lastMod = DateTime.UtcNow;
 
-            using (var session = theStore.LightweightSession())
+            using (var session = TheStore.LightweightSession())
             {
                 session.Store(doc);
                 session.MetadataFor(doc).ShouldBeNull();
                 session.SaveChanges();
             }
 
-            using (var session = theStore.LightweightSession())
+            using (var session = TheStore.LightweightSession())
             {
                 var userQuery = session.Query<DocWithMeta>($"where data ->> 'Id' = '{doc.Id.ToString()}'").Single();
                 userQuery.Description = "updated via a user SQL query";
@@ -165,7 +165,7 @@ namespace DocumentDbTests.Metadata
                 session.SaveChanges();
             }
 
-            using (var session = theStore.LightweightSession())
+            using (var session = TheStore.LightweightSession())
             {
                 var userQuery = session.Query<DocWithMeta>($"where data ->> 'Id' = '{doc.Id.ToString()}'").Single();
                 ShouldBeTestExtensions.ShouldBeGreaterThanOrEqualTo(userQuery.LastModified, lastMod);
@@ -189,7 +189,7 @@ namespace DocumentDbTests.Metadata
             var doc = new DocWithMeta();
             var tenant = "TENANT_A";
 
-            await using (var session = theStore.LightweightSession(tenant))
+            await using (var session = TheStore.LightweightSession(tenant))
             {
                 doc.LastModified = DateTime.UtcNow.AddYears(-1);
                 session.Store(doc);
@@ -197,7 +197,7 @@ namespace DocumentDbTests.Metadata
                 await session.SaveChangesAsync();
             }
 
-            await using (var session = theStore.LightweightSession(tenant))
+            await using (var session = TheStore.LightweightSession(tenant))
             {
                 session.Query<DocWithMeta>().Count(d => d.TenantId == tenant).ShouldBe(1);
 
@@ -224,9 +224,9 @@ namespace DocumentDbTests.Metadata
             var doc = new DocWithMeta();
             var tenant = "TENANT_A";
 
-            await theStore.BulkInsertAsync(tenant, new[] { doc });
+            await TheStore.BulkInsertAsync(tenant, new[] { doc });
 
-            await using var session = theStore.QuerySession(tenant);
+            await using var session = TheStore.QuerySession(tenant);
             session.Query<DocWithMeta>().Count(d => d.TenantId == tenant).ShouldBe(1);
 
             var loaded = await session.Query<DocWithMeta>().Where(d => d.Id == doc.Id).FirstOrDefaultAsync();
@@ -250,7 +250,7 @@ namespace DocumentDbTests.Metadata
                     });
             });
 
-            using (var session = theStore.LightweightSession())
+            using (var session = TheStore.LightweightSession())
             {
                 var doc = new DocWithMeta { Description = "transparent" };
                 var red = new RedDocWithMeta { Description = "red doc" };
@@ -262,7 +262,7 @@ namespace DocumentDbTests.Metadata
                 session.SaveChanges();
             }
 
-            using (var session = theStore.IdentitySession())
+            using (var session = TheStore.IdentitySession())
             {
                 session.Query<DocWithMeta>().Count(d => d.DocType == "BASE").ShouldBe(1);
                 session.Query<DocWithMeta>().Count(d => d.DocType == "blue_doc_with_meta").ShouldBe(1);
@@ -289,14 +289,14 @@ namespace DocumentDbTests.Metadata
                 docs[i] = new AttVersionedDoc();
             }
 
-            theStore.BulkInsert(docs);
+            TheStore.BulkInsert(docs);
 
             foreach (var doc in docs)
             {
                 doc.Version.ShouldNotBe(Guid.Empty);
             }
 
-            using var session = theStore.QuerySession();
+            using var session = TheStore.QuerySession();
             session.Query<AttVersionedDoc>().Count(d => d.Version != Guid.Empty).ShouldBe(100);
         }
 
@@ -309,14 +309,14 @@ namespace DocumentDbTests.Metadata
                 docs[i] = new PropVersionedDoc();
             }
 
-            theStore.BulkInsert(docs);
+            TheStore.BulkInsert(docs);
 
             foreach (var doc in docs)
             {
                 doc.Version.ShouldNotBe(Guid.Empty);
             }
 
-            using var session = theStore.QuerySession();
+            using var session = TheStore.QuerySession();
             session.Query<PropVersionedDoc>().Count(d => d.Version != Guid.Empty).ShouldBe(100);
         }
     }

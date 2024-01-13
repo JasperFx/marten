@@ -14,7 +14,7 @@ public class Bug_336_completely_remove_crosses_schema_lines : BugIntegrationCont
     [Fact]
     public async Task do_not_remove_items_out_of_the_main_schema()
     {
-        var store1 = theStore;
+        var store1 = TheStore;
         await store1.BulkInsertAsync(Target.GenerateRandomData(5).ToArray());
         await store1.BulkInsertAsync(new[] { new User() });
         var database1 = store1.Tenancy.Default.Database;

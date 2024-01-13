@@ -18,7 +18,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
     {
         var data1 = Target.GenerateRandomData(100).ToArray();
 
-        theStore.BulkInsert(data1);
+        TheStore.BulkInsert(data1);
 
         var data2 = Target.GenerateRandomData(50).ToArray();
 
@@ -29,9 +29,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
             data2[i].Number = -1;
         }
 
-        theStore.BulkInsert(data2, BulkInsertMode.IgnoreDuplicates);
+        TheStore.BulkInsert(data2, BulkInsertMode.IgnoreDuplicates);
 
-        using var session = theStore.QuerySession();
+        using var session = TheStore.QuerySession();
         session.Query<Target>().Count().ShouldBe(data1.Length + data2.Length - 5);
 
         for (var i = 0; i < 5; i++)
@@ -45,7 +45,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
     {
         var data = Target.GenerateRandomData(100).ToArray();
 
-        theStore.BulkInsert(data, batchSize: 15);
+        TheStore.BulkInsert(data, batchSize: 15);
 
         theSession.Query<Target>().Count().ShouldBe(data.Length);
 
@@ -57,7 +57,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
     {
         var data1 = Target.GenerateRandomData(100).ToArray();
 
-        theStore.BulkInsert(data1);
+        TheStore.BulkInsert(data1);
 
         var data2 = Target.GenerateRandomData(50).ToArray();
 
@@ -68,9 +68,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
             data2[i].Number = -1;
         }
 
-        theStore.BulkInsert(data2, BulkInsertMode.OverwriteExisting);
+        TheStore.BulkInsert(data2, BulkInsertMode.OverwriteExisting);
 
-        using var session = theStore.QuerySession();
+        using var session = TheStore.QuerySession();
         session.Query<Target>().Count().ShouldBe(data1.Length + data2.Length - 5);
 
         // Values were overwritten
@@ -95,7 +95,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         var data = Target.GenerateRandomData(100).ToArray();
 
         // Load all of these into a Marten-ized database
-        theStore.BulkInsert(data, batchSize: 500);
+        TheStore.BulkInsert(data, batchSize: 500);
 
         // And just checking that the data is actually there;)
         theSession.Query<Target>().Count().ShouldBe(data.Length);
@@ -114,7 +114,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         var data = Target.GenerateRandomData(100).ToArray();
 
-        theStore.BulkInsert(data);
+        TheStore.BulkInsert(data);
 
         theSession.Query<Target>().Count().ShouldBe(data.Length);
 
@@ -129,7 +129,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         var data = Target.GenerateRandomData(100).ToArray();
 
-        theStore.BulkInsert(data);
+        TheStore.BulkInsert(data);
 
         theSession.Query<Target>().Count().ShouldBe(data.Length);
 
@@ -143,7 +143,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         #region sample_bulk_insert_with_IgnoreDuplicates
         var data = Target.GenerateRandomData(100).ToArray();
 
-        theStore.BulkInsert(data, BulkInsertMode.IgnoreDuplicates);
+        TheStore.BulkInsert(data, BulkInsertMode.IgnoreDuplicates);
         #endregion
 
         theSession.Query<Target>().Count().ShouldBe(data.Length);
@@ -163,7 +163,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         #region sample_bulk_insert_with_OverwriteExisting
         var data = Target.GenerateRandomData(100).ToArray();
 
-        theStore.BulkInsert(data, BulkInsertMode.OverwriteExisting);
+        TheStore.BulkInsert(data, BulkInsertMode.OverwriteExisting);
         #endregion
 
         theSession.Query<Target>().Count().ShouldBe(data.Length);
@@ -176,7 +176,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
     {
         var data1 = Target.GenerateRandomData(100).ToArray();
 
-        await theStore.BulkInsertAsync(data1);
+        await TheStore.BulkInsertAsync(data1);
 
         var data2 = Target.GenerateRandomData(50).ToArray();
 
@@ -187,9 +187,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
             data2[i].Number = -1;
         }
 
-        await theStore.BulkInsertAsync(data2, BulkInsertMode.IgnoreDuplicates);
+        await TheStore.BulkInsertAsync(data2, BulkInsertMode.IgnoreDuplicates);
 
-        await using var session = theStore.QuerySession();
+        await using var session = TheStore.QuerySession();
         session.Query<Target>().Count().ShouldBe(data1.Length + data2.Length - 5);
 
         for (var i = 0; i < 5; i++)
@@ -203,7 +203,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
     {
         var data = Target.GenerateRandomData(100).ToArray();
 
-        await theStore.BulkInsertAsync(data, batchSize: 15);
+        await TheStore.BulkInsertAsync(data, batchSize: 15);
 
         theSession.Query<Target>().Count().ShouldBe(data.Length);
 
@@ -215,7 +215,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
     {
         var data1 = Target.GenerateRandomData(100).ToArray();
 
-        await theStore.BulkInsertAsync(data1);
+        await TheStore.BulkInsertAsync(data1);
 
         var data2 = Target.GenerateRandomData(50).ToArray();
 
@@ -226,9 +226,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
             data2[i].Number = -1;
         }
 
-        await theStore.BulkInsertAsync(data2, BulkInsertMode.OverwriteExisting);
+        await TheStore.BulkInsertAsync(data2, BulkInsertMode.OverwriteExisting);
 
-        await using var session = theStore.QuerySession();
+        await using var session = TheStore.QuerySession();
         session.Query<Target>().Count().ShouldBe(data1.Length + data2.Length - 5);
 
         // Values were overwritten
@@ -253,7 +253,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         var data = Target.GenerateRandomData(100).ToArray();
 
         // Load all of these into a Marten-ized database
-        await theStore.BulkInsertAsync(data, batchSize: 500);
+        await TheStore.BulkInsertAsync(data, batchSize: 500);
 
         // And just checking that the data is actually there;)
         theSession.Query<Target>().Count().ShouldBe(data.Length);
@@ -272,7 +272,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         var data = Target.GenerateRandomData(100).ToArray();
 
-        await theStore.BulkInsertAsync(data);
+        await TheStore.BulkInsertAsync(data);
 
         theSession.Query<Target>().Count().ShouldBe(data.Length);
 
@@ -289,7 +289,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         var data = Target.GenerateRandomData(100).ToArray();
 
-        await theStore.BulkInsertAsync(data);
+        await TheStore.BulkInsertAsync(data);
 
         theSession.Query<Target>().Count().ShouldBe(data.Length);
 
@@ -346,7 +346,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         #region sample_bulk_insert_async_with_IgnoreDuplicates
         var data = Target.GenerateRandomData(100).ToArray();
 
-        await theStore.BulkInsertAsync(data, BulkInsertMode.IgnoreDuplicates);
+        await TheStore.BulkInsertAsync(data, BulkInsertMode.IgnoreDuplicates);
         #endregion
 
         theSession.Query<Target>().Count().ShouldBe(data.Length);
@@ -366,7 +366,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         #region sample_bulk_insert_async_with_OverwriteExisting
         var data = Target.GenerateRandomData(100).ToArray();
 
-        await theStore.BulkInsertAsync(data, BulkInsertMode.OverwriteExisting);
+        await TheStore.BulkInsertAsync(data, BulkInsertMode.OverwriteExisting);
         #endregion
 
         theSession.Query<Target>().Count().ShouldBe(data.Length);
@@ -387,7 +387,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         theSession.Store<object>(user1, user2, issue1, issue2, company1, company2);
         theSession.SaveChanges();
 
-        using (var querying = theStore.QuerySession())
+        using (var querying = TheStore.QuerySession())
         {
             querying.Query<User>().Count().ShouldBe(2);
             querying.Query<Issue>().Count().ShouldBe(2);
@@ -409,7 +409,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         theSession.StoreObjects(documents);
         theSession.SaveChanges();
 
-        using (var querying = theStore.QuerySession())
+        using (var querying = TheStore.QuerySession())
         {
             querying.Query<User>().Count().ShouldBe(2);
             querying.Query<Issue>().Count().ShouldBe(2);
@@ -429,9 +429,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         var documents = new object[] { user1, user2, issue1, issue2, company1, company2 };
 
-        theStore.BulkInsert(documents);
+        TheStore.BulkInsert(documents);
 
-        using (var querying = theStore.QuerySession())
+        using (var querying = TheStore.QuerySession())
         {
             querying.Query<User>().Count().ShouldBe(2);
             querying.Query<Issue>().Count().ShouldBe(2);
@@ -451,9 +451,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         var documents = new object[] { user1, user2, issue1, issue2, company1, company2 };
 
-        theStore.BulkInsertDocuments(documents);
+        TheStore.BulkInsertDocuments(documents);
 
-        using (var querying = theStore.QuerySession())
+        using (var querying = TheStore.QuerySession())
         {
             querying.Query<User>().Count().ShouldBe(2);
             querying.Query<Issue>().Count().ShouldBe(2);
@@ -468,11 +468,11 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         {
-            theStore.BulkInsertEnlistTransaction(data, Transaction.Current);
+            TheStore.BulkInsertEnlistTransaction(data, Transaction.Current);
             scope.Complete();
         }           
 
-        using var session = theStore.QuerySession();
+        using var session = TheStore.QuerySession();
         session.Query<Target>().Count().ShouldBe(data.Length);
     }
 
@@ -483,10 +483,10 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         {
-            theStore.BulkInsertEnlistTransaction(data, Transaction.Current);                
+            TheStore.BulkInsertEnlistTransaction(data, Transaction.Current);                
         }
 
-        using var session = theStore.QuerySession();
+        using var session = TheStore.QuerySession();
         Should.Throw<MartenCommandException>(() => session.Query<Target>().Count());
     }
 
@@ -497,11 +497,11 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         {
-            await theStore.BulkInsertEnlistTransactionAsync(data, Transaction.Current);
+            await TheStore.BulkInsertEnlistTransactionAsync(data, Transaction.Current);
             scope.Complete();
         }
 
-        await using var session = theStore.QuerySession();
+        await using var session = TheStore.QuerySession();
         session.Query<Target>().Count().ShouldBe(data.Length);
     }
 
@@ -512,10 +512,10 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         {
-            await theStore.BulkInsertEnlistTransactionAsync(data, Transaction.Current);
+            await TheStore.BulkInsertEnlistTransactionAsync(data, Transaction.Current);
         }
 
-        await using var session = theStore.QuerySession();
+        await using var session = TheStore.QuerySession();
         Should.Throw<MartenCommandException>(() => session.Query<Target>().Count());
     }
 
@@ -533,11 +533,11 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         {
-            theStore.BulkInsertEnlistTransaction(documents, Transaction.Current);
+            TheStore.BulkInsertEnlistTransaction(documents, Transaction.Current);
             scope.Complete();
         }
 
-        using (var querying = theStore.QuerySession())
+        using (var querying = TheStore.QuerySession())
         {
             querying.Query<User>().Count().ShouldBe(2);
             querying.Query<Issue>().Count().ShouldBe(2);
@@ -559,11 +559,11 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         {
-            await theStore.BulkInsertEnlistTransactionAsync(documents, Transaction.Current);
+            await TheStore.BulkInsertEnlistTransactionAsync(documents, Transaction.Current);
             scope.Complete();
         }
 
-        await using (var querying = theStore.QuerySession())
+        await using (var querying = TheStore.QuerySession())
         {
             querying.Query<User>().Count().ShouldBe(2);
             querying.Query<Issue>().Count().ShouldBe(2);
@@ -573,7 +573,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
     public Task InitializeAsync()
     {
-        return theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+        return TheStore.Advanced.Clean.DeleteAllDocumentsAsync();
     }
 
     public Task DisposeAsync()

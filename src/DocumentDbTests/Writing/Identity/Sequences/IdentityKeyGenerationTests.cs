@@ -16,11 +16,11 @@ public class IdentityKeyGenerationTests : OneOffConfigurationsContext
             _.Schema.For<UserWithString>().UseIdentityKey();
         });
 
-        StoreUser(theStore, "User1");
-        StoreUser(theStore, "User2");
-        StoreUser(theStore, "User3");
+        StoreUser(TheStore, "User1");
+        StoreUser(TheStore, "User2");
+        StoreUser(TheStore, "User3");
 
-        var users = GetUsers(theStore);
+        var users = GetUsers(TheStore);
 
         GetId(users, "User1").ShouldBe("userwithstring/1");
         GetId(users, "User2").ShouldBe("userwithstring/2");

@@ -18,9 +18,9 @@ public class Bug_621_bulk_insert_with_optimistic_concurrency: BugIntegrationCont
             _.Schema.For<Target>().UseOptimisticConcurrency(true);
         });
 
-        theStore.BulkInsert(targets);
+        TheStore.BulkInsert(targets);
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Query<Target>().Count().ShouldBe(1000);
         }

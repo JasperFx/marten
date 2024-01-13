@@ -17,13 +17,13 @@ public class Bug_2660_deletes_in_complex_order : BugIntegrationContext
         public async Task Deleting_Single_DocType_In_One_Session_Works()
         {
             // store & delete within same session
-            await using var session = theStore.IdentitySession();
+            await using var session = TheStore.IdentitySession();
             var id = Guid.NewGuid();
             session.Store(new FooModel() { Id = id });
             session.Delete<FooModel>(id);
             await session.SaveChangesAsync();
 
-            await using var session2 = theStore.IdentitySession();
+            await using var session2 = TheStore.IdentitySession();
             var model = await session.LoadAsync<FooModel>(id);
             model.ShouldBeNull();
         }
@@ -33,7 +33,7 @@ public class Bug_2660_deletes_in_complex_order : BugIntegrationContext
         public async Task Deleting_Multiple_DocTypes_In_One_Session_Works()
         {
             // store & delete within same session
-            await using var session = theStore.IdentitySession();
+            await using var session = TheStore.IdentitySession();
             var id = Guid.NewGuid();
             session.Store(new FooModel() { Id = id });
             session.Store(new BarModel() { Id = id });
@@ -45,7 +45,7 @@ public class Bug_2660_deletes_in_complex_order : BugIntegrationContext
 
             await session.SaveChangesAsync();
 
-            await using var session2 = theStore.IdentitySession();
+            await using var session2 = TheStore.IdentitySession();
             var model = await session.LoadAsync<FooModel>(id);
             model.ShouldBeNull();
         }
@@ -55,7 +55,7 @@ public class Bug_2660_deletes_in_complex_order : BugIntegrationContext
         public async Task Delete_Where_Within_Same_Session_Doesnt_Affect_Actual_Delete()
         {
             // store & delete in the same session
-            using var session = theStore.IdentitySession();
+            using var session = TheStore.IdentitySession();
             var id = Guid.NewGuid();
             session.Store(new FooModel() { Id = id });
             session.Store(new BarModel() { Id = Guid.NewGuid(), RelGuid = id });
@@ -63,7 +63,7 @@ public class Bug_2660_deletes_in_complex_order : BugIntegrationContext
             session.DeleteWhere<BarModel>(x => x.RelGuid == id);
             await session.SaveChangesAsync();
 
-            await using var session2 = theStore.IdentitySession();
+            await using var session2 = TheStore.IdentitySession();
             var model = await session.LoadAsync<FooModel>(id);
             model.ShouldBeNull();
         }
@@ -71,10 +71,10 @@ public class Bug_2660_deletes_in_complex_order : BugIntegrationContext
         [Fact]
         public async Task mixing_id_types_lightweight()
         {
-            await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(IntDoc));
-            await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(GuidDoc));
+            await TheStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(IntDoc));
+            await TheStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(GuidDoc));
 
-            await using var session1 = theStore.LightweightSession();
+            await using var session1 = TheStore.LightweightSession();
 
             const int id = 5;
 
@@ -90,7 +90,7 @@ public class Bug_2660_deletes_in_complex_order : BugIntegrationContext
 
             await session1.SaveChangesAsync();
 
-            await using var session2 = theStore.QuerySession();
+            await using var session2 = TheStore.QuerySession();
             (await session2.Query<IntDoc>().CountAsync()).ShouldBe(0);
             (await session2.Query<GuidDoc>().CountAsync()).ShouldBe(0);
         }
@@ -98,10 +98,10 @@ public class Bug_2660_deletes_in_complex_order : BugIntegrationContext
         [Fact]
         public async Task mixing_id_types_identity()
         {
-            await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(IntDoc));
-            await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(GuidDoc));
+            await TheStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(IntDoc));
+            await TheStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(GuidDoc));
 
-            await using var session1 = theStore.IdentitySession();
+            await using var session1 = TheStore.IdentitySession();
 
             const int id = 5;
 
@@ -117,7 +117,7 @@ public class Bug_2660_deletes_in_complex_order : BugIntegrationContext
 
             await session1.SaveChangesAsync();
 
-            await using var session2 = theStore.QuerySession();
+            await using var session2 = TheStore.QuerySession();
             (await session2.Query<IntDoc>().CountAsync()).ShouldBe(0);
             (await session2.Query<GuidDoc>().CountAsync()).ShouldBe(0);
         }
@@ -125,10 +125,10 @@ public class Bug_2660_deletes_in_complex_order : BugIntegrationContext
         [Fact]
         public async Task mixing_id_types_dirty_checking()
         {
-            await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(IntDoc));
-            await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(GuidDoc));
+            await TheStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(IntDoc));
+            await TheStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(GuidDoc));
 
-            await using var session1 = theStore.DirtyTrackedSession();
+            await using var session1 = TheStore.DirtyTrackedSession();
 
             const int id = 5;
 
@@ -144,7 +144,7 @@ public class Bug_2660_deletes_in_complex_order : BugIntegrationContext
 
             await session1.SaveChangesAsync();
 
-            await using var session2 = theStore.QuerySession();
+            await using var session2 = TheStore.QuerySession();
             (await session2.Query<IntDoc>().CountAsync()).ShouldBe(0);
             (await session2.Query<GuidDoc>().CountAsync()).ShouldBe(0);
         }

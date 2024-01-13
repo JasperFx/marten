@@ -36,13 +36,13 @@ public class Bug_964_optimistic_concurrency_with_subclass: BugIntegrationContext
             UseSSL = false
         };
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Insert(minio1);
             session.SaveChanges();
         }
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(minio1, minio1.Version);
 
@@ -63,13 +63,13 @@ public class Bug_964_optimistic_concurrency_with_subclass: BugIntegrationContext
             UseSSL = false
         };
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Insert(minio1);
             session.SaveChanges();
         }
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             var discardedResult = session.Query<CloudStorageMinio>().SingleOrDefault(p => p.Id == minio1.Id);
 

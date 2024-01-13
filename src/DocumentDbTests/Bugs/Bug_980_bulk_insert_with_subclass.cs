@@ -25,9 +25,9 @@ public class Bug_980_bulk_insert_with_subclass: BugIntegrationContext
             new SuperUser { UserName = "myergen" }
         };
 
-        theStore.BulkInsert(users);
+        TheStore.BulkInsert(users);
 
-        using (var query = theStore.LightweightSession())
+        using (var query = TheStore.LightweightSession())
         {
             query.Query<AdminUser>().Count().ShouldBe(1);
             query.Query<SuperUser>().Count().ShouldBe(2);
@@ -52,9 +52,9 @@ public class Bug_980_bulk_insert_with_subclass: BugIntegrationContext
             new SuperUser { UserName = "more" }
         };
 
-        theStore.BulkInsert(users);
+        TheStore.BulkInsert(users);
 
-        using (var query = theStore.LightweightSession())
+        using (var query = TheStore.LightweightSession())
         {
             query.Query<SuperUser>().Count().ShouldBe(4);
         }

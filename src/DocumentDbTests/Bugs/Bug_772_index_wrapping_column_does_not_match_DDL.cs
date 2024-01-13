@@ -18,8 +18,8 @@ public class Bug_772_index_wrapping_column_does_not_match_DDL: BugIntegrationCon
                 .Duplicate(c => c.Name);
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
     }
 
     [Fact] // Control
@@ -34,8 +34,8 @@ public class Bug_772_index_wrapping_column_does_not_match_DDL: BugIntegrationCon
                 });
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
     }
 
     [Fact] // Experiment, passed
@@ -53,8 +53,8 @@ public class Bug_772_index_wrapping_column_does_not_match_DDL: BugIntegrationCon
                 });
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
     }
 
 

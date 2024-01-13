@@ -12,7 +12,7 @@ public class persist_and_load_for_hierarchy_Tests: end_to_end_document_hierarchy
     [Fact]
     public void persist_and_delete_subclass()
     {
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(admin1);
         session.SaveChanges();
 
@@ -28,7 +28,7 @@ public class persist_and_load_for_hierarchy_Tests: end_to_end_document_hierarchy
     [Fact]
     public void persist_and_delete_subclass_2()
     {
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(admin1);
         session.SaveChanges();
 
@@ -43,7 +43,7 @@ public class persist_and_load_for_hierarchy_Tests: end_to_end_document_hierarchy
     [Fact]
     public void persist_and_delete_top()
     {
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(user1);
         session.SaveChanges();
 
@@ -56,7 +56,7 @@ public class persist_and_load_for_hierarchy_Tests: end_to_end_document_hierarchy
     [Fact]
     public void persist_and_delete_top_2()
     {
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(user1);
         session.SaveChanges();
 
@@ -70,14 +70,14 @@ public class persist_and_load_for_hierarchy_Tests: end_to_end_document_hierarchy
     [Fact]
     public void persist_and_load_subclass()
     {
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(admin1);
         session.SaveChanges();
 
         session.Load<User>(admin1.Id).ShouldBeTheSameAs(admin1);
         session.Load<AdminUser>(admin1.Id).ShouldBeTheSameAs(admin1);
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         query.Load<AdminUser>(admin1.Id).ShouldNotBeTheSameAs(admin1).ShouldNotBeNull();
         query.Load<User>(admin1.Id).ShouldNotBeTheSameAs(admin1).ShouldNotBeNull();
     }
@@ -85,14 +85,14 @@ public class persist_and_load_for_hierarchy_Tests: end_to_end_document_hierarchy
     [Fact]
     public async Task persist_and_load_subclass_async()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         session.Store(admin1);
         session.SaveChanges();
 
         (await session.LoadAsync<User>(admin1.Id)).ShouldBeTheSameAs(admin1);
         (await session.LoadAsync<AdminUser>(admin1.Id)).ShouldBeTheSameAs(admin1);
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
         (await query.LoadAsync<AdminUser>(admin1.Id)).ShouldNotBeTheSameAs(admin1)
             .ShouldNotBeNull();
         (await query.LoadAsync<User>(admin1.Id)).ShouldNotBeTheSameAs(admin1)
@@ -102,13 +102,13 @@ public class persist_and_load_for_hierarchy_Tests: end_to_end_document_hierarchy
     [Fact]
     public void persist_and_load_top_level()
     {
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(user1);
         session.SaveChanges();
 
         session.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         query.Load<User>(user1.Id).ShouldNotBeTheSameAs(user1).ShouldNotBeNull();
     }
 }

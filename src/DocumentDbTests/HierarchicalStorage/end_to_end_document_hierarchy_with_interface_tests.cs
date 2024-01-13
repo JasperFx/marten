@@ -26,7 +26,7 @@ public class end_to_end_document_hierarchy_with_interface_tests: OneOffConfigura
     public void persists_subclass()
     {
         var policy = new LinuxPolicy {Name = Guid.NewGuid().ToString()};
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(policy);
             session.SaveChanges();
@@ -38,13 +38,13 @@ public class end_to_end_document_hierarchy_with_interface_tests: OneOffConfigura
     public void query_for_only_a_subclass_with_string_where_clause()
     {
         var policy = new LinuxPolicy {VersionId = Guid.NewGuid(), Name = Guid.NewGuid().ToString()};
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(policy);
             session.SaveChanges();
         }
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Query<IPolicy>($"Where id = \'{policy.VersionId}\'").Single()
                 .VersionId.ShouldBe(policy.VersionId);
@@ -56,13 +56,13 @@ public class end_to_end_document_hierarchy_with_interface_tests: OneOffConfigura
     public void query_for_only_a_subclass_with_where_clause()
     {
         var policy = new LinuxPolicy {VersionId = Guid.NewGuid(), Name = Guid.NewGuid().ToString()};
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(policy);
             session.SaveChanges();
         }
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Query<IPolicy>().Single(p => p.VersionId == policy.VersionId)
                 .VersionId.ShouldBe(policy.VersionId);

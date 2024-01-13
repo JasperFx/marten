@@ -77,7 +77,7 @@ public class UniqueIndexTests: OneOffConfigurationsContext
         };
 
 
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         //2. Save documents
         session.Store(firstDocument);
         session.Store(secondDocument);
@@ -103,7 +103,7 @@ public class UniqueIndexTests: OneOffConfigurationsContext
             new UniqueUser { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Smith" };
         var secondDocument = new UniqueUser { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Doe" };
 
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         //2. Save documents
         session.Store(firstDocument);
         session.Store(secondDocument);
@@ -133,7 +133,7 @@ public class UniqueIndexTests: OneOffConfigurationsContext
             UserId = Guid.NewGuid(), Email = "some.mail@outlook.com", FirstName = "John", Surname = "Doe"
         };
 
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         //2. Publish Events
         session.Events.Append(firstEvent.UserId, firstEvent);
         session.Events.Append(secondEvent.UserId, secondEvent);
@@ -160,7 +160,7 @@ public class UniqueIndexTests: OneOffConfigurationsContext
         var secondEvent =
             new UserCreated { UserId = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Doe" };
 
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         //2. Publish Events
         session.Events.Append(firstEvent.UserId, firstEvent);
         session.Events.Append(secondEvent.UserId, secondEvent);

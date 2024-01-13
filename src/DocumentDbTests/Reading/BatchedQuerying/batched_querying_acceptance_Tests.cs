@@ -52,7 +52,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
                 .Duplicate(x => x.FirstName).Duplicate(x => x.LastName);
         });
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(target1, target2, target3);
         session.Store(user1, user2, admin1, admin2, super1, super2);
 
@@ -104,7 +104,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_query_with_compiled_queries()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
 
         #region sample_batch-query-with-compiled-queries
 
@@ -124,7 +124,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public void can_query_synchronously_with_compiled_queries()
     {
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
 
         #region sample_batch-query-with-compiled-queries-synchronously
 
@@ -144,7 +144,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
 
     public async Task sample_usage_of_compiled_query()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
 
         #region sample_using-compiled-query
 
@@ -158,7 +158,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_query_with_user_supplied_sql()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         var batch = session.CreateBatchQuery();
 
         var justin = batch.Query<User>("where first_name = ?", "Justin");
@@ -186,7 +186,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_find_the_first_value()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         var batch = session.CreateBatchQuery();
 
         var firstUser = batch.Query<User>().OrderBy(_ => _.FirstName).First();
@@ -201,7 +201,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_find_the_first_or_default_value()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         var batch = session.CreateBatchQuery();
 
         var firstUser = batch.Query<User>().OrderBy(_ => _.FirstName).FirstOrDefault();
@@ -218,7 +218,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task single_and_single_or_default()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         var batch = session.CreateBatchQuery();
 
         var tamba = batch.Query<User>().Where(_ => _.FirstName == "Tamba").Single();
@@ -237,7 +237,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_query_documents()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         var batch = session.CreateBatchQuery();
 
         var anyUsers = batch.Query<User>().ToList();
@@ -265,7 +265,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public void can_query_documents_synchronously()
     {
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         var batch = session.CreateBatchQuery();
 
         var anyUsers = batch.Query<User>().ToList();
@@ -294,7 +294,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_query_for_any()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         var batch = session.CreateBatchQuery();
 
         var anyUsers = batch.Query<User>().Any();
@@ -315,7 +315,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_query_for_count()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         var batch = session.CreateBatchQuery();
 
         var anyUsers = batch.Query<User>().Count();
@@ -336,7 +336,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_find_one_doc_at_a_time_that_is_not_in_identity_map()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         var batch = session.CreateBatchQuery();
         var task1 = batch.Load<Target>(target1.Id);
         var task3 = batch.Load<Target>(target3.Id);
@@ -350,7 +350,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_find_docs_by_id_that_should_be_in_identity_map()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         var batch1 = session.CreateBatchQuery();
         var task1 = batch1.Load<Target>(target1.Id);
         var task3 = batch1.Load<Target>(target3.Id);
@@ -370,7 +370,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_find_multiple_docs_by_id()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         session.Logger = new TestOutputMartenLogger(_output);
         var batch1 = session.CreateBatchQuery();
         var task = batch1.LoadMany<Target>().ById(target1.Id, target3.Id);
@@ -387,7 +387,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_find_multiple_docs_by_id_with_identity_map()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
 
         var batch1 = session.CreateBatchQuery();
         var task1 = batch1.LoadMany<Target>().ById(target1.Id, target3.Id);
@@ -405,7 +405,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_find_multiple_docs_by_id_2()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         var batch1 = session.CreateBatchQuery();
         var task = batch1.LoadMany<Target>().ByIdList(new List<Guid> { target1.Id, target3.Id });
 
@@ -421,7 +421,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_find_multiple_docs_by_id_with_identity_map_2()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         var batch1 = session.CreateBatchQuery();
         var task1 = batch1.LoadMany<Target>().ByIdList(new List<Guid> { target1.Id, target3.Id });
 
@@ -439,7 +439,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_use_select_transformations_to_single_field_in_batch()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         var batch1 = session.CreateBatchQuery();
 
         var toList = batch1.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName).ToList();
@@ -466,7 +466,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_use_select_transformations_to_anonymous_type_in_batch()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         var batch1 = session.CreateBatchQuery();
 
         var toList = batch1.Query<User>().OrderBy(x => x.FirstName).Select(x => new { Name = x.FirstName }).ToList();
@@ -499,7 +499,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_use_select_transformations_to_another_type_in_batch()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         var batch1 = session.CreateBatchQuery();
 
         var toList =
@@ -536,7 +536,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
 
     public async Task batch_samples()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
 
         #region sample_using-batch-query
 

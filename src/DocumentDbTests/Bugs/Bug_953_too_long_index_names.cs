@@ -26,7 +26,7 @@ public class Bug_953_too_long_index_names: BugIntegrationContext
 
         Exception<PostgresqlIdentifierTooLongException>.ShouldBeThrownBy(() =>
         {
-            theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(LongEnoughNameToCauseIdTruncation));
+            TheStore.Tenancy.Default.Database.EnsureStorageExists(typeof(LongEnoughNameToCauseIdTruncation));
         });
     }
 

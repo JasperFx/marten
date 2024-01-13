@@ -21,7 +21,7 @@ public class BigIntegerTests : BugIntegrationContext
                 .Duplicate(x => x.Value);
         });
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             var obj = new BigIntegerObject { Id = 1, Value = BigInteger.Parse(LargerThanLongValue) };
 
@@ -29,7 +29,7 @@ public class BigIntegerTests : BugIntegrationContext
             session.SaveChanges();
         }
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             var result = session.Load<BigIntegerObject>(1);
 
@@ -48,7 +48,7 @@ public class BigIntegerTests : BugIntegrationContext
                 .Duplicate(x => x.Value);
         });
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             var obj = new BigIntegerObject { Id = 1, Value = BigInteger.Parse(LargerThanLongValue) };
 
@@ -56,7 +56,7 @@ public class BigIntegerTests : BugIntegrationContext
             session.SaveChanges();
         }
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             var result = session.Load<BigIntegerObject>(1);
 
@@ -75,7 +75,7 @@ public class BigIntegerTests : BugIntegrationContext
                 .Duplicate(x => x.Value);
         });
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             var obj = new BigIntegerObject { Id = 1, Value = BigInteger.Parse(LargerThanLongValue) };
 
@@ -91,7 +91,7 @@ public class BigIntegerTests : BugIntegrationContext
                 .Duplicate(x => x.Value);
         }, false);
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             var result = session.Load<BigIntegerObject>(1);
 
@@ -110,7 +110,7 @@ public class BigIntegerTests : BugIntegrationContext
                 .Duplicate(x => x.Value);
         });
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             var obj = new BigIntegerObject { Id = 1, Value = BigInteger.Parse(LargerThanLongValue) };
 
@@ -126,7 +126,7 @@ public class BigIntegerTests : BugIntegrationContext
                 .Duplicate(x => x.Value);
         }, false);
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             var result = session.Load<BigIntegerObject>(1);
 

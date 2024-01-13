@@ -30,12 +30,12 @@ public class Bug_1247_query_with_include_and_document_hierarchy_Tests: end_to_en
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted3" };
         var issue4 = new Issue { AssigneeId = null, Title = "Garage Door is busted4" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3, issue4);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         query.Logger = new TestOutputMartenLogger(_output);
 
         var list = new List<User>();
@@ -61,12 +61,12 @@ public class Bug_1247_query_with_include_and_document_hierarchy_Tests: end_to_en
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted3" };
         var issue4 = new Issue { AssigneeId = null, Title = "Garage Door is busted4" };
 
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3, issue4);
         await session.SaveChangesAsync();
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
         var list = new List<User>();
 
         var issues = await query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToListAsync();

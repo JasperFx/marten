@@ -10,7 +10,7 @@ namespace Marten.Testing.Harness
     {
         public BugIntegrationContext()
         {
-            _schemaName = "bugs";
+            SchemaName = "bugs";
         }
     }
 }

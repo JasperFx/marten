@@ -21,7 +21,7 @@ public class Bug_431_not_patching_with_the_doc_type_column : BugIntegrationConte
         });
 
 
-        await theStore.EnsureStorageExistsAsync(typeof(User));
+        await TheStore.EnsureStorageExistsAsync(typeof(User));
 
 
         var store2 = SeparateStore(_ =>

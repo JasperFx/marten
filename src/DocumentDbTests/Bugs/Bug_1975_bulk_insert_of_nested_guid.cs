@@ -24,7 +24,7 @@ public class Bug_1975_bulk_insert_of_nested_guid : BugIntegrationContext
             options.Schema.For<ParentDoc>().Duplicate(x => x.Child.Id);
         });
 
-        await theStore.BulkInsertDocumentsAsync(new List<ParentDoc>
+        await TheStore.BulkInsertDocumentsAsync(new List<ParentDoc>
         {
             new ParentDoc
             {
@@ -43,7 +43,7 @@ public class Bug_1975_bulk_insert_of_nested_guid : BugIntegrationContext
             options.Schema.For<ParentDoc>().Duplicate(x => x.Child.Id);
         });
 
-        theStore.BulkInsertDocuments(new List<ParentDoc>
+        TheStore.BulkInsertDocuments(new List<ParentDoc>
         {
             new ParentDoc
             {

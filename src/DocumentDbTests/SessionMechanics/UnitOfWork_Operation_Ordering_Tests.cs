@@ -44,7 +44,7 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
         _user1Issue1 = new Issue { AssigneeId = _userWithIssues.Id };
         _user1Issue2 = new Issue { AssigneeId = _userWithIssues.Id };
 
-        using var session = theStore.LightweightSession("Bug_1229");
+        using var session = TheStore.LightweightSession("Bug_1229");
         session.Store(_company);
         session.Store(_userNoIssues, _userWithIssues);
         session.Store(_user1Issue1, _user1Issue2);
@@ -312,14 +312,14 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
         int expectedUserCount,
         int expectedIssueCount)
     {
-        using (var s = theStore.LightweightSession("Bug_1229"))
+        using (var s = TheStore.LightweightSession("Bug_1229"))
         {
             act(s);
 
             s.SaveChanges();
         }
 
-        using (var s = theStore.QuerySession("Bug_1229"))
+        using (var s = TheStore.QuerySession("Bug_1229"))
         {
             var companies = s.Query<Company>().ToList();
             var users = s.Query<User>().ToList();
