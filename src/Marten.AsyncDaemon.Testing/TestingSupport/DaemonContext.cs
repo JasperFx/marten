@@ -20,11 +20,11 @@ public abstract class DaemonContext: OneOffConfigurationsContext
 {
     protected DaemonContext(ITestOutputHelper output)
     {
-        _schemaName = "daemon";
-        theStore.Advanced.Clean.DeleteAllEventData();
+        SchemaName = "daemon";
+        TheStore.Advanced.Clean.DeleteAllEventData();
         Logger = new TestLogger<IProjection>(output);
 
-        theStore.Options.Projections.DaemonLockId++;
+        TheStore.Options.Projections.DaemonLockId++;
 
         _output = output;
     }
@@ -33,7 +33,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext
 
     internal async Task<ProjectionDaemon> StartDaemon()
     {
-        var daemon = new ProjectionDaemon(theStore, Logger);
+        var daemon = new ProjectionDaemon(TheStore, Logger);
 
         await daemon.StartAllShards();
 
@@ -44,7 +44,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext
 
     internal async Task<ProjectionDaemon> StartDaemon(string tenantId)
     {
-        var daemon = (ProjectionDaemon)await theStore.BuildProjectionDaemonAsync(tenantId, Logger);
+        var daemon = (ProjectionDaemon)await TheStore.BuildProjectionDaemonAsync(tenantId, Logger);
 
         await daemon.StartAllShards();
 
@@ -55,12 +55,12 @@ public abstract class DaemonContext: OneOffConfigurationsContext
 
     internal async Task<ProjectionDaemon> StartDaemonInHotColdMode()
     {
-        theStore.Options.Projections.LeadershipPollingTime = 100;
+        TheStore.Options.Projections.LeadershipPollingTime = 100;
 
         var coordinator =
-            new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
-        var daemon = new ProjectionDaemon(theStore, theStore.Tenancy.Default.Database,
-            new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
+            new HotColdCoordinator(TheStore.Tenancy.Default.Database, TheStore.Options.Projections, Logger);
+        var daemon = new ProjectionDaemon(TheStore, TheStore.Tenancy.Default.Database,
+            new HighWaterDetector(coordinator, TheStore.Events, Logger), Logger);
 
         await daemon.UseCoordinator(coordinator);
 
@@ -72,11 +72,11 @@ public abstract class DaemonContext: OneOffConfigurationsContext
 
     internal async Task<ProjectionDaemon> StartAdditionalDaemonInHotColdMode()
     {
-        theStore.Options.Projections.LeadershipPollingTime = 100;
+        TheStore.Options.Projections.LeadershipPollingTime = 100;
         var coordinator =
-            new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
-        var daemon = new ProjectionDaemon(theStore, theStore.Tenancy.Default.Database,
-            new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
+            new HotColdCoordinator(TheStore.Tenancy.Default.Database, TheStore.Options.Projections, Logger);
+        var daemon = new ProjectionDaemon(TheStore, TheStore.Tenancy.Default.Database,
+            new HighWaterDetector(coordinator, TheStore.Events, Logger), Logger);
 
         await daemon.UseCoordinator(coordinator);
 
@@ -139,7 +139,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext
 
     protected StreamAction[] ToStreamActions()
     {
-        return _streams.Select(x => x.ToAction(theStore.Events)).ToArray();
+        return _streams.Select(x => x.ToAction(TheStore.Events)).ToArray();
     }
 
     protected async Task CheckAllExpectedAggregatesAgainstActuals()
@@ -172,7 +172,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext
     {
         var actuals = await LoadAllAggregatesFromDatabase(tenantId);
 
-        await using var session = theStore.LightweightSession(tenantId);
+        await using var session = TheStore.LightweightSession(tenantId);
 
         foreach (var stream in _streams.Where(x => x.TenantId == tenantId))
         {
@@ -204,7 +204,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext
         }
         else
         {
-            await using var session = theStore.LightweightSession(tenantId);
+            await using var session = TheStore.LightweightSession(tenantId);
             var data = await session.Query<Trip>().ToListAsync();
             var dict = data.ToDictionary(x => x.Id);
             return dict;
@@ -220,7 +220,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext
             {
                 foreach (var stream in @group)
                 {
-                    await using var session = theStore.LightweightSession(group.Key);
+                    await using var session = TheStore.LightweightSession(group.Key);
                     session.Events.StartStream(stream.StreamId, stream.Events);
                     await session.SaveChangesAsync();
                 }
@@ -230,7 +230,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext
         {
             foreach (var stream in _streams)
             {
-                await using var session = theStore.LightweightSession();
+                await using var session = TheStore.LightweightSession();
                 session.Events.StartStream(stream.StreamId, stream.Events);
                 await session.SaveChangesAsync();
             }
@@ -258,7 +258,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext
         var publishers = new List<EventPublisher>();
         for (var i = 0; i < threads; i++)
         {
-            publishers.Add(new EventPublisher(theStore));
+            publishers.Add(new EventPublisher(TheStore));
         }
 
 
