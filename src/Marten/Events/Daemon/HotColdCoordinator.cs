@@ -1,9 +1,9 @@
+#nullable enable
 using System;
 using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 using JasperFx.Core;
 using Marten.Services;
 using Marten.Storage;
@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Postgresql;
-using Timer = System.Timers.Timer;
 
 namespace Marten.Events.Daemon;
 
@@ -19,15 +18,14 @@ namespace Marten.Events.Daemon;
 ///     Coordinate the async daemon in the case of hot/cold failover
 ///     where only one node at a time should be running the async daemon
 /// </summary>
-internal class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner, IDisposable
+internal sealed class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner
 {
     private readonly CancellationTokenSource _cancellation = new();
     private readonly IMartenDatabase _database;
     private readonly ILogger _logger;
     private readonly DaemonSettings _settings;
-    private NpgsqlConnection _connection;
-    private Timer _timer;
-
+    private NpgsqlConnection? _connection;
+    private PeriodicTimer? _periodicTimer;
 
     public HotColdCoordinator(IMartenDatabase database, DaemonSettings settings, ILogger logger)
     {
@@ -43,7 +41,7 @@ internal class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner, IDispos
         return Task.CompletedTask;
     }
 
-    public IProjectionDaemon Daemon { get; private set; }
+    public IProjectionDaemon? Daemon { get; private set; }
 
     public async Task Stop()
     {
@@ -66,7 +64,7 @@ internal class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner, IDispos
     public void Dispose()
     {
         _connection?.SafeDispose();
-        _timer?.SafeDispose();
+        _periodicTimer?.SafeDispose();
     }
 
     public async Task<T> Query<T>(ISingleQueryHandler<T> handler, CancellationToken cancellation)
@@ -90,11 +88,11 @@ internal class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner, IDispos
 
     public async Task SingleCommit(DbCommand command, CancellationToken cancellation)
     {
-        NpgsqlTransaction tx = null;
+        NpgsqlTransaction? tx = null;
 
         try
         {
-            tx = await _connection.BeginTransactionAsync(cancellation).ConfigureAwait(false);
+            tx = await _connection!.BeginTransactionAsync(cancellation).ConfigureAwait(false);
             command.Connection = _connection;
 
             await command.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
@@ -119,29 +117,37 @@ internal class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner, IDispos
 
     private void startPollingForOwnership()
     {
-        _timer = new Timer { AutoReset = false, Interval = _settings.LeadershipPollingTime };
-
-        _timer.Elapsed += TimerOnElapsed;
-
-        _timer.Start();
+        _periodicTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(_settings.LeadershipPollingTime));
+#pragma warning disable MA0040
+        _ = Task.Run(async () =>
+        {
+            while (await _periodicTimer.WaitForNextTickAsync(_cancellation.Token).ConfigureAwait(false))
+            {
+                var attained = await tryToAttainLockAndStartShards().ConfigureAwait(false);
+                if (attained)
+                    break;
+            }
+            _periodicTimer.Dispose();
+        });
+#pragma warning restore MA0040
     }
+
+    public bool IsPrimary { get; private set; }
 
     private async Task<bool> tryToAttainLockAndStartShards()
     {
-        var gotLock = false;
-
-        NpgsqlConnection conn = null;
+        NpgsqlConnection? conn = null;
 
         try
         {
             conn = _database.CreateConnection();
             await conn.OpenAsync(_cancellation.Token).ConfigureAwait(false);
 
-            gotLock = (bool)await conn.CreateCommand("SELECT pg_try_advisory_lock(:id);")
+            IsPrimary = (bool)(await conn.CreateCommand("SELECT pg_try_advisory_lock(:id);")
                 .With("id", _settings.DaemonLockId)
-                .ExecuteScalarAsync(_cancellation.Token).ConfigureAwait(false);
+                .ExecuteScalarAsync(_cancellation.Token).ConfigureAwait(false))!;
 
-            if (!gotLock)
+            if (!IsPrimary)
             {
                 await conn.CloseAsync().ConfigureAwait(false);
             }
@@ -163,7 +169,7 @@ internal class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner, IDispos
                 _database.Identifier);
         }
 
-        if (gotLock)
+        if (IsPrimary)
         {
             _logger.LogInformation(
                 "Attained lock for the async daemon for database {Database}, attempting to start all shards",
@@ -171,8 +177,7 @@ internal class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner, IDispos
 
             try
             {
-                await startAllProjections(conn).ConfigureAwait(false);
-                stopPollingForOwnership();
+                await startAllProjections(conn!).ConfigureAwait(false);
 
                 return true;
             }
@@ -185,36 +190,14 @@ internal class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner, IDispos
                 await Stop().ConfigureAwait(false);
             }
         }
-
-        if (_timer == null || !_timer.Enabled)
-        {
-            startPollingForOwnership();
-        }
-        else
-        {
-            _timer.Start();
-        }
-
         return false;
-    }
-
-    private void TimerOnElapsed(object sender, ElapsedEventArgs e)
-    {
-        tryToAttainLockAndStartShards().GetAwaiter().GetResult();
-    }
-
-    private void stopPollingForOwnership()
-    {
-        _timer.Enabled = false;
-        _timer.SafeDispose();
-        _timer = null;
     }
 
     private Task startAllProjections(NpgsqlConnection conn)
     {
         _connection = conn;
 
-        return Daemon.StartAllShards();
+        return Daemon!.StartAllShards();
     }
 
     private async Task reopenConnectionIfNecessary(CancellationToken cancellation)
@@ -229,7 +212,7 @@ internal class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner, IDispos
         var restarted = await tryToAttainLockAndStartShards().ConfigureAwait(false);
         if (!restarted)
         {
-            await Daemon.StopAll().ConfigureAwait(false);
+            await Daemon!.StopAll().ConfigureAwait(false);
             startPollingForOwnership();
         }
     }

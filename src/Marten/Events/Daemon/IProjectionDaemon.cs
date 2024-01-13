@@ -16,6 +16,11 @@ public interface IProjectionDaemon: IDisposable
     ShardStateTracker Tracker { get; }
 
     /// <summary>
+    /// Indicates if this daemon is currently running
+    /// </summary>
+    bool IsRunning { get; }
+
+    /// <summary>
     ///     Rebuilds a single projection by projection name inline.
     ///     Will timeout if a shard takes longer than 5 minutes.
     /// </summary>

@@ -1,3 +1,4 @@
+#nullable enable
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,9 +8,10 @@ namespace Marten.Events.Daemon;
 ///     Default projection coordinator, assumes that there is only one
 ///     single node
 /// </summary>
-internal class SoloCoordinator: INodeCoordinator
+internal sealed class SoloCoordinator: INodeCoordinator
 {
-    public IProjectionDaemon Daemon { get; private set; }
+    public IProjectionDaemon? Daemon { get; private set; }
+    public bool IsPrimary => true;
 
     public Task Start(IProjectionDaemon agent, CancellationToken token)
     {
@@ -19,7 +21,7 @@ internal class SoloCoordinator: INodeCoordinator
 
     public Task Stop()
     {
-        return Daemon.StopAll();
+        return Daemon!.StopAll();
     }
 
     public void Dispose()

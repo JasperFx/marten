@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +15,13 @@ public interface INodeCoordinator: IDisposable
     /// <summary>
     ///     Current daemon being controlled
     /// </summary>
-    IProjectionDaemon Daemon { get; }
+    IProjectionDaemon? Daemon { get; }
+
+    /// <summary>
+    /// Indicates if the current coordinator is responsible for running the async daemon.
+    /// Will always be true in single-node environments.
+    /// </summary>
+    bool IsPrimary { get; }
 
     /// <summary>
     ///     Called at the start of the application to register the projection
