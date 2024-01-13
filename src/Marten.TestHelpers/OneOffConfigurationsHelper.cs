@@ -12,7 +12,7 @@ using Weasel.Postgresql;
 public class OneOffConfigurationsHelper(string schemaName, string connectionString)
 {
     private DocumentStore _store;
-    protected IDocumentSession _session;
+    protected IDocumentSession Session;
     protected readonly IList<IDisposable> _disposables = new List<IDisposable>();
 
     public string SchemaName => schemaName;
@@ -23,7 +23,7 @@ public class OneOffConfigurationsHelper(string schemaName, string connectionStri
     {
         var options = new StoreOptions { DatabaseSchemaName = SchemaName };
 
-        options.Connection();
+        options.Connection(connectionString);
 
         configure?.Invoke(options);
 
@@ -78,13 +78,13 @@ public class OneOffConfigurationsHelper(string schemaName, string connectionStri
     {
         get
         {
-            if (_session != null)
-                return _session;
+            if (Session != null)
+                return Session;
 
-            _session = TheStore.LightweightSession();
-            _disposables.Add(_session);
+            Session = TheStore.LightweightSession();
+            _disposables.Add(Session);
 
-            return _session;
+            return Session;
         }
     }
 
