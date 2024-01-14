@@ -464,7 +464,7 @@ public class multi_stream_aggregation_end_to_end: DaemonContext
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/multi_stream_aggregation_end_to_end.cs#L15-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multi_stream_aggregation_end_to_end_test' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### Test an async daemon listner
+### Test an async daemon listener
 
 Inherit from `DaemonContext` and test your listeners like this:
 
