@@ -12,15 +12,21 @@ namespace Marten.Testing.Harness;
 public abstract class OneOffConfigurationsContext : IDisposable
 {
     protected readonly OneOffConfigurationsHelper OneOffConfigurationsHelper;
-    public string SchemaName { get; protected set; }
+    public string SchemaName { get; }
 
-    public OneOffConfigurationsContext()
+    protected OneOffConfigurationsContext()
     {
         SchemaName = GetType().Name.ToLower().Sanitize();
         OneOffConfigurationsHelper = new OneOffConfigurationsHelper(SchemaName, ConnectionSource.ConnectionString);
     }
 
-    public OneOffConfigurationsContext(OneOffConfigurationsHelper oneOffConfigurationsOneOffConfigurationsHelper)
+    protected OneOffConfigurationsContext(string schemaName)
+    {
+        SchemaName = schemaName;
+        OneOffConfigurationsHelper = new OneOffConfigurationsHelper(SchemaName, ConnectionSource.ConnectionString);
+    }
+
+    protected OneOffConfigurationsContext(OneOffConfigurationsHelper oneOffConfigurationsOneOffConfigurationsHelper)
     {
         SchemaName = GetType().Name.ToLower().Sanitize();
         OneOffConfigurationsHelper = oneOffConfigurationsOneOffConfigurationsHelper;

@@ -8,9 +8,8 @@ namespace Marten.Testing.Harness
     [Collection("bugs")]
     public class BugIntegrationContext: OneOffConfigurationsContext
     {
-        public BugIntegrationContext()
+        public BugIntegrationContext() : base("bugs")
         {
-            SchemaName = "bugs";
         }
     }
 }

@@ -184,9 +184,8 @@ public class when_turning_off_all_optional_metadata: FlexibleDocumentMetadataCon
 [Collection("metadata")]
 public abstract class FlexibleDocumentMetadataContext : OneOffConfigurationsContext
 {
-    protected FlexibleDocumentMetadataContext()
+    protected FlexibleDocumentMetadataContext() : base("metadata")
     {
-        SchemaName = "metadata";
         StoreOptions(opts =>
         {
             opts.Schema.For<MetadataTarget>()
