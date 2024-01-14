@@ -331,25 +331,28 @@ And a `DaemonContext` using the `DaemonContextHelper` like this:
 <!-- snippet: sample_daemon_test_context -->
 <a id='snippet-sample_daemon_test_context'></a>
 ```cs
-public abstract class DaemonContext : OneOffConfigurationsContext
+public abstract class DaemonContext: OneOffConfigurationsContext
 {
     private readonly DaemonContextHelper _daemonContextHelper;
     protected ITestOutputHelper Output;
+    public ILogger<IProjection> Logger => _daemonContextHelper.Logger;
 
-    protected DaemonContext(ITestOutputHelper output)
+    public DaemonContext(ITestOutputHelper output, DaemonContextHelper daemonContextHelper) : base(daemonContextHelper)
     {
-        _daemonContextHelper = new DaemonContextHelper(ConnectionSource.ConnectionString, new TestLogger<IProjection>(output));
+        _daemonContextHelper = daemonContextHelper;
         TheStore.Advanced.Clean.DeleteAllEventData();
 
         TheStore.Options.Projections.DaemonLockId++;
         Output = output;
     }
 
-    public ILogger<IProjection> Logger => _daemonContextHelper.Logger;
+    public DaemonContext(ITestOutputHelper output)
+        : this(output, new DaemonContextHelper(ConnectionSource.ConnectionString, new TestLogger<IProjection>(output))) { }
+
     public Task<IProjectionDaemon> StartDaemon() => _daemonContextHelper.StartDaemon();
     public Task<IProjectionDaemon> StartDaemon(string tenantId) => _daemonContextHelper.StartDaemon(tenantId);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/DaemonContext.cs#L18-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemon_test_context' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/DaemonContext.cs#L18-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemon_test_context' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Test persisting documents and events using the one off context

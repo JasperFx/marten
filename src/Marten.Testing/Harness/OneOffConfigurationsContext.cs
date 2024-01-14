@@ -11,31 +11,31 @@ namespace Marten.Testing.Harness;
 [Collection("OneOffs")]
 public abstract class OneOffConfigurationsContext : IDisposable
 {
-    private readonly OneOffConfigurationsHelper _helper;
+    protected readonly OneOffConfigurationsHelper OneOffConfigurationsHelper;
     public string SchemaName { get; protected set; }
 
-    protected OneOffConfigurationsContext()
+    public OneOffConfigurationsContext()
     {
         SchemaName = GetType().Name.ToLower().Sanitize();
-        _helper = new OneOffConfigurationsHelper(SchemaName, ConnectionSource.ConnectionString);
+        OneOffConfigurationsHelper = new OneOffConfigurationsHelper(SchemaName, ConnectionSource.ConnectionString);
     }
 
-    protected OneOffConfigurationsContext(OneOffConfigurationsHelper oneOffConfigurationsHelper)
+    public OneOffConfigurationsContext(OneOffConfigurationsHelper oneOffConfigurationsOneOffConfigurationsHelper)
     {
         SchemaName = GetType().Name.ToLower().Sanitize();
-        _helper = oneOffConfigurationsHelper;
+        OneOffConfigurationsHelper = oneOffConfigurationsOneOffConfigurationsHelper;
     }
     
-    public DocumentStore SeparateStore(Action<StoreOptions> configure = null) => _helper.SeparateStore(configure);
+    public DocumentStore SeparateStore(Action<StoreOptions> configure = null) => OneOffConfigurationsHelper.SeparateStore(configure);
 
-    public DocumentStore StoreOptions(Action<StoreOptions> configure, bool cleanAll = true) => _helper.StoreOptions(configure, cleanAll);
+    public DocumentStore StoreOptions(Action<StoreOptions> configure, bool cleanAll = true) => OneOffConfigurationsHelper.StoreOptions(configure, cleanAll);
 
-    public DocumentStore TheStore => _helper.TheStore;
+    public DocumentStore TheStore => OneOffConfigurationsHelper.TheStore;
 
-    public IDocumentSession TheSession => _helper.TheSession;
-    public IList<IDisposable> Disposables => _helper.Disposables;
+    public IDocumentSession TheSession => OneOffConfigurationsHelper.TheSession;
+    public IList<IDisposable> Disposables => OneOffConfigurationsHelper.Disposables;
 
-    public Task AppendEvent(Guid streamId, params object[] events) => _helper.AppendEvent(streamId, events);
-    public void Dispose() => _helper.Dispose();
+    public Task AppendEvent(Guid streamId, params object[] events) => OneOffConfigurationsHelper.AppendEvent(streamId, events);
+    public void Dispose() => OneOffConfigurationsHelper.Dispose();
 }
 #endregion

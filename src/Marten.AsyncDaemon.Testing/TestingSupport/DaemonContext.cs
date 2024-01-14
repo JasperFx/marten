@@ -16,24 +16,27 @@ using Xunit.Abstractions;
 namespace Marten.AsyncDaemon.Testing.TestingSupport;
 
 #region sample_daemon_test_context
-public abstract class DaemonContext : OneOffConfigurationsContext
+public abstract class DaemonContext: OneOffConfigurationsContext
 {
     private readonly DaemonContextHelper _daemonContextHelper;
     protected ITestOutputHelper Output;
+    public ILogger<IProjection> Logger => _daemonContextHelper.Logger;
 
-    protected DaemonContext(ITestOutputHelper output)
+    public DaemonContext(ITestOutputHelper output, DaemonContextHelper daemonContextHelper) : base(daemonContextHelper)
     {
-        _daemonContextHelper = new DaemonContextHelper(ConnectionSource.ConnectionString, new TestLogger<IProjection>(output));
+        _daemonContextHelper = daemonContextHelper;
         TheStore.Advanced.Clean.DeleteAllEventData();
 
         TheStore.Options.Projections.DaemonLockId++;
         Output = output;
     }
 
-    public ILogger<IProjection> Logger => _daemonContextHelper.Logger;
+    public DaemonContext(ITestOutputHelper output)
+        : this(output, new DaemonContextHelper(ConnectionSource.ConnectionString, new TestLogger<IProjection>(output))) { }
+
     public Task<IProjectionDaemon> StartDaemon() => _daemonContextHelper.StartDaemon();
     public Task<IProjectionDaemon> StartDaemon(string tenantId) => _daemonContextHelper.StartDaemon(tenantId);
-#endregion
+    #endregion
     public Task<IProjectionDaemon> StartDaemonInHotColdMode() => _daemonContextHelper.StartDaemonInHotColdMode();
     public Task<IProjectionDaemon> StartAdditionalDaemonInHotColdMode() => _daemonContextHelper.StartAdditionalDaemonInHotColdMode();
     public Task WaitForAction(string shardName, ShardAction action, TimeSpan timeout = default) => _daemonContextHelper.WaitForAction(shardName, action, timeout);
