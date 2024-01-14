@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Harness;
 
+#region sample_one_off_test_context
 [Collection("OneOffs")]
 public abstract class OneOffConfigurationsContext : IDisposable
 {
@@ -37,3 +38,4 @@ public abstract class OneOffConfigurationsContext : IDisposable
     public Task AppendEvent(Guid streamId, params object[] events) => _helper.AppendEvent(streamId, events);
     public void Dispose() => _helper.Dispose();
 }
+#endregion

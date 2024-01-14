@@ -293,9 +293,180 @@ services.DisableAllExternalWolverineTransports();
 
 ## Testing Event Projections
 
-// TODO
+### Setup
 
-There is still some discussion on how to leverage this: [Add testing helpers for async projections #2624](https://github.com/JasperFx/marten/issues/2624).
+Marten provides **Marten.TestHelpers** plugin. That provides necessary setup.
+
+Install it through the [Nuget package](https://www.nuget.org/packages/Marten.TestHelpers/).
+
+```powershell
+PM> Install-Package Marten.TestHelpers
+```
+
+If you are using XUnit create an `OneOffConfigurationsContext` using the `OneOffConfigurationsHelper` like this:
+
+<!-- snippet: sample_integration_use_scheme_name -->
+<a id='snippet-sample_integration_use_scheme_name'></a>
+```cs
+services.AddMarten(sp =>
+{
+    var options = new StoreOptions();
+    options.Connection(ConnectionSource.ConnectionString);
+    var martenSettings = sp.GetRequiredService<IOptions<MartenSettings>>().Value;
+
+    if (!string.IsNullOrEmpty(martenSettings.SchemaName))
+    {
+        options.Events.DatabaseSchemaName = martenSettings.SchemaName;
+        options.DatabaseSchemaName = martenSettings.SchemaName;
+    }
+
+    return options;
+}).UseLightweightSessions();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Startup.cs#L32-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_use_scheme_name' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+And a `DaemonContext` using the `DaemonContextHelper` like this:
+
+<!-- snippet: sample_daemon_test_context -->
+<a id='snippet-sample_daemon_test_context'></a>
+```cs
+public abstract class DaemonContext : OneOffConfigurationsContext
+{
+    private readonly DaemonContextHelper _daemonContextHelper;
+    protected ITestOutputHelper Output;
+
+    protected DaemonContext(ITestOutputHelper output)
+    {
+        _daemonContextHelper = new DaemonContextHelper(ConnectionSource.ConnectionString, new TestLogger<IProjection>(output));
+        TheStore.Advanced.Clean.DeleteAllEventData();
+
+        TheStore.Options.Projections.DaemonLockId++;
+        Output = output;
+    }
+
+    public ILogger<IProjection> Logger => _daemonContextHelper.Logger;
+    public Task<IProjectionDaemon> StartDaemon() => _daemonContextHelper.StartDaemon();
+    public Task<IProjectionDaemon> StartDaemon(string tenantId) => _daemonContextHelper.StartDaemon(tenantId);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/DaemonContext.cs#L18-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemon_test_context' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Test persisting documents and events using the one off context
+
+Inherit from `OneOffConfigurationsContext` and test your documents, events and projections without spinning a host like this:
+
+<!-- snippet: sample_one_off_test -->
+<a id='snippet-sample_one_off_test'></a>
+```cs
+public class stream_aggregation : OneOffConfigurationsContext
+{
+    [Fact]
+    public async Task create_with_static_create_method()
+    {
+        var user = new User {UserName = "jamesworthy"};
+        TheSession.Store(user);
+        await TheSession.SaveChangesAsync();
+
+        var stream = Guid.NewGuid();
+        TheSession.Events.StartStream(stream, new UserStarted {UserId = user.Id});
+        await TheSession.SaveChangesAsync();
+
+        var query = TheStore.QuerySession();
+        var user2 = await query.LoadAsync<User>(user.Id);
+        user2.ShouldNotBeNull();
+
+        var aggregate = await TheSession.Events.AggregateStreamAsync<SpecialUsages>(stream);
+        aggregate.UserName.ShouldBe(user.UserName);
+    }
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/stream_aggregation.cs#L13-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_one_off_test' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Test an async multi-stream projection
+
+Inherit from `DaemonContext` and access the daemon like this:
+
+<!-- snippet: sample_multi_stream_aggregation_end_to_end_test -->
+<a id='snippet-sample_multi_stream_aggregation_end_to_end_test'></a>
+```cs
+public class multi_stream_aggregation_end_to_end: DaemonContext
+{
+    public multi_stream_aggregation_end_to_end(ITestOutputHelper output): base(output)
+    {
+    }
+
+    [Fact]
+    public async Task Bug_1947_better_is_new_logic()
+    {
+        Guid user1 = Guid.NewGuid();
+        Guid user2 = Guid.NewGuid();
+        Guid user3 = Guid.NewGuid();
+
+        Guid issue1 = Guid.NewGuid();
+        Guid issue2 = Guid.NewGuid();
+        Guid issue3 = Guid.NewGuid();
+
+        StoreOptions(opts =>
+        {
+            opts.Projections.AsyncMode = DaemonMode.Solo;
+            opts.Projections.Add<UserIssueProjection>(ProjectionLifecycle.Async);
+        });
+
+        await using (var session = TheStore.LightweightSession())
+        {
+            session.Events.Append(user1, new UserCreated { UserId = user1 });
+            session.Events.Append(user2, new UserCreated { UserId = user2 });
+            session.Events.Append(user3, new UserCreated { UserId = user3 });
+
+            await session.SaveChangesAsync();
+        }
+
+        using var daemon = await StartDaemon();
+        await daemon.StartAllShards();
+
+        await daemon.Tracker.WaitForShardState("UserIssue:All", 3, 15.Seconds());
+
+        await using (var session = TheStore.LightweightSession())
+        {
+            session.Events.Append(issue1, new IssueCreated { UserId = user1, IssueId = issue1 });
+            await session.SaveChangesAsync();
+        }
+
+        // We need to ensure that the events are not processed in a single slice to hit the IsNew issue on multiple
+        // slices which is what causes the loss of information in the projection.
+        await daemon.Tracker.WaitForShardState("UserIssue:All", 4, 15.Seconds());
+
+        await using (var session = TheStore.LightweightSession())
+        {
+            session.Events.Append(issue2, new IssueCreated { UserId = user1, IssueId = issue2 });
+            await session.SaveChangesAsync();
+        }
+
+        await daemon.Tracker.WaitForShardState("UserIssue:All", 5, 15.Seconds());
+
+        await using (var session = TheStore.LightweightSession())
+        {
+            session.Events.Append(issue3, new IssueCreated { UserId = user1, IssueId = issue3 });
+            await session.SaveChangesAsync();
+        }
+
+        await daemon.Tracker.WaitForShardState("UserIssue:All", 6, 15.Seconds());
+
+        await using (var session = TheStore.QuerySession())
+        {
+            var doc = await session.LoadAsync<UserIssues>(user1);
+            doc.Issues.Count.ShouldBe(3);
+        }
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/multi_stream_aggregation_end_to_end.cs#L15-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multi_stream_aggregation_end_to_end_test' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Run async projections as a part of your API tests
+
+Building async projections from your API tests is not supported yet. There is still some discussion on how to leverage this: [Add testing helpers for async projections #2624](https://github.com/JasperFx/marten/issues/2624).
 
 ## Additional Tips
 

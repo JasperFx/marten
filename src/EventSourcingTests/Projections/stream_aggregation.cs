@@ -10,6 +10,7 @@ using Xunit;
 
 namespace EventSourcingTests.Projections;
 
+#region sample_one_off_test
 public class stream_aggregation : OneOffConfigurationsContext
 {
     [Fact]
@@ -30,6 +31,7 @@ public class stream_aggregation : OneOffConfigurationsContext
         var aggregate = await TheSession.Events.AggregateStreamAsync<SpecialUsages>(stream);
         aggregate.UserName.ShouldBe(user.UserName);
     }
+#endregion
 
     [Fact]
     public async Task create_with_private_constructor()

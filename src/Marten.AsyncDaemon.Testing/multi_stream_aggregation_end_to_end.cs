@@ -5,7 +5,6 @@ using JasperFx.Core;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
-using Marten.Metadata;
 using Marten.Schema;
 using Shouldly;
 using Xunit;
@@ -13,6 +12,7 @@ using Xunit.Abstractions;
 
 namespace Marten.AsyncDaemon.Testing;
 
+#region sample_multi_stream_aggregation_end_to_end_test
 public class multi_stream_aggregation_end_to_end: DaemonContext
 {
     public multi_stream_aggregation_end_to_end(ITestOutputHelper output): base(output)
@@ -85,6 +85,7 @@ public class multi_stream_aggregation_end_to_end: DaemonContext
         }
     }
 }
+#endregion
 
 public class UserIssues
 {

@@ -15,6 +15,7 @@ using Xunit.Abstractions;
 
 namespace Marten.AsyncDaemon.Testing.TestingSupport;
 
+#region sample_daemon_test_context
 public abstract class DaemonContext : OneOffConfigurationsContext
 {
     private readonly DaemonContextHelper _daemonContextHelper;
@@ -32,6 +33,7 @@ public abstract class DaemonContext : OneOffConfigurationsContext
     public ILogger<IProjection> Logger => _daemonContextHelper.Logger;
     public Task<IProjectionDaemon> StartDaemon() => _daemonContextHelper.StartDaemon();
     public Task<IProjectionDaemon> StartDaemon(string tenantId) => _daemonContextHelper.StartDaemon(tenantId);
+#endregion
     public Task<IProjectionDaemon> StartDaemonInHotColdMode() => _daemonContextHelper.StartDaemonInHotColdMode();
     public Task<IProjectionDaemon> StartAdditionalDaemonInHotColdMode() => _daemonContextHelper.StartAdditionalDaemonInHotColdMode();
     public Task WaitForAction(string shardName, ShardAction action, TimeSpan timeout = default) => _daemonContextHelper.WaitForAction(shardName, action, timeout);
