@@ -65,6 +65,7 @@ public class basic_async_daemon_tests: DaemonContext
 
     #endregion
 
+    #region sample_AsyncDaemonListener_test
     [Fact]
     public async Task can_listen_for_commits_in_daemon()
     {
@@ -91,6 +92,7 @@ public class basic_async_daemon_tests: DaemonContext
 
         listener.Changes.Any().ShouldBeTrue();
     }
+    #endregion
 
     [Fact]
     public async Task listeners_are_not_active_in_rebuilds()

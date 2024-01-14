@@ -464,6 +464,40 @@ public class multi_stream_aggregation_end_to_end: DaemonContext
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/multi_stream_aggregation_end_to_end.cs#L15-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multi_stream_aggregation_end_to_end_test' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+### Test an async daemon listner
+
+Inherit from `DaemonContext` and test your listeners like this:
+
+<!-- snippet: sample_AsyncDaemonListener_test -->
+<a id='snippet-sample_asyncdaemonlistener_test'></a>
+```cs
+[Fact]
+public async Task can_listen_for_commits_in_daemon()
+{
+
+    var listener = new FakeListener();
+    StoreOptions(x =>
+    {
+        x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
+        x.Projections.AsyncListeners.Add(listener);
+    });
+
+    using var daemon = await StartDaemon();
+    await daemon.StartAllShards();
+
+    NumberOfStreams = 10;
+    await PublishSingleThreaded();
+
+    await daemon.Tracker.WaitForShardState("TripCustomName:All", NumberOfEvents);
+
+    await daemon.StopAll();
+
+    listener.Changes.Any().ShouldBeTrue();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/basic_async_daemon_tests.cs#L68-L95' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asyncdaemonlistener_test' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ### Run async projections as a part of your API tests
 
 Building async projections from your API tests is not supported yet. There is still some discussion on how to leverage this: [Add testing helpers for async projections #2624](https://github.com/JasperFx/marten/issues/2624).
@@ -472,5 +506,3 @@ Building async projections from your API tests is not supported yet. There is st
 
 1. **Parallel Execution**: xUnit runs tests in parallel. If your tests are not isolated, it could lead to unexpected behavior.
 2. **Database Clean-Up**: You may want to clean up or reset the database state before running each test. Helpers are explained here: [Cleaning up database](/schema/cleaning).
-
-Feel fre
