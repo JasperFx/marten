@@ -100,7 +100,7 @@ If you don't know the tenant upfront, you can create and apply changes dynamical
 <!-- snippet: sample_manual_single_tenancy_apply_changes -->
 <a id='snippet-sample_manual_single_tenancy_apply_changes'></a>
 ```cs
-var tenant = await theStore.Tenancy.GetTenantAsync(tenantId);
+var tenant = await TheStore.Tenancy.GetTenantAsync(tenantId);
 await tenant.Database.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L151-L156' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_manual_single_tenancy_apply_changes' title='Start of snippet'>anchor</a></sup>

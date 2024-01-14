@@ -76,11 +76,11 @@ public class sub_class_hierarchies: OneOffConfigurationsContext
         var smurf = new Smurf {Ability = "Follow the herd"};
         var papa = new PapaSmurf {Ability = "Lead"};
         var brainy = new BrainySmurf {Ability = "Invent"};
-        theSession.Store(smurf, papa, brainy);
+        TheSession.Store(smurf, papa, brainy);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<Smurf>().Count().ShouldBe(3);
+        TheSession.Query<Smurf>().Count().ShouldBe(3);
     }
 }
 
@@ -122,11 +122,11 @@ public class query_with_inheritance: OneOffConfigurationsContext
         var papa = new PapaSmurf {Ability = "Lead"};
         var papy = new PapySmurf {Ability = "Lead"};
         var brainy = new BrainySmurf {Ability = "Invent"};
-        theSession.Store(smurf, papa, brainy, papy);
+        TheSession.Store(smurf, papa, brainy, papy);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        var list = theSession.Query<IPapaSmurf>().ToList();
+        var list = TheSession.Query<IPapaSmurf>().ToList();
         list.Count().ShouldBe(3);
         list.Count(s => s.Ability == "Invent").ShouldBe(1);
     }
@@ -138,11 +138,11 @@ public class query_with_inheritance: OneOffConfigurationsContext
         var papa = new PapaSmurf {Ability = "Lead"};
         var papy = new PapySmurf {Ability = "Lead"};
         var brainy = new BrainySmurf {Ability = "Invent"};
-        theSession.Store(smurf, papa, brainy, papy);
+        TheSession.Store(smurf, papa, brainy, papy);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var list = await theSession.Query<IPapaSmurf>().ToListAsync();
+        var list = await TheSession.Query<IPapaSmurf>().ToListAsync();
         list.Count().ShouldBe(3);
         list.Count(s => s.Ability == "Invent").ShouldBe(1);
     }
@@ -155,11 +155,11 @@ public class query_with_inheritance: OneOffConfigurationsContext
         var smurf = new Smurf {Ability = "Follow the herd"};
         var papa = new PapaSmurf {Ability = "Lead"};
         var brainy = new BrainySmurf {Ability = "Invent"};
-        theSession.Store(smurf, papa, brainy);
+        TheSession.Store(smurf, papa, brainy);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<Smurf>().Count().ShouldBe(3);
+        TheSession.Query<Smurf>().Count().ShouldBe(3);
     }
 
     [Fact]
@@ -168,13 +168,13 @@ public class query_with_inheritance: OneOffConfigurationsContext
         var smurf = new Smurf {Ability = "Follow the herd"};
         var papa = new PapaSmurf {Ability = "Lead"};
         var brainy = new BrainySmurf {Ability = "Invent"};
-        theSession.Store(smurf, papa, brainy);
+        TheSession.Store(smurf, papa, brainy);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
-        theSession.Query<PapaSmurf>().Count().ShouldBe(2);
+        TheSession.Query<PapaSmurf>().Count().ShouldBe(2);
     }
 
     [Fact]
@@ -183,11 +183,11 @@ public class query_with_inheritance: OneOffConfigurationsContext
         var smurf = new Smurf {Ability = "Follow the herd"};
         var papa = new PapaSmurf {Ability = "Lead"};
         var brainy = new BrainySmurf {Ability = "Invent"};
-        theSession.Store(smurf, papa, brainy);
+        TheSession.Store(smurf, papa, brainy);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
+        TheSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
     }
 
     [Fact]
@@ -217,11 +217,11 @@ public class query_with_inheritance: OneOffConfigurationsContext
         var smurf = new Smurf {Ability = "Follow the herd"};
         var papa = new PapaSmurf {Ability = "Lead"};
         var brainy = new BrainySmurf {Ability = "Invent"};
-        theSession.Store(smurf, papa, brainy);
+        TheSession.Store(smurf, papa, brainy);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
+        TheSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
     }
 
 
@@ -232,11 +232,11 @@ public class query_with_inheritance: OneOffConfigurationsContext
         var papa = new PapaSmurf {Ability = "Lead"};
         var papy = new PapySmurf {Ability = "Lead"};
         var brainy = new BrainySmurf {Ability = "Invent"};
-        theSession.Store(smurf, papa, brainy, papy);
+        TheSession.Store(smurf, papa, brainy, papy);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<IPapaSmurf>().Count().ShouldBe(3);
+        TheSession.Query<IPapaSmurf>().Count().ShouldBe(3);
     }
 
     #endregion

@@ -45,7 +45,7 @@ public class Bug_276_Query_by_abstract_type_in_hierarchy: BugIntegrationContext
             StatusText = "testing status"
         };
 
-        using (var session = theStore.IdentitySession())
+        using (var session = TheStore.IdentitySession())
         {
             session.Store(activity);
             session.SaveChanges();
@@ -54,7 +54,7 @@ public class Bug_276_Query_by_abstract_type_in_hierarchy: BugIntegrationContext
             session.Load<StatusActivity>(activity.Id).ShouldBeTheSameAs(activity);
         }
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             session.Load<Activity>(activity.Id).ShouldNotBeTheSameAs(activity).ShouldNotBeNull();
             session.Load<StatusActivity>(activity.Id).ShouldNotBeTheSameAs(activity).ShouldNotBeNull();

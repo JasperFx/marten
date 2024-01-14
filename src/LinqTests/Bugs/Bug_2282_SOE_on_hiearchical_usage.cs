@@ -17,7 +17,7 @@ public class Bug_2282_SOE_on_hiearchical_usage : BugIntegrationContext
             opts.Schema.For<BaseClass>().AddSubClassHierarchy();
         });
 
-        var data = await theSession.Query<BaseClass>()
+        var data = await TheSession.Query<BaseClass>()
             .Where(x => x.OtherId == Guid.NewGuid())
             .ToListAsync();
 

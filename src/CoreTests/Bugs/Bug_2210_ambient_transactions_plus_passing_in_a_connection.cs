@@ -20,7 +20,7 @@ public class Bug_2210_ambient_transactions_plus_passing_in_a_connection: BugInte
     {
         StoreOptions(opts => opts.RegisterDocumentType<Target>());
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         var transaction = new TransactionScope(
             TransactionScopeOption.Required,
@@ -46,12 +46,12 @@ public class Bug_2210_ambient_transactions_plus_passing_in_a_connection: BugInte
             options.IsolationLevel = IsolationLevel.ReadCommitted;
 
             var martenConnection =
-                await options.InitializeAsync(theStore, CommandRunnerMode.External, CancellationToken.None);
+                await options.InitializeAsync(TheStore, CommandRunnerMode.External, CancellationToken.None);
             var lifetime = martenConnection.ShouldBeOfType<AmbientTransactionLifetime>();
             lifetime.OwnsConnection.ShouldBeFalse();
             lifetime.Connection.ShouldBe(connection);
 
-            await using var session = theStore.LightweightSession(options);
+            await using var session = TheStore.LightweightSession(options);
 
             session.Store(Target.Random());
             await session.SaveChangesAsync();

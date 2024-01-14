@@ -32,11 +32,11 @@ public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body: BugIn
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "3. Garage Door is busted" };
         var issue4 = new Issue { AssigneeId = null, Title = "4. Garage Door is busted" };
 
-        theSession.Store(user1, user2);
-        theSession.Store(issue1, issue2, issue3, issue4);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(user1, user2);
+        TheSession.Store(issue1, issue2, issue3, issue4);
+        await TheSession.SaveChangesAsync();
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
         query.Logger = new TestOutputMartenLogger(_output);
         var list = new List<User>();
 
@@ -62,11 +62,11 @@ public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body: BugIn
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "CCC. Garage Door is busted" };
         var issue4 = new Issue { AssigneeId = null, Title = "ddd. Garage Door is busted" };
 
-        theSession.Store(user1, user2);
-        theSession.Store(issue1, issue2, issue3, issue4);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(user1, user2);
+        TheSession.Store(issue1, issue2, issue3, issue4);
+        await TheSession.SaveChangesAsync();
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
         query.Logger = new TestOutputMartenLogger(_output);
         var list = new List<User>();
 
@@ -88,18 +88,18 @@ public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body: BugIn
         var tenant2 = new Tenant2();
         var tenant3 = new Tenant2();
 
-        theSession.Store(tenant1, tenant2, tenant3);
+        TheSession.Store(tenant1, tenant2, tenant3);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var user1 = new User2 { TenantIds = new List<Guid> { tenant1.Id, tenant2.Id, tenant3.Id } };
-        theSession.Store(user1);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(user1);
+        await TheSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
         var tenants = new Dictionary<Guid, Tenant2>();
-        var user = await theSession
+        var user = await TheSession
             .Query<User2>()
             .Include(x => x.TenantIds, tenants)
             .SingleOrDefaultAsync(x => x.Id == user1.Id);
@@ -120,13 +120,13 @@ public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body: BugIn
             TargetId = target.Id, Number = target.Number // this is random anyway
         }).ToArray();
 
-        await theStore.BulkInsertAsync(targets);
-        await theStore.BulkInsertAsync(users);
+        await TheStore.BulkInsertAsync(targets);
+        await TheStore.BulkInsertAsync(users);
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
         var dict = new Dictionary<Guid, Target>();
-        var records = await theSession.Query<TargetUser>()
+        var records = await TheSession.Query<TargetUser>()
             .Include(x => x.TargetId, dict)
             .OrderBy(x => x.Number)
             .ToPagedListAsync(3, 10);
@@ -155,11 +155,11 @@ public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body: BugIn
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "3. Garage Door is busted" };
         var issue4 = new Issue { AssigneeId = null, Title = "4. Garage Door is busted" };
 
-        theSession.Store(user1, user2);
-        theSession.Store(issue1, issue2, issue3, issue4);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(user1, user2);
+        TheSession.Store(issue1, issue2, issue3, issue4);
+        await TheSession.SaveChangesAsync();
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
 
         var list = new List<User>();
 

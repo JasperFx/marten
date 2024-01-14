@@ -30,10 +30,10 @@ public class diagnostic_methods: OneOffConfigurationsContext
             Birthdate = new DateTime(1987, 10, 4),
             Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
         };
-        theSession.Store(user1, user2);
-        theSession.SaveChanges();
+        TheSession.Store(user1, user2);
+        TheSession.SaveChanges();
 
-        var plan = theSession.Query<SimpleUser>().Explain();
+        var plan = TheSession.Query<SimpleUser>().Explain();
         SpecificationExtensions.ShouldNotBeNull(plan);
         SpecificationExtensions.ShouldBeGreaterThan(plan.PlanWidth, 0);
         SpecificationExtensions.ShouldBeGreaterThan(plan.PlanRows, 0);
@@ -57,10 +57,10 @@ public class diagnostic_methods: OneOffConfigurationsContext
             Birthdate = new DateTime(1987, 10, 4),
             Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
         };
-        theSession.Store(user1, user2);
-        theSession.SaveChanges();
+        TheSession.Store(user1, user2);
+        TheSession.SaveChanges();
 
-        var plan = theSession.Query<SimpleUser>().Where(u => u.Number > 5).Explain();
+        var plan = TheSession.Query<SimpleUser>().Where(u => u.Number > 5).Explain();
         SpecificationExtensions.ShouldNotBeNull(plan);
         SpecificationExtensions.ShouldBeGreaterThan(plan.PlanWidth, 0);
         SpecificationExtensions.ShouldBeGreaterThan(plan.PlanRows, 0);
@@ -84,10 +84,10 @@ public class diagnostic_methods: OneOffConfigurationsContext
             Birthdate = new DateTime(1987, 10, 4),
             Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
         };
-        theSession.Store(user1, user2);
-        theSession.SaveChanges();
+        TheSession.Store(user1, user2);
+        TheSession.SaveChanges();
 
-        var plan = theSession.Query<SimpleUser>().Where(u => u.Number > 5)
+        var plan = TheSession.Query<SimpleUser>().Where(u => u.Number > 5)
             .OrderBy(x => x.Number)
             .Explain(c =>
             {
@@ -110,7 +110,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
     [Fact]
     public void preview_basic_select_command()
     {
-        var cmd = theSession.Query<Target>().ToCommand(FetchType.FetchMany);
+        var cmd = TheSession.Query<Target>().ToCommand(FetchType.FetchMany);
 
         _output.WriteLine(cmd.CommandText);
 
@@ -121,7 +121,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
     [Fact]
     public void preview_select_many()
     {
-        var cmd = theSession.Query<Target>().SelectMany(x => x.Children).Where(x => x.Flag)
+        var cmd = TheSession.Query<Target>().SelectMany(x => x.Children).Where(x => x.Flag)
             .ToCommand(FetchType.FetchMany);
 
         _output.WriteLine(cmd.CommandText);
@@ -130,7 +130,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
     [Fact]
     public void preview_command_with_where_and_parameters()
     {
-        var cmd = theSession.Query<Target>().Where(x => x.Number == 3 && x.Double > 2).ToCommand(FetchType.FetchMany);
+        var cmd = TheSession.Query<Target>().Where(x => x.Number == 3 && x.Double > 2).ToCommand(FetchType.FetchMany);
 
         cmd.CommandText.ShouldBe($"select d.id, d.data from {SchemaName}.mt_doc_target as d where (CAST(d.data ->> 'Number' as integer) = :p0 and CAST(d.data ->> 'Double' as double precision) > :p1);");
 
@@ -142,7 +142,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
     [Fact]
     public void preview_basic_count_command()
     {
-        var cmd = theSession.Query<Target>().ToCommand(FetchType.Count);
+        var cmd = TheSession.Query<Target>().ToCommand(FetchType.Count);
 
         cmd.CommandText.ShouldBe($"select count(*) as number from {SchemaName}.mt_doc_target as d;");
     }
@@ -150,7 +150,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
     [Fact]
     public void preview_basic_any_command()
     {
-        var cmd = theSession.Query<Target>().ToCommand(FetchType.Any);
+        var cmd = TheSession.Query<Target>().ToCommand(FetchType.Any);
 
         cmd.CommandText.ShouldBe($"select TRUE as result from {SchemaName}.mt_doc_target as d LIMIT :p0;");
     }
@@ -158,7 +158,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
     [Fact]
     public void preview_select_on_query()
     {
-        var cmd = theSession.Query<Target>().OrderBy(x => x.Double).ToCommand(FetchType.FetchOne);
+        var cmd = TheSession.Query<Target>().OrderBy(x => x.Double).ToCommand(FetchType.FetchOne);
 
         cmd.CommandText.Trim().ShouldBe($"select d.id, d.data from {SchemaName}.mt_doc_target as d order by CAST(d.data ->> 'Double' as double precision) LIMIT :p0;");
     }

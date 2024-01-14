@@ -40,7 +40,7 @@ public class Bug_1245_include_plus_full_text_search: BugIntegrationContext
     {
         var term = "content";
         var userDictionary = new Dictionary<Guid, Bug1245User>();
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         for (var i = 0; i < 3; i++)
         {
             var newUser = new Bug1245User(Guid.NewGuid(), $"Test user {i}");
@@ -66,7 +66,7 @@ public class Bug_1245_include_plus_full_text_search: BugIntegrationContext
     {
         var term = "content";
         var userDictionary = new Dictionary<Guid, Bug1245User>();
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
         for (var i = 0; i < 3; i++)
         {
             var newUser = new Bug1245User(Guid.NewGuid(), $"Test user {i}");

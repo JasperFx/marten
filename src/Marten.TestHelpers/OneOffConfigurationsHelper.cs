@@ -9,7 +9,7 @@ using Npgsql;
 using Weasel.Core;
 using Weasel.Postgresql;
 
-public class OneOffConfigurationsHelper(string schemaName, string connectionString)
+public class OneOffConfigurationsHelper(string schemaName, string connectionString) : IDisposable
 {
     private DocumentStore _store;
     protected IDocumentSession Session;
@@ -91,5 +91,13 @@ public class OneOffConfigurationsHelper(string schemaName, string connectionStri
     {
         TheSession.Events.Append(streamId, events);
         return TheSession.SaveChangesAsync(CancellationToken.None);
+    }
+
+    public void Dispose()
+    {
+        foreach (var disposable in Disposables)
+        {
+            disposable.Dispose();
+        }
     }
 }

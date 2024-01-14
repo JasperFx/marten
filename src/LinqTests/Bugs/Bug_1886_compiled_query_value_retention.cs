@@ -36,7 +36,7 @@ public class Bug_1886_compiled_query_value_retention: BugIntegrationContext
     [Fact]
     public async Task Should_be_able_to_run_query_multiple_times()
     {
-        var insertSession = theStore.LightweightSession();
+        var insertSession = TheStore.LightweightSession();
         await using (insertSession)
         {
             var testUser = new UserBug1886 { NormalizedEmail = "TEST@EXAMPLE.COM", NormalizedUserName = "ADMIN" };
@@ -44,7 +44,7 @@ public class Bug_1886_compiled_query_value_retention: BugIntegrationContext
             await insertSession.SaveChangesAsync();
         }
 
-        var session1 = theStore.QuerySession();
+        var session1 = TheStore.QuerySession();
         await using (session1)
         {
             var foundUser = await session1
@@ -56,7 +56,7 @@ public class Bug_1886_compiled_query_value_retention: BugIntegrationContext
             foundUser.ShouldNotBeNull();
         }
 
-        var session2 = theStore.QuerySession();
+        var session2 = TheStore.QuerySession();
         await using (session2)
         {
             var foundUser = await session2

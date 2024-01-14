@@ -47,9 +47,9 @@ public class query_against_child_collections: OneOffConfigurationsContext
         child.Color = Colors.Blue;
         child.Inner = new Target { Number = -2, Color = Colors.Blue };
 
-        theSession.Store(targets);
+        TheSession.Store(targets);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         var expected = new[] { targets[5].Id, targets[9].Id, targets[12].Id }.OrderBy(x => x);
 
-        theSession.Query<Target>("where data @> '{\"Children\": [{\"Number\": 6}]}'")
+        TheSession.Query<Target>("where data @> '{\"Children\": [{\"Number\": 6}]}'")
             .ToArray()
             .Select(x => x.Id).OrderBy(x => x)
             .ShouldHaveTheSameElementsAs(expected);
@@ -70,11 +70,11 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         buildUpTargetData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
         #region sample_any-query-through-child-collections
 
-        var results = theSession.Query<Target>()
+        var results = TheSession.Query<Target>()
             .Where(x => x.Children.Any(_ => _.Number == 6))
             .ToArray();
 
@@ -91,9 +91,9 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         buildUpTargetData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
-        var results = theSession.Query<Target>()
+        var results = TheSession.Query<Target>()
             .Where(x => x.Children.Any(c => !string.IsNullOrEmpty(c.NullableString)))
             .ToArray();
 
@@ -108,9 +108,9 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         buildUpTargetData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
-        var results = theSession.Query<Target>()
+        var results = TheSession.Query<Target>()
             .Where(x => x.Children.Any(c => string.IsNullOrWhiteSpace(c.NullableString)))
             .ToArray();
 
@@ -125,11 +125,11 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         buildUpTargetData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
         #region sample_any-query-through-child-collection-with-and
 
-        var results = theSession
+        var results = TheSession
             .Query<Target>()
             .Where(x => x.Children.Any(_ => _.Number == 6 && _.Double == -1))
             .ToArray();
@@ -147,7 +147,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         buildUpTargetData();
 
-        theSession.Query<Target>()
+        TheSession.Query<Target>()
             .Single(x => Enumerable.Any<Target>(x.Children, _ => _.Inner.Number == -2))
             .Id.ShouldBe(targets[10].Id);
     }
@@ -160,7 +160,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
         StoreOptions(_ => _.UseDefaultSerialization(enumStorage));
         buildUpTargetData();
 
-        theSession.Query<Target>()
+        TheSession.Query<Target>()
             .Count(x => x.Children.Any<Target>(_ => _.Color == Colors.Green))
             .ShouldBeGreaterThanOrEqualTo(1);
     }
@@ -173,7 +173,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
         StoreOptions(_ => _.UseDefaultSerialization(enumStorage));
         buildUpTargetData();
 
-        theSession.Query<Target>()
+        TheSession.Query<Target>()
             .Count(x => x.Children.Any<Target>(_ => _.Inner.Color == Colors.Blue))
             .ShouldBeGreaterThanOrEqualTo(1);
     }
@@ -184,7 +184,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
         // Test failure bomb
         if (DateTime.Today < new DateTime(2023, 9, 12)) return;
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             var outer = new Outer();
             outer.Inners.Add(new Inner { Type = "T1", Value = "V11" });
@@ -195,7 +195,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
             session.SaveChanges();
         }
 
-        using (var session2 = theStore.LightweightSession())
+        using (var session2 = TheStore.LightweightSession())
         {
             session2.Logger = new TestOutputMartenLogger(_output);
 
@@ -246,7 +246,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
     [Fact]
     public void Bug_415_can_query_when_matched_value_has_quotes()
     {
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             session.Query<Course>().Any(x => x.ExtIds.Contains("some'thing")).ShouldBeFalse();
         }
@@ -255,7 +255,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
     [Fact]
     public void Bug_415_can_query_inside_of_non_primitive_collection()
     {
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             session.Query<Course>().Any(x => x.Sources.Any(_ => _.Case == "some'thing"));
         }
@@ -280,7 +280,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
     private void buildAuthorData()
     {
         // test fixtures
-        theSession.Store(new Article
+        TheSession.Store(new Article
         {
             Long = 1,
             CategoryArray = new[] { "sports", "finance", "health" },
@@ -289,12 +289,12 @@ public class query_against_child_collections: OneOffConfigurationsContext
             Published = true,
         });
 
-        theSession.Store(new Article
+        TheSession.Store(new Article
         {
             Long = 2, CategoryArray = new[] { "sports", "astrology" }, AuthorArray = favAuthors.Take(1).ToArray(),
         });
 
-        theSession.Store(new Article
+        TheSession.Store(new Article
         {
             Long = 3,
             CategoryArray = new[] { "health", "finance" },
@@ -302,7 +302,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
             AuthorArray = favAuthors.Skip(1).ToArray(),
         });
 
-        theSession.Store(new Article
+        TheSession.Store(new Article
         {
             Long = 4,
             CategoryArray = new[] { "health", "astrology" },
@@ -310,20 +310,20 @@ public class query_against_child_collections: OneOffConfigurationsContext
             Published = true,
         });
 
-        theSession.Store(new Article
+        TheSession.Store(new Article
         {
             Long = 5,
             CategoryArray = new[] { "sports", "nested" },
             AuthorList = new List<Guid> { Guid.NewGuid(), favAuthors[1] },
         });
 
-        theSession.Store(new Article
+        TheSession.Store(new Article
         {
             Long = 6,
             AuthorArray = new Guid[] { favAuthors[0], Guid.NewGuid() },
             ReferencedArticle = new Article { CategoryArray = new[] { "nested" }, }
         });
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
     }
 
     [Fact]
@@ -332,7 +332,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
         buildAuthorData();
 
         var interests = new[] { "finance", "astrology" };
-        var res = theSession.Query<Article>()
+        var res = TheSession.Query<Article>()
             .Where(x => x.CategoryArray.Any(s => interests.Contains(s)))
             .OrderBy(x => x.Long)
             .ToList();
@@ -350,7 +350,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
         buildAuthorData();
 
         var interests = new[] { "health", "astrology" };
-        var res = theSession.Query<Article>()
+        var res = TheSession.Query<Article>()
             .Where(x => x.CategoryList.Any(s => interests.Contains(s)))
             .OrderBy(x => x.Long)
             .ToList();
@@ -366,7 +366,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
         buildAuthorData();
 
         var interests = new[] { "nested" };
-        var res = theSession.Query<Article>()
+        var res = TheSession.Query<Article>()
             .Where(x => x.ReferencedArticle.CategoryArray.Any(s => interests.Contains(s)))
             .OrderBy(x => x.Long)
             .ToList();
@@ -381,7 +381,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
         buildAuthorData();
 
         var interests = new[] { "finance", "astrology" };
-        var res = theSession.Query<Article>()
+        var res = TheSession.Query<Article>()
             .Where(x => x.CategoryArray.Any(s => interests.Contains(s)) && x.Published)
             .OrderBy(x => x.Long)
             .ToList();
@@ -396,7 +396,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         buildAuthorData();
 
-        var res = theSession.Query<Article>()
+        var res = TheSession.Query<Article>()
             .Where(x => x.AuthorArray.Any(s => favAuthors.Contains(s)))
             .OrderBy(x => x.Long)
             .ToList();
@@ -415,7 +415,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         Exception<BadLinqExpressionException>.ShouldBeThrownBy(() =>
         {
-            var res = theSession.Query<Article>()
+            var res = TheSession.Query<Article>()
                 .Where(x => x.AuthorArray.Any(s => favAuthors.Intersect(new Guid[] { Guid.NewGuid() }).Any()))
                 .OrderBy(x => x.Long)
                 .ToList();
@@ -427,7 +427,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         buildAuthorData();
 
-        var res = theSession.Query<Article>()
+        var res = TheSession.Query<Article>()
             .Where(x => x.AuthorList.Any(s => favAuthors.Contains(s)))
             .OrderBy(x => x.Long)
             .ToList();
@@ -444,11 +444,11 @@ public class query_against_child_collections: OneOffConfigurationsContext
         var doc2 = new DocWithArrays { Numbers = new[] { 3, 4, 5 } };
         var doc3 = new DocWithArrays { Numbers = new[] { 5, 6, 7 } };
 
-        theSession.Store(doc1, doc2, doc3);
+        TheSession.Store(doc1, doc2, doc3);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Numbers.Contains(3)).ToArray()
+        TheSession.Query<DocWithArrays>().Where(x => x.Numbers.Contains(3)).ToArray()
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -459,11 +459,11 @@ public class query_against_child_collections: OneOffConfigurationsContext
         var doc2 = new DocWithArrays { Numbers = new[] { 3, 4, 5 } };
         var doc3 = new DocWithArrays { Numbers = new[] { 5, 6, 7, 8 } };
 
-        theSession.Store(doc1, doc2, doc3);
+        TheSession.Store(doc1, doc2, doc3);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Numbers.Length == 4).ToArray()
+        TheSession.Query<DocWithArrays>().Where(x => x.Numbers.Length == 4).ToArray()
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc3.Id);
     }
 
@@ -477,13 +477,13 @@ public class query_against_child_collections: OneOffConfigurationsContext
         var doc2 = new DocWithArrays { Strings = new[] { "c", "d", "e" } };
         var doc3 = new DocWithArrays { Strings = new[] { "d", "e", "f" } };
 
-        theSession.Store(doc1);
-        theSession.Store(doc2);
-        theSession.Store(doc3);
+        TheSession.Store(doc1);
+        TheSession.Store(doc2);
+        TheSession.Store(doc3);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Strings.Contains("c")).ToArray()
+        TheSession.Query<DocWithArrays>().Where(x => x.Strings.Contains("c")).ToArray()
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -496,13 +496,13 @@ public class query_against_child_collections: OneOffConfigurationsContext
         var doc2 = new DocWithArrays { Strings = new[] { "c", "d", "e" } };
         var doc3 = new DocWithArrays { Strings = new[] { "d", "e", "f" } };
 
-        theSession.Store(doc1);
-        theSession.Store(doc2);
-        theSession.Store(doc3);
+        TheSession.Store(doc1);
+        TheSession.Store(doc2);
+        TheSession.Store(doc3);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Strings.Any(_ => _ == "c")).ToArray()
+        TheSession.Query<DocWithArrays>().Where(x => x.Strings.Any(_ => _ == "c")).ToArray()
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -513,15 +513,15 @@ public class query_against_child_collections: OneOffConfigurationsContext
         var doc2 = new DocWithArrays { Strings = new[] { "c", "d", "e" } };
         var doc3 = new DocWithArrays { Strings = new[] { "d", "e", "f", "g" } };
 
-        theSession.Store(doc1);
-        theSession.Store(doc2);
-        theSession.Store(doc3);
+        TheSession.Store(doc1);
+        TheSession.Store(doc2);
+        TheSession.Store(doc3);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
-        theSession.Query<DocWithArrays>().Where(x => x.Strings.Length == 4).ToArray()
+        TheSession.Query<DocWithArrays>().Where(x => x.Strings.Length == 4).ToArray()
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc3.Id);
     }
 
@@ -532,13 +532,13 @@ public class query_against_child_collections: OneOffConfigurationsContext
         var doc2 = new DocWithArrays { Strings = new[] { "c", "d", "e" } };
         var doc3 = new DocWithArrays { Strings = new[] { "d", "e", "f", "g" } };
 
-        theSession.Store(doc1);
-        theSession.Store(doc2);
-        theSession.Store(doc3);
+        TheSession.Store(doc1);
+        TheSession.Store(doc2);
+        TheSession.Store(doc3);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Strings.Count() == 4).ToArray()
+        TheSession.Query<DocWithArrays>().Where(x => x.Strings.Count() == 4).ToArray()
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc3.Id);
     }
 
@@ -558,13 +558,13 @@ public class query_against_child_collections: OneOffConfigurationsContext
             Dates = new[] { DateTime.Today.AddDays(4), DateTime.Today.AddDays(5), DateTime.Today.AddDays(6) }
         };
 
-        theSession.Store(doc1);
-        theSession.Store(doc2);
-        theSession.Store(doc3);
+        TheSession.Store(doc1);
+        TheSession.Store(doc2);
+        TheSession.Store(doc3);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Dates.Contains(DateTime.Today.AddDays(2))).ToArray()
+        TheSession.Query<DocWithArrays>().Where(x => x.Dates.Contains(DateTime.Today.AddDays(2))).ToArray()
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -575,13 +575,13 @@ public class query_against_child_collections: OneOffConfigurationsContext
         var doc2 = new DocWithLists { Numbers = new List<int> { 3, 4, 5 } };
         var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7 } };
 
-        theSession.Store(doc1);
-        theSession.Store(doc2);
-        theSession.Store(doc3);
+        TheSession.Store(doc1);
+        TheSession.Store(doc2);
+        TheSession.Store(doc3);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<DocWithLists>().Where(x => x.Numbers.Contains(3)).ToArray()
+        TheSession.Query<DocWithLists>().Where(x => x.Numbers.Contains(3)).ToArray()
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -595,17 +595,17 @@ public class query_against_child_collections: OneOffConfigurationsContext
         var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7 } };
         var doc4 = new DocWithLists { Numbers = new List<int> { } };
 
-        theSession.Store(doc1, doc2, doc3, doc4);
+        TheSession.Store(doc1, doc2, doc3, doc4);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
-        theSession.Query<DocWithLists>().Where(x => x.Numbers.Any(_ => _ == 3)).ToArray()
+        TheSession.Query<DocWithLists>().Where(x => x.Numbers.Any(_ => _ == 3)).ToArray()
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
 
         // Or without any predicate
-        theSession.Query<DocWithLists>()
+        TheSession.Query<DocWithLists>()
             .Count(x => x.Numbers.Any()).ShouldBe(3);
     }
 
@@ -620,15 +620,15 @@ public class query_against_child_collections: OneOffConfigurationsContext
         var doc2 = new DocWithLists { Numbers = new List<int> { 3, 4, 5 } };
         var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7, 8 } };
 
-        theSession.Store(doc1);
-        theSession.Store(doc2);
-        theSession.Store(doc3);
+        TheSession.Store(doc1);
+        TheSession.Store(doc2);
+        TheSession.Store(doc3);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
-        theSession.Query<DocWithLists>()
+        TheSession.Query<DocWithLists>()
             .Single(x => x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);
     }
 
@@ -641,13 +641,13 @@ public class query_against_child_collections: OneOffConfigurationsContext
         var doc2 = new DocWithLists { Numbers = new List<int> { 3, 4, 5 } };
         var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7, 8 } };
 
-        theSession.Store(doc1);
-        theSession.Store(doc2);
-        theSession.Store(doc3);
+        TheSession.Store(doc1);
+        TheSession.Store(doc2);
+        TheSession.Store(doc3);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<DocWithLists>()
+        TheSession.Query<DocWithLists>()
             .Single(x => x.Numbers.Count == 4).Id.ShouldBe(doc3.Id);
     }
 
@@ -658,13 +658,13 @@ public class query_against_child_collections: OneOffConfigurationsContext
         var doc2 = new DocWithLists { Numbers = new List<int> { 3, 4, 5 } };
         var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7, 8 } };
 
-        theSession.Store(doc1);
-        theSession.Store(doc2);
-        theSession.Store(doc3);
+        TheSession.Store(doc1);
+        TheSession.Store(doc2);
+        TheSession.Store(doc3);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<DocWithLists>()
+        TheSession.Query<DocWithLists>()
             .Single(x => x.Numbers.Count > 3).Id.ShouldBe(doc3.Id);
     }
 
@@ -675,13 +675,13 @@ public class query_against_child_collections: OneOffConfigurationsContext
         var doc2 = new DocWithLists2 { Numbers = new List<int> { 3, 4, 5 } };
         var doc3 = new DocWithLists2 { Numbers = new List<int> { 5, 6, 7 } };
 
-        theSession.Store(doc1);
-        theSession.Store(doc2);
-        theSession.Store(doc3);
+        TheSession.Store(doc1);
+        TheSession.Store(doc2);
+        TheSession.Store(doc3);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<DocWithLists2>().Where(x => x.Numbers.Contains(3)).ToArray()
+        TheSession.Query<DocWithLists2>().Where(x => x.Numbers.Contains(3)).ToArray()
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -692,13 +692,13 @@ public class query_against_child_collections: OneOffConfigurationsContext
         var doc2 = new DocWithLists3 { Numbers = new List<int> { 3, 4, 5 } };
         var doc3 = new DocWithLists3 { Numbers = new List<int> { 5, 6, 7 } };
 
-        theSession.Store(doc1);
-        theSession.Store(doc2);
-        theSession.Store(doc3);
+        TheSession.Store(doc1);
+        TheSession.Store(doc2);
+        TheSession.Store(doc3);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<DocWithLists3>().Where(x => x.Numbers.Contains(3)).ToArray()
+        TheSession.Query<DocWithLists3>().Where(x => x.Numbers.Contains(3)).ToArray()
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -710,12 +710,12 @@ public class query_against_child_collections: OneOffConfigurationsContext
         var nochildrennullarray = new Target { Number = 2 };
         var nochildrenemptyarray = new Target { Number = 3 };
         nochildrenemptyarray.Children = new Target[] { };
-        theSession.Store(nochildrennullarray);
-        theSession.Store(nochildrenemptyarray);
-        theSession.Store(targetithchildren);
-        theSession.SaveChanges();
+        TheSession.Store(nochildrennullarray);
+        TheSession.Store(nochildrenemptyarray);
+        TheSession.Store(targetithchildren);
+        TheSession.SaveChanges();
 
-        var items = theSession.Query<Target>().Where(x => x.Children.Any()).ToList();
+        var items = TheSession.Query<Target>().Where(x => x.Children.Any()).ToList();
 
         items.Count.ShouldBe(1);
     }

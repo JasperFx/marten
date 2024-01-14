@@ -22,9 +22,9 @@ public class count_for_child_collections : OneOffConfigurationsContext
 
         SetupTestData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
-        var result = theSession
+        var result = TheSession
             .Query<Root>()
             .Where(r => r.ChildsLevel1.Count(c1 => c1.Name == "child-1.1") == 1)
             .ToList();
@@ -39,14 +39,14 @@ public class count_for_child_collections : OneOffConfigurationsContext
 
         SetupTestData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
-        var result = await theSession
+        var result = await TheSession
             .Query<Root>()
             .Where(r => r.ChildsLevel1.Count(c1 => c1.Name == "child-1.1") == 1)
             .ToListAsync();
 
-        var result2 = await theSession.QueryAsync(new ChildCollectionCountQuery());
+        var result2 = await TheSession.QueryAsync(new ChildCollectionCountQuery());
 
         result.Single().Id.ShouldBe(result2.Single().Id);
     }
@@ -136,9 +136,9 @@ public class count_for_child_collections : OneOffConfigurationsContext
             }
         };
 
-        theSession.Store(product1);
-        theSession.Store(product2);
-        theSession.SaveChanges();
+        TheSession.Store(product1);
+        TheSession.Store(product2);
+        TheSession.SaveChanges();
     }
 
     public count_for_child_collections(ITestOutputHelper output)

@@ -21,17 +21,17 @@ public class enum_usage : OneOffConfigurationsContext
     [Fact]
     public void use_enum_values_with_jil_that_are_not_duplicated()
     {
-        theSession.Store(new Target{Color = Colors.Blue, Number = 1});
-        theSession.Store(new Target{Color = Colors.Red, Number = 2});
-        theSession.Store(new Target{Color = Colors.Green, Number = 3});
-        theSession.Store(new Target{Color = Colors.Blue, Number = 4});
-        theSession.Store(new Target{Color = Colors.Red, Number = 5});
-        theSession.Store(new Target{Color = Colors.Green, Number = 6});
-        theSession.Store(new Target{Color = Colors.Blue, Number = 7});
+        TheSession.Store(new Target{Color = Colors.Blue, Number = 1});
+        TheSession.Store(new Target{Color = Colors.Red, Number = 2});
+        TheSession.Store(new Target{Color = Colors.Green, Number = 3});
+        TheSession.Store(new Target{Color = Colors.Blue, Number = 4});
+        TheSession.Store(new Target{Color = Colors.Red, Number = 5});
+        TheSession.Store(new Target{Color = Colors.Green, Number = 6});
+        TheSession.Store(new Target{Color = Colors.Blue, Number = 7});
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        TheSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
@@ -41,17 +41,17 @@ public class enum_usage : OneOffConfigurationsContext
     {
         StoreOptions(_ => _.Serializer<JsonNetSerializer>());
 
-        theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
-        theSession.Store(new Target { Color = Colors.Red, Number = 2 });
-        theSession.Store(new Target { Color = Colors.Green, Number = 3 });
-        theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
-        theSession.Store(new Target { Color = Colors.Red, Number = 5 });
-        theSession.Store(new Target { Color = Colors.Green, Number = 6 });
-        theSession.Store(new Target { Color = Colors.Blue, Number = 7 });
+        TheSession.Store(new Target { Color = Colors.Blue, Number = 1 });
+        TheSession.Store(new Target { Color = Colors.Red, Number = 2 });
+        TheSession.Store(new Target { Color = Colors.Green, Number = 3 });
+        TheSession.Store(new Target { Color = Colors.Blue, Number = 4 });
+        TheSession.Store(new Target { Color = Colors.Red, Number = 5 });
+        TheSession.Store(new Target { Color = Colors.Green, Number = 6 });
+        TheSession.Store(new Target { Color = Colors.Blue, Number = 7 });
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        TheSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
@@ -61,17 +61,17 @@ public class enum_usage : OneOffConfigurationsContext
     {
         StoreOptions(_ => _.Serializer(new JsonNetSerializer {EnumStorage = EnumStorage.AsString}));
 
-        theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
-        theSession.Store(new Target { Color = Colors.Red, Number = 2 });
-        theSession.Store(new Target { Color = Colors.Green, Number = 3 });
-        theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
-        theSession.Store(new Target { Color = Colors.Red, Number = 5 });
-        theSession.Store(new Target { Color = Colors.Green, Number = 6 });
-        theSession.Store(new Target { Color = Colors.Blue, Number = 7 });
+        TheSession.Store(new Target { Color = Colors.Blue, Number = 1 });
+        TheSession.Store(new Target { Color = Colors.Red, Number = 2 });
+        TheSession.Store(new Target { Color = Colors.Green, Number = 3 });
+        TheSession.Store(new Target { Color = Colors.Blue, Number = 4 });
+        TheSession.Store(new Target { Color = Colors.Red, Number = 5 });
+        TheSession.Store(new Target { Color = Colors.Green, Number = 6 });
+        TheSession.Store(new Target { Color = Colors.Blue, Number = 7 });
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        TheSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
@@ -85,17 +85,17 @@ public class enum_usage : OneOffConfigurationsContext
             _.Schema.For<Target>().Duplicate(x => x.Color);
         });
 
-        theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
-        theSession.Store(new Target { Color = Colors.Red, Number = 2 });
-        theSession.Store(new Target { Color = Colors.Green, Number = 3 });
-        theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
-        theSession.Store(new Target { Color = Colors.Red, Number = 5 });
-        theSession.Store(new Target { Color = Colors.Green, Number = 6 });
-        theSession.Store(new Target { Color = Colors.Blue, Number = 7 });
+        TheSession.Store(new Target { Color = Colors.Blue, Number = 1 });
+        TheSession.Store(new Target { Color = Colors.Red, Number = 2 });
+        TheSession.Store(new Target { Color = Colors.Green, Number = 3 });
+        TheSession.Store(new Target { Color = Colors.Blue, Number = 4 });
+        TheSession.Store(new Target { Color = Colors.Red, Number = 5 });
+        TheSession.Store(new Target { Color = Colors.Green, Number = 6 });
+        TheSession.Store(new Target { Color = Colors.Blue, Number = 7 });
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        TheSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
@@ -109,17 +109,17 @@ public class enum_usage : OneOffConfigurationsContext
             _.Schema.For<Target>().Duplicate(x => x.Color);
         });
 
-        theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
-        theSession.Store(new Target { Color = Colors.Red, Number = 2 });
-        theSession.Store(new Target { Color = Colors.Green, Number = 3 });
-        theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
-        theSession.Store(new Target { Color = Colors.Red, Number = 5 });
-        theSession.Store(new Target { Color = Colors.Green, Number = 6 });
-        theSession.Store(new Target { Color = Colors.Blue, Number = 7 });
+        TheSession.Store(new Target { Color = Colors.Blue, Number = 1 });
+        TheSession.Store(new Target { Color = Colors.Red, Number = 2 });
+        TheSession.Store(new Target { Color = Colors.Green, Number = 3 });
+        TheSession.Store(new Target { Color = Colors.Blue, Number = 4 });
+        TheSession.Store(new Target { Color = Colors.Red, Number = 5 });
+        TheSession.Store(new Target { Color = Colors.Green, Number = 6 });
+        TheSession.Store(new Target { Color = Colors.Blue, Number = 7 });
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        TheSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
@@ -133,17 +133,17 @@ public class enum_usage : OneOffConfigurationsContext
             _.Schema.For<Target>().Duplicate(x => x.Color);
         });
 
-        theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
-        theSession.Store(new Target { Color = Colors.Red, Number = 2 });
-        theSession.Store(new Target { Color = Colors.Green, Number = 3 });
-        theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
-        theSession.Store(new Target { Color = Colors.Red, Number = 5 });
-        theSession.Store(new Target { Color = Colors.Green, Number = 6 });
-        theSession.Store(new Target { Color = Colors.Blue, Number = 7 });
+        TheSession.Store(new Target { Color = Colors.Blue, Number = 1 });
+        TheSession.Store(new Target { Color = Colors.Red, Number = 2 });
+        TheSession.Store(new Target { Color = Colors.Green, Number = 3 });
+        TheSession.Store(new Target { Color = Colors.Blue, Number = 4 });
+        TheSession.Store(new Target { Color = Colors.Red, Number = 5 });
+        TheSession.Store(new Target { Color = Colors.Green, Number = 6 });
+        TheSession.Store(new Target { Color = Colors.Blue, Number = 7 });
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        TheSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
@@ -170,9 +170,9 @@ public class enum_usage : OneOffConfigurationsContext
             new Target {Color = Colors.Blue, Number = 7}
         };
 
-        theStore.BulkInsert(targets);
+        TheStore.BulkInsert(targets);
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        TheSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
@@ -197,9 +197,9 @@ public class enum_usage : OneOffConfigurationsContext
             new Target {Color = Colors.Blue, Number = 7}
         };
 
-        theStore.BulkInsert(targets);
+        TheStore.BulkInsert(targets);
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        TheSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
@@ -207,14 +207,14 @@ public class enum_usage : OneOffConfigurationsContext
     [Fact]
     public void use_nullable_enum_values_as_part_of_in_query()
     {
-        theSession.Store(new Target{NullableEnum = Colors.Green, Number = 1});
-        theSession.Store(new Target{NullableEnum = Colors.Blue, Number = 2});
-        theSession.Store(new Target{NullableEnum = Colors.Red, Number = 3});
-        theSession.Store(new Target{NullableEnum = Colors.Green, Number = 4});
-        theSession.Store(new Target{NullableEnum = null, Number = 5});
-        theSession.SaveChanges();
+        TheSession.Store(new Target{NullableEnum = Colors.Green, Number = 1});
+        TheSession.Store(new Target{NullableEnum = Colors.Blue, Number = 2});
+        TheSession.Store(new Target{NullableEnum = Colors.Red, Number = 3});
+        TheSession.Store(new Target{NullableEnum = Colors.Green, Number = 4});
+        TheSession.Store(new Target{NullableEnum = null, Number = 5});
+        TheSession.SaveChanges();
 
-        var results = theSession.Query<Target>().Where(x => x.NullableEnum.In(null, Colors.Green))
+        var results = TheSession.Query<Target>().Where(x => x.NullableEnum.In(null, Colors.Green))
             .ToList();
 
         results.Count.ShouldBe(3);
@@ -223,14 +223,14 @@ public class enum_usage : OneOffConfigurationsContext
     [Fact]
     public void use_nullable_enum_values_as_part_of_notin_query()
     {
-        theSession.Store(new Target{NullableEnum = Colors.Green, Number = 1});
-        theSession.Store(new Target{NullableEnum = Colors.Blue, Number = 2});
-        theSession.Store(new Target{NullableEnum = Colors.Red, Number = 3});
-        theSession.Store(new Target{NullableEnum = Colors.Green, Number = 4});
-        theSession.Store(new Target{NullableEnum = null, Number = 5});
-        theSession.SaveChanges();
+        TheSession.Store(new Target{NullableEnum = Colors.Green, Number = 1});
+        TheSession.Store(new Target{NullableEnum = Colors.Blue, Number = 2});
+        TheSession.Store(new Target{NullableEnum = Colors.Red, Number = 3});
+        TheSession.Store(new Target{NullableEnum = Colors.Green, Number = 4});
+        TheSession.Store(new Target{NullableEnum = null, Number = 5});
+        TheSession.SaveChanges();
 
-        var results = theSession.Query<Target>().Where(x => !x.NullableEnum.In(null, Colors.Green))
+        var results = TheSession.Query<Target>().Where(x => !x.NullableEnum.In(null, Colors.Green))
             .ToList();
 
         results.Count.ShouldBe(2);

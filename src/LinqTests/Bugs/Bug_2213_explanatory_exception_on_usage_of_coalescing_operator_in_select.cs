@@ -15,7 +15,7 @@ public class Bug_2213_explanatory_exception_on_usage_of_coalescing_operator_in_s
     {
         var ex = await Should.ThrowAsync<BadLinqExpressionException>(async () =>
         {
-            var targets = await theSession.Query<Parent>()
+            var targets = await TheSession.Query<Parent>()
                 .OrderBy(x => (x.First ?? x.Second).Name).ToListAsync();
         });
 

@@ -27,7 +27,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
     [Fact]
     public async Task any_filter_honors_tenancy()
     {
-        var store = theStore;
+        var store = TheStore;
 
         // Write some User documents to tenant "tenant1"
         await using (var session = store.LightweightSession("tenant1"))
@@ -65,7 +65,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         #region sample_tenancy-scoping-session-write
 
         // Write some User documents to tenant "tenant1"
-        using (var session = theStore.LightweightSession("tenant1"))
+        using (var session = TheStore.LightweightSession("tenant1"))
         {
             session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
             session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = new string[0] });
@@ -75,7 +75,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         #endregion sample_tenancy-scoping-session-write
 
         // Write some User documents to tenant "tenant2"
-        using (var session = theStore.LightweightSession("tenant2"))
+        using (var session = TheStore.LightweightSession("tenant2"))
         {
             session.Store(new User { Id = "u3", UserName = "Frank", Roles = new string[0] });
             session.Store(new User { Id = "u4", UserName = "Jill", Roles = new[] { "admin", "user" } });
@@ -87,7 +87,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
 
         var validRoles = new[] { "admin", "user" };
 
-        using (var query = theStore.QuerySession("tenant1"))
+        using (var query = TheStore.QuerySession("tenant1"))
         {
             query.Query<User>()
                 .Where(x => x.Roles.Any(_ => validRoles.Contains(_)))
@@ -96,7 +96,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
                 .ShouldHaveTheSameElementsAs("Bill");
         }
 
-        using (var query = theStore.QuerySession("tenant2"))
+        using (var query = TheStore.QuerySession("tenant2"))
         {
             query.Query<User>()
                 .Where(x => x.Roles.Any(_ => validRoles.Contains(_)))
@@ -112,7 +112,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         #region sample_tenancy-scoping-session-write
 
         // Write some User documents to tenant "tenant1"
-        using (var session = theStore.LightweightSession("tenant1"))
+        using (var session = TheStore.LightweightSession("tenant1"))
         {
             session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
             session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = new string[0] });
@@ -122,7 +122,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         #endregion sample_tenancy-scoping-session-write
 
         // Write some User documents to tenant "tenant2"
-        using (var session = theStore.LightweightSession("tenant2"))
+        using (var session = TheStore.LightweightSession("tenant2"))
         {
             session.Store(new User { Id = "u3", UserName = "Frank", Roles = new string[0] });
             session.Store(new User { Id = "u4", UserName = "Jill", Roles = new[] { "admin", "user" } });
@@ -134,7 +134,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
 
         var validRoles = new[] { "admin", "user" };
 
-        using (var query = theStore.QuerySession("tenant1"))
+        using (var query = TheStore.QuerySession("tenant1"))
         {
             query.Query<User>()
                 .Where(x => x.Roles.Any(_ => validRoles.Contains(_)) && x.AnyTenant())

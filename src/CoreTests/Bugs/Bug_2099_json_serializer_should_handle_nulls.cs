@@ -16,7 +16,7 @@ public class Bug_2099_json_serializer_should_handle_nulls: BugIntegrationContext
             _.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
         });
 
-        theStore.Serializer.ToJson(null).ShouldBe("null");
+        TheStore.Serializer.ToJson(null).ShouldBe("null");
     }
 
     [Fact]
@@ -27,7 +27,7 @@ public class Bug_2099_json_serializer_should_handle_nulls: BugIntegrationContext
             _.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
         });
 
-        theStore.Serializer.ToJson(null).ShouldBe("null");
+        TheStore.Serializer.ToJson(null).ShouldBe("null");
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class Bug_2099_json_serializer_should_handle_nulls: BugIntegrationContext
             _.Serializer<JilSerializer>();
         });
 
-        theStore.Serializer.ToJson(null).ShouldBe("null");
+        TheStore.Serializer.ToJson(null).ShouldBe("null");
     }
 
 }

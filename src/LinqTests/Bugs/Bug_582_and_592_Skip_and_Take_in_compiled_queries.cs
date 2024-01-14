@@ -17,9 +17,9 @@ public class Bug_582_and_592_Skip_and_Take_in_compiled_queries: BugIntegrationCo
     {
         var targets = Target.GenerateRandomData(1000).ToArray();
 
-        theStore.BulkInsert(targets);
+        TheStore.BulkInsert(targets);
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var page1 = query.Query(new PageOfTargets { Start = 10, Take = 17 }).ToList();
             var page2 = query.Query(new PageOfTargets { Start = 50, Take = 11 }).ToList();
@@ -44,9 +44,9 @@ public class Bug_582_and_592_Skip_and_Take_in_compiled_queries: BugIntegrationCo
 
         var targets = Target.GenerateRandomData(1000).ToArray();
 
-        theStore.BulkInsert(targets);
+        TheStore.BulkInsert(targets);
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var page1 = query.Query(new PageOfTargets { Start = 10, Take = 17 }).ToList();
             var page2 = query.Query(new PageOfTargets { Start = 50, Take = 11 }).ToList();

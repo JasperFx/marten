@@ -23,7 +23,7 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
     [Fact]
     public void extension_feature_is_not_active_without_any_extended_objects()
     {
-        theStore.Options.Storage.AllActiveFeatures(theStore.Storage.Database)
+        TheStore.Options.Storage.AllActiveFeatures(TheStore.Storage.Database)
             .OfType<StorageFeatures>().Any().ShouldBeFalse();
     }
 
@@ -32,9 +32,9 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
     {
         var table = new Table("names");
         table.AddColumn<string>("name").AsPrimaryKey();
-        theStore.Options.Storage.ExtendedSchemaObjects.Add(table);
+        TheStore.Options.Storage.ExtendedSchemaObjects.Add(table);
 
-        var feature = theStore.Options.Storage.AllActiveFeatures(theStore.Storage.Database)
+        var feature = TheStore.Options.Storage.AllActiveFeatures(TheStore.Storage.Database)
             .OfType<StorageFeatures>().Single().As<IFeatureSchema>();
 
         feature.Objects.Single().ShouldBeTheSameAs(table);
@@ -58,7 +58,7 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
             opts.Storage.ExtendedSchemaObjects.Add(table);
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         #endregion
 
@@ -86,11 +86,11 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
             opts.Storage.ExtendedSchemaObjects.Add(extension);
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         #endregion
 
-        var session = theStore.QuerySession();
+        var session = TheStore.QuerySession();
 
         var result = await session.QueryAsync<bool>("select unaccent('Æ') = 'AE';");
 
@@ -115,11 +115,11 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
             opts.Storage.ExtendedSchemaObjects.Add(extension);
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         Func<Task> queryWithNonExistingDB = async () =>
         {
-            await using var session = theStore.QuerySession(tenantId);
+            await using var session = TheStore.QuerySession(tenantId);
             await session.QueryAsync<bool>("select unaccent('Æ') = 'AE';");
         };
         var martenException = await queryWithNonExistingDB.ShouldThrowAsync<MartenCommandException>();
@@ -150,12 +150,12 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
 
         #region sample_manual_single_tenancy_apply_changes
 
-        var tenant = await theStore.Tenancy.GetTenantAsync(tenantId);
+        var tenant = await TheStore.Tenancy.GetTenantAsync(tenantId);
         await tenant.Database.ApplyAllConfiguredChangesToDatabaseAsync();
 
         #endregion
 
-        await using var sessionNext = theStore.QuerySession(tenantId);
+        await using var sessionNext = TheStore.QuerySession(tenantId);
         var result = await sessionNext.QueryAsync<bool>("select unaccent('Æ') = 'AE';");
 
         result.First().ShouldBe(true);
@@ -182,9 +182,9 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
             opts.Storage.ExtendedSchemaObjects.Add(extension);
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        var session = theStore.QuerySession(tenantId);
+        var session = TheStore.QuerySession(tenantId);
         var result = await session.QueryAsync<bool>("select unaccent('Æ') = 'AE';");
         result.First().ShouldBe(true);
     }
@@ -212,11 +212,11 @@ $f$  language sql immutable;
             opts.Storage.ExtendedSchemaObjects.Add(function);
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         #endregion
 
-        var session = theStore.QuerySession();
+        var session = TheStore.QuerySession();
 
         var match = await session.QueryAsync<string>("select iif(1 = 1, 'value matches'::text, 'no match'::text);");
         var noMatch = await session.QueryAsync<string>("select iif(1 = 2, 'value matches'::text, 'no match'::text);");
@@ -240,11 +240,11 @@ $f$  language sql immutable;
             opts.Storage.ExtendedSchemaObjects.Add(sequence);
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         #endregion
 
-        var session = theStore.QuerySession();
+        var session = TheStore.QuerySession();
 
         var value = await session.QueryAsync<int>("select nextval('banana_seq')");
         var valueAgain = await session.QueryAsync<int>("select nextval('banana_seq')");

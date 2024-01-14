@@ -61,16 +61,16 @@ public class Bug_561_negation_of_query_on_contains_with_camel_casing: BugIntegra
         var doc3 = new DocWithArrays { Strings = new string[] { "d", "e", "f" } };
         var doc4 = new DocWithArrays { Strings = new string[] { "g", "h", "i" } };
 
-        theSession.Store(doc1, doc2, doc3, doc4);
+        TheSession.Store(doc1, doc2, doc3, doc4);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
     }
 
     [Fact]
     public void negated_contains()
     {
         #region sample_negated-contains
-        theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
+        TheSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
             .ShouldBe(2);
         #endregion
     }
@@ -78,14 +78,14 @@ public class Bug_561_negation_of_query_on_contains_with_camel_casing: BugIntegra
     [Fact]
     public void NotContainsInExpressionThrowsNotSupportedException()
     {
-        theSession.Query<DocWithArrays>().Count(x => x.Strings.Contains("d") && !x.Strings.Contains("c"))
+        TheSession.Query<DocWithArrays>().Count(x => x.Strings.Contains("d") && !x.Strings.Contains("c"))
             .ShouldBe(1);
     }
 
     [Fact]
     public void ExpressionWithNotContainsReturnsCorrectResults()
     {
-        theSession.Query<DocWithArrays>().Count(x => x.Strings.Contains("d") && !x.Strings.Contains("c"))
+        TheSession.Query<DocWithArrays>().Count(x => x.Strings.Contains("d") && !x.Strings.Contains("c"))
             .ShouldBe(1);
     }
 }

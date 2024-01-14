@@ -14,43 +14,43 @@ namespace CoreTests;
 
 public class DocumentCleanerTests: OneOffConfigurationsContext
 {
-    private IDocumentCleaner theCleaner => theStore.Advanced.Clean;
+    private IDocumentCleaner theCleaner => TheStore.Advanced.Clean;
 
 
     [Fact]
     public async Task clean_table()
     {
-        theSession.Store(new Target { Number = 1 });
-        theSession.Store(new Target { Number = 2 });
-        theSession.Store(new Target { Number = 3 });
-        theSession.Store(new Target { Number = 4 });
-        theSession.Store(new Target { Number = 5 });
-        theSession.Store(new Target { Number = 6 });
+        TheSession.Store(new Target { Number = 1 });
+        TheSession.Store(new Target { Number = 2 });
+        TheSession.Store(new Target { Number = 3 });
+        TheSession.Store(new Target { Number = 4 });
+        TheSession.Store(new Target { Number = 5 });
+        TheSession.Store(new Target { Number = 6 });
 
-        await theSession.SaveChangesAsync();
-        theSession.Dispose();
+        await TheSession.SaveChangesAsync();
+        TheSession.Dispose();
 
         await theCleaner.DeleteDocumentsByTypeAsync(typeof(Target));
 
-        await using var session = theStore.QuerySession();
+        await using var session = TheStore.QuerySession();
         session.Query<Target>().Count().ShouldBe(0);
     }
 
     [Fact]
     public async Task delete_all_documents()
     {
-        theSession.Store(new Target { Number = 1 });
-        theSession.Store(new Target { Number = 2 });
-        theSession.Store(new User());
-        theSession.Store(new Company());
-        theSession.Store(new Issue());
+        TheSession.Store(new Target { Number = 1 });
+        TheSession.Store(new Target { Number = 2 });
+        TheSession.Store(new User());
+        TheSession.Store(new Company());
+        TheSession.Store(new Issue());
 
-        await theSession.SaveChangesAsync();
-        theSession.Dispose();
+        await TheSession.SaveChangesAsync();
+        TheSession.Dispose();
 
         await theCleaner.DeleteAllDocumentsAsync();
 
-        await using var session = theStore.QuerySession();
+        await using var session = TheStore.QuerySession();
         session.Query<Target>().Count().ShouldBe(0);
         session.Query<User>().Count().ShouldBe(0);
         session.Query<Issue>().Count().ShouldBe(0);
@@ -60,38 +60,38 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
     [Fact]
     public async Task completely_remove_document_type()
     {
-        theSession.Store(new Target { Number = 1 });
-        theSession.Store(new Target { Number = 2 });
+        TheSession.Store(new Target { Number = 1 });
+        TheSession.Store(new Target { Number = 2 });
 
-        await theSession.SaveChangesAsync();
-        theSession.Dispose();
+        await TheSession.SaveChangesAsync();
+        TheSession.Dispose();
 
-        var tableName = theStore.StorageFeatures.MappingFor(typeof(Target)).TableName;
+        var tableName = TheStore.StorageFeatures.MappingFor(typeof(Target)).TableName;
 
-        (await theStore.Tenancy.Default.Database.DocumentTables()).Contains(tableName)
+        (await TheStore.Tenancy.Default.Database.DocumentTables()).Contains(tableName)
             .ShouldBeTrue();
 
         await theCleaner.CompletelyRemoveAsync(typeof(Target));
 
-        (await theStore.Tenancy.Default.Database.DocumentTables()).Contains(tableName)
+        (await TheStore.Tenancy.Default.Database.DocumentTables()).Contains(tableName)
             .ShouldBeFalse();
     }
 
     [Fact]
     public async Task completely_remove_document_removes_the_upsert_command_too()
     {
-        theSession.Store(new Target { Number = 1 });
-        theSession.Store(new Target { Number = 2 });
+        TheSession.Store(new Target { Number = 1 });
+        TheSession.Store(new Target { Number = 2 });
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var upsertName = theStore.StorageFeatures.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
+        var upsertName = TheStore.StorageFeatures.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
 
-        (await theStore.Tenancy.Default.Database.Functions()).ShouldContain(upsertName);
+        (await TheStore.Tenancy.Default.Database.Functions()).ShouldContain(upsertName);
 
         await theCleaner.CompletelyRemoveAsync(typeof(Target));
 
-        (await theStore.Tenancy.Default.Database.Functions()).ShouldNotContain(upsertName);
+        (await TheStore.Tenancy.Default.Database.Functions()).ShouldNotContain(upsertName);
 
         Console.WriteLine("foo");
     }
@@ -99,20 +99,20 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
     [Fact]
     public async Task completely_remove_everything()
     {
-        theSession.Store(new Target { Number = 1 });
-        theSession.Store(new Target { Number = 2 });
-        theSession.Store(new User());
-        theSession.Store(new Company());
-        theSession.Store(new Issue());
+        TheSession.Store(new Target { Number = 1 });
+        TheSession.Store(new Target { Number = 2 });
+        TheSession.Store(new User());
+        TheSession.Store(new Company());
+        TheSession.Store(new Issue());
 
-        await theSession.SaveChangesAsync();
-        theSession.Dispose();
+        await TheSession.SaveChangesAsync();
+        TheSession.Dispose();
 
         await theCleaner.CompletelyRemoveAllAsync();
-        var tables = await theStore.Tenancy.Default.Database.DocumentTables();
+        var tables = await TheStore.Tenancy.Default.Database.DocumentTables();
         tables.ShouldBeEmpty();
 
-        var functions = await theStore.Tenancy.Default.Database.Functions();
+        var functions = await TheStore.Tenancy.Default.Database.Functions();
         functions.Where(x => x.Name != "mt_immutable_timestamp" || x.Name != "mt_immutable_timestamptz")
             .ShouldBeEmpty();
     }
@@ -121,14 +121,14 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
     public async Task delete_all_event_data()
     {
         var streamId = Guid.NewGuid();
-        theSession.Events.StartStream<Quest>(streamId, new QuestStarted());
+        TheSession.Events.StartStream<Quest>(streamId, new QuestStarted());
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         await theCleaner.DeleteAllEventDataAsync();
 
-        theSession.Events.QueryRawEventDataOnly<QuestStarted>().ShouldBeEmpty();
-        (await theSession.Events.FetchStreamAsync(streamId)).ShouldBeEmpty();
+        TheSession.Events.QueryRawEventDataOnly<QuestStarted>().ShouldBeEmpty();
+        (await TheSession.Events.FetchStreamAsync(streamId)).ShouldBeEmpty();
     }
 
 
@@ -136,14 +136,14 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
     public async Task delete_all_event_data_async()
     {
         var streamId = Guid.NewGuid();
-        theSession.Events.StartStream<Quest>(streamId, new QuestStarted());
+        TheSession.Events.StartStream<Quest>(streamId, new QuestStarted());
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         await theCleaner.DeleteAllEventDataAsync();
 
-        theSession.Events.QueryRawEventDataOnly<QuestStarted>().ShouldBeEmpty();
-        (await theSession.Events.FetchStreamAsync(streamId)).ShouldBeEmpty();
+        TheSession.Events.QueryRawEventDataOnly<QuestStarted>().ShouldBeEmpty();
+        (await TheSession.Events.FetchStreamAsync(streamId)).ShouldBeEmpty();
     }
 
     private static void ShouldBeEmpty<T>(T[] documentTables)
@@ -155,18 +155,18 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
     [Fact]
     public async Task delete_except_types()
     {
-        theSession.Store(new Target { Number = 1 });
-        theSession.Store(new Target { Number = 2 });
-        theSession.Store(new User());
-        theSession.Store(new Company());
-        theSession.Store(new Issue());
+        TheSession.Store(new Target { Number = 1 });
+        TheSession.Store(new Target { Number = 2 });
+        TheSession.Store(new User());
+        TheSession.Store(new Company());
+        TheSession.Store(new Issue());
 
-        await theSession.SaveChangesAsync();
-        theSession.Dispose();
+        await TheSession.SaveChangesAsync();
+        TheSession.Dispose();
 
         await theCleaner.DeleteDocumentsExceptAsync(typeof(Target), typeof(User));
 
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
         // Not cleaned off
         session.Query<Target>().Count().ShouldBe(2);
         session.Query<User>().Count().ShouldBe(1);
@@ -179,18 +179,18 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
     [Fact]
     public async Task delete_except_types_async()
     {
-        theSession.Store(new Target { Number = 1 });
-        theSession.Store(new Target { Number = 2 });
-        theSession.Store(new User());
-        theSession.Store(new Company());
-        theSession.Store(new Issue());
+        TheSession.Store(new Target { Number = 1 });
+        TheSession.Store(new Target { Number = 2 });
+        TheSession.Store(new User());
+        TheSession.Store(new Company());
+        TheSession.Store(new Issue());
 
-        await theSession.SaveChangesAsync();
-        theSession.Dispose();
+        await TheSession.SaveChangesAsync();
+        TheSession.Dispose();
 
         await theCleaner.DeleteDocumentsExceptAsync(typeof(Target), typeof(User));
 
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
         // Not cleaned off
         session.Query<Target>().Count().ShouldBe(2);
         session.Query<User>().Count().ShouldBe(1);
@@ -208,9 +208,9 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
             opts.Events.AddEventType(typeof(MembersJoined));
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        var allSchemas = theStore.Tenancy.Default.Database.AllSchemaNames();
+        var allSchemas = TheStore.Tenancy.Default.Database.AllSchemaNames();
 
         int GetSequenceCount(IDocumentStore store)
         {
@@ -219,10 +219,10 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
 where s.sequence_name like ? and s.sequence_schema = any(?);", "mt_%", allSchemas).First();
         }
 
-        GetSequenceCount(theStore).ShouldBeGreaterThan(0);
+        GetSequenceCount(TheStore).ShouldBeGreaterThan(0);
 
-        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+        await TheStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
-        GetSequenceCount(theStore).ShouldBe(0);
+        GetSequenceCount(TheStore).ShouldBe(0);
     }
 }

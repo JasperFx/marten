@@ -135,7 +135,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
     {
         var options = new SessionOptions { Timeout = 1 };
 
-        using var session = theStore.LightweightSession(options);
+        using var session = TheStore.LightweightSession(options);
         var e = Assert.Throws<Marten.Exceptions.MartenCommandException>(() =>
         {
             session.Query<FryGuy>("select pg_sleep(2)");
@@ -170,7 +170,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
 
         var options = new SessionOptions();
 
-        using var query = theStore.QuerySession(options);
+        using var query = TheStore.QuerySession(options);
         var cmd = query.Query<FryGuy>().Explain();
         Assert.Equal(30, cmd.Command.CommandTimeout);
     }
@@ -182,7 +182,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         // TODO -- do this without the Preview command. Check against the session itself
         var options = new SessionOptions { Timeout = 15 };
 
-        using var query = theStore.QuerySession(options);
+        using var query = TheStore.QuerySession(options);
         var cmd = query.Query<FryGuy>().Explain();
         Assert.Equal(15, cmd.Command.CommandTimeout);
     }

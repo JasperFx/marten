@@ -25,7 +25,7 @@ public class Bug_2602_include_with_conjoined_tenancy: BugIntegrationContext
         var newUser = new User(CombGuidIdGeneration.NewGuid(), "Alex");
         var newDoc = new Document(CombGuidIdGeneration.NewGuid(), "My Story", newUser.Id);
 
-        var session = theStore.LightweightSession("tenant1");
+        var session = TheStore.LightweightSession("tenant1");
         session.Store(newUser);
         session.Store(newDoc);
         await session.SaveChangesAsync();

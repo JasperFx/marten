@@ -26,10 +26,10 @@ public class BoolNotVisitorTests : OneOffConfigurationsContext
     {
         var docWithFlagFalse = new TestClass();
 
-        theSession.Store(docWithFlagFalse);
-        theSession.SaveChanges();
+        TheSession.Store(docWithFlagFalse);
+        TheSession.SaveChanges();
 
-        using var s = theStore.QuerySession();
+        using var s = TheStore.QuerySession();
         var items = s.Query<TestClass>().Where(x => !x.Flag).ToList();
 
         Assert.Single(items);
@@ -50,10 +50,10 @@ public class BoolNotVisitorTests : OneOffConfigurationsContext
         // Note: with serializer settings DefaultValueHandling.Ignore, serialized JSON won't have Flag property
         var docWithFlagFalse = new TestClass();
 
-        theSession.Store(docWithFlagFalse);
-        theSession.SaveChanges();
+        TheSession.Store(docWithFlagFalse);
+        TheSession.SaveChanges();
 
-        using (var s = theStore.QuerySession())
+        using (var s = TheStore.QuerySession())
         {
             var items = s.Query<TestClass>().Where(x => !x.Flag).ToList();
 

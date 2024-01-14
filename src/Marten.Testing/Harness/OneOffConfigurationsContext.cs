@@ -28,16 +28,6 @@ public abstract class OneOffConfigurationsContext : IDisposable
     public IDocumentSession TheSession => Helper.TheSession;
     public IList<IDisposable> Disposables => Helper.Disposables;
 
-    public Task AppendEvent(Guid streamId, params object[] events)
-    {
-        return Helper.AppendEvent(streamId, events);
-    }
-
-    public void Dispose()
-    {
-        foreach (var disposable in Disposables)
-        {
-            disposable.Dispose();
-        }
-    }
+    public Task AppendEvent(Guid streamId, params object[] events) => Helper.AppendEvent(streamId, events);
+    public void Dispose() => Helper.Dispose();
 }

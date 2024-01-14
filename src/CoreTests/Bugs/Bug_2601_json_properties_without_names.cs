@@ -17,15 +17,15 @@ public class Bug_2601_json_properties_without_names: BugIntegrationContext
         StoreOptions(opts => opts.RegisterDocumentType<DocWithJsonProperties>());
 
         var newDoc = new DocWithJsonProperties {Id = CombGuidIdGeneration.NewGuid(), Name = "foo"};
-        theSession.Store(newDoc);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(newDoc);
+        await TheSession.SaveChangesAsync();
 
         // expected query
         //  where (d.data ->> 'Name' = $1)
 
         // actual query
         //  where (d.data ->> '' = $1)
-        var lookup = await theSession.Query<DocWithJsonProperties>().Where(x => x.Name == "foo").FirstOrDefaultAsync();
+        var lookup = await TheSession.Query<DocWithJsonProperties>().Where(x => x.Name == "foo").FirstOrDefaultAsync();
         Assert.NotNull(lookup);
         Assert.Equal(newDoc.Id, lookup.Id);
     }

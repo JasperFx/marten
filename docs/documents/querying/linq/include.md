@@ -18,11 +18,11 @@ public void simple_include_for_a_single_document()
     var user = new User();
     var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
-    using var session = theStore.IdentitySession();
+    using var session = TheStore.IdentitySession();
     session.Store<object>(user, issue);
     session.SaveChanges();
 
-    using var query = theStore.QuerySession();
+    using var query = TheStore.QuerySession();
     query.Logger = new TestOutputMartenLogger(_output);
 
     User included = null;
@@ -61,12 +61,12 @@ public void include_to_dictionary()
     var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
     var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-    using var session = theStore.IdentitySession();
+    using var session = TheStore.IdentitySession();
     session.Store(user1, user2);
     session.Store(issue1, issue2, issue3);
     session.SaveChanges();
 
-    using var query = theStore.QuerySession();
+    using var query = TheStore.QuerySession();
     var dict = new Dictionary<Guid, User>();
 
     query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
@@ -124,12 +124,12 @@ public void multiple_includes()
 
     var issue1 = new Issue { AssigneeId = assignee.Id, ReporterId = reporter.Id, Title = "Garage Door is busted" };
 
-    using var session = theStore.IdentitySession();
+    using var session = TheStore.IdentitySession();
     session.Store(assignee, reporter);
     session.Store(issue1);
     session.SaveChanges();
 
-    using var query = theStore.QuerySession();
+    using var query = TheStore.QuerySession();
     User assignee2 = null;
     User reporter2 = null;
 

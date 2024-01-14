@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
+     <PropertyGroup>
         <Description>Helpers for writing tests for Marten</Description>
+        <VersionPrefix>7.0.0-beta.3</VersionPrefix>
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
@@ -10,25 +11,23 @@
         <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
         <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <nullable>enable</nullable>
+        <RootNamespace>Marten.NodaTimePlugin</RootNamespace>
     </PropertyGroup>
-
+    
     <!--SourceLink specific settings-->
     <PropertyGroup>
-        <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
-        <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
         <RepositoryUrl>https://github.com/JasperFx/marten.git</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     </PropertyGroup>
+    <PropertyGroup>
+        <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
+        <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
+    </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+        <ProjectReference Include="..\Marten\Marten.csproj"/>
     </ItemGroup>
-    <ItemGroup>
-      <ProjectReference Include="..\Marten\Marten.csproj" />
-    </ItemGroup>
-    <Import Project="../../Analysis.Build.props" />
 </Project>

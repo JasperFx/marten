@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Bug2135;
@@ -22,7 +22,7 @@ namespace CoreTests.Bugs
             var newTargets = Target.GenerateRandomData(5).ToArray();
 
             await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-            await using var session = theStore.LightweightSession(SessionOptions.ForConnection(conn));
+            await using var session = TheStore.LightweightSession(SessionOptions.ForConnection(conn));
 
             session.Store(newTargets);
             await session.SaveChangesAsync();

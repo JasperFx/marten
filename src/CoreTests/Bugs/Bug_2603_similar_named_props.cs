@@ -22,12 +22,12 @@ public class Bug_2603_similar_named_props: BugIntegrationContext
         var doc1 = new Document(Guid.NewGuid(), new Foo("aaa"), new FooBar("bbb"));
         var doc2 = new Document(Guid.NewGuid(), new Foo("ccc"), new FooBar("ddd"));
 
-        theSession.Store(doc1);
-        theSession.Store(doc2);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(doc1);
+        TheSession.Store(doc2);
+        await TheSession.SaveChangesAsync();
 
         // expected: should match both documents
-        var lookup = await theSession.Query<Document>()
+        var lookup = await TheSession.Query<Document>()
             .Where(x => x.Foo.BarBaz == "aaa" || x.FooBar.Baz == "ddd")
             .ToListAsync();
 

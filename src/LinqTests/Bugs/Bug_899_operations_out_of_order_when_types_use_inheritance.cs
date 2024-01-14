@@ -26,13 +26,13 @@ public class Bug_899_operations_out_of_order_when_types_use_inheritance: BugInte
         var docId = Guid.Parse("96d41d29-02a5-4c19-b019-034eb2cf964e");
         var doc = new Invoice { DocumentId = docId, VersionId = Guid.NewGuid(), Name = "Myergen" };
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(doc);
             session.SaveChanges();
         }
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Delete<Invoice>(doc.VersionId);
 

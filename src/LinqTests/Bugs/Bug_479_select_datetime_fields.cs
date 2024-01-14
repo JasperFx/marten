@@ -22,7 +22,7 @@ public class Bug_479_select_datetime_fields: BugIntegrationContext
             DateTime = DateTime.Today
         };
 
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         session.Store(doc);
         session.SaveChanges();
 
@@ -39,7 +39,7 @@ public class Bug_479_select_datetime_fields: BugIntegrationContext
             DateTimeOffset = new DateTimeOffset(2016, 8, 15, 18, 0, 0, 0.Hours())
         };
 
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         session.Store(doc);
         session.SaveChanges();
 

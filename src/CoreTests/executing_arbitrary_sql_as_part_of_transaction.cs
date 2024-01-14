@@ -34,19 +34,19 @@ public class executing_arbitrary_sql_as_part_of_transaction : OneOffConfiguratio
             opts.Storage.ExtendedSchemaObjects.Add(table);
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         #region sample_QueueSqlCommand
-        theSession.QueueSqlCommand("insert into names (name) values ('Jeremy')");
-        theSession.QueueSqlCommand("insert into names (name) values ('Babu')");
-        theSession.Store(Target.Random());
-        theSession.QueueSqlCommand("insert into names (name) values ('Oskar')");
-        theSession.Store(Target.Random());
+        TheSession.QueueSqlCommand("insert into names (name) values ('Jeremy')");
+        TheSession.QueueSqlCommand("insert into names (name) values ('Babu')");
+        TheSession.Store(Target.Random());
+        TheSession.QueueSqlCommand("insert into names (name) values ('Oskar')");
+        TheSession.Store(Target.Random());
         var json = "{ \"answer\": 42 }";
-        theSession.QueueSqlCommand("insert into data (raw_value) values (?::jsonb)", json);
+        TheSession.QueueSqlCommand("insert into data (raw_value) values (?::jsonb)", json);
         #endregion
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
         {

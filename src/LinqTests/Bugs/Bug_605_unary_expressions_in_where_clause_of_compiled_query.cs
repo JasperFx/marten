@@ -16,9 +16,9 @@ public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: BugInt
     public void with_flag_as_true()
     {
         var targets = Target.GenerateRandomData(1000).ToArray();
-        theStore.BulkInsert(targets);
+        TheStore.BulkInsert(targets);
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var results = query.Query(new FlaggedTrueTargets());
 
@@ -44,9 +44,9 @@ public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: BugInt
         StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
 
         var targets = Target.GenerateRandomData(1000).ToArray();
-        theStore.BulkInsert(targets);
+        TheStore.BulkInsert(targets);
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var results = query.Query(new FlaggedTrueTargets());
 
@@ -70,9 +70,9 @@ public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: BugInt
     public void with_flag_as_false()
     {
         var targets = Target.GenerateRandomData(1000).ToArray();
-        theStore.BulkInsert(targets);
+        TheStore.BulkInsert(targets);
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var results = query.Query(new FlaggedFalseTargets());
 

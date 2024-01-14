@@ -28,14 +28,14 @@ public class Bug_634_include_against_soft_deleted_docs: BugIntegrationContext
             AssigneeId = user.Id
         };
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(user);
             session.Store(issue);
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             User expected = null;
 
@@ -60,20 +60,20 @@ public class Bug_634_include_against_soft_deleted_docs: BugIntegrationContext
             AssigneeId = user.Id
         };
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(user);
             session.Store(issue);
             session.SaveChanges();
         }
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Delete(user);
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Logger = new TestOutputMartenLogger(_output);
 

@@ -26,7 +26,7 @@ public class Bug_2274_not_equals_canonicalization : BugIntegrationContext, IAsyn
     [Fact]
     public async Task Marten_Correctly_Throws_Index_Exception_When_Inserting_Using_Bang_Equals()
     {
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
 
         session.Store(new SomeData() { Id = Guid.NewGuid(), SomeField = "1" });
         session.Store(new SomeData() { Id = Guid.NewGuid(), SomeField = "1" });
@@ -37,12 +37,12 @@ public class Bug_2274_not_equals_canonicalization : BugIntegrationContext, IAsyn
     [Fact]
     public async Task Marten_Should_Not_Throw_Exception_When_Asserting_Configuration_For_Bang_Equals()
     {
-        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+        await TheStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
     }
 
     public Task InitializeAsync()
     {
-        return theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        return TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
     }
 
     public Task DisposeAsync()

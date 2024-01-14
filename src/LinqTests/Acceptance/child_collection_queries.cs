@@ -95,7 +95,7 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
 
     protected async Task withData()
     {
-        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
+        await TheStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
         var targets = Target.GenerateRandomData(5).ToArray();
         EmptyNumberArray = targets[0];
         EmptyNumberArray.NumberArray = Array.Empty<int>();
@@ -112,7 +112,7 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
         NullChildren = targets[4];
         NullChildren.Children = null;
 
-        await theStore.BulkInsertAsync(targets);
+        await TheStore.BulkInsertAsync(targets);
     }
 
     public Target HasNumberArray { get; set; }
@@ -130,9 +130,9 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
     {
         await withData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
-        var results = await theSession
+        var results = await TheSession
             .Query<Target>()
             .Where(x => x.NumberArray.IsEmpty())
             .ToListAsync();
@@ -147,9 +147,9 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
     {
         await withData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
-        var results = await theSession
+        var results = await TheSession
             .Query<Target>()
             .Where(x => !x.NumberArray.IsEmpty())
             .ToListAsync();

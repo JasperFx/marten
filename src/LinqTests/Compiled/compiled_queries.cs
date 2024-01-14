@@ -443,11 +443,11 @@ public class when_using_open_generic_compiled_query: OneOffConfigurationsContext
             opts.Schema.For<User>().AddSubClass<AdminUser>();
         });
 
-        theSession.Store(new AdminUser { UserName = "Harry" }, new User { UserName = "Harry" },
+        TheSession.Store(new AdminUser { UserName = "Harry" }, new User { UserName = "Harry" },
             new AdminUser { UserName = "Sue" });
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var user = await theSession.QueryAsync(new FindUserByUserName<AdminUser> { UserName = "Harry" });
+        var user = await TheSession.QueryAsync(new FindUserByUserName<AdminUser> { UserName = "Harry" });
         user.ShouldNotBeNull();
     }
 }
@@ -477,7 +477,7 @@ public class when_compiled_queries_are_used_in_multi_tenancy: OneOffConfiguratio
         StoreOptions(opts => opts.Schema.For<User>().MultiTenanted());
 
         var hanOne = new User { UserName = "han" };
-        await using (var session = theStore.LightweightSession("one"))
+        await using (var session = TheStore.LightweightSession("one"))
         {
             session.Store(hanOne);
             session.Store(new User { UserName = "luke" });
@@ -487,7 +487,7 @@ public class when_compiled_queries_are_used_in_multi_tenancy: OneOffConfiguratio
         }
 
         var hanTwo = new User { UserName = "han" };
-        await using (var session = theStore.LightweightSession("two"))
+        await using (var session = TheStore.LightweightSession("two"))
         {
             session.Store(hanTwo);
             session.Store(new User { UserName = "luke" });
@@ -497,12 +497,12 @@ public class when_compiled_queries_are_used_in_multi_tenancy: OneOffConfiguratio
             await session.SaveChangesAsync();
         }
 
-        await using var query = theStore.QuerySession("one");
+        await using var query = TheStore.QuerySession("one");
         query.Logger = new TestOutputMartenLogger(_output);
         var user = await query.QueryAsync(new UserByUsernameWithFields { UserName = "han" });
         user.Id.ShouldBe(hanOne.Id);
 
-        await using var query2 = theStore.QuerySession("two");
+        await using var query2 = TheStore.QuerySession("two");
         var user2 = await query2.QueryAsync(new UserByUsernameWithFields { UserName = "han" });
         user2.Id.ShouldBe(hanTwo.Id);
     }

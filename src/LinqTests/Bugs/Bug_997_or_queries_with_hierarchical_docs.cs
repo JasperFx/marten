@@ -32,9 +32,9 @@ public class Bug_997_or_queries_with_hierarchical_docs: BugIntegrationContext
         var megaUser2 = new MegaUser() { DisplayName = "Robin", RealName = "Robin Robin" };
         var megaUser3 = new MegaUser() { DisplayName = "Marten", RealName = "Marten Marten" };
 
-        await theStore.BulkInsertAsync(new Bug997User[] { megaUser1, megaUser2, megaUser3 });
+        await TheStore.BulkInsertAsync(new Bug997User[] { megaUser1, megaUser2, megaUser3 });
 
-        await using var session = theStore.QuerySession();
+        await using var session = TheStore.QuerySession();
         session.Query<MegaUser>()
             .Where(_ => _.DisplayName == "Yann" || _.DisplayName == "Robin").OrderBy(x => x.DisplayName).Select(x => x.DisplayName)
             .ToList()

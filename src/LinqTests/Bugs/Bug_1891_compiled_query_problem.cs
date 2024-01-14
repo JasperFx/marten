@@ -14,7 +14,7 @@ public class Bug_1891_compiled_query_problem : BugIntegrationContext
     [Fact]
     public async Task do_not_blow_up()
     {
-        var results = await theSession.QueryAsync(new CompiledTimeline
+        var results = await TheSession.QueryAsync(new CompiledTimeline
         {
             Type = "foo"
         });

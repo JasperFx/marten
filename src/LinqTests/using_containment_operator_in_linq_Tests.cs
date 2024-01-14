@@ -18,7 +18,7 @@ public class using_containment_operator_in_linq_Tests: OneOffConfigurationsConte
     public void query_by_date()
     {
         var targets = Target.GenerateRandomData(6).ToArray();
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(targets);
 
         session.SaveChanges();
@@ -35,7 +35,7 @@ public class using_containment_operator_in_linq_Tests: OneOffConfigurationsConte
     [Fact]
     public void query_by_number()
     {
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(new Target { Number = 1 });
         session.Store(new Target { Number = 2 });
         session.Store(new Target { Number = 3 });
@@ -52,7 +52,7 @@ public class using_containment_operator_in_linq_Tests: OneOffConfigurationsConte
     [Fact]
     public void query_by_string()
     {
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(new Target { String = "Python" });
         session.Store(new Target { String = "Ruby" });
         session.Store(new Target { String = "Java" });
@@ -80,7 +80,7 @@ public class using_containment_operator_in_linq_with_camel_casing_Tests: OneOffC
     [Fact]
     public void query_by_date()
     {
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
 
         var targets = Target.GenerateRandomData(6).ToArray();
         session.Store(targets);
@@ -98,7 +98,7 @@ public class using_containment_operator_in_linq_with_camel_casing_Tests: OneOffC
     [Fact]
     public void query_by_number()
     {
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(new Target { Number = 1 });
         session.Store(new Target { Number = 2 });
         session.Store(new Target { Number = 3 });
@@ -115,7 +115,7 @@ public class using_containment_operator_in_linq_with_camel_casing_Tests: OneOffC
     [Fact]
     public void query_by_string()
     {
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(new Target { String = "Python" });
         session.Store(new Target { String = "Ruby" });
         session.Store(new Target { String = "Java" });

@@ -22,7 +22,7 @@ public class Bug_2103_able_to_add_metadata_tables_in_migrations_to_events_table 
             opts.Events.AddEventType(typeof(AEvent));
         }, true);
 
-        await theStore.As<IDocumentStore>().Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.As<IDocumentStore>().Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         StoreOptions(opts =>
         {
@@ -32,12 +32,12 @@ public class Bug_2103_able_to_add_metadata_tables_in_migrations_to_events_table 
             opts.Events.MetadataConfig.HeadersEnabled = true;
         }, false);
 
-        var martenStorage = theStore.As<IDocumentStore>().Storage;
+        var martenStorage = TheStore.As<IDocumentStore>().Storage;
         await martenStorage.ApplyAllConfiguredChangesToDatabaseAsync();
         await martenStorage.Database.AssertDatabaseMatchesConfigurationAsync();
 
-        theSession.Events.Append(Guid.NewGuid().ToString(), new QuestStarted());
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(Guid.NewGuid().ToString(), new QuestStarted());
+        await TheSession.SaveChangesAsync();
 
     }
 }

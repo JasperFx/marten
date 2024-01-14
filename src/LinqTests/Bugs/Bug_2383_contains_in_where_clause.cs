@@ -11,12 +11,12 @@ public class Bug_2383_contains_in_where_clause : BugIntegrationContext
     [Fact]
     public async Task can_query_through()
     {
-        theSession.Store(new Something { Id = "4", Message = "Does this work?" });
-        await theSession.SaveChangesAsync();
+        TheSession.Store(new Something { Id = "4", Message = "Does this work?" });
+        await TheSession.SaveChangesAsync();
 
         var ids = new string[1] { "4" };
 
-        var results = await theSession.Query<Something>()
+        var results = await TheSession.Query<Something>()
             .Where(s => ids.Contains(s.Id))
             .ToListAsync();
 
@@ -26,12 +26,12 @@ public class Bug_2383_contains_in_where_clause : BugIntegrationContext
     [Fact]
     public async Task can_query_through_deeper()
     {
-        theSession.Store(new Something { Id = "4", Message = "Does this work?", Child = new SomeChild{Id = "3"}});
-        await theSession.SaveChangesAsync();
+        TheSession.Store(new Something { Id = "4", Message = "Does this work?", Child = new SomeChild{Id = "3"}});
+        await TheSession.SaveChangesAsync();
 
         var ids = new string[1] { "3" };
 
-        var results = await theSession.Query<Something>()
+        var results = await TheSession.Query<Something>()
             .Where(s => ids.Contains(s.Child.Id))
             .ToListAsync();
 

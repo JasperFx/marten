@@ -16,13 +16,13 @@ public class Bug_449_IsOneOf_query_with_enum_types: BugIntegrationContext
         var red = new Target { Color = Colors.Red };
         var green = new Target { Color = Colors.Green };
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(blue, red, green);
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var list = query.Query<Target>().Where(x => x.Color.IsOneOf(Colors.Blue, Colors.Red)).ToList();
 
@@ -41,13 +41,13 @@ public class Bug_449_IsOneOf_query_with_enum_types: BugIntegrationContext
         var red = new Target { Color = Colors.Red };
         var green = new Target { Color = Colors.Green };
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(blue, red, green);
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var list = query.Query<Target>().Where(x => x.Color.IsOneOf(Colors.Blue, Colors.Red)).ToList();
 

@@ -10,15 +10,15 @@ public class date_type_usage : OneOffConfigurationsContext
     [Fact]
     public void query()
     {
-        theSession.Store(new Target{Number = 1, DateOffset = DateTimeOffset.UtcNow.AddMinutes(30)});
-        theSession.Store(new Target{Number = 2, DateOffset = DateTimeOffset.UtcNow.AddDays(1)});
-        theSession.Store(new Target{Number = 3, DateOffset = DateTimeOffset.UtcNow.AddHours(1)});
-        theSession.Store(new Target{Number = 4, DateOffset = DateTimeOffset.UtcNow.AddHours(-2)});
-        theSession.Store(new Target{Number = 5, DateOffset = DateTimeOffset.UtcNow.AddHours(-3)});
+        TheSession.Store(new Target{Number = 1, DateOffset = DateTimeOffset.UtcNow.AddMinutes(30)});
+        TheSession.Store(new Target{Number = 2, DateOffset = DateTimeOffset.UtcNow.AddDays(1)});
+        TheSession.Store(new Target{Number = 3, DateOffset = DateTimeOffset.UtcNow.AddHours(1)});
+        TheSession.Store(new Target{Number = 4, DateOffset = DateTimeOffset.UtcNow.AddHours(-2)});
+        TheSession.Store(new Target{Number = 5, DateOffset = DateTimeOffset.UtcNow.AddHours(-3)});
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        theSession.Query<Target>().Where(x => x.DateOffset > DateTimeOffset.UtcNow).ToArray()
+        TheSession.Query<Target>().Where(x => x.DateOffset > DateTimeOffset.UtcNow).ToArray()
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 2, 3);
     }
@@ -31,16 +31,16 @@ public class date_type_usage : OneOffConfigurationsContext
             _.Schema.For<Target>().Index(x => x.DateOffset);
         });
 
-        theSession.Store(new Target { Number = 1, DateOffset = DateTimeOffset.UtcNow.AddMinutes(30) });
-        theSession.Store(new Target { Number = 2, DateOffset = DateTimeOffset.UtcNow.AddDays(1) });
-        theSession.Store(new Target { Number = 3, DateOffset = DateTimeOffset.UtcNow.AddHours(1) });
-        theSession.Store(new Target { Number = 4, DateOffset = DateTimeOffset.UtcNow.AddHours(-2) });
-        theSession.Store(new Target { Number = 5, DateOffset = DateTimeOffset.UtcNow.AddHours(-3) });
+        TheSession.Store(new Target { Number = 1, DateOffset = DateTimeOffset.UtcNow.AddMinutes(30) });
+        TheSession.Store(new Target { Number = 2, DateOffset = DateTimeOffset.UtcNow.AddDays(1) });
+        TheSession.Store(new Target { Number = 3, DateOffset = DateTimeOffset.UtcNow.AddHours(1) });
+        TheSession.Store(new Target { Number = 4, DateOffset = DateTimeOffset.UtcNow.AddHours(-2) });
+        TheSession.Store(new Target { Number = 5, DateOffset = DateTimeOffset.UtcNow.AddHours(-3) });
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
 
-        theSession.Query<Target>().Where(x => x.DateOffset > DateTimeOffset.UtcNow).OrderBy(x => x.DateOffset).ToArray()
+        TheSession.Query<Target>().Where(x => x.DateOffset > DateTimeOffset.UtcNow).OrderBy(x => x.DateOffset).ToArray()
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 3, 2);
     }
@@ -51,13 +51,13 @@ public class date_type_usage : OneOffConfigurationsContext
         var document = Target.Random();
         document.DateOffset = DateTimeOffset.UtcNow;
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Insert(document);
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var dateOffset = query.Query<Target>().Where(x => x.Id == document.Id).Select(x => x.DateOffset).Single();
 

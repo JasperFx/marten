@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -25,7 +25,7 @@ public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
     [Obsolete("Obsolete")]
     public async Task can_properly_detect_changes_when_user_defined_type()
     {
-        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+        await TheStore.Advanced.Clean.CompletelyRemoveAllAsync();
         StoreOptions(opts =>
         {
             opts.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
@@ -172,21 +172,21 @@ public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
             await conn.CreateCommand(sql).ExecuteNonQueryAsync();
         }
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Store(guyWithCustomType1, guyWithCustomType2);
             session.Store(issue1, issue2, issue3);
             await session.SaveChangesAsync();
         }
 
-        await using (var session = theStore.QuerySession())
+        await using (var session = TheStore.QuerySession())
         {
             session.Load<UserWithCustomType>(guyWithCustomType1.Id).CustomType.ShouldBe("test_cust_type");
         }
 
-        await using (var query = theStore.QuerySession())
+        await using (var query = TheStore.QuerySession())
         {
             var userList = new List<UserWithCustomType>();
 

@@ -13,11 +13,11 @@ public class hashset_contains: BugIntegrationContext
     public async Task Can_query_by_hashset_contains()
     {
         var value = Guid.NewGuid().ToString();
-        theSession.Store(new MySpecialType(Guid.NewGuid(), value));
-        await theSession.SaveChangesAsync();
+        TheSession.Store(new MySpecialType(Guid.NewGuid(), value));
+        await TheSession.SaveChangesAsync();
 
         var hashset = new HashSet<string> { value };
-        var items = await theSession
+        var items = await TheSession
             .Query<MySpecialType>()
             .Where(x => hashset.Contains(x.Value))
             .ToListAsync();

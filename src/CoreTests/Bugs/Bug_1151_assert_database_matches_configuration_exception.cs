@@ -17,8 +17,8 @@ public class Bug_1151_assert_db_matches_config_exception: BugIntegrationContext
                 .Duplicate(c => c.Trim);
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
     }
 
 }

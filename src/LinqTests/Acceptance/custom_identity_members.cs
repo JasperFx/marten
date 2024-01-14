@@ -15,14 +15,14 @@ public class custom_identity_members : OneOffConfigurationsContext
     {
         StoreOptions(_ => { _.Schema.For<BaseClass>().Identity(x => x.SystemId); });
 
-        theStore.BulkInsert(new[]
+        TheStore.BulkInsert(new[]
         {
             new BaseClass {Id = "qwe", SystemId = "123"},
             new BaseClass {Id = "asd", SystemId = "456"},
             new BaseClass {Id = "zxc", SystemId = "789"}
         });
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             session.Query<BaseClass>().Count(x => x.Id.IsOneOf(listSystemIds)).ShouldBe(0);
             session.Query<BaseClass>().Count(x => x.SystemId.IsOneOf(listSystemIds)).ShouldBe(2);
@@ -34,14 +34,14 @@ public class custom_identity_members : OneOffConfigurationsContext
     {
         StoreOptions(_ => { _.Schema.For<BaseClass>().Identity(x => x.SystemId); });
 
-        theStore.BulkInsert(new[]
+        TheStore.BulkInsert(new[]
         {
             new BaseClass {Id = "qwe", SystemId = "123"},
             new BaseClass {Id = "asd", SystemId = "456"},
             new BaseClass {Id = "zxc", SystemId = "789"}
         });
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             session.LoadMany<BaseClass>(listSystemIds).Count.ShouldBe(2);
 

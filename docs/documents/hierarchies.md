@@ -153,11 +153,11 @@ public void get_all_subclasses_of_a_subclass()
     var smurf = new Smurf {Ability = "Follow the herd"};
     var papa = new PapaSmurf {Ability = "Lead"};
     var brainy = new BrainySmurf {Ability = "Invent"};
-    theSession.Store(smurf, papa, brainy);
+    TheSession.Store(smurf, papa, brainy);
 
-    theSession.SaveChanges();
+    TheSession.SaveChanges();
 
-    theSession.Query<Smurf>().Count().ShouldBe(3);
+    TheSession.Query<Smurf>().Count().ShouldBe(3);
 }
 
 [Fact]
@@ -166,13 +166,13 @@ public void get_all_subclasses_of_a_subclass2()
     var smurf = new Smurf {Ability = "Follow the herd"};
     var papa = new PapaSmurf {Ability = "Lead"};
     var brainy = new BrainySmurf {Ability = "Invent"};
-    theSession.Store(smurf, papa, brainy);
+    TheSession.Store(smurf, papa, brainy);
 
-    theSession.SaveChanges();
+    TheSession.SaveChanges();
 
-    theSession.Logger = new TestOutputMartenLogger(_output);
+    TheSession.Logger = new TestOutputMartenLogger(_output);
 
-    theSession.Query<PapaSmurf>().Count().ShouldBe(2);
+    TheSession.Query<PapaSmurf>().Count().ShouldBe(2);
 }
 
 [Fact]
@@ -181,11 +181,11 @@ public void get_all_subclasses_of_a_subclass_with_where()
     var smurf = new Smurf {Ability = "Follow the herd"};
     var papa = new PapaSmurf {Ability = "Lead"};
     var brainy = new BrainySmurf {Ability = "Invent"};
-    theSession.Store(smurf, papa, brainy);
+    TheSession.Store(smurf, papa, brainy);
 
-    theSession.SaveChanges();
+    TheSession.SaveChanges();
 
-    theSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
+    TheSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
 }
 
 [Fact]
@@ -214,11 +214,11 @@ public void get_all_subclasses_of_a_subclass_with_where_with_camel_casing()
     var smurf = new Smurf {Ability = "Follow the herd"};
     var papa = new PapaSmurf {Ability = "Lead"};
     var brainy = new BrainySmurf {Ability = "Invent"};
-    theSession.Store(smurf, papa, brainy);
+    TheSession.Store(smurf, papa, brainy);
 
-    theSession.SaveChanges();
+    TheSession.SaveChanges();
 
-    theSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
+    TheSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
 }
 
 [Fact]
@@ -228,11 +228,11 @@ public void get_all_subclasses_of_an_interface()
     var papa = new PapaSmurf {Ability = "Lead"};
     var papy = new PapySmurf {Ability = "Lead"};
     var brainy = new BrainySmurf {Ability = "Invent"};
-    theSession.Store(smurf, papa, brainy, papy);
+    TheSession.Store(smurf, papa, brainy, papy);
 
-    theSession.SaveChanges();
+    TheSession.SaveChanges();
 
-    theSession.Query<IPapaSmurf>().Count().ShouldBe(3);
+    TheSession.Query<IPapaSmurf>().Count().ShouldBe(3);
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L150-L242' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>

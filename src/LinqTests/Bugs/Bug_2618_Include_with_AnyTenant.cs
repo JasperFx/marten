@@ -29,7 +29,7 @@ public class Bug_2618_Include_with_AnyTenant : BugIntegrationContext
         var user1a = new User();
         var issue1a = new Issue { AssigneeId = user1a.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        await using (var session = theStore.LightweightSession("one"))
+        await using (var session = TheStore.LightweightSession("one"))
         {
             session.Store(user1a);
             session.Store(issue1a);
@@ -40,18 +40,18 @@ public class Bug_2618_Include_with_AnyTenant : BugIntegrationContext
         var issue2a = new Issue { AssigneeId = user2a.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
 
-        await using (var session = theStore.LightweightSession("two"))
+        await using (var session = TheStore.LightweightSession("two"))
         {
             session.Store(user2a);
             session.Store(issue2a);
             await session.SaveChangesAsync();
         }
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
         var users = new List<User>();
 
-        var issues = await theSession
+        var issues = await TheSession
             .Query<Issue>().Where(x => x.AnyTenant() && x.Tags.Contains("DIY"))
             .Include(x => x.AssigneeId, users)
             .ToListAsync();

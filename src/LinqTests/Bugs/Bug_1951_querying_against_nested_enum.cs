@@ -21,20 +21,20 @@ public class Bug_1951_querying_against_nested_enum : BugIntegrationContext
     [Fact]
     public async Task can_query_against_the_nested_enum()
     {
-        theSession.Logger = new TestOutputMartenLogger(_output);
-        theSession.Store(new TestDoc
+        TheSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Store(new TestDoc
         {
             Nested = new Nested(Guid.NewGuid(), Scope.Periscope)
         });
 
-        theSession.Store(new TestDoc
+        TheSession.Store(new TestDoc
         {
             Nested = new Nested(Guid.NewGuid(), Scope.Microscope)
         });
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var results = await theSession.Query<TestDoc>()
+        var results = await TheSession.Query<TestDoc>()
             .Where(x => x.Nested.Scope == Scope.Periscope)
             .ToListAsync();
 
@@ -49,20 +49,20 @@ public class Bug_1951_querying_against_nested_enum : BugIntegrationContext
             opts.UseDefaultSerialization(EnumStorage.AsString);
         });
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
-        theSession.Store(new TestDoc
+        TheSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Store(new TestDoc
         {
             Nested = new Nested(Guid.NewGuid(), Scope.Periscope)
         });
 
-        theSession.Store(new TestDoc
+        TheSession.Store(new TestDoc
         {
             Nested = new Nested(Guid.NewGuid(), Scope.Microscope)
         });
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
-        var results = await theSession.Query<TestDoc>()
+        var results = await TheSession.Query<TestDoc>()
             .Where(x => x.Nested.Scope == Scope.Periscope)
             .ToListAsync();
 

@@ -18,7 +18,7 @@ public class Bug_118_bad_exception_message_Tests: BugIntegrationContext
     {
         Exception<BadLinqExpressionException>.ShouldBeThrownBy(() =>
         {
-            theSession.Query<TestClass>().Where(x => x.Id == TestNullObject.Id).ToList();
+            TheSession.Query<TestClass>().Where(x => x.Id == TestNullObject.Id).ToList();
         });
     }
 

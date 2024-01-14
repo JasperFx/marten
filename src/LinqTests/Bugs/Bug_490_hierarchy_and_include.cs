@@ -54,7 +54,7 @@ public class Bug_490_hierarchy_and_include: BugIntegrationContext
             Name = "Paul"
         };
 
-        theSession.Store(account);
+        TheSession.Store(account);
 
         var activity = new StatusActivity()
         {
@@ -63,10 +63,10 @@ public class Bug_490_hierarchy_and_include: BugIntegrationContext
             AccountId = 1
         };
 
-        theSession.Store(activity);
-        theSession.SaveChanges();
+        TheSession.Store(activity);
+        TheSession.SaveChanges();
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             List<Account> accounts = new List<Account>();
             session.Query<Activity>()
@@ -87,7 +87,7 @@ public class Bug_490_hierarchy_and_include: BugIntegrationContext
             Name = "Paul"
         };
 
-        theSession.Store(account);
+        TheSession.Store(account);
 
         var activity = new StatusActivity()
         {
@@ -96,10 +96,10 @@ public class Bug_490_hierarchy_and_include: BugIntegrationContext
             AccountId = 1
         };
 
-        theSession.Store(activity);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(activity);
+        await TheSession.SaveChangesAsync();
 
-        await using (var session = theStore.QuerySession())
+        await using (var session = TheStore.QuerySession())
         {
             List<Account> accounts = new List<Account>();
             (await session.Query<Activity>()

@@ -30,12 +30,12 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted #2" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted #3" };
 
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3);
         await session.SaveChangesAsync();
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
         User included = null;
         var list = new List<User>();
         var dict = new Dictionary<Guid, User>();
@@ -86,11 +86,11 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store<object>(user, issue);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         query.Logger = new TestOutputMartenLogger(_output);
 
         User included = null;
@@ -113,11 +113,11 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store<object>(user, issue);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         User included = null;
         var issue2 = query
             .Query<Issue>()
@@ -139,11 +139,11 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store<object>(user, issue);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         User included = null;
         var issue2 = query.Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
@@ -162,11 +162,11 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store<object>(user, issue);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         User included = null;
         var issue2 = query
             .Query<Issue>()
@@ -187,11 +187,11 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store<object>(user, issue);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         User included = null;
         var issue2 = query.Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
@@ -212,11 +212,11 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store<object>(user, issue);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         User included = null;
         var issue2 = query.Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
@@ -237,11 +237,11 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store<object>(user, issue);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         User included = null;
         var issue2 = query.Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
@@ -262,11 +262,11 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store<object>(user, issue);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         User included = null;
         var issue2 = query.Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
@@ -289,12 +289,12 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
 
         var requestedTags = new[] { "DIY", "TAG" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(user);
         session.Store(issue1, issue2, issue3);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         var users = new List<User>();
         var issues = query.Query<Issue>()
             .Include(x => x.AssigneeId, users)
@@ -315,7 +315,7 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var user = new UserWithInterface { Id = Guid.NewGuid(), UserName = "Jens" };
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store<object>(user, issue);
         session.SaveChanges();
 
@@ -324,7 +324,7 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
 
     private void IncludeGeneric<T>(UserWithInterface userToCompareAgainst) where T : class, IUserWithInterface
     {
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         T included = default;
         var issue2 = query.Query<Issue>()
             .Include<T>(x => x.AssigneeId, x => included = x)
@@ -342,11 +342,11 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
     {
         var issue = new Issue { AssigneeId = null, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(issue);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         User included = null;
         var issue2 = query.Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
@@ -368,12 +368,12 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted 2" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted 3" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         var list = new List<User>();
 
         var issues = query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToArray();
@@ -395,12 +395,12 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue4 = new Issue { AssigneeId = null, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3, issue4);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         var list = new List<User>();
 
         var issues = query.Query<Issue>()
@@ -427,12 +427,12 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue4 = new Issue { AssigneeId = null, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3, issue4);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         var list = new List<User>();
 
         var issues = query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToArray();
@@ -456,13 +456,13 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3);
         session.SaveChanges();
 
         // This will only work with a non-NulloIdentityMap
-        using var query = theStore.IdentitySession();
+        using var query = TheStore.IdentitySession();
         var dict = new Dictionary<Guid, User>();
 
         query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
@@ -483,12 +483,12 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         var dict = new Dictionary<Guid, User>();
 
         query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
@@ -511,12 +511,12 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue4 = new Issue { AssigneeId = null, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3, issue4);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         var dict = new Dictionary<Guid, User>();
 
         var issues = query
@@ -542,12 +542,12 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue4 = new Issue { AssigneeId = null, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3, issue4);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         var dict = new Dictionary<Guid, User>();
 
         var issues = query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
@@ -565,11 +565,11 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         session.Store<object>(user, issue);
         await session.SaveChangesAsync();
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
         query.Logger = new TestOutputMartenLogger(_output);
         User included = null;
         var issue2 = await query.Query<Issue>()
@@ -593,12 +593,12 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3);
         await session.SaveChangesAsync();
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
         var list = new List<User>();
 
         query.Logger = new TestOutputMartenLogger(_output);
@@ -620,12 +620,12 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3);
         await session.SaveChangesAsync();
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
         var list = new List<User>();
 
         await query.Query<Issue>().Include(x => x.AssigneeId, list)
@@ -648,12 +648,12 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3);
         await session.SaveChangesAsync();
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
         var list = new List<User>();
 
         await query.Query<Issue>().Include(x => x.AssigneeId, list)
@@ -676,12 +676,12 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
         var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
 
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3);
         await session.SaveChangesAsync();
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
 
         var dict = new Dictionary<Guid, User>();
 
@@ -702,12 +702,12 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
 
         var issue1 = new Issue { AssigneeId = assignee.Id, ReporterId = reporter.Id, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store(assignee, reporter);
         session.Store(issue1);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         User assignee2 = null;
         User reporter2 = null;
 
@@ -736,19 +736,19 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var user6 = new User { };
         var user7 = new User { };
 
-        theStore.BulkInsert(new User[] { user1, user2, user3, user4, user5, user6, user7 });
+        TheStore.BulkInsert(new User[] { user1, user2, user3, user4, user5, user6, user7 });
 
         var group1 = new Group { Name = "Odds", Users = new[] { user1.Id, user3.Id, user5.Id, user7.Id } };
 
         var group2 = new Group { Name = "Evens", Users = new[] { user2.Id, user4.Id, user6.Id } };
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(group1, group2);
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var list = new List<User>();
 
@@ -773,11 +773,11 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store<object>(user, issue);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         User included = null;
         var issue2 = query
             .Query<Issue>()
@@ -803,7 +803,7 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
     [Fact]
     public async Task Bug_1715_simple_include_for_a_single_document_async()
     {
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
         session.Logger = new TestOutputMartenLogger(_output);
 
         var user = new User();
@@ -818,7 +818,7 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
 
         await session.SaveChangesAsync();
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
         User includedUser = null;
         Bug includedBug = null;
         var issue2 = await query.Query<Issue>()
@@ -841,11 +841,11 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         session.Store<object>(user, issue);
         session.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
         User included = null;
         var issue2 = query
             .Query<Issue>()
@@ -863,18 +863,18 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var user2 = new User();
         var user3 = new User();
 
-        theStore.BulkInsert(new[] { user1, user2, user3 });
+        TheStore.BulkInsert(new[] { user1, user2, user3 });
 
         var group1 = new Group { Name = "Users", Users = new[] { user1.Id, user2.Id, user3.Id } };
         var group2 = new Group { Name = "Empty", Users = new Guid[0] };
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(group1, group2);
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Logger = new TestOutputMartenLogger(_output);
 

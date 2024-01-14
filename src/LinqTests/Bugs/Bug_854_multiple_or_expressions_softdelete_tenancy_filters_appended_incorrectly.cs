@@ -24,11 +24,11 @@ public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended
 
         Target[] reds = Target.GenerateRandomData(50).ToArray();
 
-        theStore.BulkInsert("Bug_854", reds);
+        TheStore.BulkInsert("Bug_854", reds);
 
         var expected = reds.Where(x => x.String == "Red" || x.String == "Orange").Select(x => x.Id).OrderBy(x => x).ToArray();
 
-        using (var query = theStore.QuerySession("Bug_854"))
+        using (var query = TheStore.QuerySession("Bug_854"))
         {
             var actual = query.Query<Target>().Where(x => x.String == "Red" || x.String == "Orange")
                 .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
@@ -48,13 +48,13 @@ public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended
 
         var expected = 3;
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Store(item1, item2, item3);
             session.SaveChanges();
         }
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             var query = session.Query<SoftDeletedItem>()
                 .Where(x => x.Number == 1 || x.Number == 2);

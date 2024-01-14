@@ -14,7 +14,7 @@ The following sample demonstrates scoping a document session to tenancy identifi
 <a id='snippet-sample_tenancy-scoping-session-write'></a>
 ```cs
 // Write some User documents to tenant "tenant1"
-using (var session = theStore.LightweightSession("tenant1"))
+using (var session = TheStore.LightweightSession("tenant1"))
 {
     session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
     session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = new string[0] });
@@ -25,7 +25,7 @@ using (var session = theStore.LightweightSession("tenant1"))
 <a id='snippet-sample_tenancy-scoping-session-write-1'></a>
 ```cs
 // Write some User documents to tenant "tenant1"
-using (var session = theStore.LightweightSession("tenant1"))
+using (var session = TheStore.LightweightSession("tenant1"))
 {
     session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
     session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = new string[0] });

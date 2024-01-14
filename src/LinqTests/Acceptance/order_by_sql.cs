@@ -27,18 +27,18 @@ public class order_by_sql : OneOffConfigurationsContext
         });
 
         var targets = Target.GenerateRandomData(100).ToArray();
-        await theStore.BulkInsertAsync(targets);
+        await TheStore.BulkInsertAsync(targets);
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
-        var expected = await theSession
+        var expected = await TheSession
             .Query<Target>()
             .OrderBy(x => x.String)
             .ThenByDescending(x => x.AnotherString)
             .Select(x => x.Id)
             .ToListAsync();
 
-        var command = theSession
+        var command = TheSession
             .Query<Target>()
             .OrderBySql("string")
             .ThenBySql("another_string desc")
@@ -46,7 +46,7 @@ public class order_by_sql : OneOffConfigurationsContext
 
         _output.WriteLine(command.CommandText);
 
-        var actual = await theSession
+        var actual = await TheSession
             .Query<Target>()
             .OrderBySql("string")
             .ThenBySql("another_string desc")

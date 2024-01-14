@@ -25,9 +25,9 @@ public class Bug_2810_distinct_plus_include : BugIntegrationContext
         var skip = 30;
         var take = 10;
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
-        var results = await theSession.Query<MainTable>()
+        var results = await TheSession.Query<MainTable>()
             .Include(x => x.IncludedTableId, includedTableDocuments)
             .Where(i => i.ExportId == exportId)
             .OrderBy(i => i.IncludedTableId)

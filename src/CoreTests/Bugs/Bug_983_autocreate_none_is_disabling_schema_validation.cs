@@ -27,7 +27,7 @@ public class Bug_983_autocreate_none_is_disabling_schema_validation: BugIntegrat
 
         await Exception<DatabaseValidationException>.ShouldBeThrownByAsync(() =>
         {
-            return theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+            return TheStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         });
     }
 

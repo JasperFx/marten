@@ -64,7 +64,7 @@ using the `&&` operator:
 <!-- snippet: sample_any-query-through-child-collection-with-and -->
 <a id='snippet-sample_any-query-through-child-collection-with-and'></a>
 ```cs
-var results = theSession
+var results = TheSession
     .Query<Target>()
     .Where(x => x.Children.Any(_ => _.Number == 6 && _.Double == -1))
     .ToArray();
@@ -83,7 +83,7 @@ theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_561_negation_of_query_on_contains.cs#L32-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_negated-contains' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_negated-contains-1'></a>
 ```cs
-theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
+TheSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
     .ShouldBe(2);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_561_negation_of_query_on_contains.cs#L72-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_negated-contains-1' title='Start of snippet'>anchor</a></sup>
@@ -102,13 +102,13 @@ public void query_against_string_array()
     var doc2 = new DocWithArrays { Strings = new[] { "c", "d", "e" } };
     var doc3 = new DocWithArrays { Strings = new[] { "d", "e", "f" } };
 
-    theSession.Store(doc1);
-    theSession.Store(doc2);
-    theSession.Store(doc3);
+    TheSession.Store(doc1);
+    TheSession.Store(doc2);
+    TheSession.Store(doc3);
 
-    theSession.SaveChanges();
+    TheSession.SaveChanges();
 
-    theSession.Query<DocWithArrays>().Where(x => x.Strings.Contains("c")).ToArray()
+    TheSession.Query<DocWithArrays>().Where(x => x.Strings.Contains("c")).ToArray()
         .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
 }
 ```
@@ -128,17 +128,17 @@ public void query_against_number_list_with_any()
     var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7 } };
     var doc4 = new DocWithLists { Numbers = new List<int> { } };
 
-    theSession.Store(doc1, doc2, doc3, doc4);
+    TheSession.Store(doc1, doc2, doc3, doc4);
 
-    theSession.SaveChanges();
+    TheSession.SaveChanges();
 
-    theSession.Logger = new TestOutputMartenLogger(_output);
+    TheSession.Logger = new TestOutputMartenLogger(_output);
 
-    theSession.Query<DocWithLists>().Where(x => x.Numbers.Any(_ => _ == 3)).ToArray()
+    TheSession.Query<DocWithLists>().Where(x => x.Numbers.Any(_ => _ == 3)).ToArray()
         .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
 
     // Or without any predicate
-    theSession.Query<DocWithLists>()
+    TheSession.Query<DocWithLists>()
         .Count(x => x.Numbers.Any()).ShouldBe(3);
 }
 ```
@@ -158,15 +158,15 @@ public void query_against_number_list_with_count_method()
     var doc2 = new DocWithLists { Numbers = new List<int> { 3, 4, 5 } };
     var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7, 8 } };
 
-    theSession.Store(doc1);
-    theSession.Store(doc2);
-    theSession.Store(doc3);
+    TheSession.Store(doc1);
+    TheSession.Store(doc2);
+    TheSession.Store(doc3);
 
-    theSession.SaveChanges();
+    TheSession.SaveChanges();
 
-    theSession.Logger = new TestOutputMartenLogger(_output);
+    TheSession.Logger = new TestOutputMartenLogger(_output);
 
-    theSession.Query<DocWithLists>()
+    TheSession.Query<DocWithLists>()
         .Single(x => x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);
 }
 ```

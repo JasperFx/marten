@@ -43,7 +43,7 @@ public class Bug_365_compiled_query_with_constant_fails: BugIntegrationContext
             _.Schema.For<Route>();
         });
 
-        theStore.Options.Providers.StorageFor<Route>().ShouldNotBeNull();
+        TheStore.Options.Providers.StorageFor<Route>().ShouldNotBeNull();
     }
 
     public class RoutesPlannedAfter: ICompiledQuery<Route, IEnumerable<Route>>
@@ -68,7 +68,7 @@ public class Bug_365_compiled_query_with_constant_fails: BugIntegrationContext
 
         var from = DateTime.Today.AddDays(5);
 
-        using (var session = theStore.QuerySession())
+        using (var session = TheStore.QuerySession())
         {
             var routes = session.Query(new RoutesPlannedAfter(from)).ToList();
             var all = session.Query<Route>();
@@ -79,7 +79,7 @@ public class Bug_365_compiled_query_with_constant_fails: BugIntegrationContext
 
     private void AddRoutes(int number)
     {
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         for (var index = 0; index < number; index++)
         {
             var route = new Route();

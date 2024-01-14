@@ -20,15 +20,15 @@ public class npgsql_multiplexing : OneOffConfigurationsContext
             options.Connection(_connectionMultiplexed);
         });
 
-        await theStore.Advanced.Clean.CompletelyRemoveAsync(typeof(Target));
+        await TheStore.Advanced.Clean.CompletelyRemoveAsync(typeof(Target));
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Insert(Target.GenerateRandomData(99).ToArray());
             await session.SaveChangesAsync();
         }
 
-        await using (var query = theStore.QuerySession())
+        await using (var query = TheStore.QuerySession())
         {
             (await query.Query<Target>().CountAsync()).ShouldBe(99);
         }

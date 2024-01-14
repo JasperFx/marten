@@ -21,7 +21,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
     [Fact]
     public void can_issue_queries_against_DateTime()
     {
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             var now = GenerateTestDateTime();
             _output.WriteLine("now: " + now.ToString("o"));
@@ -75,7 +75,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
     {
         StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             var now = GenerateTestDateTime();
             _output.WriteLine("now: " + now.ToString("o"));
@@ -129,7 +129,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
     {
         StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.SnakeCase));
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             var now = GenerateTestDateTime();
             _output.WriteLine("now: " + now.ToString("o"));
@@ -183,7 +183,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
     {
         StoreOptions(_ => _.Schema.For<DateClass>().Duplicate(x => x.DateTimeField));
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             var now = GenerateTestDateTime();
             _output.WriteLine("now: " + now.ToString("o"));
@@ -225,7 +225,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
     [Fact]
     public void can_issue_queries_against_the_datetime_offset()
     {
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             var now = GenerateTestDateTimeOffset();
             _output.WriteLine("now: " + now.ToString("o"));
@@ -269,7 +269,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
     {
         StoreOptions(_ => _.Schema.For<DateOffsetClass>().Duplicate(x => x.DateTimeOffsetField));
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             var now = GenerateTestDateTimeOffset();
             _output.WriteLine("now: " + now.ToString("o"));

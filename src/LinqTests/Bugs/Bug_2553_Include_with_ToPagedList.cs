@@ -21,19 +21,19 @@ public class Bug_2553_Include_with_ToPagedList: BugIntegrationContext
 
         foreach (var foo in foos)
         {
-            theSession.Store(foo);
+            TheSession.Store(foo);
         }
 
         foreach (var bar in bars)
         {
-            theSession.Store(bar);
+            TheSession.Store(bar);
         }
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
         var includedFoos = new Dictionary<Guid, Foo>();
 
-        var queriedBars = theSession.Query<Bar>()
+        var queriedBars = TheSession.Query<Bar>()
             .Include(bar => bar.FooId, dictionary: includedFoos)
             .ToPagedList(pageNumber: 1, pageSize: 4);
 

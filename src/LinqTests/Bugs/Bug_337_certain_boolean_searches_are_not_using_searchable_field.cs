@@ -16,7 +16,7 @@ public class Bug_337_certain_boolean_searches_are_not_using_searchable_field: Bu
             _.Schema.For<Target>().Duplicate(x => x.Flag).GinIndexJsonData();
         });
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         var cmd1 = session.Query<Target>().Where(x => x.Flag == false).ToCommand();
 
         var cmd2 = session.Query<Target>().Where(x => !x.Flag).ToCommand();
@@ -34,7 +34,7 @@ public class Bug_337_certain_boolean_searches_are_not_using_searchable_field: Bu
             //_.Schema.For<Target>().Duplicate(x => x.Flag);
         });
 
-        using var session = theStore.IdentitySession();
+        using var session = TheStore.IdentitySession();
         var cmd1 = session.Query<Target>().Where(x => x.Flag == false).ToCommand();
 
         cmd1.CommandText.ShouldBe("select d.id, d.data from bugs.mt_doc_target as d where CAST(d.data ->> 'Flag' as boolean) = :p0;");

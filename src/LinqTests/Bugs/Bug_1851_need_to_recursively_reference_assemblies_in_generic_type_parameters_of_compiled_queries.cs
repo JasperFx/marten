@@ -9,7 +9,7 @@ public class Bug_1851_need_to_recursively_reference_assemblies_in_generic_type_p
     [Fact]
     public async Task Should_be_able_execute_query()
     {
-        _ = await theSession
+        _ = await TheSession
             .QueryAsync(
                 new GenericOuter<StoredObjectInThisAssembly>.FindByNameQuery { Name = "random" })
             .ConfigureAwait(false);

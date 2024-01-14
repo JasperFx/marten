@@ -17,13 +17,13 @@ public class query_with_multiple_where_clauses_and_soft_deletes_configured : One
         var item2 = new SoftDeletedItem { Number = 2, Name = "Joe Bill" };
         var item3 = new SoftDeletedItem { Number = 1, Name = "Jim Beam" };
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Store(item1, item2, item3);
             await session.SaveChangesAsync();
         }
 
-        await using (var session = theStore.QuerySession())
+        await using (var session = TheStore.QuerySession())
         {
             var query = session.Query<SoftDeletedItem>()
                 .Where(x => x.Number == 1)
@@ -43,13 +43,13 @@ public class query_with_multiple_where_clauses_and_soft_deletes_configured : One
         var item2 = new SoftDeletedItem { Number = 2, Name = "Joe Bill" };
         var item3 = new SoftDeletedItem { Number = 1, Name = "Jim Beam" };
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Store(item1, item2, item3);
             await session.SaveChangesAsync();
         }
 
-        await using (var session = theStore.QuerySession())
+        await using (var session = TheStore.QuerySession())
         {
             var query = session.Query<SoftDeletedItem>()
                 .Where(x => x.Number == 1)

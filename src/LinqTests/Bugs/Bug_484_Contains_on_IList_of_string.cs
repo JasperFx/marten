@@ -30,7 +30,7 @@ public class Bug_484_Contains_on_IList_of_string: BugIntegrationContext
         var doc2 = new DocWithLists {Names = new List<string> {"Jeremy", "Lindsey", "Max"}};
         var doc3 = new DocWithLists {Names = new List<string> {"Jack", "Lindsey", "Max"}};
 
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         session.Store(doc1, doc2, doc3);
         session.SaveChanges();
 
@@ -51,7 +51,7 @@ public class Bug_484_Contains_on_IList_of_string: BugIntegrationContext
         var doc2 = new DocWithLists {Names = new List<string> {"Jeremy", "Lindsey", "Max"}};
         var doc3 = new DocWithLists {Names = new List<string> {"Jack", "Lindsey", "Max"}};
 
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         session.Store(doc1, doc2, doc3);
         session.SaveChanges();
 
