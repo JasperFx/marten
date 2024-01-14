@@ -27,9 +27,9 @@ public class select_many_with_transform : OneOffConfigurationsContext
         });
 
         var targets = Target.GenerateRandomData(100).ToArray();
-        await theStore.BulkInsertAsync(targets);
+        await TheStore.BulkInsertAsync(targets);
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
         var count = targets
             .Where(x => x.Flag)
             .SelectMany(x => x.Children)

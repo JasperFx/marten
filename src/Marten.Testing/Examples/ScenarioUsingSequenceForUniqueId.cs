@@ -50,15 +50,15 @@ public class ScenarioUsingSequenceForUniqueId: OneOffConfigurationsContext
 
         #region sample_scenario-usingsequenceforuniqueid-storesetup-2
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         #endregion
 
         #region sample_scenario-usingsequenceforuniqueid-querymatter
 
-        var matter = theStore.StorageFeatures.FindFeature(typeof(MatterId)).Objects.OfType<Sequence>().Single();
+        var matter = TheStore.StorageFeatures.FindFeature(typeof(MatterId)).Objects.OfType<Sequence>().Single();
 
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
         // Generate a new, unique identifier
         var nextMatter = session.NextInSequence(matter);
 

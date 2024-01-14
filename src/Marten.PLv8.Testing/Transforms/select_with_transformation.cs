@@ -30,7 +30,7 @@ public class select_with_transformation: OneOffConfigurationsContext
     {
         var user = new User { FirstName = "Eric", LastName = "Berry" };
 
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         session.Store(user);
         session.SaveChanges();
 
@@ -45,7 +45,7 @@ public class select_with_transformation: OneOffConfigurationsContext
     {
         var user = new User { FirstName = "Eric", LastName = "Berry" };
 
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
         session.Store(user);
         await session.SaveChangesAsync();
 
@@ -64,7 +64,7 @@ public class select_with_transformation: OneOffConfigurationsContext
     {
         var user = new User { FirstName = "Eric", LastName = "Berry" };
 
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
         session.Store(user);
         await session.SaveChangesAsync();
 
@@ -86,7 +86,7 @@ public class select_with_transformation: OneOffConfigurationsContext
     {
         var user = new User { FirstName = "Eric", LastName = "Berry" };
 
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
         session.Store(user);
         await session.SaveChangesAsync();
 
@@ -103,7 +103,7 @@ public class select_with_transformation: OneOffConfigurationsContext
         var user1 = new User { FirstName = "Eric", LastName = "Berry" };
         var user2 = new User { FirstName = "Derrick", LastName = "Johnson" };
 
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
         session.Store(user1, user2);
         await session.SaveChangesAsync();
 
@@ -121,7 +121,7 @@ public class select_with_transformation: OneOffConfigurationsContext
     {
         var user = new User { FirstName = "Eric", LastName = "Berry" };
 
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
         session.Store(user);
         await session.SaveChangesAsync();
 

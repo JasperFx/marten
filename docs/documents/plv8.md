@@ -71,7 +71,7 @@ To apply a patch to all documents matching a given criteria, use the following s
 <a id='snippet-sample_set_an_immediate_property_by_where_clause'></a>
 ```cs
 // Change every Target document where the Color is Blue
-theSession.Patch<Target>(x => x.Color == Colors.Blue).Set(x => x.Number, 2);
+TheSession.Patch<Target>(x => x.Color == Colors.Blue).Set(x => x.Number, 2);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L129-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_set_an_immediate_property_by_where_clause' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -90,13 +90,13 @@ public void set_an_immediate_property_by_id()
     var target = Target.Random(true);
     target.Number = 5;
 
-    theSession.Store(target);
-    theSession.SaveChanges();
+    TheSession.Store(target);
+    TheSession.SaveChanges();
 
-    theSession.Patch<Target>(target.Id).Set(x => x.Number, 10);
-    theSession.SaveChanges();
+    TheSession.Patch<Target>(target.Id).Set(x => x.Number, 10);
+    TheSession.SaveChanges();
 
-    using (var query = theStore.QuerySession())
+    using (var query = TheStore.QuerySession())
     {
         query.Load<Target>(target.Id).Number.ShouldBe(10);
     }
@@ -113,11 +113,11 @@ To initialize a new property on existing documents:
 <a id='snippet-sample_initialise_a_new_property_by_expression'></a>
 ```cs
 const string where = "(data ->> 'UpdatedAt') is null";
-theSession.Query<Target>(where).Count.ShouldBe(3);
-theSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
-theSession.SaveChanges();
+TheSession.Query<Target>(where).Count.ShouldBe(3);
+TheSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
+TheSession.SaveChanges();
 
-using (var query = theStore.QuerySession())
+using (var query = TheStore.QuerySession())
 {
     query.Query<Target>(where).Count.ShouldBe(0);
 }
@@ -134,13 +134,13 @@ To copy an existing value to a new location:
 ```cs
 var target = Target.Random();
 target.AnotherString = null;
-theSession.Store(target);
-theSession.SaveChanges();
+TheSession.Store(target);
+TheSession.SaveChanges();
 
-theSession.Patch<Target>(target.Id).Duplicate(t => t.String, t => t.AnotherString);
-theSession.SaveChanges();
+TheSession.Patch<Target>(target.Id).Duplicate(t => t.String, t => t.AnotherString);
+TheSession.SaveChanges();
 
-using (var query = theStore.QuerySession())
+using (var query = TheStore.QuerySession())
 {
     var result = query.Load<Target>(target.Id);
     result.AnotherString.ShouldBe(target.String);
@@ -154,7 +154,7 @@ The same value can be copied to multiple new locations:
 <!-- snippet: sample_duplicate_to_multiple_new_fields -->
 <a id='snippet-sample_duplicate_to_multiple_new_fields'></a>
 ```cs
-theSession.Patch<Target>(target.Id).Duplicate(t => t.String,
+TheSession.Patch<Target>(target.Id).Duplicate(t => t.String,
     t => t.StringField,
     t => t.Inner.String,
     t => t.Inner.AnotherString);
@@ -177,13 +177,13 @@ public void increment_for_int()
     var target = Target.Random();
     target.Number = 6;
 
-    theSession.Store(target);
-    theSession.SaveChanges();
+    TheSession.Store(target);
+    TheSession.SaveChanges();
 
-    theSession.Patch<Target>(target.Id).Increment(x => x.Number);
-    theSession.SaveChanges();
+    TheSession.Patch<Target>(target.Id).Increment(x => x.Number);
+    TheSession.SaveChanges();
 
-    using (var query = theStore.QuerySession())
+    using (var query = TheStore.QuerySession())
     {
         query.Load<Target>(target.Id).Number.ShouldBe(7);
     }
@@ -203,13 +203,13 @@ public void increment_for_int_with_explicit_increment()
     var target = Target.Random();
     target.Number = 6;
 
-    theSession.Store(target);
-    theSession.SaveChanges();
+    TheSession.Store(target);
+    TheSession.SaveChanges();
 
-    theSession.Patch<Target>(target.Id).Increment(x => x.Number, 3);
-    theSession.SaveChanges();
+    TheSession.Patch<Target>(target.Id).Increment(x => x.Number, 3);
+    TheSession.SaveChanges();
 
-    using (var query = theStore.QuerySession())
+    using (var query = TheStore.QuerySession())
     {
         query.Load<Target>(target.Id).Number.ShouldBe(9);
     }
@@ -237,13 +237,13 @@ public void append_complex_element()
 
     var child = Target.Random();
 
-    theSession.Store(target);
-    theSession.SaveChanges();
+    TheSession.Store(target);
+    TheSession.SaveChanges();
 
-    theSession.Patch<Target>(target.Id).Append(x => x.Children, child);
-    theSession.SaveChanges();
+    TheSession.Patch<Target>(target.Id).Append(x => x.Children, child);
+    TheSession.SaveChanges();
 
-    using (var query = theStore.QuerySession())
+    using (var query = TheStore.QuerySession())
     {
         var target2 = query.Load<Target>(target.Id);
         target2.Children.Length.ShouldBe(initialCount + 1);
@@ -276,13 +276,13 @@ public void insert_first_complex_element()
 
     var child = Target.Random();
 
-    theSession.Store(target);
-    theSession.SaveChanges();
+    TheSession.Store(target);
+    TheSession.SaveChanges();
 
-    theSession.Patch<Target>(target.Id).Insert(x => x.Children, child);
-    theSession.SaveChanges();
+    TheSession.Patch<Target>(target.Id).Insert(x => x.Children, child);
+    TheSession.SaveChanges();
 
-    using (var query = theStore.QuerySession())
+    using (var query = TheStore.QuerySession())
     {
         var target2 = query.Load<Target>(target.Id);
         target2.Children.Length.ShouldBe(initialCount + 1);
@@ -315,13 +315,13 @@ public void remove_primitive_element()
 
     var child = target.NumberArray[random.Next(0, initialCount)];
 
-    theSession.Store(target);
-    theSession.SaveChanges();
+    TheSession.Store(target);
+    TheSession.SaveChanges();
 
-    theSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child);
-    theSession.SaveChanges();
+    TheSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child);
+    TheSession.SaveChanges();
 
-    using (var query = theStore.QuerySession())
+    using (var query = TheStore.QuerySession())
     {
         var target2 = query.Load<Target>(target.Id);
         target2.NumberArray.Length.ShouldBe(initialCount - 1);
@@ -347,13 +347,13 @@ public void remove_complex_element()
     var random = new Random();
     var child = target.Children[random.Next(0, initialCount)];
 
-    theSession.Store(target);
-    theSession.SaveChanges();
+    TheSession.Store(target);
+    TheSession.SaveChanges();
 
-    theSession.Patch<Target>(target.Id).Remove(x => x.Children, child);
-    theSession.SaveChanges();
+    TheSession.Patch<Target>(target.Id).Remove(x => x.Children, child);
+    TheSession.SaveChanges();
 
-    using (var query = theStore.QuerySession())
+    using (var query = TheStore.QuerySession())
     {
         var target2 = query.Load<Target>(target.Id);
         target2.Children.Length.ShouldBe(initialCount - 1);
@@ -389,13 +389,13 @@ public void remove_repeated_primitive_elements()
         ++initialCount;
     }
 
-    theSession.Store(target);
-    theSession.SaveChanges();
+    TheSession.Store(target);
+    TheSession.SaveChanges();
 
-    theSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child, RemoveAction.RemoveAll);
-    theSession.SaveChanges();
+    TheSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child, RemoveAction.RemoveAll);
+    TheSession.SaveChanges();
 
-    using (var query = theStore.QuerySession())
+    using (var query = TheStore.QuerySession())
     {
         var target2 = query.Load<Target>(target.Id);
         target2.NumberArray.Length.ShouldBe(initialCount - occurances);
@@ -423,13 +423,13 @@ public void rename_deep_prop()
     target.Inner.String = "Foo";
     target.Inner.AnotherString = "Bar";
 
-    theSession.Store(target);
-    theSession.SaveChanges();
+    TheSession.Store(target);
+    TheSession.SaveChanges();
 
-    theSession.Patch<Target>(target.Id).Rename("String", x => x.Inner.AnotherString);
-    theSession.SaveChanges();
+    TheSession.Patch<Target>(target.Id).Rename("String", x => x.Inner.AnotherString);
+    TheSession.SaveChanges();
 
-    using (var query = theStore.QuerySession())
+    using (var query = TheStore.QuerySession())
     {
         var target2 = query.Load<Target>(target.Id);
         target2.Inner.AnotherString.ShouldBe("Foo");
@@ -452,7 +452,7 @@ To delete a redundant property no longer available on the class use the string o
 <!-- snippet: sample_delete_redundant_property -->
 <a id='snippet-sample_delete_redundant_property'></a>
 ```cs
-theSession.Patch<Target>(target.Id).Delete("String");
+TheSession.Patch<Target>(target.Id).Delete("String");
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L716-L718' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_redundant_property' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -462,7 +462,7 @@ To delete a redundant property nested on a child class specify a location lambda
 <!-- snippet: sample_delete_redundant_nested_property -->
 <a id='snippet-sample_delete_redundant_nested_property'></a>
 ```cs
-theSession.Patch<Target>(target.Id).Delete("String", t => t.Inner);
+TheSession.Patch<Target>(target.Id).Delete("String", t => t.Inner);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L736-L738' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_redundant_nested_property' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -472,7 +472,7 @@ A current property may be erased simply with a lambda:
 <!-- snippet: sample_delete_existing_property -->
 <a id='snippet-sample_delete_existing_property'></a>
 ```cs
-theSession.Patch<Target>(target.Id).Delete(t => t.Inner);
+TheSession.Patch<Target>(target.Id).Delete(t => t.Inner);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L756-L758' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_existing_property' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -483,11 +483,11 @@ Many documents may be patched using a where expressions:
 <a id='snippet-sample_delete_property_from_many_documents'></a>
 ```cs
 const string where = "(data ->> 'String') is not null";
-theSession.Query<Target>(where).Count.ShouldBe(15);
-theSession.Patch<Target>(new WhereFragment(where)).Delete("String");
-theSession.SaveChanges();
+TheSession.Query<Target>(where).Count.ShouldBe(15);
+TheSession.Patch<Target>(new WhereFragment(where)).Delete("String");
+TheSession.SaveChanges();
 
-using (var query = theStore.QuerySession())
+using (var query = TheStore.QuerySession())
 {
     query.Query<Target>(where).Count(t => t.String != null).ShouldBe(0);
 }
@@ -590,7 +590,7 @@ public void can_select_a_string_field_in_compiled_query()
 {
     var user = new User { FirstName = "Eric", LastName = "Berry" };
 
-    using var session = theStore.LightweightSession();
+    using var session = TheStore.LightweightSession();
     session.Store(user);
     session.SaveChanges();
 
@@ -605,7 +605,7 @@ public async Task can_transform_to_json()
 {
     var user = new User { FirstName = "Eric", LastName = "Berry" };
 
-    await using var session = theStore.LightweightSession();
+    await using var session = TheStore.LightweightSession();
     session.Store(user);
     await session.SaveChangesAsync();
 
@@ -635,7 +635,7 @@ public async Task can_transform_to_another_doc()
 {
     var user = new User { FirstName = "Eric", LastName = "Berry" };
 
-    await using var session = theStore.LightweightSession();
+    await using var session = TheStore.LightweightSession();
     session.Store(user);
     await session.SaveChangesAsync();
 
@@ -652,7 +652,7 @@ public async Task can_write_many_to_json()
     var user1 = new User { FirstName = "Eric", LastName = "Berry" };
     var user2 = new User { FirstName = "Derrick", LastName = "Johnson" };
 
-    await using var session = theStore.LightweightSession();
+    await using var session = TheStore.LightweightSession();
     session.Store(user1, user2);
     await session.SaveChangesAsync();
 

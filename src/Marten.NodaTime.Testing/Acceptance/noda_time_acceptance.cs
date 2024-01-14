@@ -96,13 +96,13 @@ public class noda_time_acceptance: OneOffConfigurationsContext
 
         var testDoc = TargetWithDates.Generate();
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Insert(testDoc);
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var docFromDb = query.Query<TargetWithDates>().FirstOrDefault(d => d.Id == testDoc.Id);
 
@@ -126,20 +126,20 @@ public class noda_time_acceptance: OneOffConfigurationsContext
                 .Duplicate(x => x.NullableLocalDate);
         }, true);
 
-        theStore.Advanced.Clean.CompletelyRemoveAll();
+        TheStore.Advanced.Clean.CompletelyRemoveAll();
 
         var dateTime = DateTime.UtcNow;
         var localDateTime = LocalDateTime.FromDateTime(dateTime);
         var instantUTC = Instant.FromDateTimeUtc(dateTime.ToUniversalTime());
         var testDoc = TargetWithDates.Generate(dateTime);
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Insert(testDoc);
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var results = new List<TargetWithDates>
             {
@@ -212,7 +212,7 @@ public class noda_time_acceptance: OneOffConfigurationsContext
             Name = "test"
         };
 
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
         session.Events.Append(streamId, @event);
         await session.SaveChangesAsync();
 
@@ -234,13 +234,13 @@ public class noda_time_acceptance: OneOffConfigurationsContext
         var instantUTC = Instant.FromDateTimeUtc(dateTime.ToUniversalTime());
         var testDoc = TargetWithDates.Generate(dateTime);
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Insert(testDoc);
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var resulta = query.Query<TargetWithDates>()
                 .Where(c => c.Id == testDoc.Id)

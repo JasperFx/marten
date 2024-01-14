@@ -49,7 +49,7 @@ and then executed against the database (generating & executing the DDL statement
 <!-- snippet: sample_scenario-usingsequenceforuniqueid-storesetup-2 -->
 <a id='snippet-sample_scenario-usingsequenceforuniqueid-storesetup-2'></a>
 ```cs
-await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ScenarioUsingSequenceForUniqueId.cs#L51-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-usingsequenceforuniqueid-storesetup-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -83,9 +83,9 @@ Now, when creating and persisting such types, we first query the database for a 
 <!-- snippet: sample_scenario-usingsequenceforuniqueid-querymatter -->
 <a id='snippet-sample_scenario-usingsequenceforuniqueid-querymatter'></a>
 ```cs
-var matter = theStore.StorageFeatures.FindFeature(typeof(MatterId)).Objects.OfType<Sequence>().Single();
+var matter = TheStore.StorageFeatures.FindFeature(typeof(MatterId)).Objects.OfType<Sequence>().Single();
 
-await using var session = theStore.LightweightSession();
+await using var session = TheStore.LightweightSession();
 // Generate a new, unique identifier
 var nextMatter = session.NextInSequence(matter);
 

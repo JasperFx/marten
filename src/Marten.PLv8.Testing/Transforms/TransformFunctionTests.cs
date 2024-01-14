@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using JasperFx.Core;
@@ -120,7 +120,7 @@ public class TransformFunctionTests : OneOffConfigurationsContext
 
         var func = TransformFunction.ForFile(new StoreOptions(), _getFullnameJs);
 
-        using var conn = theStore.Tenancy.Default.Database.CreateConnection();
+        using var conn = TheStore.Tenancy.Default.Database.CreateConnection();
         conn.Open();
         conn.CreateCommand(func.GenerateFunction()).ExecuteNonQuery();
 

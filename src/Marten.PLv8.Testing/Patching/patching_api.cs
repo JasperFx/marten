@@ -31,11 +31,11 @@ public class patching_api: OneOffConfigurationsContext
     [Fact]
     public async Task can_use_patch_api_when_autocreate_is_none()
     {
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         var entity = Target.Random();
-        theSession.Store(entity);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(entity);
+        await TheSession.SaveChangesAsync();
 
 
 
@@ -62,13 +62,13 @@ public class patching_api: OneOffConfigurationsContext
         var target = Target.Random(true);
         target.Number = 5;
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Set(x => x.Number, 10);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Set(x => x.Number, 10);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).Number.ShouldBe(10);
         }
@@ -79,16 +79,16 @@ public class patching_api: OneOffConfigurationsContext
     [Fact]
     public void initialise_a_new_property_by_expression()
     {
-        theSession.Store(Target.Random(), Target.Random(), Target.Random());
-        theSession.SaveChanges();
+        TheSession.Store(Target.Random(), Target.Random(), Target.Random());
+        TheSession.SaveChanges();
 
         #region sample_initialise_a_new_property_by_expression
         const string where = "(data ->> 'UpdatedAt') is null";
-        theSession.Query<Target>(where).Count.ShouldBe(3);
-        theSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
-        theSession.SaveChanges();
+        TheSession.Query<Target>(where).Count.ShouldBe(3);
+        TheSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Query<Target>(where).Count.ShouldBe(0);
         }
@@ -101,13 +101,13 @@ public class patching_api: OneOffConfigurationsContext
         var target = Target.Random(true);
         target.Inner.Number = 5;
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Set(x => x.Inner.Number, 10);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Set(x => x.Inner.Number, 10);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).Inner.Number.ShouldBe(10);
         }
@@ -123,17 +123,17 @@ public class patching_api: OneOffConfigurationsContext
         var target5 = new Target { Color = Colors.Green, Number = 1 };
         var target6 = new Target { Color = Colors.Red, Number = 1 };
 
-        theSession.Store(target1, target2, target3, target4, target5, target6);
-        theSession.SaveChanges();
+        TheSession.Store(target1, target2, target3, target4, target5, target6);
+        TheSession.SaveChanges();
 
         #region sample_set_an_immediate_property_by_where_clause
         // Change every Target document where the Color is Blue
-        theSession.Patch<Target>(x => x.Color == Colors.Blue).Set(x => x.Number, 2);
+        TheSession.Patch<Target>(x => x.Color == Colors.Blue).Set(x => x.Number, 2);
         #endregion
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             // These should have been updated
             query.Load<Target>(target1.Id).Number.ShouldBe(2);
@@ -153,13 +153,13 @@ public class patching_api: OneOffConfigurationsContext
         #region sample_duplicate_to_new_field
         var target = Target.Random();
         target.AnotherString = null;
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Duplicate(t => t.String, t => t.AnotherString);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Duplicate(t => t.String, t => t.AnotherString);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var result = query.Load<Target>(target.Id);
             result.AnotherString.ShouldBe(target.String);
@@ -173,18 +173,18 @@ public class patching_api: OneOffConfigurationsContext
         var target = Target.Random();
         target.StringField = null;
         target.Inner = null;
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
         #region sample_duplicate_to_multiple_new_fields
-        theSession.Patch<Target>(target.Id).Duplicate(t => t.String,
+        TheSession.Patch<Target>(target.Id).Duplicate(t => t.String,
             t => t.StringField,
             t => t.Inner.String,
             t => t.Inner.AnotherString);
         #endregion
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var result = query.Load<Target>(target.Id);
 
@@ -202,13 +202,13 @@ public class patching_api: OneOffConfigurationsContext
         var target = Target.Random();
         target.Number = 6;
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Increment(x => x.Number);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Increment(x => x.Number);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).Number.ShouldBe(7);
         }
@@ -223,13 +223,13 @@ public class patching_api: OneOffConfigurationsContext
         var target = Target.Random();
         target.Number = 6;
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Increment(x => x.Number, 3);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Increment(x => x.Number, 3);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).Number.ShouldBe(9);
         }
@@ -243,13 +243,13 @@ public class patching_api: OneOffConfigurationsContext
         var target = Target.Random();
         target.Long = 13;
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Increment(x => x.Long);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Increment(x => x.Long);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).Long.ShouldBe(14);
         }
@@ -261,13 +261,13 @@ public class patching_api: OneOffConfigurationsContext
         var target = Target.Random();
         target.Double = 11.2;
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Increment(x => x.Double, 2.4);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Increment(x => x.Double, 2.4);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).Double.ShouldBe(13.6);
         }
@@ -279,13 +279,13 @@ public class patching_api: OneOffConfigurationsContext
         var target = Target.Random();
         target.Float = 11.2F;
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Increment(x => x.Float, 2.4F);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Increment(x => x.Float, 2.4F);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).Float.ShouldBe(13.6F);
         }
@@ -297,13 +297,13 @@ public class patching_api: OneOffConfigurationsContext
         var target = Target.Random();
         target.NumberArray = new[] { 1, 2, 3 };
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Append(x => x.NumberArray, 4);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Append(x => x.NumberArray, 4);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).NumberArray
                 .ShouldHaveTheSameElementsAs(1, 2, 3, 4);
@@ -316,22 +316,22 @@ public class patching_api: OneOffConfigurationsContext
         var target = Target.Random();
         target.NumberArray = new[] { 1, 2, 3 };
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.NumberArray, 3);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.NumberArray, 3);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).NumberArray
                 .ShouldHaveTheSameElementsAs(1, 2, 3);
         }
 
-        theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.NumberArray, 4);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.NumberArray, 4);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).NumberArray
                 .ShouldHaveTheSameElementsAs(1, 2, 3, 4);
@@ -347,13 +347,13 @@ public class patching_api: OneOffConfigurationsContext
 
         var child = Target.Random();
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Append(x => x.Children, child);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Append(x => x.Children, child);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var target2 = query.Load<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount + 1);
@@ -373,14 +373,14 @@ public class patching_api: OneOffConfigurationsContext
         var child = Target.Random();
         var child2 = Target.Random();
 
-        theSession.Store(target);
-        theSession.SaveChanges();
-        theSession.Patch<Target>(target.Id).Append(x => x.Children, child);
-        theSession.SaveChanges();
-        theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.Children, child);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Append(x => x.Children, child);
+        TheSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.Children, child);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var target2 = query.Load<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount + 1);
@@ -388,10 +388,10 @@ public class patching_api: OneOffConfigurationsContext
             target2.Children.Last().Id.ShouldBe(child.Id);
         }
 
-        theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.Children, child2);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.Children, child2);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var target2 = query.Load<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount + 2);
@@ -406,13 +406,13 @@ public class patching_api: OneOffConfigurationsContext
         var target = Target.Random();
         target.NumberArray = new[] { 1, 2, 3 };
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Insert(x => x.NumberArray, 4);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Insert(x => x.NumberArray, 4);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).NumberArray
                 .ShouldHaveTheSameElementsAs(4, 1, 2, 3);
@@ -425,22 +425,22 @@ public class patching_api: OneOffConfigurationsContext
         var target = Target.Random();
         target.NumberArray = new[] { 1, 2, 3 };
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 1);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 1);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).NumberArray
                 .ShouldHaveTheSameElementsAs(1, 2, 3);
         }
 
-        theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 4);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 4);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).NumberArray
                 .ShouldHaveTheSameElementsAs(4, 1, 2, 3);
@@ -453,13 +453,13 @@ public class patching_api: OneOffConfigurationsContext
         var target = Target.Random();
         target.NumberArray = new[] { 1, 2, 3 };
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Insert(x => x.NumberArray, 4, 2);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Insert(x => x.NumberArray, 4, 2);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).NumberArray
                 .ShouldHaveTheSameElementsAs(1, 2, 4, 3);
@@ -472,22 +472,22 @@ public class patching_api: OneOffConfigurationsContext
         var target = Target.Random();
         target.NumberArray = new[] { 1, 2, 3 };
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 3, 2);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 3, 2);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).NumberArray
                 .ShouldHaveTheSameElementsAs(1, 2, 3);
         }
 
-        theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 4, 2);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 4, 2);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Load<Target>(target.Id).NumberArray
                 .ShouldHaveTheSameElementsAs(1, 2, 4, 3);
@@ -503,13 +503,13 @@ public class patching_api: OneOffConfigurationsContext
 
         var child = Target.Random();
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Insert(x => x.Children, child);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Insert(x => x.Children, child);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var target2 = query.Load<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount + 1);
@@ -528,13 +528,13 @@ public class patching_api: OneOffConfigurationsContext
 
         var child = Target.Random();
         var child2 = Target.Random();
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Insert(x => x.Children, child);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Insert(x => x.Children, child);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var target2 = query.Load<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount + 1);
@@ -542,10 +542,10 @@ public class patching_api: OneOffConfigurationsContext
             target2.Children.First().Id.ShouldBe(child.Id);
         }
 
-        theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.Children, child);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.Children, child);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var target2 = query.Load<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount + 1);
@@ -553,10 +553,10 @@ public class patching_api: OneOffConfigurationsContext
             target2.Children.First().Id.ShouldBe(child.Id);
         }
 
-        theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.Children, child2);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.Children, child2);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var target2 = query.Load<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount + 2);
@@ -572,13 +572,13 @@ public class patching_api: OneOffConfigurationsContext
         target.String = "Foo";
         target.AnotherString = "Bar";
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Rename("String", x => x.AnotherString);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Rename("String", x => x.AnotherString);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var target2 = query.Load<Target>(target.Id);
             target2.AnotherString.ShouldBe("Foo");
@@ -594,13 +594,13 @@ public class patching_api: OneOffConfigurationsContext
         target.Inner.String = "Foo";
         target.Inner.AnotherString = "Bar";
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Rename("String", x => x.Inner.AnotherString);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Rename("String", x => x.Inner.AnotherString);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var target2 = query.Load<Target>(target.Id);
             target2.Inner.AnotherString.ShouldBe("Foo");
@@ -624,13 +624,13 @@ public class patching_api: OneOffConfigurationsContext
 
         var child = target.NumberArray[random.Next(0, initialCount)];
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var target2 = query.Load<Target>(target.Id);
             target2.NumberArray.Length.ShouldBe(initialCount - 1);
@@ -662,13 +662,13 @@ public class patching_api: OneOffConfigurationsContext
             ++initialCount;
         }
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child, RemoveAction.RemoveAll);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child, RemoveAction.RemoveAll);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var target2 = query.Load<Target>(target.Id);
             target2.NumberArray.Length.ShouldBe(initialCount - occurances);
@@ -689,13 +689,13 @@ public class patching_api: OneOffConfigurationsContext
         var random = new Random();
         var child = target.Children[random.Next(0, initialCount)];
 
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
-        theSession.Patch<Target>(target.Id).Remove(x => x.Children, child);
-        theSession.SaveChanges();
+        TheSession.Patch<Target>(target.Id).Remove(x => x.Children, child);
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var target2 = query.Load<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount - 1);
@@ -710,15 +710,15 @@ public class patching_api: OneOffConfigurationsContext
     public void delete_redundant_property()
     {
         var target = Target.Random();
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
         #region sample_delete_redundant_property
-        theSession.Patch<Target>(target.Id).Delete("String");
+        TheSession.Patch<Target>(target.Id).Delete("String");
         #endregion
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var result = query.Load<Target>(target.Id);
 
@@ -730,15 +730,15 @@ public class patching_api: OneOffConfigurationsContext
     public void delete_redundant_nested_property()
     {
         var target = Target.Random(true);
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
         #region sample_delete_redundant_nested_property
-        theSession.Patch<Target>(target.Id).Delete("String", t => t.Inner);
+        TheSession.Patch<Target>(target.Id).Delete("String", t => t.Inner);
         #endregion
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var result = query.Load<Target>(target.Id);
 
@@ -750,15 +750,15 @@ public class patching_api: OneOffConfigurationsContext
     public void delete_existing_property()
     {
         var target = Target.Random(true);
-        theSession.Store(target);
-        theSession.SaveChanges();
+        TheSession.Store(target);
+        TheSession.SaveChanges();
 
         #region sample_delete_existing_property
-        theSession.Patch<Target>(target.Id).Delete(t => t.Inner);
+        TheSession.Patch<Target>(target.Id).Delete(t => t.Inner);
         #endregion
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var result = query.Load<Target>(target.Id);
 
@@ -771,17 +771,17 @@ public class patching_api: OneOffConfigurationsContext
     {
         for (var i = 0; i < 15; i++)
         {
-            theSession.Store(Target.Random());
+            TheSession.Store(Target.Random());
         }
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
 
         #region sample_delete_property_from_many_documents
         const string where = "(data ->> 'String') is not null";
-        theSession.Query<Target>(where).Count.ShouldBe(15);
-        theSession.Patch<Target>(new WhereFragment(where)).Delete("String");
-        theSession.SaveChanges();
+        TheSession.Query<Target>(where).Count.ShouldBe(15);
+        TheSession.Patch<Target>(new WhereFragment(where)).Delete("String");
+        TheSession.SaveChanges();
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             query.Query<Target>(where).Count(t => t.String != null).ShouldBe(0);
         }
@@ -791,19 +791,19 @@ public class patching_api: OneOffConfigurationsContext
     [Fact]
     public async Task bug_611_duplicate_field_is_updated_by_set_operation()
     {
-        var mapping = theStore.StorageFeatures.MappingFor(typeof(Target));
+        var mapping = TheStore.StorageFeatures.MappingFor(typeof(Target));
         var field = mapping.DuplicateField("String");
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         var entity = Target.Random();
-        theSession.Store(entity);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(entity);
+        await TheSession.SaveChangesAsync();
 
         var newval = new string(entity.String.Reverse().ToArray());
-        theSession.Patch<Target>(entity.Id).Set(t => t.String, newval);
-        await theSession.SaveChangesAsync();
+        TheSession.Patch<Target>(entity.Id).Set(t => t.String, newval);
+        await TheSession.SaveChangesAsync();
 
-        await using var command = theSession.Connection.CreateCommand();
+        await using var command = TheSession.Connection.CreateCommand();
         command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
                               $"where data->>'String' = '{newval}' and {field.ColumnName} = '{newval}'";
         var count = (long)(command.ExecuteScalar() ?? 0);
@@ -813,20 +813,20 @@ public class patching_api: OneOffConfigurationsContext
     [Fact]
     public async Task bug_611_duplicate_field_is_updated_by_set_operation_with_multiple_duplicates_smoke_test()
     {
-        var mapping = theStore.StorageFeatures.MappingFor(typeof(Target));
+        var mapping = TheStore.StorageFeatures.MappingFor(typeof(Target));
         var field = mapping.DuplicateField("String");
         var field2 = mapping.DuplicateField(nameof(Target.Number));
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         var entity = Target.Random();
-        theSession.Store(entity);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(entity);
+        await TheSession.SaveChangesAsync();
 
         var newval = new string(entity.String.Reverse().ToArray());
-        theSession.Patch<Target>(entity.Id).Set(t => t.String, newval);
-        await theSession.SaveChangesAsync();
+        TheSession.Patch<Target>(entity.Id).Set(t => t.String, newval);
+        await TheSession.SaveChangesAsync();
 
-        await using var command = theSession.Connection.CreateCommand();
+        await using var command = TheSession.Connection.CreateCommand();
         command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
                               $"where data->>'String' = '{newval}' and {field.ColumnName} = '{newval}'";
         var count = (long)(command.ExecuteScalar() ?? 0);
@@ -869,7 +869,7 @@ public class patching_api: OneOffConfigurationsContext
             _.UseJavascriptTransformsAndPatching();
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         var aggregateId = Guid.NewGuid();
         var quest = new Quest
@@ -882,10 +882,10 @@ public class patching_api: OneOffConfigurationsContext
             Name = "New Quest",
         };
 
-        theSession.Events.Append(aggregateId, quest, questStarted);
-        await theSession.SaveChangesAsync();
+        TheSession.Events.Append(aggregateId, quest, questStarted);
+        await TheSession.SaveChangesAsync();
 
-        (await theSession.Events.FetchStreamStateAsync(aggregateId)).Version.ShouldBe(2);
+        (await TheSession.Events.FetchStreamStateAsync(aggregateId)).Version.ShouldBe(2);
     }
 
     #region sample_QuestPatchTestProjection

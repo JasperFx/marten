@@ -29,19 +29,19 @@ public class Bug_2170_patch_with_sub_collection_query : BugIntegrationContext
 
         var targets = Target.GenerateRandomData(50).ToArray();
 
-        await theStore.BulkInsertAsync(targets);
+        await TheStore.BulkInsertAsync(targets);
 
         var initialCount = targets.Count(x => x.Inner.Children != null && x.Inner.Children.Any(t => t.Color == Colors.Blue));
         targets.Length.ShouldNotBe(initialCount);
 
-        theSession.Patch<Target>(x => x.Inner.Children != null && x.Inner.Children.Any(t => t.Color == Colors.Blue)).Set(x => x.Long, 33333);
+        TheSession.Patch<Target>(x => x.Inner.Children != null && x.Inner.Children.Any(t => t.Color == Colors.Blue)).Set(x => x.Long, 33333);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
         var children =
             targets.Where(x => x.Inner.Children != null && x.Inner.Children.Any(t => t.Color == Colors.Blue)).Select(x => x.Id).ToArray();
 
-        var values = await theSession.LoadManyAsync<Target>(children);
+        var values = await TheSession.LoadManyAsync<Target>(children);
 
         foreach (var value in values)
         {

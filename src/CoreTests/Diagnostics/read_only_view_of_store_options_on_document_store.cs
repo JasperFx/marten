@@ -39,26 +39,26 @@ public class read_only_view_of_store_options_on_document_store: OneOffConfigurat
     [Fact]
     public void can_find_all_event_types()
     {
-        theStore.As<IDocumentStore>().Options.Events.AllKnownEventTypes()
+        TheStore.As<IDocumentStore>().Options.Events.AllKnownEventTypes()
             .Any()
             .ShouldBeTrue();
     }
 
     public void Dispose()
     {
-        theStore?.Dispose();
+        TheStore?.Dispose();
     }
 
     [Fact]
     public void have_the_readonly_options()
     {
-        theStore.As<IDocumentStore>().Options.DatabaseSchemaName.ShouldBe("read_only");
+        TheStore.As<IDocumentStore>().Options.DatabaseSchemaName.ShouldBe("read_only");
     }
 
     [Fact]
     public void can_retrieve_projections()
     {
-        var readOnlyStoreOptions = theStore.As<IDocumentStore>().Options;
+        var readOnlyStoreOptions = TheStore.As<IDocumentStore>().Options;
         var readOnlyEventStoreOptions = readOnlyStoreOptions.Events;
         readOnlyEventStoreOptions.Projections().Any().ShouldBeTrue();
     }
@@ -66,14 +66,14 @@ public class read_only_view_of_store_options_on_document_store: OneOffConfigurat
     [Fact]
     public void fetch_the_document_types()
     {
-        theStore.As<IDocumentStore>().Options.AllKnownDocumentTypes().Any().ShouldBeTrue();
+        TheStore.As<IDocumentStore>().Options.AllKnownDocumentTypes().Any().ShouldBeTrue();
     }
 
     [Fact]
     public void find_existing_mapping()
     {
-        var m1 = theStore.As<IDocumentStore>().Options.FindOrResolveDocumentType(typeof(User));
-        var m2 = theStore.As<IDocumentStore>().Options.FindOrResolveDocumentType(typeof(User));
+        var m1 = TheStore.As<IDocumentStore>().Options.FindOrResolveDocumentType(typeof(User));
+        var m2 = TheStore.As<IDocumentStore>().Options.FindOrResolveDocumentType(typeof(User));
 
         m1.ShouldNotBeNull();
         m1.ShouldBeSameAs(m2);
@@ -82,7 +82,7 @@ public class read_only_view_of_store_options_on_document_store: OneOffConfigurat
     [Fact]
     public void resolve_mapping_from_sub_class()
     {
-        var root = theStore.As<IDocumentStore>().Options.FindOrResolveDocumentType(typeof(BaseballTeam));
+        var root = TheStore.As<IDocumentStore>().Options.FindOrResolveDocumentType(typeof(BaseballTeam));
         root.DocumentType.ShouldBe(typeof(Squad));
 
         root.SubClasses.Any(x => x.DocumentType == typeof(BaseballTeam))

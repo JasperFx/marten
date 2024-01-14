@@ -20,9 +20,9 @@ public class Bug_593_patch_doc_function_should_be_built_in_designated_schema: Bu
             _.UseJavascriptTransformsAndPatching();
         });
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         var expected = new PostgresqlObjectName("other", "mt_transform_patch_doc");
-        (await theStore.Tenancy.Default.Database.Functions()).Contains(expected).ShouldBeTrue();
+        (await TheStore.Tenancy.Default.Database.Functions()).Contains(expected).ShouldBeTrue();
     }
 }

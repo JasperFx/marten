@@ -26,12 +26,12 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     public PatchExpressionTests()
     {
         StoreOptions(x => x.UseJavascriptTransformsAndPatching());
-        theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(TransformSchema));
+        TheStore.Tenancy.Default.Database.EnsureStorageExists(typeof(TransformSchema));
 
         var storage = Substitute.For<IDocumentStorage>();
         storage.DocumentType.Returns(typeof(Target));
 
-        var session = theStore.LightweightSession();
+        var session = TheStore.LightweightSession();
 
         Disposables.Add(session);
 
@@ -41,9 +41,9 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     [Fact]
     public async Task does_not_blow_up()
     {
-        var transform = theStore.Options.TransformFor("patch_doc");
+        var transform = TheStore.Options.TransformFor("patch_doc");
 
-        (await theStore.Tenancy.Default.Database.Functions())
+        (await TheStore.Tenancy.Default.Database.Functions())
             .ShouldContain(transform.Identifier);
     }
 
@@ -51,7 +51,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     public async Task Patch_And_Load_Should_Return_Non_Stale_Result()
     {
         var id = Guid.NewGuid();
-        await using (var sess = theStore.LightweightSession())
+        await using (var sess = TheStore.LightweightSession())
         {
             sess.Store(new Model() { Id = id, Name = "foo" });
             sess.Patch<Model>(id).Set(x => x.Name, "bar");
@@ -448,7 +448,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
             _.UseJavascriptTransformsAndPatching();
         });
 
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
 
         var expressionWithSimpleProperty = new PatchExpression<Target>(new ByGuidFilter(Guid.NewGuid()), (DocumentSessionBase) session);
         expressionWithSimpleProperty.Set(x => x.Color, Colors.Blue);
@@ -484,10 +484,10 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     public void can_append_with_sub_types_in_collection()
     {
         var group = new ItemGroup();
-        theSession.Store(group);
-        theSession.SaveChanges();
+        TheSession.Store(group);
+        TheSession.SaveChanges();
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Patch<ItemGroup>(group.Id).Append(x => x.Items, new Item{Name = "One"});
             session.Patch<ItemGroup>(group.Id).Append(x => x.Items, new ColoredItem{Name = "Two", Color = "Blue"});
@@ -495,7 +495,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var group2 = query.Load<ItemGroup>(group.Id);
 
@@ -510,10 +510,10 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     public void can_append_if_not_exists_with_sub_types_in_collection()
     {
         var group = new ItemGroup();
-        theSession.Store(group);
-        theSession.SaveChanges();
+        TheSession.Store(group);
+        TheSession.SaveChanges();
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Patch<ItemGroup>(group.Id).AppendIfNotExists(x => x.Items, new Item{Name = "One"});
             session.Patch<ItemGroup>(group.Id).AppendIfNotExists(x => x.Items, new ColoredItem{Name = "Two", Color = "Blue"});
@@ -521,7 +521,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var group2 = query.Load<ItemGroup>(group.Id);
 
@@ -539,16 +539,16 @@ public class PatchExpressionTests : OneOffConfigurationsContext
         {
             Items = new List<Item>{new Item{Name = "regular"}}
         };
-        theSession.Store(group);
-        theSession.SaveChanges();
+        TheSession.Store(group);
+        TheSession.SaveChanges();
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Patch<ItemGroup>(group.Id).Insert(x => x.Items, new ColoredItem{Name = "Two", Color = "Blue"});
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var group2 = query.Load<ItemGroup>(group.Id);
 
@@ -564,7 +564,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
         var id1 = Guid.NewGuid();
         var id2 = Guid.NewGuid();
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.DeleteWhere<TestModel5>(x => x.ObjectId == id1 && x.DefinitionId == 1 && x.Stage > 1);
 
@@ -626,18 +626,18 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     {
         var model = new TestModel7();
         var nullModel = new TestModel7() { NullableObjectId = Guid.NewGuid()};
-        theSession.Store(model, nullModel);
-        theSession.SaveChanges();
+        TheSession.Store(model, nullModel);
+        TheSession.SaveChanges();
 
         var id = Guid.NewGuid();
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Patch<TestModel7>(model.Id).Set(x => x.NullableObjectId, id);
             session.Patch<TestModel7>(nullModel.Id).Set(x => x.NullableObjectId, null);
             session.SaveChanges();
         }
 
-        using (var query = theStore.QuerySession())
+        using (var query = TheStore.QuerySession())
         {
             var model1 = query.Load<TestModel7>(model.Id);
             model1!.NullableObjectId.ShouldBe(id);

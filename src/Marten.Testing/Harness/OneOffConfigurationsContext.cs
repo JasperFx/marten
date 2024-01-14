@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten.Internal.CodeGeneration;
 using Marten.TestHelpers;
@@ -15,7 +16,7 @@ public abstract class OneOffConfigurationsContext : IDisposable
     protected OneOffConfigurationsContext()
     {
         SchemaName = GetType().Name.ToLower().Sanitize();
-        Helper = new(SchemaName, ConnectionSource.ConnectionString);
+        Helper = new OneOffConfigurationsHelper(SchemaName, ConnectionSource.ConnectionString);
     }
     
     public DocumentStore SeparateStore(Action<StoreOptions> configure = null) => Helper.SeparateStore(configure);
@@ -25,6 +26,7 @@ public abstract class OneOffConfigurationsContext : IDisposable
     public DocumentStore TheStore => Helper.TheStore;
 
     public IDocumentSession TheSession => Helper.TheSession;
+    public IList<IDisposable> Disposables => Helper.Disposables;
 
     public Task AppendEvent(Guid streamId, params object[] events)
     {
@@ -33,7 +35,7 @@ public abstract class OneOffConfigurationsContext : IDisposable
 
     public void Dispose()
     {
-        foreach (var disposable in Helper.Disposables)
+        foreach (var disposable in Disposables)
         {
             disposable.Dispose();
         }
