@@ -82,7 +82,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
     /// Prevent code generation bugs when multiple aggregates are code generated in parallel
     /// Happens more often on dynamic code generation
     /// </summary>
-    private static readonly object LockObjAssembleTypes = new();
+    private static readonly object LockObjAssembleTypes = new object();
 
     protected override void assembleTypes(GeneratedAssembly assembly, StoreOptions options)
     {
