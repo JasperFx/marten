@@ -73,7 +73,7 @@ public class ViewProjectionTests: DaemonContext
         NumberOfStreams = 10;
         await PublishSingleThreaded();
 
-        _output.WriteLine($"Expecting {NumberOfEvents} events");
+        Output.WriteLine($"Expecting {NumberOfEvents} events");
 
         await agent.Tracker.WaitForShardState("Day:All", NumberOfEvents, 30.Seconds());
 

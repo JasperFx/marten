@@ -10,6 +10,8 @@ namespace Marten.Events.Daemon;
 /// </summary>
 public interface IProjectionDaemon: IDisposable
 {
+    bool IsRunning { get; }
+
     /// <summary>
     ///     Observable tracking of projection shard events
     /// </summary>
@@ -83,6 +85,8 @@ public interface IProjectionDaemon: IDisposable
     /// <returns></returns>
     Task StartShard(string shardName, CancellationToken token);
 
+    IShardAgent[] CurrentShards();
+
     /// <summary>
     ///     Stops a single projection shard by name
     /// </summary>
@@ -123,4 +127,7 @@ public interface IProjectionDaemon: IDisposable
     Task PauseHighWaterAgent();
 
     long HighWaterMark();
+    AgentStatus StatusFor(string shardName);
+
+    Task WaitForShardToStop(string shardName, TimeSpan? timeout = null);
 }

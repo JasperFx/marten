@@ -11,8 +11,8 @@ using Weasel.Postgresql;
 
 public class OneOffConfigurationsHelper(string schemaName, string connectionString) : IDisposable
 {
-    private DocumentStore _store;
-    protected IDocumentSession Session;
+    private DocumentStore? _store;
+    protected IDocumentSession? Session;
 
     public string SchemaName => schemaName;
 
@@ -69,7 +69,7 @@ public class OneOffConfigurationsHelper(string schemaName, string connectionStri
                 StoreOptions(_ => { });
             }
 
-            return _store;
+            return _store!;
         }
     }
 

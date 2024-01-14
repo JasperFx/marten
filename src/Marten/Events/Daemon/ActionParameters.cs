@@ -13,11 +13,11 @@ internal class ActionParameters
     {
     }
 
-    public ActionParameters(ShardAgent shard, Func<Task> action): this(shard, action, shard.Cancellation)
+    public ActionParameters(IShardAgent shard, Func<Task> action): this(shard, action, shard.Cancellation)
     {
     }
 
-    public ActionParameters(ShardAgent shard, Func<Task> action, CancellationToken cancellation)
+    public ActionParameters(IShardAgent shard, Func<Task> action, CancellationToken cancellation)
     {
         Cancellation = cancellation;
 
@@ -31,7 +31,7 @@ internal class ActionParameters
         };
     }
 
-    public ShardAgent Shard { get; }
+    public IShardAgent Shard { get; }
     public Func<Task> Action { get; }
     public CancellationToken Cancellation { get; private set; }
 

@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Events;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.HighWater;
 using Marten.Events.Projections;
 using Marten.Storage;
+using Marten.TestHelpers;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Logging;
 using Shouldly;
@@ -16,83 +15,26 @@ using Xunit.Abstractions;
 
 namespace Marten.AsyncDaemon.Testing.TestingSupport;
 
-public abstract class DaemonContext: OneOffConfigurationsContext
+public abstract class DaemonContext : OneOffConfigurationsContext
 {
+    private readonly DaemonContextHelper _daemonContextHelper;
+    protected ITestOutputHelper Output;
+
     protected DaemonContext(ITestOutputHelper output)
     {
-        SchemaName = "daemon";
+        _daemonContextHelper = new DaemonContextHelper(ConnectionSource.ConnectionString, new TestLogger<IProjection>(output));
         TheStore.Advanced.Clean.DeleteAllEventData();
-        Logger = new TestLogger<IProjection>(output);
 
         TheStore.Options.Projections.DaemonLockId++;
-
-        _output = output;
+        Output = output;
     }
 
-    public ILogger<IProjection> Logger { get; }
-
-    internal async Task<ProjectionDaemon> StartDaemon()
-    {
-        var daemon = new ProjectionDaemon(TheStore, Logger);
-
-        await daemon.StartAllShards();
-
-        _daemon = daemon;
-
-        return daemon;
-    }
-
-    internal async Task<ProjectionDaemon> StartDaemon(string tenantId)
-    {
-        var daemon = (ProjectionDaemon)await TheStore.BuildProjectionDaemonAsync(tenantId, Logger);
-
-        await daemon.StartAllShards();
-
-        _daemon = daemon;
-
-        return daemon;
-    }
-
-    internal async Task<ProjectionDaemon> StartDaemonInHotColdMode()
-    {
-        TheStore.Options.Projections.LeadershipPollingTime = 100;
-
-        var coordinator =
-            new HotColdCoordinator(TheStore.Tenancy.Default.Database, TheStore.Options.Projections, Logger);
-        var daemon = new ProjectionDaemon(TheStore, TheStore.Tenancy.Default.Database,
-            new HighWaterDetector(coordinator, TheStore.Events, Logger), Logger);
-
-        await daemon.UseCoordinator(coordinator);
-
-        _daemon = daemon;
-
-        Disposables.Add(daemon);
-        return daemon;
-    }
-
-    internal async Task<ProjectionDaemon> StartAdditionalDaemonInHotColdMode()
-    {
-        TheStore.Options.Projections.LeadershipPollingTime = 100;
-        var coordinator =
-            new HotColdCoordinator(TheStore.Tenancy.Default.Database, TheStore.Options.Projections, Logger);
-        var daemon = new ProjectionDaemon(TheStore, TheStore.Tenancy.Default.Database,
-            new HighWaterDetector(coordinator, TheStore.Events, Logger), Logger);
-
-        await daemon.UseCoordinator(coordinator);
-
-        Disposables.Add(daemon);
-        return daemon;
-    }
-
-    protected Task WaitForAction(string shardName, ShardAction action, TimeSpan timeout = default)
-    {
-        if (timeout == default)
-        {
-            timeout = 30.Seconds();
-        }
-
-        return new ShardActionWatcher(_daemon.Tracker, shardName, action, timeout).Task;
-    }
+    public ILogger<IProjection> Logger => _daemonContextHelper.Logger;
+    public Task<IProjectionDaemon> StartDaemon() => _daemonContextHelper.StartDaemon();
+    public Task<IProjectionDaemon> StartDaemon(string tenantId) => _daemonContextHelper.StartDaemon(tenantId);
+    public Task<IProjectionDaemon> StartDaemonInHotColdMode() => _daemonContextHelper.StartDaemonInHotColdMode();
+    public Task<IProjectionDaemon> StartAdditionalDaemonInHotColdMode() => _daemonContextHelper.StartAdditionalDaemonInHotColdMode();
+    public Task WaitForAction(string shardName, ShardAction action, TimeSpan timeout = default) => _daemonContextHelper.WaitForAction(shardName, action, timeout);
 
     public int NumberOfStreams
     {
@@ -132,8 +74,6 @@ public abstract class DaemonContext: OneOffConfigurationsContext
     public long NumberOfEvents => _streams.Sum(x => x.Events.Count);
 
     private readonly List<TripStream> _streams = new List<TripStream>();
-    private ProjectionDaemon _daemon;
-    protected ITestOutputHelper _output;
 
     public IReadOnlyList<TripStream> Streams => _streams;
 
@@ -308,7 +248,8 @@ public abstract class DaemonContext: OneOffConfigurationsContext
                         {
                             if (stream.TryCheckOutEvents(out var events))
                             {
-                                if (events.Length == 0) throw new DivideByZeroException();
+                                if (events.Length == 0)
+                                    throw new DivideByZeroException();
                                 session.Events.Append(stream.StreamId, events);
                             }
                         }
@@ -323,52 +264,6 @@ public abstract class DaemonContext: OneOffConfigurationsContext
             }
 
             _completion.SetResult(true);
-        }
-    }
-}
-
-internal class ShardActionWatcher: IObserver<ShardState>
-{
-    private readonly IDisposable _unsubscribe;
-    private readonly string _shardName;
-    private readonly ShardAction _expected;
-    private readonly TaskCompletionSource<ShardState> _completion;
-    private readonly CancellationTokenSource _timeout;
-
-    public ShardActionWatcher(ShardStateTracker tracker, string shardName, ShardAction expected, TimeSpan timeout)
-    {
-        _shardName = shardName;
-        _expected = expected;
-        _completion = new TaskCompletionSource<ShardState>();
-
-
-        _timeout = new CancellationTokenSource(timeout);
-        _timeout.Token.Register(() =>
-        {
-            _completion.TrySetException(new TimeoutException(
-                $"Shard {_shardName} did receive the action {_expected} in the time allowed"));
-        });
-
-        _unsubscribe = tracker.Subscribe(this);
-    }
-
-    public Task<ShardState> Task => _completion.Task;
-
-    public void OnCompleted()
-    {
-    }
-
-    public void OnError(Exception error)
-    {
-        _completion.SetException(error);
-    }
-
-    public void OnNext(ShardState value)
-    {
-        if (value.ShardName.EqualsIgnoreCase(_shardName) && value.Action == _expected)
-        {
-            _completion.SetResult(value);
-            _unsubscribe.Dispose();
         }
     }
 }

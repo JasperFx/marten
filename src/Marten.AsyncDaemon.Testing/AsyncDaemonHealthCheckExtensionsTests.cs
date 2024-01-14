@@ -23,7 +23,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
 
     public AsyncDaemonHealthCheckExtensionsTests(ITestOutputHelper output) : base(output)
     {
-        _output = output;
+        Output = output;
     }
 
     [Fact]

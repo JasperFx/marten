@@ -54,7 +54,7 @@ public class when_skipping_events_in_daemon : DaemonContext
 
 
 
-    private async Task<ProjectionDaemon> PublishTheEvents()
+    private async Task<IProjectionDaemon> PublishTheEvents()
     {
         var daemon = await StartDaemon();
 
@@ -124,7 +124,7 @@ public class when_skipping_events_in_daemon : DaemonContext
     {
         await PublishTheEvents();
 
-        TheSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(Output);
         var skipped = await TheSession.Query<DeadLetterEvent>().ToListAsync();
 
 

@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.AsyncDaemon.Testing.TestingSupport;
@@ -52,7 +51,7 @@ public class HotCold_leadership_election: DaemonContext
         StoreOptions(x =>
         {
             x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
-            x.Logger(new TestOutputMartenLogger(_output));
+            x.Logger(new TestOutputMartenLogger(Output));
         }, true);
 
         var agent = await StartDaemonInHotColdMode();
@@ -91,7 +90,7 @@ public class HotCold_leadership_election: DaemonContext
         await CheckAllExpectedAggregatesAgainstActuals();
     }
 
-    private async Task assertIsRunning(ProjectionDaemon daemon, TimeSpan timeout)
+    private async Task assertIsRunning(IProjectionDaemon daemon, TimeSpan timeout)
     {
         if (daemon.IsRunning) return;
 
@@ -107,7 +106,7 @@ public class HotCold_leadership_election: DaemonContext
         daemon.IsRunning.ShouldBeTrue();
     }
 
-    private async Task<ProjectionDaemon> findRunningDaemon(params ProjectionDaemon[] daemons)
+    private async Task<IProjectionDaemon> findRunningDaemon(params IProjectionDaemon[] daemons)
     {
         var timeout = 5.Seconds();
 
@@ -152,7 +151,7 @@ public class HotCold_leadership_election: DaemonContext
 
         await assertIsRunning(daemon1, 1.Seconds());
 
-        var others = new ProjectionDaemon[4];
+        var others = new IProjectionDaemon[4];
 
         others[0] = await StartDaemonInHotColdMode();
         others[1] = await StartDaemonInHotColdMode();

@@ -23,7 +23,7 @@ namespace Marten.Events.Daemon;
 /// </summary>
 internal class ProjectionDaemon: IProjectionDaemon
 {
-    private readonly Dictionary<string, ShardAgent> _agents = new();
+    private readonly Dictionary<string, IShardAgent> _agents = new();
     private readonly HighWaterAgent _highWater;
     private readonly ILogger _logger;
     private readonly DocumentStore _store;
@@ -344,7 +344,7 @@ internal class ProjectionDaemon: IProjectionDaemon
         await TryAction(parameters).ConfigureAwait(false);
     }
 
-    public ShardAgent[] CurrentShards()
+    public IShardAgent[] CurrentShards()
     {
         return _agents.Values.ToArray();
     }

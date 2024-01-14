@@ -20,7 +20,7 @@ public class event_projections_end_to_end : DaemonContext
 {
     public event_projections_end_to_end(ITestOutputHelper output) : base(output)
     {
-        _output = output;
+        Output = output;
     }
 
     [Fact]
