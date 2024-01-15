@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -39,7 +40,6 @@ internal class SimpleExpression: ExpressionVisitor
                 Constant = n.ReduceToConstant();
                 HasConstant = true;
                 break;
-
 
             case ParameterExpression:
                 if (queryableMembers is IValueCollectionMember collection)
@@ -98,8 +98,14 @@ internal class SimpleExpression: ExpressionVisitor
 
     public ISqlFragment CompareTo(SimpleExpression right, string op)
     {
+        // See GH-2895
         if (Constant != null)
         {
+            if (right.Constant != null)
+            {
+                return new ComparisonFilter(new CommandParameter(Constant.Value), new CommandParameter(right.Constant.Value), op);
+            }
+
             return right.CompareTo(this, ComparisonFilter.OppositeOperators[op]);
         }
 
