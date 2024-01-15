@@ -76,6 +76,13 @@ public interface IMartenSessionLogger
     /// </summary>
     /// <param name="command"></param>
     public void OnBeforeExecute(NpgsqlCommand command);
+
+    /// <summary>
+    ///     Called just before a batch is to be executed. Use this to create
+    ///     performance logging of Marten operations
+    /// </summary>
+    /// <param name="command"></param>
+    public void OnBeforeExecute(NpgsqlBatch batch);
 }
 
 #endregion
@@ -162,6 +169,12 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
     }
 
     public void OnBeforeExecute(NpgsqlCommand command)
+    {
+        _stopwatch = new Stopwatch();
+        _stopwatch.Start();
+    }
+
+    public void OnBeforeExecute(NpgsqlBatch batch)
     {
         _stopwatch = new Stopwatch();
         _stopwatch.Start();

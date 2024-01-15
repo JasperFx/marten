@@ -69,6 +69,11 @@ public class Bug_1758_creating_stream_runs_extra_selects_and_deletes : BugIntegr
         public void OnBeforeExecute(NpgsqlCommand command)
         {
         }
+
+        public void OnBeforeExecute(NpgsqlBatch batch)
+        {
+
+        }
     }
 }
 

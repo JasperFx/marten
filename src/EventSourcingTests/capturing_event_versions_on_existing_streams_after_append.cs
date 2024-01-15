@@ -43,6 +43,11 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
 
         }
 
+        public void OnBeforeExecute(NpgsqlBatch batch)
+        {
+
+        }
+
         public IChangeSet LastCommit { get; set; }
     }
 

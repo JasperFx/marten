@@ -272,9 +272,16 @@ public interface IMartenSessionLogger
     /// </summary>
     /// <param name="command"></param>
     public void OnBeforeExecute(NpgsqlCommand command);
+
+    /// <summary>
+    ///     Called just before a batch is to be executed. Use this to create
+    ///     performance logging of Marten operations
+    /// </summary>
+    /// <param name="command"></param>
+    public void OnBeforeExecute(NpgsqlBatch batch);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L11-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_imartenlogger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L11-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_imartenlogger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To apply these logging abstractions, you can either plug your own `IMartenLogger` into the `StoreOptions` object and allow that default logger to create the individual session loggers:
@@ -287,7 +294,7 @@ var store = DocumentStore.For(_ =>
     _.Logger(new ConsoleMartenLogger());
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L156-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L161-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also directly apply a session logger to any `IQuerySession` or `IDocumentSession` like this:
@@ -299,7 +306,7 @@ using var session = store.LightweightSession();
 // Replace the logger for only this one session
 session.Logger = new RecordingLogger();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L165-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L170-L176' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The session logging is a different abstraction specifically so that you _could_ track database commands issued per session. In effect, my own shop is going to use this capability to understand what HTTP endpoints or service bus message handlers are being unnecessarily chatty in their database interactions. We also hope that the contextual logging of commands per document session makes it easier to understand how our systems behave.
@@ -391,9 +398,15 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
         _stopwatch = new Stopwatch();
         _stopwatch.Start();
     }
+
+    public void OnBeforeExecute(NpgsqlBatch batch)
+    {
+        _stopwatch = new Stopwatch();
+        _stopwatch.Start();
+    }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L83-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_consolemartenlogger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IMartenLogger.cs#L90-L184' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_consolemartenlogger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Accessing Diagnostics

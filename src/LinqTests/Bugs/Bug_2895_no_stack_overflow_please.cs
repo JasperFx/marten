@@ -6,7 +6,7 @@ using Marten.Testing.Harness;
 
 namespace LinqTests.Bugs;
 
-public class bug_2895_no_stack_overflow_please : BugIntegrationContext
+public class Bug_2895_no_stack_overflow_please : BugIntegrationContext
 {
     [Fact]
     public async Task do_not_blow_up_in_linq_parsing()

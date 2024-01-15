@@ -129,6 +129,11 @@ public class StoreOptionsTests
             OnBeforeExecuted++;
         }
 
+        public void OnBeforeExecute(NpgsqlBatch batch)
+        {
+
+        }
+
         public void LogSuccess(NpgsqlCommand command)
         {
             LastCommand = command;

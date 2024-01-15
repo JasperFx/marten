@@ -109,4 +109,13 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
             _stopwatch.Start();
         }
     }
+
+    public void OnBeforeExecute(NpgsqlBatch batch)
+    {
+        if (Inner.IsEnabled(LogLevel.Debug))
+        {
+            _stopwatch = new Stopwatch();
+            _stopwatch.Start();
+        }
+    }
 }

@@ -82,6 +82,11 @@ public class RecordingLogger : IMartenSessionLogger
 
     }
 
+    public void OnBeforeExecute(NpgsqlBatch batch)
+    {
+
+    }
+
     public IChangeSet LastCommit { get; set; }
 
     public IDocumentSession LastSession { get; set; }

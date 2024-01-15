@@ -124,6 +124,10 @@ namespace Marten.Testing.Harness
 
         }
 
+        public void OnBeforeExecute(NpgsqlBatch batch)
+        {
+
+        }
 
 
         private class NoopTestOutputHelper : ITestOutputHelper
