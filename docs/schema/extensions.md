@@ -80,7 +80,7 @@ StoreOptions(opts =>
     opts.Storage.ExtendedSchemaObjects.Add(table);
 });
 
-await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L49-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschematable' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -110,7 +110,7 @@ $f$  language sql immutable;
     opts.Storage.ExtendedSchemaObjects.Add(function);
 });
 
-await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L195-L217' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemafunction' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -132,7 +132,7 @@ StoreOptions(opts =>
     opts.Storage.ExtendedSchemaObjects.Add(sequence);
 });
 
-await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L231-L245' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemasequence' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -155,7 +155,7 @@ StoreOptions(opts =>
     opts.Storage.ExtendedSchemaObjects.Add(extension);
 });
 
-await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L76-L91' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemaextension' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

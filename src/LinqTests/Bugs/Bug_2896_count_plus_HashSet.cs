@@ -21,10 +21,10 @@ public class Bug_2896_count_plus_HashSet : BugIntegrationContext
     [Fact]
     public async Task try_to_query()
     {
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        TheSession.Logger = new TestOutputMartenLogger(_output);
 
         var guidList = new HashSet<Guid>() { Guid.NewGuid() };
-        var count = await theSession
+        var count = await TheSession
             .Query<User>()
             .Where(x=> guidList.Contains(x.Id))
             .CountAsync();

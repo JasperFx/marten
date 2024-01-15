@@ -37,7 +37,7 @@ public class Bug_2883_ievent_not_working_as_identity_source : BugIntegrationCont
         var customersToCreate = 10;
 
         {
-            await using var session = theStore.LightweightSession();
+            await using var session = TheStore.LightweightSession();
             session.Logger = new TestOutputMartenLogger(_output);
 
             for (var i = 0; i < customersToCreate; i++)
@@ -48,7 +48,7 @@ public class Bug_2883_ievent_not_working_as_identity_source : BugIntegrationCont
             await session.SaveChangesAsync();
         }
         {
-            await using var session = theStore.QuerySession();
+            await using var session = TheStore.QuerySession();
 
             var docs = session.Query<CustomerInsightsResponse>().ToList();
             docs.Count.ShouldBeEquivalentTo(1);
@@ -56,7 +56,7 @@ public class Bug_2883_ievent_not_working_as_identity_source : BugIntegrationCont
         }
         var customersToDelete = 5;
         {
-            await using var session = theStore.LightweightSession();
+            await using var session = TheStore.LightweightSession();
             session.Logger = new TestOutputMartenLogger(_output);
 
             for (var i = 0; i < customersToDelete; i++)
@@ -67,7 +67,7 @@ public class Bug_2883_ievent_not_working_as_identity_source : BugIntegrationCont
             await session.SaveChangesAsync();
         }
         {
-            await using var session = theStore.QuerySession();
+            await using var session = TheStore.QuerySession();
 
             var docs = session.Query<CustomerInsightsResponse>().ToList();
             docs.Count.ShouldBeEquivalentTo(1);

@@ -10,8 +10,6 @@ namespace Marten.Events.Daemon;
 /// </summary>
 public interface IProjectionDaemon: IDisposable
 {
-    bool IsRunning { get; }
-
     /// <summary>
     ///     Observable tracking of projection shard events
     /// </summary>
