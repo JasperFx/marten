@@ -48,6 +48,7 @@ public class LinqParsing: IReadOnlyLinqParsing
 
         // Keep this below the string methods!
         new EnumerableContains(),
+        new HashSetEnumerableContains(),
         new AllMethodParser(),
 
         // Added

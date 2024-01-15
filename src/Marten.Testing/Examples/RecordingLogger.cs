@@ -40,4 +40,9 @@ public class RecordingLogger: IMartenSessionLogger
     {
 
     }
+
+    public void OnBeforeExecute(NpgsqlBatch batch)
+    {
+
+    }
 }

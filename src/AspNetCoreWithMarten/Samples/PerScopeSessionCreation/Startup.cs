@@ -60,6 +60,11 @@ public class CorrelatedMartenLogger: IMartenSessionLogger
     {
 
     }
+
+    public void OnBeforeExecute(NpgsqlBatch batch)
+    {
+
+    }
 }
 #endregion
 

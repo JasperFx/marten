@@ -182,7 +182,7 @@ public partial class QuerySession
         try
         {
             var returnValue = _retryPolicy.Execute(batch.ExecuteNonQuery);
-            //Logger.LogSuccess(batch);
+            Logger.LogSuccess(batch);
 
             return returnValue;
         }
@@ -204,7 +204,7 @@ public partial class QuerySession
 
         await _connection.ApplyAsync(batch, token).ConfigureAwait(false);
 
-        //Logger.OnBeforeExecute(command);
+        Logger.OnBeforeExecute(batch);
 
         try
         {
@@ -244,7 +244,7 @@ public partial class QuerySession
     {
         await _connection.ApplyAsync(batch, token).ConfigureAwait(false);
 
-        //Logger.OnBeforeExecute(command);
+        Logger.OnBeforeExecute(batch);
 
         RequestCount++;
 

@@ -408,9 +408,14 @@ public class CorrelatedMartenLogger: IMartenSessionLogger
     {
 
     }
+
+    public void OnBeforeExecute(NpgsqlBatch batch)
+    {
+
+    }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L22-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_correlatedmartenlogger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L22-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_correlatedmartenlogger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, let's move on to building out a custom session factory that will attach our correlated marten logger to sessions being resolved from the IoC container:
@@ -450,7 +455,7 @@ public class ScopedSessionFactory: ISessionFactory
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L67-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customsessionfactorybyscope' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L72-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customsessionfactorybyscope' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Lastly, let's register our new session factory, but this time we need to take care to register the session factory as `Scoped` in the underlying container so we're using the correct `ISession` at runtime:
@@ -471,7 +476,7 @@ services.AddMarten(opts =>
     // Chained helper to replace the CustomSessionFactory
     .BuildSessionsWith<ScopedSessionFactory>(ServiceLifetime.Scoped);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L115-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreationbyscope' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L120-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreationbyscope' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
