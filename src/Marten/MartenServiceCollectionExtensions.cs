@@ -55,7 +55,9 @@ public static class MartenServiceCollectionExtensions
     public static IServiceCollection SetApplicationProject(this IServiceCollection services, Assembly assembly,
         string? hintPath = null)
     {
-        var environment = services.Select(x => x.ImplementationInstance)
+        var environment = services
+            .Where(x => !x.IsKeyedService)
+            .Select(x => x.ImplementationInstance)
             .OfType<IHostEnvironment>().LastOrDefault();
 
         var applicationName = assembly.GetName().Name;
@@ -309,7 +311,11 @@ public static class MartenServiceCollectionExtensions
     {
         services.AddSingleton<IDocumentStoreSource, DocumentStoreSource<T>>();
 
-        var stores = services.Select(x => x.ImplementationInstance).OfType<SecondaryDocumentStores>().FirstOrDefault();
+        var stores = services
+            .Where(x  => !x.IsKeyedService)
+            .Select(x => x.ImplementationInstance)
+            .OfType<SecondaryDocumentStores>().FirstOrDefault();
+
         if (stores == null)
         {
             stores = new SecondaryDocumentStores();
