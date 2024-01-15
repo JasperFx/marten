@@ -75,9 +75,11 @@ public class Bug_2883_ievent_not_working_as_identity_source : BugIntegrationCont
         }
     }
 
-
-    public class CustomerInsightsProjection : MultiStreamProjection<CustomerInsightsResponse, string>
+    #region sample_using_ievent_for_document_identity_in_projections
+public class CustomerInsightsProjection : MultiStreamProjection<CustomerInsightsResponse, string>
 {
+
+
     public CustomerInsightsProjection()
     {
         Identity<IEvent<CustomerCreated>>(x => DateOnly.FromDateTime(x.Timestamp.Date).ToString(CultureInfo.InvariantCulture));
@@ -93,6 +95,7 @@ public class Bug_2883_ievent_not_working_as_identity_source : BugIntegrationCont
     public CustomerInsightsResponse Apply(IEvent<CustomerDeleted> @event, CustomerInsightsResponse current)
         => current with { NewCustomers = current.NewCustomers - 1 };
 }
+    #endregion
 
 public class CustomerDeleted
 {
