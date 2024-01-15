@@ -37,7 +37,15 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
 
     void ICodeFile.AssembleTypes(GeneratedAssembly assembly)
     {
-        assembleTypes(assembly, StoreOptions);
+        if (!_hasGenerated)
+        {
+            lock (_assembleLocker)
+            {
+                if (_hasGenerated) return;
+                assembleTypes(assembly, StoreOptions);
+                _hasGenerated = true;
+            }
+        }
     }
 
     Task<bool> ICodeFile.AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services,
@@ -99,15 +107,24 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
 
         if (needsSettersGenerated())
         {
-            var generatedAssembly = new GeneratedAssembly(rules);
-            assembleTypes(generatedAssembly, store.Options);
+            lock (_assembleLocker)
+            {
+                var generatedAssembly = new GeneratedAssembly(rules);
+                assembleTypes(generatedAssembly, store.Options);
 
-            // This will force it to create any setters or dynamic funcs
-            generatedAssembly.GenerateCode();
+                // This will force it to create any setters or dynamic funcs
+                generatedAssembly.GenerateCode();
+            }
         }
 
         _hasGenerated = true;
     }
+
+    /// <summary>
+    /// Prevent code generation bugs when multiple aggregates are code generated in parallel
+    /// Happens more often on dynamic code generation
+    /// </summary>
+    protected static object _assembleLocker = new object();
 
     protected abstract IProjection buildProjectionObject(DocumentStore store);
 

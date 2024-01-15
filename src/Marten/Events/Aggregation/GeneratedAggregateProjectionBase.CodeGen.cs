@@ -56,7 +56,13 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         // You have to do this for the sake of the Setters
         if (_liveGeneratedType == null)
         {
-            assembleTypes(new GeneratedAssembly(rules), options);
+            lock (_assembleLocker)
+            {
+                if (_liveGeneratedType == null)
+                {
+                    assembleTypes(new GeneratedAssembly(rules), options);
+                }
+            }
         }
     }
 
@@ -78,22 +84,13 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         return _inlineType != null && _liveType != null;
     }
 
-    /// <summary>
-    /// Prevent code generation bugs when multiple aggregates are code generated in parallel
-    /// Happens more often on dynamic code generation
-    /// </summary>
-    private static readonly object LockObjAssembleTypes = new object();
-
     protected override void assembleTypes(GeneratedAssembly assembly, StoreOptions options)
     {
-        lock (LockObjAssembleTypes)
-        {
-            ReferenceAssembliesAndTypes(assembly);
-            AddUsingNamespaces(assembly);
-            CheckAndSetAsyncFlag();
-            ValidateAndSetAggregateMapping(options);
-            BuildAggregationTypes(assembly);
-        }
+        ReferenceAssembliesAndTypes(assembly);
+        AddUsingNamespaces(assembly);
+        CheckAndSetAsyncFlag();
+        ValidateAndSetAggregateMapping(options);
+        BuildAggregationTypes(assembly);
     }
 
     private void ReferenceAssembliesAndTypes(GeneratedAssembly assembly)
@@ -167,8 +164,11 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         }
         else if (_inlineGeneratedType == null)
         {
-            var rules = store.Options.CreateGenerationRules();
-            assembleTypes(new GeneratedAssembly(rules), store.Options);
+            lock (_assembleLocker)
+            {
+                var rules = store.Options.CreateGenerationRules();
+                assembleTypes(new GeneratedAssembly(rules), store.Options);
+            }
         }
 
         var storage = store.Options.Providers.StorageFor<T>().Lightweight;
