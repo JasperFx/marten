@@ -45,6 +45,9 @@ public class using_multiple_document_stores_in_same_host : IDisposable
                 opts.GeneratedCodeMode = TypeLoadMode.Auto;
             });
 
+            // Just to prove that this doesn't blow up, see GH-2892
+            services.AddKeyedSingleton<IMartenSessionLogger>("blue", new StoreOptionsTests.RecordingLogger());
+
             services.AddMartenStore<ISecondStore>(services =>
             {
                 var opts = new StoreOptions();
