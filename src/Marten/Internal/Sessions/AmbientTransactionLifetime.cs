@@ -34,6 +34,8 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         {
             OwnsConnection = true;
         }
+
+        CommandTimeout = _options.Timeout ?? _connection?.CommandTimeout ?? 30;
     }
 
     public NpgsqlConnection Connection
@@ -47,7 +49,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
 
     public bool OwnsConnection { get; }
 
-    public int CommandTimeout => _options.Timeout ?? _connection?.CommandTimeout ?? 30;
+    public int CommandTimeout { get; set; }
 
 
 
@@ -74,6 +76,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
     public void Apply(NpgsqlCommand command)
     {
         BeginTransaction();
+        command.CommandTimeout = CommandTimeout;
         command.Connection = _connection;
         command.CommandTimeout = CommandTimeout;
     }
@@ -82,6 +85,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
     {
         await BeginTransactionAsync(token).ConfigureAwait(false);
         command.Connection = _connection;
+        command.CommandTimeout = CommandTimeout;
         command.CommandTimeout = CommandTimeout;
     }
 
@@ -133,126 +137,126 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         }
     }
 
-    public int Execute(NpgsqlCommand cmd, IMartenSessionLogger logger)
+    public int Execute(NpgsqlCommand cmd)
     {
         Apply(cmd);
 
         try
         {
             var returnValue = cmd.ExecuteNonQuery();
-            logger.LogSuccess(cmd);
+            Logger.LogSuccess(cmd);
 
             return returnValue;
         }
         catch (Exception e)
         {
-            handleCommandException(logger, cmd, e);
+            handleCommandException(cmd, e);
             throw;
         }
     }
 
-    public async Task<int> ExecuteAsync(NpgsqlCommand command, IMartenSessionLogger logger,
-        CancellationToken token = new CancellationToken())
+    public async Task<int> ExecuteAsync(NpgsqlCommand command,
+        CancellationToken token = new())
     {
         await ApplyAsync(command, token).ConfigureAwait(false);
 
-        logger.OnBeforeExecute(command);
+        Logger.OnBeforeExecute(command);
 
         try
         {
             var returnValue = await command.ExecuteNonQueryAsync(token)
                 .ConfigureAwait(false);
-            logger.LogSuccess(command);
+            Logger.LogSuccess(command);
 
             return returnValue;
         }
         catch (Exception e)
         {
-            handleCommandException(logger, command, e);
+            handleCommandException(command, e);
             throw;
         }
     }
 
-    public DbDataReader ExecuteReader(NpgsqlCommand command, IMartenSessionLogger logger)
+    public DbDataReader ExecuteReader(NpgsqlCommand command)
     {
         Apply(command);
 
         try
         {
             var returnValue = command.ExecuteReader();
-            logger.LogSuccess(command);
+            Logger.LogSuccess(command);
             return returnValue;
         }
         catch (Exception e)
         {
-            handleCommandException(logger, command, e);
+            handleCommandException(command, e);
             throw;
         }
     }
 
-    public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, IMartenSessionLogger logger, CancellationToken token = default)
+    public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default)
     {
         await ApplyAsync(command, token).ConfigureAwait(false);
 
-        logger.OnBeforeExecute(command);
+        Logger.OnBeforeExecute(command);
 
         try
         {
             var reader = await command.ExecuteReaderAsync(token)
                 .ConfigureAwait(false);
 
-            logger.LogSuccess(command);
+            Logger.LogSuccess(command);
 
             return reader;
         }
         catch (Exception e)
         {
-            handleCommandException(logger, command, e);
+            handleCommandException(command, e);
             throw;
         }
     }
 
-    public DbDataReader ExecuteReader(NpgsqlBatch batch, IMartenSessionLogger logger)
+    public DbDataReader ExecuteReader(NpgsqlBatch batch)
     {
         Apply(batch);
 
         try
         {
             var reader = batch.ExecuteReader();
-            logger.LogSuccess(batch);
+            Logger.LogSuccess(batch);
             return reader;
         }
         catch (Exception e)
         {
-            handleCommandException(logger, batch, e);
+            handleCommandException(batch, e);
             throw;
         }
     }
 
-    public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, IMartenSessionLogger logger, CancellationToken token = default)
+    public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, CancellationToken token = default)
     {
         await ApplyAsync(batch, token).ConfigureAwait(false);
 
-        logger.OnBeforeExecute(batch);
+        Logger.OnBeforeExecute(batch);
 
         try
         {
             var reader = await batch.ExecuteReaderAsync(token)
                 .ConfigureAwait(false);
 
-            logger.LogSuccess(batch);
+            Logger.LogSuccess(batch);
 
             return reader;
         }
         catch (Exception e)
         {
-            handleCommandException(logger, batch, e);
+            handleCommandException(batch, e);
             throw;
         }
     }
 
-        public void ExecuteBatchPages(IReadOnlyList<OperationPage> pages, IMartenSessionLogger logger,
-        List<Exception> exceptions)
+        public void ExecuteBatchPages(IReadOnlyList<OperationPage> pages,
+            List<Exception> exceptions)
     {
         try
         {
@@ -260,13 +264,13 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
             foreach (var page in pages)
             {
                 var batch = page.Compile();
-                using var reader = ExecuteReader(batch, logger);
+                using var reader = ExecuteReader(batch);
                 page.ApplyCallbacks(reader, exceptions);
             }
         }
         catch (Exception e)
         {
-            logger.LogFailure(new NpgsqlCommand(), e);
+            Logger.LogFailure(new NpgsqlCommand(), e);
             pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
         }
 
@@ -282,7 +286,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         }
     }
 
-    public async Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages, IMartenSessionLogger logger,
+    public async Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages,
         List<Exception> exceptions, CancellationToken token)
     {
         try
@@ -291,13 +295,13 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
             foreach (var page in pages)
             {
                 var batch = page.Compile();
-                await using var reader = await ExecuteReaderAsync(batch, logger, token).ConfigureAwait(false);
+                await using var reader = await ExecuteReaderAsync(batch, token).ConfigureAwait(false);
                 await page.ApplyCallbacksAsync(reader, exceptions, token).ConfigureAwait(false);
             }
         }
         catch (Exception e)
         {
-            logger.LogFailure(new NpgsqlCommand(), e);
+            Logger.LogFailure(new NpgsqlCommand(), e);
             pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
         }
 

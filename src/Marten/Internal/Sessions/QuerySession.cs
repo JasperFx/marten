@@ -100,8 +100,8 @@ public partial class QuerySession: IMartenSession, IQuerySession
 
     public IMartenSessionLogger Logger
     {
-        get;
-        set;
+        get => _connection.Logger;
+        set => _connection.Logger = value;
     }
 
     public int RequestCount { get; set; }

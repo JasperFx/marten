@@ -12,6 +12,7 @@ using Marten.Exceptions;
 using Marten.Services;
 using Marten.Storage;
 using Npgsql;
+using Polly;
 
 namespace Marten.Internal.Sessions;
 
@@ -19,8 +20,9 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
 {
     private readonly SessionOptions _options;
     private readonly IMartenDatabase _database;
+    private readonly ResiliencePipeline _resilience;
 
-    public AutoClosingLifetime(SessionOptions options)
+    public AutoClosingLifetime(SessionOptions options, StoreOptions storeOptions)
     {
         if (options.Tenant == null)
             throw new ArgumentOutOfRangeException(nameof(options), "Tenant.Database cannot be null");
@@ -28,7 +30,9 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         _options = options;
         _database = options.Tenant!.Database;
 
-        CommandTimeout = _options.Timeout ?? 30;
+        CommandTimeout = _options.Timeout ?? storeOptions.CommandTimeout;
+
+        _resilience = storeOptions.ResiliencePipeline;
     }
 
     public int CommandTimeout { get; }
@@ -44,9 +48,9 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
     }
 
 
-    public int Execute(NpgsqlCommand cmd, IMartenSessionLogger logger)
+    public int Execute(NpgsqlCommand cmd)
     {
-        logger.OnBeforeExecute(cmd);
+        Logger.OnBeforeExecute(cmd);
         using var conn = _database.CreateConnection();
         conn.Open();
         try
@@ -55,12 +59,12 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
             cmd.CommandTimeout = CommandTimeout;
             var returnValue = cmd.ExecuteNonQuery();
 
-            logger.LogSuccess(cmd);
+            Logger.LogSuccess(cmd);
             return returnValue;
         }
         catch (Exception e)
         {
-            handleCommandException(logger, cmd, e);
+            handleCommandException(cmd, e);
             throw;
         }
         finally
@@ -69,10 +73,10 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         }
     }
 
-    public async Task<int> ExecuteAsync(NpgsqlCommand command, IMartenSessionLogger logger,
-        CancellationToken token = new CancellationToken())
+    public async Task<int> ExecuteAsync(NpgsqlCommand command,
+        CancellationToken token = new())
     {
-        logger.OnBeforeExecute(command);
+        Logger.OnBeforeExecute(command);
         await using var conn = _database.CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
 
@@ -81,13 +85,13 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
             command.Connection = conn;
             command.CommandTimeout = CommandTimeout;
             var returnValue = await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
-            logger.LogSuccess(command);
+            Logger.LogSuccess(command);
 
             return returnValue;
         }
         catch (Exception e)
         {
-            handleCommandException(logger, command, e);
+            handleCommandException(command, e);
             throw;
         }
         finally
@@ -96,9 +100,9 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         }
     }
 
-    public DbDataReader ExecuteReader(NpgsqlCommand command, IMartenSessionLogger logger)
+    public DbDataReader ExecuteReader(NpgsqlCommand command)
     {
-        logger.OnBeforeExecute(command);
+        Logger.OnBeforeExecute(command);
 
         // Do NOT use a using block here because we're returning the reader
         var conn = _database.CreateConnection();
@@ -109,20 +113,20 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
             command.Connection = conn;
             command.CommandTimeout = CommandTimeout;
             var returnValue = command.ExecuteReader(CommandBehavior.CloseConnection);
-            logger.LogSuccess(command);
+            Logger.LogSuccess(command);
             return returnValue;
         }
         catch (Exception e)
         {
             conn.Close();
-            handleCommandException(logger, command, e);
+            handleCommandException(command, e);
             throw;
         }
     }
 
-    public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, IMartenSessionLogger logger, CancellationToken token = default)
+    public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default)
     {
-        logger.OnBeforeExecute(command);
+        Logger.OnBeforeExecute(command);
 
         // Do NOT use a using block here because we're returning the reader
         var conn = _database.CreateConnection();
@@ -133,20 +137,20 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
             command.Connection = conn;
             command.CommandTimeout = CommandTimeout;
             var returnValue = await command.ExecuteReaderAsync(CommandBehavior.CloseConnection, token).ConfigureAwait(false);
-            logger.LogSuccess(command);
+            Logger.LogSuccess(command);
             return returnValue;
         }
         catch (Exception e)
         {
             await conn.CloseAsync().ConfigureAwait(false);
-            handleCommandException(logger, command, e);
+            handleCommandException(command, e);
             throw;
         }
     }
 
-    public DbDataReader ExecuteReader(NpgsqlBatch batch, IMartenSessionLogger logger)
+    public DbDataReader ExecuteReader(NpgsqlBatch batch)
     {
-        logger.OnBeforeExecute(batch);
+        Logger.OnBeforeExecute(batch);
 
         // Do NOT use a using block here because we're returning the reader
         var conn = _database.CreateConnection();
@@ -157,7 +161,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
             batch.Connection = conn;
             batch.Timeout = CommandTimeout;
             var reader = batch.ExecuteReader(CommandBehavior.CloseConnection);
-            logger.LogSuccess(batch);
+            Logger.LogSuccess(batch);
             return reader;
         }
         catch (Exception)
@@ -167,9 +171,9 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         }
     }
 
-    public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, IMartenSessionLogger logger, CancellationToken token = default)
+    public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, CancellationToken token = default)
     {
-        logger.OnBeforeExecute(batch);
+        Logger.OnBeforeExecute(batch);
 
         // Do NOT use a using block here because we're returning the reader
         var conn = _database.CreateConnection();
@@ -181,7 +185,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
             batch.Timeout = CommandTimeout;
             var reader = await batch.ExecuteReaderAsync(CommandBehavior.CloseConnection, token).ConfigureAwait(false);
 
-            logger.LogSuccess(batch);
+            Logger.LogSuccess(batch);
 
             return reader;
         }
@@ -192,7 +196,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         }
     }
 
-    public void ExecuteBatchPages(IReadOnlyList<OperationPage> pages, IMartenSessionLogger logger, List<Exception> exceptions)
+    public void ExecuteBatchPages(IReadOnlyList<OperationPage> pages, List<Exception> exceptions)
     {
         using var conn = _database.CreateConnection();
         conn.Open();
@@ -210,7 +214,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                     batch.Connection = conn;
                     batch.Transaction = tx;
 
-                    logger.OnBeforeExecute(batch);
+                    Logger.OnBeforeExecute(batch);
                     try
                     {
                         using var reader = batch.ExecuteReader();
@@ -219,11 +223,11 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                     }
                     catch (Exception e)
                     {
-                        logger.LogFailure(batch, e);
+                        Logger.LogFailure(batch, e);
                         throw;
                     }
 
-                    logger.LogSuccess(batch);
+                    Logger.LogSuccess(batch);
                 }
             }
             catch (Exception e)
@@ -234,11 +238,11 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                 }
                 catch (Exception rollbackEx)
                 {
-                    logger.LogFailure(rollbackEx, "Error trying to rollback an exception");
+                    Logger.LogFailure(rollbackEx, "Error trying to rollback an exception");
                     throw;
                 }
 
-                logger.LogFailure(new NpgsqlCommand(), e);
+                Logger.LogFailure(new NpgsqlCommand(), e);
                 pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>()
                     .Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
             }
@@ -251,7 +255,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                 }
                 catch (Exception e)
                 {
-                    logger.LogFailure(e, "Failure trying to rollback an exception");
+                    Logger.LogFailure(e, "Failure trying to rollback an exception");
                 }
 
                 var ex = exceptions.Single();
@@ -266,7 +270,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                 }
                 catch (Exception e)
                 {
-                    logger.LogFailure(e, "Failure trying to rollback an exception");
+                    Logger.LogFailure(e, "Failure trying to rollback an exception");
                 }
 
                 throw new AggregateException(exceptions);
@@ -280,7 +284,8 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         }
     }
 
-    public async Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages, IMartenSessionLogger logger, List<Exception> exceptions, CancellationToken token)
+    public async Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages, List<Exception> exceptions,
+        CancellationToken token)
     {
         await using var conn = _database.CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
@@ -298,7 +303,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                     batch.Connection = conn;
                     batch.Transaction = tx;
 
-                    logger.OnBeforeExecute(batch);
+                    Logger.OnBeforeExecute(batch);
                     try
                     {
                         await using var reader = batch.ExecuteReader();
@@ -307,11 +312,11 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                     }
                     catch (Exception e)
                     {
-                        logger.LogFailure(batch, e);
+                        Logger.LogFailure(batch, e);
                         throw;
                     }
 
-                    logger.LogSuccess(batch);
+                    Logger.LogSuccess(batch);
                 }
             }
             catch (Exception e)
@@ -322,11 +327,11 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                 }
                 catch (Exception rollbackEx)
                 {
-                    logger.LogFailure(rollbackEx, "Error trying to rollback an exception");
+                    Logger.LogFailure(rollbackEx, "Error trying to rollback an exception");
                     throw;
                 }
 
-                logger.LogFailure(new NpgsqlCommand(), e);
+                Logger.LogFailure(new NpgsqlCommand(), e);
                 pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>()
                     .Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
             }
@@ -339,7 +344,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                 }
                 catch (Exception e)
                 {
-                    logger.LogFailure(e, "Failure trying to rollback an exception");
+                    Logger.LogFailure(e, "Failure trying to rollback an exception");
                 }
 
                 var ex = exceptions.Single();
@@ -354,7 +359,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                 }
                 catch (Exception e)
                 {
-                    logger.LogFailure(e, "Failure trying to rollback an exception");
+                    Logger.LogFailure(e, "Failure trying to rollback an exception");
                 }
 
                 throw new AggregateException(exceptions);
@@ -371,8 +376,8 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
     public IAlwaysConnectedLifetime Start()
     {
         var transaction = _options.Mode == CommandRunnerMode.ReadOnly
-            ? new ReadOnlyTransactionalConnection(_options)
-            : new TransactionalConnection(_options);
+            ? new ReadOnlyTransactionalConnection(_options){Logger = Logger, CommandTimeout = CommandTimeout}
+            : new TransactionalConnection(_options){Logger = Logger, CommandTimeout = CommandTimeout};
         transaction.BeginTransaction();
 
         return transaction;
@@ -381,8 +386,8 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
     public async Task<IAlwaysConnectedLifetime> StartAsync(CancellationToken token)
     {
         var transaction = _options.Mode == CommandRunnerMode.ReadOnly
-            ? new ReadOnlyTransactionalConnection(_options)
-            : new TransactionalConnection(_options);
+            ? new ReadOnlyTransactionalConnection(_options){Logger = Logger, CommandTimeout = CommandTimeout}
+            : new TransactionalConnection(_options){Logger = Logger, CommandTimeout = CommandTimeout };
 
         await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
 

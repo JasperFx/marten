@@ -125,7 +125,7 @@ public abstract partial class DocumentSessionBase
         {
             try
             {
-                _connection.ExecuteBatchPages(pages, Logger, exceptions);
+                _connection.ExecuteBatchPages(pages, exceptions);
             }
             catch (Exception e)
             {
@@ -178,7 +178,7 @@ public abstract partial class DocumentSessionBase
         {
             try
             {
-                await _connection.ExecuteBatchPagesAsync(pages, Logger, exceptions, token).ConfigureAwait(false);
+                await _connection.ExecuteBatchPagesAsync(pages, exceptions, token).ConfigureAwait(false);
 
                 try
                 {
