@@ -11,16 +11,18 @@ namespace Marten.Internal.Sessions;
 
 internal class ConnectionLifetimeBase
 {
-    protected void handleCommandException(IMartenSessionLogger logger, NpgsqlCommand cmd, Exception e)
+    public IMartenSessionLogger Logger { get; set; }
+
+    protected void handleCommandException(NpgsqlCommand cmd, Exception e)
     {
-        logger.LogFailure(cmd, e);
+        Logger.LogFailure(cmd, e);
 
         MartenExceptionTransformer.WrapAndThrow(cmd, e);
     }
 
-    protected void handleCommandException(IMartenSessionLogger logger, NpgsqlBatch batch, Exception e)
+    protected void handleCommandException(NpgsqlBatch batch, Exception e)
     {
-        logger.LogFailure(batch, e);
+        Logger.LogFailure(batch, e);
 
         MartenExceptionTransformer.WrapAndThrow(batch, e);
     }
@@ -43,22 +45,23 @@ public interface IAlwaysConnectedLifetime : IConnectionLifetime
 
 public interface IConnectionLifetime: IAsyncDisposable, IDisposable
 {
+    IMartenSessionLogger Logger { get; set; }
     int CommandTimeout { get; }
 
-    int Execute(NpgsqlCommand cmd, IMartenSessionLogger logger);
-    Task<int> ExecuteAsync(NpgsqlCommand command, IMartenSessionLogger logger, CancellationToken token = new());
+    int Execute(NpgsqlCommand cmd);
+    Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new());
 
-    DbDataReader ExecuteReader(NpgsqlCommand command, IMartenSessionLogger logger);
+    DbDataReader ExecuteReader(NpgsqlCommand command);
 
-    Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, IMartenSessionLogger logger,
+    Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command,
         CancellationToken token = default);
 
-    DbDataReader ExecuteReader(NpgsqlBatch batch, IMartenSessionLogger logger);
+    DbDataReader ExecuteReader(NpgsqlBatch batch);
 
-    Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, IMartenSessionLogger logger,
+    Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch,
         CancellationToken token = default);
 
-    void ExecuteBatchPages(IReadOnlyList<OperationPage> pages, IMartenSessionLogger logger, List<Exception> exceptions);
-    Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages, IMartenSessionLogger logger,
+    void ExecuteBatchPages(IReadOnlyList<OperationPage> pages, List<Exception> exceptions);
+    Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages,
         List<Exception> exceptions, CancellationToken token);
 }

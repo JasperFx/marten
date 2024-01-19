@@ -191,7 +191,6 @@ public class SessionOptionsTests: OneOffConfigurationsContext
     [Fact]
     public void can_define_custom_timeout_via_pgcstring()
     {
-        // TODO -- do this without the Preview command. Check against the session itself
         var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
         connectionStringBuilder.CommandTimeout = 1;

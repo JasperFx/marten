@@ -103,33 +103,33 @@ public sealed class SessionOptions
             if (IsolationLevel == IsolationLevel.Serializable)
             {
                 var transaction = mode == CommandRunnerMode.ReadOnly
-                    ? new ReadOnlyTransactionalConnection(this)
-                    : new TransactionalConnection(this);
+                    ? new ReadOnlyTransactionalConnection(this){CommandTimeout = Timeout ?? store.Options.CommandTimeout}
+                    : new TransactionalConnection(this){CommandTimeout = Timeout ?? store.Options.CommandTimeout};
                 transaction.BeginTransaction();
 
                 return transaction;
             }
             else
             {
-                return new AutoClosingLifetime(this);
+                return new AutoClosingLifetime(this, store.Options);
             }
         }
 
 
         if (Transaction != null)
         {
-            return new ExternalTransaction(this);
+            return new ExternalTransaction(this){CommandTimeout = Timeout ?? store.Options.CommandTimeout};
         }
 
 
         if (DotNetTransaction != null)
         {
-            return new AmbientTransactionLifetime(this);
+            return new AmbientTransactionLifetime(this){CommandTimeout = Timeout ?? store.Options.CommandTimeout};
         }
 
         if (Connection != null)
         {
-            return new TransactionalConnection(this);
+            return new TransactionalConnection(this){CommandTimeout = Timeout ?? store.Options.CommandTimeout};
         }
 
 

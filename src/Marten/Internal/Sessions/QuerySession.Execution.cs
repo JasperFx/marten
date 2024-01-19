@@ -20,37 +20,37 @@ public partial class QuerySession
     public int Execute(NpgsqlCommand cmd)
     {
         RequestCount++;
-        return _connection.Execute(cmd, Logger);
+        return _connection.Execute(cmd);
     }
 
     public Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new())
     {
         RequestCount++;
-        return _connection.ExecuteAsync(command, Logger, token);
+        return _connection.ExecuteAsync(command, token);
     }
 
     public DbDataReader ExecuteReader(NpgsqlCommand command)
     {
         RequestCount++;
-        return _connection.ExecuteReader(command, Logger);
+        return _connection.ExecuteReader(command);
     }
 
     public Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default)
     {
         RequestCount++;
-        return _connection.ExecuteReaderAsync(command, Logger, token);
+        return _connection.ExecuteReaderAsync(command, token);
     }
 
     public DbDataReader ExecuteReader(NpgsqlBatch batch)
     {
         RequestCount++;
-        return _connection.ExecuteReader(batch, Logger);
+        return _connection.ExecuteReader(batch);
     }
 
     public Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, CancellationToken token = default)
     {
         RequestCount++;
-        return _connection.ExecuteReaderAsync(batch, Logger, token);
+        return _connection.ExecuteReaderAsync(batch, token);
     }
 
     internal T? LoadOne<T>(NpgsqlCommand command, ISelector<T> selector)

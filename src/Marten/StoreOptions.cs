@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -20,6 +21,7 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Services.Json;
 using Marten.Storage;
 using Npgsql;
+using Polly;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
@@ -90,9 +92,24 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
         Projections = new ProjectionOptions(this);
 
         Linq = new LinqParsing(this);
+
+        // TODO -- temporary, we'll need to get more fine-grained with this on specific Npgsql exceptions!
+        var strategy = new ResiliencePipelineBuilder().AddRetry(new()
+        {
+            ShouldHandle = new PredicateBuilder().Handle<Exception>(),
+            MaxRetryAttempts = 3, // Retry up to 20 times - this should be enough that we eventually succeed.
+            Delay = TimeSpan.FromMilliseconds(200)
+        }).Build();
+
+        ResiliencePipeline = strategy;
     }
 
     internal IList<Type> CompiledQueryTypes { get; } = new List<Type>();
+
+    /// <summary>
+    /// Polly policies for retries within Marten command execution
+    /// </summary>
+    public ResiliencePipeline ResiliencePipeline { get; set; }
 
     /// <summary>
     ///     Advisory lock id is used by the ApplyChangesOnStartup() option to serialize access to making
@@ -261,6 +278,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     IReadOnlyEventStoreOptions IReadOnlyStoreOptions.Events => EventGraph;
 
     IReadOnlyLinqParsing IReadOnlyStoreOptions.Linq => Linq;
+    public int CommandTimeout { get; set; } = 30;
 
     /// <summary>
     ///     Configure Marten to create databases for tenants in case databases do not exist or need to be dropped & re-created.
@@ -291,6 +309,17 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     /// <param name="connectionString"></param>
     public void Connection(string connectionString)
     {
+        try
+        {
+            var builder = new NpgsqlConnectionStringBuilder(connectionString);
+
+            if (builder.CommandTimeout > 0) CommandTimeout = builder.CommandTimeout;
+        }
+        catch (Exception)
+        {
+            // Just swallow this one
+        }
+
         _tenancy = new Lazy<ITenancy>(() =>
             new DefaultTenancy(new ConnectionFactory(NpgsqlDataSourceFactory, connectionString), this));
     }
