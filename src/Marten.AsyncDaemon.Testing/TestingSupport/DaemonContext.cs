@@ -7,7 +7,7 @@ using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Storage;
-using Marten.TestHelpers;
+using Marten.Testing;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Logging;
 using Shouldly;
@@ -18,28 +18,28 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport;
 #region sample_daemon_test_context
 public abstract class DaemonContext: OneOffConfigurationsContext
 {
-    private readonly DaemonContextHelper _daemonContextHelper;
+    private readonly ProjectionDaemonRunner _projectionDaemonRunner;
     protected ITestOutputHelper Output;
-    public ILogger<IProjection> Logger => _daemonContextHelper.Logger;
+    public ILogger<IProjection> Logger => _projectionDaemonRunner.Logger;
 
-    public DaemonContext(ITestOutputHelper output, DaemonContextHelper daemonContextHelper) : base(daemonContextHelper)
+    protected DaemonContext(ITestOutputHelper output, ProjectionDaemonRunner projectionDaemonRunner) : base(projectionDaemonRunner)
     {
-        _daemonContextHelper = daemonContextHelper;
+        _projectionDaemonRunner = projectionDaemonRunner;
         TheStore.Advanced.Clean.DeleteAllEventData();
 
         TheStore.Options.Projections.DaemonLockId++;
         Output = output;
     }
 
-    public DaemonContext(ITestOutputHelper output)
-        : this(output, new DaemonContextHelper(ConnectionSource.ConnectionString, new TestLogger<IProjection>(output))) { }
+    protected DaemonContext(ITestOutputHelper output)
+        : this(output, new ProjectionDaemonRunner(ConnectionSource.ConnectionString, new TestLogger<IProjection>(output))) { }
 
-    public Task<IProjectionDaemon> StartDaemon() => _daemonContextHelper.StartDaemon();
-    public Task<IProjectionDaemon> StartDaemon(string tenantId) => _daemonContextHelper.StartDaemon(tenantId);
+    public Task<IProjectionDaemon> StartDaemon() => _projectionDaemonRunner.StartDaemon();
+    public Task<IProjectionDaemon> StartDaemon(string tenantId) => _projectionDaemonRunner.StartDaemon(tenantId);
     #endregion
-    public Task<IProjectionDaemon> StartDaemonInHotColdMode() => _daemonContextHelper.StartDaemonInHotColdMode();
-    public Task<IProjectionDaemon> StartAdditionalDaemonInHotColdMode() => _daemonContextHelper.StartAdditionalDaemonInHotColdMode();
-    public Task WaitForAction(string shardName, ShardAction action, TimeSpan timeout = default) => _daemonContextHelper.WaitForAction(shardName, action, timeout);
+    public Task<IProjectionDaemon> StartDaemonInHotColdMode() => _projectionDaemonRunner.StartDaemonInHotColdMode();
+    public Task<IProjectionDaemon> StartAdditionalDaemonInHotColdMode() => _projectionDaemonRunner.StartAdditionalDaemonInHotColdMode();
+    public Task WaitForAction(string shardName, ShardAction action, TimeSpan timeout = default) => _projectionDaemonRunner.WaitForAction(shardName, action, timeout);
 
     public int NumberOfStreams
     {

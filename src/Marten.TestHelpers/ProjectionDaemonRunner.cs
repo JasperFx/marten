@@ -6,14 +6,14 @@ using Marten.Events.Daemon.HighWater;
 using Marten.Events.Projections;
 using Microsoft.Extensions.Logging;
 
-namespace Marten.TestHelpers;
+namespace Marten.Testing;
 
-public class DaemonContextHelper(string schemaName, string connectionString, ILogger<IProjection> logger) : OneOffConfigurationsHelper(schemaName, connectionString)
+public class ProjectionDaemonRunner(string schemaName, string connectionString, ILogger<IProjection> logger) : OneOffConfigurationsHelper(schemaName, connectionString)
 {
     private ProjectionDaemon? _daemon;
     public ILogger<IProjection> Logger { get; } = logger;
 
-    public DaemonContextHelper(string connectionString, ILogger<IProjection> logger)
+    public ProjectionDaemonRunner(string connectionString, ILogger<IProjection> logger)
         : this("daemon", connectionString, logger)
     {
     }

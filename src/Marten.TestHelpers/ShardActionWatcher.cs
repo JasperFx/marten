@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Events.Daemon;
 
-namespace Marten.TestHelpers;
+namespace Marten.Testing;
 
 internal class ShardActionWatcher: IObserver<ShardState>
 {

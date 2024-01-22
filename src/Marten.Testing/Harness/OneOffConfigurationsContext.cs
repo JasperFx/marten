@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten.Internal.CodeGeneration;
-using Marten.TestHelpers;
 using Xunit;
 
 namespace Marten.Testing.Harness;

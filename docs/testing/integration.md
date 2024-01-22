@@ -333,24 +333,24 @@ And a `DaemonContext` using the `DaemonContextHelper` like this:
 ```cs
 public abstract class DaemonContext: OneOffConfigurationsContext
 {
-    private readonly DaemonContextHelper _daemonContextHelper;
+    private readonly ProjectionDaemonRunner _projectionDaemonRunner;
     protected ITestOutputHelper Output;
-    public ILogger<IProjection> Logger => _daemonContextHelper.Logger;
+    public ILogger<IProjection> Logger => _projectionDaemonRunner.Logger;
 
-    public DaemonContext(ITestOutputHelper output, DaemonContextHelper daemonContextHelper) : base(daemonContextHelper)
+    protected DaemonContext(ITestOutputHelper output, ProjectionDaemonRunner projectionDaemonRunner) : base(projectionDaemonRunner)
     {
-        _daemonContextHelper = daemonContextHelper;
+        _projectionDaemonRunner = projectionDaemonRunner;
         TheStore.Advanced.Clean.DeleteAllEventData();
 
         TheStore.Options.Projections.DaemonLockId++;
         Output = output;
     }
 
-    public DaemonContext(ITestOutputHelper output)
-        : this(output, new DaemonContextHelper(ConnectionSource.ConnectionString, new TestLogger<IProjection>(output))) { }
+    protected DaemonContext(ITestOutputHelper output)
+        : this(output, new ProjectionDaemonRunner(ConnectionSource.ConnectionString, new TestLogger<IProjection>(output))) { }
 
-    public Task<IProjectionDaemon> StartDaemon() => _daemonContextHelper.StartDaemon();
-    public Task<IProjectionDaemon> StartDaemon(string tenantId) => _daemonContextHelper.StartDaemon(tenantId);
+    public Task<IProjectionDaemon> StartDaemon() => _projectionDaemonRunner.StartDaemon();
+    public Task<IProjectionDaemon> StartDaemon(string tenantId) => _projectionDaemonRunner.StartDaemon(tenantId);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/DaemonContext.cs#L18-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemon_test_context' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

@@ -1,13 +1,12 @@
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Marten.TestHelpers;
-
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Postgresql;
+
+namespace Marten.Testing;
 
 public class OneOffConfigurationsHelper(string schemaName, string connectionString) : IDisposable
 {

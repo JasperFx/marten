@@ -12,7 +12,7 @@
         <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <nullable>enable</nullable>
-        <RootNamespace>Marten.TestHelpers</RootNamespace>
+        <RootNamespace>Marten.Testing</RootNamespace>
     </PropertyGroup>
     
     <!--SourceLink specific settings-->
