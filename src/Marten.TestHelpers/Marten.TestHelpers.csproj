@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
      <PropertyGroup>
-        <Description>Helpers for writing tests for Marten</Description>
+        <Description>Marten testing extensions to streamline your tests setup</Description>
         <VersionPrefix>7.0.0-beta.3</VersionPrefix>
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
