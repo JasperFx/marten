@@ -34,7 +34,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
             options.GeneratedCodeMode = TypeLoadMode.Auto;
             options.Projections.Snapshot<V1.ShoppingCart>(SnapshotLifecycle.Inline);
         });
-        await theStore.EnsureStorageExistsAsync(typeof(StreamAction));
+        await TheStore.EnsureStorageExistsAsync(typeof(StreamAction));
 
         await AppendEventsInV1Schema(
             shoppingCartId,
@@ -81,7 +81,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
             options.GeneratedCodeMode = TypeLoadMode.Auto;
             options.Projections.Snapshot<V1.ShoppingCart>(SnapshotLifecycle.Inline);
         });
-        await theStore.EnsureStorageExistsAsync(typeof(StreamAction));
+        await TheStore.EnsureStorageExistsAsync(typeof(StreamAction));
 
         await AppendEventsInV1Schema(
             shoppingCartId,
@@ -112,7 +112,7 @@ public class MultipleSchemaVersions: OneOffConfigurationsContext
     private async Task AppendEventsInV1Schema(Guid shoppingCartId, Guid clientId, Guid productId,
         int initialQuantity)
     {
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
         session.Events.Append(shoppingCartId,
             new V1.ShoppingCartOpened(shoppingCartId, clientId));
         session.Events.Append(shoppingCartId,

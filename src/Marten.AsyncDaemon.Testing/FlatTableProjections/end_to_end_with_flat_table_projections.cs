@@ -32,7 +32,7 @@ public class end_to_end_with_flat_table_projections : DaemonContext
 
         await TheSession.SaveChangesAsync();
 
-        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        using var daemon = await TheStore.BuildProjectionDaemonAsync();
 
         var waiter = daemon.Tracker.WaitForShardState("Values:All", 2);
 

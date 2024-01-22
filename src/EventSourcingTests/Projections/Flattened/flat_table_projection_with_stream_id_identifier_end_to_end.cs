@@ -34,9 +34,9 @@ public class flat_table_projection_with_stream_id_identifier_end_to_end: OneOffC
     [Fact]
     public async Task table_should_be_built()
     {
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        await using var conn = theStore.Storage.Database.CreateConnection();
+        await using var conn = TheStore.Storage.Database.CreateConnection();
         await conn.OpenAsync();
 
         var table = await new Table(new PostgresqlObjectName(SchemaName, "values")).FetchExistingAsync(conn);
@@ -71,7 +71,7 @@ public class flat_table_projection_with_stream_id_identifier_end_to_end: OneOffC
 
     private async Task<Data> findData(Guid streamId)
     {
-        await using var conn = theStore.Storage.Database.CreateConnection();
+        await using var conn = TheStore.Storage.Database.CreateConnection();
         await conn.OpenAsync();
 
         var all = await Weasel.Core.CommandExtensions
@@ -85,9 +85,9 @@ public class flat_table_projection_with_stream_id_identifier_end_to_end: OneOffC
     [Fact]
     public async Task functions_are_built()
     {
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        var functions = await theStore.Storage.Database.Functions();
+        var functions = await TheStore.Storage.Database.Functions();
         functions.Any(x => x.QualifiedName == $"{SchemaName}.mt_upsert_values_valuesadded").ShouldBeTrue();
         functions.Any(x => x.QualifiedName == $"{SchemaName}.mt_upsert_values_valuesset").ShouldBeTrue();
         functions.Any(x => x.QualifiedName == $"{SchemaName}.mt_upsert_values_valuessubtracted").ShouldBeTrue();

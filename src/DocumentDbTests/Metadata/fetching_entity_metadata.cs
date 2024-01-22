@@ -14,7 +14,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
     {
         var shop = new CoffeeShop();
 
-        theSession.MetadataFor(shop)
+        TheSession.MetadataFor(shop)
             .ShouldBeNull();
 
     }

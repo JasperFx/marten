@@ -27,7 +27,7 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
         loadEvents(TheSession.Events);
         await TheSession.SaveChangesAsync();
 
-        var fetcher = new EventFetcher(theStore, null, theStore.Tenancy.Default.Database, theFilters.ToArray());
+        var fetcher = new EventFetcher(TheStore, null, TheStore.Tenancy.Default.Database, theFilters.ToArray());
         await fetcher.Load(theRange, default);
     }
 
@@ -98,7 +98,7 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
     [Fact]
     public async Task filter_on_aggregate_type_name_if_exists()
     {
-        theFilters.Add(new AggregateTypeFilter(typeof(Letters), theStore.Events));
+        theFilters.Add(new AggregateTypeFilter(typeof(Letters), TheStore.Events));
 
         await executeAfterLoadingEvents(e =>
         {
@@ -118,7 +118,7 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
 
     public Task InitializeAsync()
     {
-        return theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        return TheStore.Advanced.Clean.DeleteAllEventDataAsync();
     }
 
     public Task DisposeAsync()

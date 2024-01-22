@@ -125,8 +125,8 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
     {
         StoreOptions(opts => opts.Projections.Add(new MyCustomProjection(), ProjectionLifecycle.Inline));
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await TheStore.Advanced.Clean.DeleteAllDocumentsAsync();
+        await TheStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         appendCustomEvent(1, 'a');
         appendCustomEvent(1, 'a');
@@ -159,8 +159,8 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
     {
         StoreOptions(opts => opts.Projections.Add(new MyCustomProjection(), ProjectionLifecycle.Inline));
 
-        theStore.Advanced.Clean.DeleteAllDocuments();
-        theStore.Advanced.Clean.DeleteAllEventData();
+        TheStore.Advanced.Clean.DeleteAllDocuments();
+        TheStore.Advanced.Clean.DeleteAllEventData();
 
         appendCustomEvent(1, 'a');
         appendCustomEvent(1, 'a');
@@ -318,7 +318,7 @@ public class using_custom_aggregate_with_soft_deletes_and_update_only_events : O
 
     public Task InitializeAsync()
     {
-        return theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+        return TheStore.Advanced.Clean.CompletelyRemoveAllAsync();
     }
 
     public Task DisposeAsync()

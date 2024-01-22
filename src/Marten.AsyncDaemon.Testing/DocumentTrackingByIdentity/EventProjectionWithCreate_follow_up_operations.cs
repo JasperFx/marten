@@ -20,7 +20,7 @@ public class EventProjectionWithCreate_follow_up_operations: DaemonContext
 
         var entityId = Guid.NewGuid();
 
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
 
         session.Events.StartStream(entityId, new EntityCreated(entityId, "Some name"));
         await session.SaveChangesAsync();
@@ -46,7 +46,7 @@ public class EventProjectionWithCreate_follow_up_operations: DaemonContext
 
         var entityId = Guid.NewGuid();
 
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
 
         session.Events.StartStream(entityId, new EntityCreated(entityId, "Some name"));
         await session.SaveChangesAsync();

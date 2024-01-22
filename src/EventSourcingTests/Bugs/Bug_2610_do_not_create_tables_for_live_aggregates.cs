@@ -16,9 +16,9 @@ public class Bug_2610_do_not_create_tables_for_live_aggregates : BugIntegrationC
     {
         StoreOptions(opts => opts.Projections.LiveStreamAggregation<QuestParty>());
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        var tables = theStore.Storage.AllObjects().OfType<Table>();
+        var tables = TheStore.Storage.AllObjects().OfType<Table>();
         tables.ShouldNotContain(x => x.Identifier.Name.Contains(nameof(QuestParty), StringComparison.OrdinalIgnoreCase));
     }
 }

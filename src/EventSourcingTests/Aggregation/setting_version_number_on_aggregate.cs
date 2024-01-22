@@ -45,7 +45,7 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
         var stream = TheSession.Events.StartStream(new AEvent(), new BEvent(), new CEvent());
         await TheSession.SaveChangesAsync();
 
-        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        using var daemon = await TheStore.BuildProjectionDaemonAsync();
         await daemon.StartAllShards();
 
         await daemon.WaitForNonStaleData(5.Seconds());

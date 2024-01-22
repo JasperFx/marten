@@ -12,9 +12,9 @@ public class event_statistics : OneOffConfigurationsContext
     [Fact]
     public async Task fetch_from_empty_store()
     {
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await TheStore.Advanced.Clean.DeleteAllEventDataAsync();
 
-        var statistics = await theStore.Advanced.FetchEventStoreStatistics();
+        var statistics = await TheStore.Advanced.FetchEventStoreStatistics();
 
         statistics.EventCount.ShouldBe(0);
         statistics.StreamCount.ShouldBe(0);
@@ -24,7 +24,7 @@ public class event_statistics : OneOffConfigurationsContext
     [Fact]
     public async Task fetch_from_non_empty_event_store()
     {
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await TheStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         TheSession.Events.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
         TheSession.Events.Append(Guid.NewGuid(), new AEvent(), new CEvent(), new DEvent());
@@ -34,7 +34,7 @@ public class event_statistics : OneOffConfigurationsContext
 
         await TheSession.SaveChangesAsync();
 
-        var statistics = await theStore.Advanced.FetchEventStoreStatistics();
+        var statistics = await TheStore.Advanced.FetchEventStoreStatistics();
 
         statistics.EventCount.ShouldBe(18);
         statistics.StreamCount.ShouldBe(5);

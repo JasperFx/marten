@@ -19,8 +19,8 @@ public class MultiStreamAggregationTests: OneOffConfigurationsContext
 
         var commonId = Guid.NewGuid();
 
-        using var daemon = await theStore.BuildProjectionDaemonAsync();
-        await using var session = theStore.LightweightSession();
+        using var daemon = await TheStore.BuildProjectionDaemonAsync();
+        await using var session = TheStore.LightweightSession();
 
         session.Events.StartStream(commonId, new Happened() { Id = commonId }, new Happened() { Id = commonId });
         await session.SaveChangesAsync();

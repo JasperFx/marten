@@ -20,7 +20,7 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
             opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Inline);
         });
 
-        await theStore.Advanced.EventProjectionScenario(scenario =>
+        await TheStore.Advanced.EventProjectionScenario(scenario =>
         {
             var id1 = Guid.NewGuid();
             var id2 = Guid.NewGuid();
@@ -52,7 +52,7 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
             opts.Schema.For<User>().MultiTenanted();
         });
 
-        await theStore.Advanced.EventProjectionScenario(scenario =>
+        await TheStore.Advanced.EventProjectionScenario(scenario =>
         {
             scenario.TenantId = "Purple";
 
@@ -87,7 +87,7 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
 
         await Exception<ProjectionScenarioException>.ShouldBeThrownByAsync(async () =>
         {
-            await theStore.Advanced.EventProjectionScenario(scenario =>
+            await TheStore.Advanced.EventProjectionScenario(scenario =>
             {
                 var id1 = Guid.NewGuid();
                 var id2 = Guid.NewGuid();
@@ -122,7 +122,7 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
 
         await Exception<ProjectionScenarioException>.ShouldBeThrownByAsync(async () =>
         {
-            await theStore.Advanced.EventProjectionScenario(scenario =>
+            await TheStore.Advanced.EventProjectionScenario(scenario =>
             {
                 var id1 = Guid.NewGuid();
                 var id2 = Guid.NewGuid();
@@ -152,9 +152,9 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
             opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Inline);
         });
 
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await TheStore.Advanced.Clean.DeleteAllEventDataAsync();
 
-        await theStore.Advanced.EventProjectionScenario(scenario =>
+        await TheStore.Advanced.EventProjectionScenario(scenario =>
         {
             var id1 = Guid.NewGuid();
             var id2 = Guid.NewGuid();
@@ -187,7 +187,7 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
 
         await Exception<ProjectionScenarioException>.ShouldBeThrownByAsync(async () =>
         {
-            await theStore.Advanced.EventProjectionScenario(scenario =>
+            await TheStore.Advanced.EventProjectionScenario(scenario =>
             {
                 var id1 = Guid.NewGuid();
                 var id2 = Guid.NewGuid();
@@ -222,7 +222,7 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
 
         await Exception<ProjectionScenarioException>.ShouldBeThrownByAsync(async () =>
         {
-            await theStore.Advanced.EventProjectionScenario(scenario =>
+            await TheStore.Advanced.EventProjectionScenario(scenario =>
             {
                 var id1 = Guid.NewGuid();
                 var id2 = Guid.NewGuid();

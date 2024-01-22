@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Marten.Testing.OtherAssembly.Bug1984;
@@ -17,7 +17,7 @@ public class Bug_1984_need_to_recursively_reference_assemblies_in_lamar_code_gen
     [Fact]
     public async Task Should_be_able_execute_query()
     {
-        theSession
+        TheSession
             .Store(new GenericEntity<Data>
             {
                 Id = Guid.NewGuid(),
@@ -26,6 +26,6 @@ public class Bug_1984_need_to_recursively_reference_assemblies_in_lamar_code_gen
                     SomeField = "Hello",
                 }
             });
-        await theSession.SaveChangesAsync().ConfigureAwait(false);
+        await TheSession.SaveChangesAsync().ConfigureAwait(false);
     }
 }

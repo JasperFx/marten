@@ -53,17 +53,17 @@ public class Bug_1871_includes_with_snake_case_json : BugIntegrationContext
         var superuser = new Role {Name = "Super"};
         var auditor = new Role {Name = "Auditor"};
 
-        theSession.Store(admin, superuser, auditor);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(admin, superuser, auditor);
+        await TheSession.SaveChangesAsync();
 
         var card1 = new RateCard
         {
             Roles = new List<RateCardRole>{new RateCardRole{RoleId = admin.Id}, new RateCardRole{RoleId = superuser.Id}, new RateCardRole{RoleId = auditor.Id}}
         };
-        theSession.Store(card1);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(card1);
+        await TheSession.SaveChangesAsync();
 
-        var session = theSession;
+        var session = TheSession;
 
         var roles = new Dictionary<Guid, Role>();
         var cards = await session

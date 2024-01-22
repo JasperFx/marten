@@ -28,7 +28,7 @@ public class get_committed_events_from_listener_Tests : OneOffConfigurationsCont
         var id = Guid.NewGuid();
         var started = new QuestStarted();
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Events.StartStream<Quest>(id, started);
             session.SaveChanges();
@@ -41,7 +41,7 @@ public class get_committed_events_from_listener_Tests : OneOffConfigurationsCont
             events.ElementAt(0).Data.ShouldBeOfType<QuestStarted>();
         }
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -67,7 +67,7 @@ public class get_committed_events_from_listener_Tests : OneOffConfigurationsCont
         var id1 = Guid.NewGuid();
         var id2 = Guid.NewGuid();
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Events.StartStream<Quest>(id1, new QuestStarted { Id = id1 });
             session.Events.StartStream<Quest>(id2, new QuestStarted { Id = id2 });
@@ -83,7 +83,7 @@ public class get_committed_events_from_listener_Tests : OneOffConfigurationsCont
             events.Select(x => x.Data).OfType<QuestStarted>().Any(x => x.Id == id2).ShouldBeTrue();
         }
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Events.Append(id1,
                 new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } },

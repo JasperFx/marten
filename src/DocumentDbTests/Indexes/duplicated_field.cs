@@ -216,12 +216,12 @@ public class duplicated_field: OneOffConfigurationsContext
             _.Schema.For<Target>().Duplicate(x => x.Inner.Number);
         });
 
-        targets.Each(x => theSession.Store(x));
-        theSession.SaveChanges();
+        targets.Each(x => TheSession.Store(x));
+        TheSession.SaveChanges();
 
         var thirdTarget = targets.ElementAt(2);
 
-        var results = theSession.Query<Target>().Where(x => x.Inner.Number == thirdTarget.Inner.Number).ToArray();
+        var results = TheSession.Query<Target>().Where(x => x.Inner.Number == thirdTarget.Inner.Number).ToArray();
         results
             .Any(x => x.Id == thirdTarget.Id).ShouldBeTrue();
     }
@@ -235,12 +235,12 @@ public class duplicated_field: OneOffConfigurationsContext
             _.Schema.For<Target>().Duplicate(x => x.Inner.Color);
         });
 
-        targets.Each(x => theSession.Store(x));
-        theSession.SaveChanges();
+        targets.Each(x => TheSession.Store(x));
+        TheSession.SaveChanges();
 
         var thirdTarget = targets.ElementAt(2);
 
-        var results = theSession.Query<Target>().Where(x => x.Inner.Color == thirdTarget.Inner.Color).ToArray();
+        var results = TheSession.Query<Target>().Where(x => x.Inner.Color == thirdTarget.Inner.Color).ToArray();
         results
             .Any(x => x.Id == thirdTarget.Id).ShouldBeTrue();
     }
@@ -254,12 +254,12 @@ public class duplicated_field: OneOffConfigurationsContext
             _.Schema.For<Target>().Duplicate(x => x.Inner.Date);
         });
 
-        targets.Each(x => theSession.Store(x));
-        theSession.SaveChanges();
+        targets.Each(x => TheSession.Store(x));
+        TheSession.SaveChanges();
 
         var thirdTarget = targets.ElementAt(2);
 
-        var queryable = theSession.Query<Target>().Where(x => x.Inner.Date == thirdTarget.Inner.Date);
+        var queryable = TheSession.Query<Target>().Where(x => x.Inner.Date == thirdTarget.Inner.Date);
         var results = queryable.ToArray();
         results
             .Any(x => x.Id == thirdTarget.Id).ShouldBeTrue();
@@ -310,7 +310,7 @@ public class duplicated_field: OneOffConfigurationsContext
             new Application()
         });
 
-        var app = await theSession.Query<Application>().FirstOrDefaultAsync();
+        var app = await TheSession.Query<Application>().FirstOrDefaultAsync();
     }
 
     [Fact]
@@ -340,7 +340,7 @@ public class duplicated_field: OneOffConfigurationsContext
 
         await TheStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
-        var app = await theSession.Query<Application>().FirstOrDefaultAsync();
+        var app = await TheSession.Query<Application>().FirstOrDefaultAsync();
 
         await TheStore.BulkInsertDocumentsAsync(new Application[]
         {

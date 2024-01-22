@@ -23,7 +23,7 @@ public class stream_aggregation : OneOffConfigurationsContext
         TheSession.Events.StartStream(stream, new UserStarted {UserId = user.Id});
         await TheSession.SaveChangesAsync();
 
-        var query = theStore.QuerySession();
+        var query = TheStore.QuerySession();
         var user2 = await query.LoadAsync<User>(user.Id);
         user2.ShouldNotBeNull();
 

@@ -40,8 +40,8 @@ public class custom_aggregation_in_async_daemon : OneOffConfigurationsContext
             opts.Logger(new TestOutputMartenLogger(_output));
         });
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await TheStore.Advanced.Clean.DeleteAllDocumentsAsync();
+        await TheStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         appendCustomEvent(1, 'a');
         appendCustomEvent(1, 'a');
@@ -57,7 +57,7 @@ public class custom_aggregation_in_async_daemon : OneOffConfigurationsContext
 
         await TheSession.SaveChangesAsync();
 
-        using var daemon = await theStore.BuildProjectionDaemonAsync(logger:new TestLogger<IProjection>(_output));
+        using var daemon = await TheStore.BuildProjectionDaemonAsync(logger:new TestLogger<IProjection>(_output));
         await daemon.StartAllShards();
 
         await  daemon.Tracker.WaitForShardState("Custom:All", 11);

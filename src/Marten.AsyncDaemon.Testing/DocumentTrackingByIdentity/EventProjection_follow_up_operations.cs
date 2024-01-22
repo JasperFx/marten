@@ -22,7 +22,7 @@ public class EventProjection_follow_up_operations: DaemonContext
 
         var guid = Guid.NewGuid();
 
-        await using var session = theStore.IdentitySession();
+        await using var session = TheStore.IdentitySession();
 
         session.Events.StartStream(guid,
             new EntityPublished(guid,

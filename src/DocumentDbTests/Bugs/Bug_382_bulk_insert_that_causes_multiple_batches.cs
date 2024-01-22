@@ -22,7 +22,7 @@ public class Bug_382_bulk_insert_that_causes_multiple_batches: BugIntegrationCon
 
         TheStore.BulkInsert(data, BulkInsertMode.OverwriteExisting, batchSize: 10);
 
-        theSession.Query<Target>().Count().ShouldBe(data.Length);
+        TheSession.Query<Target>().Count().ShouldBe(data.Length);
     }
 
 

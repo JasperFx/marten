@@ -13,9 +13,9 @@ public class Bug_130_enable_case_insensitive_custom_sql_queries_Tests: BugIntegr
     public void query()
     {
         var entity = new Target();
-        theSession.Store(entity);
-        theSession.SaveChanges();
+        TheSession.Store(entity);
+        TheSession.SaveChanges();
 
-        theSession.Query<Target>($"SELECT data FROM {SchemaName}.mt_doc_target").Single().Id.ShouldBe(entity.Id);
+        TheSession.Query<Target>($"SELECT data FROM {SchemaName}.mt_doc_target").Single().Id.ShouldBe(entity.Id);
     }
 }

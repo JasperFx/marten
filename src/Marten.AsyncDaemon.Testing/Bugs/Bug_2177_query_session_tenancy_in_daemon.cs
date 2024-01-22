@@ -37,17 +37,17 @@ namespace Marten.AsyncDaemon.Testing.Bugs
             var userId = Guid.NewGuid();
             var ticketId = Guid.NewGuid();
 
-            await using var session = theStore.LightweightSession(tenantId);
+            await using var session = TheStore.LightweightSession(tenantId);
             session.Insert(new User { Id = userId, FirstName = "Tester", LastName = "McTestFace" });
             await session.SaveChangesAsync();
 
-            await insertUserWithSameIdInOtherTenant(theStore, userId);
+            await insertUserWithSameIdInOtherTenant(TheStore, userId);
 
             session.Events.Append(ticketId, new TicketCreated(ticketId, "Test Projections"),
                 new TicketAssigned(ticketId, userId));
             await session.SaveChangesAsync();
 
-            using var daemon = await theStore.BuildProjectionDaemonAsync();
+            using var daemon = await TheStore.BuildProjectionDaemonAsync();
             await daemon.StartAllShards();
             await daemon.WaitForNonStaleData(1.Minutes());
 

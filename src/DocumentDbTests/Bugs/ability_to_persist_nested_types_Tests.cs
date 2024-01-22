@@ -13,10 +13,10 @@ public class ability_to_persist_nested_types_Tests: BugIntegrationContext
     {
         var doc1 = new MyDocument();
 
-        theSession.Store(doc1);
-        theSession.SaveChanges();
+        TheSession.Store(doc1);
+        TheSession.SaveChanges();
 
-        var doc2 = theSession.Load<MyDocument>(doc1.Id);
+        var doc2 = TheSession.Load<MyDocument>(doc1.Id);
         doc2.ShouldNotBeNull();
     }
 

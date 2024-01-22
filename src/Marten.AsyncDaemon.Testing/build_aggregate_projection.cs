@@ -30,7 +30,7 @@ public class build_aggregate_projection: DaemonContext
         var projection = new TripProjectionWithCustomName();
         projection.AssembleAndAssertValidity();
         var filter = projection.As<IProjectionSource>()
-            .AsyncProjectionShards(theStore)
+            .AsyncProjectionShards(TheStore)
             .First()
             .EventFilters
             .OfType<EventTypeFilter>()
@@ -59,7 +59,7 @@ public class build_aggregate_projection: DaemonContext
         var agent = await StartDaemon();
 
         await PublishSingleThreaded();
-        var shard = theStore.Options.Projections.AllShards().Single();
+        var shard = TheStore.Options.Projections.AllShards().Single();
         var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 60.Seconds());
 
         await agent.StartShard(shard.Name.Identity, CancellationToken.None);
@@ -85,7 +85,7 @@ public class build_aggregate_projection: DaemonContext
 
         var agent = await StartDaemon();
 
-        var shard = theStore.Options.Projections.AllShards().Single();
+        var shard = TheStore.Options.Projections.AllShards().Single();
         var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 60.Seconds());
 
         await PublishSingleThreaded();
@@ -142,7 +142,7 @@ public class build_aggregate_projection: DaemonContext
 
         await agent.RebuildProjection("TripCustomName", CancellationToken.None);
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
         // Demonstrates that the Trip documents were deleted first
         (await query.LoadAsync<Trip>(trip.Id)).ShouldBeNull();
     }
@@ -160,7 +160,7 @@ public class build_aggregate_projection: DaemonContext
 
         await PublishSingleThreaded();
 
-        await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
+        await TheStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
 
         Logger.LogDebug("About to rebuild Trip:All");
         await agent.RebuildProjection<Trip>(CancellationToken.None);
@@ -181,7 +181,7 @@ public class build_aggregate_projection: DaemonContext
 
         await PublishSingleThreaded();
 
-        await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
+        await TheStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
 
         Logger.LogDebug("About to rebuild Trip:All");
         await agent.RebuildProjection(typeof(TestingSupport.TripProjection),CancellationToken.None);
@@ -202,7 +202,7 @@ public class build_aggregate_projection: DaemonContext
 
         await PublishSingleThreaded();
 
-        await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
+        await TheStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
         Logger.LogDebug("About to rebuild Trip:All");
         await agent.RebuildProjection(typeof(Trip),CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
@@ -274,7 +274,7 @@ public class build_aggregate_projection: DaemonContext
         await waiter2;
 
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
 
         (await query.LoadAsync<Trip>(notCriticalBreakdownStream)).ShouldNotBeNull();
         (await query.LoadAsync<Trip>(criticalBreakdownStream)).ShouldBeNull();
@@ -300,7 +300,7 @@ public class build_aggregate_projection: DaemonContext
 
         var waiter1 = agent.Tracker.WaitForShardState("Trip:All", initialCount);
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Events.Append(shortTrip.StreamId, shortTrip.Events.ToArray());
             session.Events.Append(longTrip.StreamId, longTrip.Events.ToArray());
@@ -323,7 +323,7 @@ public class build_aggregate_projection: DaemonContext
         await waiter2;
 
 
-        await using var query = theStore.QuerySession();
+        await using var query = TheStore.QuerySession();
 
         (await query.LoadAsync<Trip>(shortTrip.StreamId)).ShouldNotBeNull();
         (await query.LoadAsync<Trip>(longTrip.StreamId)).ShouldBeNull();
@@ -340,7 +340,7 @@ public class build_aggregate_projection: DaemonContext
         }, true);
 
         var id = Guid.NewGuid();
-        await using (var session = theStore.LightweightSession("a"))
+        await using (var session = TheStore.LightweightSession("a"))
         {
             session.Events.StartStream(id, new ContactCreated(id, "x"));
             session.Events.Append(id, new ContactEdited(id, "x"));
@@ -352,11 +352,11 @@ public class build_aggregate_projection: DaemonContext
             Assert.Equal("x", contact.Name);
         }
 
-        var daemon = await theStore.BuildProjectionDaemonAsync();
+        var daemon = await TheStore.BuildProjectionDaemonAsync();
 
         await daemon.RebuildProjection("Contact", CancellationToken.None);
 
-        await using var session2 = theStore.LightweightSession("a");
+        await using var session2 = TheStore.LightweightSession("a");
         var c = await session2.LoadAsync<Contact>(id);
         Assert.Equal("x", c.Name);
     }
@@ -415,7 +415,7 @@ public class build_aggregate_projection: DaemonContext
         }, true);
 
         var id = Guid.NewGuid();
-        await using (var session = theStore.LightweightSession("a"))
+        await using (var session = TheStore.LightweightSession("a"))
         {
             session.Events.StartStream(id, new FooCreated(id, "Foo"));
             session.Events.StartStream(Guid.NewGuid(), new BarCreated(Guid.NewGuid()));
@@ -426,11 +426,11 @@ public class build_aggregate_projection: DaemonContext
             Assert.Equal("Foo", foo.Name);
         }
 
-        var daemon = theStore.BuildProjectionDaemon();
+        var daemon = TheStore.BuildProjectionDaemon();
 
         await daemon.RebuildProjection("Foo", CancellationToken.None);
 
-        await using var session2 = theStore.LightweightSession("a");
+        await using var session2 = TheStore.LightweightSession("a");
         var c = await session2.LoadAsync<Foo>(id);
         Assert.Equal("Foo", c.Name);
     }
@@ -468,7 +468,7 @@ public class build_aggregate_projection: DaemonContext
         }, true);
 
         var id = Guid.NewGuid();
-        await using (var session = theStore.LightweightSession("a"))
+        await using (var session = TheStore.LightweightSession("a"))
         {
             session.Events.StartStream(id, new FooCreated2(id, "Foo"));
             session.Events.StartStream(Guid.NewGuid(), new BarCreated(Guid.NewGuid()));
@@ -479,11 +479,11 @@ public class build_aggregate_projection: DaemonContext
             Assert.Equal("Foo", foo.Name);
         }
 
-        var daemon = await theStore.BuildProjectionDaemonAsync();
+        var daemon = await TheStore.BuildProjectionDaemonAsync();
 
         await daemon.RebuildProjection("Foo", CancellationToken.None);
 
-        await using var session2 = theStore.LightweightSession("a");
+        await using var session2 = TheStore.LightweightSession("a");
         var c = await session2.LoadAsync<Foo>(id);
         Assert.Equal("Foo", c.Name);
     }

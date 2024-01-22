@@ -231,7 +231,7 @@ public async Task run_simultaneously()
 
     // Wait for all projections to reach the highest event sequence point
     // as of the time this method is called
-    await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
+    await TheStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
 
     await CheckExpectedResults();
 }

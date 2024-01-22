@@ -22,12 +22,12 @@ public class ability_to_persist_generic_types: BugIntegrationContext
         var doc1A = new GenericTypeToPersist<TypeA>();
         var doc1B = new GenericTypeToPersist<TypeB>();
 
-        theSession.Store(doc1A);
-        theSession.Store(doc1B);
-        theSession.SaveChanges();
+        TheSession.Store(doc1A);
+        TheSession.Store(doc1B);
+        TheSession.SaveChanges();
 
-        var doc2A = theSession.Load<GenericTypeToPersist<TypeA>>(doc1A.Id);
-        var doc2B = theSession.Load<GenericTypeToPersist<TypeA>>(doc2A.Id);
+        var doc2A = TheSession.Load<GenericTypeToPersist<TypeA>>(doc1A.Id);
+        var doc2B = TheSession.Load<GenericTypeToPersist<TypeA>>(doc2A.Id);
         doc2A.ShouldNotBeNull();
         doc2B.ShouldNotBeNull();
     }
@@ -44,10 +44,10 @@ public class ability_to_persist_nested_generic_types: BugIntegrationContext
     {
         var doc1 = new NestedGenericTypeToPersist<TypeA>();
 
-        theSession.Store(doc1);
-        theSession.SaveChanges();
+        TheSession.Store(doc1);
+        TheSession.SaveChanges();
 
-        var doc2 = theSession.Load<NestedGenericTypeToPersist<TypeA>>(doc1.Id);
+        var doc2 = TheSession.Load<NestedGenericTypeToPersist<TypeA>>(doc1.Id);
         doc2.ShouldNotBeNull();
     }
 

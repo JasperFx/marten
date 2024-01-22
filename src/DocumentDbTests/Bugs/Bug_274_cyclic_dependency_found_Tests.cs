@@ -17,8 +17,8 @@ public class Bug_274_cyclic_dependency_found_Tests: BugIntegrationContext
                 .ForeignKey<User>(x => x.ReporterId);
         });
 
-        theSession.Store(new Issue());
-        theSession.SaveChanges();
+        TheSession.Store(new Issue());
+        TheSession.SaveChanges();
     }
 
 }

@@ -27,7 +27,7 @@ public class include_extra_schema_objects_from_projections: OneOffConfigurations
     {
         var tableName = new PostgresqlObjectName("extra", "names");
 
-        var feature = theStore.Options.Storage.FindFeature(typeof(IEvent));
+        var feature = TheStore.Options.Storage.FindFeature(typeof(IEvent));
         feature.Objects.OfType<Table>().Any(x => Equals(x.Identifier, tableName)).ShouldBeTrue();
     }
 
@@ -36,16 +36,16 @@ public class include_extra_schema_objects_from_projections: OneOffConfigurations
     {
         var tableName = new PostgresqlObjectName("extra", "names");
 
-        await using (var conn = theStore.Storage.Database.CreateConnection())
+        await using (var conn = TheStore.Storage.Database.CreateConnection())
         {
             await conn.OpenAsync();
 
             await conn.DropSchemaAsync("extra");
         }
 
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        await using (var conn = theStore.Storage.Database.CreateConnection())
+        await using (var conn = TheStore.Storage.Database.CreateConnection())
         {
             await conn.OpenAsync();
 

@@ -19,7 +19,7 @@ public class append_events_with_optimistic_or_exclusive_locks
         public append_events_optimistic_or_exclusive_with_guid_identity(ITestOutputHelper output)
         {
             _output = output;
-            theStore.Advanced.Clean.DeleteAllEventData();
+            TheStore.Advanced.Clean.DeleteAllEventData();
         }
 
         [Fact]
@@ -58,7 +58,7 @@ public class append_events_with_optimistic_or_exclusive_locks
             // Fetch the expected version
             await TheSession.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
 
-            await using (var session = theStore.LightweightSession())
+            await using (var session = TheStore.LightweightSession())
             {
                 session.Events.Append(streamId, new DEvent());
                 await session.SaveChangesAsync();
@@ -109,7 +109,7 @@ public class append_events_with_optimistic_or_exclusive_locks
             // Fetch the expected version
             await TheSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
 
-            await using (var session = theStore.LightweightSession())
+            await using (var session = TheStore.LightweightSession())
             {
                 session.Events.Append(streamId, new DEvent());
                 var ex = await Should.ThrowAsync<MartenCommandException>(async () =>
@@ -132,7 +132,7 @@ public class append_events_with_optimistic_or_exclusive_locks
             // Fetch the expected version
             await TheSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
 
-            await using (var session = theStore.LightweightSession())
+            await using (var session = TheStore.LightweightSession())
             {
                 await Should.ThrowAsync<StreamLockedException>(async () =>
                 {
@@ -148,7 +148,7 @@ public class append_events_with_optimistic_or_exclusive_locks
         public append_events_optimistic_or_exclusive_with_string_identity()
         {
             StoreOptions(x => x.Events.StreamIdentity = StreamIdentity.AsString);
-            theStore.Advanced.Clean.DeleteAllEventData();
+            TheStore.Advanced.Clean.DeleteAllEventData();
         }
 
         [Fact]
@@ -187,7 +187,7 @@ public class append_events_with_optimistic_or_exclusive_locks
             // Fetch the expected version
             await TheSession.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
 
-            await using (var session = theStore.LightweightSession())
+            await using (var session = TheStore.LightweightSession())
             {
                 session.Events.Append(streamId, new DEvent());
                 await session.SaveChangesAsync();
@@ -236,7 +236,7 @@ public class append_events_with_optimistic_or_exclusive_locks
             // Fetch the expected version
             await TheSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
 
-            await using (var session = theStore.LightweightSession())
+            await using (var session = TheStore.LightweightSession())
             {
                 session.Events.Append(streamId, new DEvent());
                 var ex = await Should.ThrowAsync<MartenCommandException>(async () =>
@@ -259,7 +259,7 @@ public class append_events_with_optimistic_or_exclusive_locks
             // Fetch the expected version
             await TheSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
 
-            await using (var session = theStore.LightweightSession())
+            await using (var session = TheStore.LightweightSession())
             {
                 await Should.ThrowAsync<StreamLockedException>(async () =>
                 {

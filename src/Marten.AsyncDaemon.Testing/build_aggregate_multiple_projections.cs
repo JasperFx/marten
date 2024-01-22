@@ -107,21 +107,21 @@ public class build_aggregate_multiple_projections: DaemonContext
         var truckStreamId = Guid.NewGuid();
 
         //Create car stream - Transaction 1
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Events.StartStream(carStreamId, new CarNamed() { Value = "car-name-1" });
             await session.SaveChangesAsync();
         }
 
         //Create truck stream - Transaction 2
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Events.StartStream(truckStreamId, new TruckNamed() { Value = "truck-name-1" });
             await session.SaveChangesAsync();
         }
 
         //Send TruckNamed Event - Transaction 3
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Events.Append(truckStreamId, new TruckNamed() { Value = "truck-name-2" });
 
@@ -129,7 +129,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         }
 
         //Send CarNamed Event - Transaction 4
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Events.Append(carStreamId, new CarNamed() { Value = "car-name-2" });
             await session.SaveChangesAsync();
@@ -142,7 +142,7 @@ public class build_aggregate_multiple_projections: DaemonContext
 
 
         //Assert results are latest
-        await using (var session = theStore.QuerySession())
+        await using (var session = TheStore.QuerySession())
         {
             var carName = session.Query<CarView>().FirstOrDefault()?.Name;
             var truckName = session.Query<TruckView>().FirstOrDefault()?.Name;
@@ -164,7 +164,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         }, true);
 
         // create car stream with 1000 events
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             var events = new List<CarNamed>();
 
@@ -189,7 +189,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         await deleteEvents(groupsToRemove);
 
         // rebuild the projection
-        var daemon = await theStore.BuildProjectionDaemonAsync(logger: Logger);
+        var daemon = await TheStore.BuildProjectionDaemonAsync(logger: Logger);
 
         //await daemon.StartDaemon();
 
@@ -208,7 +208,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         }
 
         // assert that the projections have reached max seq_id
-        await using (var session = theStore.QuerySession())
+        await using (var session = TheStore.QuerySession())
         {
             var waterMark = await GetHighWaterMark();
             var maxSeqId = await GetMaxSeqId();
@@ -232,7 +232,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         }, true);
 
         // create car stream with 1000 events
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             var events = new List<CarNamed>();
 
@@ -257,7 +257,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         await deleteEvents(groupsToRemove);
 
         // rebuild the projection
-        var daemon = await theStore.BuildProjectionDaemonAsync(logger: Logger);
+        var daemon = await TheStore.BuildProjectionDaemonAsync(logger: Logger);
 
         await daemon.StartDaemon();
 
@@ -276,7 +276,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         }
 
         // assert that the projections have reached max seq_id
-        await using (var session = theStore.QuerySession())
+        await using (var session = TheStore.QuerySession())
         {
             var waterMark = await GetHighWaterMark();
             var maxSeqId = await GetMaxSeqId();
@@ -291,33 +291,33 @@ public class build_aggregate_multiple_projections: DaemonContext
 
     protected async Task deleteEvents(params long[] ids)
     {
-        await using var conn = theStore.CreateConnection();
+        await using var conn = TheStore.CreateConnection();
         await conn.OpenAsync();
 
         await conn
-            .CreateCommand($"delete from {theStore.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(:ids)")
+            .CreateCommand($"delete from {TheStore.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(:ids)")
             .With("ids", ids, NpgsqlDbType.Bigint | NpgsqlDbType.Array)
             .ExecuteNonQueryAsync();
     }
 
     protected async Task<long> GetHighWaterMark()
     {
-        await using var conn = theStore.CreateConnection();
+        await using var conn = TheStore.CreateConnection();
         await conn.OpenAsync();
 
         return (long)await conn
             .CreateCommand(
-                $"select last_seq_id from {theStore.Events.DatabaseSchemaName}.mt_event_progression where name = 'HighWaterMark'")
+                $"select last_seq_id from {TheStore.Events.DatabaseSchemaName}.mt_event_progression where name = 'HighWaterMark'")
             .ExecuteScalarAsync();
     }
 
     protected async Task<long> GetMaxSeqId()
     {
-        await using var conn = theStore.CreateConnection();
+        await using var conn = TheStore.CreateConnection();
         await conn.OpenAsync();
 
         return (long)await conn
-            .CreateCommand($"select max(seq_id) from {theStore.Events.DatabaseSchemaName}.mt_events")
+            .CreateCommand($"select max(seq_id) from {TheStore.Events.DatabaseSchemaName}.mt_events")
             .ExecuteScalarAsync();
     }
 }

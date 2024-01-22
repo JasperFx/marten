@@ -15,11 +15,11 @@ public class EventSequenceFetcherTests : OneOffConfigurationsContext
     [Fact]
     public async Task fetch_sequence_numbers_async()
     {
-        await theStore.EnsureStorageExistsAsync(typeof(IEvent));
+        await TheStore.EnsureStorageExistsAsync(typeof(IEvent));
 
-        await using var query = (QuerySession)theStore.QuerySession();
+        await using var query = (QuerySession)TheStore.QuerySession();
 
-        var handler = new EventSequenceFetcher(theStore.Events, 5);
+        var handler = new EventSequenceFetcher(TheStore.Events, 5);
         var sequences = (await query.ExecuteHandlerAsync(handler, CancellationToken.None)).ToList();
 
         sequences.Count.ShouldBe(5);
@@ -32,11 +32,11 @@ public class EventSequenceFetcherTests : OneOffConfigurationsContext
     [Fact]
     public void fetch_sequence_numbers_sync()
     {
-        theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(IEvent));
+        TheStore.Tenancy.Default.Database.EnsureStorageExists(typeof(IEvent));
 
-        using var query = (QuerySession)theStore.QuerySession();
+        using var query = (QuerySession)TheStore.QuerySession();
 
-        var handler = new EventSequenceFetcher(theStore.Events, 5);
+        var handler = new EventSequenceFetcher(TheStore.Events, 5);
         var sequences = query.ExecuteHandler(handler).ToList();
 
         sequences.Count.ShouldBe(5);

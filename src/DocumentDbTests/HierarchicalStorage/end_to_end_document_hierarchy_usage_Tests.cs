@@ -42,9 +42,9 @@ public class end_to_end_document_hierarchy_usage_Tests: OneOffConfigurationsCont
 
     protected void loadData()
     {
-        theSession.Store(user1, user2, admin1, admin2, super1, super2);
+        TheSession.Store(user1, user2, admin1, admin2, super1, super2);
 
-        theSession.SaveChanges();
+        TheSession.SaveChanges();
     }
 
 

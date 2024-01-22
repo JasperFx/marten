@@ -21,11 +21,11 @@ public class Bug_2283_problems_with_duplicated_DateTime_fields: BugIntegrationCo
         });
         var model1 = new MyModel { UserId = Guid.NewGuid(), Date = DateTime.Now };
 
-        theSession.Store(model1);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(model1);
+        await TheSession.SaveChangesAsync();
 
         await Should.ThrowAsync<InvalidDateTimeUsageException>(() =>
-            theSession
+            TheSession
                 .Query<MyModel>()
                 .Where(t => t.UserId == model1.UserId)
                 .MinAsync(t => t.Date)
@@ -42,10 +42,10 @@ public class Bug_2283_problems_with_duplicated_DateTime_fields: BugIntegrationCo
         });
         var model1 = new MyModel { UserId = Guid.NewGuid(), DateTimeOffset = DateTimeOffset.UtcNow };
 
-        theSession.Store(model1);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(model1);
+        await TheSession.SaveChangesAsync();
 
-        var minDate = await theSession
+        var minDate = await TheSession
             .Query<MyModel>()
             .Where(t => t.UserId == model1.UserId)
             .MinAsync(t => t.DateTimeOffset);

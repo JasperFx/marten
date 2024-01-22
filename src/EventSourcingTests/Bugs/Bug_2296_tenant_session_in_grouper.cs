@@ -29,9 +29,9 @@ public class Bug_2296_tenant_session_in_grouper: OneOffConfigurationsContext
         });
 
         const string tenant = "myTenant";
-        await using var tenantedSession = theStore.LightweightSession(tenant);
+        await using var tenantedSession = TheStore.LightweightSession(tenant);
 
-        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        using var daemon = await TheStore.BuildProjectionDaemonAsync();
         await daemon.StartAllShards();
 
         var streamKey = CombGuidIdGeneration.NewGuid().ToString();

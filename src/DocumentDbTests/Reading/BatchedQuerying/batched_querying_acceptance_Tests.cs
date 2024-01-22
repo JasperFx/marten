@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -173,7 +173,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     [Fact]
     public async Task can_query_with_user_supplied_subquery()
     {
-        var batch = theSession.CreateBatchQuery();
+        var batch = TheSession.CreateBatchQuery();
 
         var list = batch.Query<User>("order by (select random())");
 

@@ -26,14 +26,14 @@ public class Bug_2777_querying_with_linq_against_events_and_event_has_id_propert
             opts.Logger(new TestOutputMartenLogger(_output));
         }, true);
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Events.Append("a", new DummyEvent("a"));
 
             await session.SaveChangesAsync();
         }
 
-        await using (var session = theStore.QuerySession())
+        await using (var session = TheStore.QuerySession())
         {
             var ids = await session.Events.QueryRawEventDataOnly<DummyEvent>()
                 .Select(d => d.Id)          // This causes the operation to fail

@@ -32,7 +32,7 @@ public class Bug_2159_using_QuerySession_within_async_aggregation : BugIntegrati
         TheSession.Events.Append(streamId, new UserUpdated{UserId = user.Id});
         await TheSession.SaveChangesAsync();
 
-        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        using var daemon = await TheStore.BuildProjectionDaemonAsync();
         await daemon.RebuildProjection<UserAggregate>(CancellationToken.None);
 
         var aggregate = await TheSession.LoadAsync<MyAggregate>(streamId);

@@ -23,8 +23,8 @@ public class Bug_1563_user_friendly_warning_about_public_type: BugIntegrationCon
         var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
         {
             var doc = new InternalDoc();
-            theSession.Store(doc);
-            theSession.SaveChanges();
+            TheSession.Store(doc);
+            TheSession.SaveChanges();
         });
 
         ex.Message.ShouldContain(expectedMessage);

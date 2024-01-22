@@ -240,7 +240,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         await TheSession.SaveChangesAsync();
 
 
-        await using var otherSession = theStore.LightweightSession();
+        await using var otherSession = TheStore.LightweightSession();
         var otherStream = await otherSession.Events.FetchForExclusiveWriting<SimpleAggregate>(streamId);
 
         await Should.ThrowAsync<StreamLockedException>(async () =>
@@ -294,7 +294,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         await TheSession.SaveChangesAsync();
 
 
-        await using var otherSession = theStore.LightweightSession();
+        await using var otherSession = TheStore.LightweightSession();
         var otherStream = await otherSession.Events.FetchForExclusiveWriting<SimpleAggregateAsString>(streamId);
 
         await Should.ThrowAsync<StreamLockedException>(async () =>
@@ -365,7 +365,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         stream.AppendOne(new EEvent());
 
         // Get in between and run other events in a different session
-        await using (var otherSession = theStore.LightweightSession())
+        await using (var otherSession = TheStore.LightweightSession())
         {
             otherSession.Events.Append(streamId, new EEvent());
             await otherSession.SaveChangesAsync();
@@ -444,7 +444,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         stream.AppendOne(new EEvent());
 
         // Get in between and run other events in a different session
-        await using (var otherSession = theStore.LightweightSession())
+        await using (var otherSession = TheStore.LightweightSession())
         {
             otherSession.Events.Append(streamId, new EEvent());
             await otherSession.SaveChangesAsync();

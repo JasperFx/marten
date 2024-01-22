@@ -45,7 +45,7 @@ public class Bug_sequential_rebuilds_throws_internally: BugIntegrationContext
         await TheSession.SaveChangesAsync();
 
         using var logger = _output.BuildLogger();
-        using var daemon1 = await theStore.BuildProjectionDaemonAsync(logger: logger);
+        using var daemon1 = await TheStore.BuildProjectionDaemonAsync(logger: logger);
         await daemon1.StartDaemon();
 
         await daemon1.RebuildProjection("Bug_sequential_rebuilds_throws_internally.RandomProjection", default);

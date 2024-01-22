@@ -17,7 +17,7 @@ public class nulls_in_event_name_cache : BugIntegrationContext
     public async Task rebuild_with_unregistered_events_does_not_cause_null_ref()
     {
         var stream = Guid.NewGuid();
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Events.StartStream(stream, new MembersJoined(), new MembersDeparted());
             await session.SaveChangesAsync();
@@ -25,7 +25,7 @@ public class nulls_in_event_name_cache : BugIntegrationContext
 
         using (var store = SeparateStore(_ =>
                {
-                   _.DatabaseSchemaName = theStore.Options.DatabaseSchemaName;
+                   _.DatabaseSchemaName = TheStore.Options.DatabaseSchemaName;
                    _.Events.StreamIdentity = StreamIdentity.AsGuid;
                    _.Projections.Add<MemberJoinedProjection>(ProjectionLifecycle.Inline);
                    _.Projections.Add(new CustomProjection(), ProjectionLifecycle.Async);

@@ -13,11 +13,10 @@ public class OneOffConfigurationsHelper(string schemaName, string connectionStri
 {
     private DocumentStore _store;
     protected IDocumentSession Session;
-    protected readonly IList<IDisposable> _disposables = new List<IDisposable>();
 
     public string SchemaName => schemaName;
 
-    public IList<IDisposable> Disposables => _disposables;
+    public IList<IDisposable> Disposables { get; } = new List<IDisposable>();
 
     public DocumentStore SeparateStore(Action<StoreOptions> configure = null)
     {
@@ -29,7 +28,7 @@ public class OneOffConfigurationsHelper(string schemaName, string connectionStri
 
         var store = new DocumentStore(options);
 
-        _disposables.Add(store);
+        Disposables.Add(store);
 
         return store;
     }
@@ -56,7 +55,7 @@ public class OneOffConfigurationsHelper(string schemaName, string connectionStri
 
         _store = new DocumentStore(options);
 
-        _disposables.Add(_store);
+        Disposables.Add(_store);
 
         return _store;
     }
@@ -82,7 +81,7 @@ public class OneOffConfigurationsHelper(string schemaName, string connectionStri
                 return Session;
 
             Session = TheStore.LightweightSession();
-            _disposables.Add(Session);
+            Disposables.Add(Session);
 
             return Session;
         }

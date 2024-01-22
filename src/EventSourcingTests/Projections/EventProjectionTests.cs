@@ -15,7 +15,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
 {
     public EventProjectionTests()
     {
-        theStore.Advanced.Clean.DeleteDocumentsByType(typeof(User));
+        TheStore.Advanced.Clean.DeleteDocumentsByType(typeof(User));
     }
 
     protected void UseProjection<T>() where T : EventProjection, new()
@@ -29,7 +29,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
         UseProjection<SimpleTransformProjectionUsingMetadata>();
 
         // MyAggregate is the aggregate type for AllGood above
-        theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
+        TheStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
             .ShouldContain(typeof(User));
     }
 
@@ -44,7 +44,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
 
         TheSession.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
 
         query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
             .ToList()
@@ -71,7 +71,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
 
         TheSession.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
 
         query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
             .ToList()
@@ -98,7 +98,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
 
         TheSession.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
 
         query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
             .ToList()
@@ -156,7 +156,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
 
         TheSession.SaveChanges();
 
-        using var query = theStore.QuerySession();
+        using var query = TheStore.QuerySession();
 
         query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
             .ToList()

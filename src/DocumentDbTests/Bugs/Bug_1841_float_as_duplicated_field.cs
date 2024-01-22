@@ -12,9 +12,9 @@ public class Bug_1841_float_as_duplicated_field : BugIntegrationContext
     public async Task let_it_work()
     {
         var doc = new FloatValueDoc {Value = 123.45f};
-        theSession.Store(doc);
+        TheSession.Store(doc);
 
-        await theSession.SaveChangesAsync();
+        await TheSession.SaveChangesAsync();
 
 
     }

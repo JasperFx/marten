@@ -31,10 +31,10 @@ public class document_session_load_document: OneOffConfigurationsContext
 
         var user = new UserWithReadonlyCollectionWithPrivateSetter(Guid.NewGuid(), "James", new[] { 1, 2, 3 });
 
-        theSession.Store(user);
-        await theSession.SaveChangesAsync(token);
+        TheSession.Store(user);
+        await TheSession.SaveChangesAsync(token);
 
-        var userFromDb = await theSession.LoadAsync<UserWithReadonlyCollectionWithPrivateSetter>(user.Id, token);
+        var userFromDb = await TheSession.LoadAsync<UserWithReadonlyCollectionWithPrivateSetter>(user.Id, token);
         userFromDb.Id.ShouldBe(user.Id);
         userFromDb.Name.ShouldBe(user.Name);
         userFromDb.Collection.ShouldHaveTheSameElementsAs(user.Collection);

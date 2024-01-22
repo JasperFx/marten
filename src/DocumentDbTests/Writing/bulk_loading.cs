@@ -47,9 +47,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         TheStore.BulkInsert(data, batchSize: 15);
 
-        theSession.Query<Target>().Count().ShouldBe(data.Length);
+        TheSession.Query<Target>().Count().ShouldBe(data.Length);
 
-        theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
+        TheSession.Load<Target>(data[0].Id).ShouldNotBeNull();
     }
 
     [Fact]
@@ -98,10 +98,10 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         TheStore.BulkInsert(data, batchSize: 500);
 
         // And just checking that the data is actually there;)
-        theSession.Query<Target>().Count().ShouldBe(data.Length);
+        TheSession.Query<Target>().Count().ShouldBe(data.Length);
         #endregion
 
-        theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
+        TheSession.Load<Target>(data[0].Id).ShouldNotBeNull();
     }
 
     [Fact]
@@ -116,9 +116,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         TheStore.BulkInsert(data);
 
-        theSession.Query<Target>().Count().ShouldBe(data.Length);
+        TheSession.Query<Target>().Count().ShouldBe(data.Length);
 
-        theSession.Query<Target>().Any(x => x.Date == data[0].Date)
+        TheSession.Query<Target>().Any(x => x.Date == data[0].Date)
             .ShouldBeTrue();
     }
 
@@ -131,9 +131,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         TheStore.BulkInsert(data);
 
-        theSession.Query<Target>().Count().ShouldBe(data.Length);
+        TheSession.Query<Target>().Count().ShouldBe(data.Length);
 
-        theSession.Query<Target>().Any(x => x.String == data[0].String)
+        TheSession.Query<Target>().Any(x => x.String == data[0].String)
             .ShouldBeTrue();
     }
 
@@ -146,11 +146,11 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         TheStore.BulkInsert(data, BulkInsertMode.IgnoreDuplicates);
         #endregion
 
-        theSession.Query<Target>().Count().ShouldBe(data.Length);
+        TheSession.Query<Target>().Count().ShouldBe(data.Length);
 
-        SpecificationExtensions.ShouldNotBeNull(theSession.Load<Target>(data[0].Id));
+        SpecificationExtensions.ShouldNotBeNull(TheSession.Load<Target>(data[0].Id));
 
-        var count = theSession.Connection.CreateCommand()
+        var count = TheSession.Connection.CreateCommand()
             .Sql($"select count(*) from {SchemaName}.mt_doc_target where mt_last_modified is null")
             .ExecuteScalar();
 
@@ -166,9 +166,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         TheStore.BulkInsert(data, BulkInsertMode.OverwriteExisting);
         #endregion
 
-        theSession.Query<Target>().Count().ShouldBe(data.Length);
+        TheSession.Query<Target>().Count().ShouldBe(data.Length);
 
-        SpecificationExtensions.ShouldNotBeNull(theSession.Load<Target>(data[0].Id));
+        SpecificationExtensions.ShouldNotBeNull(TheSession.Load<Target>(data[0].Id));
     }
 
     [Fact]
@@ -205,9 +205,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         await TheStore.BulkInsertAsync(data, batchSize: 15);
 
-        theSession.Query<Target>().Count().ShouldBe(data.Length);
+        TheSession.Query<Target>().Count().ShouldBe(data.Length);
 
-        theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
+        TheSession.Load<Target>(data[0].Id).ShouldNotBeNull();
     }
 
     [Fact]
@@ -256,10 +256,10 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         await TheStore.BulkInsertAsync(data, batchSize: 500);
 
         // And just checking that the data is actually there;)
-        theSession.Query<Target>().Count().ShouldBe(data.Length);
+        TheSession.Query<Target>().Count().ShouldBe(data.Length);
         #endregion
 
-        theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
+        TheSession.Load<Target>(data[0].Id).ShouldNotBeNull();
     }
 
     [Fact]
@@ -274,11 +274,11 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         await TheStore.BulkInsertAsync(data);
 
-        theSession.Query<Target>().Count().ShouldBe(data.Length);
+        TheSession.Query<Target>().Count().ShouldBe(data.Length);
 
-        var cmd = theSession.Query<Target>().Where(x => x.Date == data[0].Date).ToCommand();
+        var cmd = TheSession.Query<Target>().Where(x => x.Date == data[0].Date).ToCommand();
 
-        theSession.Query<Target>().Any(x => x.Date == data[0].Date)
+        TheSession.Query<Target>().Any(x => x.Date == data[0].Date)
             .ShouldBeTrue();
     }
 
@@ -291,9 +291,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         await TheStore.BulkInsertAsync(data);
 
-        theSession.Query<Target>().Count().ShouldBe(data.Length);
+        TheSession.Query<Target>().Count().ShouldBe(data.Length);
 
-        theSession.Query<Target>().Any(x => x.String == data[0].String)
+        TheSession.Query<Target>().Any(x => x.String == data[0].String)
             .ShouldBeTrue();
     }
 
@@ -349,11 +349,11 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         await TheStore.BulkInsertAsync(data, BulkInsertMode.IgnoreDuplicates);
         #endregion
 
-        theSession.Query<Target>().Count().ShouldBe(data.Length);
+        TheSession.Query<Target>().Count().ShouldBe(data.Length);
 
-        theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
+        TheSession.Load<Target>(data[0].Id).ShouldNotBeNull();
 
-        var count = theSession.Connection.CreateCommand()
+        var count = TheSession.Connection.CreateCommand()
             .Sql($"select count(*) from {SchemaName}.mt_doc_target where mt_last_modified is null")
             .ExecuteScalar();
 
@@ -369,9 +369,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         await TheStore.BulkInsertAsync(data, BulkInsertMode.OverwriteExisting);
         #endregion
 
-        theSession.Query<Target>().Count().ShouldBe(data.Length);
+        TheSession.Query<Target>().Count().ShouldBe(data.Length);
 
-        theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
+        TheSession.Load<Target>(data[0].Id).ShouldNotBeNull();
     }
 
     [Fact]
@@ -384,8 +384,8 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         var company1 = new Company();
         var company2 = new Company();
 
-        theSession.Store<object>(user1, user2, issue1, issue2, company1, company2);
-        theSession.SaveChanges();
+        TheSession.Store<object>(user1, user2, issue1, issue2, company1, company2);
+        TheSession.SaveChanges();
 
         using (var querying = TheStore.QuerySession())
         {
@@ -406,8 +406,8 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         var company2 = new Company();
 
         var documents = new object[] { user1, user2, issue1, issue2, company1, company2};
-        theSession.StoreObjects(documents);
-        theSession.SaveChanges();
+        TheSession.StoreObjects(documents);
+        TheSession.SaveChanges();
 
         using (var querying = TheStore.QuerySession())
         {

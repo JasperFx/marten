@@ -29,7 +29,7 @@ public class event_projections_end_to_end : DaemonContext
         var projection = new DistanceProjection();
         projection.AssembleAndAssertValidity();
         var filter = projection.As<IProjectionSource>()
-            .AsyncProjectionShards(theStore)
+            .AsyncProjectionShards(TheStore)
             .First()
             .EventFilters
             .OfType<Marten.Events.Daemon.EventTypeFilter>()
@@ -54,7 +54,7 @@ public class event_projections_end_to_end : DaemonContext
 
         // Wait for all projections to reach the highest event sequence point
         // as of the time this method is called
-        await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
+        await TheStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
 
         await CheckExpectedResults();
     }
@@ -77,7 +77,7 @@ public class event_projections_end_to_end : DaemonContext
 
         await PublishSingleThreaded();
 
-        await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
+        await TheStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
 
         await CheckExpectedResultsForTenants("a", "b");
     }
@@ -110,7 +110,7 @@ public class event_projections_end_to_end : DaemonContext
     {
         foreach (var tenantId in tenants)
         {
-            await using (var session = theStore.LightweightSession(tenantId))
+            await using (var session = TheStore.LightweightSession(tenantId))
             {
                 await CheckExpectedResults(session);
             }

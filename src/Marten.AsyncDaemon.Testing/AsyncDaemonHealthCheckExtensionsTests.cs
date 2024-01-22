@@ -57,11 +57,11 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
             x.Projections.Add(new FakeSingleStream1Projection(), ProjectionLifecycle.Async);
         });
         var agent = await StartDaemon();
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         session.Events.Append(Guid.NewGuid(), new FakeIrrellevantEvent());
         await session.SaveChangesAsync();
         await agent.Tracker.WaitForHighWaterMark(1);
-        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(100));
+        var healthCheck = new AsyncDaemonHealthCheck(TheStore, new(100));
 
         var result = await healthCheck.CheckHealthAsync(new());
 
@@ -76,7 +76,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
             x.Projections.Add(new FakeSingleStream2Projection(), ProjectionLifecycle.Async);
         });
         var agent = await StartDaemon();
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         var stream = Guid.NewGuid();
         var eventCount = 100;
         for (var i = 0; i < eventCount; i++)
@@ -84,7 +84,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
         await session.SaveChangesAsync();
         await agent.Tracker.WaitForHighWaterMark(eventCount);
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream2:All", eventCount), 15.Seconds());
-        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(0));
+        var healthCheck = new AsyncDaemonHealthCheck(TheStore, new(0));
 
         var result = await healthCheck.CheckHealthAsync(new());
 
@@ -102,7 +102,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
                 x.Projections.Add(new FakeSingleStream4Projection(), ProjectionLifecycle.Async);
             });
         var agent = await StartDaemon();
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         var stream1 = Guid.NewGuid();
         var stream2 = Guid.NewGuid();
         var eventCount = 100;
@@ -115,7 +115,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream3:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream4:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForHighWaterMark(eventCount);
-        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1));
+        var healthCheck = new AsyncDaemonHealthCheck(TheStore, new(1));
 
         var result = await healthCheck.CheckHealthAsync(new());
 
@@ -131,7 +131,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
             x.Projections.Add(new FakeSingleStream6Projection(), ProjectionLifecycle.Async);
         });
         var agent = await StartDaemon();
-        using var session = theStore.LightweightSession();
+        using var session = TheStore.LightweightSession();
         var stream1 = Guid.NewGuid();
         var stream2 = Guid.NewGuid();
         var eventCount = 500;
@@ -144,10 +144,10 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream5:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream6:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForHighWaterMark(eventCount);
-        using var treeCommand = new NpgsqlCommand($"update {theStore.Events.DatabaseSchemaName}.mt_event_progression set last_seq_id = 0 where name = 'FakeStream6:All'", TheSession.Connection);
+        using var treeCommand = new NpgsqlCommand($"update {TheStore.Events.DatabaseSchemaName}.mt_event_progression set last_seq_id = 0 where name = 'FakeStream6:All'", TheSession.Connection);
         await treeCommand.ExecuteScalarAsync();
 
-        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1));
+        var healthCheck = new AsyncDaemonHealthCheck(TheStore, new(1));
 
         var result = await healthCheck.CheckHealthAsync(new());
 

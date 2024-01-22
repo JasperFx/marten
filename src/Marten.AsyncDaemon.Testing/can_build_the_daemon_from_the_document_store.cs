@@ -9,6 +9,6 @@ public class can_build_the_daemon_from_the_document_store : OneOffConfigurations
     [Fact]
     public async Task can_build_it_out_with_no_custom_logging()
     {
-        var daemon = await theStore.BuildProjectionDaemonAsync();
+        var daemon = await TheStore.BuildProjectionDaemonAsync();
     }
 }

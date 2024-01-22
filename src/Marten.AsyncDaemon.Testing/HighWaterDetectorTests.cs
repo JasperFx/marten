@@ -23,8 +23,8 @@ public class HighWaterDetectorTests: DaemonContext
 
     public HighWaterDetectorTests(ITestOutputHelper output) : base(output)
     {
-        theStore.EnsureStorageExists(typeof(IEvent));
-        theDetector = new HighWaterDetector(new AutoOpenSingleQueryRunner(theStore.Tenancy.Default.Database), theStore.Events, NullLogger.Instance);
+        TheStore.EnsureStorageExists(typeof(IEvent));
+        theDetector = new HighWaterDetector(new AutoOpenSingleQueryRunner(TheStore.Tenancy.Default.Database), TheStore.Events, NullLogger.Instance);
     }
 
     [Fact]
@@ -108,11 +108,11 @@ public class HighWaterDetectorTests: DaemonContext
 
     protected async Task deleteEvents(params long[] ids)
     {
-        await using var conn = theStore.CreateConnection();
+        await using var conn = TheStore.CreateConnection();
         await conn.OpenAsync();
 
         await conn
-            .CreateCommand($"delete from {theStore.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(:ids)")
+            .CreateCommand($"delete from {TheStore.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(:ids)")
             .With("ids", ids, NpgsqlDbType.Bigint | NpgsqlDbType.Array)
             .ExecuteNonQueryAsync();
 
@@ -121,22 +121,22 @@ public class HighWaterDetectorTests: DaemonContext
 
     protected async Task makeOldWhereSequenceIsLessThanOrEqualTo(long seqId)
     {
-        await using var conn = theStore.CreateConnection();
+        await using var conn = TheStore.CreateConnection();
         await conn.OpenAsync();
 
         await conn
-            .CreateCommand($"update {theStore.Events.DatabaseSchemaName}.mt_events set timestamp = transaction_timestamp() - interval '1 hour' where seq_id <= :id")
+            .CreateCommand($"update {TheStore.Events.DatabaseSchemaName}.mt_events set timestamp = transaction_timestamp() - interval '1 hour' where seq_id <= :id")
             .With("id", seqId)
             .ExecuteNonQueryAsync();
     }
 
     protected async Task makeNewerWhereSequenceIsGreaterThan(long seqId)
     {
-        await using var conn = theStore.CreateConnection();
+        await using var conn = TheStore.CreateConnection();
         await conn.OpenAsync();
 
         await conn
-            .CreateCommand($"update {theStore.Events.DatabaseSchemaName}.mt_events set timestamp = :timestamp where seq_id > :id")
+            .CreateCommand($"update {TheStore.Events.DatabaseSchemaName}.mt_events set timestamp = :timestamp where seq_id > :id")
             .With("id", seqId)
             .With("timestamp", DateTime.UtcNow.Add(30.Seconds()))
             .ExecuteNonQueryAsync();

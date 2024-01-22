@@ -13,7 +13,7 @@ public class Bug_499_event_store_objects_should_not_be_erroneously_in_the_patch:
     {
         StoreOptions(_ => _.Schema.For<User>());
 
-        var patch = await theStore.Storage.Database.CreateMigrationAsync();
+        var patch = await TheStore.Storage.Database.CreateMigrationAsync();
 
         patch.UpdateSql().ShouldNotContain("mt_events");
         patch.UpdateSql().ShouldNotContain("mt_streams");

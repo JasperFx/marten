@@ -790,9 +790,9 @@ namespace EventSourcingTests.SchemaChange
 
             var shoppingCart = new Old.ShoppingCart(shoppingCartId, clientId);
 
-            await theStore.EnsureStorageExistsAsync(typeof(StreamAction));
+            await TheStore.EnsureStorageExistsAsync(typeof(StreamAction));
 
-            await using (var session = theStore.LightweightSession())
+            await using (var session = TheStore.LightweightSession())
             {
                 session.Events.Append(shoppingCartId, (IEnumerable<object>)shoppingCart.DequeueEvents());
                 await session.SaveChangesAsync();

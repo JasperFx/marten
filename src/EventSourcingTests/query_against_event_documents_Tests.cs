@@ -112,10 +112,10 @@ public class query_against_event_documents_Tests: OneOffConfigurationsContext
             _.Events.AddEventType(typeof(MembersDeparted));
         });
 
-        theStore.Advanced.Clean.DeleteAllEventData();
+        TheStore.Advanced.Clean.DeleteAllEventData();
 
 
-        theStore.StorageFeatures.FindMapping(typeof(MembersDeparted))
+        TheStore.StorageFeatures.FindMapping(typeof(MembersDeparted))
             .TableName.Schema.ShouldBe("query_against_event_documents_tests_events");
 
         TheSession.Events.StartStream<Quest>(joined1, departed1);
@@ -235,6 +235,6 @@ public class query_against_event_documents_Tests: OneOffConfigurationsContext
     public query_against_event_documents_Tests(ITestOutputHelper output)
     {
         _output = output;
-        theStore.Advanced.Clean.DeleteAllEventData();
+        TheStore.Advanced.Clean.DeleteAllEventData();
     }
 }

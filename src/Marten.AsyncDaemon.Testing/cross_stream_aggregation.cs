@@ -66,7 +66,7 @@ public class cross_stream_aggregation: DaemonContext
     {
         StoreOptions(x => x.Projections.Add(new CrossStreamDayProjection(), ProjectionLifecycle.Async));
 
-        await theStore.EnsureStorageExistsAsync(typeof(Day));
+        await TheStore.EnsureStorageExistsAsync(typeof(Day));
 
         using var agent = await StartDaemon();
 

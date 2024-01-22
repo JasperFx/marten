@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
@@ -22,8 +22,8 @@ public class Bug_255_Hilo_table_being_erroneously_recreated : BugIntegrationCont
             opts.Logger(logger);
         });
 
-        theSession.Store(new IntDoc());
-        theSession.SaveChanges();
+        TheSession.Store(new IntDoc());
+        TheSession.SaveChanges();
 
 
         using (var store2 = SeparateStore(_ =>

@@ -20,10 +20,10 @@ public class GapDetectorTest: DaemonContext
 
     public GapDetectorTest(ITestOutputHelper output) : base(output)
     {
-        theStore.EnsureStorageExists(typeof(IEvent));
+        TheStore.EnsureStorageExists(typeof(IEvent));
 
-        theGapDetector = new GapDetector(theStore.Events);
-        _runner = new AutoOpenSingleQueryRunner(theStore.Tenancy.Default.Database);
+        theGapDetector = new GapDetector(TheStore.Events);
+        _runner = new AutoOpenSingleQueryRunner(TheStore.Tenancy.Default.Database);
     }
 
     [Fact]
@@ -77,11 +77,11 @@ public class GapDetectorTest: DaemonContext
 
     protected async Task deleteEvents(params long[] ids)
     {
-        await using var conn = theStore.CreateConnection();
+        await using var conn = TheStore.CreateConnection();
         await conn.OpenAsync();
 
         await conn
-            .CreateCommand($"delete from {theStore.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(:ids)")
+            .CreateCommand($"delete from {TheStore.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(:ids)")
             .With("ids", ids, NpgsqlDbType.Bigint | NpgsqlDbType.Array)
             .ExecuteNonQueryAsync();
     }

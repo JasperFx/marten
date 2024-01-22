@@ -13,7 +13,7 @@ public class Bug_705_FetchStreamState_before_AggregateStream: BugIntegrationCont
     {
         Guid id;
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };

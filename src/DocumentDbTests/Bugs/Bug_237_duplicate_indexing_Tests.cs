@@ -17,8 +17,8 @@ public class Bug_237_duplicate_indexing_Tests: BugIntegrationContext
                 .ForeignKey<User>(x => x.AssigneeId);
         });
 
-        theSession.Store(new Issue());
-        theSession.SaveChanges();
+        TheSession.Store(new Issue());
+        TheSession.SaveChanges();
     }
 
 }

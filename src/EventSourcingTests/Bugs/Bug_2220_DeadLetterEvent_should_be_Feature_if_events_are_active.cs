@@ -12,7 +12,7 @@ public class Bug_2220_DeadLetterEvent_should_be_Feature_if_events_are_active : B
     [Fact]
     public void no_events_are_active()
     {
-        theStore.Options.Storage.AllActiveFeatures(theStore.Tenancy.Default.Database)
+        TheStore.Options.Storage.AllActiveFeatures(TheStore.Tenancy.Default.Database)
             .Any(x => x.StorageType == typeof(DeadLetterEvent)).ShouldBeFalse();
     }
 
@@ -25,7 +25,7 @@ public class Bug_2220_DeadLetterEvent_should_be_Feature_if_events_are_active : B
             opts.Events.AddEventType(typeof(QuestEnded));
         });
 
-        theStore.Options.Storage.AllActiveFeatures(theStore.Tenancy.Default.Database)
+        TheStore.Options.Storage.AllActiveFeatures(TheStore.Tenancy.Default.Database)
             .Any(x => x.StorageType == typeof(DeadLetterEvent)).ShouldBeTrue();
     }
 }

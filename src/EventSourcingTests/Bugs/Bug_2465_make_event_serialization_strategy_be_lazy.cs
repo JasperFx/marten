@@ -24,7 +24,7 @@ public class Bug_2465_make_event_serialization_strategy_be_lazy : BugIntegration
             o.Serializer(
                 new SystemTextJsonSerializer { EnumStorage = EnumStorage.AsString });
         });
-        await using var session = theStore.LightweightSession();
+        await using var session = TheStore.LightweightSession();
         var @event = new TestEvent()
         {
             Data = JsonObject.Parse(@"{""Value"":1}")

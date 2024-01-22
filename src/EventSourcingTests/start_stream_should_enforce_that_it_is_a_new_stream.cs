@@ -12,13 +12,13 @@ public class start_stream_should_enforce_that_it_is_a_new_stream: OneOffConfigur
     {
         var stream = Guid.NewGuid();
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Events.StartStream(stream, new MembersJoined());
             session.SaveChanges();
         }
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Events.StartStream(stream, new MembersJoined());
             Exception<ExistingStreamIdCollisionException>.ShouldBeThrownBy(() =>
@@ -34,13 +34,13 @@ public class start_stream_should_enforce_that_it_is_a_new_stream: OneOffConfigur
         var stream = Guid.NewGuid();
         const string tenantName = "Tenant";
 
-        using (var session = theStore.LightweightSession(tenantName))
+        using (var session = TheStore.LightweightSession(tenantName))
         {
             session.Events.StartStream(stream, new MembersJoined());
             session.SaveChanges();
         }
 
-        using (var session = theStore.LightweightSession("Tenant"))
+        using (var session = TheStore.LightweightSession("Tenant"))
         {
             session.Events.StartStream(stream, new MembersJoined());
             Exception<ExistingStreamIdCollisionException>.ShouldBeThrownBy(() =>
@@ -58,13 +58,13 @@ public class start_stream_should_enforce_that_it_is_a_new_stream: OneOffConfigur
         var stream = Guid.NewGuid();
         const string tenantName = "Tenant";
 
-        using (var session = theStore.LightweightSession(tenantName))
+        using (var session = TheStore.LightweightSession(tenantName))
         {
             session.Events.StartStream(stream, new MembersJoined());
             session.SaveChanges();
         }
 
-        using (var session = theStore.LightweightSession(tenantName))
+        using (var session = TheStore.LightweightSession(tenantName))
         {
             session.Events.StartStream(stream, new MembersJoined());
             Exception<ExistingStreamIdCollisionException>.ShouldBeThrownBy(() =>
@@ -81,13 +81,13 @@ public class start_stream_should_enforce_that_it_is_a_new_stream: OneOffConfigur
 
         var stream = Guid.NewGuid();
 
-        using (var session = theStore.LightweightSession("Tenant"))
+        using (var session = TheStore.LightweightSession("Tenant"))
         {
             session.Events.StartStream(stream, new MembersJoined());
             session.SaveChanges();
         }
 
-        using (var session = theStore.LightweightSession("OtherTenant"))
+        using (var session = TheStore.LightweightSession("OtherTenant"))
         {
             session.Events.StartStream(stream, new MembersJoined());
             session.SaveChanges();

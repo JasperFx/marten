@@ -40,7 +40,7 @@ public class Bug_DeleteWhere_Operations_Should_Respect_Tenancy : BugIntegrationC
         var createHard = new CreateDeletableProjection(Guid.NewGuid(), innerGuid2);
         var deleteHard = new HardDeleteEvent(innerGuid2);
 
-        await using var session = theStore.LightweightSession("test");
+        await using var session = TheStore.LightweightSession("test");
 
         session.Events.StartStream(createNormal);
         session.Events.StartStream(createHard);
@@ -60,7 +60,7 @@ public class Bug_DeleteWhere_Operations_Should_Respect_Tenancy : BugIntegrationC
         Assert.Null(normalDeleteInline);
         Assert.Null(hardDeleteInline);
 
-        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        using var daemon = await TheStore.BuildProjectionDaemonAsync();
 
         await daemon.RebuildProjection<DeletableEventProjection>(default);
 

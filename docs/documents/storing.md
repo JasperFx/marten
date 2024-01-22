@@ -96,10 +96,10 @@ Marten supports [Postgresql's COPY](http://www.postgresql.org/docs/9.4/static/sq
 var data = Target.GenerateRandomData(100).ToArray();
 
 // Load all of these into a Marten-ized database
-theStore.BulkInsert(data, batchSize: 500);
+TheStore.BulkInsert(data, batchSize: 500);
 
 // And just checking that the data is actually there;)
-theSession.Query<Target>().Count().ShouldBe(data.Length);
+TheSession.Query<Target>().Count().ShouldBe(data.Length);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L92-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -121,10 +121,10 @@ the asynchronous versions of Marten APIs.
 var data = Target.GenerateRandomData(100).ToArray();
 
 // Load all of these into a Marten-ized database
-await theStore.BulkInsertAsync(data, batchSize: 500);
+await TheStore.BulkInsertAsync(data, batchSize: 500);
 
 // And just checking that the data is actually there;)
-theSession.Query<Target>().Count().ShouldBe(data.Length);
+TheSession.Query<Target>().Count().ShouldBe(data.Length);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L250-L260' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

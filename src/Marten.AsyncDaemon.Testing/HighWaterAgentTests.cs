@@ -53,7 +53,7 @@ public class HighWaterAgentTests: DaemonContext
 
         await agent.StopAll();
 
-        using var agent2 = new ProjectionDaemon(theStore, new NulloLogger());
+        using var agent2 = new ProjectionDaemon(TheStore, new NulloLogger());
         await agent2.StartDaemon();
         await agent2.Tracker.WaitForHighWaterMark(NumberOfEvents, 15.Seconds());
 
@@ -87,14 +87,14 @@ public class HighWaterAgentTests: DaemonContext
     {
         NumberOfStreams = 10;
         await PublishSingleThreaded();
-        theStore.Options.Projections.StaleSequenceThreshold = 1.Seconds();
+        TheStore.Options.Projections.StaleSequenceThreshold = 1.Seconds();
 
         using var agent = await StartDaemon();
 
         await agent.Tracker.WaitForHighWaterMark(NumberOfEvents, 2.Minutes());
         await agent.StopAll();
 
-        using (var conn = theStore.Storage.Database.CreateConnection())
+        using (var conn = TheStore.Storage.Database.CreateConnection())
         {
             await conn.OpenAsync();
             await conn.CreateCommand($"SELECT setval('daemon.mt_events_sequence', {NumberOfEvents + 5});").ExecuteNonQueryAsync();
@@ -108,11 +108,11 @@ public class HighWaterAgentTests: DaemonContext
 
     private async Task deleteEvents(params long[] ids)
     {
-        await using var conn = theStore.CreateConnection();
+        await using var conn = TheStore.CreateConnection();
         await conn.OpenAsync();
 
         await conn
-            .CreateCommand($"delete from {theStore.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(:ids)")
+            .CreateCommand($"delete from {TheStore.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(:ids)")
             .With("ids", ids, NpgsqlDbType.Bigint | NpgsqlDbType.Array)
             .ExecuteNonQueryAsync();
     }

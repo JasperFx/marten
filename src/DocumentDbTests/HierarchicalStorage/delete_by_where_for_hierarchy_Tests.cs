@@ -14,12 +14,12 @@ public class delete_by_where_for_hierarchy_Tests: end_to_end_document_hierarchy_
     {
         loadData();
 
-        theSession.DeleteWhere<SuperUser>(x => true);
-        theSession.SaveChanges();
+        TheSession.DeleteWhere<SuperUser>(x => true);
+        TheSession.SaveChanges();
 
-        theSession.Query<SuperUser>().Count().ShouldBe(0);
-        theSession.Query<AdminUser>().Count().ShouldBe(2);
-        theSession.Query<User>().Count().ShouldBe(4);
+        TheSession.Query<SuperUser>().Count().ShouldBe(0);
+        TheSession.Query<AdminUser>().Count().ShouldBe(2);
+        TheSession.Query<User>().Count().ShouldBe(4);
     }
 
     [Fact]
@@ -27,12 +27,12 @@ public class delete_by_where_for_hierarchy_Tests: end_to_end_document_hierarchy_
     {
         loadData();
 
-        theSession.DeleteWhere<SuperUser>(x => x.FirstName.StartsWith("D"));
-        theSession.SaveChanges();
+        TheSession.DeleteWhere<SuperUser>(x => x.FirstName.StartsWith("D"));
+        TheSession.SaveChanges();
 
-        theSession.Query<SuperUser>().Count().ShouldBe(1);
-        theSession.Query<AdminUser>().Count().ShouldBe(2);
-        theSession.Query<User>().Count().ShouldBe(5);
+        TheSession.Query<SuperUser>().Count().ShouldBe(1);
+        TheSession.Query<AdminUser>().Count().ShouldBe(2);
+        TheSession.Query<User>().Count().ShouldBe(5);
     }
 
     [Fact]
@@ -40,12 +40,12 @@ public class delete_by_where_for_hierarchy_Tests: end_to_end_document_hierarchy_
     {
         loadData();
 
-        theSession.DeleteWhere<User>(x => x.FirstName.StartsWith("D"));
-        theSession.SaveChanges();
+        TheSession.DeleteWhere<User>(x => x.FirstName.StartsWith("D"));
+        TheSession.SaveChanges();
 
         // Should delete one SuperUser and one AdminUser
-        theSession.Query<SuperUser>().Count().ShouldBe(1);
-        theSession.Query<AdminUser>().Count().ShouldBe(1);
-        theSession.Query<User>().Count().ShouldBe(4);
+        TheSession.Query<SuperUser>().Count().ShouldBe(1);
+        TheSession.Query<AdminUser>().Count().ShouldBe(1);
+        TheSession.Query<User>().Count().ShouldBe(4);
     }
 }

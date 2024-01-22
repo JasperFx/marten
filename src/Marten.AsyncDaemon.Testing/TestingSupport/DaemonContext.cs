@@ -66,7 +66,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext
 
         _daemon = daemon;
 
-        _disposables.Add(daemon);
+        Helper.Disposables.Add(daemon);
         return daemon;
     }
 
@@ -80,7 +80,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext
 
         await daemon.UseCoordinator(coordinator);
 
-        _disposables.Add(daemon);
+        Helper.Disposables.Add(daemon);
         return daemon;
     }
 

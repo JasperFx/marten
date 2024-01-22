@@ -66,7 +66,7 @@ public class ViewProjectionTests: DaemonContext
     {
         StoreOptions(x => x.Projections.Add(new DayProjection(), ProjectionLifecycle.Async));
 
-        await theStore.EnsureStorageExistsAsync(typeof(Day));
+        await TheStore.EnsureStorageExistsAsync(typeof(Day));
 
         using var agent = await StartDaemon();
 

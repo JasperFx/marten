@@ -243,9 +243,9 @@ namespace EventSourcingTests.SchemaChange
             var task = new Old.Task(taskId, "Initial Description");
             task.UpdateDescription("updated description");
 
-            await theStore.EnsureStorageExistsAsync(typeof(StreamAction));
+            await TheStore.EnsureStorageExistsAsync(typeof(StreamAction));
 
-            await using (var session = (DocumentSessionBase)theStore.LightweightSession())
+            await using (var session = (DocumentSessionBase)TheStore.LightweightSession())
             {
                 session.Events.Append(taskId, task.DequeueEvents());
                 await session.SaveChangesAsync();

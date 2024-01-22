@@ -35,9 +35,9 @@ public class flat_table_projection_with_stream_key_identifier_end_to_end: OneOff
     [Fact]
     public async Task table_should_be_built()
     {
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        await using var conn = theStore.Storage.Database.CreateConnection();
+        await using var conn = TheStore.Storage.Database.CreateConnection();
         await conn.OpenAsync();
 
         var table = await new Table(new PostgresqlObjectName(SchemaName, "string_values")).FetchExistingAsync(conn);
@@ -72,7 +72,7 @@ public class flat_table_projection_with_stream_key_identifier_end_to_end: OneOff
 
     private async Task<Data> findData(string streamId)
     {
-        await using var conn = theStore.Storage.Database.CreateConnection();
+        await using var conn = TheStore.Storage.Database.CreateConnection();
         await conn.OpenAsync();
 
         var all = await CommandExtensions

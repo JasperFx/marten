@@ -31,13 +31,13 @@ public class Bug_1069_using_generic_event_types_because_why_not: BugIntegrationC
         var event1 = new Envelope<Created> { Value = new Created { Id = Guid.NewGuid() } };
         var event2 = new Envelope<Updated> { Value = new Updated { UpdateValue = "something" } };
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Events.StartStream(streamId, event1, event2);
             session.SaveChanges();
         }
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             var events = session.Events.FetchStream(streamId);
             events.Select(x => x.Data.GetType())
@@ -52,7 +52,7 @@ public class Bug_1069_using_generic_event_types_because_why_not: BugIntegrationC
         var event1 = new Envelope<Created> { Value = new Created { Id = Guid.NewGuid() } };
         var event2 = new Envelope<Updated> { Value = new Updated { UpdateValue = "something" } };
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Events.StartStream(streamId, event1, event2);
             session.SaveChanges();

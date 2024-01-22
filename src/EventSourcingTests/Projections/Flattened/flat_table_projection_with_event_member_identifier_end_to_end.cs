@@ -35,9 +35,9 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
     [Fact]
     public async Task table_should_be_built()
     {
-        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await TheStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        await using var conn = theStore.Storage.Database.CreateConnection();
+        await using var conn = TheStore.Storage.Database.CreateConnection();
         await conn.OpenAsync();
 
         var table = await new Table(new PostgresqlObjectName(SchemaName, "member_values")).FetchExistingAsync(conn);
@@ -76,7 +76,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
 
     private async Task<Data> findData(string name)
     {
-        await using var conn = theStore.Storage.Database.CreateConnection();
+        await using var conn = TheStore.Storage.Database.CreateConnection();
         await conn.OpenAsync();
 
         var all = await CommandExtensions

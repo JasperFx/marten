@@ -40,13 +40,13 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
     [Fact]
     public void smoke_test_being_able_to_create_database_objects()
     {
-        theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(EventGraph));
+        TheStore.Tenancy.Default.Database.EnsureStorageExists(typeof(EventGraph));
     }
 
     [Fact]
     public void try_to_insert_event_with_string_identifiers()
     {
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Events.Append("First", new MembersJoined(), new MembersJoined());
             session.SaveChanges();
@@ -56,13 +56,13 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
     [Fact]
     public void try_to_insert_event_with_string_identifiers_non_typed()
     {
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Events.StartStream("First", new MembersJoined(), new MembersJoined());
             session.SaveChanges();
         }
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Events.FetchStream("First").Count.ShouldBe(2);
         }
@@ -71,13 +71,13 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
     [Fact]
     public void fetch_state()
     {
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Events.Append("First", new MembersJoined(), new MembersJoined());
             session.SaveChanges();
         }
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             var state = session.Events.FetchStreamState("First");
             state.Key.ShouldBe("First");
@@ -88,13 +88,13 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
     [Fact]
     public async Task fetch_state_async()
     {
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Events.Append("First", new MembersJoined(), new MembersJoined());
             await session.SaveChangesAsync();
         }
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             var state = await session.Events.FetchStreamStateAsync("First");
             state.Key.ShouldBe("First");
@@ -105,14 +105,14 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
     [Fact]
     public async Task store_on_multiple_streams_at_a_time()
     {
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             session.Events.Append("First", new MembersJoined(), new MembersJoined());
             session.Events.Append("Second", new MembersJoined(), new MembersJoined(), new MembersJoined());
             await session.SaveChangesAsync();
         }
 
-        await using (var session = theStore.LightweightSession())
+        await using (var session = TheStore.LightweightSession())
         {
             var state = await session.Events.FetchStreamStateAsync("First");
             state.Key.ShouldBe("First");

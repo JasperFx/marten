@@ -26,14 +26,14 @@ public class Bug_2201_out_of_order_exception_with_hard_deletes: BugIntegrationCo
             options.Projections.Add<TicketProjection>(ProjectionLifecycle.Async);
         });
 
-        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+        await TheStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
-        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        using var daemon = await TheStore.BuildProjectionDaemonAsync();
         await daemon.StartAllShards();
 
         var tenantId = Guid.NewGuid().ToString();
         var ticketId = Guid.NewGuid();
-        await using var session = theStore.LightweightSession(tenantId);
+        await using var session = TheStore.LightweightSession(tenantId);
         for (var i = 1; i <= 1000; i++)
         {
             ticketId = Guid.NewGuid();

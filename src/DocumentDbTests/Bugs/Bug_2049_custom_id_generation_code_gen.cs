@@ -25,7 +25,7 @@ public class Bug_2049_custom_id_generation_code_gen : BugIntegrationContext
         });
 
         var doc = new StringDoc();
-        theSession.Store(doc);
-        await theSession.SaveChangesAsync();
+        TheSession.Store(doc);
+        await TheSession.SaveChangesAsync();
     }
 }

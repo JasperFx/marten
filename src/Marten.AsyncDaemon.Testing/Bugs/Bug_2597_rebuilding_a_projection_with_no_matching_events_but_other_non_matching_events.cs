@@ -18,7 +18,7 @@ public class Bug_2597_rebuilding_a_projection_with_no_matching_events_but_other_
             opts.Projections.Snapshot<OtherAggregate>(SnapshotLifecycle.Inline);
         });
 
-        using (var session = theStore.LightweightSession())
+        using (var session = TheStore.LightweightSession())
         {
             session.Events.Append(Guid.NewGuid(), new BEvent(), new CEvent(), new DEvent());
             session.Events.Append(Guid.NewGuid(), new BEvent(), new CEvent(), new DEvent());
@@ -29,7 +29,7 @@ public class Bug_2597_rebuilding_a_projection_with_no_matching_events_but_other_
             await session.SaveChangesAsync();
         }
 
-        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        using var daemon = await TheStore.BuildProjectionDaemonAsync();
 
         await daemon.RebuildProjection<UsesAEventOnly>(CancellationToken.None);
     }
@@ -43,7 +43,7 @@ public class Bug_2597_rebuilding_a_projection_with_no_matching_events_but_other_
             opts.Projections.Snapshot<OtherAggregate>(SnapshotLifecycle.Inline);
         });
 
-        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        using var daemon = await TheStore.BuildProjectionDaemonAsync();
 
         await daemon.RebuildProjection<UsesAEventOnly>(CancellationToken.None);
     }

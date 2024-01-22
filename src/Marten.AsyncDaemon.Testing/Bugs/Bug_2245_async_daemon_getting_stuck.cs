@@ -30,7 +30,7 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
             opts.Projections.Add<AsyncProjection.Projector>(ProjectionLifecycle.Async);
         });
 
-        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        using var daemon = await TheStore.BuildProjectionDaemonAsync();
         await daemon.StartAllShards();
 
         // prove async daemon works on happy path
@@ -63,7 +63,7 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
 
         // however, writing any new event will unstick the async daemon
         // comment out previous line of code and test will pass
-        var newSession = theStore.LightweightSession();
+        var newSession = TheStore.LightweightSession();
 
         newSession.Events.StartStream(Guid.NewGuid().ToString(),
             new CreatedEvent(Guid.NewGuid().ToString(), Guid.NewGuid().ToString()));
@@ -82,7 +82,7 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
             opts.Projections.Add<AsyncProjection.Projector>(ProjectionLifecycle.Async);
         });
 
-        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        using var daemon = await TheStore.BuildProjectionDaemonAsync();
         await daemon.StartAllShards();
 
         // prove async daemon works on happy path
@@ -118,7 +118,7 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
 
         // however, writing any new event will unstick the async daemon
         // comment out previous line of code and test will pass
-        var newSession = theStore.LightweightSession();
+        var newSession = TheStore.LightweightSession();
 
         newSession.Events.StartStream(Guid.NewGuid().ToString(),
             new CreatedEvent(Guid.NewGuid().ToString(), Guid.NewGuid().ToString()));

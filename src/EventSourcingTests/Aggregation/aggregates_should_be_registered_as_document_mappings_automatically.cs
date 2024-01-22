@@ -17,7 +17,7 @@ public class aggregates_should_be_registered_as_document_mappings_automatically:
             _.Projections.AggregatorFor<QuestParty>();
         });
 
-        theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
+        TheStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
             .ShouldContain(typeof(QuestParty));
     }
 
@@ -30,7 +30,7 @@ public class aggregates_should_be_registered_as_document_mappings_automatically:
         });
 
         // MyAggregate is the aggregate type for AllGood above
-        theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
+        TheStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
             .ShouldContain(typeof(MyAggregate));
     }
 
@@ -43,7 +43,7 @@ public class aggregates_should_be_registered_as_document_mappings_automatically:
             _.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
         });
 
-        theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
+        TheStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
             .ShouldContain(typeof(QuestParty));
     }
 
@@ -55,7 +55,7 @@ public class aggregates_should_be_registered_as_document_mappings_automatically:
             _.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Async);
         });
 
-        theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
+        TheStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
             .ShouldContain(typeof(QuestParty));
     }
 }
