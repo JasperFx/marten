@@ -98,6 +98,12 @@ internal class MartenBuild
         Target("test-linq", DependsOn("compile-linq-tests"), () =>
             RunTests("LinqTests"));
 
+	    Target("compile-patching-tests", DependsOn("clean"), () =>
+            Run("dotnet", $"build src/PatchingTests/PatchingTests.csproj --framework {_framework} --configuration {configuration}"));
+
+        Target("test-patching", DependsOn("compile-patching-tests"), () =>
+            RunTests("PatchingTests"));
+
         Target("test-codegen", () =>
         {
             var projectPath = "src/CommandLineRunner";
@@ -118,7 +124,7 @@ internal class MartenBuild
         Target("test-plv8", DependsOn("compile", "compile-plv8"), () =>
             RunTests("Marten.PLv8.Testing"));
 
-        Target("test", DependsOn("test-base-lib", "test-core", "test-document-db", "test-event-sourcing", "test-cli", "test-linq", "test-codegen"));
+        Target("test", DependsOn("test-base-lib", "test-core", "test-document-db", "test-event-sourcing", "test-cli", "test-linq", "test-codegen", "test-patching"));
 
         Target("test-extension-libs-without-plv8", DependsOn("test-noda-time", "test-aspnetcore"));
 
