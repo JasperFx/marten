@@ -93,6 +93,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Helpdesk.Api", "samples\Hel
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Helpdesk.Api.Tests", "samples\Helpdesk\Helpdesk.Api.Tests\Helpdesk.Api.Tests.csproj", "{B0629D41-CA4E-4123-BC98-79A04D708A3E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PatchingTests", "PatchingTests\PatchingTests.csproj", "{EE82EFC4-FBC1-4181-9AB8-671222B60C3F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -219,6 +221,10 @@ Global
 		{B0629D41-CA4E-4123-BC98-79A04D708A3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B0629D41-CA4E-4123-BC98-79A04D708A3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B0629D41-CA4E-4123-BC98-79A04D708A3E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE82EFC4-FBC1-4181-9AB8-671222B60C3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE82EFC4-FBC1-4181-9AB8-671222B60C3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE82EFC4-FBC1-4181-9AB8-671222B60C3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE82EFC4-FBC1-4181-9AB8-671222B60C3F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -255,5 +261,6 @@ Global
 		{F3DADE49-9C89-4F74-BCCE-7DAFD35675E9} = {79961196-DB50-4AD3-B749-D231799BCF2E}
 		{5E18DEBD-C768-4636-B167-7DA2A4954F43} = {F3DADE49-9C89-4F74-BCCE-7DAFD35675E9}
 		{B0629D41-CA4E-4123-BC98-79A04D708A3E} = {F3DADE49-9C89-4F74-BCCE-7DAFD35675E9}
+		{EE82EFC4-FBC1-4181-9AB8-671222B60C3F} = {91D87D73-EC07-4067-8A64-26A2E4F6BC83}
 	EndGlobalSection
 EndGlobal

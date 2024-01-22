@@ -261,6 +261,7 @@ public class StorageFeatures: IFeatureSchema
         SystemFunctions.AddSystemFunction(_options, "mt_grams_vector", "text");
         SystemFunctions.AddSystemFunction(_options, "mt_grams_query", "text");
         SystemFunctions.AddSystemFunction(_options, "mt_grams_array", "text");
+        SystemFunctions.AddSystemFunction(_options, "mt_jsonb_patch", "jsonb,jsonb");
 
         Add(SystemFunctions);
 
