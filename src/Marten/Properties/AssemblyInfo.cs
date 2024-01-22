@@ -12,3 +12,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("DocumentDbTests")]
 [assembly: InternalsVisibleTo("EventSourcingTests")]
 [assembly: InternalsVisibleTo("Examples")]
+[assembly: InternalsVisibleTo("PatchingTests")]
