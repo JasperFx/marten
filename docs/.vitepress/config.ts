@@ -192,6 +192,7 @@ export default withMermaid({
               text: 'Aggregates, events and repositories',
               link: '/scenarios/aggregates-events-repositories'
             },
+            { text: 'Understanding Event Sourcing', link: '/events/learning' },
           ]
         },
         {
