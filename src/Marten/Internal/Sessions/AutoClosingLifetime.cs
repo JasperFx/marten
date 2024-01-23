@@ -20,7 +20,6 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
 {
     private readonly SessionOptions _options;
     private readonly IMartenDatabase _database;
-    private readonly ResiliencePipeline _resilience;
 
     public AutoClosingLifetime(SessionOptions options, StoreOptions storeOptions)
     {
@@ -31,8 +30,6 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         _database = options.Tenant!.Database;
 
         CommandTimeout = _options.Timeout ?? storeOptions.CommandTimeout;
-
-        _resilience = storeOptions.ResiliencePipeline;
     }
 
     public int CommandTimeout { get; }

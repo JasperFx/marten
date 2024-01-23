@@ -17,40 +17,45 @@ public partial class QuerySession
 {
     internal IConnectionLifetime _connection;
 
+    internal record CommandExecution(NpgsqlCommand Command, IConnectionLifetime Lifetime);
+
     public int Execute(NpgsqlCommand cmd)
     {
         RequestCount++;
-        return _connection.Execute(cmd);
+
+        return _resilience.Execute(static e => e.Lifetime.Execute(e.Command), new CommandExecution(cmd, _connection));
     }
 
     public Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new())
     {
         RequestCount++;
-        return _connection.ExecuteAsync(command, token);
+        return _resilience.Execute(static (e, t) => e.Lifetime.ExecuteAsync(e.Command, t), new CommandExecution(command, _connection), token);
     }
 
     public DbDataReader ExecuteReader(NpgsqlCommand command)
     {
         RequestCount++;
-        return _connection.ExecuteReader(command);
+        return _resilience.Execute(static e => e.Lifetime.ExecuteReader(e.Command), new CommandExecution(command, _connection));
     }
 
     public Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default)
     {
         RequestCount++;
-        return _connection.ExecuteReaderAsync(command, token);
+        return _resilience.Execute(static (e, t) => e.Lifetime.ExecuteReaderAsync(e.Command, t), new CommandExecution(command, _connection), token);
     }
+
+    internal record BatchExecution(NpgsqlBatch Batch, IConnectionLifetime Lifetime);
 
     public DbDataReader ExecuteReader(NpgsqlBatch batch)
     {
         RequestCount++;
-        return _connection.ExecuteReader(batch);
+        return _resilience.Execute(static e => e.Lifetime.ExecuteReader(e.Batch), new BatchExecution(batch, _connection));
     }
 
     public Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, CancellationToken token = default)
     {
         RequestCount++;
-        return _connection.ExecuteReaderAsync(batch, token);
+        return _resilience.Execute(static (e, t) => e.Lifetime.ExecuteReaderAsync(e.Batch, t), new BatchExecution(batch, _connection), token);
     }
 
     internal T? LoadOne<T>(NpgsqlCommand command, ISelector<T> selector)
