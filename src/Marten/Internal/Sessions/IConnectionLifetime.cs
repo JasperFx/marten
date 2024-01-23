@@ -9,6 +9,7 @@ using Npgsql;
 
 namespace Marten.Internal.Sessions;
 
+// TODO -- look at how much more could be put here
 internal class ConnectionLifetimeBase
 {
     public IMartenSessionLogger Logger { get; set; }
@@ -65,3 +66,5 @@ public interface IConnectionLifetime: IAsyncDisposable, IDisposable
     Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages,
         List<Exception> exceptions, CancellationToken token);
 }
+
+

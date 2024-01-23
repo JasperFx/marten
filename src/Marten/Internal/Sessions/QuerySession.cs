@@ -6,12 +6,14 @@ using Marten.Events;
 using Marten.Services;
 using Marten.Storage;
 using Npgsql;
+using Polly;
 
 namespace Marten.Internal.Sessions;
 
 public partial class QuerySession: IMartenSession, IQuerySession
 {
     private readonly DocumentStore _store;
+    private readonly ResiliencePipeline _resilience;
 
     internal virtual DocumentTracking TrackingMode => DocumentTracking.QueryOnly;
 
@@ -72,6 +74,8 @@ public partial class QuerySession: IMartenSession, IQuerySession
         Events = CreateEventStore(store, tenant ?? sessionOptions.Tenant);
 
         Logger = store.Options.Logger().StartSession(this);
+
+        _resilience = Options.ResiliencePipeline;
     }
 
     public ConcurrencyChecks Concurrency { get; protected set; } = ConcurrencyChecks.Enabled;
