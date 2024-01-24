@@ -25,6 +25,10 @@ internal class SimpleParameterFinder<T>: IParameterFinder
         return memberType == DotNetType;
     }
 
+    /// <summary>
+    /// Does a quick sweep over all members this <see cref="SimpleParameterFinder{T}"/> can handle
+    /// and checks for uniqueness
+    /// </summary>
     public bool AreValuesUnique(object query, CompiledQueryPlan plan)
     {
         var members = findMembers(plan);

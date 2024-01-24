@@ -12,6 +12,11 @@ namespace Marten.Internal.CompiledQueries;
 internal interface IQueryMember<T>: IQueryMember
 {
     T Value { get; }
+    /// <summary>
+    /// Returns the current value of the QueryMember represented by this instance from <paramref name="query"/>
+    /// </summary>
+    /// <param name="query">The object from which to read the value</param>
+    /// <returns>The value if any</returns>
     T GetValue(object query);
     void SetValue(object query, T value);
 }
