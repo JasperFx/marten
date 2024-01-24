@@ -77,7 +77,7 @@ public partial class StoreOptions
                 return new ValueCollectionMember(this, parent, casing, member);
             }
 
-            return new ChildCollectionMember(this, parent, casing, member);
+            return new ChildCollectionMember(this, parent, casing, member, memberType);
         }
 
         var pgType = PostgresqlProvider.Instance.GetDatabaseType(memberType, serializer.EnumStorage);

@@ -149,6 +149,13 @@ select data from mt_temp_id_list1CTE
 as d where d.data = 'value2' order by d.data;
          */
     }
+
+    [Fact]
+    public async Task selecting_into_a_dictionary()
+    {
+        // From GH-2911
+        var data = await theSession.Query<SelectDict>().Select(x => x.Dict).ToListAsync();
+    }
 }
 
 public class EntityWithDict
@@ -161,3 +168,6 @@ public sealed record MyEntity(Guid Id, string Value);
 
 public sealed record DictEntity(Guid Id, Dictionary<Guid, HashSet<Guid>> GuidDict,
     Dictionary<Guid, MyEntity> ObjectDict);
+
+public sealed record NestedEntity(Guid Id);
+public sealed record SelectDict(Guid Id, Dictionary<Guid, NestedEntity[]> Dict);

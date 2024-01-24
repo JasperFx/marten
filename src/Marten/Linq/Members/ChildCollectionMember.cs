@@ -23,11 +23,12 @@ internal class ChildCollectionMember: QueryableMember, ICollectionMember, IQuery
     private readonly RootMember _root;
     private ImHashMap<string, IQueryableMember> _members = ImHashMap<string, IQueryableMember>.Empty;
 
-    public ChildCollectionMember(StoreOptions options, IQueryableMember parent, Casing casing, MemberInfo member): base(
+    public ChildCollectionMember(StoreOptions options, IQueryableMember parent, Casing casing, MemberInfo member, Type? memberType): base(
         parent, casing, member)
     {
         _options = options;
         TypedLocator = $"{parent.RawLocator} -> '{MemberName}'";
+        MemberType ??= memberType;
         ElementType = MemberType.DetermineElementType();
 
         _root = new RootMember(ElementType) { Ancestors = Array.Empty<IQueryableMember>() };
