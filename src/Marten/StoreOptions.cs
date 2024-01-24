@@ -35,6 +35,8 @@ namespace Marten;
 /// </summary>
 public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
 {
+    public const int DefaultTimeout = 5;
+
     internal static readonly Func<string, NpgsqlDataSourceBuilder> DefaultNpgsqlDataSourceBuilderFactory =
         connectionString => new NpgsqlDataSourceBuilder(connectionString);
 
@@ -126,11 +128,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     /// <summary>
     /// Polly policies for retries within Marten command execution
     /// </summary>
-    public ResiliencePipeline ResiliencePipeline
-    {
-        get => _resiliencePipeline;
-        set => _resiliencePipeline = value ?? throw new ArgumentNullException(nameof(value));
-    }
+    internal ResiliencePipeline ResiliencePipeline { get; set; }
 
     /// <summary>
     ///     Advisory lock id is used by the ApplyChangesOnStartup() option to serialize access to making
@@ -322,7 +320,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     private Func<string, NpgsqlDataSourceBuilder> _npgsqlDataSourceBuilderFactory = DefaultNpgsqlDataSourceBuilderFactory;
     private INpgsqlDataSourceFactory _npgsqlDataSourceFactory = new DefaultNpgsqlDataSourceFactory();
     private readonly IList<Type> _compiledQueryTypes = new List<Type>();
-    private ResiliencePipeline _resiliencePipeline;
     private int _applyChangesLockId = 4004;
     private bool _shouldApplyChangesOnStartup = false;
     private bool _shouldAssertDatabaseMatchesConfigurationOnStartup = false;
@@ -335,17 +332,12 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     private readonly EventGraph _eventGraph;
     private readonly LinqParsing _linq;
     private int _updateBatchSize = 500;
-    private int _commandTimeout = 30;
 
     IReadOnlyEventStoreOptions IReadOnlyStoreOptions.Events => EventGraph;
 
     IReadOnlyLinqParsing IReadOnlyStoreOptions.Linq => Linq;
 
-    public int CommandTimeout
-    {
-        get => _commandTimeout;
-        set => _commandTimeout = value;
-    }
+    public int CommandTimeout { get; set; } = DefaultTimeout;
 
     /// <summary>
     ///     Configure Marten to create databases for tenants in case databases do not exist or need to be dropped & re-created.
