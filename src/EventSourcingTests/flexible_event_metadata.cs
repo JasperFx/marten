@@ -225,6 +225,36 @@ public class flexible_event_metadata: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task query_all_raw_events_with_headers_enabled()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.MetadataConfig.EnableAll();
+            opts.Events.MetadataConfig.HeadersEnabled = true;
+        });
+
+        const string correlationId = "test-correlation-id";
+        theSession.CorrelationId = correlationId;
+
+        const string causationId = "test-causation-id";
+        theSession.CausationId = causationId;
+
+        const string userDefinedMetadataName = "my-custom-metadata";
+        const string userDefinedMetadataValue = "my-custom-metadata-value";
+        theSession.SetHeader(userDefinedMetadataName, userDefinedMetadataValue);
+
+        var streamId = theSession.Events
+            .StartStream<QuestParty>(started, joined, slayed).Id;
+        await theSession.SaveChangesAsync();
+
+        var allEvents = await theSession.Events.QueryAllRawEvents().ToListAsync();
+        foreach (var @event in allEvents)
+        {
+            @event.GetHeader("my-custom-metadata").ShouldNotBeNull();
+        }
+    }
+
+    [Fact]
     public async Task check_writing_empty_headers_system_text_json()
     {
         StoreOptions(_ =>
