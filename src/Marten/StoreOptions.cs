@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -39,11 +38,17 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     internal static readonly Func<string, NpgsqlDataSourceBuilder> DefaultNpgsqlDataSourceBuilderFactory =
         connectionString => new NpgsqlDataSourceBuilder(connectionString);
 
-    internal Func<string, NpgsqlDataSourceBuilder> NpgsqlDataSourceBuilderFactory { get; private set; } =
-        DefaultNpgsqlDataSourceBuilderFactory;
+    internal Func<string, NpgsqlDataSourceBuilder> NpgsqlDataSourceBuilderFactory
+    {
+        get => _npgsqlDataSourceBuilderFactory;
+        private set => _npgsqlDataSourceBuilderFactory = value;
+    }
 
-    internal INpgsqlDataSourceFactory NpgsqlDataSourceFactory { get; private set; } =
-        new DefaultNpgsqlDataSourceFactory();
+    internal INpgsqlDataSourceFactory NpgsqlDataSourceFactory
+    {
+        get => _npgsqlDataSourceFactory;
+        private set => _npgsqlDataSourceFactory = value;
+    }
 
     internal readonly List<Action<ISerializer>> SerializationConfigurations = new();
 
@@ -82,76 +87,112 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
 
     public StoreOptions()
     {
-        EventGraph = new EventGraph(this);
+        _eventGraph = new EventGraph(this);
         Schema = new MartenRegistry(this);
-        Storage = new StorageFeatures(this);
+        _storage = new StorageFeatures(this);
 
-        Providers = new ProviderGraph(this);
-        Advanced = new AdvancedOptions(this);
+        _providers = new ProviderGraph(this);
+        _advanced = new AdvancedOptions(this);
 
-        Projections = new ProjectionOptions(this);
+        _projections = new ProjectionOptions(this);
 
-        Linq = new LinqParsing(this);
+        _linq = new LinqParsing(this);
 
-        // TODO -- temporary, we'll need to get more fine-grained with this on specific Npgsql exceptions!
         var strategy = new ResiliencePipelineBuilder().AddRetry(new()
         {
-            ShouldHandle = new PredicateBuilder().Handle<Exception>(),
-            MaxRetryAttempts = 3, // Retry up to 20 times - this should be enough that we eventually succeed.
-            Delay = TimeSpan.FromMilliseconds(200)
+            ShouldHandle = new PredicateBuilder().Handle<NpgsqlException>().Handle<MartenCommandException>(),
+            MaxRetryAttempts = 3,
+            Delay = TimeSpan.FromMilliseconds(50),
+            BackoffType = DelayBackoffType.Exponential
         }).Build();
 
         ResiliencePipeline = strategy;
     }
 
-    internal IList<Type> CompiledQueryTypes { get; } = new List<Type>();
+    /// <summary>
+    /// Configure and override the Polly error handling policies for this DocumentStore
+    /// </summary>
+    /// <param name="configure"></param>
+    public void ConfigurePolly(Action<ResiliencePipelineBuilder> configure)
+    {
+        var builder = new ResiliencePipelineBuilder();
+        configure(builder);
+
+        ResiliencePipeline = builder.Build();
+    }
+
+    internal IList<Type> CompiledQueryTypes => _compiledQueryTypes;
 
     /// <summary>
     /// Polly policies for retries within Marten command execution
     /// </summary>
-    public ResiliencePipeline ResiliencePipeline { get; set; }
+    public ResiliencePipeline ResiliencePipeline
+    {
+        get => _resiliencePipeline;
+        set => _resiliencePipeline = value ?? throw new ArgumentNullException(nameof(value));
+    }
 
     /// <summary>
     ///     Advisory lock id is used by the ApplyChangesOnStartup() option to serialize access to making
     ///     schema changes from multiple application nodes
     /// </summary>
-    public int ApplyChangesLockId { get; set; } = 4004;
+    public int ApplyChangesLockId
+    {
+        get => _applyChangesLockId;
+        set => _applyChangesLockId = value;
+    }
 
     /// <summary>
     ///     Used internally by the MartenActivator
     /// </summary>
-    internal bool ShouldApplyChangesOnStartup { get; set; } = false;
+    internal bool ShouldApplyChangesOnStartup
+    {
+        get => _shouldApplyChangesOnStartup;
+        set => _shouldApplyChangesOnStartup = value;
+    }
 
     /// <summary>
     ///     Used internally by the MartenActivator
     /// </summary>
-    internal bool ShouldAssertDatabaseMatchesConfigurationOnStartup { get; set; } = false;
+    internal bool ShouldAssertDatabaseMatchesConfigurationOnStartup
+    {
+        get => _shouldAssertDatabaseMatchesConfigurationOnStartup;
+        set => _shouldAssertDatabaseMatchesConfigurationOnStartup = value;
+    }
 
     /// <summary>
     ///     Configuration for all event store projections
     /// </summary>
-    public ProjectionOptions Projections { get; }
+    public ProjectionOptions Projections => _projections;
 
     /// <summary>
     ///     Direct Marten to either generate code at runtime (Dynamic), or attempt to load types from the entry assembly
     /// </summary>
-    public TypeLoadMode GeneratedCodeMode { get; set; } = TypeLoadMode.Dynamic;
+    public TypeLoadMode GeneratedCodeMode
+    {
+        get => _generatedCodeMode;
+        set => _generatedCodeMode = value;
+    }
 
     /// <summary>
     ///     Access to adding custom schema features to this Marten-enabled Postgresql database
     /// </summary>
-    public StorageFeatures Storage { get; }
+    public StorageFeatures Storage => _storage;
 
-    internal Action<IDatabaseCreationExpressions>? CreateDatabases { get; set; }
+    internal Action<IDatabaseCreationExpressions>? CreateDatabases
+    {
+        get => _createDatabases;
+        set => _createDatabases = value;
+    }
 
-    internal IProviderGraph Providers { get; }
+    internal IProviderGraph Providers => _providers;
 
     /// <summary>
     ///     Advanced configuration options for this DocumentStore
     /// </summary>
-    public AdvancedOptions Advanced { get; }
+    public AdvancedOptions Advanced => _advanced;
 
-    internal EventGraph EventGraph { get; }
+    internal EventGraph EventGraph => _eventGraph;
 
     /// <summary>
     ///     Configuration of event streams and projections
@@ -161,7 +202,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     /// <summary>
     ///     Extension point to add custom Linq query parsers
     /// </summary>
-    public LinqParsing Linq { get; }
+    public LinqParsing Linq => _linq;
 
     /// <summary>
     ///     Apply conventional policies to how documents are mapped
@@ -212,7 +253,11 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     ///     Sets the batch size for updating or deleting documents in IDocumentSession.SaveChanges() /
     ///     IUnitOfWork.ApplyChanges()
     /// </summary>
-    public int UpdateBatchSize { get; set; } = 500;
+    public int UpdateBatchSize
+    {
+        get => _updateBatchSize;
+        set => _updateBatchSize = value;
+    }
 
     /// <summary>
     ///     Retrieve the currently configured serializer
@@ -274,11 +319,33 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     }
 
     private Lazy<ITenancy>? _tenancy;
+    private Func<string, NpgsqlDataSourceBuilder> _npgsqlDataSourceBuilderFactory = DefaultNpgsqlDataSourceBuilderFactory;
+    private INpgsqlDataSourceFactory _npgsqlDataSourceFactory = new DefaultNpgsqlDataSourceFactory();
+    private readonly IList<Type> _compiledQueryTypes = new List<Type>();
+    private ResiliencePipeline _resiliencePipeline;
+    private int _applyChangesLockId = 4004;
+    private bool _shouldApplyChangesOnStartup = false;
+    private bool _shouldAssertDatabaseMatchesConfigurationOnStartup = false;
+    private readonly ProjectionOptions _projections;
+    private TypeLoadMode _generatedCodeMode = TypeLoadMode.Dynamic;
+    private readonly StorageFeatures _storage;
+    private Action<IDatabaseCreationExpressions>? _createDatabases;
+    private readonly IProviderGraph _providers;
+    private readonly AdvancedOptions _advanced;
+    private readonly EventGraph _eventGraph;
+    private readonly LinqParsing _linq;
+    private int _updateBatchSize = 500;
+    private int _commandTimeout = 30;
 
     IReadOnlyEventStoreOptions IReadOnlyStoreOptions.Events => EventGraph;
 
     IReadOnlyLinqParsing IReadOnlyStoreOptions.Linq => Linq;
-    public int CommandTimeout { get; set; } = 30;
+
+    public int CommandTimeout
+    {
+        get => _commandTimeout;
+        set => _commandTimeout = value;
+    }
 
     /// <summary>
     ///     Configure Marten to create databases for tenants in case databases do not exist or need to be dropped & re-created.
