@@ -1,7 +1,6 @@
 CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_fix_null_parent(jsonb, text[])
     RETURNS jsonb
     LANGUAGE plpgsql
-    IMMUTABLE STRICT
 AS $function$
 DECLARE
 retval ALIAS FOR $1;

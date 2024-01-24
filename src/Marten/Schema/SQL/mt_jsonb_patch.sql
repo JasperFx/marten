@@ -1,13 +1,12 @@
 CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_patch(jsonb, jsonb)
- RETURNS jsonb
- LANGUAGE plpgsql
- IMMUTABLE STRICT
+    RETURNS jsonb
+    LANGUAGE plpgsql
 AS $function$
 DECLARE
-retval ALIAS FOR $1;
-patch ALIAS FOR $2;
-patch_path text[];
-value jsonb;
+    retval ALIAS FOR $1;
+    patch ALIAS FOR $2;
+    patch_path text[];
+    value jsonb;
 BEGIN
     patch_path = {databaseSchema}.mt_jsonb_path_to_array((patch->>'path')::text, '\.');
 

@@ -1,7 +1,6 @@
 CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_path_to_array(text, character)
     RETURNS text[]
     LANGUAGE plpgsql
-    IMMUTABLE STRICT
 AS $function$
 DECLARE
     location ALIAS FOR $1;
