@@ -1,7 +1,10 @@
 CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_fix_null_parent(jsonb, text[])
-RETURNS jsonb AS $$
+    RETURNS jsonb
+    LANGUAGE plpgsql
+    IMMUTABLE STRICT
+AS $function$
 DECLARE
-    retval ALIAS FOR $1;
+retval ALIAS FOR $1;
     dst_path ALIAS FOR $2;
     dst_path_segment text[] = ARRAY[]::text[];
     dst_path_array_length integer;
@@ -19,4 +22,4 @@ BEGIN
 
     RETURN retval;
 END;
-$$ LANGUAGE PLPGSQL;
+$function$;

@@ -1,7 +1,10 @@
 CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_remove(jsonb, text[], jsonb)
-RETURNS jsonb AS $$
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE STRICT
+AS $function$
 DECLARE
-    retval ALIAS FOR $1;
+retval ALIAS FOR $1;
     location ALIAS FOR $2;
     val ALIAS FOR $3;
     tmp_value jsonb;
@@ -18,4 +21,4 @@ BEGIN
     END IF;
     RETURN jsonb_set(retval, location, tmp_value, FALSE);
 END;
-$$ LANGUAGE PLPGSQL;
+$function$;
