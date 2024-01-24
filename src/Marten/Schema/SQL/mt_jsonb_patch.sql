@@ -6,7 +6,7 @@ patch ALIAS FOR $2;
 patch_path text[];
 value jsonb;
 BEGIN
-patch_path = {databaseSchema}.mt_jsonb_path_to_array((patch->>'path')::text);
+patch_path = {databaseSchema}.mt_jsonb_path_to_array((patch->>'path')::text, '\.');
 
 CASE patch->>'type'
     WHEN 'set' THEN
@@ -14,11 +14,11 @@ CASE patch->>'type'
     WHEN 'delete' THEN
         retval = retval#-patch_path;
     WHEN 'append' THEN
-        retval = {databaseSchema}.mt_jsonb_append(retval, patch_path,(patch->'value')::jsonb);
+        retval = {databaseSchema}.mt_jsonb_append(retval, patch_path,(patch->'value')::jsonb, FALSE);
     WHEN 'append_if_not_exists' THEN
         retval = {databaseSchema}.mt_jsonb_append(retval, patch_path,(patch->'value')::jsonb, TRUE);
     WHEN 'insert' THEN
-        retval = {databaseSchema}.mt_jsonb_insert(retval, patch_path,(patch->'value')::jsonb,(patch->>'index')::integer);
+        retval = {databaseSchema}.mt_jsonb_insert(retval, patch_path,(patch->'value')::jsonb,(patch->>'index')::integer, FALSE);
     WHEN 'insert_if_not_exists' THEN
         retval = {databaseSchema}.mt_jsonb_insert(retval, patch_path,(patch->'value')::jsonb,(patch->>'index')::integer, TRUE);
     WHEN 'remove' THEN

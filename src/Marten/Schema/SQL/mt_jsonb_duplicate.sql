@@ -10,7 +10,7 @@ DECLARE
 BEGIN
     FOR target IN SELECT jsonb_array_elements_text(targets)
     LOOP
-        target_path = {databaseSchema}.mt_jsonb_path_to_array(target);
+        target_path = {databaseSchema}.mt_jsonb_path_to_array(target, '\.');
         retval = {databaseSchema}.mt_jsonb_copy(retval, location, target_path);
     END LOOP;
 
