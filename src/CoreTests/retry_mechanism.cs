@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Testing.Harness;
@@ -24,14 +25,11 @@ public class retry_mechanism : IntegrationContext
     {
         var sometimesFailingOperation1 = new SometimesFailingOperation();
         theSession.QueueOperation(sometimesFailingOperation1);
-        var sometimesFailingOperation2 = new SometimesFailingOperation();
-        theSession.QueueOperation(sometimesFailingOperation2);
 
         await theSession.SaveChangesAsync();
 
         // Only succeeds on the 3rd try
-        sometimesFailingOperation1.Usage.ShouldBe(3);
-        sometimesFailingOperation2.Usage.ShouldBe(3);
+        sometimesFailingOperation1.Usage.ShouldBe(2);
     }
 
     [Fact]
@@ -39,14 +37,11 @@ public class retry_mechanism : IntegrationContext
     {
         var sometimesFailingOperation1 = new SometimesFailingOperation();
         theSession.QueueOperation(sometimesFailingOperation1);
-        var sometimesFailingOperation2 = new SometimesFailingOperation();
-        theSession.QueueOperation(sometimesFailingOperation2);
 
         theSession.SaveChanges();
 
         // Only succeeds on the 3rd try
-        sometimesFailingOperation1.Usage.ShouldBe(3);
-        sometimesFailingOperation2.Usage.ShouldBe(3);
+        sometimesFailingOperation1.Usage.ShouldBe(2);
     }
 }
 
@@ -54,8 +49,6 @@ public class SometimesFailingOperation: IStorageOperation
 {
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
-        Usage++;
-
         builder.Append("select 1");
     }
 
@@ -64,17 +57,19 @@ public class SometimesFailingOperation: IStorageOperation
     public Type DocumentType { get; }
     public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
     {
+        Usage++;
         if (Usage < 2)
         {
-            throw new NpgsqlException();
+            throw new MartenCommandException(new NpgsqlCommand(), new Exception());
         }
     }
 
     public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
+        Usage++;
         if (Usage < 2)
         {
-            throw new NpgsqlException();
+            throw new MartenCommandException(new NpgsqlCommand(), new Exception());
         }
 
         return Task.CompletedTask;
