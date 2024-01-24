@@ -44,6 +44,9 @@ public abstract partial class DocumentSessionBase
         foreach (var listener in Listeners) listener.BeforeSaveChanges(this);
 
         var batch = new UpdateBatch(_workTracker.AllOperations);
+
+        Options.ResiliencePipeline.Execute(static (x, t) => x.Session.ExecuteBatch(x.Batch), new BatchExecution(batch, this));
+
         ExecuteBatch(batch);
 
         resetDirtyChecking();
@@ -56,6 +59,8 @@ public abstract partial class DocumentSessionBase
         // Need to clear the unit of work here
         _workTracker.Reset();
     }
+
+    internal record BatchExecution(IUpdateBatch Batch, DocumentSessionBase Session);
 
     public async Task SaveChangesAsync(CancellationToken token = default)
     {
@@ -94,6 +99,8 @@ public abstract partial class DocumentSessionBase
         }
 
         var batch = new UpdateBatch(_workTracker.AllOperations);
+
+        await Options.ResiliencePipeline.ExecuteAsync(static (x, t) => new ValueTask(x.Session.ExecuteBatchAsync(x.Batch, t)), new BatchExecution(batch, this), token).ConfigureAwait(false);
 
         await ExecuteBatchAsync(batch, token).ConfigureAwait(false);
 
