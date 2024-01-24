@@ -70,7 +70,7 @@ public void can_get_the_total_in_results()
 For the sake of completeness, the SQL generated in the operation above by Marten would be:
 
 ```sql
-select d.data, d.id, count(1) OVER() as total_rows from public.mt_doc_target as d
+select d.data, d.id, count(*) OVER() as total_rows from public.mt_doc_target as d
 where CAST(d.data ->> 'Number' as integer) > :arg0 LIMIT 5
 ```
 
