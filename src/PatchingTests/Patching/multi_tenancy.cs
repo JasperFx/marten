@@ -16,7 +16,6 @@ public class MultiTenancyFixture: StoreFixture
     {
         Options.Policies.AllDocumentsAreMultiTenanted();
         Options.Schema.For<User>().UseOptimisticConcurrency(true);
-        Store.Storage.ApplyAllConfiguredChangesToDatabaseAsync().Wait();
     }
 }
 
