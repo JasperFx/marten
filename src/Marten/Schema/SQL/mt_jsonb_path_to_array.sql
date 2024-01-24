@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_path_to_array(text, char(1) DEFAULT '\.')
+CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_path_to_array(text, char(1) default '\.')
 RETURNS text[] AS $$
 DECLARE
     location ALIAS FOR $1;
