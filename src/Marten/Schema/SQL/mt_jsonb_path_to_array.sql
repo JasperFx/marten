@@ -1,10 +1,12 @@
-CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_path_to_array(text, char(1))
-RETURNS text[] AS $$
+CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_path_to_array(text, character)
+    RETURNS text[]
+    LANGUAGE plpgsql
+    IMMUTABLE STRICT
+AS $function$
 DECLARE
     location ALIAS FOR $1;
     regex_pattern ALIAS FOR $2;
 BEGIN
-    RETURN regexp_split_to_array(location, regex_pattern)::text[];
+RETURN regexp_split_to_array(location, regex_pattern)::text[];
 END;
-$$ LANGUAGE PLPGSQL;
-
+$function$;

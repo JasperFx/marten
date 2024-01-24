@@ -1,7 +1,10 @@
 CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_insert(jsonb, text[], jsonb, integer, boolean)
-RETURNS jsonb AS $$
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ IMMUTABLE STRICT
+AS $function$
 DECLARE
-    retval ALIAS FOR $1;
+retval ALIAS FOR $1;
     location ALIAS FOR $2;
     val ALIAS FOR $3;
     elm_index ALIAS FOR $4;
@@ -23,7 +26,6 @@ BEGIN
             ELSE NULL;
         END CASE;
     END IF;
-
     RETURN retval;
 END;
-$$ LANGUAGE PLPGSQL;
+$function$;

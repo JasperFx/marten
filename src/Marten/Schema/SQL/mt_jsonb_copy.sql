@@ -1,5 +1,8 @@
 CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_copy(jsonb, text[], text[])
-RETURNS jsonb AS $$
+    RETURNS jsonb
+    LANGUAGE plpgsql
+    IMMUTABLE STRICT
+AS $function$
 DECLARE
     retval ALIAS FOR $1;
     src_path ALIAS FOR $2;
@@ -10,4 +13,4 @@ BEGIN
     retval = {databaseSchema}.mt_jsonb_fix_null_parent(retval, dst_path);
     RETURN jsonb_set(retval, dst_path, tmp_value::jsonb, TRUE);
 END;
-$$ LANGUAGE PLPGSQL;
+$function$;

@@ -1,5 +1,8 @@
 CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_append(jsonb, text[], jsonb, boolean)
-RETURNS jsonb AS $$
+    RETURNS jsonb
+    LANGUAGE plpgsql
+    IMMUTABLE STRICT
+AS $function$
 DECLARE
     retval ALIAS FOR $1;
     location ALIAS FOR $2;
@@ -17,8 +20,8 @@ BEGIN
             WHEN jsonb_typeof(val) <> 'object' AND NOT tmp_value @> val THEN
                 retval = jsonb_set(retval, location, tmp_value || val, FALSE);
             ELSE NULL;
-        END CASE;
+            END CASE;
     END IF;
-RETURN retval;
+    RETURN retval;
 END;
-$$ LANGUAGE PLPGSQL;
+$function$;
