@@ -35,7 +35,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
             OwnsConnection = true;
         }
 
-        CommandTimeout = _options.Timeout ?? _connection?.CommandTimeout ?? 30;
+        CommandTimeout = _options.Timeout ?? _connection?.CommandTimeout ?? StoreOptions.DefaultTimeout;
     }
 
     public NpgsqlConnection Connection
