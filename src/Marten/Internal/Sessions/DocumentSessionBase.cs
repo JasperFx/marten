@@ -255,11 +255,6 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     /// <returns></returns>
     public new ITenantOperations ForTenant(string tenantId)
     {
-        if (tenantId == Marten.Storage.Tenancy.DefaultTenantId)
-        {
-            throw new ArgumentOutOfRangeException(nameof(tenantId), "It is not valid to use the default tenant id");
-        }
-
         _byTenant ??= new Dictionary<string, NestedTenantSession>();
 
         if (_byTenant.TryGetValue(tenantId, out var tenantSession))

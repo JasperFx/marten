@@ -45,8 +45,6 @@ public abstract partial class DocumentSessionBase
 
         var batch = new UpdateBatch(_workTracker.AllOperations);
 
-        Options.ResiliencePipeline.Execute(static (x, t) => x.Session.ExecuteBatch(x.Batch), new BatchExecution(batch, this));
-
         ExecuteBatch(batch);
 
         resetDirtyChecking();
@@ -59,8 +57,6 @@ public abstract partial class DocumentSessionBase
         // Need to clear the unit of work here
         _workTracker.Reset();
     }
-
-    internal record BatchExecution(IUpdateBatch Batch, DocumentSessionBase Session);
 
     public async Task SaveChangesAsync(CancellationToken token = default)
     {
@@ -100,8 +96,6 @@ public abstract partial class DocumentSessionBase
 
         var batch = new UpdateBatch(_workTracker.AllOperations);
 
-        await Options.ResiliencePipeline.ExecuteAsync(static (x, t) => new ValueTask(x.Session.ExecuteBatchAsync(x.Batch, t)), new BatchExecution(batch, this), token).ConfigureAwait(false);
-
         await ExecuteBatchAsync(batch, token).ConfigureAwait(false);
 
         resetDirtyChecking();
@@ -125,29 +119,30 @@ public abstract partial class DocumentSessionBase
 
     internal void ExecuteBatch(IUpdateBatch batch)
     {
-        var exceptions = new List<Exception>();
         var pages = batch.BuildPages(this);
+
+        var execution = new PagesExecution(pages, _connection);
 
         try
         {
             try
             {
-                _connection.ExecuteBatchPages(pages, exceptions);
+                Options.ResiliencePipeline.Execute(static (x, t) => x.Connection.ExecuteBatchPages(x.Pages, x.Exceptions), execution, CancellationToken.None);
             }
             catch (Exception e)
             {
                 pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
             }
 
-            if (exceptions.Count == 1)
+            if (execution.Exceptions.Count == 1)
             {
-                var ex = exceptions.Single();
+                var ex = execution.Exceptions.Single();
                 ExceptionDispatchInfo.Throw(ex);
             }
 
-            if (exceptions.Any())
+            if (execution.Exceptions.Any())
             {
-                throw new AggregateException(exceptions);
+                throw new AggregateException(execution.Exceptions);
             }
         }
         catch (Exception)
@@ -166,6 +161,11 @@ public abstract partial class DocumentSessionBase
         }
     }
 
+    internal record PagesExecution(IReadOnlyList<OperationPage> Pages, IConnectionLifetime Connection)
+    {
+        public List<Exception> Exceptions { get; } = new();
+    }
+
     internal async Task ExecuteBatchAsync(IUpdateBatch batch, CancellationToken token)
     {
         // TODO -- double check this isn't getting done multiple times
@@ -177,15 +177,18 @@ public abstract partial class DocumentSessionBase
             }
         }
 
-        var exceptions = new List<Exception>();
         var pages = batch.BuildPages(this);
         if (!pages.Any()) return;
+
+        var execution = new PagesExecution(pages, _connection);
 
         try
         {
             try
             {
-                await _connection.ExecuteBatchPagesAsync(pages, exceptions, token).ConfigureAwait(false);
+
+                await Options.ResiliencePipeline.ExecuteAsync(
+                    static (e, t) => new ValueTask(e.Connection.ExecuteBatchPagesAsync(e.Pages, e.Exceptions, t)), execution, token).ConfigureAwait(false);
 
                 try
                 {
@@ -201,15 +204,15 @@ public abstract partial class DocumentSessionBase
                 pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
             }
 
-            if (exceptions.Count == 1)
+            if (execution.Exceptions.Count == 1)
             {
-                var ex = exceptions.Single();
+                var ex = execution.Exceptions.Single();
                 ExceptionDispatchInfo.Throw(ex);
             }
 
-            if (exceptions.Any())
+            if (execution.Exceptions.Any())
             {
-                throw new AggregateException(exceptions);
+                throw new AggregateException(execution.Exceptions);
             }
         }
         catch (Exception)
