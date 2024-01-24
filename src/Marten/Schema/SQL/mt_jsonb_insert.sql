@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_insert(jsonb, text[], jsonb, integer DEFAULT NULL, boolean DEFAULT FALSE)
+CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_insert(jsonb, text[], jsonb, integer default null, boolean default false)
 RETURNS jsonb AS $$
 DECLARE
     retval ALIAS FOR $1;
