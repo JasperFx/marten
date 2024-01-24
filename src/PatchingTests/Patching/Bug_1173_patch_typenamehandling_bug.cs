@@ -33,7 +33,7 @@ public class Bug_1173_patch_typenamehandling_bug: BugIntegrationContext
             _.AutoCreateSchemaObjects = AutoCreate.All;
         });
 
-        store.Storage.ApplyAllConfiguredChangesToDatabaseAsync().Wait();
+        // store.Storage.ApplyAllConfiguredChangesToDatabaseAsync().Wait();
 
         using (var session = store.LightweightSession())
         {
