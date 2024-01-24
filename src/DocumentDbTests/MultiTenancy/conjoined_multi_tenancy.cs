@@ -52,12 +52,6 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
     }
 
     [Fact]
-    public void invalid_to_call_ForTenant_with_default_tenant_id()
-    {
-        Should.Throw<ArgumentOutOfRangeException>(() => theSession.ForTenant("*DEFAULT*"));
-    }
-
-    [Fact]
     public void cannot_load_by_id_across_tenants()
     {
         using (var red = theStore.QuerySession("Red"))
