@@ -3,7 +3,9 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core;
 using Marten;
+using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
@@ -272,6 +274,33 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         await query.SaveChangesAsync();
         var loadedObject = await query.LoadAsync<FryGuy>(testObject.Id);
         loadedObject.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void build_connection_by_default()
+    {
+        using var store = DocumentStore.For(ConnectionSource.ConnectionString);
+
+        var options = new SessionOptions{Timeout = 7};
+        options.Initialize(store, CommandRunnerMode.Transactional)
+            .ShouldBeOfType<AutoClosingLifetime>()
+            .CommandTimeout.ShouldBe(7);
+    }
+
+    [Fact]
+    public void build_connection_with_sticky_connections_enabled()
+    {
+        using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.UseStickyConnectionLifetimes = true;
+        });
+
+        var options = new SessionOptions{Timeout = 2};
+        options.Initialize(store, CommandRunnerMode.Transactional)
+            .ShouldBeOfType<TransactionalConnection>()
+            .CommandTimeout.ShouldBe(2)
+            ;
     }
 
     public class FryGuy

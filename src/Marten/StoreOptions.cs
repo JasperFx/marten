@@ -123,6 +123,15 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
         ResiliencePipeline = builder.Build();
     }
 
+    /// <summary>
+    /// Direct Marten to use the <= V6 behavior of keeping a connection open
+    /// in an IQuerySession or IDocumentSession upon first usage until the session
+    /// is disposed. In V7 and later, the default behavior is an aggressive "use and close"
+    /// policy that tries to close and released used database connections as soon as possible
+    /// Default is false
+    /// </summary>
+    public bool UseStickyConnectionLifetimes { get; set; } = false;
+
     internal IList<Type> CompiledQueryTypes => _compiledQueryTypes;
 
     /// <summary>

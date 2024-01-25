@@ -1,5 +1,31 @@
 # Migration Guide
 
+## Key Changes in 7.0.0
+
+The V7 release significantly impacted Marten internals and also included support for .NET 8 and and upgrade to Npgsql 8.
+In addition, Marten 7.0 requires at least PostgreSQL 12 because of the dependence upon sql/json constructs introduced in PostgreSQL 12.
+
+Marten 7 includes a large overhaul of the LINQ provider support, with highlights including:
+
+* Very significant improvements to querying through document child collections by being able to opt into
+  JSONPath or containment operator querying in many cases. Early reports suggest an order of magnitude improvement in
+  query times. 
+* GIST/GIN indexes should be effective with Marten queries again
+* The `IMethodCallParser` interface changed slightly, and any custom implementations will have to be adjusted
+* Covers significantly more use cases within the LINQ `Where()` filtering
+* `Select()` support was widened to include constructor functions
+
+The database connection lifetime logic in `IDocumentSession` or `IQuerySession` was changed from the original Marten 1-6 "sticky" connection behavior. Instead
+of Marten trying to keep a database connection open from first usage through any call to `SaveChangesAsync()`, Marten
+is auto-closing the connection on every usage **by default**. This change should help reduce the overall number of 
+open connections used at runtime, and help make Marten be more easily integrated into GraphQL solutions using
+the [Hot Chocolate framework](https://chillicream.com/docs/hotchocolate/v13). 
+
+See [Connection Handling](/documents/sessions.html#connection-handling) for more information, including how to opt into
+the previous V6 and earlier "sticky" connection lifetime. 
+
+
+
 ## Key Changes in 6.0.0
 
 The V6 release lite motive is upgrading to .NET 7 and Npgsql 7. Besides that, we decided to align the event sourcing projections' naming and initializing document sessions. See the [full release notes](https://github.com/JasperFx/marten/releases/tag/6.0.0).

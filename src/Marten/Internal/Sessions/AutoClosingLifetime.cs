@@ -12,7 +12,6 @@ using Marten.Exceptions;
 using Marten.Services;
 using Marten.Storage;
 using Npgsql;
-using Polly;
 
 namespace Marten.Internal.Sessions;
 

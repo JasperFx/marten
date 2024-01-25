@@ -17,6 +17,13 @@ namespace CoreTests;
 public class StoreOptionsTests
 {
     [Fact]
+    public void sticky_connections_are_off_by_default()
+    {
+        new StoreOptions()
+            .UseStickyConnectionLifetimes.ShouldBeFalse();
+    }
+
+    [Fact]
     public void DefaultAutoCreateShouldBeCreateOrUpdate()
     {
         var settings = new StoreOptions();

@@ -210,7 +210,97 @@ theSession.PendingChanges.Operations().Any().ShouldBeFalse();
 
 ## Connection Handling
 
-Marten uses a single connection to the Postgresql database in each `IQuerySession` or `IDocumentSession`.
+::: tip
+This behavior changed in Marten 7. And regardless of the new Marten 7 behavior or opting into the V6 and before "sticky"
+connection handling, you almost certainly want connection pooling enabled (it is by default). 
+:::
+
+By default, Marten will only open a database connection within a session immediately before any operation that involves
+a database connection, and closes that connection immediately after the operation is over (really just returning the underlying
+connection to the connection pool managed by Npgsql). With this change, it is now safe to run read-only queries through
+`IQuerySession` (or lightweight `IDocumentSession`) objects in multiple threads. That should make Marten be more effective
+within [Hot Chocolate integrations](https://chillicream.com/docs/hotchocolate/v13).
+
+There are some exceptions to this behavior:
+
+1. When creating a session with an existing connection or transaction
+2. When creating a session with serializable transaction isolation levels, the connection is opened immediately and sticky throughout. I.e., `IDocumentStore.******SerializableSessionAsync()`
+2. When opting to have Marten enroll in ambient transactions (`SessionOptions.ForCurrentTransaction()`)
+3. When choosing to use explicit transaction boundaries (see the next section)
+4. When using the session's underlying connection for user defined querying.
+
+::: info
+This ability to directly access and use the session's connection was originally intended to make Marten easy to integrate
+with [Dapper](https://github.com/DapperLib/Dapper).
+:::
+
+To the last point, using this code will quietly move the session to having a "sticky" connection:
+
+<!-- snippet: sample_using_session_connection_directly -->
+<a id='snippet-sample_using_session_connection_directly'></a>
+```cs
+public static async Task using_session_connection(IQuerySession session)
+{
+    // Accessing the session.Connection object will quietly open
+    // a "sticky" connection for the session
+    var openCount = await session.Connection
+
+        // This is using a helper extension method from Weasel
+        .CreateCommand("select count(*) from tasks where status = 'open'")
+        .ExecuteScalarAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ExplicitTransactions.cs#L11-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_session_connection_directly' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+You can register SQL statements to be executed as part of the `SaveChanges()` / `SaveChangesAsync()` batch and transaction through
+`IDocumentSession.QueueSqlCommand()`, and the Marten team would recommend doing that as much as possible.
+
+### Explicit Transaction Boundaries
+
+::: warning
+If you use this method, you will want to make sure the session is disposed to release the "sticky" connection.
+:::
+
+Sometimes you may want to start the transaction in a Marten session for making explicit commits through the session's
+connection (with Dapper for example) or if you simply need to have consistent reads within the usage of the session 
+by querying through an active transaction. In that case, your syntax is:
+
+<!-- snippet: sample_explicit_transactions -->
+<a id='snippet-sample_explicit_transactions'></a>
+```cs
+public static async Task explicit_transactions(IDocumentSession session)
+{
+    // If in synchronous code, but don't mix this in real async code!!!!
+    session.BeginTransaction();
+
+    // Favor this within async code
+    await session.BeginTransactionAsync(CancellationToken.None);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ExplicitTransactions.cs#L27-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_explicit_transactions' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### "Sticky" Connections
+
+To revert Marten back to its V6 and earlier "sticky" connection handling, use this option:
+
+<!-- snippet: sample_use_sticky_connection_lifetimes -->
+<a id='snippet-sample_use_sticky_connection_lifetimes'></a>
+```cs
+using var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // Opt into V6 and earlier "sticky" connection
+    // handling
+    opts.UseStickyConnectionLifetimes = true;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/sticky_connection_mode.cs#L30-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_sticky_connection_lifetimes' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+With this setting, Marten uses a single connection to the Postgresql database in each `IQuerySession` or `IDocumentSession`.
 The connection is only opened on the first call to the database, but after that remains open until the `IQuerySession`/`IDocumentSession` is disposed. A couple things to note:
 
 - It's imperative that any `IQuerySession`/`IDocumentSession` opened is disposed in order to recover and reuse
@@ -237,7 +327,7 @@ public void ConfigureCommandTimeout(IDocumentStore store)
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionOptionsTests.cs#L19-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionOptionsTests.cs#L21-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Unit of Work Mechanics
