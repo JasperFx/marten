@@ -100,6 +100,9 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
 
         _linq = new LinqParsing(this);
 
+        #region sample_default_Polly_setup
+
+        // Default Polly setup
         var strategy = new ResiliencePipelineBuilder().AddRetry(new()
         {
             ShouldHandle = new PredicateBuilder().Handle<NpgsqlException>().Handle<MartenCommandException>(),
@@ -109,6 +112,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
         }).Build();
 
         ResiliencePipeline = strategy;
+
+        #endregion
     }
 
     /// <summary>
