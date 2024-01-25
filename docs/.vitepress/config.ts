@@ -87,7 +87,7 @@ export default withMermaid({
             { text: 'Bootstrap with HostBuilder', link: '/configuration/hostbuilder' },
             { text: 'Configuring Document Storage', link: '/configuration/storeoptions' },
             { text: 'Json Serialization', link: '/configuration/json' },
-            { text: 'Retry Policies', link: '/configuration/retries' },
+            { text: 'Resiliency Policies', link: '/configuration/retries' },
             { text: 'Pre-Building Generated Types', link: '/configuration/prebuilding' },
             { text: 'Command Line Tooling', link: '/configuration/cli' },
             { text: 'Development versus Production Usage', link: '/configuration/optimized_artifact_workflow' },

@@ -24,7 +24,8 @@ the [Hot Chocolate framework](https://chillicream.com/docs/hotchocolate/v13).
 See [Connection Handling](/documents/sessions.html#connection-handling) for more information, including how to opt into
 the previous V6 and earlier "sticky" connection lifetime. 
 
-
+Marten 7 replaces the previous `IRetryPolicy` mechanism for resiliency with built in support for Polly. 
+See [Resiliency Policies](/configuration/retries) for more information.
 
 ## Key Changes in 6.0.0
 
