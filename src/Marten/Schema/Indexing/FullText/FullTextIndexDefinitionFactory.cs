@@ -19,8 +19,8 @@ public static class FullTextIndexDefinitionFactory
     ) =>
         new(
             PostgresqlObjectName.From(mapping.TableName),
-            regConfig ?? FullTextIndexDefinition.DefaultRegConfig,
             dataConfig ?? FullTextIndexDefinition.DataDocumentConfig,
+            regConfig ?? FullTextIndexDefinition.DefaultRegConfig,
             indexName,
             SchemaConstants.MartenPrefix
         );
