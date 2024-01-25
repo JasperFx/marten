@@ -109,7 +109,10 @@ public sealed class SessionOptions
 
                 return transaction;
             }
-            else
+            else if (store.Options.UseStickyConnectionLifetimes)
+            {
+                return new TransactionalConnection(this){CommandTimeout = Timeout ?? store.Options.CommandTimeout};
+            }
             {
                 return new AutoClosingLifetime(this, store.Options);
             }
