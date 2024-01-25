@@ -225,9 +225,9 @@ There are some exceptions to this behavior:
 
 1. When creating a session with an existing connection or transaction
 2. When creating a session with serializable transaction isolation levels, the connection is opened immediately and sticky throughout. I.e., `IDocumentStore.******SerializableSessionAsync()`
-2. When opting to have Marten enroll in ambient transactions (`SessionOptions.ForCurrentTransaction()`)
-3. When choosing to use explicit transaction boundaries (see the next section)
-4. When using the session's underlying connection for user defined querying.
+3. When opting to have Marten enroll in ambient transactions (`SessionOptions.ForCurrentTransaction()`)
+4. When choosing to use explicit transaction boundaries (see the next section)
+5. When using the session's underlying connection for user defined querying.
 
 ::: info
 This ability to directly access and use the session's connection was originally intended to make Marten easy to integrate

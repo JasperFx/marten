@@ -7,13 +7,13 @@ In addition, Marten 7.0 requires at least PostgreSQL 12 because of the dependenc
 
 Marten 7 includes a large overhaul of the LINQ provider support, with highlights including:
 
-* Very significant improvements to querying through document child collections by being able to opt into
+- Very significant improvements to querying through document child collections by being able to opt into
   JSONPath or containment operator querying in many cases. Early reports suggest an order of magnitude improvement in
   query times. 
-* GIST/GIN indexes should be effective with Marten queries again
-* The `IMethodCallParser` interface changed slightly, and any custom implementations will have to be adjusted
-* Covers significantly more use cases within the LINQ `Where()` filtering
-* `Select()` support was widened to include constructor functions
+- GIST/GIN indexes should be effective with Marten queries again
+- The `IMethodCallParser` interface changed slightly, and any custom implementations will have to be adjusted
+- Covers significantly more use cases within the LINQ `Where()` filtering
+- `Select()` support was widened to include constructor functions
 
 The database connection lifetime logic in `IDocumentSession` or `IQuerySession` was changed from the original Marten 1-6 "sticky" connection behavior. Instead
 of Marten trying to keep a database connection open from first usage through any call to `SaveChangesAsync()`, Marten
