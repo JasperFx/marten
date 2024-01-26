@@ -223,8 +223,8 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
     [Fact]
     public async Task query_with_batch()
     {
-        theStore.BulkInsert("Red", _reds);
-        theStore.BulkInsert("Green", _greens);
+        await theStore.BulkInsertAsync("Red", _reds);
+        await theStore.BulkInsertAsync("Green", _greens);
 
         await using var query = theStore.QuerySession("Red");
         var batch = query.CreateBatchQuery();
