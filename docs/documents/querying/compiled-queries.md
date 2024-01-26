@@ -475,7 +475,23 @@ If you wish to do it asynchronously, you can use the `ToJsonArrayAsync()` method
 
 A sample usage of this type of query is shown below:
 
-<[sample:sample_FindJsonOrderedUsersByUsername]>
+<!-- snippet: sample_CompiledToJsonArray -->
+<a id='snippet-sample_compiledtojsonarray'></a>
+```cs
+public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
+{
+    public string FirstName { get; set; }
+
+    Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> ICompiledQuery<User, IEnumerable<User>>.QueryIs()
+    {
+        return query =>
+            query.Where(x => FirstName == x.FirstName)
+                .OrderBy(x => x.UserName);
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L409-L423' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledtojsonarray' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Note that the result has the documents comma separated and wrapped in angle brackets (as per the Json notation).
 
@@ -502,7 +518,22 @@ public class FindJsonUserByUsername: ICompiledQuery<User>
 
 And an example:
 
-<[sample:sample_FindJsonUserByUsername]>
+<!-- snippet: sample_CompiledAsJson -->
+<a id='snippet-sample_compiledasjson'></a>
+```cs
+public class FindJsonUserByUsername: ICompiledQuery<User>
+{
+    public string Username { get; set; }
+
+    Expression<Func<IMartenQueryable<User>, User>> ICompiledQuery<User, User>.QueryIs()
+    {
+        return query =>
+            query.Where(x => Username == x.UserName).Single();
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L394-L407' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledasjson' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 (our `ToJson()` method simply returns a string representation of the `User` instance in Json notation)
 
