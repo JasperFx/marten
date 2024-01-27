@@ -165,7 +165,7 @@ using (var query = store.QuerySession("tenant1"))
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L55-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Marten will automatically filter the LINQ query for the current tenant *if the current document type is tenanted*. However, if
+Marten will automatically filter the LINQ query for the current tenant _if the current document type is tenanted_. However, if
 you want to query across multiple tenants or across documents for any tenant, you're still in luck with the `TenantIsOneOf()` LINQ
 filter:
 
