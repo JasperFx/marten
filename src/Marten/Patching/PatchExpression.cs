@@ -13,155 +13,191 @@ using Weasel.Postgresql.SqlGeneration;
 #nullable enable
 namespace Marten.Patching;
 
+internal record PatchData(IDictionary<string, object> Items, bool PossiblyPolymorphic);
+
 internal class PatchExpression<T>: IPatchExpression<T>
 {
-    private readonly ISqlFragment? _filter;
-    private readonly Expression<Func<T, bool>>? _filterExpression;
     private readonly DocumentSessionBase _session;
-    public readonly IDictionary<string, object?> Patch = new Dictionary<string, object?>();
+    private readonly List<PatchData> _patchSet = new();
+    internal IDictionary<string, object>? Patch => _patchSet.Count > 0
+        ? _patchSet[^1].Items
+        : null;
 
     public PatchExpression(ISqlFragment filter, DocumentSessionBase session)
     {
-        _filter = filter;
         _session = session;
+        var storage = _session.StorageFor(typeof(T));
+        var operation = new PatchOperation(PatchFunction, storage, _patchSet, _session.Serializer);
+        if (filter != null)
+        {
+            operation.Wheres.Add(storage.FilterDocuments(filter, _session));
+        }
+        else
+        {
+            operation.Wheres.Add(storage.DefaultWhereFragment());
+        }
+        _session.QueueOperation(operation);
     }
 
     public PatchExpression(Expression<Func<T, bool>> filterExpression, DocumentSessionBase session)
     {
-        _filterExpression = filterExpression;
         _session = session;
+        var storage = _session.StorageFor(typeof(T));
+        var operation = new PatchOperation(PatchFunction, storage, _patchSet, _session.Serializer);
+        if (filterExpression != null)
+        {
+            operation.ApplyFiltering(_session, filterExpression);
+        }
+        else
+        {
+            operation.Wheres.Add(storage.DefaultWhereFragment());
+        }
+        _session.QueueOperation(operation);
     }
 
-    public void Set<TValue>(string name, TValue value)
+    public IPatchExpression<T> Set<TValue>(string name, TValue value)
     {
-        set(name, value);
+        return set(name, value);
     }
 
-    public void Set<TParent, TValue>(string name, Expression<Func<T, TParent>> expression, TValue value)
+    public IPatchExpression<T> Set<TParent, TValue>(string name, Expression<Func<T, TParent>> expression, TValue value)
     {
-        set(toPath(expression) + $".{name}", value);
+        return set(toPath(expression) + $".{name}", value);
     }
 
-    public void Set<TValue>(Expression<Func<T, TValue>> expression, TValue value)
+    public IPatchExpression<T> Set<TValue>(Expression<Func<T, TValue>> expression, TValue value)
     {
-        set(toPath(expression), value);
+        return set(toPath(expression), value);
     }
 
-    public void Duplicate<TElement>(Expression<Func<T, TElement>> expression, params Expression<Func<T, TElement>>[] destinations)
+    public IPatchExpression<T> Duplicate<TElement>(Expression<Func<T, TElement>> expression, params Expression<Func<T, TElement>>[] destinations)
     {
         if (destinations.Length == 0)
             throw new ArgumentException("At least one destination must be given");
 
-        Patch.Add("type", "duplicate");
-        Patch.Add("path", toPath(expression));
-        Patch.Add("targets", destinations.Select(toPath).ToArray());
-
-        apply();
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "duplicate");
+        patch.Add("path", toPath(expression));
+        patch.Add("targets", destinations.Select(toPath).ToArray());
+        _patchSet.Add(new PatchData(Items: patch, false));
+        return this;
     }
 
-    public void Increment(Expression<Func<T, int>> expression, int increment = 1)
+    public IPatchExpression<T> Increment(Expression<Func<T, int>> expression, int increment = 1)
     {
-        Patch.Add("type", "increment");
-        Patch.Add("increment", increment);
-        Patch.Add("path", toPath(expression));
-
-        apply();
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "increment");
+        patch.Add("increment", increment);
+        patch.Add("path", toPath(expression));
+        _patchSet.Add(new PatchData(Items: patch, false));
+        return this;
     }
 
-    public void Increment(Expression<Func<T, long>> expression, long increment = 1)
+    public IPatchExpression<T> Increment(Expression<Func<T, long>> expression, long increment = 1)
     {
-        Patch.Add("type", "increment");
-        Patch.Add("increment", increment);
-        Patch.Add("path", toPath(expression));
-
-        apply();
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "increment");
+        patch.Add("increment", increment);
+        patch.Add("path", toPath(expression));
+        _patchSet.Add(new PatchData(Items: patch, false));
+        return this;
     }
 
-    public void Increment(Expression<Func<T, double>> expression, double increment = 1)
+    public IPatchExpression<T> Increment(Expression<Func<T, double>> expression, double increment = 1)
     {
-        Patch.Add("type", "increment_float");
-        Patch.Add("increment", increment);
-        Patch.Add("path", toPath(expression));
-
-        apply();
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "increment_float");
+        patch.Add("increment", increment);
+        patch.Add("path", toPath(expression));
+        _patchSet.Add(new PatchData(Items: patch, false));
+        return this;
     }
 
-    public void Increment(Expression<Func<T, float>> expression, float increment = 1)
+    public IPatchExpression<T> Increment(Expression<Func<T, float>> expression, float increment = 1)
     {
-        Patch.Add("type", "increment_float");
-        Patch.Add("increment", increment);
-        Patch.Add("path", toPath(expression));
-
-        apply();
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "increment_float");
+        patch.Add("increment", increment);
+        patch.Add("path", toPath(expression));
+        _patchSet.Add(new PatchData(Items: patch, false));
+        return this;
     }
     //TODO NRT - Annotations are currently inaccurate here due to lack of null guards. Replace with guards in .NET 6+
-    public void Append<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element)
+    public IPatchExpression<T> Append<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element)
     {
-        Patch.Add("type", "append");
-        Patch.Add("value", element);
-        Patch.Add("path", toPath(expression));
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "append");
+        patch.Add("value", element);
+        patch.Add("path", toPath(expression));
 
-        PossiblyPolymorphic = element!.GetType() != typeof(TElement);
-
-        apply();
+        var possiblyPolymorphic = element!.GetType() != typeof(TElement);
+        _patchSet.Add(new PatchData(Items: patch, possiblyPolymorphic));
+        return this;
     }
 
-    public void AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element)
+    public IPatchExpression<T> AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element)
     {
-        Patch.Add("type", "append_if_not_exists");
-        Patch.Add("value", element);
-        Patch.Add("path", toPath(expression));
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "append_if_not_exists");
+        patch.Add("value", element);
+        patch.Add("path", toPath(expression));
 
-        PossiblyPolymorphic = element!.GetType() != typeof(TElement);
+        var possiblyPolymorphic = element!.GetType() != typeof(TElement);
+        _patchSet.Add(new PatchData(Items: patch, possiblyPolymorphic));
 
-        apply();
+        return this;
     }
 
-    public void Insert<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int? index = null)
+    public IPatchExpression<T> Insert<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int? index = null)
     {
-        Patch.Add("type", "insert");
-        Patch.Add("value", element);
-        Patch.Add("path", toPath(expression));
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "insert");
+        patch.Add("value", element);
+        patch.Add("path", toPath(expression));
         if (index.HasValue)
         {
-            Patch.Add("index", index);
+            patch.Add("index", index);
         }
 
-        PossiblyPolymorphic = element!.GetType() != typeof(TElement);
+        var possiblyPolymorphic = element!.GetType() != typeof(TElement);
+        _patchSet.Add(new PatchData(Items: patch, possiblyPolymorphic));
 
-        apply();
+        return this;
     }
 
-    public void InsertIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int? index = null)
+    public IPatchExpression<T> InsertIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int? index = null)
     {
-        Patch.Add("type", "insert_if_not_exists");
-        Patch.Add("value", element);
-        Patch.Add("path", toPath(expression));
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "insert_if_not_exists");
+        patch.Add("value", element);
+        patch.Add("path", toPath(expression));
         if (index.HasValue)
         {
-            Patch.Add("index", index);
+            patch.Add("index", index);
         }
 
-        PossiblyPolymorphic = element!.GetType() != typeof(TElement);
-
-        apply();
+        var possiblyPolymorphic = element!.GetType() != typeof(TElement);
+        _patchSet.Add(new PatchData(Items: patch, possiblyPolymorphic));
+        return this;
     }
 
-    public void Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, RemoveAction action = RemoveAction.RemoveFirst)
+    public IPatchExpression<T> Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, RemoveAction action = RemoveAction.RemoveFirst)
     {
-        Patch.Add("type", "remove");
-        Patch.Add("value", element);
-        Patch.Add("path", toPath(expression));
-        Patch.Add("action", (int)action);
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "remove");
+        patch.Add("value", element);
+        patch.Add("path", toPath(expression));
+        patch.Add("action", (int)action);
 
-        PossiblyPolymorphic = element!.GetType() != typeof(TElement);
-
-        apply();
+        var possiblyPolymorphic = element!.GetType() != typeof(TElement);
+        _patchSet.Add(new PatchData(Items: patch, possiblyPolymorphic));
+        return this;
     }
 
-    public void Rename(string oldName, Expression<Func<T, object>> expression)
+    public IPatchExpression<T> Rename(string oldName, Expression<Func<T, object>> expression)
     {
-        Patch.Add("type", "rename");
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "rename");
 
         var newPath = toPath(expression);
         var parts = newPath.Split('.');
@@ -171,42 +207,45 @@ internal class PatchExpression<T>: IPatchExpression<T>
 
         var path = parts.Join(".");
 
-        Patch.Add("to", to);
-        Patch.Add("path", path);
+        patch.Add("to", to);
+        patch.Add("path", path);
+        _patchSet.Add(new PatchData(Items: patch, false));
 
-        apply();
+        return this;
     }
 
-    public void Delete(string name)
+    public IPatchExpression<T> Delete(string name)
     {
-        delete(name);
+        return delete(name);
     }
 
-    public void Delete<TParent>(string name, Expression<Func<T, TParent>> expression)
+    public IPatchExpression<T> Delete<TParent>(string name, Expression<Func<T, TParent>> expression)
     {
-        delete(toPath(expression) + $".{name}");
+        return delete(toPath(expression) + $".{name}");
     }
 
-    public void Delete<TElement>(Expression<Func<T, TElement>> expression)
+    public IPatchExpression<T> Delete<TElement>(Expression<Func<T, TElement>> expression)
     {
-        delete(toPath(expression));
+        return delete(toPath(expression));
     }
 
-    private void set<TValue>(string path, TValue value)
+    private IPatchExpression<T> set<TValue>(string path, TValue value)
     {
-        Patch.Add("type", "set");
-        Patch.Add("value", value);
-        Patch.Add("path", path);
-
-        apply();
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "set");
+        patch.Add("value", value);
+        patch.Add("path", path);
+        _patchSet.Add(new PatchData(Items: patch, false));
+        return this;
     }
 
-    private void delete(string path)
+    private IPatchExpression<T> delete(string path)
     {
-        Patch.Add("type", "delete");
-        Patch.Add("path", path);
-
-        apply();
+        var patch = new Dictionary<string, object>();
+        patch.Add("path", path);
+        patch.Add("type", "delete");
+        _patchSet.Add(new PatchData(Items: patch, false));
+        return this;
     }
 
     private string toPath(Expression expression)
@@ -218,29 +257,5 @@ internal class PatchExpression<T>: IPatchExpression<T>
         return visitor.Members.Select(x => x.Name.FormatCase(_session.Serializer.Casing)).Join(".");
     }
 
-    internal bool PossiblyPolymorphic { get; set; } = false;
-
     private DbObjectName PatchFunction => new PostgresqlObjectName(_session.Options.DatabaseSchemaName, "mt_jsonb_patch");
-
-    private void apply()
-    {
-        var storage = _session.StorageFor(typeof(T));
-
-        var operation = new PatchOperation(PatchFunction, storage, Patch, _session.Serializer, PossiblyPolymorphic);
-
-        if (_filterExpression != null)
-        {
-            operation.ApplyFiltering(_session, _filterExpression);
-        }
-        else if (_filter == null)
-        {
-            operation.Wheres.Add(storage.DefaultWhereFragment());
-        }
-        else
-        {
-            operation.Wheres.Add(storage.FilterDocuments(_filter, _session));
-        }
-
-        _session.QueueOperation(operation);
-    }
 }

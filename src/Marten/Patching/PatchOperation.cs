@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Marten.Internal.Operations;
@@ -17,38 +16,41 @@ namespace Marten.Patching;
 internal class PatchFragment: IOperationFragment
 {
     private const string VALUE_LOOKUP = "___VALUE___";
-    private readonly IDictionary<string, object> _patch;
     private readonly ISerializer _serializer;
     private readonly IDocumentStorage _storage;
     private readonly DbObjectName _function;
+    private readonly List<PatchData> _patchSet;
 
-    public PatchFragment(IDictionary<string, object> patch, ISerializer serializer, DbObjectName function,
-        IDocumentStorage storage, bool possiblyPolymorphic)
+    public PatchFragment(List<PatchData> patchSet, ISerializer serializer, DbObjectName function,
+        IDocumentStorage storage)
     {
-        PossiblyPolymorphic = possiblyPolymorphic;
-        _patch = patch;
+        _patchSet = patchSet;
+        _patchSet = patchSet;
         _serializer = serializer;
         _function = function;
         _storage = storage;
     }
 
-    public bool PossiblyPolymorphic { get; }
-
     public void Apply(ICommandBuilder builder)
     {
-        var json = _serializer.ToCleanJson(_patch);
-        if (_patch.TryGetValue("value", out var document))
+        var patchSetStr = new List<string>();
+        foreach (var patch in _patchSet)
         {
-            var value = PossiblyPolymorphic ? _serializer.ToJsonWithTypes(document) : _serializer.ToJson(document);
-            var copy = new Dictionary<string, object>();
-            foreach (var item in _patch) copy.Add(item.Key, item.Value);
+            var json = _serializer.ToCleanJson(patch.Items);
+            if (patch.Items.TryGetValue("value", out var document))
+            {
+                var value = patch.PossiblyPolymorphic ? _serializer.ToJsonWithTypes(document) : _serializer.ToJson(document);
+                var copy = new Dictionary<string, object>();
+                foreach (var item in patch.Items) copy.Add(item.Key, item.Value);
 
-            copy["value"] = VALUE_LOOKUP;
+                copy["value"] = VALUE_LOOKUP;
 
-            var patchJson = _serializer.ToJson(copy);
-            var replacedValue = patchJson.Replace($"\"{VALUE_LOOKUP}\"", value);
+                var patchJson = _serializer.ToJson(copy);
+                var replacedValue = patchJson.Replace($"\"{VALUE_LOOKUP}\"", value);
 
-            json = replacedValue;
+                json = replacedValue;
+            }
+            patchSetStr.Add(json);
         }
 
         builder.Append("update ");
@@ -56,7 +58,7 @@ internal class PatchFragment: IOperationFragment
         builder.Append(" as d set data = ");
         builder.Append(_function.QualifiedName);
         builder.Append("(data, ");
-        builder.AppendParameter(json, NpgsqlDbType.Jsonb);
+        builder.AppendParameter("[" + string.Join(",", patchSetStr.ToArray()) + "]", NpgsqlDbType.Jsonb);
         builder.Append("), ");
         builder.Append(SchemaConstants.LastModifiedColumn);
         builder.Append(" = (now() at time zone 'utc'), ");
@@ -75,12 +77,13 @@ internal class PatchOperation: StatementOperation, NoDataReturnedCall
 {
     private readonly ISqlFragment _fragment;
     private readonly IDocumentStorage _storage;
+    private readonly List<PatchData> _patchSet;
 
-    public PatchOperation(DbObjectName function, IDocumentStorage storage,
-        IDictionary<string, object> patch, ISerializer serializer, bool possiblyPolymorphic): base(storage,
-        new PatchFragment(patch, serializer, function, storage, possiblyPolymorphic))
+    public PatchOperation(DbObjectName function, IDocumentStorage storage, List<PatchData> patchSet , ISerializer serializer):
+        base(storage, new PatchFragment(patchSet, serializer, function, storage))
     {
         _storage = storage;
+        _patchSet = patchSet;
     }
 
     public OperationRole Role()
@@ -90,6 +93,7 @@ internal class PatchOperation: StatementOperation, NoDataReturnedCall
 
     protected override void configure(ICommandBuilder builder)
     {
+        if (_patchSet.Count == 0) return;
         base.configure(builder);
         applyUpdates(builder);
     }

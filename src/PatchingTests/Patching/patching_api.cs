@@ -888,6 +888,26 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     #endregion
+
+    [Fact]
+    public void able_to_chain_patch_operations()
+    {
+        var target = Target.Random(true);
+        target.Number = 5;
+
+        theSession.Store(target);
+        theSession.SaveChanges();
+
+        theSession.Patch<Target>(target.Id)
+            .Set(x => x.Number, 10)
+            .Increment(x => x.Number, 10);
+        theSession.SaveChanges();
+
+        using (var query = theStore.QuerySession())
+        {
+            query.Load<Target>(target.Id).Number.ShouldBe(20);
+        }
+    }
 }
 
 internal static class EnumerableExtensions

@@ -1,8 +1,5 @@
 using System;
 using System.Linq.Expressions;
-using JasperFx.Core;
-using JasperFx.Core.Reflection;
-using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Weasel.Postgresql.SqlGeneration;
 
