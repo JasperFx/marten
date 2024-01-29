@@ -45,14 +45,17 @@ export default withMermaid({
       { text: 'Document DB', link: '/documents/', activeMatch: '/documents/' },
       { text: 'Event Store', link: '/events/', activeMatch: '/events/' },
       { text: 'Migration', link: '/migration-guide' },
-      { text: 'Support Plans', link: 'https://www.jasperfx.net/support-plans/'},
+      { text: 'Support Plans', link: 'https://www.jasperfx.net/support-plans/' },
       { text: 'Join Chat', link: 'https://discord.gg/WMxrvegf8H' },
     ],
 
-    algolia: {
-      appId: '9S7KY0SIDO',
-      apiKey: '5b95a0e704fcf10d97ae621741cd907d',
-      indexName: 'marten_index'
+    // algolia: {
+    //   appId: '9S7KY0SIDO',
+    //   apiKey: '5b95a0e704fcf10d97ae621741cd907d',
+    //   indexName: 'marten_index'
+    // },
+    search: {
+      provider: 'local'
     },
 
     editLink: {
