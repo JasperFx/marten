@@ -51,10 +51,10 @@ jobs:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
-      - name: Generate Algolia DocSearch index
-        uses: darrenjennings/algolia-docsearch-action@master
-        if: ${{ github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event.inputs.publish_docs == 'true') }}
-        with:
-          algolia_application_id: ${{ secrets.ALGOLIA_APPLICATION_ID }}
-          algolia_api_key: ${{ secrets.ALGOLIA_API_KEY }}
-          file: 'docs/.vitepress/algolia-config.json'
+      # - name: Generate Algolia DocSearch index
+      #   uses: darrenjennings/algolia-docsearch-action@master
+      #   if: ${{ github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event.inputs.publish_docs == 'true') }}
+      #   with:
+      #     algolia_application_id: ${{ secrets.ALGOLIA_APPLICATION_ID }}
+      #     algolia_api_key: ${{ secrets.ALGOLIA_API_KEY }}
+      #     file: 'docs/.vitepress/algolia-config.json'
