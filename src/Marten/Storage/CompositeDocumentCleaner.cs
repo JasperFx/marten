@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Schema;
@@ -113,6 +114,6 @@ public class CompositeDocumentCleaner: IDocumentCleaner
     private async Task applyToAll(Func<IMartenDatabase, Task> func)
     {
         var databases = await _tenancy.BuildDatabases().ConfigureAwait(false);
-        foreach (IMartenDatabase database in databases) await func(database).ConfigureAwait(false);
+        foreach (var database in databases.OfType<IMartenDatabase>()) await func(database).ConfigureAwait(false);
     }
 }
