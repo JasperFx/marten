@@ -2,7 +2,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Schema;
-using Marten.Storage;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -72,20 +71,24 @@ internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
                 .ConfigureAwait(false);
         }
 
+        var databases = await Store.Tenancy.BuildDatabases().ConfigureAwait(false);
+
         if (Store.Options.ShouldApplyChangesOnStartup)
         {
-            var databases = Store.Tenancy.BuildDatabases().ConfigureAwait(false);
-            foreach (PostgresqlDatabase database in await databases)
+            foreach (PostgresqlDatabase database in databases)
+            {
                 await database
                     .ApplyAllConfiguredChangesToDatabaseAsync(this, AutoCreate.CreateOrUpdate, ct: cancellationToken)
                     .ConfigureAwait(false);
+            }
         }
 
         if (Store.Options.ShouldAssertDatabaseMatchesConfigurationOnStartup)
         {
-            var databases = Store.Tenancy.BuildDatabases().ConfigureAwait(false);
-            foreach (var database in await databases)
+            foreach (var database in databases)
+            {
                 await database.AssertDatabaseMatchesConfigurationAsync(cancellationToken).ConfigureAwait(false);
+            }
         }
 
         foreach (var initialData in Store.Options.InitialData)

@@ -776,6 +776,19 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
             });
         }
     }
+
+    /// <summary>
+    /// Multi-tenancy strategy where the tenant database connection strings are defined in a table
+    /// named "mt_tenant_databases"
+    /// </summary>
+    /// <param name="connectionString">A connection string to the database that will hold the tenant database lookup table </param>
+    /// <param name="schemaName">If specified, override the schema name where the tenant database lookup table wil be</param>
+    public void MultiTenantedDatabasesWithMasterDatabaseTable(string connectionString, string? schemaName = "public")
+    {
+        var tenancy = new MasterTableTenancy(this, connectionString, schemaName);
+        Advanced.DefaultTenantUsageEnabled = false;
+        Tenancy = tenancy;
+    }
 }
 
 internal class LambdaDocumentPolicy: IDocumentPolicy
