@@ -35,7 +35,11 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
         resetSequences();
 
         Providers = options.Providers;
+
+        Logger = _options.Logger();
     }
+
+    public IMartenLogger Logger { get; }
 
     public MartenDatabase(
         StoreOptions options,
@@ -49,6 +53,7 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
         resetSequences();
 
         Providers = options.Providers;
+        Logger = _options.Logger();
     }
 
     public ISequences Sequences => _sequences.Value;

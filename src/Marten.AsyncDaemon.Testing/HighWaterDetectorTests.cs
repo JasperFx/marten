@@ -24,7 +24,7 @@ public class HighWaterDetectorTests: DaemonContext
     public HighWaterDetectorTests(ITestOutputHelper output) : base(output)
     {
         theStore.EnsureStorageExists(typeof(IEvent));
-        theDetector = new HighWaterDetector(new AutoOpenSingleQueryRunner(theStore.Tenancy.Default.Database), theStore.Events, NullLogger.Instance);
+        theDetector = new HighWaterDetector((ISingleQueryRunner)theStore.Tenancy.Default.Database, theStore.Events, NullLogger.Instance);
     }
 
     [Fact]

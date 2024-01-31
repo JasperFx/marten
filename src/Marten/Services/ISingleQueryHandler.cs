@@ -5,7 +5,7 @@ using Npgsql;
 
 namespace Marten.Services;
 
-internal interface ISingleQueryHandler<T>
+public interface ISingleQueryHandler<T>
 {
     NpgsqlCommand BuildCommand();
     Task<T> HandleAsync(DbDataReader reader, CancellationToken token);

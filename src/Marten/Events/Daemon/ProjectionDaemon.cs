@@ -61,7 +61,7 @@ internal class ProjectionDaemon: IProjectionDaemon
 
     // Only for testing
     public ProjectionDaemon(DocumentStore store, ILogger logger): this(store, store.Tenancy.Default.Database,
-        new HighWaterDetector(new AutoOpenSingleQueryRunner(store.Tenancy.Default.Database), store.Events, logger),
+        new HighWaterDetector((ISingleQueryRunner)store.Tenancy.Default.Database, store.Events, logger),
         logger)
     {
     }
