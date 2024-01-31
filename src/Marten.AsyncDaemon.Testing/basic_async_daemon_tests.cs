@@ -154,7 +154,7 @@ public class basic_async_daemon_tests: DaemonContext
     public async Task event_fetcher_simple_case()
     {
         using var fetcher =
-            new EventFetcher(theStore, theAgent, theStore.Tenancy.Default.Database, new ISqlFragment[0]);
+            new EventFetcher(theStore, theStore.Tenancy.Default.Database, new ISqlFragment[0]);
 
         NumberOfStreams = 10;
         await PublishSingleThreaded();
@@ -183,7 +183,7 @@ public class basic_async_daemon_tests: DaemonContext
         await PublishSingleThreaded();
 
         using var fetcher1 =
-            new EventFetcher(theStore, theAgent, theStore.Tenancy.Default.Database, new ISqlFragment[0]);
+            new EventFetcher(theStore, theStore.Tenancy.Default.Database, new ISqlFragment[0]);
 
         var shardName = new ShardName("name");
         var range1 = new EventRange(shardName, 0, NumberOfEvents);
@@ -195,7 +195,7 @@ public class basic_async_daemon_tests: DaemonContext
         uniqueTypeCount.ShouldBe(6);
 
         var filter = new EventTypeFilter(theStore.Events, new Type[] { typeof(Travel), typeof(Arrival) });
-        using var fetcher2 = new EventFetcher(theStore, theAgent, theStore.Tenancy.Default.Database,
+        using var fetcher2 = new EventFetcher(theStore, theStore.Tenancy.Default.Database,
             new ISqlFragment[] { filter });
 
         var range2 = new EventRange(shardName, 0, NumberOfEvents);
