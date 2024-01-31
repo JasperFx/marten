@@ -1,23 +1,15 @@
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Storage;
+using Marten.Services;
 
-namespace Marten.Services;
+namespace Marten.Storage;
 
-internal class AutoOpenSingleQueryRunner: ISingleQueryRunner
+public partial class MartenDatabase : ISingleQueryRunner
 {
-    private readonly IMartenDatabase _database;
-
-    public AutoOpenSingleQueryRunner(IMartenDatabase database)
-    {
-        _database = database;
-    }
-
-
     public async Task<T> Query<T>(ISingleQueryHandler<T> handler, CancellationToken cancellation)
     {
-        await using var conn = _database.CreateConnection();
+        await using var conn = CreateConnection();
 
         var command = handler.BuildCommand();
         command.Connection = conn;
@@ -38,7 +30,7 @@ internal class AutoOpenSingleQueryRunner: ISingleQueryRunner
 
     public async Task SingleCommit(DbCommand command, CancellationToken cancellation)
     {
-        await using var conn = _database.CreateConnection();
+        await using var conn = CreateConnection();
         await conn.OpenAsync(cancellation).ConfigureAwait(false);
 
         command.Connection = conn;
