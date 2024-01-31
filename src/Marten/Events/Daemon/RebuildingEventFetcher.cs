@@ -20,7 +20,7 @@ internal class RebuildingEventFetcher: EventFetcher
     private long _serializationErrorCount;
 
     public RebuildingEventFetcher(IDocumentStore store, ShardAgent shardAgent, IMartenDatabase database,
-        ISqlFragment[] filters): base(store, shardAgent, database, filters)
+        ISqlFragment[] filters): base(store, database, filters)
     {
         _store = store;
         _shardAgent = shardAgent;

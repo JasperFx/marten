@@ -220,7 +220,7 @@ internal class ShardAgent: IShardAgent, IObserver<ShardState>
         _daemon = daemon;
 
         _fetcher = Mode == ShardExecutionMode.Continuous
-            ? new EventFetcher(_store, this, _daemon.Database, _projectionShard.EventFilters)
+            ? new EventFetcher(_store, _daemon.Database, _projectionShard.EventFilters)
             : new RebuildingEventFetcher(_store, this, _daemon.Database, _projectionShard.EventFilters);
 
         _grouping = new TransformBlock<EventRange, EventRangeGroup>(groupEventRange, singleFileOptions);

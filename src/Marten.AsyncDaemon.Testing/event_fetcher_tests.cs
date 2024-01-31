@@ -27,7 +27,7 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
         loadEvents(theSession.Events);
         await theSession.SaveChangesAsync();
 
-        var fetcher = new EventFetcher(theStore, null, theStore.Tenancy.Default.Database, theFilters.ToArray());
+        var fetcher = new EventFetcher(theStore, theStore.Tenancy.Default.Database, theFilters.ToArray());
         await fetcher.Load(theRange, default);
     }
 
