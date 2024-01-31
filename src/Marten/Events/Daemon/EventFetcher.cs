@@ -29,19 +29,15 @@ internal class EventFetcher: IEventFetcher
     private readonly NpgsqlParameter _ceiling;
     private readonly NpgsqlCommand _command;
     private readonly IMartenDatabase _database;
-    private readonly ISqlFragment[] _filters;
     private readonly NpgsqlParameter _floor;
-    private readonly IShardAgent _shardAgent;
     private readonly IEventStorage _storage;
     private readonly IDocumentStore _store;
 
-    public EventFetcher(IDocumentStore store, IShardAgent shardAgent, IMartenDatabase database,
+    public EventFetcher(IDocumentStore store, IMartenDatabase database,
         ISqlFragment[] filters)
     {
         _store = store;
-        _shardAgent = shardAgent;
         _database = database;
-        _filters = filters;
 
         using var session = querySession();
         _storage = session.EventStorage();
