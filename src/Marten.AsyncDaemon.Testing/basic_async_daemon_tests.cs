@@ -183,7 +183,7 @@ public class basic_async_daemon_tests: DaemonContext
         await PublishSingleThreaded();
 
         using var fetcher1 =
-            new EventFetcher(theStore, theStore.Tenancy.Default.Database, new ISqlFragment[0]);
+            new EventFetcher(theStore, theStore.Tenancy.Default.Database, Array.Empty<ISqlFragment>());
 
         var shardName = new ShardName("name");
         var range1 = new EventRange(shardName, 0, NumberOfEvents);
