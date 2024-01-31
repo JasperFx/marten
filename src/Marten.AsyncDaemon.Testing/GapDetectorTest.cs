@@ -23,7 +23,7 @@ public class GapDetectorTest: DaemonContext
         theStore.EnsureStorageExists(typeof(IEvent));
 
         theGapDetector = new GapDetector(theStore.Events);
-        _runner = new AutoOpenSingleQueryRunner(theStore.Tenancy.Default.Database);
+        _runner = (ISingleQueryRunner)theStore.Tenancy.Default.Database;
     }
 
     [Fact]
@@ -33,7 +33,7 @@ public class GapDetectorTest: DaemonContext
         await PublishSingleThreaded();
         await deleteEvents(NumberOfEvents - 100, NumberOfEvents - 50);
 
-        var current = await _runner.Query(theGapDetector, CancellationToken.None).ConfigureAwait(false);
+        var current = await _runner.Query(theGapDetector, CancellationToken.None);
 
         current.ShouldBe(NumberOfEvents - 101);
     }

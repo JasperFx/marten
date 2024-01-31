@@ -108,4 +108,6 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     /// <returns></returns>
     Task<long> ProjectionProgressFor(ShardName name,
         CancellationToken token = default);
+
+
 }

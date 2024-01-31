@@ -392,7 +392,9 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         var database = tenantIdOrDatabaseIdentifier.IsEmpty()
             ? Tenancy.Default.Database
             : Tenancy.GetTenant(tenantIdOrDatabaseIdentifier).Database;
-        var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(database), Events, logger);
+
+        // TODO -- going to make the cast go away later
+        var detector = new HighWaterDetector((ISingleQueryRunner)database, Events, logger);
 
         return new ProjectionDaemon(this, database, detector, logger);
     }
