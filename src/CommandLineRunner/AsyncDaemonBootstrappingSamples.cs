@@ -50,31 +50,31 @@ public class AsyncDaemonBootstrappingSamples
 
                         #region sample_stop_shard_on_exception
 
-                        // Stop only the current exception
-                        opts.Projections.OnException<InvalidOperationException>()
-                            .Stop();
-
-                        // or get more granular
-                        opts.Projections
-                            .OnException<InvalidOperationException>(e => e.Message.Contains("Really bad!"))
-                            .Stop(); // stops just the current projection shard
+                        // // Stop only the current exception
+                        // opts.Projections.OnException<InvalidOperationException>()
+                        //     .Stop();
+                        //
+                        // // or get more granular
+                        // opts.Projections
+                        //     .OnException<InvalidOperationException>(e => e.Message.Contains("Really bad!"))
+                        //     .Stop(); // stops just the current projection shard
 
                         #endregion
 
                         #region sample_poison_pill
 
-                        opts.Projections.OnApplyEventException()
-                            .AndInner<ArithmeticException>()
-                            .SkipEvent();
+                        // opts.Projections.OnApplyEventException()
+                        //     .AndInner<ArithmeticException>()
+                        //     .SkipEvent();
 
                         #endregion
 
                         #region sample_exponential_back-off_strategy
 
-                        opts.Projections.OnException<NpgsqlException>()
-                            .RetryLater(50.Milliseconds(), 250.Milliseconds(), 500.Milliseconds())
-                            .Then
-                            .Pause(1.Minutes());
+                        // opts.Projections.OnException<NpgsqlException>()
+                        //     .RetryLater(50.Milliseconds(), 250.Milliseconds(), 500.Milliseconds())
+                        //     .Then
+                        //     .Pause(1.Minutes());
 
                         #endregion
                     })

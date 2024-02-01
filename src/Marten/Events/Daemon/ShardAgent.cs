@@ -120,44 +120,27 @@ internal class ShardAgent: IShardAgent, IObserver<ShardState>
         _loader!.Post(range);
     }
 
-    public Task TryAction(Func<Task> action, CancellationToken token, Action<ILogger, Exception>? logException = null,
-        EventRangeGroup? group = null, GroupActionMode actionMode = GroupActionMode.Parent)
-    {
-        var parameters = new ActionParameters(this, action, token == default ? _cancellation : token)
-        {
-            GroupActionMode = actionMode
-        };
-
-        parameters.LogAction = logException ?? parameters.LogAction;
-        parameters.Group = group;
-
-        return _daemon!.TryAction(parameters);
-    }
-
     public ShardExecutionMode Mode { get; set; } = ShardExecutionMode.Continuous;
 
 
     private async Task<EventRange> loadEvents(EventRange range)
     {
-        var parameters = new ActionParameters(this, async () =>
+        try
         {
             await _fetcher!.Load(range, _cancellation).ConfigureAwait(false);
-
-            if (Logger.IsEnabled(LogLevel.Debug))
-            {
-                Logger.LogDebug("Loaded events {Range} for {ProjectionShardIdentity}", range, ProjectionShardIdentity);
-            }
-        })
+        }
+        catch (Exception e)
         {
-            LogAction = (logger, e) =>
-            {
-                logger.LogError(e, "Error loading events {Range} for {ProjectionShardIdentity}", range,
-                    ProjectionShardIdentity);
-            }
-        };
+            Logger.LogError(e, "Error loading events {Range} for {ProjectionShardIdentity}", range,
+                ProjectionShardIdentity);
 
+            throw;
+        }
 
-        await _daemon!.TryAction(parameters).ConfigureAwait(false);
+        if (Logger.IsEnabled(LogLevel.Debug))
+        {
+            Logger.LogDebug("Loaded events {Range} for {ProjectionShardIdentity}", range, ProjectionShardIdentity);
+        }
 
         return range;
     }
@@ -250,43 +233,31 @@ internal class ShardAgent: IShardAgent, IObserver<ShardState>
         // This should be done *once* here before going to the TryAction()
         group.Reset();
 
-        ProjectionUpdateBatch? batch = null;
-
-        // Building the ProjectionUpdateBatch
-        await TryAction(async () =>
-        {
-            batch = await buildUpdateBatch(group).ConfigureAwait(false);
-
-            group.Dispose();
-        }, _cancellation, (logger, e) =>
-        {
-            logger.LogError(e,
-                "Failure while trying to process updates for event range {EventRange} for projection shard '{ProjectionShardIdentity}'",
-                group, ProjectionShardIdentity);
-        }, group).ConfigureAwait(false);
-
-        // This has failed, so get out of here.
-        if (batch == null)
-        {
-            return;
-        }
+        var batch = await buildUpdateBatch(group).ConfigureAwait(false);
+        group.Dispose();
+        if (batch == null) return;
 
         // Executing the SQL commands for the ProjectionUpdateBatch
-        await TryAction(async () =>
+        await ExecuteBatch(batch).ConfigureAwait(false);
+        if (Logger.IsEnabled(LogLevel.Debug))
         {
-            await ExecuteBatch(batch).ConfigureAwait(false);
+            Logger.LogDebug("Shard '{ProjectionShardIdentity}': Successfully processed batch {Group}",
+                ProjectionShardIdentity, group);
+        }
 
-            if (Logger.IsEnabled(LogLevel.Debug))
-            {
-                Logger.LogDebug("Shard '{ProjectionShardIdentity}': Successfully processed batch {Group}",
-                    ProjectionShardIdentity, group);
-            }
-        }, _cancellation, (logger, e) =>
-        {
-            logger.LogError(e,
-                "Failure while trying to process updates for event range {EventRange} for projection shard '{ProjectionShardIdentity}'",
-                group, ProjectionShardIdentity);
-        }).ConfigureAwait(false);
+        // TODO -- put back
+        // logger.LogError(e,
+        //     "Failure while trying to process updates for event range {EventRange} for projection shard '{ProjectionShardIdentity}'",
+        //     group, ProjectionShardIdentity);
+
+        // TODO -- put back
+        // logger.LogError(e,
+        //     "Failure while trying to process updates for event range {EventRange} for projection shard '{ProjectionShardIdentity}'",
+        //     group, ProjectionShardIdentity);
+
+
+
+
     }
 
     private async Task<ProjectionUpdateBatch?> buildUpdateBatch(EventRangeGroup group)
@@ -338,30 +309,24 @@ internal class ShardAgent: IShardAgent, IObserver<ShardState>
             return null;
         }
 
-        EventRangeGroup? group = null;
-
-        await TryAction(async () =>
+        if (Logger.IsEnabled(LogLevel.Debug))
         {
-            if (Logger.IsEnabled(LogLevel.Debug))
-            {
-                Logger.LogDebug("Shard '{ProjectionShardIdentity}':Starting to group {Range}", ProjectionShardIdentity,
-                    range);
-            }
+            Logger.LogDebug("Shard '{ProjectionShardIdentity}':Starting to group {Range}", ProjectionShardIdentity,
+                range);
+        }
 
-            group = await _source.GroupEvents(_store, _daemon!.Database, range, _cancellation).ConfigureAwait(false);
+        var group = await _source.GroupEvents(_store, _daemon!.Database, range, _cancellation).ConfigureAwait(false);
 
-            if (Logger.IsEnabled(LogLevel.Debug))
-            {
-                Logger.LogDebug("Shard '{ProjectionShardIdentity}': successfully grouped {Range}",
-                    ProjectionShardIdentity, range);
-            }
-        }, _cancellation, (logger, e) =>
+        if (Logger.IsEnabled(LogLevel.Debug))
         {
-            logger.LogError(e,
-                "Error while trying to group event range {EventRange} for projection shard {SProjectionShardIdentity}",
-                range, ProjectionShardIdentity);
-        }).ConfigureAwait(false);
+            Logger.LogDebug("Shard '{ProjectionShardIdentity}': successfully grouped {Range}",
+                ProjectionShardIdentity, range);
+        }
 
+        // TODO -- put back
+        // logger.LogError(e,
+        //     "Error while trying to group event range {EventRange} for projection shard {SProjectionShardIdentity}",
+        //     range, ProjectionShardIdentity);
 
         return group;
     }
@@ -405,45 +370,6 @@ internal class ShardAgent: IShardAgent, IObserver<ShardState>
         });
 
         IsStopping = false;
-    }
-
-    public async Task Pause(TimeSpan timeout)
-    {
-        await Stop().ConfigureAwait(false);
-
-        Status = AgentStatus.Paused;
-        _tracker!.Publish(new ShardState(_projectionShard, ShardAction.Paused));
-
-#pragma warning disable 4014, MA0040
-        // ReSharper disable once MethodSupportsCancellation
-        Task.Run(async () =>
-        {
-            // ReSharper disable once MethodSupportsCancellation
-            await Task.Delay(timeout).ConfigureAwait(false);
-#pragma warning restore 4014, MA0040
-            _cancellationSource = new CancellationTokenSource();
-            _cancellation = _cancellationSource.Token;
-
-            var parameters = new ActionParameters(this, async () =>
-            {
-                try
-                {
-                    await Start(_daemon!, ShardExecutionMode.Continuous).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    throw new ShardStartException(this, e);
-                }
-            });
-
-            parameters.LogAction = (l, e) =>
-            {
-                l.LogError(e, "Error trying to start shard '{ProjectionShardIdentity}' after pausing",
-                    ProjectionShardIdentity);
-            };
-
-            await _daemon!.TryAction(parameters).ConfigureAwait(false);
-        });
     }
 
     public ProjectionUpdateBatch StartNewBatch(EventRangeGroup group)

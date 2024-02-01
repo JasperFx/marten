@@ -104,7 +104,9 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
             }
 
             x.Projections.Add(new SometimesFailingTripProjection(), ProjectionLifecycle.Async);
-            x.Projections.OnApplyEventException().SkipEvent();
+
+            throw new NotImplementedException("Redo this");
+            //x.Projections.OnApplyEventException().SkipEvent();
         }, true);
 
         var agent = await StartDaemon(tenantId);

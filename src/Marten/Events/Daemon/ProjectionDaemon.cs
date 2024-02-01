@@ -149,27 +149,13 @@ internal class ProjectionDaemon: IProjectionDaemon
                 return;
             }
 
-            var parameters = new ActionParameters(agent, async () =>
-            {
-                try
-                {
-                    await agent.Stop(ex).ConfigureAwait(false);
-                    _agents.Remove(shardName);
-                }
-                catch (Exception e)
-                {
-                    throw new ShardStopException(agent.ShardName, e);
-                }
-            }, _cancellation.Token)
-            {
-                LogAction = (logger, exception) =>
-                {
-                    logger.LogError(exception, "Error when trying to stop projection shard '{ShardName}'",
-                        shardName);
-                }
-            };
+            await agent.Stop(ex).ConfigureAwait(false);
+            _agents.Remove(shardName);
 
-            await TryAction(parameters).ConfigureAwait(false);
+            // Put some of this back?
+            // throw new ShardStopException(agent.ShardName, e);
+            // logger.LogError(exception, "Error when trying to stop projection shard '{ShardName}'",
+            //     shardName);
         }
     }
 
@@ -319,29 +305,15 @@ internal class ProjectionDaemon: IProjectionDaemon
             return;
         }
 
-        var parameters = new ActionParameters(async () =>
-        {
-            try
-            {
-                var agent = new ShardAgent(_store, shard, _logger, cancellationToken);
-                var position = await agent.Start(this, mode).ConfigureAwait(false);
+        var agent = new ShardAgent(_store, shard, _logger, cancellationToken);
+        var position = await agent.Start(this, mode).ConfigureAwait(false);
 
-                Tracker.Publish(new ShardState(shard.Name, position) { Action = ShardAction.Started });
+        Tracker.Publish(new ShardState(shard.Name, position) { Action = ShardAction.Started });
 
-                _agents[shard.Name.Identity] = agent;
-            }
-            catch (Exception e)
-            {
-                throw new ShardStartException(shard, e);
-            }
-        }, cancellationToken);
+        _agents[shard.Name.Identity] = agent;
 
-        parameters.LogAction = (logger, ex) =>
-        {
-            logger.LogError(ex, "Error when trying to start projection shard '{ShardName}'", shard.Name.Identity);
-        };
-
-        await TryAction(parameters).ConfigureAwait(false);
+        // TODO -- put back
+        // logger.LogError(ex, "Error when trying to start projection shard '{ShardName}'", shard.Name.Identity);
     }
 
     public ShardAgent[] CurrentShards()
@@ -460,125 +432,6 @@ internal class ProjectionDaemon: IProjectionDaemon
         }
     }
 
-
-    internal async Task TryAction(ActionParameters parameters)
-    {
-        if (parameters.Delay != default)
-        {
-            await Task.Delay(parameters.Delay, parameters.Cancellation).ConfigureAwait(false);
-        }
-
-        if (parameters.Cancellation.IsCancellationRequested)
-        {
-            return;
-        }
-
-        try
-        {
-            await parameters.Action().ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            // Get out of here and do nothing if this is just a result of a Task being
-            // cancelled
-            if (ex is TaskCanceledException)
-            {
-                // Unless this is a parent action of a group action that failed and bailed out w/ a
-                // TaskCanceledException that is
-                if (parameters.Group?.Exception is ApplyEventException apply &&
-                    parameters.GroupActionMode == GroupActionMode.Parent)
-                {
-                    ex = apply;
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-            // IF you're using a group, you're using the group's cancellation, and it's going to be
-            // cancelled already
-            if (parameters.Group == null && parameters.Cancellation.IsCancellationRequested)
-            {
-                return;
-            }
-
-            parameters.Group?.Abort(ex);
-
-            parameters.LogAction(_logger, ex);
-
-            var continuation = Settings.DetermineContinuation(ex, parameters.Attempts);
-            switch (continuation)
-            {
-                case RetryLater r:
-                    parameters.IncrementAttempts(r.Delay);
-                    if (_logger.IsEnabled(LogLevel.Debug))
-                    {
-                        _logger.LogDebug("Retrying in {Milliseconds} @{DatabaseIdentifier}", r.Delay.TotalMilliseconds,
-                            Database.Identifier);
-                    }
-
-                    await TryAction(parameters).ConfigureAwait(false);
-                    break;
-                case Resiliency.StopShard:
-                    if (parameters.Shard != null)
-                    {
-                        await StopShard(parameters.Shard.ShardName.Identity, ex).ConfigureAwait(false);
-                    }
-
-                    break;
-                case StopAllShards:
-                    await Parallel.ForEachAsync(_agents.Keys.ToArray(), _cancellation.Token,
-                        async (name, _) => await StopShard(name, ex).ConfigureAwait(false)
-                    ).ConfigureAwait(false);
-
-                    Tracker.Publish(
-                        new ShardState(ShardName.All, Tracker.HighWaterMark)
-                        {
-                            Action = ShardAction.Stopped, Exception = ex
-                        });
-                    break;
-                case PauseShard pause:
-                    if (parameters.Shard != null)
-                    {
-                        await parameters.Shard.Pause(pause.Delay).ConfigureAwait(false);
-                    }
-
-                    break;
-                case PauseAllShards pauseAll:
-                    await Parallel.ForEachAsync(_agents.Values.ToArray(), _cancellation.Token,
-                            async (agent, _) => await agent.Pause(pauseAll.Delay).ConfigureAwait(false))
-                        .ConfigureAwait(false);
-                    break;
-
-                case SkipEvent skip:
-                    if (parameters.GroupActionMode == GroupActionMode.Child)
-                    {
-                        // Don't do anything, this has to be retried from the parent
-                        // task
-                        return;
-                    }
-
-                    await parameters.ApplySkipAsync(skip, Database).ConfigureAwait(false);
-
-                    _logger.LogInformation(
-                        "Skipping event #{Sequence} ({EventType}@{DatabaseIdentifier}) in shard '{ShardName}'",
-                        skip.Event.Sequence, skip.Event.EventType.GetFullName(), parameters.Shard.Name,
-                        Database.Identifier);
-
-                    var exception = (ex as ApplyEventException)!;
-                    var deadLetterEvent = new DeadLetterEvent(skip.Event, parameters.Shard.Name, exception);
-                    await _deadLetterBlock.PostAsync(deadLetterEvent).ConfigureAwait(false);
-
-                    await TryAction(parameters).ConfigureAwait(false);
-                    break;
-
-                case DoNothing:
-                    // Don't do anything.
-                    break;
-            }
-        }
-    }
 
     public AgentStatus StatusFor(string shardName)
     {
