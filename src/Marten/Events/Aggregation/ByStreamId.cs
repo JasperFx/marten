@@ -25,7 +25,7 @@ public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>
     }
 
 
-    public async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, Guid>>> SliceAsyncEvents(IQuerySession querySession,
+    public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, Guid>>> SliceAsyncEvents(IQuerySession querySession,
         List<IEvent> events)
     {
         var list = new List<TenantSliceGroup<TDoc, Guid>>();
@@ -44,6 +44,6 @@ public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>
             list.Add(group);
         }
 
-        return list;
+        return new ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, Guid>>>(list);
     }
 }
