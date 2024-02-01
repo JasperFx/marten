@@ -71,6 +71,41 @@ public class EventRequest
     public long Floor { get; init; }
     public long HighWater { get; init; }
     public int BatchSize { get; init; }
+
+    public override string ToString()
+    {
+        return $"{nameof(Floor)}: {Floor}, {nameof(HighWater)}: {HighWater}, {nameof(BatchSize)}: {BatchSize}";
+    }
+
+    protected bool Equals(EventRequest other)
+    {
+        return Floor == other.Floor && HighWater == other.HighWater && BatchSize == other.BatchSize;
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (ReferenceEquals(null, obj))
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(this, obj))
+        {
+            return true;
+        }
+
+        if (obj.GetType() != this.GetType())
+        {
+            return false;
+        }
+
+        return Equals((EventRequest)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Floor, HighWater, BatchSize);
+    }
 }
 
 public interface IEventLoader
@@ -237,7 +272,6 @@ public interface ISubscriptionExecution: IAsyncDisposable
 {
     ValueTask StopAsync();
 
-    int InFlightCount { get; }
     void Enqueue(EventPage range, SubscriptionAgent subscriptionAgent);
 }
 
@@ -246,161 +280,4 @@ public interface ISubscriptionExecution: IAsyncDisposable
 public interface ISubscriptionAgent
 {
     void Pause(TimeSpan time);
-}
-
-// TODO -- subsume ProjectionController here. Command should also have a "loaded" event
-public class SubscriptionAgent: IAsyncDisposable
-{
-    private readonly AsyncOptions _options;
-    private readonly IEventLoader _loader;
-    private readonly ISubscriptionExecution _execution;
-    public string Identifier { get; }
-    private readonly CancellationTokenSource _cancellation = new();
-    private readonly ActionBlock<Command> _commandBlock;
-
-    public SubscriptionAgent(string identifier, AsyncOptions options, IEventLoader loader, ISubscriptionExecution execution)
-    {
-        _options = options;
-        _loader = loader;
-        _execution = execution;
-        Identifier = identifier;
-
-        _commandBlock = new ActionBlock<Command>(Apply, _cancellation.Token.SequentialOptions());
-    }
-
-    public CancellationToken CancellationToken => _cancellation.Token;
-
-    public long LastEnqueued { get; private set; }
-
-    public long LastCommitted { get; private set; }
-
-    public long HighWaterMark { get; private set; }
-
-    public async ValueTask DisposeAsync()
-    {
-#if NET8_0_OR_GREATER
-        await _cancellation.CancelAsync().ConfigureAwait(false);
-        #else
-        _cancellation.Cancel();
-#endif
-        _commandBlock.Complete();
-        await _execution.DisposeAsync().ConfigureAwait(false);
-    }
-
-    internal void PostCommand(Command command) => _commandBlock.Post(command);
-
-    internal async Task Apply(Command command)
-    {
-        if (_cancellation.IsCancellationRequested) return;
-
-        switch (command.Type)
-        {
-            case CommandType.HighWater:
-                MarkHighWater(command.HighWaterMark);
-                break;
-
-            case CommandType.Start:
-                Start(command.HighWaterMark, command.LastCommitted);
-                break;
-
-            case CommandType.RangeCompleted:
-                EventRangeUpdated(command.Range);
-                break;
-        }
-
-    }
-
-    public void MarkHighWater(long sequence)
-    {
-        // Ignore the high water mark if it's lower than
-        // already encountered. Not sure how that could happen,
-        // but still be ready for that.
-        if (sequence <= HighWaterMark)
-        {
-            return;
-        }
-
-        HighWaterMark = sequence;
-
-        enqueueNewEventRanges();
-    }
-
-    public void Start(long highWaterMark, long lastCommitted)
-    {
-        if (lastCommitted > highWaterMark)
-        {
-            throw new InvalidOperationException(
-                $"The last committed number ({lastCommitted}) cannot be higher than the high water mark ({highWaterMark})");
-        }
-
-        HighWaterMark = highWaterMark;
-        LastCommitted = LastEnqueued = lastCommitted;
-
-
-        if (HighWaterMark > 0)
-        {
-            enqueueNewEventRanges();
-        }
-    }
-
-    public void EventRangeUpdated(EventRange range)
-    {
-        LastCommitted = range.SequenceCeiling;
-
-        enqueueNewEventRanges();
-    }
-
-    private void enqueueNewEventRanges()
-    {
-        /*
-         * Logic:
-         * Track how many batches are ongoing? Keep a minimum of 2 batches active in hopper
-         * If there's more in the db than the batch size, build and post
-         *
-         *
-         * if high water mark == last committed, do nothing
-         * if high water mark == last fetched, no fetching
-         * if there is more on deck than the maximum
-         *
-         *
-         */
-
-
-        while (HighWaterMark > LastEnqueued && _execution.InFlightCount < _options.MaximumHopperSize)
-        {
-            var floor = LastEnqueued;
-            var ceiling = LastEnqueued + _options.BatchSize;
-            if (ceiling > HighWaterMark)
-            {
-                ceiling = HighWaterMark;
-            }
-
-            startRange(floor, ceiling);
-        }
-    }
-
-    private async Task loadNextAsync()
-    {
-        var request = new EventRequest
-        {
-            HighWater = HighWaterMark, BatchSize = _options.BatchSize, Floor = LastEnqueued
-        };
-
-        // TODO -- try/catch, and you pause here if this happens.
-        var page = await _loader.LoadAsync(request, _cancellation.Token).ConfigureAwait(false);
-
-        LastEnqueued = page.Ceiling;
-
-        _execution.Enqueue(page, this);
-    }
-
-    private void startRange(long floor, long ceiling)
-    {
-
-
-        // var range = new EventRange(_shardName, floor, ceiling);
-        // LastEnqueued = range.SequenceCeiling;
-        // _inFlight.Enqueue(range);
-        // _agent.StartRange(range);
-    }
 }
