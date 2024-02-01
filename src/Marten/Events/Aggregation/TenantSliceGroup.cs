@@ -21,7 +21,7 @@ public interface ITenantSliceGroup<TId>: IEventGrouping<TId>, IDisposable
 }
 
 /// <summary>
-///     Intermediate grouping of events by tenant within the asynchronous projection support
+///     Intermediate grouping of events by tenant within the asynchronous projection support. Really for aggregations
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
@@ -104,7 +104,7 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
         {
             Slices[id].AddEvents(events);
         }
-    } 
+    }
 
     public void Dispose()
     {
@@ -129,15 +129,9 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
                 return;
             }
 
-            await shardAgent.TryAction(async () =>
-            {
-                await runtime.ApplyChangesAsync(_session, slice, parent.Cancellation, ProjectionLifecycle.Async)
-                    .ConfigureAwait(false);
-            }, parent.Cancellation, group: parent, logException: (l, e) =>
-            {
-                l.LogError(e, "Failure trying to build a storage operation to update {DocumentType} with {Id}",
-                    typeof(TDoc).FullNameInCode(), slice.Id);
-            }, actionMode: GroupActionMode.Child).ConfigureAwait(false);
+            // TODO -- emit exceptions in one place
+            await runtime.ApplyChangesAsync(_session, slice, parent.Cancellation, ProjectionLifecycle.Async)
+                .ConfigureAwait(false);
         }, new ExecutionDataflowBlockOptions { CancellationToken = parent.Cancellation });
 
         await processEventSlices(shardAgent, runtime, store, parent.Cancellation).ConfigureAwait(false);
