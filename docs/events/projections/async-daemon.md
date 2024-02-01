@@ -125,14 +125,14 @@ projection encounters an `InvalidOperationException` like so:
 <!-- snippet: sample_stop_shard_on_exception -->
 <a id='snippet-sample_stop_shard_on_exception'></a>
 ```cs
-// Stop only the current exception
-opts.Projections.OnException<InvalidOperationException>()
-    .Stop();
-
-// or get more granular
-opts.Projections
-    .OnException<InvalidOperationException>(e => e.Message.Contains("Really bad!"))
-    .Stop(); // stops just the current projection shard
+// // Stop only the current exception
+// opts.Projections.OnException<InvalidOperationException>()
+//     .Stop();
+//
+// // or get more granular
+// opts.Projections
+//     .OnException<InvalidOperationException>(e => e.Message.Contains("Really bad!"))
+//     .Stop(); // stops just the current projection shard
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L51-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_stop_shard_on_exception' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -143,44 +143,13 @@ an additional action as shown below in this [exponential back-off error handling
 <!-- snippet: sample_exponential_back-off_strategy -->
 <a id='snippet-sample_exponential_back-off_strategy'></a>
 ```cs
-opts.Projections.OnException<NpgsqlException>()
-    .RetryLater(50.Milliseconds(), 250.Milliseconds(), 500.Milliseconds())
-    .Then
-    .Pause(1.Minutes());
+// opts.Projections.OnException<NpgsqlException>()
+//     .RetryLater(50.Milliseconds(), 250.Milliseconds(), 500.Milliseconds())
+//     .Then
+//     .Pause(1.Minutes());
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L72-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_exponential_back-off_strategy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
-## Default Error Handling Policies
-
-Here is the default error handling policies in the daemon:
-
-<!-- snippet: sample_default_daemon_exception_policies -->
-<a id='snippet-sample_default_daemon_exception_policies'></a>
-```cs
-OnException<EventFetcherException>().RetryLater(250.Milliseconds(), 500.Milliseconds(), 1.Seconds())
-    .Then.Pause(30.Seconds());
-
-OnException<ShardStopException>().DoNothing();
-
-OnException<ShardStartException>().RetryLater(250.Milliseconds(), 500.Milliseconds(), 1.Seconds())
-    .Then.DoNothing();
-
-OnException<NpgsqlException>().RetryLater(250.Milliseconds(), 500.Milliseconds(), 1.Seconds())
-    .Then.Pause(30.Seconds());
-
-OnException<MartenCommandException>().RetryLater(250.Milliseconds(), 500.Milliseconds(), 1.Seconds())
-    .Then.Pause(30.Seconds());
-
-// This exception means that the daemon has detected that another process
-// has updated the current projection shard. When this happens, Marten will stop
-// and restart the projection from its last known "good" point in 10 seconds
-OnException<ProgressionProgressOutOfOrderException>().Pause(10.Seconds());
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Daemon/DaemonSettings.cs#L55-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_daemon_exception_policies' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-Any user supplied policies would take precedence over the default policies.
 
 ## Poison Event Detection
 
@@ -193,9 +162,9 @@ Here's an example of teaching the daemon to ignore and skip events that encounte
 <!-- snippet: sample_poison_pill -->
 <a id='snippet-sample_poison_pill'></a>
 ```cs
-opts.Projections.OnApplyEventException()
-    .AndInner<ArithmeticException>()
-    .SkipEvent();
+// opts.Projections.OnApplyEventException()
+//     .AndInner<ArithmeticException>()
+//     .SkipEvent();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L64-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_poison_pill' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

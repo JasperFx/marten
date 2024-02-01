@@ -40,15 +40,17 @@ public class when_skipping_events_in_daemon : DaemonContext
 
     public when_skipping_events_in_daemon(ITestOutputHelper output) : base(output)
     {
+        throw new NotImplementedException("Have to redo this");
+
         StoreOptions(opts =>
         {
             opts.Events.DatabaseSchemaName = "daemon";
             opts.Projections.Add<ErrorRejectingEventProjection>(ProjectionLifecycle.Async);
             opts.Projections.Add<CollateNames>(ProjectionLifecycle.Async);
 
-            opts.Projections.OnApplyEventException().SkipEvent();
-            opts.Projections.OnException<NpgsqlException>().RetryLater(50.Milliseconds(), 250.Milliseconds(), 500.Milliseconds())
-                .Then.Stop();
+            // opts.Projections.OnApplyEventException().SkipEvent();
+            // opts.Projections.OnException<NpgsqlException>().RetryLater(50.Milliseconds(), 250.Milliseconds(), 500.Milliseconds())
+            //     .Then.Stop();
         });
     }
 

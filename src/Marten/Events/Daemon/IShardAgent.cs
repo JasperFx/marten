@@ -1,9 +1,4 @@
 #nullable enable
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-
 namespace Marten.Events.Daemon;
 
 /// <summary>
@@ -13,9 +8,6 @@ namespace Marten.Events.Daemon;
 public interface IShardAgent
 {
     ShardName Name { get; }
-    ShardExecutionMode Mode { get; set; }
+    ShardExecutionMode Mode { get; }
     void StartRange(EventRange range);
-
-    Task TryAction(Func<Task> action, CancellationToken token, Action<ILogger, Exception>? logException = null,
-        EventRangeGroup? group = null, GroupActionMode actionMode = GroupActionMode.Parent);
 }
