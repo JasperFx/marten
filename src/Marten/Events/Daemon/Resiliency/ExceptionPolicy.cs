@@ -5,11 +5,13 @@ using Marten.Exceptions;
 
 namespace Marten.Events.Daemon.Resiliency;
 
+[Obsolete("Kill in V7")]
 internal interface IExceptionPolicy
 {
     bool TryMatch(Exception ex, int attemptCount, out IContinuation continuation);
 }
 
+[Obsolete("Kill in V7")]
 public class ExceptionPolicy: IHandlerDefinition, IThenExpression, IExceptionPolicy
 {
     private readonly List<Func<Exception, bool>> _filters = new();
@@ -194,6 +196,7 @@ public interface ICoreHandlerDefinition
     void SkipEvent();
 }
 
+[Obsolete("Kill in V7")]
 public interface IThenExpression
 {
     /// <summary>
@@ -203,6 +206,7 @@ public interface IThenExpression
     ICoreHandlerDefinition Then { get; }
 }
 
+[Obsolete("Kill in V7")]
 public interface IHandlerDefinition: ICoreHandlerDefinition
 {
     /// <summary>

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
 using Marten.Events.Projections;
 using Marten.Exceptions;
@@ -235,36 +234,6 @@ internal record GroupExecution(
     {
         // TODO -- try/catch around this will stop or pause the shard or shard group
         return Source.GroupEvents(Store, Database, Range, token);
-    }
-}
-
-// TODO -- this is hot garbage, replace when you can
-internal static class BlockFactory
-{
-    public static ExecutionDataflowBlockOptions SequentialOptions(this CancellationToken token)
-    {
-        return new ExecutionDataflowBlockOptions
-        {
-            EnsureOrdered = true, MaxDegreeOfParallelism = 1, CancellationToken = token
-        };
-    }
-
-    public static TransformBlock<EventRange, EventRangeGroup> BuildGrouping(IProjectionSource source,
-        DocumentStore store, IMartenDatabase database, CancellationToken token)
-    {
-        var options = token.SequentialOptions();
-        var pipeline = store.Options.ResiliencePipeline;
-
-        // TODO -- build in communication to the parent in the case of failures getting out of the resilience
-        // block
-        Task<EventRangeGroup> Transform(EventRange range)
-        {
-            var execution = new GroupExecution(source, range, database, store);
-            return pipeline.ExecuteAsync(static (x, t) => x.GroupAsync(t), execution, token).AsTask();
-        }
-
-        return new TransformBlock<EventRange, EventRangeGroup>((Func<EventRange, Task<EventRangeGroup>>)Transform,
-            options);
     }
 }
 
