@@ -25,10 +25,11 @@ public class Bug_2074_recovering_from_errors
 
             options.Projections.Add<UserIssueCounterProjection>(ProjectionLifecycle.Async);
 
-            options.Projections.OnApplyEventException()
-                .RetryLater(250.Milliseconds(), 500.Milliseconds(), 1.Seconds())
-                .Then
-                .Pause(5.Seconds());
+            throw new NotImplementedException("Redo the ApplyEvent skipping");
+            // options.Projections.OnApplyEventException()
+            //     .RetryLater(250.Milliseconds(), 500.Milliseconds(), 1.Seconds())
+            //     .Then
+            //     .Pause(5.Seconds());
         });
 
         await using var provider = services.BuildServiceProvider();

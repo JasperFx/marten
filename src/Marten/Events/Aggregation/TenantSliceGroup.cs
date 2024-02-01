@@ -174,16 +174,11 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
 
         var ids = beingFetched.Select(x => x.Id).ToArray();
 
-        IReadOnlyList<TDoc> aggregates = null;
+        var options = new SessionOptions { Tenant = Tenant, AllowAnyTenant = true };
 
-        await shardAgent.TryAction(async () =>
-        {
-            var options = new SessionOptions { Tenant = Tenant, AllowAnyTenant = true };
-
-            await using var session = (IMartenSession)store.LightweightSession(options);
-            aggregates = await runtime.Storage
-                .LoadManyAsync(ids, session, token).ConfigureAwait(false);
-        }, token).ConfigureAwait(false);
+        await using var session = (IMartenSession)store.LightweightSession(options);
+        var aggregates = await runtime.Storage
+            .LoadManyAsync(ids, session, token).ConfigureAwait(false);
 
         if (token.IsCancellationRequested || aggregates == null)
         {
