@@ -2,6 +2,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -202,9 +203,11 @@ internal class ShardAgent: IShardAgent, IObserver<ShardState>
         _tracker = daemon.Tracker;
         _daemon = daemon;
 
+        var filters = _projectionShard.BuildFilters(_store).ToArray();
+
         _fetcher = Mode == ShardExecutionMode.Continuous
-            ? new EventFetcher(_store, _daemon.Database, _projectionShard.EventFilters)
-            : new RebuildingEventFetcher(_store, this, _daemon.Database, _projectionShard.EventFilters);
+            ? new EventFetcher(_store, _daemon.Database, filters)
+            : new RebuildingEventFetcher(_store, this, _daemon.Database, filters);
 
         _grouping = new TransformBlock<EventRange, EventRangeGroup>(groupEventRange, singleFileOptions);
 

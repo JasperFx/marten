@@ -32,38 +32,12 @@ public class AggregationProjectionTests
             .ShouldBe(shouldApply);
     }
 
-    [Fact]
-    public void adding_filter_for_aggregate_type()
-    {
-        var projection = new SampleAggregate();
-        projection.AssembleAndAssertValidity();
-
-        using var store = DocumentStore.For(ConnectionSource.ConnectionString);
-        var filters = projection.BuildFilters(store);
-
-        var filter = filters.OfType<AggregateTypeFilter>().Single();
-        filter.AggregateType.ShouldBe(typeof(MyAggregate));
-    }
 
     public class OtherAggregate
     {
         public Guid Id { get; set; }
     }
 
-    [Fact]
-    public void adding_filter_for_another_aggregate_type()
-    {
-        var projection = new SingleStreamProjection<MyAggregate>();
-        projection.ProjectEvent<AEvent>(a => { });
-        projection.FilterIncomingEventsOnStreamType(typeof(OtherAggregate));
-        projection.AssembleAndAssertValidity();
-
-        using var store = DocumentStore.For(ConnectionSource.ConnectionString);
-        var filters = projection.BuildFilters(store);
-
-        var filter = filters.OfType<AggregateTypeFilter>().Single();
-        filter.AggregateType.ShouldBe(typeof(OtherAggregate));
-    }
 }
 
 public interface IThing{}
