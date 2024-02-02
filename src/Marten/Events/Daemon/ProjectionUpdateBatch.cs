@@ -54,6 +54,13 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     public EventRange Range { get; }
 
+    public Task WaitForCompletion()
+    {
+        Queue.Complete();
+        return Queue.Completion;
+    }
+
+    // TODO -- make this private
     public ActionBlock<IStorageOperation> Queue { get; }
 
     IEnumerable<IDeletion> IUnitOfWork.Deletions()

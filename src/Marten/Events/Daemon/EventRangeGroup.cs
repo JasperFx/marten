@@ -18,8 +18,6 @@ public abstract class EventRangeGroup: IDisposable
 
     public EventRange Range { get; }
 
-    public Exception Exception { get; private set; }
-
     public bool WasAborted { get; private set; }
 
     public CancellationToken Cancellation { get; private set; }
@@ -33,8 +31,6 @@ public abstract class EventRangeGroup: IDisposable
     /// </summary>
     public void Reset()
     {
-        Exception = null;
-
         Attempts++;
         WasAborted = false;
         _cancellationTokenSource = new CancellationTokenSource();
@@ -44,17 +40,8 @@ public abstract class EventRangeGroup: IDisposable
         reset();
     }
 
-    public void Abort(Exception ex = null)
-    {
-        WasAborted = true;
-        _cancellationTokenSource.Cancel();
-        reset();
-
-        Exception = ex;
-    }
-
     protected abstract void reset();
 
-    public abstract Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch);
+    public abstract Task ConfigureUpdateBatch(ProjectionUpdateBatch batch);
     public abstract ValueTask SkipEventSequence(long eventSequence, IMartenDatabase database);
 }

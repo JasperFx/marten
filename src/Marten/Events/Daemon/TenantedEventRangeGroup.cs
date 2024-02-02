@@ -82,7 +82,7 @@ internal class TenantedEventRangeGroup: EventRangeGroup
         return $"Tenant Group Range for: {Range}";
     }
 
-    public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch)
+    public override Task ConfigureUpdateBatch(ProjectionUpdateBatch batch)
     {
         return Parallel.ForEachAsync(Groups, Cancellation,
             async (tenantGroup, token) =>
