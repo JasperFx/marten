@@ -232,7 +232,6 @@ internal record GroupExecution(
 {
     public ValueTask<EventRangeGroup> GroupAsync(CancellationToken token)
     {
-        // TODO -- try/catch around this will stop or pause the shard or shard group
         return Source.GroupEvents(Store, Database, Range, token);
     }
 }
@@ -243,8 +242,6 @@ public interface ISubscriptionExecution: IAsyncDisposable
 
     void Enqueue(EventPage range, SubscriptionAgent subscriptionAgent);
 }
-
-
 
 public interface ISubscriptionAgent
 {
