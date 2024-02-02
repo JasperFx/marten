@@ -40,17 +40,12 @@ internal class TenantSliceRange<TDoc, TId>: EventRangeGroup
         return $"Aggregate for {Range}, {Groups.Count} slices";
     }
 
-    public override async Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch)
+    public override async Task ConfigureUpdateBatch(ProjectionUpdateBatch batch)
     {
         await Parallel.ForEachAsync(Groups, CancellationToken.None,
                 async (group, _) =>
-                    await group.Start(shardAgent, batch, _runtime, _store, this).ConfigureAwait(false))
+                    await group.Start(batch, _runtime, _store, this).ConfigureAwait(false))
             .ConfigureAwait(false);
-
-        if (Exception != null)
-        {
-            ExceptionDispatchInfo.Capture(Exception).Throw();
-        }
     }
 
     public override async ValueTask SkipEventSequence(long eventSequence, IMartenDatabase database)

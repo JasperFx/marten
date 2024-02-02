@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
@@ -12,7 +11,6 @@ using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Services;
 using Marten.Storage;
-using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Aggregation;
 
@@ -111,13 +109,10 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
         _session.Dispose();
     }
 
-    internal async Task Start(
-        IShardAgent shardAgent,
-        ProjectionUpdateBatch updateBatch,
+    internal async Task Start(ProjectionUpdateBatch updateBatch,
         IAggregationRuntime<TDoc, TId> runtime,
         DocumentStore store,
-        EventRangeGroup parent
-    )
+        EventRangeGroup parent)
     {
         _session = new ProjectionDocumentSession(store, updateBatch,
             new SessionOptions { Tracking = DocumentTracking.None, Tenant = Tenant });
@@ -134,7 +129,7 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
                 .ConfigureAwait(false);
         }, new ExecutionDataflowBlockOptions { CancellationToken = parent.Cancellation });
 
-        await processEventSlices(shardAgent, runtime, store, parent.Cancellation).ConfigureAwait(false);
+        await processEventSlices(runtime, store, parent.Cancellation).ConfigureAwait(false);
 
         var builder = Volatile.Read(ref _builder);
 
@@ -145,7 +140,7 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
         }
     }
 
-    private async Task processEventSlices(IShardAgent shardAgent, IAggregationRuntime<TDoc, TId> runtime,
+    private async Task processEventSlices(IAggregationRuntime<TDoc, TId> runtime,
         IDocumentStore store, CancellationToken token)
     {
         var beingFetched = new List<EventSlice<TDoc, TId>>();
