@@ -84,7 +84,7 @@ internal class ProjectionController
         var range = new EventRange(_shardName, floor, ceiling);
         LastEnqueued = range.SequenceCeiling;
         _inFlight.Enqueue(range);
-        _agent.StartRange(range);
+        //_agent.StartRange(range);
     }
 
     public void EventRangeUpdated(EventRange range)

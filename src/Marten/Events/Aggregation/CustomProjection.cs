@@ -127,9 +127,7 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
     {
         readDocumentStorage(store);
 
-        var filters = BuildFilters(store);
-
-        return new List<AsyncProjectionShard> { new(this, filters)
+        return new List<AsyncProjectionShard> { new(this)
         {
             IncludeArchivedEvents = false,
             EventTypes = IncludedEventTypes,
