@@ -129,7 +129,12 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
 
         var filters = BuildFilters(store);
 
-        return new List<AsyncProjectionShard> { new(this, filters) };
+        return new List<AsyncProjectionShard> { new(this, filters)
+        {
+            IncludeArchivedEvents = false,
+            EventTypes = IncludedEventTypes,
+            StreamType = StreamType
+        } };
     }
 
     async ValueTask<EventRangeGroup> IProjectionSource.GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase,

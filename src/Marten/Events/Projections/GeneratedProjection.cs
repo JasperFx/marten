@@ -76,7 +76,12 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
         // TODO -- this will have to change when we actually do sharding!!!
         var filters = BuildFilters(store);
 
-        return new List<AsyncProjectionShard> { new(this, filters) };
+        return new List<AsyncProjectionShard> { new(this, filters)
+        {
+            IncludeArchivedEvents = false,
+            EventTypes = IncludedEventTypes,
+            StreamType = StreamType
+        } };
     }
 
 
