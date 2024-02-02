@@ -108,7 +108,7 @@ public class ProjectionControllerTests: IProjectionHost
             source.ProjectionName.Returns(projectionName);
 
             source.Lifecycle.Returns(pair.Item2);
-            return new AsyncProjectionShard(identifier[1], source, Array.Empty<ISqlFragment>());
+            return new AsyncProjectionShard(identifier[1], source);
         }).ToList();
 
         store.Shards.Returns(shards);

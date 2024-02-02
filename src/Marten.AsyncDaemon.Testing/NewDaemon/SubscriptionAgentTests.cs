@@ -13,13 +13,13 @@ namespace Marten.AsyncDaemon.Testing.NewDaemon;
 public class SubscriptionAgentTests
 {
     private IEventLoader theLoader = Substitute.For<IEventLoader>();
-    private AsyncOptions theOptions = new AsyncOptions();
+    private AsyncOptions theOptions = new();
     private ISubscriptionExecution theExecution = Substitute.For<ISubscriptionExecution>();
     private SubscriptionAgent theAgent;
 
     public SubscriptionAgentTests()
     {
-        theAgent = new SubscriptionAgent("Something", theOptions, theLoader, theExecution);
+        theAgent = new SubscriptionAgent(new ShardName("Projection1"), theOptions, theLoader, theExecution, ShardExecutionMode.Continuous);
     }
 
     [Fact]

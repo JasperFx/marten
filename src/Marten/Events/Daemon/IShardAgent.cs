@@ -1,4 +1,6 @@
 #nullable enable
+using System;
+
 namespace Marten.Events.Daemon;
 
 /// <summary>
@@ -9,5 +11,4 @@ public interface IShardAgent
 {
     ShardName Name { get; }
     ShardExecutionMode Mode { get; }
-    void StartRange(EventRange range);
 }

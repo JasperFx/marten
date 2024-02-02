@@ -32,7 +32,7 @@ public class build_aggregate_projection: DaemonContext
         var filter = projection.As<IProjectionSource>()
             .AsyncProjectionShards(theStore)
             .First()
-            .EventFilters
+            .BuildFilters(theStore)
             .OfType<EventTypeFilter>()
             .Single();
 

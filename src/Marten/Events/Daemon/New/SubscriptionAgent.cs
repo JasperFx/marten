@@ -10,16 +10,17 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     private readonly AsyncOptions _options;
     private readonly IEventLoader _loader;
     private readonly ISubscriptionExecution _execution;
-    public string Identifier { get; }
+    public ShardName Name { get; }
     private readonly CancellationTokenSource _cancellation = new();
     private readonly ActionBlock<Command> _commandBlock;
 
-    public SubscriptionAgent(string identifier, AsyncOptions options, IEventLoader loader, ISubscriptionExecution execution)
+    public SubscriptionAgent(ShardName name, AsyncOptions options, IEventLoader loader, ISubscriptionExecution execution, ShardExecutionMode mode)
     {
         _options = options;
         _loader = loader;
         _execution = execution;
-        Identifier = identifier;
+        Name = name;
+        Mode = mode;
 
         _commandBlock = new ActionBlock<Command>(Apply, _cancellation.Token.SequentialOptions());
     }
@@ -125,13 +126,12 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         _execution.Enqueue(page, this);
     }
 
-    public void Pause(TimeSpan time)
-    {
-        throw new NotImplementedException();
-    }
 
     public void MarkSuccess(long processedCeiling)
     {
         _commandBlock.Post(Command.Completed(processedCeiling));
     }
+
+    public ShardExecutionMode Mode { get; }
+
 }

@@ -31,7 +31,7 @@ public class event_projections_end_to_end : DaemonContext
         var filter = projection.As<IProjectionSource>()
             .AsyncProjectionShards(theStore)
             .First()
-            .EventFilters
+            .BuildFilters(theStore)
             .OfType<Marten.Events.Daemon.EventTypeFilter>()
             .Single();
 

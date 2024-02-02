@@ -12,16 +12,14 @@ namespace Marten.Events.Daemon;
 /// </summary>
 public class AsyncProjectionShard
 {
-    // TODO -- don't inject filters here
-    public AsyncProjectionShard(string shardName, IProjectionSource source, ISqlFragment[] filters)
+    public AsyncProjectionShard(string shardName, IProjectionSource source)
     {
         Name = new ShardName(source.ProjectionName, shardName);
-        EventFilters = filters.Concat(new ISqlFragment[] { IsNotArchivedFilter.Instance }).ToArray();
         Source = source;
     }
 
-    public AsyncProjectionShard(IProjectionSource source, ISqlFragment[] filters): this(ShardName.All,
-        source, filters)
+    public AsyncProjectionShard(IProjectionSource source): this(ShardName.All,
+        source)
     {
     }
 
@@ -33,12 +31,23 @@ public class AsyncProjectionShard
 
     public bool IncludeArchivedEvents { get; set; }
 
-    /// <summary>
-    ///     WHERE clause fragments used to filter the events
-    ///     to be applied to this projection shard
-    /// </summary>
-    [Obsolete]
-    public ISqlFragment[] EventFilters { get; }
+    public IEnumerable<ISqlFragment> BuildFilters(DocumentStore store)
+    {
+        if (EventTypes.Any() && !EventTypes.Any(x => x.IsAbstract || x.IsInterface))
+        {
+            yield return new EventTypeFilter(store.Options.EventGraph, EventTypes);
+        }
+
+        if (StreamType != null)
+        {
+            yield return new AggregateTypeFilter(StreamType, store.Options.EventGraph);
+        }
+
+        if (!IncludeArchivedEvents)
+        {
+            yield return IsNotArchivedFilter.Instance;
+        }
+    }
 
     /// <summary>
     ///     The identity of this projection shard
