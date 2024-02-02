@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Marten.Events.Daemon.New;
 using Marten.Events.Daemon.Progress;
 using Marten.Internal.Operations;
 
@@ -50,6 +51,9 @@ public class EventRange
     ///     The actual number of events in this range
     /// </summary>
     public int Size => Events?.Count ?? (int)(SequenceCeiling - SequenceFloor);
+
+    // TODO -- make this come through the constructor later
+    public ISubscriptionAgent Agent { get; set; }
 
     protected bool Equals(EventRange other)
     {
