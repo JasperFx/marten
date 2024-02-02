@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using Marten.Events.Archiving;
 using Marten.Events.Projections;
@@ -10,6 +12,7 @@ namespace Marten.Events.Daemon;
 /// </summary>
 public class AsyncProjectionShard
 {
+    // TODO -- don't inject filters here
     public AsyncProjectionShard(string shardName, IProjectionSource source, ISqlFragment[] filters)
     {
         Name = new ShardName(source.ProjectionName, shardName);
@@ -24,10 +27,17 @@ public class AsyncProjectionShard
 
     public IProjectionSource Source { get; }
 
+    public Type? StreamType { get; set; }
+
+    public IReadOnlyList<Type> EventTypes { get; init; }
+
+    public bool IncludeArchivedEvents { get; set; }
+
     /// <summary>
     ///     WHERE clause fragments used to filter the events
     ///     to be applied to this projection shard
     /// </summary>
+    [Obsolete]
     public ISqlFragment[] EventFilters { get; }
 
     /// <summary>

@@ -41,7 +41,12 @@ internal class ProjectionWrapper: IProjectionSource
 
     IReadOnlyList<AsyncProjectionShard> IProjectionSource.AsyncProjectionShards(DocumentStore store)
     {
-        return new List<AsyncProjectionShard> { new(this, new ISqlFragment[0]) };
+        return new List<AsyncProjectionShard> { new(this, Array.Empty<ISqlFragment>())
+        {
+            EventTypes = ArraySegment<Type>.Empty,
+            StreamType = null,
+            IncludeArchivedEvents = false
+        } };
     }
 
     public ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase, EventRange range,
