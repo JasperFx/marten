@@ -37,8 +37,14 @@ public class EventSelection
     }
 }
 
-public class EventPage(long Floor): List<IEvent>
+public class EventPage: List<IEvent>
 {
+    public EventPage(long floor)
+    {
+        Floor = floor;
+    }
+
+    public long Floor { get; }
     public long Ceiling { get; private set; }
 
     public void CalculateCeiling(int batchSize, long highWaterMark)
@@ -48,6 +54,7 @@ public class EventPage(long Floor): List<IEvent>
             : highWaterMark;
     }
 
+    // TODO -- this won't be used.
     internal IStorageOperation BuildProgressionOperation(EventGraph events)
     {
         throw new NotImplementedException();
@@ -238,12 +245,11 @@ internal record GroupExecution(
 
 public interface ISubscriptionExecution: IAsyncDisposable
 {
-    ValueTask StopAsync();
-
-    void Enqueue(EventPage range, SubscriptionAgent subscriptionAgent);
+    void Enqueue(EventPage page, ISubscriptionAgent subscriptionAgent);
 }
 
 public interface ISubscriptionAgent
 {
     void Pause(TimeSpan time);
+    void MarkSuccess(long processedCeiling);
 }

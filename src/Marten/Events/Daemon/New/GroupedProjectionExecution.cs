@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -16,9 +15,9 @@ public class GroupedProjectionExecution: ISubscriptionExecution
     private readonly DocumentStore _store;
     private readonly IMartenDatabase _database;
     private readonly CancellationTokenSource _cancellation = new();
-    private TransformBlock<EventRange, EventRangeGroup>? _grouping;
-    private ActionBlock<EventRangeGroup>? _building;
-    private SessionOptions _sessionOptions;
+    private readonly TransformBlock<EventRange, EventRangeGroup> _grouping;
+    private readonly ActionBlock<EventRangeGroup> _building;
+    private readonly SessionOptions _sessionOptions;
 
     // TODO -- use combined cancellation?
     public GroupedProjectionExecution(IProjectionSource source, DocumentStore store, IMartenDatabase database)
@@ -69,6 +68,7 @@ public class GroupedProjectionExecution: ISubscriptionExecution
 
         await batch.WaitForCompletion().ConfigureAwait(false);
 
+        // Clean up the group, release sessions. TODO -- find a way to eliminate this
         group.Dispose();
 
         // Executing the SQL commands for the ProjectionUpdateBatch
@@ -78,6 +78,8 @@ public class GroupedProjectionExecution: ISubscriptionExecution
             // probably deserves a full circuit break
             await session.ExecuteBatchAsync(batch, _cancellation.Token).ConfigureAwait(false);
 
+            group.Agent.MarkSuccess(group.Range.SequenceCeiling);
+
             // TODO -- log here obviously
             // Logger.LogInformation("Shard '{ProjectionShardIdentity}': Executed updates for {Range}",
             //     ProjectionShardIdentity, batch.Range);
@@ -86,7 +88,7 @@ public class GroupedProjectionExecution: ISubscriptionExecution
         {
             if (!_cancellation.IsCancellationRequested)
             {
-                // TODO -- log here obviously
+                // TODO -- log here obviously. Probably freeze/pause the processing
                 // Logger.LogError(e,
                 //     "Failure in shard '{ProjectionShardIdentity}' trying to execute an update batch for {Range}",
                 //     ProjectionShardIdentity,
@@ -96,21 +98,32 @@ public class GroupedProjectionExecution: ISubscriptionExecution
         }
     }
 
+    // TODO -- pipe this through the EventPage
     public ShardExecutionMode Mode { get; set; } = ShardExecutionMode.Continuous;
 
 
     public async ValueTask DisposeAsync()
     {
-        throw new System.NotImplementedException();
+#if NET8_0_OR_GREATER
+        await _cancellation.CancelAsync().ConfigureAwait(false);
+#else
+        _cancellation.Cancel();
+#endif
+
+        _grouping.Complete();
+        _building.Complete();
     }
 
-    public async ValueTask StopAsync()
+    public void Enqueue(EventPage page, ISubscriptionAgent subscriptionAgent)
     {
-        throw new System.NotImplementedException();
-    }
+        if (_cancellation.IsCancellationRequested) return;
 
-    public void Enqueue(EventPage range, SubscriptionAgent subscriptionAgent)
-    {
-        throw new System.NotImplementedException();
+        // TODO -- let's get rid of shard name
+        var range = new EventRange(new ShardName("Some", "All"), page.Floor, page.Ceiling)
+        {
+            Agent = subscriptionAgent
+        };
+
+        _grouping.Post(range);
     }
 }
