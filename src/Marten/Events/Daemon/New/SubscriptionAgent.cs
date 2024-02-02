@@ -78,7 +78,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
                 break;
 
             case CommandType.RangeCompleted:
-                LastCommitted = command.Range.SequenceCeiling;
+                LastCommitted = command.LastCommitted;
                 break;
         }
 
@@ -128,5 +128,10 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     public void Pause(TimeSpan time)
     {
         throw new NotImplementedException();
+    }
+
+    public void MarkSuccess(long processedCeiling)
+    {
+        _commandBlock.Post(Command.Completed(processedCeiling));
     }
 }

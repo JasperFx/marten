@@ -11,7 +11,6 @@ using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Progress;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
-using Marten.Exceptions;
 using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;

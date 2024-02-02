@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Daemon.New;
 using Marten.Storage;
 
 namespace Marten.Events.Daemon;
@@ -14,7 +15,11 @@ public abstract class EventRangeGroup: IDisposable
     {
         _parent = parent;
         Range = range;
+        Agent = range.Agent ?? throw new ArgumentOutOfRangeException(nameof(range), "Agent cannot be null");
     }
+
+    // TODO -- pull this into the constructor later
+    public ISubscriptionAgent Agent { get; }
 
     public EventRange Range { get; }
 
