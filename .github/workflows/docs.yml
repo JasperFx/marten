@@ -2,13 +2,14 @@ name: Docs build and deploy
 
 on:
   # run it on push to the default repository branch
-  #  push:
-  #    branches: [ master ]
+   push:
+     branches: [ master ]
   workflow_dispatch:
     inputs:
       publish_docs:
         description: 'Publish docs'
         type: boolean
+        default: true
 
 env:
   config: Release
