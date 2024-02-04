@@ -34,8 +34,9 @@ export default withMermaid({
 
     nav: [
       {
-        text: 'latest (v6.x)',
+        text: 'latest (v7.x)',
         items: [
+          { text: 'v6.x', link: 'https://marten-docs-v6.netlify.app', target: "_blank" },
           { text: 'v5.x', link: 'https://marten-docs-v5.netlify.app', target: "_blank" },
           { text: 'v4.x', link: 'https://marten-docs-v4.netlify.app', target: "_blank" },
           { text: 'v3.x', link: 'https://martendb.io/v3/index.html', target: "_blank" }
