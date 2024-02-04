@@ -34,7 +34,7 @@ export default withMermaid({
 
     nav: [
       {
-        text: 'latest (v6.x)',
+        text: 'v6.x',
         items: [
           { text: 'v5.x', link: 'https://marten-docs-v5.netlify.app', target: "_blank" },
           { text: 'v4.x', link: 'https://marten-docs-v4.netlify.app', target: "_blank" },
@@ -49,10 +49,14 @@ export default withMermaid({
       { text: 'Join Chat', link: 'https://discord.gg/WMxrvegf8H' },
     ],
 
-    algolia: {
-      appId: '9S7KY0SIDO',
-      apiKey: '5b95a0e704fcf10d97ae621741cd907d',
-      indexName: 'marten_index'
+    // algolia: {
+    //   appId: '9S7KY0SIDO',
+    //   apiKey: '5b95a0e704fcf10d97ae621741cd907d',
+    //   indexName: 'marten_index'
+    // },
+
+    search: {
+      provider: 'local'
     },
 
     editLink: {
