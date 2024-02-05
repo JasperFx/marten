@@ -48,7 +48,7 @@ public class DaemonSettings: IReadOnlyDaemonSettings
     /// <summary>
     ///     Register session listeners that will ONLY be applied within the asynchronous daemon updates.
     /// </summary>
-    public readonly IList<IChangeListener> AsyncListeners = new List<IChangeListener>();
+    public readonly List<IChangeListener> AsyncListeners = new();
 
     /// <summary>
     ///     This is used to establish a global lock id for the async daemon and should

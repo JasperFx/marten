@@ -6,6 +6,7 @@ using Marten.Events.Projections;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
+using Weasel.Core;
 
 namespace Marten.Events.Daemon.New;
 
@@ -33,6 +34,21 @@ public class GroupedProjectionExecution: ISubscriptionExecution
         _grouping.LinkTo(_building);
     }
 
+    public async Task EnsureStorageExists()
+    {
+        if (_store.Options.AutoCreateSchemaObjects == AutoCreate.None) return;
+
+        foreach (var storageType in _source.Options.StorageTypes)
+        {
+            await _database.EnsureStorageExistsAsync(storageType, _cancellation.Token).ConfigureAwait(false);
+        }
+
+        foreach (var publishedType in _source.PublishedTypes())
+        {
+            await _database.EnsureStorageExistsAsync(publishedType, _cancellation.Token).ConfigureAwait(false);
+        }
+    }
+
     private async Task<EventRangeGroup> groupEventRange(EventRange range)
     {
         if (_cancellation.IsCancellationRequested)
@@ -57,7 +73,7 @@ public class GroupedProjectionExecution: ISubscriptionExecution
 
         await using var session = (DocumentSessionBase)_store.IdentitySession(_sessionOptions!);
         await using var batch = new ProjectionUpdateBatch(_store.Events, _store.Options.Projections, session,
-            group.Range, group.Cancellation, Mode);
+            group.Range, group.Cancellation, group.Agent.Mode);
 
         await group.ConfigureUpdateBatch(batch).ConfigureAwait(false);
 
@@ -98,10 +114,6 @@ public class GroupedProjectionExecution: ISubscriptionExecution
         }
     }
 
-    // TODO -- pipe this through the EventPage
-    public ShardExecutionMode Mode { get; set; } = ShardExecutionMode.Continuous;
-
-
     public async ValueTask DisposeAsync()
     {
 #if NET8_0_OR_GREATER
@@ -118,10 +130,10 @@ public class GroupedProjectionExecution: ISubscriptionExecution
     {
         if (_cancellation.IsCancellationRequested) return;
 
-        // TODO -- let's get rid of shard name
-        var range = new EventRange(new ShardName("Some", "All"), page.Floor, page.Ceiling)
+        var range = new EventRange(subscriptionAgent.Name, page.Floor, page.Ceiling)
         {
-            Agent = subscriptionAgent
+            Agent = subscriptionAgent,
+            Events = page
         };
 
         _grouping.Post(range);

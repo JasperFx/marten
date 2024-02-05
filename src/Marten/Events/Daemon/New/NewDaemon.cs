@@ -37,6 +37,7 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
     private readonly List<ISubscriptionAgent> _active = new();
     private CancellationTokenSource _cancellation = new();
     private readonly HighWaterAgent _highWater;
+    private readonly IDisposable _breakSubscription;
 
     public NewDaemon(DocumentStore store, MartenDatabase database, ILogger logger, IHighWaterDetector detector,
         IAgentFactory factory)
@@ -48,6 +49,7 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
         Tracker = Database.Tracker;
         _highWater = new HighWaterAgent(detector, Tracker, logger, store.Options.Projections, _cancellation.Token);
 
+        _breakSubscription = database.Tracker.Subscribe(this);
     }
 
     public MartenDatabase Database { get; }
@@ -58,6 +60,7 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
     {
         _cancellation?.Dispose();
         _highWater?.Dispose();
+        _breakSubscription.Dispose();
     }
 
     public ShardStateTracker Tracker { get; }
@@ -131,14 +134,23 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
 
     private async Task startAgent(ISubscriptionAgent agent, ShardExecutionMode mode)
     {
+        // Be idempotent, don't start an agent that is already running
+        if (_active.Any(x => Equals(x.Name, agent.Name))) return;
+
         // TODO -- harden this
         var position = await Database.ProjectionProgressFor(agent.Name, _cancellation.Token).ConfigureAwait(false);
-        agent.Start(position, mode);
+        await agent.StartAsync(position, mode).ConfigureAwait(false);
+        agent.MarkHighWater(HighWaterMark());
         _active.Add(agent);
     }
 
     public async Task StartShard(string shardName, CancellationToken token)
     {
+        if (!_highWater.IsRunning)
+        {
+            await StartDaemon().ConfigureAwait(false);
+        }
+
         var agent = _active.FirstOrDefault(x => x.Name.Identity == shardName);
         if (agent != null) return;
 
@@ -160,6 +172,11 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
 
     public async Task StartAllShards()
     {
+        if (!_highWater.IsRunning)
+        {
+            await StartDaemon().ConfigureAwait(false);
+        }
+
         var agents = _factory.BuildAllAgents(Database);
         foreach (var agent in agents)
         {
@@ -198,6 +215,15 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
 
         var message = $"The active projection shards did not reach sequence {statistics.EventSequenceNumber} in time";
         throw new TimeoutException(message);
+    }
+
+    public AgentStatus StatusFor(string shardName)
+    {
+        var agent = _active.FirstOrDefault(x => x.Name.Identity == shardName);
+        if (agent == null) return AgentStatus.Stopped;
+
+        // TODO -- add Paused mechanics
+        return AgentStatus.Running;
     }
 
     public Task PauseHighWaterAgent()

@@ -10,6 +10,7 @@ using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
+using Marten.Events.Daemon.New;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Exceptions;
@@ -17,6 +18,7 @@ using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql.Connections;
 using IsolationLevel = System.Data.IsolationLevel;
@@ -407,7 +409,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
     {
         AssertTenantOrDatabaseIdentifierIsValid(tenantIdOrDatabaseIdentifier);
 
-        logger ??= new NulloLogger();
+        logger ??= Options.LogFactory?.CreateLogger<NewDaemon>() ?? Options.DotNetLogger ?? NullLogger.Instance;
 
         var database = tenantIdOrDatabaseIdentifier.IsEmpty()
             ? Tenancy.Default.Database
