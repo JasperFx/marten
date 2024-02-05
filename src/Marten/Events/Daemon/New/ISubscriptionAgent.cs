@@ -14,5 +14,5 @@ public interface ISubscriptionAgent : IShardAgent
     Task StopAndDrainAsync(CancellationToken token);
     Task HardStopAsync();
 
-    void Start(long floor, ShardExecutionMode mode, ShardStateTracker tracker);
+    void Start(long floor, ShardExecutionMode mode);
 }

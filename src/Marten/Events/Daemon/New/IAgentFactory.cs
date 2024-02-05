@@ -41,7 +41,7 @@ public class AgentFactory : IAgentFactory
         var loader = new EventLoader(_store, database, shard, shard.Source.Options);
         var wrapped = new ResilientEventLoader(_store.Options.ResiliencePipeline, loader);
 
-        return new SubscriptionAgent(shard.Name, shard.Source.Options, wrapped, execution);
+        return new SubscriptionAgent(shard.Name, shard.Source.Options, wrapped, execution, database.Tracker);
     }
 
     public IReadOnlyList<ISubscriptionAgent> BuildAllAgents(MartenDatabase database)
