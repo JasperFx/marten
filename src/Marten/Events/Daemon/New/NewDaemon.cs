@@ -38,13 +38,14 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
     private CancellationTokenSource _cancellation = new();
     private readonly HighWaterAgent _highWater;
 
-    public NewDaemon(DocumentStore store, MartenDatabase database, ILogger logger, IHighWaterDetector detector, IAgentFactory factory, ShardStateTracker tracker)
+    public NewDaemon(DocumentStore store, MartenDatabase database, ILogger logger, IHighWaterDetector detector,
+        IAgentFactory factory)
     {
         Database = database;
         _store = store;
         _factory = factory;
         Logger = logger;
-        Tracker = tracker;
+        Tracker = Database.Tracker;
         _highWater = new HighWaterAgent(detector, Tracker, logger, store.Options.Projections, _cancellation.Token);
 
     }
