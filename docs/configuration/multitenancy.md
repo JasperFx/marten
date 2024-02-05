@@ -126,7 +126,7 @@ The multi-tenancy strategy is pluggable. Start by implementing the `Marten.Stora
 /// <summary>
 ///     Pluggable interface for Marten multi-tenancy by database
 /// </summary>
-public interface ITenancy: IDatabaseSource
+public interface ITenancy: IDatabaseSource, IDisposable
 {
     /// <summary>
     ///     The default tenant. This can be null.
@@ -168,7 +168,7 @@ public interface ITenancy: IDatabaseSource
     bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Storage/ITenancy.cs#L8-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_itenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Storage/ITenancy.cs#L9-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_itenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Assuming that we have a custom `ITenancy` model:

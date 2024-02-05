@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -47,6 +48,14 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
     {
         _options = options;
         Cleaner = new CompositeDocumentCleaner(this);
+    }
+
+    public void Dispose()
+    {
+        foreach (var entry in _tenants.Enumerate())
+        {
+            entry.Value.Database.Dispose();
+        }
     }
 
     public ISingleServerMultiTenancy WithTenants(params string[] tenantIds)

@@ -50,4 +50,9 @@ internal class DefaultTenancy: Tenancy, ITenancy
     {
         Default = new Tenant(DefaultTenantId, new MartenDatabase(Options, _factory, Options.StoreName));
     }
+
+    public void Dispose()
+    {
+        Default.Database.Dispose();
+    }
 }

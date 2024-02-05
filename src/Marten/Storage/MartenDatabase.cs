@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using Marten.Events.Daemon;
 using Marten.Internal;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
@@ -34,6 +37,9 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
         resetSequences();
 
         Providers = options.Providers;
+
+        Tracker = new ShardStateTracker(options.LogFactory?.CreateLogger<MartenDatabase>() ?? options.DotNetLogger ??
+                                        NullLogger<MartenDatabase>.Instance);
     }
 
 
@@ -121,5 +127,10 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
 
             return sequences;
         });
+    }
+
+    public void Dispose()
+    {
+        ((IDisposable)Tracker)?.Dispose();
     }
 }

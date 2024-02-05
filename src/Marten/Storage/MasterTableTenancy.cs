@@ -32,6 +32,14 @@ public class MasterTableTenancy : ITenancy
 
     }
 
+    public void Dispose()
+    {
+        foreach (var entry in _databases.Enumerate())
+        {
+            entry.Value.Dispose();
+        }
+    }
+
     public async Task DeleteDatabaseRecordAsync(string tenantId)
     {
         await using var conn = new NpgsqlConnection(_connectionString);
