@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Schema;
 using Weasel.Core.Migrations;
@@ -10,7 +11,7 @@ namespace Marten.Storage;
 /// <summary>
 ///     Pluggable interface for Marten multi-tenancy by database
 /// </summary>
-public interface ITenancy: IDatabaseSource
+public interface ITenancy: IDatabaseSource, IDisposable
 {
     /// <summary>
     ///     The default tenant. This can be null.

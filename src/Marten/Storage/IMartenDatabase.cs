@@ -18,7 +18,7 @@ namespace Marten.Storage;
 /// <summary>
 ///     Governs the database structure and migration path for a single Marten database
 /// </summary>
-public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>, IDocumentCleaner
+public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>, IDocumentCleaner, IDisposable
 {
     /// <summary>
     ///     Used to create new Hilo sequences
