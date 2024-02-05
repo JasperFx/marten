@@ -7,7 +7,6 @@ using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Progress;
 using Marten.Linq.QueryHandlers;
-using Marten.Services;
 using Microsoft.Extensions.Logging;
 using Weasel.Postgresql;
 
@@ -131,7 +130,7 @@ select last_value from {_options.Events.DatabaseSchemaName}.mt_events_sequence;
     ///     is the ShardStateTracker for the running daemon. This is useful in testing
     ///     scenarios
     /// </summary>
-    public ShardStateTracker? Tracker { get; private set; }
+    public ShardStateTracker Tracker { get; private set; }
 
     internal IProjectionDaemon StartProjectionDaemon(DocumentStore store, ILogger? logger = null)
     {

@@ -33,7 +33,7 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     ///     is the ShardStateTracker for the running daemon. This is useful in testing
     ///     scenarios
     /// </summary>
-    ShardStateTracker? Tracker { get; }
+    ShardStateTracker Tracker { get; }
 
     /// <summary>
     ///     Ensures that the IDocumentStorage object for a document type is ready
