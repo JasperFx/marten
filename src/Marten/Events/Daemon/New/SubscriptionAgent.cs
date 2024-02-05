@@ -10,16 +10,18 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     private readonly AsyncOptions _options;
     private readonly IEventLoader _loader;
     private readonly ISubscriptionExecution _execution;
+    private readonly ShardStateTracker _tracker;
     public ShardName Name { get; }
     private readonly CancellationTokenSource _cancellation = new();
     private readonly ActionBlock<Command> _commandBlock;
 
     public SubscriptionAgent(ShardName name, AsyncOptions options, IEventLoader loader,
-        ISubscriptionExecution execution)
+        ISubscriptionExecution execution, ShardStateTracker tracker)
     {
         _options = options;
         _loader = loader;
         _execution = execution;
+        _tracker = tracker;
         Name = name;
 
         _commandBlock = new ActionBlock<Command>(Apply, _cancellation.Token.SequentialOptions());
@@ -96,6 +98,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
 
             case CommandType.RangeCompleted:
                 LastCommitted = command.LastCommitted;
+                _tracker.Publish(new ShardState(Name, LastCommitted));
                 break;
         }
 
