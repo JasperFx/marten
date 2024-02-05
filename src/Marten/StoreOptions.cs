@@ -19,6 +19,7 @@ using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services.Json;
 using Marten.Storage;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using Polly;
 using Weasel.Core;
@@ -352,6 +353,9 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     IReadOnlyLinqParsing IReadOnlyStoreOptions.Linq => Linq;
 
     public int CommandTimeout { get; set; } = DefaultTimeout;
+
+    // This is used to move logging into the >v7 async daemon
+    internal ILoggerFactory? LogFactory { get; set; }
 
     /// <summary>
     ///     Configure Marten to create databases for tenants in case databases do not exist or need to be dropped & re-created.
