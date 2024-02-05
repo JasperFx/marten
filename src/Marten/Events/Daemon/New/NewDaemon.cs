@@ -133,7 +133,7 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
     {
         // TODO -- harden this
         var position = await Database.ProjectionProgressFor(agent.Name, _cancellation.Token).ConfigureAwait(false);
-        agent.Start(position, mode, Tracker);
+        agent.Start(position, mode);
         _active.Add(agent);
     }
 

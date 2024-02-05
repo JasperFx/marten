@@ -126,4 +126,29 @@ public class GroupedProjectionExecution: ISubscriptionExecution
 
         _grouping.Post(range);
     }
+
+    public async Task StopAndDrainAsync(CancellationToken token)
+    {
+        _grouping.Complete();
+        await _grouping.Completion.ConfigureAwait(false);
+        _building.Complete();
+        await _building.Completion.ConfigureAwait(false);
+
+#if NET8_0_OR_GREATER
+        await _cancellation.CancelAsync().ConfigureAwait(false);
+#else
+        _cancellation.Cancel();
+#endif
+    }
+
+    public async Task HardStopAsync()
+    {
+#if NET8_0_OR_GREATER
+        await _cancellation.CancelAsync().ConfigureAwait(false);
+#else
+        _cancellation.Cancel();
+#endif
+        _grouping.Complete();
+        _building.Complete();
+    }
 }
