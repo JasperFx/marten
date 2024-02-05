@@ -56,7 +56,7 @@ public class when_skipping_events_in_daemon : DaemonContext
 
 
 
-    private async Task<ProjectionDaemon> PublishTheEvents()
+    private async Task<IProjectionDaemon> PublishTheEvents()
     {
         var daemon = await StartDaemon();
 
@@ -84,12 +84,14 @@ public class when_skipping_events_in_daemon : DaemonContext
     {
         var daemon = await PublishTheEvents();
 
-        var shards = daemon.CurrentShards();
+        throw new NotImplementedException("Come back to this");
 
-        foreach (var shard in shards)
-        {
-            shard.Status.ShouldBe(AgentStatus.Running);
-        }
+        // var shards = daemon.CurrentShards();
+        //
+        // foreach (var shard in shards)
+        // {
+        //     shard.Status.ShouldBe(AgentStatus.Running);
+        // }
     }
 
     [Fact]

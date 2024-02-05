@@ -60,10 +60,11 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         await DisposeAsync().ConfigureAwait(false);
     }
 
-    public void Start(long floor, ShardExecutionMode mode)
+    public Task StartAsync(long floor, ShardExecutionMode mode)
     {
         Mode = mode;
         _commandBlock.Post(Command.Started(_tracker.HighWaterMark, floor));
+        return _execution.EnsureStorageExists();
     }
 
     public async ValueTask DisposeAsync()

@@ -123,4 +123,5 @@ public interface IProjectionDaemon: IDisposable
     Task PauseHighWaterAgent();
 
     long HighWaterMark();
+    AgentStatus StatusFor(string shardName);
 }
