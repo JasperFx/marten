@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Divergic.Logging.Xunit;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
@@ -31,9 +33,10 @@ public abstract class DaemonContext: OneOffConfigurationsContext
 
     public ILogger<IProjection> Logger { get; }
 
-    internal async Task<ProjectionDaemon> StartDaemon()
+    internal async Task<IProjectionDaemon> StartDaemon()
     {
-        var daemon = new ProjectionDaemon(theStore, Logger);
+        var daemon = theStore.Tenancy.Default.Database.As<MartenDatabase>()
+            .StartProjectionDaemon(theStore, new TestOutputMartenLogger(_output));
 
         await daemon.StartAllShards();
 
@@ -132,7 +135,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext
     public long NumberOfEvents => _streams.Sum(x => x.Events.Count);
 
     private readonly List<TripStream> _streams = new List<TripStream>();
-    private ProjectionDaemon _daemon;
+    private IProjectionDaemon _daemon;
     protected ITestOutputHelper _output;
 
     public IReadOnlyList<TripStream> Streams => _streams;
