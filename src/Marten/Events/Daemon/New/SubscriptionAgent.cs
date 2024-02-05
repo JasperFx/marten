@@ -39,20 +39,31 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     public long HighWaterMark { get; internal set; }
 
     long ISubscriptionAgent.Position => LastCommitted;
-    public Task StopAndDrainAsync(CancellationToken token)
+    public async Task StopAndDrainAsync(CancellationToken token)
     {
-        throw new NotImplementedException();
+        // Let the command block finish first
+        _commandBlock.Complete();
+        await _commandBlock.Completion.ConfigureAwait(false);
+
+#if NET8_0_OR_GREATER
+        await _cancellation.CancelAsync().ConfigureAwait(false);
+#else
+        _cancellation.Cancel();
+#endif
+
+        await _execution.StopAndDrainAsync(token).ConfigureAwait(false);
     }
 
     public async Task HardStopAsync()
     {
-        throw new NotImplementedException();
+        await _execution.HardStopAsync().ConfigureAwait(false);
+        await DisposeAsync().ConfigureAwait(false);
     }
 
-    public void Start(long floor, ShardExecutionMode mode, ShardStateTracker tracker)
+    public void Start(long floor, ShardExecutionMode mode)
     {
         Mode = mode;
-        throw new NotImplementedException();
+        _commandBlock.Post(Command.Started(_tracker.HighWaterMark, floor));
     }
 
     public async ValueTask DisposeAsync()

@@ -4,6 +4,7 @@ using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.New;
 using Marten.Storage;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -19,7 +20,7 @@ public class SubscriptionAgentTests
 
     public SubscriptionAgentTests()
     {
-        theAgent = new SubscriptionAgent(new ShardName("Projection1"), theOptions, theLoader, theExecution);
+        theAgent = new SubscriptionAgent(new ShardName("Projection1"), theOptions, theLoader, theExecution, new ShardStateTracker(NullLogger.Instance));
     }
 
     [Fact]
