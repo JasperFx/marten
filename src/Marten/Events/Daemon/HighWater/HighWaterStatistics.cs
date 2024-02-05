@@ -2,7 +2,7 @@ using System;
 
 namespace Marten.Events.Daemon.HighWater;
 
-internal class HighWaterStatistics
+public class HighWaterStatistics
 {
     public long LastMark { get; set; }
     public long HighestSequence { get; set; }
