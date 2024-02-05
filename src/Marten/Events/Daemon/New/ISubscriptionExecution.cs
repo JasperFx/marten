@@ -10,4 +10,6 @@ public interface ISubscriptionExecution: IAsyncDisposable
     Task StopAndDrainAsync(CancellationToken token);
     Task HardStopAsync();
     Task EnsureStorageExists();
+
+    string DatabaseName { get; }
 }

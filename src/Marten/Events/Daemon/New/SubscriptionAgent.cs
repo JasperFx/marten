@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon.New;
 
@@ -11,21 +12,31 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     private readonly IEventLoader _loader;
     private readonly ISubscriptionExecution _execution;
     private readonly ShardStateTracker _tracker;
+    private readonly ILogger _logger;
     public ShardName Name { get; }
     private readonly CancellationTokenSource _cancellation = new();
     private readonly ActionBlock<Command> _commandBlock;
 
     public SubscriptionAgent(ShardName name, AsyncOptions options, IEventLoader loader,
-        ISubscriptionExecution execution, ShardStateTracker tracker)
+        ISubscriptionExecution execution, ShardStateTracker tracker, ILogger logger)
     {
         _options = options;
         _loader = loader;
         _execution = execution;
         _tracker = tracker;
+        _logger = logger;
         Name = name;
 
         _commandBlock = new ActionBlock<Command>(Apply, _cancellation.Token.SequentialOptions());
+
+        ProjectionShardIdentity = name.Identity;
+        if (_execution.DatabaseName != "Marten")
+        {
+            ProjectionShardIdentity += $"@{_execution.DatabaseName}";
+        }
     }
+
+    public string ProjectionShardIdentity { get; private set; }
 
     public CancellationToken CancellationToken => _cancellation.Token;
 
@@ -39,6 +50,10 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     public long HighWaterMark { get; internal set; }
 
     long ISubscriptionAgent.Position => LastCommitted;
+
+    // TODO -- this will change when the "Pause" is put into place
+    public AgentStatus Status { get; } = AgentStatus.Running;
+
     public async Task StopAndDrainAsync(CancellationToken token)
     {
         // Let the command block finish first
@@ -58,13 +73,15 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     {
         await _execution.HardStopAsync().ConfigureAwait(false);
         await DisposeAsync().ConfigureAwait(false);
+        _tracker.Publish(new ShardState(Name, LastCommitted){Action = ShardAction.Stopped});
     }
 
-    public Task StartAsync(long floor, ShardExecutionMode mode)
+    public async Task StartAsync(long floor, ShardExecutionMode mode)
     {
         Mode = mode;
+        await _execution.EnsureStorageExists().ConfigureAwait(false);
         _commandBlock.Post(Command.Started(_tracker.HighWaterMark, floor));
-        return _execution.EnsureStorageExists();
+        _tracker.Publish(new ShardState(Name, floor){Action = ShardAction.Started});
     }
 
     public async ValueTask DisposeAsync()
@@ -152,6 +169,11 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         // TODO -- try/catch, and you pause here if this happens.
         var page = await _loader.LoadAsync(request, _cancellation.Token).ConfigureAwait(false);
 
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug("Loaded {Number} of Events from {Floor} to {Ceiling} for Subscription {Name}", page.Count, page.Floor, page.Ceiling, ProjectionShardIdentity);
+        }
+
         LastEnqueued = page.Ceiling;
 
         _execution.Enqueue(page, this);
@@ -161,6 +183,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     public void MarkSuccess(long processedCeiling)
     {
         _commandBlock.Post(Command.Completed(processedCeiling));
+        _tracker.Publish(new ShardState(Name, processedCeiling){Action = ShardAction.Updated});
     }
 
     public void MarkHighWater(long sequence)

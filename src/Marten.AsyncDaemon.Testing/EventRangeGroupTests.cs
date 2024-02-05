@@ -2,8 +2,10 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.New;
 using Marten.Storage;
 using Marten.Testing.Harness;
+using NSubstitute;
 using Shouldly;
 using Xunit;
 
@@ -11,7 +13,7 @@ namespace Marten.AsyncDaemon.Testing;
 
 public class EventRangeGroupTests
 {
-    private readonly TestEventRangeGroup theGroup = new TestEventRangeGroup(new EventRange(new ShardName("Trip", "All"), 100, 200));
+    private readonly TestEventRangeGroup theGroup = new TestEventRangeGroup(new EventRange(new ShardName("Trip", "All"), 100, 200){Agent = Substitute.For<ISubscriptionAgent>()});
 
     [Fact]
     public void initial_state()

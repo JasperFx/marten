@@ -35,7 +35,7 @@ public class HighWaterAgentTests: DaemonContext
 
         agent.Tracker.HighWaterMark.ShouldBe(NumberOfEvents);
 
-        await agent.StopAll();
+        await agent.StopAllAsync();
     }
 
     [Fact]
@@ -51,10 +51,10 @@ public class HighWaterAgentTests: DaemonContext
 
         agent.Tracker.HighWaterMark.ShouldBe(NumberOfEvents);
 
-        await agent.StopAll();
+        await agent.StopAllAsync();
 
         using var agent2 = new ProjectionDaemon(theStore, new NulloLogger());
-        await agent2.StartDaemon();
+        await agent2.StartDaemonAsync();
         await agent2.Tracker.WaitForHighWaterMark(NumberOfEvents, 15.Seconds());
 
     }
@@ -77,7 +77,7 @@ public class HighWaterAgentTests: DaemonContext
 
         agent.Tracker.HighWaterMark.ShouldBe(NumberOfEvents);
 
-        await agent.StopAll();
+        await agent.StopAllAsync();
     }
 
 
@@ -92,7 +92,7 @@ public class HighWaterAgentTests: DaemonContext
         using var agent = await StartDaemon();
 
         await agent.Tracker.WaitForHighWaterMark(NumberOfEvents, 2.Minutes());
-        await agent.StopAll();
+        await agent.StopAllAsync();
 
         using (var conn = theStore.Storage.Database.CreateConnection())
         {

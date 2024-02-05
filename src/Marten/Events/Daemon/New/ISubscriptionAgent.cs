@@ -10,6 +10,7 @@ public interface ISubscriptionAgent : IShardAgent
     void MarkHighWater(long sequence);
 
     long Position { get; }
+    AgentStatus Status { get; }
 
     Task StopAndDrainAsync(CancellationToken token);
     Task HardStopAsync();

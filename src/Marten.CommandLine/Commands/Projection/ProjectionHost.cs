@@ -61,7 +61,7 @@ internal class ProjectionHost: IProjectionHost
         IReadOnlyList<AsyncProjectionShard> asyncProjectionShards, TimeSpan? shardTimeout = null)
     {
         using var daemon = database.BuildDaemon();
-        await daemon.StartDaemon().ConfigureAwait(false);
+        await daemon.StartDaemonAsync().ConfigureAwait(false);
 
         var highWater = daemon.Tracker.HighWaterMark;
         if (highWater == 0)
@@ -93,7 +93,7 @@ internal class ProjectionHost: IProjectionHost
                 })
             .ConfigureAwait(false);
 
-        await daemon.StopAll().ConfigureAwait(false);
+        await daemon.StopAllAsync().ConfigureAwait(false);
 
         watcher.Stop();
         await watcherTask.ConfigureAwait(false);
