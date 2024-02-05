@@ -235,6 +235,8 @@ public static class MartenServiceCollectionExtensions
             var logger = s.GetService<ILogger<IDocumentStore>>() ?? new NullLogger<IDocumentStore>();
             options.Logger(new DefaultMartenLogger(logger));
 
+            options.LogFactory = s.GetService<ILoggerFactory>();
+
             return new DocumentStore(options);
         });
 
