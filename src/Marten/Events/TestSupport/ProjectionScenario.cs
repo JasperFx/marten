@@ -115,7 +115,7 @@ public partial class ProjectionScenario: IEventOperations
         {
             if (Daemon != null)
             {
-                await Daemon.StopAll().ConfigureAwait(false);
+                await Daemon.StopAllAsync().ConfigureAwait(false);
                 Daemon.SafeDispose();
             }
 

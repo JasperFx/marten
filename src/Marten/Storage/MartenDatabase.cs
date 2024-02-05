@@ -55,6 +55,9 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
         resetSequences();
 
         Providers = options.Providers;
+
+        Tracker = new ShardStateTracker(options.LogFactory?.CreateLogger<MartenDatabase>() ?? options.DotNetLogger ??
+            NullLogger<MartenDatabase>.Instance);
     }
 
     public ISequences Sequences => _sequences.Value;

@@ -56,7 +56,7 @@ internal sealed class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner
             _connection.SafeDispose();
             if (Daemon != null)
             {
-                await Daemon.StopAll().ConfigureAwait(false);
+                await Daemon.StopAllAsync().ConfigureAwait(false);
             }
         }
     }
@@ -212,7 +212,7 @@ internal sealed class HotColdCoordinator: INodeCoordinator, ISingleQueryRunner
         var restarted = await tryToAttainLockAndStartShards().ConfigureAwait(false);
         if (!restarted)
         {
-            await Daemon!.StopAll().ConfigureAwait(false);
+            await Daemon!.StopAllAsync().ConfigureAwait(false);
             startPollingForOwnership();
         }
     }

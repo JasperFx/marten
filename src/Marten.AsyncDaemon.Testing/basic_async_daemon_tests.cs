@@ -40,7 +40,7 @@ public class basic_async_daemon_tests: DaemonContext
 
         await daemon.Tracker.WaitForHighWaterMark(NumberOfEvents);
 
-        await daemon.StopAll();
+        await daemon.StopAllAsync();
 
 
         using var daemon2 = await StartDaemon();
@@ -98,7 +98,7 @@ public class basic_async_daemon_tests: DaemonContext
 
         await daemon.Tracker.WaitForShardState("TripCustomName:All", NumberOfEvents);
 
-        await daemon.StopAll();
+        await daemon.StopAllAsync();
 
         listener.Befores.Any().ShouldBeTrue();
         listener.Changes.Any().ShouldBeTrue();
@@ -122,7 +122,7 @@ public class basic_async_daemon_tests: DaemonContext
 
         await daemon.Tracker.WaitForShardState("TripCustomName:All", NumberOfEvents);
 
-        await daemon.StopAll();
+        await daemon.StopAllAsync();
 
         listener.Changes.Clear(); // clear state before doing this again
 

@@ -65,7 +65,7 @@ public class Bug_2073_tenancy_problems
         daemon.CurrentShards().Single()
             .Status.ShouldBe(AgentStatus.Running);
 
-        await daemon.StopAll();
+        await daemon.StopAllAsync();
     }
 }
 

@@ -39,7 +39,7 @@ public class HotCold_leadership_election: DaemonContext
 
         agent.IsRunning.ShouldBeTrue();
 
-        await agent.StopAll();
+        await agent.StopAllAsync();
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public class HotCold_leadership_election: DaemonContext
         daemon1.IsRunning.ShouldBeTrue();
         daemon2.IsRunning.ShouldBeFalse();
 
-        await daemon1.StopAll();
+        await daemon1.StopAllAsync();
 
         daemon1.IsRunning.ShouldBeFalse();
 
@@ -159,7 +159,7 @@ public class HotCold_leadership_election: DaemonContext
         others[2] = await StartDaemonInHotColdMode();
         others[3] = await StartDaemonInHotColdMode();
 
-        await daemon1.StopAll();
+        await daemon1.StopAllAsync();
 
         var active = await findRunningDaemon(others);
 
