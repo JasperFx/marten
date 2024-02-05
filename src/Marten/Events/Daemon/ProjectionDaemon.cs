@@ -73,7 +73,7 @@ internal class ProjectionDaemon: IProjectionDaemon
 
     public ShardStateTracker Tracker { get; }
 
-    public async Task StartDaemon()
+    public async Task StartDaemonAsync()
     {
         await Database.EnsureStorageExistsAsync(typeof(IEvent), _cancellation.Token).ConfigureAwait(false);
         await _highWater.Start().ConfigureAwait(false);
@@ -112,7 +112,7 @@ internal class ProjectionDaemon: IProjectionDaemon
     {
         if (!_highWater.IsRunning)
         {
-            await StartDaemon().ConfigureAwait(false);
+            await StartDaemonAsync().ConfigureAwait(false);
         }
 
         var shards = _store.Options.Projections.AllShards();
@@ -124,7 +124,7 @@ internal class ProjectionDaemon: IProjectionDaemon
     {
         if (!_highWater.IsRunning)
         {
-            await StartDaemon().ConfigureAwait(false);
+            await StartDaemonAsync().ConfigureAwait(false);
         }
 
         // Latch it so it doesn't double start
@@ -158,7 +158,7 @@ internal class ProjectionDaemon: IProjectionDaemon
         }
     }
 
-    public async Task StopAll()
+    public async Task StopAllAsync()
     {
         // This avoids issues around whether it was signaled here
         // first or through the coordinator first
@@ -295,7 +295,7 @@ internal class ProjectionDaemon: IProjectionDaemon
     {
         if (!_highWater.IsRunning && mode == ShardExecutionMode.Continuous)
         {
-            await StartDaemon().ConfigureAwait(false);
+            await StartDaemonAsync().ConfigureAwait(false);
         }
 
         // Don't duplicate the shard

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
 using Marten.Storage;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Marten.Events.Daemon.New;
 
@@ -37,11 +39,14 @@ public class AgentFactory : IAgentFactory
 
     private SubscriptionAgent buildAgentForShard(MartenDatabase database, AsyncProjectionShard shard)
     {
-        var execution = new GroupedProjectionExecution(shard.Source, _store, database);
+        var logger = _store.Options.LogFactory?.CreateLogger<SubscriptionAgent>() ?? _store.Options.DotNetLogger
+            ?? NullLogger<SubscriptionAgent>.Instance;
+
+        var execution = new GroupedProjectionExecution(shard, _store, database, logger);
         var loader = new EventLoader(_store, database, shard, shard.Source.Options);
         var wrapped = new ResilientEventLoader(_store.Options.ResiliencePipeline, loader);
 
-        return new SubscriptionAgent(shard.Name, shard.Source.Options, wrapped, execution, database.Tracker);
+        return new SubscriptionAgent(shard.Name, shard.Source.Options, wrapped, execution, database.Tracker, logger);
     }
 
     public IReadOnlyList<ISubscriptionAgent> BuildAllAgents(MartenDatabase database)

@@ -12,23 +12,9 @@ using Marten.Events.Projections;
 using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
+using Weasel.Core;
 
 namespace Marten.Events.Daemon.New;
-
-/*
- * TODO
- * New SubscriptionAgent needs to broadcast through ShardStateTracker
- * IShardFactory
- * Add logging to SubscriptionAgent
- * Implement real IDeadLetterQueue
- * SubscriptionAgent.StopAndDrainAsync()
- */
-
-
-public interface IDeadLetterEventQueue
-{
-    void Enqueue(DeadLetterEvent dlEvent);
-}
 
 public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
 {
@@ -52,9 +38,9 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
         _breakSubscription = database.Tracker.Subscribe(this);
     }
 
-    public MartenDatabase Database { get; }
+    internal MartenDatabase Database { get; }
 
-    public ILogger Logger { get; }
+    internal ILogger Logger { get; }
 
     public void Dispose()
     {
@@ -101,7 +87,7 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
             }
             catch (Exception e)
             {
-                throw new ArgumentOutOfRangeException(nameof(projectionType),
+                throw new ArgumentOutOfRangeException(nameof(projectionType), e,
                     $"No public default constructor for projection type {projectionType.FullNameInCode()}, you may need to supply the projection name instead");
             }
         }
@@ -126,7 +112,7 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
         if (typeof(TView).CanBeCastTo(typeof(ProjectionBase)) && typeof(TView).HasDefaultConstructor())
         {
             var projection = (ProjectionBase)Activator.CreateInstance(typeof(TView))!;
-            return RebuildProjection(projection.ProjectionName, shardTimeout, token);
+            return RebuildProjection(projection.ProjectionName!, shardTimeout, token);
         }
 
         return RebuildProjection(typeof(TView).Name, shardTimeout, token);
@@ -137,7 +123,6 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
         // Be idempotent, don't start an agent that is already running
         if (_active.Any(x => Equals(x.Name, agent.Name))) return;
 
-        // TODO -- harden this
         var position = await Database.ProjectionProgressFor(agent.Name, _cancellation.Token).ConfigureAwait(false);
         await agent.StartAsync(position, mode).ConfigureAwait(false);
         agent.MarkHighWater(HighWaterMark());
@@ -148,7 +133,7 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
     {
         if (!_highWater.IsRunning)
         {
-            await StartDaemon().ConfigureAwait(false);
+            await StartDaemonAsync().ConfigureAwait(false);
         }
 
         var agent = _active.FirstOrDefault(x => x.Name.Identity == shardName);
@@ -160,12 +145,21 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
 
     public async Task StopShard(string shardName, Exception ex = null)
     {
-        // TODO -- harden this
         var agent = _active.FirstOrDefault(x => x.Name.Identity == shardName);
         if (agent != null)
         {
-            // TODO -- use a timeout here
-            await agent.StopAndDrainAsync(CancellationToken.None).ConfigureAwait(true);
+            var cancellation = new CancellationTokenSource();
+            cancellation.CancelAfter(5.Seconds());
+
+            try
+            {
+                await agent.StopAndDrainAsync(cancellation.Token).ConfigureAwait(true);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e, "Error trying to stop and drain a subscription agent for '{Name}'", agent.Name.Identity);
+            }
+
             _active.Remove(agent);
         }
     }
@@ -174,7 +168,7 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
     {
         if (!_highWater.IsRunning)
         {
-            await StartDaemon().ConfigureAwait(false);
+            await StartDaemonAsync().ConfigureAwait(false);
         }
 
         var agents = _factory.BuildAllAgents(Database);
@@ -184,17 +178,29 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
         }
     }
 
-    public async Task StopAll()
+    public async Task StopAllAsync()
     {
-        // TODO -- use a timeout. And make sure that you harden within the SubscriptionAgent
-        await Parallel.ForEachAsync(_active, CancellationToken.None, (agent, t) => new ValueTask(agent.StopAndDrainAsync(t))).ConfigureAwait(false);
+        var cancellation = new CancellationTokenSource();
+        cancellation.CancelAfter(5.Seconds());
+        try
+        {
+            await Parallel.ForEachAsync(_active, cancellation.Token, (agent, t) => new ValueTask(agent.StopAndDrainAsync(t))).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error trying to stop subscription agents for {Agents}", _active.Select(x => x.Name.Identity).Join(", "));
+        }
 
         _active.Clear();
     }
 
-    public async Task StartDaemon()
+    public async Task StartDaemonAsync()
     {
-        await Database.EnsureStorageExistsAsync(typeof(IEvent), _cancellation.Token).ConfigureAwait(false);
+        if (_store.Options.AutoCreateSchemaObjects != AutoCreate.None)
+        {
+            await Database.EnsureStorageExistsAsync(typeof(IEvent), _cancellation.Token).ConfigureAwait(false);
+        }
+
         await _highWater.Start().ConfigureAwait(false);
     }
 
@@ -222,8 +228,7 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
         var agent = _active.FirstOrDefault(x => x.Name.Identity == shardName);
         if (agent == null) return AgentStatus.Stopped;
 
-        // TODO -- add Paused mechanics
-        return AgentStatus.Running;
+        return agent.Status;
     }
 
     public Task PauseHighWaterAgent()

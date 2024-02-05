@@ -101,7 +101,7 @@ public interface IProjectionDaemon: IDisposable
     ///     Stops all known projection shards
     /// </summary>
     /// <returns></returns>
-    Task StopAll();
+    Task StopAllAsync();
 
     /// <summary>
     ///     Starts the daemon high water detection. This is called
@@ -109,7 +109,7 @@ public interface IProjectionDaemon: IDisposable
     ///     methods
     /// </summary>
     /// <returns></returns>
-    Task StartDaemon();
+    Task StartDaemonAsync();
 
 
     /// <summary>

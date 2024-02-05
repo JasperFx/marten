@@ -55,7 +55,7 @@ public class EventProjectionWithCreate_follow_up_operations: DaemonContext
 
         var daemon = await StartDaemon();
 
-        await daemon.StartDaemon();
+        await daemon.StartDaemonAsync();
 
         await daemon.Tracker.WaitForShardState($"{nameof(EntityProjection)}:All", 2);
 

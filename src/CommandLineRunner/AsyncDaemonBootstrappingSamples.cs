@@ -159,7 +159,7 @@ public class AsyncDaemonBootstrappingSamples
         await daemon.StopShard("shard name");
 
         // No, shut them all down!
-        await daemon.StopAll();
+        await daemon.StopAllAsync();
     }
 
     #endregion

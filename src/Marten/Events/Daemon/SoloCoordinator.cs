@@ -21,7 +21,7 @@ internal sealed class SoloCoordinator: INodeCoordinator
 
     public Task Stop()
     {
-        return Daemon!.StopAll();
+        return Daemon!.StopAllAsync();
     }
 
     public void Dispose()
