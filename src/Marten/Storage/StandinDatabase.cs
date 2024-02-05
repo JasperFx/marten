@@ -222,4 +222,9 @@ internal class StandinDatabase: IMartenDatabase
     {
         throw new NotImplementedException();
     }
+
+    public void Dispose()
+    {
+        ((IDisposable)Tracker)?.Dispose();
+    }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -35,6 +36,14 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
     {
         _dataSourceFactory = dataSourceFactory;
         Cleaner = new CompositeDocumentCleaner(this);
+    }
+
+    public void Dispose()
+    {
+        foreach (var entry in _tenants.Enumerate())
+        {
+            entry.Value.Database.Dispose();
+        }
     }
 
     public bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId)

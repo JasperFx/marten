@@ -29,6 +29,8 @@ public class using_per_database_multitenancy: IAsyncLifetime
 
     #region sample_MySpecialTenancy
 
+    // Make sure you implement the Dispose() method and
+    // dispose all MartenDatabase objects
     public class MySpecialTenancy: ITenancy
 
     #endregion
@@ -60,6 +62,11 @@ public class using_per_database_multitenancy: IAsyncLifetime
         public bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId)
         {
             throw new System.NotImplementedException();
+        }
+
+        public void Dispose()
+        {
+            //
         }
     }
 

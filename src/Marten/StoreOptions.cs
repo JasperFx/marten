@@ -357,6 +357,10 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     // This is used to move logging into the >v7 async daemon
     internal ILoggerFactory? LogFactory { get; set; }
 
+    // This is used mostly for testing to provide *some* sort of logging
+    // within the async daemon
+    internal ILogger? DotNetLogger { get; set; }
+
     /// <summary>
     ///     Configure Marten to create databases for tenants in case databases do not exist or need to be dropped & re-created.
     /// You will need to also use the ApplyAllDatabaseChangesOnStartup() option when configuring Marten to make this function correctly

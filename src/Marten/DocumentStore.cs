@@ -98,6 +98,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
     {
         (dataSourceFactory as IDisposable)?.SafeDispose();
         (Options.Events as IDisposable)?.SafeDispose();
+        Tenancy.Dispose();
     }
 
     public ValueTask DisposeAsync()
