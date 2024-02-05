@@ -14,13 +14,13 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     private readonly CancellationTokenSource _cancellation = new();
     private readonly ActionBlock<Command> _commandBlock;
 
-    public SubscriptionAgent(ShardName name, AsyncOptions options, IEventLoader loader, ISubscriptionExecution execution, ShardExecutionMode mode)
+    public SubscriptionAgent(ShardName name, AsyncOptions options, IEventLoader loader,
+        ISubscriptionExecution execution)
     {
         _options = options;
         _loader = loader;
         _execution = execution;
         Name = name;
-        Mode = mode;
 
         _commandBlock = new ActionBlock<Command>(Apply, _cancellation.Token.SequentialOptions());
     }
@@ -36,6 +36,23 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
 
     public long HighWaterMark { get; internal set; }
 
+    long ISubscriptionAgent.Position => LastCommitted;
+    public Task StopAndDrainAsync(CancellationToken token)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task HardStopAsync()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Start(long floor, ShardExecutionMode mode, ShardStateTracker tracker)
+    {
+        Mode = mode;
+        throw new NotImplementedException();
+    }
+
     public async ValueTask DisposeAsync()
     {
 #if NET8_0_OR_GREATER
@@ -47,7 +64,6 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         await _execution.DisposeAsync().ConfigureAwait(false);
     }
 
-    internal void PostCommand(Command command) => _commandBlock.Post(command);
 
     internal async Task Apply(Command command)
     {
@@ -132,6 +148,11 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         _commandBlock.Post(Command.Completed(processedCeiling));
     }
 
-    public ShardExecutionMode Mode { get; }
+    public void MarkHighWater(long sequence)
+    {
+        _commandBlock.Post(Command.HighWaterMarkUpdated(sequence));
+    }
+
+    public ShardExecutionMode Mode { get; private set; } = ShardExecutionMode.Continuous;
 
 }

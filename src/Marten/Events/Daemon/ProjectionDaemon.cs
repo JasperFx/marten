@@ -411,26 +411,6 @@ internal class ProjectionDaemon: IProjectionDaemon
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
-    private static async Task waitForAllShardsToComplete(CancellationToken token, Task[] waiters)
-    {
-        var completion = Task.WhenAll(waiters);
-
-        var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-        await using (token.Register(state =>
-                         {
-                             ((TaskCompletionSource<object>)state!).TrySetResult(null!);
-                         },
-                         tcs))
-        {
-            var resultTask = await Task.WhenAny(completion, tcs.Task).ConfigureAwait(false);
-            if (resultTask == tcs.Task)
-            {
-                // Operation cancelled
-                throw new OperationCanceledException(token);
-            }
-        }
-    }
-
 
     public AgentStatus StatusFor(string shardName)
     {
@@ -439,18 +419,5 @@ internal class ProjectionDaemon: IProjectionDaemon
             : AgentStatus.Stopped;
     }
 
-    public Task WaitForShardToStop(string shardName, TimeSpan? timeout = null)
-    {
-        if (StatusFor(shardName) == AgentStatus.Stopped)
-        {
-            return Task.CompletedTask;
-        }
 
-        bool IsStopped(ShardState s)
-        {
-            return s.ShardName.EqualsIgnoreCase(shardName) && s.Action == ShardAction.Stopped;
-        }
-
-        return Tracker.WaitForShardCondition(IsStopped, $"{shardName} is Stopped", timeout);
-    }
 }
