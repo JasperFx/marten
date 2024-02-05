@@ -207,9 +207,15 @@ public class ShardStateTracker: IObservable<ShardState>, IObserver<ShardState>, 
         }
     }
 
+    [Obsolete("Goes away in V7")]
     internal void MarkAsRestarted(AsyncProjectionShard shard)
     {
         _states = _states.Remove(shard.Name.Identity);
+    }
+
+    internal void MarkAsRestarted(ShardName name)
+    {
+        _states = _states.Remove(name.Identity);
     }
 
     private class Unsubscriber: IDisposable

@@ -19,7 +19,7 @@ public class SubscriptionAgentTests
 
     public SubscriptionAgentTests()
     {
-        theAgent = new SubscriptionAgent(new ShardName("Projection1"), theOptions, theLoader, theExecution, ShardExecutionMode.Continuous);
+        theAgent = new SubscriptionAgent(new ShardName("Projection1"), theOptions, theLoader, theExecution);
     }
 
     [Fact]
