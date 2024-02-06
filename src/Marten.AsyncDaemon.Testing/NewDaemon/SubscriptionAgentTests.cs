@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.New;
+using Marten.Events.Projections;
 using Marten.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;

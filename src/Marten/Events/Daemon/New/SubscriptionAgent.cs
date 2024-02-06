@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Marten.Events.Projections;
 using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon.New;
@@ -16,6 +17,8 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     public ShardName Name { get; }
     private readonly CancellationTokenSource _cancellation = new();
     private readonly ActionBlock<Command> _commandBlock;
+    private ErrorHandlingOptions _errorOptions = new();
+    private IDaemonRuntime _runtime = new NulloDaemonRuntime();
 
     public SubscriptionAgent(ShardName name, AsyncOptions options, IEventLoader loader,
         ISubscriptionExecution execution, ShardStateTracker tracker, ILogger logger)
@@ -76,12 +79,14 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         _tracker.Publish(new ShardState(Name, LastCommitted){Action = ShardAction.Stopped});
     }
 
-    public async Task StartAsync(long floor, ShardExecutionMode mode)
+    public async Task StartAsync(SubscriptionExecutionRequest request)
     {
-        Mode = mode;
+        Mode = request.Mode;
+        _errorOptions = request.ErrorHandling;
+        _runtime = request.Runtime;
         await _execution.EnsureStorageExists().ConfigureAwait(false);
-        _commandBlock.Post(Command.Started(_tracker.HighWaterMark, floor));
-        _tracker.Publish(new ShardState(Name, floor){Action = ShardAction.Started});
+        _commandBlock.Post(Command.Started(_tracker.HighWaterMark, request.Floor));
+        _tracker.Publish(new ShardState(Name, request.Floor){Action = ShardAction.Started});
     }
 
     public async ValueTask DisposeAsync()
@@ -163,7 +168,11 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     {
         var request = new EventRequest
         {
-            HighWater = HighWaterMark, BatchSize = _options.BatchSize, Floor = LastEnqueued
+            HighWater = HighWaterMark,
+            BatchSize = _options.BatchSize,
+            Floor = LastEnqueued,
+            ErrorOptions = _errorOptions,
+            Runtime = _runtime
         };
 
         // TODO -- try/catch, and you pause here if this happens.

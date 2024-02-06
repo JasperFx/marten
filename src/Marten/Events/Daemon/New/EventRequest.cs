@@ -1,4 +1,5 @@
 using System;
+using Marten.Events.Projections;
 
 namespace Marten.Events.Daemon.New;
 
@@ -7,6 +8,10 @@ public class EventRequest
     public long Floor { get; init; }
     public long HighWater { get; init; }
     public int BatchSize { get; init; }
+
+    public ErrorHandlingOptions ErrorOptions { get; init; }
+
+    public IDaemonRuntime Runtime { get; init; }
 
     public override string ToString()
     {
