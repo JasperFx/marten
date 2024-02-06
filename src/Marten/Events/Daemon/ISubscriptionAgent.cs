@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections;
 
-namespace Marten.Events.Daemon.New;
+namespace Marten.Events.Daemon;
 
 public record SubscriptionExecutionRequest(
     long Floor,

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
-using Marten.Events.Daemon.New;
 using Marten.Events.Daemon.Progress;
 using Marten.Linq.QueryHandlers;
 using Microsoft.Extensions.Logging;
@@ -139,6 +138,6 @@ select last_value from {_options.Events.DatabaseSchemaName}.mt_events_sequence;
 
         var detector = new HighWaterDetector(this, _options.EventGraph, logger);
 
-        return new NewDaemon(store, this, logger, detector, new AgentFactory(store));
+        return new ProjectionDaemon(store, this, logger, detector, new AgentFactory(store));
     }
 }

@@ -5,7 +5,7 @@ using System.Threading.Tasks.Dataflow;
 using Marten.Events.Projections;
 using Microsoft.Extensions.Logging;
 
-namespace Marten.Events.Daemon.New;
+namespace Marten.Events.Daemon;
 
 public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
 {

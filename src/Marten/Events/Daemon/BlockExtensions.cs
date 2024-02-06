@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks.Dataflow;
 
-namespace Marten.Events.Daemon.New;
+namespace Marten.Events.Daemon;
 
 internal static class BlockExtensions
 {

@@ -6,7 +6,7 @@ using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Marten.Events.Daemon.New;
+namespace Marten.Events.Daemon;
 
 public interface IAgentFactory
 {

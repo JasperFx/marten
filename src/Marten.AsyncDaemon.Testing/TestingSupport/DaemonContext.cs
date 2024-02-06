@@ -45,9 +45,9 @@ public abstract class DaemonContext: OneOffConfigurationsContext
         return daemon;
     }
 
-    internal async Task<Events.Daemon.New.NewDaemon> StartDaemon(string tenantId)
+    internal async Task<ProjectionDaemon> StartDaemon(string tenantId)
     {
-        var daemon = (Events.Daemon.New.NewDaemon)await theStore.BuildProjectionDaemonAsync(tenantId, Logger);
+        var daemon = (ProjectionDaemon)await theStore.BuildProjectionDaemonAsync(tenantId, Logger);
 
         await daemon.StartAllShards();
 
@@ -58,33 +58,35 @@ public abstract class DaemonContext: OneOffConfigurationsContext
 
     internal async Task<ProjectionDaemon> StartDaemonInHotColdMode()
     {
-        theStore.Options.Projections.LeadershipPollingTime = 100;
-
-        var coordinator =
-            new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
-        var daemon = new ProjectionDaemon(theStore, theStore.Tenancy.Default.Database,
-            new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
-
-        await daemon.UseCoordinator(coordinator);
-
-        _daemon = daemon;
-
-        _disposables.Add(daemon);
-        return daemon;
+        throw new NotImplementedException();
+        // theStore.Options.Projections.LeadershipPollingTime = 100;
+        //
+        // var coordinator =
+        //     new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
+        // var daemon = new NewDaemon(theStore, theStore.Tenancy.Default.Database,
+        //     new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
+        //
+        // await daemon.UseCoordinator(coordinator);
+        //
+        // _daemon = daemon;
+        //
+        // _disposables.Add(daemon);
+        // return daemon;
     }
 
     internal async Task<ProjectionDaemon> StartAdditionalDaemonInHotColdMode()
     {
-        theStore.Options.Projections.LeadershipPollingTime = 100;
-        var coordinator =
-            new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
-        var daemon = new ProjectionDaemon(theStore, theStore.Tenancy.Default.Database,
-            new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
-
-        await daemon.UseCoordinator(coordinator);
-
-        _disposables.Add(daemon);
-        return daemon;
+        throw new NotImplementedException();
+        // theStore.Options.Projections.LeadershipPollingTime = 100;
+        // var coordinator =
+        //     new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
+        // var daemon = new Events.Daemon.New.NewDaemon(theStore, theStore.Tenancy.Default.Database,
+        //     new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
+        //
+        // await daemon.UseCoordinator(coordinator);
+        //
+        // _disposables.Add(daemon);
+        // return daemon;
     }
 
     protected Task WaitForAction(string shardName, ShardAction action, TimeSpan timeout = default)

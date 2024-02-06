@@ -118,7 +118,7 @@ public class multi_tenancy_by_database: IAsyncLifetime
     [Fact]
     public async Task build_daemon_for_database()
     {
-        using var daemon = (Events.Daemon.New.NewDaemon)await theStore.BuildProjectionDaemonAsync("tenant1");
+        using var daemon = (ProjectionDaemon)await theStore.BuildProjectionDaemonAsync("tenant1");
 
         daemon.Database.Identifier.ShouldBe("database1");
 
@@ -130,7 +130,7 @@ public class multi_tenancy_by_database: IAsyncLifetime
     [Fact]
     public async Task build_daemon_for_database_async()
     {
-        using var daemon = (Events.Daemon.New.NewDaemon)(await theStore.BuildProjectionDaemonAsync("tenant1"));
+        using var daemon = (ProjectionDaemon)(await theStore.BuildProjectionDaemonAsync("tenant1"));
 
         daemon.Database.Identifier.ShouldBe("database1");
 
