@@ -10,6 +10,30 @@ using Marten.Exceptions;
 
 namespace Marten.Events.Projections;
 
+public class ErrorHandlingOptions
+{
+    /// <summary>
+    /// Should the daemon skip any "poison pill" events that fail in user projection code?
+    /// </summary>
+    public bool SkipApplyErrors { get; set; }
+
+    /// <summary>
+    /// Should the daemon skip any unknown event types encountered when trying to
+    /// fetch events?
+    /// </summary>
+    public bool SkipUnknownEvents { get; set; }
+
+    /// <summary>
+    /// Should the daemon skip any events that experience serialization errors?
+    /// </summary>
+    public bool SkipSerializationErrors { get; set; }
+
+    /// <summary>
+    /// LATER... TODO -- write something here, use these, something
+    /// </summary>
+    public TimeSpan[] PauseTimes { get; set; } = [1.Seconds(), 3.Seconds(), 5.Seconds()];
+}
+
 /// <summary>
 ///     Used to register projections with Marten
 /// </summary>
@@ -26,12 +50,25 @@ public class ProjectionOptions: DaemonSettings
         _options = options;
     }
 
-    internal IList<IProjectionSource> All { get; } = new List<IProjectionSource>();
+    /// <summary>
+    /// Async daemon error handling policies while running in a rebuild mode. The defaults
+    /// are to *not* skip any errors
+    /// </summary>
+    public ErrorHandlingOptions RebuildErrors { get; } = new();
 
-    internal IList<AsyncProjectionShard> BuildAllShards(DocumentStore store)
+    /// <summary>
+    /// Async daemon error handling polices while running continuously. The defaults
+    /// are to skip serialization errors, unknown events, and apply errors
+    /// </summary>
+    public ErrorHandlingOptions Errors { get; } = new()
     {
-        return All.SelectMany(x => x.AsyncProjectionShards(store)).ToList();
-    }
+        SkipApplyErrors = true,
+        SkipSerializationErrors = true,
+        SkipUnknownEvents = true
+    };
+
+
+    internal IList<IProjectionSource> All { get; } = new List<IProjectionSource>();
 
     internal bool DoesPersistAggregate(Type aggregateType)
     {
