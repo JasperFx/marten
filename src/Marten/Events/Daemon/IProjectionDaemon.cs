@@ -1,7 +1,10 @@
 #nullable enable
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Daemon.New;
 
 namespace Marten.Events.Daemon;
 
@@ -124,4 +127,5 @@ public interface IProjectionDaemon: IDisposable
 
     long HighWaterMark();
     AgentStatus StatusFor(string shardName);
+    IReadOnlyList<ISubscriptionAgent> CurrentShards();
 }

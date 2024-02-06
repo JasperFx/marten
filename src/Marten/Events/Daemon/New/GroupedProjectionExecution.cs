@@ -154,6 +154,7 @@ public class GroupedProjectionExecution: ISubscriptionExecution
             catch (ApplyEventException e)
             {
                 await group.SkipEventSequence(e.Event.Sequence, _database).ConfigureAwait(false);
+                group.Agent.Enqueue(new DeadLetterEvent(e.Event, group.Range.ShardName, e));
             }
         }
 

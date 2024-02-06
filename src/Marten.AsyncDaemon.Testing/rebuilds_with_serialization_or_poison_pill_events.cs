@@ -1,9 +1,11 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.AsyncDaemon.Testing.TestingSupport;
+using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Storage;
@@ -58,6 +60,7 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
         {
             x.Projections.Add(new SometimesFailingTripProjection(), ProjectionLifecycle.Async);
             x.Projections.RebuildErrors.SkipSerializationErrors = true;
+            x.Projections.Errors.SkipSerializationErrors = true;
         }, true);
 
         var agent = await StartDaemon();
@@ -79,6 +82,9 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
         // serialization failures
         FailingEvent.SerializationFails = false;
         await CheckAllExpectedAggregatesAgainstActuals();
+
+        // Do this to force the dead letter queue to drain
+        await agent.StopAllAsync();
 
         var deadLetters = await theSession.Query<DeadLetterEvent>()
             .Where(x => x.ShardName == "All" && x.ProjectionName == "Trip")
@@ -122,9 +128,16 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
         var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 60.Seconds());
 
         await waiter;
+
+        // Do this to force the dead letter queue to drain
+        await agent.StopAllAsync();
+
         Logger.LogDebug("About to rebuild Trip:All");
         await agent.RebuildProjection("Trip", CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
+
+        // Do this to force the dead letter queue to drain
+        await agent.StopAllAsync();
 
         // Gotta latch the failures so the aggregate checking can work here
         SometimesFailingTripProjection.FailingEventFails = false;
@@ -149,8 +162,9 @@ public class SometimesFailingTripProjection: TripProjectionWithCustomName
         ProjectionName = "Trip";
     }
 
-    public void Apply(FailingEvent e, Trip trip)
+    public void Apply(IEvent<FailingEvent> e, Trip trip)
     {
+        Debug.WriteLine("EVENT SEQUENCE WAS " + e.Sequence);
         if (FailingEventFails) throw new InvalidOperationException("You shall not pass!");
     }
 }
