@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Marten.Events.Projections;
+using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
@@ -43,6 +44,8 @@ public class GroupedProjectionExecution: ISubscriptionExecution
             ProjectionShardIdentity += $"@{database.Identifier}";
         }
     }
+
+    public ShardExecutionMode Mode { get; set; }
 
     public string ProjectionShardIdentity { get; }
 
@@ -88,13 +91,77 @@ public class GroupedProjectionExecution: ISubscriptionExecution
             return;
         }
 
+        await using var session = (DocumentSessionBase)_store.IdentitySession(_sessionOptions!);
+
         // This should be done *once* before proceeding
         // And this cannot be put inside of ConfigureUpdateBatch
         // Low chance of errors
         group.Reset();
 
-        await using var session = (DocumentSessionBase)_store.IdentitySession(_sessionOptions!);
+        var options = Mode == ShardExecutionMode.Continuous
+            ? _store.Options.Projections.Errors
+            : _store.Options.Projections.RebuildErrors;
 
+        var batch = options.SkipApplyErrors
+            ? await buildBatchWithSkipping(group, session, _cancellation.Token).ConfigureAwait(false)
+            : await buildBatchAsync(group, session).ConfigureAwait(false);
+
+        // Executing the SQL commands for the ProjectionUpdateBatch
+        await applyBatchOperationsToDatabaseAsync(group, session, batch).ConfigureAwait(false);
+    }
+
+    private async Task applyBatchOperationsToDatabaseAsync(EventRangeGroup group, DocumentSessionBase session,
+        ProjectionUpdateBatch batch)
+    {
+        try
+        {
+            // Polly is already around the basic retry here, so anything that gets past this
+            // probably deserves a full circuit break
+            await session.ExecuteBatchAsync(batch, _cancellation.Token).ConfigureAwait(false);
+
+            group.Agent.MarkSuccess(group.Range.SequenceCeiling);
+
+            _logger.LogInformation("Shard '{ProjectionShardIdentity}': Executed updates for {Range}",
+                ProjectionShardIdentity, batch.Range);
+        }
+        catch (Exception e)
+        {
+            if (!_cancellation.IsCancellationRequested)
+            {
+                _logger.LogError(e,
+                    "Failure in shard '{ProjectionShardIdentity}' trying to execute an update batch for {Range}",
+                    ProjectionShardIdentity,
+                    batch.Range);
+                throw;
+            }
+        }
+        finally
+        {
+            await batch.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
+    private async Task<ProjectionUpdateBatch> buildBatchWithSkipping(EventRangeGroup group, DocumentSessionBase session,
+        CancellationToken cancellationToken)
+    {
+        ProjectionUpdateBatch batch = null;
+        while (batch == null && !cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                batch = await buildBatchAsync(group, session).ConfigureAwait(false);
+            }
+            catch (ApplyEventException e)
+            {
+                await group.SkipEventSequence(e.Event.Sequence, _database).ConfigureAwait(false);
+            }
+        }
+
+        return batch;
+    }
+
+    private async Task<ProjectionUpdateBatch> buildBatchAsync(EventRangeGroup group, DocumentSessionBase session)
+    {
         ProjectionUpdateBatch batch = default;
         try
         {
@@ -123,33 +190,7 @@ public class GroupedProjectionExecution: ISubscriptionExecution
             group.Dispose();
         }
 
-        // Executing the SQL commands for the ProjectionUpdateBatch
-        try
-        {
-            // Polly is already around the basic retry here, so anything that gets past this
-            // probably deserves a full circuit break
-            await session.ExecuteBatchAsync(batch, _cancellation.Token).ConfigureAwait(false);
-
-            group.Agent.MarkSuccess(group.Range.SequenceCeiling);
-
-            _logger.LogInformation("Shard '{ProjectionShardIdentity}': Executed updates for {Range}",
-                ProjectionShardIdentity, batch.Range);
-        }
-        catch (Exception e)
-        {
-            if (!_cancellation.IsCancellationRequested)
-            {
-                _logger.LogError(e,
-                    "Failure in shard '{ProjectionShardIdentity}' trying to execute an update batch for {Range}",
-                    ProjectionShardIdentity,
-                    batch.Range);
-                throw;
-            }
-        }
-        finally
-        {
-            await batch.DisposeAsync().ConfigureAwait(false);
-        }
+        return batch;
     }
 
     public async ValueTask DisposeAsync()

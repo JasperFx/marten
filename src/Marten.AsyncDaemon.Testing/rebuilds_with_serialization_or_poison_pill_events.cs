@@ -29,7 +29,10 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-        StoreOptions(x => x.Projections.Add(new SometimesFailingTripProjection(), ProjectionLifecycle.Async), true);
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new SometimesFailingTripProjection(), ProjectionLifecycle.Async);
+        }, true);
 
         var agent = await StartDaemon();
 
@@ -51,7 +54,11 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-        StoreOptions(x => x.Projections.Add(new SometimesFailingTripProjection(), ProjectionLifecycle.Async), true);
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new SometimesFailingTripProjection(), ProjectionLifecycle.Async);
+            x.Projections.RebuildErrors.SkipSerializationErrors = true;
+        }, true);
 
         var agent = await StartDaemon();
 
@@ -105,8 +112,7 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
 
             x.Projections.Add(new SometimesFailingTripProjection(), ProjectionLifecycle.Async);
 
-            throw new NotImplementedException("Redo this");
-            //x.Projections.OnApplyEventException().SkipEvent();
+            x.Projections.RebuildErrors.SkipApplyErrors = true;
         }, true);
 
         var agent = await StartDaemon(tenantId);
