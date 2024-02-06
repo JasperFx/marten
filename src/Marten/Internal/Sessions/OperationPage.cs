@@ -42,6 +42,8 @@ public class OperationPage
 
     public void Append(IStorageOperation operation)
     {
+        if (_session == null) return;
+
         Count++;
         _builder.StartNewCommand();
         operation.ConfigureCommand(
