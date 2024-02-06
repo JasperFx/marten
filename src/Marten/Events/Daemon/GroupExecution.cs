@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Storage;
 
-namespace Marten.Events.Daemon.New;
+namespace Marten.Events.Daemon;
 
 internal record GroupExecution(
     IProjectionSource Source,

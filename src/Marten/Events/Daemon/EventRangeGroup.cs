@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Events.Daemon.New;
 using Marten.Storage;
 
 namespace Marten.Events.Daemon;

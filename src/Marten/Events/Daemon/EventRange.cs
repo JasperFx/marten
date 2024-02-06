@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using Marten.Events.Daemon.New;
 using Marten.Events.Daemon.Progress;
 using Marten.Internal.Operations;
 

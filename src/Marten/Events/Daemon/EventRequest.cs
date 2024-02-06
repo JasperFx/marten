@@ -1,7 +1,7 @@
 using System;
 using Marten.Events.Projections;
 
-namespace Marten.Events.Daemon.New;
+namespace Marten.Events.Daemon;
 
 public class EventRequest
 {

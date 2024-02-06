@@ -4,7 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Events.Daemon.New;
 
 namespace Marten.Events.Daemon;
 

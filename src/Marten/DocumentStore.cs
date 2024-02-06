@@ -10,7 +10,6 @@ using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
-using Marten.Events.Daemon.New;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Exceptions;
@@ -396,10 +395,9 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
             ? Tenancy.Default.Database
             : Tenancy.GetTenant(tenantIdOrDatabaseIdentifier).Database;
 
-        // TODO -- going to make the cast go away later
-        var detector = new HighWaterDetector((ISingleQueryRunner)database, Events, logger);
+        var detector = new HighWaterDetector((MartenDatabase)database, Events, logger);
 
-        return new ProjectionDaemon(this, database, detector, logger);
+        return new ProjectionDaemon(this, (MartenDatabase)database, logger, detector, new AgentFactory(this));
     }
 
     public async ValueTask<IProjectionDaemon> BuildProjectionDaemonAsync(
@@ -409,7 +407,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
     {
         AssertTenantOrDatabaseIdentifierIsValid(tenantIdOrDatabaseIdentifier);
 
-        logger ??= Options.LogFactory?.CreateLogger<NewDaemon>() ?? Options.DotNetLogger ?? NullLogger.Instance;
+        logger ??= Options.LogFactory?.CreateLogger<ProjectionDaemon>() ?? Options.DotNetLogger ?? NullLogger.Instance;
 
         var database = tenantIdOrDatabaseIdentifier.IsEmpty()
             ? Tenancy.Default.Database

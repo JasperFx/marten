@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Marten.Events.Daemon.New;
+namespace Marten.Events.Daemon;
 
 public interface ISubscriptionExecution: IAsyncDisposable
 {

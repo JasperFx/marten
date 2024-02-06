@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Marten.Events.Daemon.New;
+namespace Marten.Events.Daemon;
 
 public class EventPage: List<IEvent>
 {
