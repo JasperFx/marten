@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Events.Projections;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Marten.Events.Daemon;
@@ -29,6 +30,7 @@ public static class AsyncDaemonHealthCheckExtensions
     public static IHealthChecksBuilder AddMartenAsyncDaemonHealthCheck(this IHealthChecksBuilder builder, int maxEventLag = 100)
     {
         builder.Services.AddSingleton(new AsyncDaemonHealthCheckSettings(maxEventLag));
+        builder.Services.TryAddSingleton(TimeProvider.System);
         return builder.AddCheck<AsyncDaemonHealthCheck>(nameof(AsyncDaemonHealthCheck), tags: new[] { "Marten", "AsyncDaemon" });
     }
 
