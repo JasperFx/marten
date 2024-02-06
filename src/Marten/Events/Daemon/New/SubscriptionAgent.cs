@@ -52,6 +52,12 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
 
     public long HighWaterMark { get; internal set; }
 
+    public async Task ReportCriticalFailureAsync(Exception ex)
+    {
+        // HARD STOP, and tell the daemon that you shut down.
+        throw new NotImplementedException();
+    }
+
     long ISubscriptionAgent.Position => LastCommitted;
 
     // TODO -- this will change when the "Pause" is put into place
@@ -82,6 +88,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     public async Task StartAsync(SubscriptionExecutionRequest request)
     {
         Mode = request.Mode;
+        _execution.Mode = request.Mode;
         _errorOptions = request.ErrorHandling;
         _runtime = request.Runtime;
         await _execution.EnsureStorageExists().ConfigureAwait(false);
@@ -172,7 +179,8 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
             BatchSize = _options.BatchSize,
             Floor = LastEnqueued,
             ErrorOptions = _errorOptions,
-            Runtime = _runtime
+            Runtime = _runtime,
+            Name = Name
         };
 
         // TODO -- try/catch, and you pause here if this happens.

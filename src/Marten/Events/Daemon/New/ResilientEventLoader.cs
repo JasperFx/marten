@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Events.Projections;
 using Polly;
 
 namespace Marten.Events.Daemon.New;

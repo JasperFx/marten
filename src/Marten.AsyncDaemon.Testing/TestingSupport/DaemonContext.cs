@@ -45,9 +45,9 @@ public abstract class DaemonContext: OneOffConfigurationsContext
         return daemon;
     }
 
-    internal async Task<ProjectionDaemon> StartDaemon(string tenantId)
+    internal async Task<Events.Daemon.New.NewDaemon> StartDaemon(string tenantId)
     {
-        var daemon = (ProjectionDaemon)await theStore.BuildProjectionDaemonAsync(tenantId, Logger);
+        var daemon = (Events.Daemon.New.NewDaemon)await theStore.BuildProjectionDaemonAsync(tenantId, Logger);
 
         await daemon.StartAllShards();
 

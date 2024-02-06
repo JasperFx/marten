@@ -2,7 +2,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
-using Marten.Events.Projections;
+using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
@@ -76,17 +76,31 @@ internal class EventLoader: IEventLoader
         await using var reader = await session.ExecuteReaderAsync(_command, token).ConfigureAwait(false);
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
-            // TODO -- put error handling and dead letter queue around this! maybe by wrapping the IEventStorage
-            // as a decorator
-            var @event = await _storage.ResolveAsync(reader, token).ConfigureAwait(false);
-
-            if (!await reader.IsDBNullAsync(_aggregateIndex, token).ConfigureAwait(false))
+            try
             {
-                @event.AggregateTypeName =
-                    await reader.GetFieldValueAsync<string>(_aggregateIndex, token).ConfigureAwait(false);
-            }
+                // as a decorator
+                var @event = await _storage.ResolveAsync(reader, token).ConfigureAwait(false);
 
-            page.Add(@event);
+                if (!await reader.IsDBNullAsync(_aggregateIndex, token).ConfigureAwait(false))
+                {
+                    @event.AggregateTypeName =
+                        await reader.GetFieldValueAsync<string>(_aggregateIndex, token).ConfigureAwait(false);
+                }
+
+                page.Add(@event);
+            }
+            catch (EventDeserializationFailureException e)
+            {
+                if (request.ErrorOptions.SkipSerializationErrors)
+                {
+                    request.Runtime.Enqueue(e.ToDeadLetterEvent(request.Name));
+                }
+                else
+                {
+                    // Let any other exception throw
+                    throw;
+                }
+            }
         }
 
         page.CalculateCeiling(_batchSize, request.HighWater);
