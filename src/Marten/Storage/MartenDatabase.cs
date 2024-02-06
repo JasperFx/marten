@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
 using Marten.Internal;
+using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
 using Microsoft.Extensions.Logging;

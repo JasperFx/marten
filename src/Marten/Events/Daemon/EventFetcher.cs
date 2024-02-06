@@ -15,14 +15,17 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Daemon;
 
+[Obsolete("Goes away in 7")]
 internal interface IEventFetcher: IDisposable
 {
     Task Load(EventRange range, CancellationToken token);
 }
 
+
 /// <summary>
 ///     Fetches ranges of event objects. Used within the asynchronous projections
 /// </summary>
+[Obsolete("Goes away in 7")]
 internal class EventFetcher: IEventFetcher
 {
     private readonly int _aggregateIndex;
