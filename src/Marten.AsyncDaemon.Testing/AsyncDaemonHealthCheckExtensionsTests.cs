@@ -38,6 +38,17 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
     }
 
     [Fact]
+    public void should_add_timeprovider_to_services()
+    {
+        builder = new();
+        builder.Services.ShouldNotContain(x => x.ServiceType == typeof(TimeProvider));
+
+        builder.AddMartenAsyncDaemonHealthCheck(200);
+
+        builder.Services.ShouldContain(x => x.ServiceType == typeof(TimeProvider));
+    }
+
+    [Fact]
     public void should_add_healthcheck_to_services()
     {
         builder = new();
