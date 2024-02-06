@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Polly;
 
-namespace Marten.Events.Daemon.New;
+namespace Marten.Events.Daemon;
 
 internal class ResilientEventLoader: IEventLoader
 {

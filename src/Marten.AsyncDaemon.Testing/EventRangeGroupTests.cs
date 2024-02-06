@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.New;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using NSubstitute;
