@@ -51,7 +51,7 @@ public class Bug_2073_tenancy_problems
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
         await store.Advanced.Clean.CompletelyRemoveAllAsync();
-        var daemon = (ProjectionDaemon)(await store.BuildProjectionDaemonAsync());
+        var daemon = (Events.Daemon.New.NewDaemon)(await store.BuildProjectionDaemonAsync());
         await daemon.StartAllShards();
 
         await using (var session = store.LightweightSession("tenant1"))

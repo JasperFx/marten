@@ -32,6 +32,11 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         get => _session ?? throw new InvalidOperationException("Session already released");
     }
 
+    public bool IsDisposed()
+    {
+        return _session == null;
+    }
+
     internal ProjectionUpdateBatch(EventGraph events, DaemonSettings settings,
         DocumentSessionBase? session, EventRange range, CancellationToken token, ShardExecutionMode mode)
     {
@@ -248,7 +253,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
         _documentTypes.Fill(operation.DocumentType);
 
-        if (!_token.IsCancellationRequested && _current.Count >= Session.Options.UpdateBatchSize)
+        if (_session != null && !_token.IsCancellationRequested && _current.Count >= Session.Options.UpdateBatchSize)
         {
             startNewPage(Session);
         }

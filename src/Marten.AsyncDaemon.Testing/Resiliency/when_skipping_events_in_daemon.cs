@@ -47,6 +47,7 @@ public class when_skipping_events_in_daemon : DaemonContext
             opts.Projections.Add<CollateNames>(ProjectionLifecycle.Async);
 
             opts.Projections.RebuildErrors.SkipApplyErrors = true;
+            opts.Projections.Errors.SkipApplyErrors = true;
         });
     }
 
@@ -80,14 +81,12 @@ public class when_skipping_events_in_daemon : DaemonContext
     {
         var daemon = await PublishTheEvents();
 
-        throw new NotImplementedException("Come back to this");
+        var shards = daemon.CurrentShards();
 
-        // var shards = daemon.CurrentShards();
-        //
-        // foreach (var shard in shards)
-        // {
-        //     shard.Status.ShouldBe(AgentStatus.Running);
-        // }
+        foreach (var shard in shards)
+        {
+            shard.Status.ShouldBe(AgentStatus.Running);
+        }
     }
 
     [Fact]
@@ -122,12 +121,13 @@ public class when_skipping_events_in_daemon : DaemonContext
     [Fact]
     public async Task see_the_dead_letter_events()
     {
-        await PublishTheEvents();
+        var daemon = await PublishTheEvents();
+
+        // Drain the dead letter events queued up
+        await daemon.StopAllAsync();
 
         theSession.Logger = new TestOutputMartenLogger(_output);
         var skipped = await theSession.Query<DeadLetterEvent>().ToListAsync();
-
-
 
         skipped.Where(x => x.ProjectionName == "CollateNames" && x.ShardName == "All")
             .Select(x => x.EventSequence).OrderBy(x => x)

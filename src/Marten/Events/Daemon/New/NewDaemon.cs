@@ -25,7 +25,7 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>, IDaemonRuntim
     private CancellationTokenSource _cancellation = new();
     private readonly HighWaterAgent _highWater;
     private readonly IDisposable _breakSubscription;
-    private readonly RetryBlock<DeadLetterEvent> _deadLetterBlock;
+    private RetryBlock<DeadLetterEvent> _deadLetterBlock;
 
     public NewDaemon(DocumentStore store, MartenDatabase database, ILogger logger, IHighWaterDetector detector,
         IAgentFactory factory)
@@ -39,7 +39,12 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>, IDaemonRuntim
 
         _breakSubscription = database.Tracker.Subscribe(this);
 
-        _deadLetterBlock = new RetryBlock<DeadLetterEvent>(async (deadLetterEvent, token) =>
+        _deadLetterBlock = buildDeadLetterBlock();
+    }
+
+    private RetryBlock<DeadLetterEvent> buildDeadLetterBlock()
+    {
+        return new RetryBlock<DeadLetterEvent>(async (deadLetterEvent, token) =>
         {
             // More important to end cleanly
             if (token.IsCancellationRequested) return;
@@ -224,6 +229,8 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>, IDaemonRuntim
         }
 
         _active.Clear();
+
+        _deadLetterBlock = buildDeadLetterBlock();
     }
 
     public async Task StartDaemonAsync()
@@ -261,6 +268,11 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>, IDaemonRuntim
         if (agent == null) return AgentStatus.Stopped;
 
         return agent.Status;
+    }
+
+    public IReadOnlyList<ISubscriptionAgent> CurrentShards()
+    {
+        return _active;
     }
 
     public Task PauseHighWaterAgent()
@@ -302,6 +314,7 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>, IDaemonRuntim
     // TODO -- ZOMG, this is awful
     private async Task rebuildProjection(IProjectionSource source, TimeSpan shardTimeout, CancellationToken token)
     {
+
         await Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
         Logger.LogInformation("Starting to rebuild Projection {ProjectionName}@{DatabaseIdentifier}",
@@ -367,23 +380,6 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>, IDaemonRuntim
             // TODO -- timeout and harden here
             await agent.StopAndDrainAsync(CancellationToken.None).ConfigureAwait(false);
         }
-
-
-        // foreach (var shard in shards)
-        // {
-            // TODO -- find all serialization errors and write out
-            // if (_agents.TryGetValue(shard.Name.Identity, out var agent))
-            // {
-            //     var serializationFailures = await agent.DrainSerializationFailureRecording().ConfigureAwait(false);
-            //     if (serializationFailures > 0)
-            //     {
-            //         Console.WriteLine(
-            //             $"There were {serializationFailures} deserialization failures during rebuild of shard {shard.Name.Identity}");
-            //     }
-            // }
-
-            // await StopShard(shard.Name.Identity).ConfigureAwait(false);
-        // }
     }
 
 

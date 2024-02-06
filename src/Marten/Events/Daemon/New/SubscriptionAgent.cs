@@ -96,6 +96,11 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         _tracker.Publish(new ShardState(Name, request.Floor){Action = ShardAction.Started});
     }
 
+    public void Enqueue(DeadLetterEvent @event)
+    {
+        _runtime.Enqueue(@event);
+    }
+
     public async ValueTask DisposeAsync()
     {
 #if NET8_0_OR_GREATER
@@ -209,5 +214,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     }
 
     public ShardExecutionMode Mode { get; private set; } = ShardExecutionMode.Continuous;
+
+
 
 }

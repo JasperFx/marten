@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon.HighWater;
+using Marten.Events.Daemon.New;
 using Marten.Events.Daemon.Progress;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
@@ -81,21 +82,22 @@ internal class ProjectionDaemon: IProjectionDaemon
 
     public async Task WaitForNonStaleData(TimeSpan timeout)
     {
-        var stopWatch = Stopwatch.StartNew();
-        var statistics = await Database.FetchEventStoreStatistics(_cancellation.Token).ConfigureAwait(false);
-
-        while (stopWatch.Elapsed < timeout)
-        {
-            if (CurrentShards().All(x => x.Position >= statistics.EventSequenceNumber))
-            {
-                return;
-            }
-
-            await Task.Delay(100.Milliseconds(), _cancellation.Token).ConfigureAwait(false);
-        }
-
-        var message = $"The active projection shards did not reach sequence {statistics.EventSequenceNumber} in time";
-        throw new TimeoutException(message);
+        throw new NotImplementedException("Killing this");
+        // var stopWatch = Stopwatch.StartNew();
+        // var statistics = await Database.FetchEventStoreStatistics(_cancellation.Token).ConfigureAwait(false);
+        //
+        // while (stopWatch.Elapsed < timeout)
+        // {
+        //     if (CurrentShards().All(x => x.Position >= statistics.EventSequenceNumber))
+        //     {
+        //         return;
+        //     }
+        //
+        //     await Task.Delay(100.Milliseconds(), _cancellation.Token).ConfigureAwait(false);
+        // }
+        //
+        // var message = $"The active projection shards did not reach sequence {statistics.EventSequenceNumber} in time";
+        // throw new TimeoutException(message);
     }
 
     public Task PauseHighWaterAgent()
@@ -315,9 +317,9 @@ internal class ProjectionDaemon: IProjectionDaemon
         // logger.LogError(ex, "Error when trying to start projection shard '{ShardName}'", shard.Name.Identity);
     }
 
-    public ShardAgent[] CurrentShards()
+    public IReadOnlyList<ISubscriptionAgent> CurrentShards()
     {
-        return _agents.Values.ToArray();
+        throw new NotImplementedException();
     }
 
 
