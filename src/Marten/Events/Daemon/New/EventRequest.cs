@@ -9,6 +9,8 @@ public class EventRequest
     public long HighWater { get; init; }
     public int BatchSize { get; init; }
 
+    public ShardName Name { get; init; }
+
     public ErrorHandlingOptions ErrorOptions { get; init; }
 
     public IDaemonRuntime Runtime { get; init; }

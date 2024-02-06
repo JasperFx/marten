@@ -12,4 +12,5 @@ public interface ISubscriptionExecution: IAsyncDisposable
     Task EnsureStorageExists();
 
     string DatabaseName { get; }
+    ShardExecutionMode Mode { get; set; }
 }
