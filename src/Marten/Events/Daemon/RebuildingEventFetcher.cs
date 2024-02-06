@@ -10,6 +10,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Daemon;
 
+[Obsolete("Remove in 7")]
 internal class RebuildingEventFetcher: EventFetcher
 {
     private readonly BatchBlock<DeadLetterEvent> _batching;

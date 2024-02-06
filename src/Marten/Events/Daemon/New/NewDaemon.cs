@@ -8,6 +8,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Progress;
+using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Services;
 using Marten.Storage;
@@ -16,7 +17,7 @@ using Weasel.Core;
 
 namespace Marten.Events.Daemon.New;
 
-public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
+public class NewDaemon : IProjectionDaemon, IObserver<ShardState>, IDaemonRuntime
 {
     private readonly DocumentStore _store;
     private readonly IAgentFactory _factory;
@@ -24,6 +25,7 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
     private CancellationTokenSource _cancellation = new();
     private readonly HighWaterAgent _highWater;
     private readonly IDisposable _breakSubscription;
+    private readonly RetryBlock<DeadLetterEvent> _deadLetterBlock;
 
     public NewDaemon(DocumentStore store, MartenDatabase database, ILogger logger, IHighWaterDetector detector,
         IAgentFactory factory)
@@ -36,6 +38,21 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
         _highWater = new HighWaterAgent(detector, Tracker, logger, store.Options.Projections, _cancellation.Token);
 
         _breakSubscription = database.Tracker.Subscribe(this);
+
+        _deadLetterBlock = new RetryBlock<DeadLetterEvent>(async (deadLetterEvent, token) =>
+        {
+            // More important to end cleanly
+            if (token.IsCancellationRequested) return;
+
+            await using var session =
+                _store.LightweightSession(SessionOptions.ForDatabase(Database));
+
+            await using (session.ConfigureAwait(false))
+            {
+                session.Store(deadLetterEvent);
+                await session.SaveChangesAsync(_cancellation.Token).ConfigureAwait(false);
+            }
+        }, Logger, _cancellation.Token);
     }
 
     internal MartenDatabase Database { get; }
@@ -47,6 +64,7 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
         _cancellation?.Dispose();
         _highWater?.Dispose();
         _breakSubscription.Dispose();
+        _deadLetterBlock.Dispose();
     }
 
     public ShardStateTracker Tracker { get; }
@@ -124,7 +142,12 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
         if (_active.Any(x => Equals(x.Name, agent.Name))) return;
 
         var position = await Database.ProjectionProgressFor(agent.Name, _cancellation.Token).ConfigureAwait(false);
-        await agent.StartAsync(position, mode).ConfigureAwait(false);
+
+        var errorOptions = mode == ShardExecutionMode.Continuous
+            ? _store.Options.Projections.Errors
+            : _store.Options.Projections.RebuildErrors;
+
+        await agent.StartAsync(new SubscriptionExecutionRequest(position, mode, errorOptions, this)).ConfigureAwait(false);
         agent.MarkHighWater(HighWaterMark());
         _active.Add(agent);
     }
@@ -189,6 +212,15 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
         catch (Exception e)
         {
             Logger.LogError(e, "Error trying to stop subscription agents for {Agents}", _active.Select(x => x.Name.Identity).Join(", "));
+        }
+
+        try
+        {
+            await _deadLetterBlock.DrainAsync().ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error trying to finish all outstanding DeadLetterEvent persistence");
         }
 
         _active.Clear();
@@ -372,5 +404,10 @@ public class NewDaemon : IProjectionDaemon, IObserver<ShardState>
         session.DeleteWhere<DeadLetterEvent>(x => x.ProjectionName == source.ProjectionName);
 
         await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    public void Enqueue(DeadLetterEvent @event)
+    {
+        _deadLetterBlock.Post(@event);
     }
 }

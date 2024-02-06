@@ -1,8 +1,14 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Projections;
 
 namespace Marten.Events.Daemon.New;
+
+public record SubscriptionExecutionRequest(
+    long Floor,
+    ShardExecutionMode Mode,
+    ErrorHandlingOptions ErrorHandling,
+    IDaemonRuntime Runtime);
 
 public interface ISubscriptionAgent : IShardAgent
 {
@@ -15,5 +21,5 @@ public interface ISubscriptionAgent : IShardAgent
     Task StopAndDrainAsync(CancellationToken token);
     Task HardStopAsync();
 
-    Task StartAsync(long floor, ShardExecutionMode mode);
+    Task StartAsync(SubscriptionExecutionRequest request);
 }
