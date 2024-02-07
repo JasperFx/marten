@@ -27,4 +27,6 @@ public interface ISubscriptionAgent : IShardAgent
     Task StartAsync(SubscriptionExecutionRequest request);
 
     Task RecordDeadLetterEventAsync(DeadLetterEvent @event);
+
+    DateTimeOffset? PausedTime { get; }
 }

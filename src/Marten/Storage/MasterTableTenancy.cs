@@ -85,6 +85,10 @@ public class MasterTableTenancy : ITenancy
             while (await reader.ReadAsync().ConfigureAwait(false))
             {
                 var tenantId = await reader.GetFieldValueAsync<string>(0).ConfigureAwait(false);
+
+                // Be idempotent, don't duplicate
+                if (_databases.Contains(tenantId)) continue;
+
                 var connectionString = await reader.GetFieldValueAsync<string>(1).ConfigureAwait(false);
 
                 var database = new MartenDatabase(_options, new ConnectionFactory(new DefaultNpgsqlDataSourceFactory(), connectionString), tenantId);

@@ -8,6 +8,7 @@ using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Progress;
 using Marten.Linq.QueryHandlers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Weasel.Postgresql;
 
 namespace Marten.Storage;
@@ -134,7 +135,8 @@ select last_value from {_options.Events.DatabaseSchemaName}.mt_events_sequence;
 
     internal IProjectionDaemon StartProjectionDaemon(DocumentStore store, ILogger? logger = null)
     {
-        logger ??= new NulloLogger();
+        logger ??= store.Options.LogFactory?.CreateLogger<ProjectionDaemon>() ??
+                   store.Options.DotNetLogger ?? NullLogger.Instance;
 
         var detector = new HighWaterDetector(this, _options.EventGraph, logger);
 

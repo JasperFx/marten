@@ -275,6 +275,11 @@ public class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>, IDaemo
         return _active;
     }
 
+    public bool HasAnyPaused()
+    {
+        return _active.Any(x => x.Status == AgentStatus.Paused);
+    }
+
     public Task PauseHighWaterAgent()
     {
         return _highWater.Stop();

@@ -101,6 +101,8 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         return _runtime.RecordDeadLetterEventAsync(@event);
     }
 
+    public DateTimeOffset? PausedTime { get; private set; }
+
     public async ValueTask DisposeAsync()
     {
 #if NET8_0_OR_GREATER
