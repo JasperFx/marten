@@ -26,5 +26,5 @@ public interface ISubscriptionAgent : IShardAgent
 
     Task StartAsync(SubscriptionExecutionRequest request);
 
-    void Enqueue(DeadLetterEvent @event);
+    Task RecordDeadLetterEventAsync(DeadLetterEvent @event);
 }

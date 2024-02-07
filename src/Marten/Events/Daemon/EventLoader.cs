@@ -93,7 +93,7 @@ internal class EventLoader: IEventLoader
             {
                 if (request.ErrorOptions.SkipSerializationErrors)
                 {
-                    request.Runtime.Enqueue(e.ToDeadLetterEvent(request.Name));
+                    await request.Runtime.RecordDeadLetterEventAsync(e.ToDeadLetterEvent(request.Name)).ConfigureAwait(false);
                 }
                 else
                 {
