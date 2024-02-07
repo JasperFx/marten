@@ -59,7 +59,7 @@ public class DaemonSettings: IReadOnlyDaemonSettings
     /// <summary>
     ///     Time in milliseconds to poll for leadership election in the async projection daemon
     /// </summary>
-    public double LeadershipPollingTime { get; set; } = 5000;
+    public int LeadershipPollingTime { get; set; } = 5000;
 
     /// <summary>
     ///     If the projection daemon detects a "stale" event sequence that is probably cause
@@ -86,6 +86,11 @@ public class DaemonSettings: IReadOnlyDaemonSettings
     ///     of its activities and try to restart anything that is not currently running
     /// </summary>
     public TimeSpan HealthCheckPollingTime { get; set; } = 5.Seconds();
+
+    /// <summary>
+    /// If a subscription has been paused for any reason
+    /// </summary>
+    public TimeSpan AgentPauseTime { get; set; } = 1.Seconds();
 
     /// <summary>
     ///     Projection Daemon mode. The default is Disabled. As of V5, the async daemon needs to be
