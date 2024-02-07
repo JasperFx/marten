@@ -402,8 +402,8 @@ public class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>, IDaemo
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
-    public void Enqueue(DeadLetterEvent @event)
+    public Task RecordDeadLetterEventAsync(DeadLetterEvent @event)
     {
-        _deadLetterBlock.Post(@event);
+        return _deadLetterBlock.PostAsync(@event);
     }
 }

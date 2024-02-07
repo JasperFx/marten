@@ -1,6 +1,8 @@
+using System.Threading.Tasks;
+
 namespace Marten.Events.Daemon;
 
 public interface IDaemonRuntime
 {
-    void Enqueue(DeadLetterEvent @event);
+    Task RecordDeadLetterEventAsync(DeadLetterEvent @event);
 }
