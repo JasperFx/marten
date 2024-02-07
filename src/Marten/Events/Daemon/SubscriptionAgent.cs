@@ -96,9 +96,9 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         _tracker.Publish(new ShardState(Name, request.Floor){Action = ShardAction.Started});
     }
 
-    public void Enqueue(DeadLetterEvent @event)
+    public Task RecordDeadLetterEventAsync(DeadLetterEvent @event)
     {
-        _runtime.Enqueue(@event);
+        return _runtime.RecordDeadLetterEventAsync(@event);
     }
 
     public async ValueTask DisposeAsync()
