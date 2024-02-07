@@ -10,6 +10,7 @@ namespace Marten.Events.Daemon;
 ///     responsible for starting projection shards and assigning
 ///     work to the locally running IProjectionDaemon
 /// </summary>
+[Obsolete("Goes away in 7")]
 public interface INodeCoordinator: IDisposable
 {
     /// <summary>

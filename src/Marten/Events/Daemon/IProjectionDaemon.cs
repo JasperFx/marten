@@ -127,4 +127,10 @@ public interface IProjectionDaemon: IDisposable
     long HighWaterMark();
     AgentStatus StatusFor(string shardName);
     IReadOnlyList<ISubscriptionAgent> CurrentShards();
+
+    /// <summary>
+    /// Are there any paused agents?
+    /// </summary>
+    /// <returns></returns>
+    bool HasAnyPaused();
 }
