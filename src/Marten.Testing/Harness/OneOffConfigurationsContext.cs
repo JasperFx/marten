@@ -91,6 +91,10 @@ namespace Marten.Testing.Harness
 
                 return _store;
             }
+            set
+            {
+                _store = value;
+            }
         }
 
         protected IDocumentSession theSession

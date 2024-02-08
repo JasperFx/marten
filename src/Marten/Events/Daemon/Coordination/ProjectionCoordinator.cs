@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using Marten.Events.Daemon.Resiliency;
 using Marten.Storage;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,7 +19,7 @@ namespace Marten.Events.Daemon.Coordination;
  * Error handling in advisory lock?
  * In ProjectionCoordinator, turn off agents where you no longer have the lock
  * Push through being able to pause a SubscriptionAgent
- * Throw specific exception for ShardStartException
+ * Throw specific exception for ShardStopException
  * Automatically pause agent that gets the projection out of order
  * Pause if grouping fails too many times
  * Pause if applying a batch fails too many times
@@ -29,47 +31,160 @@ namespace Marten.Events.Daemon.Coordination;
  * Move on to projection command, simplify output
  */
 
-public class ProjectionCoordinator : BackgroundService
+public class ProjectionCoordinator<T>: ProjectionCoordinator, IProjectionCoordinator<T> where T : IDocumentStore
 {
-    private readonly IProjectionDistributor _distributor;
+    public ProjectionCoordinator(T documentStore, ILogger<ProjectionCoordinator> logger) : base(documentStore, logger)
+    {
+    }
+}
+
+public class ProjectionCoordinator : IProjectionCoordinator
+{
     private readonly StoreOptions _options;
     private readonly ILogger<ProjectionCoordinator> _logger;
 
-    private readonly Dictionary<IMartenDatabase, IProjectionDaemon> _daemons = new();
+    private readonly ConcurrentDictionary<IMartenDatabase, IProjectionDaemon> _daemons = new();
     private readonly ResiliencePipeline _resilience;
+    private readonly CancellationTokenSource _cancellation = new();
+    private Task _runner;
 
-    public ProjectionCoordinator(IProjectionDistributor distributor, StoreOptions options, ILogger<ProjectionCoordinator> logger)
+    public ProjectionCoordinator(IDocumentStore documentStore, ILogger<ProjectionCoordinator> logger)
     {
-        _distributor = distributor;
-        _options = options;
+        var store = (DocumentStore)documentStore;
+
+        if (store.Options.Projections.AsyncMode == DaemonMode.Solo)
+        {
+            Distributor = new SoloProjectionDistributor(store);
+        }
+        else if (store.Options.Projections.AsyncMode == DaemonMode.HotCold)
+        {
+            if (store.Options.Tenancy is DefaultTenancy)
+            {
+                Distributor = new SingleTenantProjectionDistributor(store);
+            }
+            else
+            {
+                Distributor = new MultiTenantedProjectionDistributor(store);
+            }
+        }
+
+        _options = store.Options;
         _logger = logger;
-        _resilience = options.ResiliencePipeline;
+        _resilience = store.Options.ResiliencePipeline;
+
+        Store = store;
     }
+
+    public IProjectionDaemon DaemonForMainDatabase()
+    {
+        var database = (MartenDatabase)Store.Tenancy.Default.Database;
+        if (_daemons.TryGetValue(database, out var daemon))
+        {
+            return daemon;
+        }
+
+        daemon = database.StartProjectionDaemon(Store, _logger);
+        _daemons[database] = daemon;
+
+        return daemon;
+    }
+
+    public async ValueTask<IProjectionDaemon> DaemonForDatabase(string databaseIdentifier)
+    {
+        var database = (MartenDatabase)await Store.Storage.FindOrCreateDatabase(databaseIdentifier).ConfigureAwait(false);
+        if (_daemons.TryGetValue(database, out var daemon))
+        {
+            return daemon;
+        }
+
+        daemon = database.StartProjectionDaemon(Store, _logger);
+        _daemons[database] = daemon;
+
+        return daemon;
+    }
+
+    public DocumentStore Store { get; }
+
+    public IProjectionDistributor Distributor { get; }
 
     internal record DaemonShardName(IProjectionDaemon Daemon, ShardName Name);
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
-        await _distributor.RandomWait(stoppingToken).ConfigureAwait(false);
+        _runner = Task.Run(() => executeAsync(_cancellation.Token), _cancellation.Token);
+
+        return Task.CompletedTask;
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+#if NET8_0_OR_GREATER
+        await _cancellation.CancelAsync().ConfigureAwait(false);
+#else
+        _cancellation.Cancel();
+#endif
+
+        try
+        {
+#pragma warning disable VSTHRD003
+            await _runner.ConfigureAwait(false);
+#pragma warning restore VSTHRD003
+        }
+        catch (Exception)
+        {
+            // Just trying to let it drain
+        }
+        _runner.SafeDispose();
+
+        foreach (var pair in _daemons)
+        {
+            try
+            {
+                await pair.Value.StopAllAsync().ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Error while trying to stop daemon agents in database {Name}", pair.Key.Identifier);
+            }
+        }
+
+        foreach (var daemon in _daemons.Values)
+        {
+            daemon.SafeDispose();
+        }
+
+        try
+        {
+            await Distributor.ReleaseAllLocks().ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error trying to release subscription agent locks");
+        }
+    }
+
+    private async Task executeAsync(CancellationToken stoppingToken)
+    {
+        await Distributor.RandomWait(stoppingToken).ConfigureAwait(false);
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                var sets = await _distributor
+                var sets = await Distributor
                     .BuildDistributionAsync().ConfigureAwait(false);
 
                 foreach (var set in sets)
                 {
                     // Is it already running here?
-                    if (_distributor.HasLock(set))
+                    if (Distributor.HasLock(set))
                     {
                         var daemon = resolveDaemon(set);
 
                         // check if it's still running
                         await startAgentsIfNecessaryAsync(set, daemon, stoppingToken).ConfigureAwait(false);
                     }
-                    else if (await _distributor.TryAttainLockAsync(set, stoppingToken).ConfigureAwait(false))
+                    else if (await Distributor.TryAttainLockAsync(set, stoppingToken).ConfigureAwait(false))
                     {
                         var daemon = resolveDaemon(set);
 
@@ -80,17 +195,28 @@ public class ProjectionCoordinator : BackgroundService
             }
             catch (Exception e)
             {
+                if (stoppingToken.IsCancellationRequested) return;
+
                 // Only really expect any errors if there are dynamic tenants in place
                 _logger.LogError(e, "Error trying to resolve projection distributions");
             }
 
-            if (_daemons.Values.Any(x => x.HasAnyPaused()))
+            if (stoppingToken.IsCancellationRequested) return;
+
+            try
             {
-                await Task.Delay(_options.Projections.AgentPauseTime, stoppingToken).ConfigureAwait(false);
+                if (_daemons.Values.Any(x => x.HasAnyPaused()))
+                {
+                    await Task.Delay(_options.Projections.AgentPauseTime, stoppingToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    await Task.Delay(_options.Projections.LeadershipPollingTime.Milliseconds(), stoppingToken).ConfigureAwait(false);
+                }
             }
-            else
+            catch (TaskCanceledException)
             {
-                await Task.Delay(_options.Projections.LeadershipPollingTime.Milliseconds(), stoppingToken).ConfigureAwait(false);
+                // just get out of here, this signals a graceful shutdown attempt
             }
         }
     }
