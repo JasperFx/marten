@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,11 +28,27 @@ internal class AdvisoryLock : IAsyncDisposable
 
     public bool HasLock(int lockId)
     {
-        return _locks.Contains(lockId);
+        return _conn.State != ConnectionState.Broken && _locks.Contains(lockId);
     }
 
     public async Task<bool> TryAttainLockAsync(int lockId, CancellationToken token)
     {
+        if (_conn.State == ConnectionState.Broken)
+        {
+            try
+            {
+                await _conn.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error trying to clean up and restart an advisory lock connection");
+            }
+            finally
+            {
+                _conn = null;
+            }
+        }
+
         if (_conn == null)
         {
             _conn = _database.CreateConnection();
@@ -50,7 +67,7 @@ internal class AdvisoryLock : IAsyncDisposable
 
     public async Task ReleaseLockAsync(int lockId)
     {
-        if (_conn == null) return;
+        if (_conn == null || _conn.State == ConnectionState.Broken) return;
 
         var cancellation = new CancellationTokenSource();
         cancellation.CancelAfter(1.Seconds());
