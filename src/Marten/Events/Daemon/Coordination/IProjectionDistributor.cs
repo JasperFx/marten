@@ -14,4 +14,6 @@ public interface IProjectionDistributor : IAsyncDisposable
     Task<bool> TryAttainLockAsync(IProjectionSet set, CancellationToken token);
 
     Task ReleaseLockAsync(IProjectionSet set);
+
+    Task ReleaseAllLocks();
 }

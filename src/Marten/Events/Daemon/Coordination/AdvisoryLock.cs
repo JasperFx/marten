@@ -72,12 +72,22 @@ internal class AdvisoryLock : IAsyncDisposable
 
         try
         {
+            foreach (var i in _locks)
+            {
+                await _conn.ReleaseGlobalLock(i, CancellationToken.None).ConfigureAwait(false);
+            }
+
             await _conn.CloseAsync().ConfigureAwait(false);
             await _conn.DisposeAsync().ConfigureAwait(false);
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Error trying to dispose of advisory locks for database {Identifier}", _database.Identifier);
+            _logger.LogError(e, "Error trying to dispose of advisory locks for database {Identifier}",
+                _database.Identifier);
+        }
+        finally
+        {
+            await _conn.DisposeAsync().ConfigureAwait(false);
         }
     }
 }

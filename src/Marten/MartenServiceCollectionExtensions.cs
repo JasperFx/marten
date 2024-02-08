@@ -8,7 +8,7 @@ using System.Reflection;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
-using Marten.Events.Daemon;
+using Marten.Events.Daemon.Coordination;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Internal;
@@ -22,7 +22,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
-using Weasel.Postgresql.Connections;
 
 namespace Marten;
 
@@ -508,7 +507,11 @@ public static class MartenServiceCollectionExtensions
         public MartenStoreExpression<T> AddAsyncDaemon(DaemonMode mode)
         {
             Services.ConfigureMarten<T>(opts => opts.Projections.AsyncMode = mode);
-            Services.AddSingleton<IHostedService, AsyncProjectionHostedService<T>>();
+            if (mode != DaemonMode.Disabled)
+            {
+                Services.AddSingleton<IProjectionCoordinator<T>, ProjectionCoordinator<T>>();
+                Services.AddSingleton<IHostedService>(s => s.GetRequiredService<IProjectionCoordinator<T>>());
+            }
 
             return this;
         }
@@ -625,7 +628,12 @@ public static class MartenServiceCollectionExtensions
         public MartenConfigurationExpression AddAsyncDaemon(DaemonMode mode)
         {
             Services.ConfigureMarten(opts => opts.Projections.AsyncMode = mode);
-            Services.AddSingleton<IHostedService, AsyncProjectionHostedService>();
+
+            if (mode != DaemonMode.Disabled)
+            {
+                Services.AddSingleton<IProjectionCoordinator, ProjectionCoordinator>();
+                Services.AddSingleton<IHostedService>(s => s.GetRequiredService<IProjectionCoordinator>());
+            }
 
             return this;
         }
