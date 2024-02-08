@@ -12,7 +12,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Lamar" Version="12.1.0"/>
         <PackageReference Include="Spectre.Console" Version="0.48.0" />
     </ItemGroup>
 </Project>

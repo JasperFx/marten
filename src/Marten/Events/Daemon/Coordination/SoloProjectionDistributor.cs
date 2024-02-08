@@ -6,11 +6,11 @@ using Marten.Storage;
 
 namespace Marten.Events.Daemon.Coordination;
 
-public class SoloTenantProjectionDistributor: IProjectionDistributor
+public class SoloProjectionDistributor: IProjectionDistributor
 {
     private readonly DocumentStore _store;
 
-    public SoloTenantProjectionDistributor(DocumentStore store)
+    public SoloProjectionDistributor(DocumentStore store)
     {
         _store = store;
     }
@@ -47,6 +47,11 @@ public class SoloTenantProjectionDistributor: IProjectionDistributor
     }
 
     public Task ReleaseLockAsync(IProjectionSet set)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task ReleaseAllLocks()
     {
         return Task.CompletedTask;
     }

@@ -64,4 +64,14 @@ public class MultiTenantedProjectionDistributor: IProjectionDistributor
     {
         return _locks[set.Database].ReleaseLockAsync(set.LockId);
     }
+
+    public async Task ReleaseAllLocks()
+    {
+        foreach (var @lock in _locks)
+        {
+            await @lock.DisposeAsync().ConfigureAwait(false);
+        }
+
+        _locks.ClearAll();
+    }
 }

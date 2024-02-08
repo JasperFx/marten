@@ -8,6 +8,7 @@ using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
@@ -31,15 +32,15 @@ public class HotCold_leadership_election: DaemonContext
 
         await PublishSingleThreaded();
 
-        using var agent = await StartDaemonInHotColdMode();
+        using var host = await StartDaemonInHotColdMode();
 
-        await agent.Tracker.WaitForHighWaterMark(NumberOfEvents, 15.Seconds());
+        var daemon = host.Daemon();
+        var tracker = daemon.Tracker;
+        await tracker.WaitForHighWaterMark(NumberOfEvents, 15.Seconds());
 
-        agent.Tracker.HighWaterMark.ShouldBe(NumberOfEvents);
+        tracker.HighWaterMark.ShouldBe(NumberOfEvents);
 
-        agent.IsRunning.ShouldBeTrue();
-
-        await agent.StopAllAsync();
+        daemon.IsRunning.ShouldBeTrue();
     }
 
     [Fact]
@@ -49,15 +50,8 @@ public class HotCold_leadership_election: DaemonContext
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-        StoreOptions(x =>
-        {
-            x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
-            x.Logger(new TestOutputMartenLogger(_output));
-        }, true);
-
-        var agent = await StartDaemonInHotColdMode();
-        var waiter = agent.Tracker.WaitForShardState("TripCustomName:All", NumberOfEvents, 15.Seconds());
-
+        var host = await StartDaemonInHotColdMode();
+        var waiter = host.Daemon().Tracker.WaitForShardState("TripCustomName:All", NumberOfEvents, 15.Seconds());
 
         await PublishSingleThreaded();
 
@@ -73,16 +67,13 @@ public class HotCold_leadership_election: DaemonContext
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-        StoreOptions(x =>
-        {
-            x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
-        }, true);
+        var host = await StartDaemonInHotColdMode();
 
-        var agent = await StartDaemonInHotColdMode();
-        var daemon2 = await StartAdditionalDaemonInHotColdMode();
+        await assertIsRunning(host, 5.Seconds());
 
-        var waiter = agent.Tracker.WaitForShardState("TripCustomName:All", NumberOfEvents, 30.Seconds());
+        var host2 = await StartAdditionalDaemonInHotColdMode();
 
+        var waiter = host.Daemon().Tracker.WaitForShardState("TripCustomName:All", NumberOfEvents, 30.Seconds());
 
         await PublishSingleThreaded();
 
@@ -91,8 +82,10 @@ public class HotCold_leadership_election: DaemonContext
         await CheckAllExpectedAggregatesAgainstActuals();
     }
 
-    private async Task assertIsRunning(ProjectionDaemon daemon, TimeSpan timeout)
+    private async Task assertIsRunning(IHost host, TimeSpan timeout)
     {
+        var daemon = host.Daemon();
+
         if (daemon.IsRunning) return;
 
         var stopwatch = new Stopwatch();
@@ -107,7 +100,7 @@ public class HotCold_leadership_election: DaemonContext
         daemon.IsRunning.ShouldBeTrue();
     }
 
-    private async Task<ProjectionDaemon> findRunningDaemon(params ProjectionDaemon[] daemons)
+    private async Task<ProjectionDaemon> findRunningDaemon(params IHost[] hosts)
     {
         var timeout = 5.Seconds();
 
@@ -116,8 +109,8 @@ public class HotCold_leadership_election: DaemonContext
 
         while (stopwatch.Elapsed < timeout)
         {
-            var daemon = daemons.SingleOrDefault(x => x.IsRunning);
-            if (daemon != null) return daemon;
+            var host = hosts.SingleOrDefault(x => x.Daemon().IsRunning);
+            if (host != null) return host.Daemon();
             await Task.Delay(200.Milliseconds());
         }
 
@@ -128,46 +121,44 @@ public class HotCold_leadership_election: DaemonContext
     [Fact]
     public async Task one_additional_node_will_take_over_leadership_mechanics()
     {
-        var daemon1 = await StartDaemonInHotColdMode();
+        var host1 = await StartDaemonInHotColdMode();
 
-        await assertIsRunning(daemon1, 1.Seconds());
+        await assertIsRunning(host1, 5.Seconds());
 
-        var daemon2 = await StartDaemonInHotColdMode();
+        var host2 = await StartAdditionalDaemonInHotColdMode();
         await Task.Delay(500.Milliseconds());
 
-        daemon1.IsRunning.ShouldBeTrue();
-        daemon2.IsRunning.ShouldBeFalse();
+        host1.Daemon().IsRunning.ShouldBeTrue();
+        host2.Daemon().IsRunning.ShouldBeFalse();
 
-        await daemon1.StopAllAsync();
+        await host1.StopAsync();
 
-        daemon1.IsRunning.ShouldBeFalse();
-
-        await assertIsRunning(daemon2, 3.Seconds());
+        await assertIsRunning(host2, 5.Seconds());
     }
 
     [Fact]
     public async Task spin_up_several_daemons_and_fail_over()
     {
-        var daemon1 = await StartDaemonInHotColdMode();
+        var host = await StartDaemonInHotColdMode();
 
-        await assertIsRunning(daemon1, 1.Seconds());
+        await assertIsRunning(host, 3.Seconds());
 
-        var others = new ProjectionDaemon[4];
+        var others = new IHost[4];
 
-        others[0] = await StartDaemonInHotColdMode();
-        others[1] = await StartDaemonInHotColdMode();
-        others[2] = await StartDaemonInHotColdMode();
-        others[3] = await StartDaemonInHotColdMode();
+        others[0] = await StartAdditionalDaemonInHotColdMode();
+        others[1] = await StartAdditionalDaemonInHotColdMode();
+        others[2] = await StartAdditionalDaemonInHotColdMode();
+        others[3] = await StartAdditionalDaemonInHotColdMode();
 
-        await daemon1.StopAllAsync();
+        await host.StopAsync();
 
         var active = await findRunningDaemon(others);
 
         foreach (var other in others)
         {
-            if (other.Equals(active)) continue;
+            if (other.Daemon().Equals(active)) continue;
 
-            other.IsRunning.ShouldBeFalse();
+            other.Daemon().IsRunning.ShouldBeFalse();
         }
     }
 }

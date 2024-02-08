@@ -8,6 +8,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Coordination;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Internal;
 using Marten.Services;
@@ -348,7 +349,7 @@ public class additional_document_store_registration_and_optimized_artifact_workf
         store.Options.Projections.AsyncMode.ShouldBe(DaemonMode.HotCold);
 
         var hostedService = host.Services.GetServices<IHostedService>()
-            .OfType<AsyncProjectionHostedService<IFirstStore>>().Single();
+            .OfType<ProjectionCoordinator<IFirstStore>>().Single();
 
         (hostedService.Store is IFirstStore).ShouldBeTrue();
 

@@ -34,7 +34,12 @@ public class SingleTenantProjectionDistributor : IProjectionDistributor
 
         IReadOnlyList<IProjectionSet> sets = projectionShards.Select(shard =>
         {
-            return new ProjectionSet(_store.Options.Projections.DaemonLockId, _store, (MartenDatabase)database,
+            // Make deterministic for each projection name
+            var lockId =
+                Math.Abs($"{_store.Options.EventGraph.DatabaseSchemaName}:{shard.Name.Identity}"
+                    .GetDeterministicHashCode()) + _store.Options.Projections.DaemonLockId;
+
+            return new ProjectionSet(lockId, _store, (MartenDatabase)database,
                 new[] { shard.Name });
         }).OrderBy(x => random.NextDouble()).ToList();
 
@@ -67,5 +72,15 @@ public class SingleTenantProjectionDistributor : IProjectionDistributor
     public Task ReleaseLockAsync(IProjectionSet set)
     {
         return _locks[set.Database].ReleaseLockAsync(set.LockId);
+    }
+
+    public async Task ReleaseAllLocks()
+    {
+        foreach (var @lock in _locks)
+        {
+            await @lock.DisposeAsync().ConfigureAwait(false);
+        }
+
+        _locks.ClearAll();
     }
 }

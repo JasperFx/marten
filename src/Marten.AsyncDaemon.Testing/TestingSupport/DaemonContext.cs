@@ -3,30 +3,39 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Divergic.Logging.Xunit;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Lamar.Microsoft.DependencyInjection;
 using Marten.Events;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.HighWater;
+using Marten.Events.Daemon.Coordination;
+using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Storage;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Shouldly;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Marten.AsyncDaemon.Testing.TestingSupport;
 
-public abstract class DaemonContext: OneOffConfigurationsContext
+public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
 {
+    private int lockId = 10000;
+
     protected DaemonContext(ITestOutputHelper output)
     {
         _schemaName = "daemon";
         theStore.Advanced.Clean.DeleteAllEventData();
         Logger = new TestLogger<IProjection>(output);
 
-        theStore.Options.Projections.DaemonLockId++;
+        // Creating a little uniqueness
+        lockId++;
+
+        theStore.Options.Projections.DaemonLockId = lockId;
 
         _output = output;
     }
@@ -56,37 +65,49 @@ public abstract class DaemonContext: OneOffConfigurationsContext
         return daemon;
     }
 
-    internal async Task<ProjectionDaemon> StartDaemonInHotColdMode()
+    internal async Task<IHost> StartDaemonInHotColdMode()
     {
-        throw new NotImplementedException();
-        // theStore.Options.Projections.LeadershipPollingTime = 100;
-        //
-        // var coordinator =
-        //     new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
-        // var daemon = new NewDaemon(theStore, theStore.Tenancy.Default.Database,
-        //     new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
-        //
-        // await daemon.UseCoordinator(coordinator);
-        //
-        // _daemon = daemon;
-        //
-        // _disposables.Add(daemon);
-        // return daemon;
+        var host = await Host.CreateDefaultBuilder()
+            .UseLamar(services =>
+            {
+                services.AddMarten(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = _schemaName;
+                    opts.Projections.LeadershipPollingTime = 100;
+                    opts.Projections.DaemonLockId = lockId;
+
+                    opts.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
+                }).AddAsyncDaemon(DaemonMode.HotCold);
+            }).StartAsync();
+
+        _disposables.Add(host);
+
+        theStore = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
+
+        return host;
     }
 
-    internal async Task<ProjectionDaemon> StartAdditionalDaemonInHotColdMode()
+    internal async Task<IHost> StartAdditionalDaemonInHotColdMode()
     {
-        throw new NotImplementedException();
-        // theStore.Options.Projections.LeadershipPollingTime = 100;
-        // var coordinator =
-        //     new HotColdCoordinator(theStore.Tenancy.Default.Database, theStore.Options.Projections, Logger);
-        // var daemon = new Events.Daemon.New.NewDaemon(theStore, theStore.Tenancy.Default.Database,
-        //     new HighWaterDetector(coordinator, theStore.Events, Logger), Logger);
-        //
-        // await daemon.UseCoordinator(coordinator);
-        //
-        // _disposables.Add(daemon);
-        // return daemon;
+        var host = await Host.CreateDefaultBuilder()
+            .UseLamar(services =>
+            {
+                services.AddMarten(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = _schemaName;
+                    opts.Projections.LeadershipPollingTime = 100;
+
+                    opts.Projections.DaemonLockId = lockId;
+
+                    opts.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
+                }).AddAsyncDaemon(DaemonMode.HotCold);
+            }).StartAsync();
+
+        _disposables.Add(host);
+
+        return host;
     }
 
     protected Task WaitForAction(string shardName, ShardAction action, TimeSpan timeout = default)
@@ -330,6 +351,18 @@ public abstract class DaemonContext: OneOffConfigurationsContext
             _completion.SetResult(true);
         }
     }
+
+    public async Task InitializeAsync()
+    {
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+    }
+
+    public Task DisposeAsync()
+    {
+        Dispose();
+        return Task.CompletedTask;
+    }
 }
 
 internal class ShardActionWatcher: IObserver<ShardState>
@@ -375,5 +408,13 @@ internal class ShardActionWatcher: IObserver<ShardState>
             _completion.SetResult(value);
             _unsubscribe.Dispose();
         }
+    }
+}
+
+public static class HostExtensions
+{
+    public static ProjectionDaemon Daemon(this IHost host)
+    {
+        return (ProjectionDaemon)host.Services.GetRequiredService<IProjectionCoordinator>().DaemonForMainDatabase();
     }
 }
