@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Storage;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Polly;
 
@@ -24,9 +23,6 @@ namespace Marten.Events.Daemon.Coordination;
  * Pause if grouping fails too many times
  * Pause if applying a batch fails too many times
  * Flesh out IProjectionCoordinator
- * Register ProjectionCoordinator as IHostedService & IProjectionCoordinator
- * Register correct IProjectionDistributor
- * Retrofit old tests for hot/cold detection
  * Start new issue for pausing, stopping, restarting projections/databases
  * Move on to projection command, simplify output
  */
