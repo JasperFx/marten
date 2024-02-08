@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -56,6 +57,13 @@ internal class AdvisoryLock : IAsyncDisposable
 
         await _conn.ReleaseGlobalLock(lockId, cancellation: cancellation.Token).ConfigureAwait(false);
         _locks.Remove(lockId);
+
+        if (!_locks.Any())
+        {
+            await _conn.CloseAsync().ConfigureAwait(false);
+            await _conn.DisposeAsync().ConfigureAwait(false);
+            _conn = null;
+        }
     }
 
     public async ValueTask DisposeAsync()

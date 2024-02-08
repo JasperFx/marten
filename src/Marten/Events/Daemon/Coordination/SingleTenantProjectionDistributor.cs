@@ -30,11 +30,13 @@ public class SingleTenantProjectionDistributor : IProjectionDistributor
         var database = _store.Storage.Database;
         var projectionShards = _store.Options.Projections.AllShards();
 
+        var random = new Random();
+
         IReadOnlyList<IProjectionSet> sets = projectionShards.Select(shard =>
         {
             return new ProjectionSet(_store.Options.Projections.DaemonLockId, _store, (MartenDatabase)database,
                 new[] { shard.Name });
-        }).ToList();
+        }).OrderBy(x => random.NextDouble()).ToList();
 
         return ValueTask.FromResult(sets);
     }
