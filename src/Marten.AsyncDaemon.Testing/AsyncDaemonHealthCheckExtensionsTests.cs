@@ -65,6 +65,20 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
     }
 
     [Fact]
+    public async Task should_be_healty_without_events()
+    {
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new FakeSingleStream1Projection(), ProjectionLifecycle.Async);
+        });
+        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(100), _timeProvider);
+
+        var result = await healthCheck.CheckHealthAsync(new());
+
+        result.Status.ShouldBe(HealthStatus.Healthy);
+    }
+
+    [Fact]
     public async Task should_be_healty_with_one_projection_no_relevant_events()
     {
         StoreOptions(x =>

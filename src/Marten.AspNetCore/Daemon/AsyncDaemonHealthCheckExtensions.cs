@@ -54,7 +54,7 @@ public static class AsyncDaemonHealthCheckExtensions
     /// <summary>
     /// Health check implementation
     /// </summary>
-    internal class AsyncDaemonHealthCheck : IHealthCheck
+    internal class AsyncDaemonHealthCheck: IHealthCheck
     {
         /// <summary>
         /// The <see cref="DocumentStore"/> to check health for.
@@ -79,7 +79,8 @@ public static class AsyncDaemonHealthCheckExtensions
         private readonly ConcurrentDictionary<string, (DateTime CheckedAt, long Sequence)>
             _lastProjectionsChecks = new();
 
-        public AsyncDaemonHealthCheck(IDocumentStore store, AsyncDaemonHealthCheckSettings settings, TimeProvider timeProvider)
+        public AsyncDaemonHealthCheck(IDocumentStore store, AsyncDaemonHealthCheckSettings settings,
+            TimeProvider timeProvider)
         {
             _store = store;
             _timeProvider = timeProvider;
@@ -102,7 +103,12 @@ public static class AsyncDaemonHealthCheckExtensions
                 var allProgress = await _store.Advanced.AllProjectionProgress(token: cancellationToken)
                     .ConfigureAwait(true);
 
-                var highWaterMark = allProgress.First(x => string.Equals("HighWaterMark", x.ShardName));
+                var highWaterMark = allProgress.FirstOrDefault(x => string.Equals("HighWaterMark", x.ShardName));
+                if (highWaterMark is null)
+                {
+                    return HealthCheckResult.Healthy("Healthy");
+                }
+
                 var projectionMarks = allProgress.Where(x => !string.Equals("HighWaterMark", x.ShardName)).ToArray();
 
                 var projectionsSequences = projectionMarks.Where(x => projectionsToCheck.Contains(x.ShardName))
