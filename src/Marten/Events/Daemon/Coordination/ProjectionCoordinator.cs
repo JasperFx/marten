@@ -11,10 +11,26 @@ using Polly;
 
 namespace Marten.Events.Daemon.Coordination;
 
+/*
+ * TODO
+ * Use deterministic hash for lock id of the per projection shard lock id
+ * Error handling in advisory lock?
+ * In ProjectionCoordinator, turn off agents where you no longer have the lock
+ * Push through being able to pause a SubscriptionAgent
+ * Throw specific exception for ShardStartException
+ * Automatically pause agent that gets the projection out of order
+ * Pause if grouping fails too many times
+ * Pause if applying a batch fails too many times
+ * Flesh out IProjectionCoordinator
+ * Register ProjectionCoordinator as IHostedService & IProjectionCoordinator
+ * Register correct IProjectionDistributor
+ * Retrofit old tests for hot/cold detection
+ * Start new issue for pausing, stopping, restarting projections/databases
+ * Move on to projection command, simplify output
+ */
+
 public class ProjectionCoordinator : BackgroundService
 {
-
-
     private readonly IProjectionDistributor _distributor;
     private readonly StoreOptions _options;
     private readonly ILogger<ProjectionCoordinator> _logger;

@@ -35,13 +35,14 @@ public class MultiTenantedProjectionDistributor: IProjectionDistributor
 
     public async ValueTask<IReadOnlyList<IProjectionSet>> BuildDistributionAsync()
     {
+        var random = new Random();
         var databases = await _store.Storage.AllDatabases().ConfigureAwait(false);
         return databases.OfType<MartenDatabase>().Select(db =>
         {
             var projectionOptions = _store.Options.Projections;
             return new ProjectionSet(projectionOptions.DaemonLockId, _store, db,
                 projectionOptions.AllShards().Select(x => x.Name).ToList());
-        }).ToList();
+        }).OrderBy(x => random.NextDouble()).ToList();
     }
 
     public virtual Task RandomWait(CancellationToken token)
