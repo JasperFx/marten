@@ -7,9 +7,9 @@ namespace Marten.Events.Daemon;
 /// <summary>
 ///     Marten failed to load events for a projection shard
 /// </summary>
-public class EventFetcherException: MartenException
+public class EventLoaderException: MartenException
 {
-    public EventFetcherException(ShardName name, IMartenDatabase martenDatabase, Exception innerException): base(
+    public EventLoaderException(ShardName name, IMartenDatabase martenDatabase, Exception innerException): base(
         $"Failure while trying to load events for projection shard '{name}@{martenDatabase.Identifier}'",
         innerException)
     {

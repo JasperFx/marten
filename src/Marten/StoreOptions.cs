@@ -106,7 +106,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
         // Default Polly setup
         var strategy = new ResiliencePipelineBuilder().AddRetry(new()
         {
-            ShouldHandle = new PredicateBuilder().Handle<NpgsqlException>().Handle<MartenCommandException>(),
+            ShouldHandle = new PredicateBuilder().Handle<NpgsqlException>().Handle<MartenCommandException>().Handle<EventLoaderException>(),
             MaxRetryAttempts = 3,
             Delay = TimeSpan.FromMilliseconds(50),
             BackoffType = DelayBackoffType.Exponential

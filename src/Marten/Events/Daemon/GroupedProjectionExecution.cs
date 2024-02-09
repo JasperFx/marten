@@ -36,7 +36,7 @@ public class GroupedProjectionExecution: ISubscriptionExecution
         var singleFileOptions = _cancellation.Token.SequentialOptions();
         _grouping = new TransformBlock<EventRange, EventRangeGroup>(groupEventRange, singleFileOptions);
         _building = new ActionBlock<EventRangeGroup>(processRange, singleFileOptions);
-        _grouping.LinkTo(_building);
+        _grouping.LinkTo(_building, x => x != null);
 
         ProjectionShardIdentity = shard.Name.Identity;
         if (database.Identifier != "Marten")
@@ -73,41 +73,58 @@ public class GroupedProjectionExecution: ISubscriptionExecution
             return null;
         }
 
-        // TODO -- if grouping fails, you have to pause
-        var group = await _source.GroupEvents(_store, _database, range, _cancellation.Token).ConfigureAwait(false);
-
-        if (_logger.IsEnabled(LogLevel.Debug))
+        try
         {
-            _logger.LogDebug("Subscription {Name} successfully grouped {Number} events with a floor of {Floor} and ceiling of {Ceiling}", ProjectionShardIdentity, range.Events.Count, range.SequenceFloor, range.SequenceCeiling);
-        }
+            var group = await _source.GroupEvents(_store, _database, range, _cancellation.Token).ConfigureAwait(false);
 
-        return group;
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("Subscription {Name} successfully grouped {Number} events with a floor of {Floor} and ceiling of {Ceiling}", ProjectionShardIdentity, range.Events.Count, range.SequenceFloor, range.SequenceCeiling);
+            }
+
+            return group;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failure trying to group events for {Name} from {Floor} to {Ceiling}", ProjectionShardIdentity, range.SequenceFloor, range.SequenceCeiling);
+            await range.Agent.ReportCriticalFailureAsync(e).ConfigureAwait(false);
+
+            return null;
+        }
     }
 
     private async Task processRange(EventRangeGroup group)
     {
-        if (_cancellation.IsCancellationRequested)
+        try
         {
-            return;
+            if (_cancellation.IsCancellationRequested)
+            {
+                return;
+            }
+
+            await using var session = (DocumentSessionBase)_store.IdentitySession(_sessionOptions!);
+
+            // This should be done *once* before proceeding
+            // And this cannot be put inside of ConfigureUpdateBatch
+            // Low chance of errors
+            group.Reset();
+
+            var options = Mode == ShardExecutionMode.Continuous
+                ? _store.Options.Projections.Errors
+                : _store.Options.Projections.RebuildErrors;
+
+            var batch = options.SkipApplyErrors
+                ? await buildBatchWithSkipping(group, session, _cancellation.Token).ConfigureAwait(false)
+                : await buildBatchAsync(group, session).ConfigureAwait(false);
+
+            // Executing the SQL commands for the ProjectionUpdateBatch
+            await applyBatchOperationsToDatabaseAsync(group, session, batch).ConfigureAwait(false);
         }
-
-        await using var session = (DocumentSessionBase)_store.IdentitySession(_sessionOptions!);
-
-        // This should be done *once* before proceeding
-        // And this cannot be put inside of ConfigureUpdateBatch
-        // Low chance of errors
-        group.Reset();
-
-        var options = Mode == ShardExecutionMode.Continuous
-            ? _store.Options.Projections.Errors
-            : _store.Options.Projections.RebuildErrors;
-
-        var batch = options.SkipApplyErrors
-            ? await buildBatchWithSkipping(group, session, _cancellation.Token).ConfigureAwait(false)
-            : await buildBatchAsync(group, session).ConfigureAwait(false);
-
-        // Executing the SQL commands for the ProjectionUpdateBatch
-        await applyBatchOperationsToDatabaseAsync(group, session, batch).ConfigureAwait(false);
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error trying to build and apply changes to event subscription {Name} from {Floor} to {Ceiling}", ProjectionShardIdentity, group.Range.SequenceFloor, group.Range.SequenceCeiling);
+            await group.Agent.ReportCriticalFailureAsync(e).ConfigureAwait(false);
+        }
     }
 
     private async Task applyBatchOperationsToDatabaseAsync(EventRangeGroup group, DocumentSessionBase session,

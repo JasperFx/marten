@@ -54,28 +54,49 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
 
     public async Task ReportCriticalFailureAsync(Exception ex)
     {
-        // HARD STOP, and tell the daemon that you shut down.
-        throw new NotImplementedException();
+        try
+        {
+#if NET8_0_OR_GREATER
+            await _cancellation.CancelAsync().ConfigureAwait(false);
+#else
+        _cancellation.Cancel();
+#endif
+            await _execution.HardStopAsync().ConfigureAwait(false);
+            PausedTime = DateTimeOffset.UtcNow;
+            Status = AgentStatus.Paused;
+            _tracker.Publish(new ShardState(Name, LastCommitted) { Action = ShardAction.Paused, Exception = ex});
+            await DisposeAsync().ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error trying to pause subscription agent {Name}", ProjectionShardIdentity);
+        }
     }
 
     long ISubscriptionAgent.Position => LastCommitted;
 
-    // TODO -- this will change when the "Pause" is put into place
-    public AgentStatus Status { get; } = AgentStatus.Running;
+    public AgentStatus Status { get; private set; } = AgentStatus.Running;
 
     public async Task StopAndDrainAsync(CancellationToken token)
     {
-        // Let the command block finish first
-        _commandBlock.Complete();
-        await _commandBlock.Completion.ConfigureAwait(false);
+        try
+        {
+            // Let the command block finish first
+            _commandBlock.Complete();
+            await _commandBlock.Completion.ConfigureAwait(false);
 
 #if NET8_0_OR_GREATER
-        await _cancellation.CancelAsync().ConfigureAwait(false);
+            await _cancellation.CancelAsync().ConfigureAwait(false);
 #else
-        _cancellation.Cancel();
+            _cancellation.Cancel();
 #endif
 
-        await _execution.StopAndDrainAsync(token).ConfigureAwait(false);
+            await _execution.StopAndDrainAsync(token).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            throw new ShardStopException(ProjectionShardIdentity, e);
+        }
     }
 
     public async Task HardStopAsync()
@@ -190,17 +211,24 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
             Name = Name
         };
 
-        // TODO -- try/catch, and you pause here if this happens.
-        var page = await _loader.LoadAsync(request, _cancellation.Token).ConfigureAwait(false);
-
-        if (_logger.IsEnabled(LogLevel.Debug))
+        try
         {
-            _logger.LogDebug("Loaded {Number} of Events from {Floor} to {Ceiling} for Subscription {Name}", page.Count, page.Floor, page.Ceiling, ProjectionShardIdentity);
+            var page = await _loader.LoadAsync(request, _cancellation.Token).ConfigureAwait(false);
+
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("Loaded {Number} of Events from {Floor} to {Ceiling} for Subscription {Name}", page.Count, page.Floor, page.Ceiling, ProjectionShardIdentity);
+            }
+
+            LastEnqueued = page.Ceiling;
+
+            _execution.Enqueue(page, this);
         }
-
-        LastEnqueued = page.Ceiling;
-
-        _execution.Enqueue(page, this);
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error trying to load events");
+            await ReportCriticalFailureAsync(e).ConfigureAwait(false);
+        }
     }
 
 

@@ -8,8 +8,10 @@ namespace Marten.Events.Daemon;
 /// </summary>
 public class ShardStopException: MartenException
 {
-    public ShardStopException(ShardName name, Exception innerException): base(
-        $"Failure while trying to stop '{name.Identity}'", innerException)
+    public ShardStopException(string projectionIdentity, Exception innerException): base(
+        $"Failure while trying to stop '{projectionIdentity}'", innerException)
     {
     }
 }
+
+
