@@ -263,7 +263,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         {
             var page = await _loader.LoadAsync(request, _cancellation.Token).ConfigureAwait(false);
 
-            if (_logger.IsEnabled(LogLevel.Debug))
+            if (_logger.IsEnabled(LogLevel.Debug) && Mode == ShardExecutionMode.Continuous)
             {
                 _logger.LogDebug("Loaded {Number} of Events from {Floor} to {Ceiling} for Subscription {Name}", page.Count, page.Floor, page.Ceiling, ProjectionShardIdentity);
             }

@@ -53,7 +53,7 @@ public class HighWaterAgentTests: DaemonContext
 
         await agent.StopAllAsync();
 
-        using var agent2 = await theStore.BuildProjectionDaemonAsync();
+        using var agent2 = (ProjectionDaemon)await theStore.BuildProjectionDaemonAsync();
         await agent2.StartHighWaterDetectionAsync();
         await agent2.Tracker.WaitForHighWaterMark(NumberOfEvents, 15.Seconds());
 

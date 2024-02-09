@@ -43,7 +43,7 @@ internal class HighWaterAgent: IDisposable
         _loop?.SafeDispose();
     }
 
-    public async Task Start()
+    public async Task StartAsync()
     {
         IsRunning = true;
 
@@ -52,7 +52,7 @@ internal class HighWaterAgent: IDisposable
         _tracker.Publish(
             new ShardState(ShardState.HighWaterMark, _current.CurrentMark) { Action = ShardAction.Started });
 
-        _loop = Task.Factory.StartNew(DetectChanges, _token,
+        _loop = Task.Factory.StartNew(detectChanges, _token,
             TaskCreationOptions.LongRunning | TaskCreationOptions.AttachedToParent, TaskScheduler.Default);
 
         _timer.Start();
@@ -60,7 +60,7 @@ internal class HighWaterAgent: IDisposable
         _logger.LogInformation("Started HighWaterAgent");
     }
 
-    private async Task DetectChanges()
+    private async Task detectChanges()
     {
         if (!IsRunning)
         {
@@ -107,11 +107,11 @@ internal class HighWaterAgent: IDisposable
             switch (status)
             {
                 case HighWaterStatus.Changed:
-                    await markProgress(statistics, _settings.FastPollingTime, status).ConfigureAwait(false);
+                    await markProgressAsync(statistics, _settings.FastPollingTime, status).ConfigureAwait(false);
                     break;
 
                 case HighWaterStatus.CaughtUp:
-                    await markProgress(statistics, _settings.SlowPollingTime, status).ConfigureAwait(false);
+                    await markProgressAsync(statistics, _settings.SlowPollingTime, status).ConfigureAwait(false);
                     break;
 
                 case HighWaterStatus.Stale:
@@ -131,7 +131,7 @@ internal class HighWaterAgent: IDisposable
                         _settings.StaleSequenceThreshold.TotalSeconds, safeHarborTime);
 
                     statistics = await _detector.DetectInSafeZone(_token).ConfigureAwait(false);
-                    await markProgress(statistics, _settings.FastPollingTime, status).ConfigureAwait(false);
+                    await markProgressAsync(statistics, _settings.FastPollingTime, status).ConfigureAwait(false);
                     break;
             }
         }
@@ -139,7 +139,7 @@ internal class HighWaterAgent: IDisposable
         _logger.LogInformation("HighWaterAgent has detected a cancellation and has stopped polling");
     }
 
-    private async Task markProgress(HighWaterStatistics statistics, TimeSpan delayTime, HighWaterStatus status)
+    private async Task markProgressAsync(HighWaterStatistics statistics, TimeSpan delayTime, HighWaterStatus status)
     {
         if (!IsRunning)
         {
@@ -176,10 +176,10 @@ internal class HighWaterAgent: IDisposable
 
     private void TimerOnElapsed(object sender, ElapsedEventArgs e)
     {
-        _ = CheckState();
+        _ = checkState();
     }
 
-    private async Task CheckState()
+    private async Task checkState()
     {
         if (_loop.IsFaulted && !_token.IsCancellationRequested)
         {
@@ -188,7 +188,7 @@ internal class HighWaterAgent: IDisposable
             try
             {
                 _loop.Dispose();
-                await Start().ConfigureAwait(false);
+                await StartAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -197,7 +197,7 @@ internal class HighWaterAgent: IDisposable
         }
     }
 
-    public async Task CheckNow()
+    public async Task CheckNowAsync()
     {
         var statistics = await _detector.DetectInSafeZone(_token).ConfigureAwait(false);
         var initialHighMark = statistics.HighestSequence;
@@ -218,12 +218,16 @@ internal class HighWaterAgent: IDisposable
         _tracker.MarkHighWater(statistics.CurrentMark);
     }
 
-    public Task Stop()
+    public async Task StopAsync()
     {
         try
         {
             _timer?.Stop();
-            _loop?.Dispose();
+            if (_loop != null)
+            {
+                await _loop.ConfigureAwait(false);
+                _loop?.Dispose();
+            }
 
             IsRunning = false;
         }
@@ -231,12 +235,5 @@ internal class HighWaterAgent: IDisposable
         {
             _logger.LogError(e, "Error trying to stop the HighWaterAgent");
         }
-
-        return Task.CompletedTask;
-    }
-
-    internal void ResetCancellation(CancellationToken cancellation)
-    {
-        _token = cancellation;
     }
 }
