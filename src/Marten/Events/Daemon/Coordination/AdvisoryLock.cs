@@ -67,7 +67,13 @@ internal class AdvisoryLock : IAsyncDisposable
 
     public async Task ReleaseLockAsync(int lockId)
     {
-        if (_conn == null || _conn.State == ConnectionState.Broken) return;
+        if (!_locks.Contains(lockId)) return;
+
+        if (_conn == null || _conn.State == ConnectionState.Broken)
+        {
+            _locks.Remove(lockId);
+            return;
+        }
 
         var cancellation = new CancellationTokenSource();
         cancellation.CancelAfter(1.Seconds());

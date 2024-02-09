@@ -18,7 +18,6 @@ internal class EventLoader: IEventLoader
     private readonly int _batchSize;
     private readonly NpgsqlParameter _ceiling;
     private readonly NpgsqlCommand _command;
-    private readonly IMartenDatabase _database;
     private readonly NpgsqlParameter _floor;
     private readonly IEventStorage _storage;
     private readonly IDocumentStore _store;
@@ -26,7 +25,7 @@ internal class EventLoader: IEventLoader
     public EventLoader(DocumentStore store, MartenDatabase database, AsyncProjectionShard shard, AsyncOptions options)
     {
         _store = store;
-        _database = database;
+        Database = database;
 
         _storage = (IEventStorage)store.Options.Providers.StorageFor<IEvent>().QueryOnly;
         _batchSize = options.BatchSize;
@@ -62,6 +61,8 @@ internal class EventLoader: IEventLoader
         _aggregateIndex = _storage.SelectFields().Length;
     }
 
+    public IMartenDatabase Database { get; }
+
     public async Task<EventPage> LoadAsync(EventRequest request,
         CancellationToken token)
     {
@@ -69,7 +70,7 @@ internal class EventLoader: IEventLoader
         // and never at the same time on the same instance
         var page = new EventPage(request.Floor);
 
-        await using var session = (QuerySession)_store.QuerySession(SessionOptions.ForDatabase(_database));
+        await using var session = (QuerySession)_store.QuerySession(SessionOptions.ForDatabase(Database));
         _floor.Value = request.Floor;
         _ceiling.Value = request.HighWater;
 

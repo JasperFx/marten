@@ -100,7 +100,7 @@ internal class EventFetcher: IEventFetcher
         }
         catch (Exception e)
         {
-            throw new EventFetcherException(range.ShardName, _database, e);
+            throw new EventLoaderException(range.ShardName, _database, e);
         }
     }
 

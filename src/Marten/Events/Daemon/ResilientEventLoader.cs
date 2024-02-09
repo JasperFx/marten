@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Polly;
@@ -7,7 +8,7 @@ namespace Marten.Events.Daemon;
 internal class ResilientEventLoader: IEventLoader
 {
     private readonly ResiliencePipeline _pipeline;
-    private readonly IEventLoader _inner;
+    private readonly EventLoader _inner;
 
     internal record EventLoadExecution(EventRequest Request, IEventLoader Loader)
     {
@@ -18,7 +19,7 @@ internal class ResilientEventLoader: IEventLoader
         }
     }
 
-    public ResilientEventLoader(ResiliencePipeline pipeline, IEventLoader inner)
+    public ResilientEventLoader(ResiliencePipeline pipeline, EventLoader inner)
     {
         _pipeline = pipeline;
         _inner = inner;
@@ -26,8 +27,15 @@ internal class ResilientEventLoader: IEventLoader
 
     public Task<EventPage> LoadAsync(EventRequest request, CancellationToken token)
     {
-        var execution = new EventLoadExecution(request, _inner);
-        return _pipeline.ExecuteAsync(static (x, t) => x.ExecuteAsync(t),
-            execution, token).AsTask();
+        try
+        {
+            var execution = new EventLoadExecution(request, _inner);
+            return _pipeline.ExecuteAsync(static (x, t) => x.ExecuteAsync(t),
+                execution, token).AsTask();
+        }
+        catch (Exception e)
+        {
+            throw new EventLoaderException(request.Name, _inner.Database, e);
+        }
     }
 }
