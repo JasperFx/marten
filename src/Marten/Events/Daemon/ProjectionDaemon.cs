@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Events.Daemon.HighWater;
+using Marten.Events.Daemon.Internals;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Services;
 using Marten.Storage;

@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 
 namespace Marten.Events.Daemon;

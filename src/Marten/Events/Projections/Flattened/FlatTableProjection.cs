@@ -13,6 +13,7 @@ using Marten.Storage;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;
 using JasperFx.Core.Reflection;
+using Marten.Events.Daemon.Internals;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Projections.Flattened;

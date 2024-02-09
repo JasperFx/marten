@@ -7,6 +7,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events;
+using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
@@ -32,7 +33,7 @@ public class event_projections_end_to_end : DaemonContext
             .AsyncProjectionShards(theStore)
             .First()
             .BuildFilters(theStore)
-            .OfType<Marten.Events.Daemon.EventTypeFilter>()
+            .OfType<EventTypeFilter>()
             .Single();
 
         filter.EventTypes.Single().ShouldBe(typeof(Travel));

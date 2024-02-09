@@ -10,7 +10,7 @@ using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Weasel.Core;
 
-namespace Marten.Events.Daemon;
+namespace Marten.Events.Daemon.Internals;
 
 public class GroupedProjectionExecution: ISubscriptionExecution
 {

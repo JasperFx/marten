@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Microsoft.Extensions.Logging;
 

@@ -7,6 +7,7 @@ using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Services;
