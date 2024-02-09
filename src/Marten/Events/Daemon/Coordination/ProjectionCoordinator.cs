@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,21 +10,6 @@ using Microsoft.Extensions.Logging;
 using Polly;
 
 namespace Marten.Events.Daemon.Coordination;
-
-/*
- * TODO
- * Use deterministic hash for lock id of the per projection shard lock id
- * Error handling in advisory lock?
- * In ProjectionCoordinator, turn off agents where you no longer have the lock
- * Push through being able to pause a SubscriptionAgent
- * Throw specific exception for ShardStopException
- * Automatically pause agent that gets the projection out of order
- * Pause if grouping fails too many times
- * Pause if applying a batch fails too many times
- * Flesh out IProjectionCoordinator
- * Start new issue for pausing, stopping, restarting projections/databases
- * Move on to projection command, simplify output
- */
 
 public class ProjectionCoordinator<T>: ProjectionCoordinator, IProjectionCoordinator<T> where T : IDocumentStore
 {
@@ -257,6 +241,12 @@ public class ProjectionCoordinator : IProjectionCoordinator
         catch (Exception e)
         {
             _logger.LogError(e, "Error trying to start subscription {Name} on database {Database}", name.Identity, set.Database.Identifier);
+            if (daemon.StatusFor(name.Identity) == AgentStatus.Paused)
+            {
+                daemon.EjectPausedShard(name.Identity);
+            }
+
+            await Distributor.ReleaseLockAsync(set).ConfigureAwait(false);
         }
     }
 }

@@ -185,10 +185,19 @@ public class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>, IDaemo
             }
             catch (Exception e)
             {
-                Logger.LogError(e, "Error trying to stop and drain a subscription agent for '{Name}'", agent.Name.Identity);
+                Logger.LogError(e, "Error trying to stop and drain a subscription agent for '{Name}'",
+                    agent.Name.Identity);
             }
+            finally
+            {
+                _active.Remove(agent);
+            }
+        }
 
-            _active.Remove(agent);
+        if (!_active.Any() && _highWater.IsRunning)
+        {
+            // Nothing happening, so might as well stop hammering the database!
+            await _highWater.Stop().ConfigureAwait(false);
         }
     }
 
@@ -208,6 +217,8 @@ public class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>, IDaemo
 
     public async Task StopAllAsync()
     {
+        await _highWater.Stop().ConfigureAwait(false);
+
         var cancellation = new CancellationTokenSource();
         cancellation.CancelAfter(5.Seconds());
         try
@@ -280,6 +291,11 @@ public class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>, IDaemo
         return _active.Any(x => x.Status == AgentStatus.Paused);
     }
 
+    public void EjectPausedShard(string shardName)
+    {
+        _active.RemoveAll(x => x.Name.Identity == shardName && x.Status == AgentStatus.Paused);
+    }
+
     public Task PauseHighWaterAgent()
     {
         return _highWater.Stop();
@@ -319,7 +335,6 @@ public class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>, IDaemo
     // TODO -- ZOMG, this is awful
     private async Task rebuildProjection(IProjectionSource source, TimeSpan shardTimeout, CancellationToken token)
     {
-
         await Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
         Logger.LogInformation("Starting to rebuild Projection {ProjectionName}@{DatabaseIdentifier}",

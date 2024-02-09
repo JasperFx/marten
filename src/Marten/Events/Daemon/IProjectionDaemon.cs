@@ -133,4 +133,10 @@ public interface IProjectionDaemon: IDisposable
     /// </summary>
     /// <returns></returns>
     bool HasAnyPaused();
+
+    /// <summary>
+    /// Will eject a Paused
+    /// </summary>
+    /// <param name="shardName"></param>
+    void EjectPausedShard(string shardName);
 }
