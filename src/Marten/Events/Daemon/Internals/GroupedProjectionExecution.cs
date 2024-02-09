@@ -23,7 +23,6 @@ public class GroupedProjectionExecution: ISubscriptionExecution
     private readonly ActionBlock<EventRangeGroup> _building;
     private readonly SessionOptions _sessionOptions;
 
-    // TODO -- use combined cancellation?
     public GroupedProjectionExecution(AsyncProjectionShard shard, DocumentStore store, IMartenDatabase database,
         ILogger logger)
     {
@@ -77,7 +76,7 @@ public class GroupedProjectionExecution: ISubscriptionExecution
         {
             var group = await _source.GroupEvents(_store, _database, range, _cancellation.Token).ConfigureAwait(false);
 
-            if (_logger.IsEnabled(LogLevel.Debug))
+            if (_logger.IsEnabled(LogLevel.Debug) && Mode == ShardExecutionMode.Continuous)
             {
                 _logger.LogDebug("Subscription {Name} successfully grouped {Number} events with a floor of {Floor} and ceiling of {Ceiling}", ProjectionShardIdentity, range.Events.Count, range.SequenceFloor, range.SequenceCeiling);
             }
@@ -138,8 +137,11 @@ public class GroupedProjectionExecution: ISubscriptionExecution
 
             group.Agent.MarkSuccess(group.Range.SequenceCeiling);
 
-            _logger.LogInformation("Shard '{ProjectionShardIdentity}': Executed updates for {Range}",
-                ProjectionShardIdentity, batch.Range);
+            if (Mode == ShardExecutionMode.Continuous)
+            {
+                _logger.LogInformation("Shard '{ProjectionShardIdentity}': Executed updates for {Range}",
+                    ProjectionShardIdentity, batch.Range);
+            }
         }
         catch (Exception e)
         {

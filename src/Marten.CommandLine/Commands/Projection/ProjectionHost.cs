@@ -5,8 +5,10 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core;
 using Marten.Events.Daemon;
 using Microsoft.Extensions.Hosting;
+using Spectre.Console;
 
 namespace Marten.CommandLine.Commands.Projection;
 
@@ -60,17 +62,14 @@ internal class ProjectionHost: IProjectionHost
     public async Task<RebuildStatus> TryRebuildShards(IProjectionDatabase database,
         IReadOnlyList<AsyncProjectionShard> asyncProjectionShards, TimeSpan? shardTimeout = null)
     {
-        using var daemon = database.BuildDaemon();
-        await daemon.StartHighWaterDetectionAsync().ConfigureAwait(false);
+        using var daemon = (ProjectionDaemon)database.BuildDaemon();
+        await daemon.PrepareForRebuildsAsync().ConfigureAwait(false);
 
         var highWater = daemon.Tracker.HighWaterMark;
         if (highWater == 0)
         {
             return RebuildStatus.NoData;
         }
-
-        // Just messes up the rebuild to have this going after the initial check
-        await daemon.PauseHighWaterAgentAsync().ConfigureAwait(false);
 
         var watcher = new RebuildWatcher(highWater);
         using var unsubscribe = daemon.Tracker.Subscribe(watcher);
@@ -79,16 +78,24 @@ internal class ProjectionHost: IProjectionHost
 
         var projectionNames = asyncProjectionShards.Select(x => x.Name.ProjectionName).Distinct();
 
+        var list = new List<Exception>();
+
         await Parallel.ForEachAsync(projectionNames, _cancellation.Token,
                 async (projectionName, token) =>
                 {
-                    if (shardTimeout == null)
-                    {
-                        await daemon.RebuildProjection(projectionName, token).ConfigureAwait(false);
-                    }
-                    else
+                    shardTimeout ??= 5.Minutes();
+
+                    try
                     {
                         await daemon.RebuildProjection(projectionName, shardTimeout.Value, token).ConfigureAwait(false);
+                    }
+                    catch (Exception e)
+                    {
+                        AnsiConsole.MarkupLine($"[bold red]Error while rebuilding projection {projectionName} on database '{database.Identifier}'[/]");
+                        AnsiConsole.WriteException(e);
+                        AnsiConsole.WriteLine();
+
+                        list.Add(e);
                     }
                 })
             .ConfigureAwait(false);
@@ -97,6 +104,11 @@ internal class ProjectionHost: IProjectionHost
 
         watcher.Stop();
         await watcherTask.ConfigureAwait(false);
+
+        if (list.Any())
+        {
+            throw new AggregateException(list);
+        }
 
         return RebuildStatus.Complete;
     }

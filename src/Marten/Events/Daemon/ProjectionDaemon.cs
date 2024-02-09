@@ -149,7 +149,7 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
         if (!_active.Any() && _highWater.IsRunning)
         {
             // Nothing happening, so might as well stop hammering the database!
-            await _highWater.Stop().ConfigureAwait(false);
+            await _highWater.StopAsync().ConfigureAwait(false);
         }
     }
 
@@ -169,7 +169,7 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
 
     public async Task StopAllAsync()
     {
-        await _highWater.Stop().ConfigureAwait(false);
+        await _highWater.StopAsync().ConfigureAwait(false);
 
         var cancellation = new CancellationTokenSource();
         cancellation.CancelAfter(5.Seconds());
@@ -203,7 +203,7 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
             await Database.EnsureStorageExistsAsync(typeof(IEvent), _cancellation.Token).ConfigureAwait(false);
         }
 
-        await _highWater.Start().ConfigureAwait(false);
+        await _highWater.StartAsync().ConfigureAwait(false);
     }
 
     public async Task WaitForNonStaleData(TimeSpan timeout)
@@ -250,7 +250,7 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
 
     public Task PauseHighWaterAgentAsync()
     {
-        return _highWater.Stop();
+        return _highWater.StopAsync();
     }
 
     public long HighWaterMark()

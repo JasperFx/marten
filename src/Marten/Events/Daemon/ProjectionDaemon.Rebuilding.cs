@@ -98,7 +98,10 @@ public partial class ProjectionDaemon
 
         if (token.IsCancellationRequested) return;
 
-        await _highWater.CheckNow().ConfigureAwait(false);
+        if (Tracker.HighWaterMark == 0)
+        {
+            await _highWater.CheckNowAsync().ConfigureAwait(false);
+        }
 
         // If there's no data, do nothing
         if (Tracker.HighWaterMark == 0)
@@ -161,5 +164,15 @@ public partial class ProjectionDaemon
         session.DeleteWhere<DeadLetterEvent>(x => x.ProjectionName == source.ProjectionName);
 
         await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    public async Task PrepareForRebuildsAsync()
+    {
+        if (_highWater.IsRunning)
+        {
+            await _highWater.StopAsync().ConfigureAwait(false);
+        }
+
+        await _highWater.CheckNowAsync().ConfigureAwait(false);
     }
 }
