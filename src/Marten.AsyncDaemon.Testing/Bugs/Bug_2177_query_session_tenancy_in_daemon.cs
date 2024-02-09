@@ -48,7 +48,7 @@ namespace Marten.AsyncDaemon.Testing.Bugs
             await session.SaveChangesAsync();
 
             using var daemon = await theStore.BuildProjectionDaemonAsync();
-            await daemon.StartAllShards();
+            await daemon.StartAllAsync();
             await daemon.WaitForNonStaleData(1.Minutes());
 
             var projection = await session.LoadAsync<Ticket>(ticketId);

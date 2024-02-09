@@ -58,7 +58,7 @@ public class custom_aggregation_in_async_daemon : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         using var daemon = await theStore.BuildProjectionDaemonAsync(logger:new TestLogger<IProjection>(_output));
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         await  daemon.Tracker.WaitForShardState("Custom:All", 11);
 

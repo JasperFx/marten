@@ -32,7 +32,7 @@ public class Bug_2296_tenant_session_in_grouper: OneOffConfigurationsContext
         await using var tenantedSession = theStore.LightweightSession(tenant);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         var streamKey = CombGuidIdGeneration.NewGuid().ToString();
         tenantedSession.Events.StartStream(streamKey,

@@ -81,7 +81,7 @@ public class when_skipping_events_in_daemon : DaemonContext
     {
         var daemon = await PublishTheEvents();
 
-        var shards = daemon.CurrentShards();
+        var shards = daemon.CurrentAgents();
 
         foreach (var shard in shards)
         {
