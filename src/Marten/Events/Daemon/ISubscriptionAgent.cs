@@ -30,4 +30,5 @@ public interface ISubscriptionAgent : IShardAgent
     Task RecordDeadLetterEventAsync(DeadLetterEvent @event);
 
     DateTimeOffset? PausedTime { get; }
+    Task ReplayAsync(SubscriptionExecutionRequest request, long highWaterMark, TimeSpan timeout);
 }
