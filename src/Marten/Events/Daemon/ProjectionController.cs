@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Marten.Events.Daemon.Internals;
 
 namespace Marten.Events.Daemon;
 
 /// <summary>
 ///     Helps control the "pull-based" event loading in an individual projection shard
 /// </summary>
+[Obsolete]
 internal class ProjectionController
 {
     private readonly IShardAgent _agent;

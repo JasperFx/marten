@@ -1,6 +1,6 @@
 using System;
 
-namespace Marten.Events.Daemon;
+namespace Marten.Events.Daemon.Internals;
 
 internal class Command
 {

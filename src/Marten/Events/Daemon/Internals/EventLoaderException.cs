@@ -2,7 +2,7 @@ using System;
 using Marten.Exceptions;
 using Marten.Storage;
 
-namespace Marten.Events.Daemon;
+namespace Marten.Events.Daemon.Internals;
 
 /// <summary>
 ///     Marten failed to load events for a projection shard

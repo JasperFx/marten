@@ -8,6 +8,7 @@ using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Storage;
 using Marten.Testing.Harness;

@@ -3,7 +3,7 @@ using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Services;
 
-namespace Marten.Events.Daemon;
+namespace Marten.Events.Daemon.Internals;
 
 /// <summary>
 ///     Lightweight session specifically used to capture operations for a specific tenant
