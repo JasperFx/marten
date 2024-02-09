@@ -33,7 +33,7 @@ public class basic_async_daemon_tests: DaemonContext
         StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async));
 
         using var daemon = await StartDaemon();
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         NumberOfStreams = 10;
         await PublishSingleThreaded();
@@ -46,7 +46,7 @@ public class basic_async_daemon_tests: DaemonContext
         using var daemon2 = await StartDaemon();
         await daemon2.Tracker.WaitForHighWaterMark(NumberOfEvents);
 
-        await daemon2.StartAllShards();
+        await daemon2.StartAllAsync();
     }
 
     #region sample_AsyncDaemonListener
@@ -91,7 +91,7 @@ public class basic_async_daemon_tests: DaemonContext
         #endregion
 
         using var daemon = await StartDaemon();
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         NumberOfStreams = 10;
         await PublishSingleThreaded();
@@ -115,7 +115,7 @@ public class basic_async_daemon_tests: DaemonContext
         });
 
         using var daemon = await StartDaemon();
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         NumberOfStreams = 10;
         await PublishSingleThreaded();
@@ -137,14 +137,14 @@ public class basic_async_daemon_tests: DaemonContext
         StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async));
 
         using var daemon = await StartDaemon();
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         NumberOfStreams = 10;
         await PublishSingleThreaded();
 
         await daemon.Tracker.WaitForHighWaterMark(NumberOfEvents);
 
-        await daemon.StopShard("Trip:All");
+        await daemon.StopAsync("Trip:All");
 
         daemon.StatusFor("Trip:All")
             .ShouldBe(AgentStatus.Stopped);

@@ -31,7 +31,7 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
         });
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         // prove async daemon works on happy path
         theSession.Events.StartStream(Guid.NewGuid().ToString(),
@@ -83,7 +83,7 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
         });
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         // prove async daemon works on happy path
         theSession.Events.StartStream(Guid.NewGuid().ToString(),

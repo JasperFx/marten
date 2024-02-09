@@ -29,7 +29,7 @@ public class Bug_2201_out_of_order_exception_with_hard_deletes: BugIntegrationCo
         await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         var tenantId = Guid.NewGuid().ToString();
         var ticketId = Guid.NewGuid();

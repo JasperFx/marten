@@ -259,7 +259,7 @@ public class build_aggregate_multiple_projections: DaemonContext
         // rebuild the projection
         var daemon = await theStore.BuildProjectionDaemonAsync(logger: Logger);
 
-        await daemon.StartDaemonAsync();
+        await daemon.StartHighWaterDetectionAsync();
 
         try
         {

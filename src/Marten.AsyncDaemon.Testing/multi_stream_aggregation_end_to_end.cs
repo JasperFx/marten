@@ -47,7 +47,7 @@ public class multi_stream_aggregation_end_to_end: DaemonContext
         }
 
         using var daemon = await StartDaemon();
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         await daemon.Tracker.WaitForShardState("UserIssue:All", 3, 15.Seconds());
 

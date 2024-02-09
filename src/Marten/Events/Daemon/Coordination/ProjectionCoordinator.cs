@@ -206,7 +206,7 @@ public class ProjectionCoordinator : IProjectionCoordinator
     {
         foreach (var name in set.Names)
         {
-            var agent = daemon.CurrentShards().FirstOrDefault(x => x.Name.Equals(name));
+            var agent = daemon.CurrentAgents().FirstOrDefault(x => x.Name.Equals(name));
             if (agent == null)
             {
                 await tryStartAgent(stoppingToken, daemon, name, set).ConfigureAwait(false);

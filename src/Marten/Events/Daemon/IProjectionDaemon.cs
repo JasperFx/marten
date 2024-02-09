@@ -91,13 +91,13 @@ public interface IProjectionDaemon: IDisposable
     /// <param name="shardName"></param>
     /// <param name="ex"></param>
     /// <returns></returns>
-    Task StopShard(string shardName, Exception? ex = null);
+    Task StopAsync(string shardName, Exception? ex = null);
 
     /// <summary>
     ///     Starts all known projections shards
     /// </summary>
     /// <returns></returns>
-    Task StartAllShards();
+    Task StartAllAsync();
 
     /// <summary>
     ///     Stops all known projection shards
@@ -111,7 +111,7 @@ public interface IProjectionDaemon: IDisposable
     ///     methods
     /// </summary>
     /// <returns></returns>
-    Task StartDaemonAsync();
+    Task StartHighWaterDetectionAsync();
 
 
     /// <summary>
@@ -122,11 +122,20 @@ public interface IProjectionDaemon: IDisposable
     /// <returns></returns>
     Task WaitForNonStaleData(TimeSpan timeout);
 
-    Task PauseHighWaterAgent();
+    /// <summary>
+    /// Turn off high water agent usage
+    /// </summary>
+    /// <returns></returns>
+    Task PauseHighWaterAgentAsync();
 
     long HighWaterMark();
     AgentStatus StatusFor(string shardName);
-    IReadOnlyList<ISubscriptionAgent> CurrentShards();
+
+    /// <summary>
+    /// List of agents that are currently running or paused
+    /// </summary>
+    /// <returns></returns>
+    IReadOnlyList<ISubscriptionAgent> CurrentAgents();
 
     /// <summary>
     /// Are there any paused agents?

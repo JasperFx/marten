@@ -47,7 +47,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         var daemon = theStore.Tenancy.Default.Database.As<MartenDatabase>()
             .StartProjectionDaemon(theStore, new TestOutputMartenLogger(_output));
 
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         _daemon = daemon;
 
@@ -58,7 +58,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
     {
         var daemon = (ProjectionDaemon)await theStore.BuildProjectionDaemonAsync(tenantId, Logger);
 
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         _daemon = daemon;
 
