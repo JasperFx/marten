@@ -44,7 +44,7 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
 
         await waiter;
         Logger.LogDebug("About to rebuild Trip:All");
-        await agent.RebuildProjection("Trip", CancellationToken.None);
+        await agent.RebuildProjectionAsync("Trip", CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
         await CheckAllExpectedAggregatesAgainstActuals();
     }
@@ -75,7 +75,7 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
         // Simulating serialization failures
         FailingEvent.SerializationFails = true;
 
-        await agent.RebuildProjection("Trip", CancellationToken.None);
+        await agent.RebuildProjectionAsync("Trip", CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
 
         // Gotta do this, or the expected aggregation will fail w/ fake
@@ -133,7 +133,7 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
         await agent.StopAllAsync();
 
         Logger.LogDebug("About to rebuild Trip:All");
-        await agent.RebuildProjection("Trip", CancellationToken.None);
+        await agent.RebuildProjectionAsync("Trip", CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
 
         // Do this to force the dead letter queue to drain

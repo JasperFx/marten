@@ -115,7 +115,7 @@ public class build_aggregate_projection: DaemonContext
 
         await waiter;
         Logger.LogDebug("About to rebuild TripCustomName:All");
-        await agent.RebuildProjection("TripCustomName", CancellationToken.None);
+        await agent.RebuildProjectionAsync("TripCustomName", CancellationToken.None);
         Logger.LogDebug("Done rebuilding TripCustomName:All");
         await CheckAllExpectedAggregatesAgainstActuals();
     }
@@ -142,7 +142,7 @@ public class build_aggregate_projection: DaemonContext
         theSession.Store(trip);
         await theSession.SaveChangesAsync();
 
-        await agent.RebuildProjection("TripCustomName", CancellationToken.None);
+        await agent.RebuildProjectionAsync("TripCustomName", CancellationToken.None);
 
         await using var query = theStore.QuerySession();
         // Demonstrates that the Trip documents were deleted first
@@ -165,7 +165,7 @@ public class build_aggregate_projection: DaemonContext
         await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
 
         Logger.LogDebug("About to rebuild Trip:All");
-        await agent.RebuildProjection<Trip>(CancellationToken.None);
+        await agent.RebuildProjectionAsync<Trip>(CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
         await CheckAllExpectedAggregatesAgainstActuals();
     }
@@ -186,7 +186,7 @@ public class build_aggregate_projection: DaemonContext
         await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
 
         Logger.LogDebug("About to rebuild Trip:All");
-        await agent.RebuildProjection(typeof(TestingSupport.TripProjection),CancellationToken.None);
+        await agent.RebuildProjectionAsync(typeof(TestingSupport.TripProjection),CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
         await CheckAllExpectedAggregatesAgainstActuals();
     }
@@ -206,7 +206,7 @@ public class build_aggregate_projection: DaemonContext
 
         await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
         Logger.LogDebug("About to rebuild Trip:All");
-        await agent.RebuildProjection(typeof(Trip),CancellationToken.None);
+        await agent.RebuildProjectionAsync(typeof(Trip),CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
         await CheckAllExpectedAggregatesAgainstActuals();
     }
@@ -356,7 +356,7 @@ public class build_aggregate_projection: DaemonContext
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
 
-        await daemon.RebuildProjection("Contact", CancellationToken.None);
+        await daemon.RebuildProjectionAsync("Contact", CancellationToken.None);
 
         await using var session2 = theStore.LightweightSession("a");
         var c = await session2.LoadAsync<Contact>(id);
@@ -430,7 +430,7 @@ public class build_aggregate_projection: DaemonContext
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
 
-        await daemon.RebuildProjection("Foo", CancellationToken.None);
+        await daemon.RebuildProjectionAsync("Foo", CancellationToken.None);
 
         await using var session2 = theStore.LightweightSession("a");
         var c = await session2.LoadAsync<Foo>(id);
@@ -483,7 +483,7 @@ public class build_aggregate_projection: DaemonContext
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
 
-        await daemon.RebuildProjection("Foo", CancellationToken.None);
+        await daemon.RebuildProjectionAsync("Foo", CancellationToken.None);
 
         await using var session2 = theStore.LightweightSession("a");
         var c = await session2.LoadAsync<Foo>(id);

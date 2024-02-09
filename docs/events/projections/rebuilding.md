@@ -34,7 +34,7 @@ var agent = await StartDaemon();
 await PublishSingleThreaded();
 
 // rebuild projection `Distance`
-await agent.RebuildProjection("Distance", CancellationToken.None);
+await agent.RebuildProjectionAsync("Distance", CancellationToken.None);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/event_projections_end_to_end.cs#L91-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild-single-projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

@@ -97,7 +97,7 @@ public class event_projections_end_to_end : DaemonContext
         await PublishSingleThreaded();
 
         // rebuild projection `Distance`
-        await agent.RebuildProjection("Distance", CancellationToken.None);
+        await agent.RebuildProjectionAsync("Distance", CancellationToken.None);
         #endregion
 
     }
