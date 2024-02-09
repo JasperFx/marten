@@ -33,7 +33,7 @@ public class MultiStreamAggregationTests: OneOffConfigurationsContext
         projection.ShouldNotBeNull();
         projection.EventSequenceList.ShouldHaveTheSameElementsAs(eventSequenceList);
 
-        await daemon.RebuildProjection<Projector>(CancellationToken.None);
+        await daemon.RebuildProjectionAsync<Projector>(CancellationToken.None);
         projection = await session.LoadAsync<Projection>(commonId);
         projection.ShouldNotBeNull();
         projection.EventSequenceList.ShouldHaveTheSameElementsAs(eventSequenceList);

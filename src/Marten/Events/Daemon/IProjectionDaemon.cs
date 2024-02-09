@@ -18,7 +18,7 @@ public interface IProjectionDaemon: IDisposable
     ShardStateTracker Tracker { get; }
 
     /// <summary>
-    /// Indicates if this daemon is currently running
+    /// Indicates if this daemon is currently running any subscriptions
     /// </summary>
     bool IsRunning { get; }
 
@@ -29,7 +29,7 @@ public interface IProjectionDaemon: IDisposable
     /// <param name="projectionName"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task RebuildProjection(string projectionName, CancellationToken token);
+    Task RebuildProjectionAsync(string projectionName, CancellationToken token);
 
 
     /// <summary>
@@ -39,7 +39,7 @@ public interface IProjectionDaemon: IDisposable
     /// <typeparam name="TView">Projection view type</typeparam>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task RebuildProjection<TView>(CancellationToken token);
+    Task RebuildProjectionAsync<TView>(CancellationToken token);
 
     /// <summary>
     ///     Rebuilds a single projection by projection type inline.
@@ -48,7 +48,7 @@ public interface IProjectionDaemon: IDisposable
     /// <param name="projectionType">The projection type</param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task RebuildProjection(Type projectionType, CancellationToken token);
+    Task RebuildProjectionAsync(Type projectionType, CancellationToken token);
 
     /// <summary>
     ///     Rebuilds a single projection by projection name inline
@@ -57,7 +57,7 @@ public interface IProjectionDaemon: IDisposable
     /// <param name="shardTimeout"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task RebuildProjection(Type projectionType, TimeSpan shardTimeout, CancellationToken token);
+    Task RebuildProjectionAsync(Type projectionType, TimeSpan shardTimeout, CancellationToken token);
 
     /// <summary>
     ///     Rebuilds a single projection by projection name inline
@@ -66,7 +66,7 @@ public interface IProjectionDaemon: IDisposable
     /// <param name="shardTimeout"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task RebuildProjection(string projectionName, TimeSpan shardTimeout, CancellationToken token);
+    Task RebuildProjectionAsync(string projectionName, TimeSpan shardTimeout, CancellationToken token);
 
 
     /// <summary>
@@ -75,7 +75,7 @@ public interface IProjectionDaemon: IDisposable
     /// <typeparam name="TView">Projection view type</typeparam>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task RebuildProjection<TView>(TimeSpan shardTimeout, CancellationToken token);
+    Task RebuildProjectionAsync<TView>(TimeSpan shardTimeout, CancellationToken token);
 
     /// <summary>
     ///     Starts a single projection shard by name

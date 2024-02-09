@@ -31,7 +31,7 @@ public class Bug_2597_rebuilding_a_projection_with_no_matching_events_but_other_
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
 
-        await daemon.RebuildProjection<UsesAEventOnly>(CancellationToken.None);
+        await daemon.RebuildProjectionAsync<UsesAEventOnly>(CancellationToken.None);
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public class Bug_2597_rebuilding_a_projection_with_no_matching_events_but_other_
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
 
-        await daemon.RebuildProjection<UsesAEventOnly>(CancellationToken.None);
+        await daemon.RebuildProjectionAsync<UsesAEventOnly>(CancellationToken.None);
     }
 }
 

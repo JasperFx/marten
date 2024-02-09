@@ -21,11 +21,11 @@ namespace Marten.AsyncDaemon.Testing;
 
 public class basic_async_daemon_tests: DaemonContext
 {
-    private readonly IShardAgent theAgent;
+    private readonly ISubscriptionAgent theAgent;
 
     public basic_async_daemon_tests(ITestOutputHelper output): base(output)
     {
-        theAgent = Substitute.For<IShardAgent>();
+        theAgent = Substitute.For<ISubscriptionAgent>();
         theAgent.Mode.Returns(ShardExecutionMode.Continuous);
     }
 
@@ -128,7 +128,7 @@ public class basic_async_daemon_tests: DaemonContext
 
         listener.Changes.Clear(); // clear state before doing this again
 
-        await daemon.RebuildProjection<TripProjectionWithCustomName>(CancellationToken.None);
+        await daemon.RebuildProjectionAsync<TripProjectionWithCustomName>(CancellationToken.None);
 
         listener.Changes.Any().ShouldBeFalse();
     }

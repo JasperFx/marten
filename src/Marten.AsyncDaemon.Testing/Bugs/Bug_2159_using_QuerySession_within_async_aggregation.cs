@@ -33,7 +33,7 @@ public class Bug_2159_using_QuerySession_within_async_aggregation : BugIntegrati
         await theSession.SaveChangesAsync();
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
-        await daemon.RebuildProjection<UserAggregate>(CancellationToken.None);
+        await daemon.RebuildProjectionAsync<UserAggregate>(CancellationToken.None);
 
         var aggregate = await theSession.LoadAsync<MyAggregate>(streamId);
         aggregate.UpdatedBy.ShouldBe("Blue");

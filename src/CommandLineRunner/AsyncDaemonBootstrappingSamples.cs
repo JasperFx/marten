@@ -143,10 +143,10 @@ public class AsyncDaemonBootstrappingSamples
 
 
         // or instead, rebuild a single projection
-        await daemon.RebuildProjection("a projection name", 5.Minutes(), cancellation);
+        await daemon.RebuildProjectionAsync("a projection name", 5.Minutes(), cancellation);
 
         // or a single projection by its type
-        await daemon.RebuildProjection<TripProjectionWithCustomName>(5.Minutes(), cancellation);
+        await daemon.RebuildProjectionAsync<TripProjectionWithCustomName>(5.Minutes(), cancellation);
 
         // Be careful with this. Wait until the async daemon has completely
         // caught up with the currently known high water mark

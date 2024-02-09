@@ -87,7 +87,7 @@ internal class ProjectionHost: IProjectionHost
 
                     try
                     {
-                        await daemon.RebuildProjection(projectionName, shardTimeout.Value, token).ConfigureAwait(false);
+                        await daemon.RebuildProjectionAsync(projectionName, shardTimeout.Value, token).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {

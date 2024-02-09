@@ -14,27 +14,27 @@ namespace Marten.Events.Daemon;
 
 public partial class ProjectionDaemon
 {
-    public Task RebuildProjection(string projectionName, CancellationToken token)
+    public Task RebuildProjectionAsync(string projectionName, CancellationToken token)
     {
-        return RebuildProjection(projectionName, 5.Minutes(), token);
+        return RebuildProjectionAsync(projectionName, 5.Minutes(), token);
     }
 
-    public Task RebuildProjection<TView>(CancellationToken token)
+    public Task RebuildProjectionAsync<TView>(CancellationToken token)
     {
-        return RebuildProjection<TView>(5.Minutes(), token);
+        return RebuildProjectionAsync<TView>(5.Minutes(), token);
     }
 
-    public Task RebuildProjection(Type projectionType, CancellationToken token)
+    public Task RebuildProjectionAsync(Type projectionType, CancellationToken token)
     {
-        return RebuildProjection(projectionType, 5.Minutes(), token);
+        return RebuildProjectionAsync(projectionType, 5.Minutes(), token);
     }
 
-    public Task RebuildProjection(Type projectionType, TimeSpan shardTimeout, CancellationToken token)
+    public Task RebuildProjectionAsync(Type projectionType, TimeSpan shardTimeout, CancellationToken token)
     {
         if (projectionType.CanBeCastTo<IProjection>())
         {
             var projectionName = projectionType.FullNameInCode();
-            return RebuildProjection(projectionName, shardTimeout, token);
+            return RebuildProjectionAsync(projectionName, shardTimeout, token);
         }
 
         if (projectionType.CanBeCastTo<IProjectionSource>())
@@ -43,7 +43,7 @@ public partial class ProjectionDaemon
             {
                 var projection = Activator.CreateInstance(projectionType);
                 if (projection is IProjectionSource wrapper)
-                    return RebuildProjection(wrapper.ProjectionName, shardTimeout, token);
+                    return RebuildProjectionAsync(wrapper.ProjectionName, shardTimeout, token);
 
                 throw new ArgumentOutOfRangeException(nameof(projectionType),
                     $"Type {projectionType.FullNameInCode()} is not a valid projection type");
@@ -56,10 +56,10 @@ public partial class ProjectionDaemon
         }
 
         // Assume this is an aggregate type name
-        return RebuildProjection(projectionType.NameInCode(), shardTimeout, token);
+        return RebuildProjectionAsync(projectionType.NameInCode(), shardTimeout, token);
     }
 
-    public Task RebuildProjection(string projectionName, TimeSpan shardTimeout, CancellationToken token)
+    public Task RebuildProjectionAsync(string projectionName, TimeSpan shardTimeout, CancellationToken token)
     {
         if (!_store.Options.Projections.TryFindProjection(projectionName, out var projection))
         {
@@ -70,15 +70,15 @@ public partial class ProjectionDaemon
         return rebuildProjection(projection, shardTimeout, token);
     }
 
-    public Task RebuildProjection<TView>(TimeSpan shardTimeout, CancellationToken token)
+    public Task RebuildProjectionAsync<TView>(TimeSpan shardTimeout, CancellationToken token)
     {
         if (typeof(TView).CanBeCastTo(typeof(ProjectionBase)) && typeof(TView).HasDefaultConstructor())
         {
             var projection = (ProjectionBase)Activator.CreateInstance(typeof(TView))!;
-            return RebuildProjection(projection.ProjectionName!, shardTimeout, token);
+            return RebuildProjectionAsync(projection.ProjectionName!, shardTimeout, token);
         }
 
-        return RebuildProjection(typeof(TView).Name, shardTimeout, token);
+        return RebuildProjectionAsync(typeof(TView).Name, shardTimeout, token);
     }
 
         // TODO -- ZOMG, this is awful

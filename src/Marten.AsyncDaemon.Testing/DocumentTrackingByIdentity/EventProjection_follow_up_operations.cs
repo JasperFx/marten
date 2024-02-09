@@ -36,7 +36,7 @@ public class EventProjection_follow_up_operations: DaemonContext
 
         var agent = await StartDaemon();
 
-        await agent.RebuildProjection(nameof(NestedEntity), CancellationToken.None);
+        await agent.RebuildProjectionAsync(nameof(NestedEntity), CancellationToken.None);
     }
 
     public record EntityPublished(Guid Id, Dictionary<Guid, NestedEntity> Entities);
