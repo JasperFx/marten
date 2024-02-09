@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace Marten.Events.Daemon;
+namespace Marten.Events.Daemon.Internals;
 
 public interface IDaemonRuntime
 {

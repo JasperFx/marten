@@ -10,7 +10,7 @@ using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
-namespace Marten.Events.Daemon;
+namespace Marten.Events.Daemon.Internals;
 
 internal class EventLoader: IEventLoader
 {

@@ -6,6 +6,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Internals;
 using Marten.Storage;
 using Weasel.Core;
 

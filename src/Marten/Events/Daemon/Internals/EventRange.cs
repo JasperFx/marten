@@ -3,7 +3,7 @@ using System.Linq;
 using Marten.Events.Daemon.Progress;
 using Marten.Internal.Operations;
 
-namespace Marten.Events.Daemon;
+namespace Marten.Events.Daemon.Internals;
 
 /// <summary>
 ///     Used to specify then track a range of events by sequence number

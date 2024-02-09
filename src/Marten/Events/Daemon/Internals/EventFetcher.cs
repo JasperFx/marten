@@ -13,7 +13,7 @@ using NpgsqlTypes;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Events.Daemon;
+namespace Marten.Events.Daemon.Internals;
 
 [Obsolete("Goes away in 7")]
 internal interface IEventFetcher: IDisposable

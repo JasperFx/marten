@@ -3,7 +3,7 @@ using NpgsqlTypes;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Events.Daemon;
+namespace Marten.Events.Daemon.Internals;
 
 /// <summary>
 ///     Filter on a single aggregate type

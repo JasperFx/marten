@@ -7,7 +7,7 @@ using NpgsqlTypes;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Events.Daemon;
+namespace Marten.Events.Daemon.Internals;
 
 /// <summary>
 ///     WHERE clause filter to limit event fetching to only the event types specified
