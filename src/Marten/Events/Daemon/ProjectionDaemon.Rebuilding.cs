@@ -96,10 +96,7 @@ public partial class ProjectionDaemon
             _active.Remove(agent);
         }
 
-        if (token.IsCancellationRequested)
-        {
-            return;
-        }
+        if (token.IsCancellationRequested) return;
 
         await _highWater.CheckNow().ConfigureAwait(false);
 
@@ -110,10 +107,7 @@ public partial class ProjectionDaemon
             return;
         }
 
-        if (token.IsCancellationRequested)
-        {
-            return;
-        }
+        if (token.IsCancellationRequested) return;
 
         var agents = _factory.BuildAgentsForProjection(source.ProjectionName, Database);
 
@@ -139,9 +133,7 @@ public partial class ProjectionDaemon
             {
                 Tracker.MarkAsRestarted(agent.Name);
 
-                await startAgent(agent, ShardExecutionMode.Rebuild).ConfigureAwait(false);
-
-                await Tracker.WaitForShardState(agent.Name, mark, shardTimeout).ConfigureAwait(false);
+                await rebuildAgent(agent, mark, shardTimeout).ConfigureAwait(false);
             }).ConfigureAwait(false);
 
         foreach (var agent in agents)

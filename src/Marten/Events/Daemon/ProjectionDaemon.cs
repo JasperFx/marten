@@ -79,7 +79,11 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
         // Be idempotent, don't start an agent that is already running
         if (_active.Any(x => Equals(x.Name, agent.Name))) return;
 
-        var position = await Database.ProjectionProgressFor(agent.Name, _cancellation.Token).ConfigureAwait(false);
+        var position = mode == ShardExecutionMode.Continuous
+            ? await Database.ProjectionProgressFor(agent.Name, _cancellation.Token).ConfigureAwait(false)
+
+            // No point in doing the extra database hop
+            : 0;
 
         var errorOptions = mode == ShardExecutionMode.Continuous
             ? _store.Options.Projections.Errors
@@ -87,6 +91,21 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
 
         await agent.StartAsync(new SubscriptionExecutionRequest(position, mode, errorOptions, this)).ConfigureAwait(false);
         agent.MarkHighWater(HighWaterMark());
+        _active.Add(agent);
+    }
+
+    private async Task rebuildAgent(ISubscriptionAgent agent, long highWaterMark, TimeSpan shardTimeout)
+    {
+        // Ensure that the agent is stopped if it is already running
+        await StopAsync(agent.Name.Identity).ConfigureAwait(false);
+
+        var errorOptions = _store.Options.Projections.Errors;
+
+        var request = new SubscriptionExecutionRequest(0, ShardExecutionMode.Rebuild, errorOptions, this);
+        await agent.ReplayAsync(request, highWaterMark, shardTimeout).ConfigureAwait(false);
+
+
+
         _active.Add(agent);
     }
 

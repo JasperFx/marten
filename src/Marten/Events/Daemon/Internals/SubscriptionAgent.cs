@@ -2,11 +2,11 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Marten.Events.Daemon.Internals;
+using JasperFx.Core;
 using Marten.Events.Projections;
 using Microsoft.Extensions.Logging;
 
-namespace Marten.Events.Daemon;
+namespace Marten.Events.Daemon.Internals;
 
 public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
 {
@@ -60,12 +60,18 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
 #if NET8_0_OR_GREATER
             await _cancellation.CancelAsync().ConfigureAwait(false);
 #else
-        _cancellation.Cancel();
+            _cancellation.Cancel();
 #endif
             await _execution.HardStopAsync().ConfigureAwait(false);
             PausedTime = DateTimeOffset.UtcNow;
             Status = AgentStatus.Paused;
             _tracker.Publish(new ShardState(Name, LastCommitted) { Action = ShardAction.Paused, Exception = ex});
+
+            if (Mode == ShardExecutionMode.Rebuild)
+            {
+                _rebuild?.SetException(ex);
+            }
+
             await DisposeAsync().ConfigureAwait(false);
         }
         catch (Exception e)
@@ -94,6 +100,11 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
 
             await _execution.StopAndDrainAsync(token).ConfigureAwait(false);
         }
+        catch (TaskCanceledException)
+        {
+            // Just get out of here.
+            return;
+        }
         catch (Exception e)
         {
             throw new ShardStopException(ProjectionShardIdentity, e);
@@ -116,6 +127,35 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         await _execution.EnsureStorageExists().ConfigureAwait(false);
         _commandBlock.Post(Command.Started(_tracker.HighWaterMark, request.Floor));
         _tracker.Publish(new ShardState(Name, request.Floor){Action = ShardAction.Started});
+    }
+
+    private TaskCompletionSource? _rebuild;
+
+    public async Task ReplayAsync(SubscriptionExecutionRequest request, long highWaterMark, TimeSpan timeout)
+    {
+        Mode = ShardExecutionMode.Rebuild;
+        _rebuild = new TaskCompletionSource();
+        _execution.Mode = ShardExecutionMode.Rebuild;
+        _errorOptions = request.ErrorHandling;
+        _runtime = request.Runtime;
+
+        try
+        {
+            await _execution.EnsureStorageExists().ConfigureAwait(false);
+            _tracker.Publish(new ShardState(Name, request.Floor) { Action = ShardAction.Started });
+            _commandBlock.Post(Command.Started(highWaterMark, request.Floor));
+
+            await _rebuild.Task.TimeoutAfterAsync((int)timeout.TotalMilliseconds).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error trying to rebuild projection {Name}", ProjectionShardIdentity);
+            throw;
+        }
+        finally
+        {
+            await DisposeAsync().ConfigureAwait(false);
+        }
     }
 
     public Task RecordDeadLetterEventAsync(DeadLetterEvent @event)
@@ -169,6 +209,13 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
             case CommandType.RangeCompleted:
                 LastCommitted = command.LastCommitted;
                 _tracker.Publish(new ShardState(Name, LastCommitted));
+
+                if (LastCommitted == HighWaterMark && Mode == ShardExecutionMode.Rebuild)
+                {
+                    // We're done, get out of here!
+                    _rebuild?.TrySetResult();
+                }
+
                 break;
         }
 
