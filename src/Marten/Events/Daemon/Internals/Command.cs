@@ -30,22 +30,4 @@ internal class Command
     {
         return new Command { HighWaterMark = highWater, LastCommitted = lastCommitted };
     }
-
-    internal void Apply(ProjectionController controller)
-    {
-        switch (Type)
-        {
-            case CommandType.HighWater:
-                controller.MarkHighWater(HighWaterMark);
-                break;
-
-            case CommandType.RangeCompleted:
-                controller.EventRangeUpdated(Range);
-                break;
-
-            case CommandType.Start:
-                controller.Start(HighWaterMark, LastCommitted);
-                break;
-        }
-    }
 }

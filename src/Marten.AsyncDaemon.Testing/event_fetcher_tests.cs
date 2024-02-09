@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
+using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Postgresql.SqlGeneration;
@@ -28,8 +31,13 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
         loadEvents(theSession.Events);
         await theSession.SaveChangesAsync();
 
-        var fetcher = new EventFetcher(theStore, theStore.Tenancy.Default.Database, theFilters.ToArray());
-        await fetcher.Load(theRange, default);
+        var fetcher = new EventLoader(theStore, (MartenDatabase)theStore.Tenancy.Default.Database, new AsyncOptions(), theFilters.ToArray());
+
+        var results = await fetcher.LoadAsync(
+            new EventRequest { Floor = theRange.SequenceFloor, BatchSize = 1000, HighWater = 1000, Runtime = new NulloDaemonRuntime(), Name = theShardName},
+            CancellationToken.None);
+
+        theRange.Events = results.ToList();
     }
 
 
