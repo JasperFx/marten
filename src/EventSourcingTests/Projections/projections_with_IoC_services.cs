@@ -80,7 +80,7 @@ public class projections_with_IoC_services
         await session.SaveChangesAsync();
 
         using var daemon = await store.BuildProjectionDaemonAsync();
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         await daemon.Tracker.WaitForShardState("Product:All", 1);
 

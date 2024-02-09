@@ -61,7 +61,7 @@ internal class ProjectionHost: IProjectionHost
         IReadOnlyList<AsyncProjectionShard> asyncProjectionShards, TimeSpan? shardTimeout = null)
     {
         using var daemon = database.BuildDaemon();
-        await daemon.StartDaemonAsync().ConfigureAwait(false);
+        await daemon.StartHighWaterDetectionAsync().ConfigureAwait(false);
 
         var highWater = daemon.Tracker.HighWaterMark;
         if (highWater == 0)
@@ -70,7 +70,7 @@ internal class ProjectionHost: IProjectionHost
         }
 
         // Just messes up the rebuild to have this going after the initial check
-        await daemon.PauseHighWaterAgent().ConfigureAwait(false);
+        await daemon.PauseHighWaterAgentAsync().ConfigureAwait(false);
 
         var watcher = new RebuildWatcher(highWater);
         using var unsubscribe = daemon.Tracker.Subscribe(watcher);

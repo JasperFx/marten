@@ -36,7 +36,7 @@ public class Bug_2074_recovering_from_errors
 
         var logger = provider.GetRequiredService<ILogger<IProjectionDaemon>>();
         using var daemon = await documentStore.BuildProjectionDaemonAsync(logger: logger).ConfigureAwait(false);
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         var waiter = daemon.Tracker.WaitForShardState("UserIssueCounter:All", 1000, 1.Hours());
 

@@ -20,7 +20,7 @@ public class Bug_2666_create_or_apply_but_not_both_should_apply : BugIntegration
             _.Projections.Snapshot<CounterWithCreate>(SnapshotLifecycle.Async);
         });
         using var theAsyncDaemon = await theStore.BuildProjectionDaemonAsync();
-        await theAsyncDaemon.StartAllShards();
+        await theAsyncDaemon.StartAllAsync();
 
         var streamId = Guid.NewGuid();
         theSession.Events.Append(streamId, new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
@@ -43,7 +43,7 @@ public class Bug_2666_create_or_apply_but_not_both_should_apply : BugIntegration
             _.Projections.Snapshot<CounterWithDefaultCtor>(SnapshotLifecycle.Async);
         });
         using var theAsyncDaemon = await theStore.BuildProjectionDaemonAsync();
-        await theAsyncDaemon.StartAllShards();
+        await theAsyncDaemon.StartAllAsync();
 
         var streamId = Guid.NewGuid();
         theSession.Events.Append(streamId, new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
@@ -66,7 +66,7 @@ public class Bug_2666_create_or_apply_but_not_both_should_apply : BugIntegration
             _.Projections.Snapshot<CounterWithCreateAndDefaultCtor>(SnapshotLifecycle.Async);
         });
         using var theAsyncDaemon = await theStore.BuildProjectionDaemonAsync();
-        await theAsyncDaemon.StartAllShards();
+        await theAsyncDaemon.StartAllAsync();
 
         var streamId = Guid.NewGuid();
         theSession.Events.Append(streamId, new IncrementEvent(), new IncrementEvent(), new IncrementEvent());
@@ -89,7 +89,7 @@ public class Bug_2666_create_or_apply_but_not_both_should_apply : BugIntegration
             _.Projections.Snapshot<CounterWithCreateAndDefaultCtor>(SnapshotLifecycle.Async);
         });
         using var theAsyncDaemon = await theStore.BuildProjectionDaemonAsync();
-        await theAsyncDaemon.StartAllShards();
+        await theAsyncDaemon.StartAllAsync();
 
         var streamId = Guid.NewGuid();
 

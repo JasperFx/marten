@@ -139,7 +139,7 @@ public class AsyncDaemonBootstrappingSamples
         using var daemon = await store.BuildProjectionDaemonAsync();
 
         // Fire up everything!
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
 
         // or instead, rebuild a single projection
@@ -156,7 +156,7 @@ public class AsyncDaemonBootstrappingSamples
         await daemon.StartShard("shard name", cancellation);
 
         // Or change your mind and stop the shard you just started
-        await daemon.StopShard("shard name");
+        await daemon.StopAsync("shard name");
 
         // No, shut them all down!
         await daemon.StopAllAsync();

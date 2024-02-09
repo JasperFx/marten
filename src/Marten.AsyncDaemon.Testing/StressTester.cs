@@ -63,7 +63,7 @@ public class StressTester
         timer.Start();
 
         using var daemon = await store.BuildProjectionDaemonAsync(logger:logger);
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         long lastCount = 0;
         while (!stopping.IsCancellationRequested)
