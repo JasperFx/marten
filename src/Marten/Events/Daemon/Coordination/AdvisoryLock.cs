@@ -28,11 +28,17 @@ internal class AdvisoryLock : IAsyncDisposable
 
     public bool HasLock(int lockId)
     {
-        return _conn.State != ConnectionState.Broken && _locks.Contains(lockId);
+        return _conn is not { State: ConnectionState.Broken } && _locks.Contains(lockId);
     }
 
     public async Task<bool> TryAttainLockAsync(int lockId, CancellationToken token)
     {
+        if (_conn == null)
+        {
+            _conn = _database.CreateConnection();
+            await _conn.OpenAsync(token).ConfigureAwait(false);
+        }
+
         if (_conn.State == ConnectionState.Broken)
         {
             try
@@ -49,11 +55,7 @@ internal class AdvisoryLock : IAsyncDisposable
             }
         }
 
-        if (_conn == null)
-        {
-            _conn = _database.CreateConnection();
-            await _conn.OpenAsync(token).ConfigureAwait(false);
-        }
+
 
         var attained = await _conn.TryGetGlobalLock(lockId, cancellation: token).ConfigureAwait(false);
         if (attained == AttainLockResult.Success)

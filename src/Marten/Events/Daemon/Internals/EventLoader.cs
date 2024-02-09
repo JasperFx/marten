@@ -9,6 +9,7 @@ using Marten.Storage;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Daemon.Internals;
 
@@ -22,7 +23,12 @@ internal class EventLoader: IEventLoader
     private readonly IEventStorage _storage;
     private readonly IDocumentStore _store;
 
-    public EventLoader(DocumentStore store, MartenDatabase database, AsyncProjectionShard shard, AsyncOptions options)
+    public EventLoader(DocumentStore store, MartenDatabase database, AsyncProjectionShard shard, AsyncOptions options) : this(store, database, options, shard.BuildFilters(store).ToArray())
+    {
+
+    }
+
+    public EventLoader(DocumentStore store, MartenDatabase database, AsyncOptions options, ISqlFragment[] filters)
     {
         _store = store;
         Database = database;
@@ -47,7 +53,6 @@ internal class EventLoader: IEventLoader
         _ceiling = parameters[1];
         _floor.NpgsqlDbType = _ceiling.NpgsqlDbType = NpgsqlDbType.Bigint;
 
-        var filters = shard.BuildFilters(store);
         foreach (var filter in filters)
         {
             builder.Append(" and ");
