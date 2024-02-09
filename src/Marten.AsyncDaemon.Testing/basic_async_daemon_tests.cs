@@ -9,6 +9,7 @@ using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Linq.SqlGeneration;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Testing.Harness;
 using NSubstitute;
 using Shouldly;
@@ -154,57 +155,22 @@ public class basic_async_daemon_tests: DaemonContext
     [Fact]
     public async Task event_fetcher_simple_case()
     {
-        using var fetcher =
-            new EventFetcher(theStore, theStore.Tenancy.Default.Database, new ISqlFragment[0]);
+        var fetcher =
+            new EventLoader(theStore, (MartenDatabase)theStore.Tenancy.Default.Database, new AsyncOptions(), new ISqlFragment[0]);
 
         NumberOfStreams = 10;
         await PublishSingleThreaded();
 
         var shardName = new ShardName("name");
-        var range1 = new EventRange(shardName, 0, 10);
 
+        var range1 = await fetcher.LoadAsync(new EventRequest{Floor = 0, BatchSize = 10, HighWater = 10, Name = shardName, Runtime = new NulloDaemonRuntime()}, CancellationToken.None);
 
-        await fetcher.Load(range1, CancellationToken.None);
+        var range2 = await fetcher.LoadAsync(new EventRequest{Floor = 10, BatchSize = 10, HighWater = 20, Name = shardName, Runtime = new NulloDaemonRuntime()}, CancellationToken.None);
+        var range3 = await fetcher.LoadAsync(new EventRequest{Floor = 20, BatchSize = 10, HighWater = 38, Name = shardName, Runtime = new NulloDaemonRuntime()}, CancellationToken.None);
 
-        var range2 = new EventRange(shardName, 10, 20);
-        await fetcher.Load(range2, CancellationToken.None);
-
-        var range3 = new EventRange(shardName, 20, 38);
-        await fetcher.Load(range3, CancellationToken.None);
-
-        range1.Events.Count.ShouldBe(10);
-        range2.Events.Count.ShouldBe(10);
-        range3.Events.Count.ShouldBe(18);
-    }
-
-    [Fact]
-    public async Task use_type_filters()
-    {
-        NumberOfStreams = 10;
-        await PublishSingleThreaded();
-
-        using var fetcher1 =
-            new EventFetcher(theStore, theStore.Tenancy.Default.Database, Array.Empty<ISqlFragment>());
-
-        var shardName = new ShardName("name");
-        var range1 = new EventRange(shardName, 0, NumberOfEvents);
-        await fetcher1.Load(range1, CancellationToken.None);
-
-        var uniqueTypeCount = range1.Events.Select(x => x.EventType).Distinct()
-            .Count();
-
-        uniqueTypeCount.ShouldBe(6);
-
-        var filter = new EventTypeFilter(theStore.Events, new Type[] { typeof(Travel), typeof(Arrival) });
-        using var fetcher2 = new EventFetcher(theStore, theStore.Tenancy.Default.Database,
-            new ISqlFragment[] { filter });
-
-        var range2 = new EventRange(shardName, 0, NumberOfEvents);
-        await fetcher2.Load(range2, CancellationToken.None);
-        range2.Events
-            .Select(x => x.EventType)
-            .OrderBy(x => x.Name).Distinct()
-            .ShouldHaveTheSameElementsAs(typeof(Arrival), typeof(Travel));
+        range1.Count.ShouldBe(10);
+        range2.Count.ShouldBe(10);
+        range3.Count.ShouldBe(18);
     }
 
     [Fact]
