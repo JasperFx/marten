@@ -30,7 +30,7 @@ public class EventProjectionOrderingTests: IntegrationContext
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
 
-        await daemon.RebuildProjection<TestOrderingEventProjection>(CancellationToken.None);
+        await daemon.RebuildProjectionAsync<TestOrderingEventProjection>(CancellationToken.None);
 
         var results = theSession.Query<OrderingTracker>()
             .Where(x => x.StreamId == firstStream || x.StreamId == secondStream)

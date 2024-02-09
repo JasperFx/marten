@@ -36,7 +36,7 @@ public class end_to_end_with_flat_table_projections : DaemonContext
 
         var waiter = daemon.Tracker.WaitForShardState("Values:All", 2);
 
-        await daemon.RebuildProjection<WriteTableWithGuidIdentifierProjection>(CancellationToken.None);
+        await daemon.RebuildProjectionAsync<WriteTableWithGuidIdentifierProjection>(CancellationToken.None);
 
         await waiter;
     }

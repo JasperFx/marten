@@ -195,7 +195,7 @@ public class build_aggregate_multiple_projections: DaemonContext
 
         try
         {
-            await daemon.RebuildProjection<CarProjection>(default);
+            await daemon.RebuildProjectionAsync<CarProjection>(default);
         }
         catch (Exception ex)
         {
@@ -261,7 +261,7 @@ public class build_aggregate_multiple_projections: DaemonContext
 
         try
         {
-            await daemon.RebuildProjection<CarProjection>(default);
+            await daemon.RebuildProjectionAsync<CarProjection>(default);
         }
         catch (Exception ex)
         {

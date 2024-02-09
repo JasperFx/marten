@@ -40,7 +40,7 @@ public class Bug_1995_empty_batch_update_failure : BugIntegrationContext
         }
 
         using var daemon = await documentStore.BuildProjectionDaemonAsync();
-        await daemon.RebuildProjection<IssueAggregate>(default);
+        await daemon.RebuildProjectionAsync<IssueAggregate>(default);
     }
 }
 

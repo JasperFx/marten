@@ -12,8 +12,14 @@ public record SubscriptionExecutionRequest(
     ErrorHandlingOptions ErrorHandling,
     IDaemonRuntime Runtime);
 
-public interface ISubscriptionAgent : IShardAgent
+/// <summary>
+///     Used internally by asynchronous projections.
+/// </summary>
+// This is public because it's used by the generated code
+public interface ISubscriptionAgent
 {
+    ShardName Name { get; }
+    ShardExecutionMode Mode { get; }
     void MarkSuccess(long processedCeiling);
     void MarkHighWater(long sequence);
 

@@ -815,7 +815,7 @@ namespace EventSourcingTests.SchemaChange
 
                 using var daemon = await store.BuildProjectionDaemonAsync();
 
-                await daemon.RebuildProjection<New.ShoppingCartProjection>(CancellationToken.None);
+                await daemon.RebuildProjectionAsync<New.ShoppingCartProjection>(CancellationToken.None);
 
                 var shoppingCartRebuilt = await session.LoadAsync<New.ShoppingCartDetails>(shoppingCartId);
 

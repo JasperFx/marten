@@ -62,7 +62,7 @@ public class Bug_DeleteWhere_Operations_Should_Respect_Tenancy : BugIntegrationC
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
 
-        await daemon.RebuildProjection<DeletableEventProjection>(default);
+        await daemon.RebuildProjectionAsync<DeletableEventProjection>(default);
 
         var normalDeleteRebuilt = await session.LoadAsync<DeletableProjection>(createNormal.Id);
         var hardDeleteRebuilt = await session.LoadAsync<DeletableProjection>(createHard.Id);

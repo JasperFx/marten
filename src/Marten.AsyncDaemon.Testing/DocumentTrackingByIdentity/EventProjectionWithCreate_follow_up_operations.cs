@@ -29,7 +29,7 @@ public class EventProjectionWithCreate_follow_up_operations: DaemonContext
 
         var agent = await StartDaemon();
 
-        await agent.RebuildProjection(nameof(EntityProjection), CancellationToken.None);
+        await agent.RebuildProjectionAsync(nameof(EntityProjection), CancellationToken.None);
 
         var shoppingCartRebuilt = await session.LoadAsync<Entity>(entityId);
 
