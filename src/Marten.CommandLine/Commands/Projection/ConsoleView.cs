@@ -16,7 +16,7 @@ internal class ConsoleView: IConsoleView
 
     public void ListShards(IProjectionStore store)
     {
-        var projections = store.Shards.Select(x => x.Source).Distinct();
+        var projections = store.Shards.Select(x => x.Source).Distinct().ToArray();
 
         if (projections.IsEmpty())
         {
@@ -44,7 +44,7 @@ internal class ConsoleView: IConsoleView
 
     public void DisplayEmptyEventsMessage(IProjectionStore store)
     {
-        AnsiConsole.Markup("[bold]The event storage is empty, aborting.[/]");
+        AnsiConsole.MarkupLine("[bold]The event storage is empty, aborting.[/]");
     }
 
     public void DisplayRebuildIsComplete()

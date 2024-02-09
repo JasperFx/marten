@@ -11,6 +11,7 @@
         <ProjectReference Include="..\Marten.CommandLine\Marten.CommandLine.csproj"/>
         <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj"/>
         <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj"/>
+        <ProjectReference Include="..\Marten.AsyncDaemon.Testing\Marten.AsyncDaemon.Testing.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

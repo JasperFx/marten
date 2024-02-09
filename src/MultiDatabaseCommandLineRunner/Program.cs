@@ -1,6 +1,9 @@
 ﻿using JasperFx.CodeGeneration;
 using Marten;
+using Marten.AsyncDaemon.Testing;
+using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon.Resiliency;
+using Marten.Events.Projections;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
@@ -49,6 +52,16 @@ public class Program
                     // just to let Marten know that document type exists
                     opts.RegisterDocumentType<Target>();
                     opts.RegisterDocumentType<User>();
+
+                    // Register all event store projections ahead of time
+                    opts.Projections
+                        .Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
+
+                    opts.Projections
+                        .Add(new DayProjection(), ProjectionLifecycle.Async);
+
+                    opts.Projections
+                        .Add(new DistanceProjection(), ProjectionLifecycle.Async);
                 }).AddAsyncDaemon(DaemonMode.Solo);
             });
     }

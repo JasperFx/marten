@@ -106,27 +106,12 @@ public interface IProjectionDaemon: IDisposable
     Task StopAllAsync();
 
     /// <summary>
-    ///     Starts the daemon high water detection. This is called
-    ///     automatically by any of the Start***() or Rebuild****()
-    ///     methods
-    /// </summary>
-    /// <returns></returns>
-    Task StartHighWaterDetectionAsync();
-
-
-    /// <summary>
     ///     Use with caution! This will try to wait for all projections to "catch up" to the currently
     ///     known farthest known sequence of the event store
     /// </summary>
     /// <param name="timeout"></param>
     /// <returns></returns>
     Task WaitForNonStaleData(TimeSpan timeout);
-
-    /// <summary>
-    /// Turn off high water agent usage
-    /// </summary>
-    /// <returns></returns>
-    Task PauseHighWaterAgentAsync();
 
     long HighWaterMark();
     AgentStatus StatusFor(string shardName);

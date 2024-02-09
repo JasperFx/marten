@@ -55,8 +55,6 @@ public class EventProjectionWithCreate_follow_up_operations: DaemonContext
 
         var daemon = await StartDaemon();
 
-        await daemon.StartHighWaterDetectionAsync();
-
         await daemon.Tracker.WaitForShardState($"{nameof(EntityProjection)}:All", 2);
 
         var entity = await session.LoadAsync<Entity>(entityId);
