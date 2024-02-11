@@ -69,7 +69,7 @@ public class QuestPatchTestProjection: IProjection
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L891-L924' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpatchtestprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L890-L923' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpatchtestprojection' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_questpatchtestprojection-1'></a>
 ```cs
 public class QuestPatchTestProjection: IProjection
@@ -125,7 +125,7 @@ var store = DocumentStore.For(opts =>
     opts.Projections.Add(new QuestPatchTestProjection(), ProjectionLifecycle.Async);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L838-L854' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_custom_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L837-L853' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_custom_projection' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_registering_custom_projection-1'></a>
 ```cs
 var store = DocumentStore.For(opts =>

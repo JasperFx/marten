@@ -22,6 +22,7 @@ public class HotCold_leadership_election: DaemonContext
     {
     }
 
+    // WATCH OUT. These tests will all pass one at a time, but don't play nicely with any others
 
     [Fact]
     public async Task detect_high_water_mark_when_running_after_events_are_posted()

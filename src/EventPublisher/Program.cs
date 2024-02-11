@@ -82,7 +82,7 @@ internal class Publisher
 
     public Task Start()
     {
-        var random = new Random();
+        var random = Random.Shared;
         return Task.Run(async () =>
         {
             while (true)
