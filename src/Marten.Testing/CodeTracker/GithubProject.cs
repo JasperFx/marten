@@ -14,8 +14,6 @@ namespace Marten.Testing.CodeTracker;
 
 public class GithubProject
 {
-    private static readonly Random _random = new Random();
-
     private readonly IList<Timestamped> _events = new List<Timestamped>();
 
     public static GithubProject LoadFrom(string file)

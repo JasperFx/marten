@@ -116,7 +116,7 @@ public class web_service_streaming_tests: IntegrationContext
         var issues = new Issue[100];
         for (int i = 0; i < issues.Length; i++)
         {
-            issues[i] = Issue.Random();
+            issues[i] = Issue.RandomIssue();
         }
 
         await store.BulkInsertDocumentsAsync(issues);
@@ -193,7 +193,7 @@ public class web_service_streaming_tests: IntegrationContext
         var issues = new Issue[100];
         for (int i = 0; i < issues.Length; i++)
         {
-            issues[i] = Issue.Random();
+            issues[i] = Issue.RandomIssue();
         }
 
         await store.BulkInsertDocumentsAsync(issues);
