@@ -465,14 +465,13 @@ The `Patch.Remove()` operation removes the given item from a child collection:
 [Fact]
 public void remove_primitive_element()
 {
-    var random = new Random();
     var target = Target.Random();
-    target.NumberArray = new[] { random.Next(0, 10), random.Next(0, 10), random.Next(0, 10) };
+    target.NumberArray = new[] { Random.Shared.Next(0, 10), Random.Shared.Next(0, 10), Random.Shared.Next(0, 10) };
     target.NumberArray = target.NumberArray.Distinct().ToArray();
 
     var initialCount = target.NumberArray.Length;
 
-    var child = target.NumberArray[random.Next(0, initialCount)];
+    var child = target.NumberArray[Random.Shared.Next(0, initialCount)];
 
     theSession.Store(target);
     theSession.SaveChanges();
@@ -489,7 +488,7 @@ public void remove_primitive_element()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L613-L642' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_remove_primitive_element' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L613-L641' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_remove_primitive_element' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_remove_primitive_element-1'></a>
 ```cs
 [Fact]
@@ -551,7 +550,7 @@ public void remove_complex_element()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L682-L707' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_remove_complex_element' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L681-L706' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_remove_complex_element' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_remove_complex_element-1'></a>
 ```cs
 [Fact]
@@ -620,7 +619,7 @@ public void remove_repeated_primitive_elements()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L644-L680' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_remove_repeated_primitive_element' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L643-L679' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_remove_repeated_primitive_element' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_remove_repeated_primitive_element-1'></a>
 ```cs
 [Fact]
@@ -731,7 +730,7 @@ To delete a redundant property no longer available on the class use the string o
 ```cs
 theSession.Patch<Target>(target.Id).Delete("String");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L716-L718' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_redundant_property' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L715-L717' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_redundant_property' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_delete_redundant_property-1'></a>
 ```cs
 theSession.Patch<Target>(target.Id).Delete("String");
@@ -746,7 +745,7 @@ To delete a redundant property nested on a child class specify a location lambda
 ```cs
 theSession.Patch<Target>(target.Id).Delete("String", t => t.Inner);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L736-L738' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_redundant_nested_property' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L735-L737' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_redundant_nested_property' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_delete_redundant_nested_property-1'></a>
 ```cs
 theSession.Patch<Target>(target.Id).Delete("String", t => t.Inner);
@@ -761,7 +760,7 @@ A current property may be erased simply with a lambda:
 ```cs
 theSession.Patch<Target>(target.Id).Delete(t => t.Inner);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L756-L758' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_existing_property' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L755-L757' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_existing_property' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_delete_existing_property-1'></a>
 ```cs
 theSession.Patch<Target>(target.Id).Delete(t => t.Inner);
@@ -784,7 +783,7 @@ using (var query = theStore.QuerySession())
     query.Query<Target>(where).Count(t => t.String != null).ShouldBe(0);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L778-L788' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_property_from_many_documents' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L777-L787' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_property_from_many_documents' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_delete_property_from_many_documents-1'></a>
 ```cs
 const string where = "(data ->> 'String') is not null";

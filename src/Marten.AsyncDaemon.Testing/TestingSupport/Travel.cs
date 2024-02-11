@@ -9,25 +9,26 @@ public class Travel : IDayEvent
     {
         var travel = new Travel {Day = day,};
 
-        var numberOfMovements = TripStream.Random.Next(1, 20);
+        var random = System.Random.Shared;
+        var numberOfMovements = random.Next(1, 20);
         for (var i = 0; i < numberOfMovements; i++)
         {
             var movement = new Movement
             {
-                Direction = TripStream.RandomDirection(), Distance = TripStream.Random.Next(500, 3000) / 100
+                Direction = TripStream.RandomDirection(), Distance = random.Next(500, 3000) / 100
             };
 
             travel.Movements.Add(movement);
         }
 
-        var numberOfStops = TripStream.Random.Next(1, 10);
+        var numberOfStops = random.Next(1, 10);
         for (var i = 0; i < numberOfStops; i++)
         {
             travel.Stops.Add(new Stop()
             {
                 Time = TripStream.RandomTime(),
                 State = TripStream.RandomState(),
-                Duration = TripStream.Random.Next(10, 30)
+                Duration = random.Next(10, 30)
             });
         }
 

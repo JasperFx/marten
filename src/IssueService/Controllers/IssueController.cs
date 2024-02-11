@@ -19,11 +19,9 @@ namespace IssueService.Controllers
 
     public class Issue
     {
-        private static readonly Random _random = new Random();
-
-        public static Issue Random()
+        public static Issue RandomIssue()
         {
-            return new Issue {Description = Guid.NewGuid().ToString(), Open = _random.Next(0, 10) > 7};
+            return new Issue {Description = Guid.NewGuid().ToString(), Open = Random.Shared.Next(0, 10) > 7};
         }
 
         public Guid Id { get; set; }

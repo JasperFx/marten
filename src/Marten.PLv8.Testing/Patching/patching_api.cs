@@ -614,15 +614,14 @@ public class patching_api: OneOffConfigurationsContext
     [Fact]
     public void remove_primitive_element()
     {
-        var random = new Random();
         var target = Target.Random();
-        target.NumberArray = new[] { random.Next(0, 10), random.Next(0, 10), random.Next(0, 10) };
+        target.NumberArray = new[] { Random.Shared.Next(0, 10), Random.Shared.Next(0, 10), Random.Shared.Next(0, 10) };
         target.NumberArray = target.NumberArray.Distinct().ToArray();
 
         var initialCount = target.NumberArray.Length;
 
 
-        var child = target.NumberArray[random.Next(0, initialCount)];
+        var child = target.NumberArray[Random.Shared.Next(0, initialCount)];
 
         theSession.Store(target);
         theSession.SaveChanges();

@@ -20,18 +20,17 @@ public class TripStream
         return list;
     }
 
-    public static readonly Random Random = new Random();
     public static readonly string[] States = new string[] {"Texas", "Arkansas", "Missouri", "Kansas", "Oklahoma", "Connecticut", "New Jersey", "New York" };
 
     public static string RandomState()
     {
-        var index = Random.Next(0, States.Length - 1);
+        var index = Random.Shared.Next(0, States.Length - 1);
         return States[index];
     }
 
     public static Direction RandomDirection()
     {
-        var index = Random.Next(0, 3);
+        var index = Random.Shared.Next(0, 3);
         switch (index)
         {
             case 0:
@@ -47,7 +46,7 @@ public class TripStream
 
     public static TimeOnly RandomTime()
     {
-        var hour = Random.Next(0, 24);
+        var hour = Random.Shared.Next(0, 24);
         return new TimeOnly(hour, 0, 0);
     }
 
@@ -59,7 +58,8 @@ public class TripStream
 
     public TripStream()
     {
-        var startDay = Random.Next(1, 100);
+        var random = Random.Shared;
+        var startDay = random.Next(1, 100);
 
         var start = new TripStarted {Day = startDay};
         Events.Add(start);
@@ -69,9 +69,9 @@ public class TripStream
 
         Events.Add(new Departure{Day = startDay, State = state});
 
-        var duration = Random.Next(1, 20);
+        var duration = random.Next(1, 20);
 
-        var randomNumber = Random.NextDouble();
+        var randomNumber = random.NextDouble();
         for (var i = 0; i < duration; i++)
         {
             var day = startDay + i;
@@ -133,7 +133,7 @@ public class TripStream
             return false;
         }
 
-        var number = Random.Next(1, 5);
+        var number = Random.Shared.Next(1, 5);
 
         if (_index + number >= Events.Count)
         {

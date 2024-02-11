@@ -429,7 +429,7 @@ create an aggregated view. As an example, a `Travel` event we use in Marten test
 public IList<Movement> Movements { get; set; } = new List<Movement>();
 public List<Stop> Stops { get; set; } = new();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/Travel.cs#L39-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_travel_movements' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/Travel.cs#L40-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_travel_movements' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In a sample `ViewProjection`, we do a "fan out" of the `Travel.Movements` members into separate events being processed through the projection:

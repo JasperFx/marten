@@ -6,7 +6,7 @@ public sealed class BenchModel4
 {
     public BenchModel4()
     {
-        Id = new Random().Next(int.MaxValue);
+        Id = Random.Shared.Next(int.MaxValue);
     }
 
     public int Id { get; set; }
