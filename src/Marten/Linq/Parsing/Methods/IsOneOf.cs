@@ -1,7 +1,10 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
+using Marten.Linq.SqlGeneration.Filters;
+using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing.Methods;
@@ -28,6 +31,27 @@ internal class IsOneOf: IMethodCallParser
             return new EnumIsOneOfWhereFragment(values, options.Serializer().EnumStorage, locator);
         }
 
-        return new WhereFragment($"{locator} = ANY(?)", values);
+        return new IsOneOfFilter(queryableMember, new CommandParameter(values));
     }
+}
+
+internal class IsOneOfFilter: ISqlFragment
+{
+    private readonly ISqlFragment _member;
+    private readonly CommandParameter _parameter;
+
+    public IsOneOfFilter(ISqlFragment member, CommandParameter parameter)
+    {
+        _member = member;
+        _parameter = parameter;
+    }
+
+    public void Apply(ICommandBuilder builder)
+    {
+        _member.Apply(builder);
+        builder.Append(" = ANY(");
+        _parameter.Apply(builder);
+        builder.Append(')');
+    }
+
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using JasperFx.Core;
-using Marten.Exceptions;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql.SqlGeneration;
 
