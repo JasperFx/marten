@@ -31,8 +31,20 @@ internal class AnySubQueryParser: IMethodCallParser
 
         if (expression.Arguments.Count == 1)
         {
+            if (expression.Arguments[0].TryToParseConstant(out var c))
+            {
+                if (c.Value == null) return new LiteralFalse();
+
+                if (c.Value is Array a)
+                {
+                    return a.Length > 0 ? new LiteralTrue() : new LiteralFalse();
+                }
+
+                return c.Value.As<IEnumerable<object>>().Any() ? new LiteralTrue() : new LiteralFalse();
+            }
+
             // Where(filter).Any()
-            if (expression.Arguments[0] is MethodCallExpression method)
+            else if (expression.Arguments[0] is MethodCallExpression method)
             {
                 // Where(filter).Any()
                 memberExpression = method.Arguments[0];
