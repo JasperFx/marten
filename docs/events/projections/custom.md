@@ -70,6 +70,40 @@ public class QuestPatchTestProjection: IProjection
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L891-L924' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpatchtestprojection' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_questpatchtestprojection-1'></a>
+```cs
+public class QuestPatchTestProjection: IProjection
+{
+    public Guid Id { get; set; }
+
+    public string Name { get; set; }
+
+    public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
+    {
+        var questEvents = streams.SelectMany(x => x.Events).OrderBy(s => s.Sequence).Select(s => s.Data);
+
+        foreach (var @event in questEvents)
+        {
+            if (@event is Quest quest)
+            {
+                operations.Store(new QuestPatchTestProjection { Id = quest.Id });
+            }
+            else if (@event is QuestStarted started)
+            {
+                operations.Patch<QuestPatchTestProjection>(started.Id).Set(x => x.Name, "New Name");
+            }
+        }
+    }
+
+    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
+        CancellationToken cancellation)
+    {
+        Apply(operations, streams);
+        return Task.CompletedTask;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L857-L890' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpatchtestprojection-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the custom projection can be registered in your Marten `DocumentStore` like this:
@@ -92,4 +126,18 @@ var store = DocumentStore.For(opts =>
 });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L838-L854' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_custom_projection' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_registering_custom_projection-1'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // Use inline lifecycle
+    opts.Projections.Add(new QuestPatchTestProjection(), ProjectionLifecycle.Inline);
+
+    // Or use this as an asychronous projection
+    opts.Projections.Add(new QuestPatchTestProjection(), ProjectionLifecycle.Async);
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L809-L822' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_custom_projection-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
