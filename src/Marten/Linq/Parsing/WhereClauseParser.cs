@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq.Expressions;
+using JasperFx.Core;
 using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.SqlGeneration.Filters;
@@ -124,19 +125,28 @@ public class WhereClauseParser: ExpressionVisitor
     private void buildCompoundWhereFragment(BinaryExpression node, string separator)
     {
         var original = _holder;
+        if (_holder is CompoundWhereFragment c && c.Separator.EqualsIgnoreCase(separator))
+        {
+            Visit(node.Left);
+            _holder = original;
+            Visit(node.Right);
+            _holder = original;
+        }
+        else
+        {
+            var compound = CompoundWhereFragment.For(separator);
+            _holder.Register(compound);
 
-        var compound = CompoundWhereFragment.For(separator);
-        _holder.Register(compound);
+            _holder = compound;
 
-        _holder = compound;
+            Visit(node.Left);
 
-        Visit(node.Left);
+            _holder = compound;
 
-        _holder = compound;
+            Visit(node.Right);
 
-        Visit(node.Right);
-
-        _holder = original;
+            _holder = original;
+        }
     }
 
     protected override Expression VisitUnary(UnaryExpression node)
