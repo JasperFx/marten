@@ -47,6 +47,26 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
         CollectionMember = collection;
     }
 
+    public ISqlFragment MoveUnder(ICollectionMember ancestorCollection)
+    {
+        var dict = new Dictionary<string, object>();
+
+        ancestorCollection.PlaceValueInDictionaryForContainment(dict, Expression.Constant(_data));
+
+        _data = dict;
+
+        foreach (var parent in ancestorCollection.Ancestors.Reverse())
+        {
+            if (parent is DocumentQueryableMemberCollection) break;
+
+            dict = new Dictionary<string, object>();
+            parent.PlaceValueInDictionaryForContainment(dict, Expression.Constant(_data));
+            _data = dict;
+        }
+
+        return this;
+    }
+
     public bool IsNot { get; set; }
 
     public ContainmentUsage Usage { get; set; } = ContainmentUsage.Singular;
@@ -101,10 +121,7 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
 
     public ICollectionMember CollectionMember { get; }
 
-    public ISqlFragment MoveUnder(ICollectionMember ancestorCollection)
-    {
-        throw new NotSupportedException();
-    }
+
 
     public void Apply(ICommandBuilder builder)
     {

@@ -43,8 +43,8 @@ internal class EnumerableContains: IMethodCallParser
             return new IsOneOfFilter(collectionMember, new CommandParameter(constant.Value));
         }
 
-        var collection = memberCollection as ICollectionMember ??
-                         memberCollection.MemberFor(expression.Object ?? expression.Arguments[0]) as ICollectionMember;
+        // Not sure why it did this: memberCollection as ICollectionMember ??
+        var collection = memberCollection.MemberFor(expression.Object ?? expression.Arguments[0]) as ICollectionMember;
 
         if (collection == null)
         {
