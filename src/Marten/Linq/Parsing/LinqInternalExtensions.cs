@@ -190,6 +190,9 @@ internal static class LinqInternalExtensions
 
     public static bool IsCompilableExpression(this MemberExpression node)
     {
+        // Field of the containing code
+        if (node.Expression == null) return true;
+
         return (node.Expression is ConstantExpression || node.Expression != null) &&
                node.Expression.ToString().StartsWith("value(");
     }
