@@ -22,7 +22,7 @@ public record LiteralFalse : IReversibleWhereFragment
 {
     public void Apply(ICommandBuilder builder)
     {
-        builder.Append("TRUE");
+        builder.Append("FALSE");
     }
 
     public ISqlFragment Reverse()
