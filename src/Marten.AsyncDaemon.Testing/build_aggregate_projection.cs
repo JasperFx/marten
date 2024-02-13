@@ -64,7 +64,7 @@ public class build_aggregate_projection: DaemonContext
         var shard = theStore.Options.Projections.AllShards().Single();
         var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 60.Seconds());
 
-        await agent.StartShard(shard.Name.Identity, CancellationToken.None);
+        await agent.StartAgentAsync(shard.Name.Identity, CancellationToken.None);
 
         await waiter;
 

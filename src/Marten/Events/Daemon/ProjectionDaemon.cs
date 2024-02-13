@@ -139,7 +139,7 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
         }
     }
 
-    public async Task StartShard(string shardName, CancellationToken token)
+    public async Task StartAgentAsync(string shardName, CancellationToken token)
     {
         if (!_highWater.IsRunning)
         {
@@ -155,7 +155,7 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
             await d.DisposeAsync().ConfigureAwait(false);
         }
     }
-
+    
     private async Task stopIfRunningAsync(string shardIdentity)
     {
         if (_agents.TryFind(shardIdentity, out var agent))
@@ -180,7 +180,7 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
         }
     }
 
-    public async Task StopAsync(string shardName, Exception ex = null)
+    public async Task StopAgentAsync(string shardName, Exception ex = null)
     {
         if (_agents.TryFind(shardName, out var agent))
         {
@@ -366,4 +366,7 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
     {
         return _deadLetterBlock.PostAsync(@event);
     }
+
+
+
 }
