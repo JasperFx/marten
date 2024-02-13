@@ -1,3 +1,4 @@
+using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.CodeGeneration;
@@ -18,7 +19,7 @@ internal class DictionaryContainsKeyFilter: ISqlFragment, ICompiledQueryAwareFil
     public DictionaryContainsKeyFilter(IDictionaryMember member, ISerializer serializer, ConstantExpression constant)
     {
         _value = constant.Value;
-        _keyText = serializer.ToCleanJson(_value);
+        _keyText = (_value is not null && _value is Enum) ? _value.ToString() : serializer.ToCleanJson(_value);
 
         _member = member;
     }

@@ -2,10 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LinqTests.Bugs;
 using Marten;
+using Marten.Schema;
+using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Xunit.Abstractions;
 
 namespace LinqTests.Acceptance;
@@ -158,11 +162,60 @@ as d where d.data = 'value2' order by d.data;
     }
 }
 
-public class EntityWithDict
+public class dictionary_bugs : OneOffConfigurationsContext
 {
-    public Guid Id { get; set; }
-    public Dictionary<int, string> Data { get; set; } = new();
+    private readonly ITestOutputHelper _output;
+
+    public dictionary_bugs(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
+    [Fact]
+    public async Task query_by_contains_key_using_enum_as_key_with_enum_as_integer()
+    {
+        // From GH-2953
+        await theStore.BulkInsertAsync(new[]
+            { new EnumOrder("o1", new Dictionary<EnumA, string>() { [EnumA.Whatever] = "abc" }, EnumA.Whatever) });
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+
+        var count = await theSession.Query<EnumOrder>()
+            .Where(x => x.EnumStringMap.ContainsKey(EnumA.Whatever))
+            .Where(x => x.EnumStringMap[EnumA.Whatever] == "abc").CountAsync();
+
+        count.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task filter_on_enum_of_dictionary_with_string_storage()
+    {
+        // GH-2951
+        StoreOptions(opts => opts.UseDefaultSerialization(EnumStorage.AsString));
+
+        var desiredValue = ItemStatus.Available;
+        await theSession.Query<Order>().Where(x => x.StringEnumMap["1"] == desiredValue).ToListAsync();
+    }
 }
+
+[DocumentAlias("enum_order")]
+public record EnumOrder(string Id,
+    Dictionary<EnumA, string> EnumStringMap, EnumA Value);
+
+public enum EnumA
+{
+    Whatever
+}
+
+public enum ItemStatus
+{
+    Available
+};
+
+public record Order(string Id,
+    Dictionary<string, ItemStatus> StringEnumMap);
+
 
 public sealed record MyEntity(Guid Id, string Value);
 
@@ -171,3 +224,5 @@ public sealed record DictEntity(Guid Id, Dictionary<Guid, HashSet<Guid>> GuidDic
 
 public sealed record NestedEntity(Guid Id);
 public sealed record SelectDict(Guid Id, Dictionary<Guid, NestedEntity[]> Dict);
+
+
