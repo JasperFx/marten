@@ -5,6 +5,7 @@ using System.Reflection;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
+using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Marten.Linq.Parsing.Operators;
 using Marten.Linq.SqlGeneration.Filters;
@@ -28,7 +29,7 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
         if (parent == null) throw new ArgumentNullException(nameof(parent));
 
         Member = member;
-        MemberType = member.GetMemberType();
+        MemberType = member is ElementMember m ? m.ReflectedType : member.GetMemberType();
 
         JsonPathSegment = MemberName = member.ToJsonKey(casing);
         RawLocator = TypedLocator = $"{parent.RawLocator} ->> '{MemberName}'";
