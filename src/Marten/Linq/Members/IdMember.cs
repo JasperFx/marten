@@ -83,5 +83,5 @@ internal class IdMember: IQueryableMember, IComparableMember
         throw new NotSupportedException();
     }
 
-    string IQueryableMember.LocatorForIncludedDocumentId => throw new NotImplementedException();
+    string IQueryableMember.LocatorForIncludedDocumentId => "d.id";
 }
