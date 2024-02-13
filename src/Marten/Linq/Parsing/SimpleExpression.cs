@@ -54,6 +54,10 @@ internal class SimpleExpression: ExpressionVisitor
                 {
                     Visit(expression);
                 }
+                catch (BadLinqExpressionException)
+                {
+                    throw;
+                }
                 catch (Exception e)
                 {
                     throw new BadLinqExpressionException($"Whoa pardner, Marten could not parse '{expression}' with the SimpleExpression construct", e);
