@@ -80,18 +80,18 @@ public interface IProjectionDaemon: IDisposable
     /// <summary>
     ///     Starts a single projection shard by name
     /// </summary>
-    /// <param name="shardName"></param>
+    /// <param name="shardName">The full identity of the desired shard. Example 'Trip:All'</param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task StartShard(string shardName, CancellationToken token);
+    Task StartAgentAsync(string shardName, CancellationToken token);
 
     /// <summary>
     ///     Stops a single projection shard by name
     /// </summary>
-    /// <param name="shardName"></param>
+    /// <param name="shardName">The full identity of the desired shard. Example 'Trip:All'</param>
     /// <param name="ex"></param>
     /// <returns></returns>
-    Task StopAsync(string shardName, Exception? ex = null);
+    Task StopAgentAsync(string shardName, Exception? ex = null);
 
     /// <summary>
     ///     Starts all known projections shards
@@ -133,4 +133,125 @@ public interface IProjectionDaemon: IDisposable
     /// </summary>
     /// <param name="shardName"></param>
     void EjectPausedShard(string shardName);
+
+    /* START OLD STUFF *****************************************/
+
+
+
+
+
+
+    /// <summary>
+    ///     Rebuilds a single projection by projection name inline.
+    ///     Will timeout if a shard takes longer than 5 minutes.
+    /// </summary>
+    /// <param name="projectionName"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task RebuildProjection(string projectionName, CancellationToken token);
+
+
+    /// <summary>
+    ///     Rebuilds a single projection by projection type inline.
+    ///     Will timeout if a shard takes longer than 5 minutes.
+    /// </summary>
+    /// <typeparam name="TView">Projection view type</typeparam>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task RebuildProjection<TView>(CancellationToken token);
+
+    /// <summary>
+    ///     Rebuilds a single projection by projection type inline.
+    ///     Will timeout if a shard takes longer than 5 minutes.
+    /// </summary>
+    /// <param name="projectionType">The projection type</param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task RebuildProjection(Type projectionType, CancellationToken token);
+
+    /// <summary>
+    ///     Rebuilds a single projection by projection name inline
+    /// </summary>
+    /// <param name="projectionType">The projection type</param>
+    /// <param name="shardTimeout"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task RebuildProjection(Type projectionType, TimeSpan shardTimeout, CancellationToken token);
+
+    /// <summary>
+    ///     Rebuilds a single projection by projection name inline
+    /// </summary>
+    /// <param name="projectionName"></param>
+    /// <param name="shardTimeout"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task RebuildProjection(string projectionName, TimeSpan shardTimeout, CancellationToken token);
+
+
+    /// <summary>
+    ///     Rebuilds a single projection by projection type inline
+    /// </summary>
+    /// <typeparam name="TView">Projection view type</typeparam>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task RebuildProjection<TView>(TimeSpan shardTimeout, CancellationToken token);
+
+    /// <summary>
+    ///     Starts a single projection shard by name
+    /// </summary>
+    /// <param name="shardName"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Prefer StartAgentAsync() instead")]
+    Task StartShard(string shardName, CancellationToken token);
+
+    /// <summary>
+    ///     Stops a single projection shard by name
+    /// </summary>
+    /// <param name="shardName"></param>
+    /// <param name="ex"></param>
+    /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Prefer StopAgentAsync() instead")]
+    Task StopShard(string shardName, Exception? ex = null);
+
+    /// <summary>
+    ///     Starts all known projections shards
+    /// </summary>
+    /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Prefer StartAllAsync() instead")]
+    Task StartAllShards();
+
+    /// <summary>
+    ///     Stops all known projection shards
+    /// </summary>
+    /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Prefer StopAllAsync() instead")]
+    Task StopAll();
+
+    /// <summary>
+    ///     Starts the daemon high water detection. This is called
+    ///     automatically by any of the Start***() or Rebuild****()
+    ///     methods
+    /// </summary>
+    /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Prefer StartHighWaterDetectionAsync() instead")]
+    Task StartDaemon();
+
+
+    [Obsolete("Will be removed in 8.0. Prefer PauseHighWaterAgentAsync()")]
+    Task PauseHighWaterAgent();
+
+    /// <summary>
+    /// Starts the underlying "high water agent" running if it is not already running. This is an advanced usage
+    /// that's handled automatically for the most part by Marten
+    /// </summary>
+    /// <returns></returns>
+    Task StartHighWaterDetectionAsync();
+
+    /// <summary>
+    /// Manually stop the "high water agent" inside of this daemon. This is an advanced usage
+    /// that's handled automatically for the most part by Marten
+    /// </summary>
+    /// <returns></returns>
+    Task PauseHighWaterAgentAsync();
 }

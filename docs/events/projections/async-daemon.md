@@ -341,10 +341,10 @@ public static async Task UseAsyncDaemon(IDocumentStore store, CancellationToken 
     await daemon.WaitForNonStaleData(5.Minutes());
 
     // Start a single projection shard
-    await daemon.StartShard("shard name", cancellation);
+    await daemon.StartAgentAsync("shard name", cancellation);
 
     // Or change your mind and stop the shard you just started
-    await daemon.StopAsync("shard name");
+    await daemon.StopAgentAsync("shard name");
 
     // No, shut them all down!
     await daemon.StopAllAsync();

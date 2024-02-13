@@ -122,7 +122,7 @@ internal class ProjectionHost: IProjectionHost
 
         foreach (var shard in shards)
         {
-            await daemon.StartShard(shard.Name.Identity, _cancellation.Token).ConfigureAwait(false);
+            await daemon.StartAgentAsync(shard.Name.Identity, _cancellation.Token).ConfigureAwait(false);
         }
     }
 

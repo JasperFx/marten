@@ -146,7 +146,7 @@ public class basic_async_daemon_tests: DaemonContext
 
         await daemon.Tracker.WaitForHighWaterMark(NumberOfEvents);
 
-        await daemon.StopAsync("Trip:All");
+        await daemon.StopAgentAsync("Trip:All");
 
         daemon.StatusFor("Trip:All")
             .ShouldBe(AgentStatus.Stopped);
