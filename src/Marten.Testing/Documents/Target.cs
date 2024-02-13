@@ -11,7 +11,10 @@ public enum Colors
 {
     Red,
     Blue,
-    Green
+    Green,
+    Purple,
+    Yellow,
+    Orange
 }
 
 public class Target
