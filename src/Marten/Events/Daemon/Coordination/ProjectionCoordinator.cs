@@ -249,7 +249,7 @@ public class ProjectionCoordinator : IProjectionCoordinator
         try
         {
             await _resilience.ExecuteAsync<DaemonShardName>(
-                static (x, t) => new ValueTask(x.Daemon.StartShard(x.Name.Identity, t)),
+                static (x, t) => new ValueTask(x.Daemon.StartAgentAsync(x.Name.Identity, t)),
                 new DaemonShardName(daemon, name), stoppingToken).ConfigureAwait(false);
         }
         catch (Exception e)
