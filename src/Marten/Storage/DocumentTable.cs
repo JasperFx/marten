@@ -46,6 +46,8 @@ internal class DocumentTable: Table
         AddIfActive(_mapping.Metadata.LastModifiedBy);
         AddIfActive(_mapping.Metadata.Headers);
 
+        AddIfActive(_mapping.Metadata.Revision);
+
         foreach (var field in mapping.DuplicatedFields.Where(x => !x.OnlyForSearching))
         {
             AddColumn(new DuplicatedFieldColumn(field));

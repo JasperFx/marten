@@ -24,6 +24,7 @@ public abstract class MetadataColumn: TableColumn
     protected MetadataColumn(string name, string type, Type dotNetType): base(name, type)
     {
         DotNetType = dotNetType;
+        Enabled = false;
     }
 
     public Type DotNetType { get; }

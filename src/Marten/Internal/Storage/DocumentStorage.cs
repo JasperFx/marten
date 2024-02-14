@@ -93,6 +93,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         }
 
         UseOptimisticConcurrency = document.UseOptimisticConcurrency;
+        UseNumericRevisions = document.UseNumericRevisions;
 
 
         _setter = LambdaBuilder.Setter<T, TId>(document.IdMember)!;
@@ -103,6 +104,8 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
         HardDeleteFragment = new HardDelete(this);
     }
+
+    public bool UseNumericRevisions { get;  }
 
     public ISelectClause SelectClauseWithDuplicatedFields { get; }
 
