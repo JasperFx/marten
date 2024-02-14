@@ -96,6 +96,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         var storage = StorageFor<T>();
         storage.Store(this, entity, revision);
         var op = storage.Upsert(entity, this, TenantId);
+        if (op is IRevisionedOperation r) r.Revision = revision;
         _workTracker.Add(op);
     }
 
@@ -353,6 +354,11 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
                 storage.Store(this, entity, versioned.Version);
                 return;
             }
+        }
+        else if (entity is IRevisioned revisioned && revisioned.Version != 0)
+        {
+            storage.Store(this, entity, revisioned.Version);
+            return;
         }
 
         // Put it in the identity map -- if necessary

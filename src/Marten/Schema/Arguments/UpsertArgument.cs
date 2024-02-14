@@ -173,7 +173,6 @@ END
     {
         var rawMemberType = _members.Last().GetRawMemberType();
 
-
         var dbTypeString = rawMemberType.IsArray
             ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
             : Constant.ForEnum(DbType).Usage;

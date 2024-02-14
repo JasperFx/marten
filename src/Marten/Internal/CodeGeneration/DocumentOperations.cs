@@ -21,7 +21,7 @@ internal class DocumentOperations
         IdentityMapSelector = new SelectorBuilder(mapping, StorageStyle.IdentityMap).BuildType(assembly);
         DirtyCheckingSelector = new SelectorBuilder(mapping, StorageStyle.DirtyTracking).BuildType(assembly);
 
-        if (mapping.UseOptimisticConcurrency)
+        if (mapping.UseOptimisticConcurrency || mapping.UseNumericRevisions)
         {
             Overwrite = new DocumentFunctionOperationBuilder(mapping, mapping.Schema.Overwrite,
                     OperationRole.Update, options)

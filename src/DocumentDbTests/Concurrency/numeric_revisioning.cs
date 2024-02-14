@@ -1,4 +1,6 @@
 using System;
+using System.Threading.Tasks;
+using Castle.Components.DictionaryAdapter;
 using Marten.Metadata;
 using Marten.Schema;
 using Marten.Testing.Documents;
@@ -10,6 +12,10 @@ namespace DocumentDbTests.Concurrency;
 
 public class numeric_revisioning: OneOffConfigurationsContext
 {
+    public numeric_revisioning()
+    {
+    }
+
     [Fact]
     public void use_numeric_revisions_is_off_by_default()
     {
@@ -46,7 +52,36 @@ public class numeric_revisioning: OneOffConfigurationsContext
         mapping.UseNumericRevisions.ShouldBeTrue();
         mapping.Metadata.Revision.Member.Name.ShouldBe("Version");
     }
+
+    [Fact]
+    public async Task happy_path_insert()
+    {
+        var doc = new RevisionedDoc { Name = "Tim" };
+        theSession.Insert(doc);
+        await theSession.SaveChangesAsync();
+
+        var loaded = await theSession.LoadAsync<RevisionedDoc>(doc.Id);
+        loaded.Version.ShouldBe(1);
+
+        doc.Version.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task fetch_document_metadata()
+    {
+        var doc = new RevisionedDoc { Name = "Tim" };
+        theSession.Insert(doc);
+        await theSession.SaveChangesAsync();
+
+        var metadata = await theSession.MetadataForAsync(doc);
+        metadata.CurrentRevision.ShouldBe(1);
+    }
+
+
+
 }
+
+
 
 public class RevisionedDoc: IRevisioned
 {

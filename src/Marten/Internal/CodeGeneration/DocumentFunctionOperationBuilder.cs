@@ -78,6 +78,17 @@ internal class DocumentFunctionOperationBuilder
             }
         }
 
+        void applyRevisionToDocument()
+        {
+            if (_mapping.Metadata.Revision.Member != null)
+            {
+                sync.Frames.SetMemberValue(_mapping.Metadata.Revision.Member, "Revision", _mapping.DocumentType,
+                    type);
+                async.Frames.SetMemberValue(_mapping.Metadata.Revision.Member, "Revision", _mapping.DocumentType,
+                    type);
+            }
+        }
+
         if (_mapping.UseOptimisticConcurrency)
         {
             async.AsyncMode = AsyncMode.AsyncTask;
@@ -95,9 +106,27 @@ internal class DocumentFunctionOperationBuilder
             return;
         }
 
+        if (_mapping.UseNumericRevisions)
+        {
+            async.AsyncMode = AsyncMode.AsyncTask;
+            async.Frames.CodeAsync("BLOCK:if (await postprocessRevisionAsync({0}, {1}, {2}))",
+                Use.Type<DbDataReader>(), Use.Type<IList<Exception>>(), Use.Type<CancellationToken>());
+            sync.Frames.Code("BLOCK:if (postprocessRevision({0}, {1}))", Use.Type<DbDataReader>(),
+                Use.Type<IList<Exception>>());
+
+
+            applyRevisionToDocument();
+
+            async.Frames.Code("END");
+            sync.Frames.Code("END");
+
+            return;
+        }
+
         sync.Frames.Code("storeVersion();");
         async.Frames.Code("storeVersion();");
         applyVersionToDocument();
+
 
         if (_role == OperationRole.Update)
         {
