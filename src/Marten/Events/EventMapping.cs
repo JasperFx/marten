@@ -10,6 +10,7 @@ using JasperFx.Core.Reflection;
 using Marten.Events.Archiving;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq;
 using Marten.Linq.Members;
@@ -262,6 +263,11 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
     }
 
     void IDocumentStorage<T>.Store(IMartenSession session, T document, Guid? version)
+    {
+        throw new NotSupportedException();
+    }
+
+    public void Store(IMartenSession session, T document, int revision)
     {
         throw new NotSupportedException();
     }

@@ -243,6 +243,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     public abstract void Store(IMartenSession session, T document);
     public abstract void Store(IMartenSession session, T document, Guid? version);
+    public abstract void Store(IMartenSession session, T document, int revision);
     public abstract void Eject(IMartenSession session, T document);
     public abstract IStorageOperation Update(T document, IMartenSession session, string tenant);
     public abstract IStorageOperation Insert(T document, IMartenSession session, string tenant);

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Model;
 using Marten.Internal.Operations;
+using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.Members;
 using Marten.Linq.SqlGeneration;
@@ -90,6 +91,7 @@ public interface IDocumentStorage<T>: IDocumentStorage where T : notnull
 
     void Store(IMartenSession session, T document);
     void Store(IMartenSession session, T document, Guid? version);
+    void Store(IMartenSession session, T document, int revision);
 
     void Eject(IMartenSession session, T document);
 
@@ -105,6 +107,7 @@ public interface IDocumentStorage<T>: IDocumentStorage where T : notnull
     void EjectById(IMartenSession session, object id);
     void RemoveDirtyTracker(IMartenSession session, object id);
     IDeletion HardDeleteForDocument(T document, string tenantId);
+
 }
 
 public interface IDocumentStorage<T, TId>: IDocumentStorage<T> where T : notnull where TId : notnull

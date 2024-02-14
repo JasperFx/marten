@@ -96,6 +96,17 @@ public interface IDocumentOperations: IQuerySession
     void UpdateExpectedVersion<T>(T entity, Guid version) where T : notnull;
 
     /// <summary>
+    /// Explicitly marks a document as needing to be updated and supplies the
+    /// *new* revision for the purpose of optimistic versioning checks. This operation
+    /// will be rejected if the revision in the database is greater or equal to the given
+    /// revision
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="entity"></param>
+    /// <param name="revision"></param>
+    void UpdateRevision<T>(T entity, int revision) where T : notnull;
+
+    /// <summary>
     ///     Store an enumerable of potentially mixed documents
     /// </summary>
     /// <param name="documents"></param>
