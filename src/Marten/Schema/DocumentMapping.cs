@@ -162,6 +162,8 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
     public bool UseOptimisticConcurrency { get; set; }
 
+    public bool UseNumericRevisions { get; set; }
+
     public IList<IndexDefinition> Indexes { get; } = new List<IndexDefinition>();
 
     public IList<ForeignKey> ForeignKeys { get; } = new List<ForeignKey>();
@@ -713,6 +715,12 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         {
             throw new InvalidDocumentException(
                 $"{DocumentType.FullName} must be configured for soft deletion to map soft deleted metadata.");
+        }
+
+        if (UseNumericRevisions && UseOptimisticConcurrency)
+        {
+            throw new InvalidDocumentException(
+                $"{DocumentType.FullNameInCode()} cannot be configured with UseNumericRevision and UseOptimisticConcurrency. Choose one or the other");
         }
 
         var idField = new IdMember(IdMember);
