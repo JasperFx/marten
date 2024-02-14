@@ -35,6 +35,21 @@ public abstract class LightweightDocumentStorage<T, TId>: DocumentStorage<T, TId
         }
     }
 
+    public sealed override void Store(IMartenSession session, T document, int revision)
+    {
+        var id = AssignIdentity(document, session.TenantId, session.Database);
+        session.MarkAsAddedForStorage(id, document);
+
+        if (revision > 0)
+        {
+            session.Versions.StoreRevision<T, TId>(id, revision);
+        }
+        else
+        {
+            session.Versions.ClearRevision<T, TId>(id);
+        }
+    }
+
     public sealed override void Eject(IMartenSession session, T document)
     {
         // Nothing!

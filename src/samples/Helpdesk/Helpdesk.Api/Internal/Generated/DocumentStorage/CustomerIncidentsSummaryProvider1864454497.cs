@@ -8,6 +8,7 @@ using Marten.Schema.Arguments;
 using Npgsql;
 using System;
 using System.Collections.Generic;
+using Marten.Internal.Sessions;
 using Weasel.Core;
 using Weasel.Postgresql;
 
@@ -80,8 +81,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: UpsertCustomerIncidentsSummaryOperation1864454497
-    
-    
+
+
     // START: InsertCustomerIncidentsSummaryOperation1864454497
     public class InsertCustomerIncidentsSummaryOperation1864454497 : Marten.Internal.Operations.StorageOperation<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>
     {
@@ -149,8 +150,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: InsertCustomerIncidentsSummaryOperation1864454497
-    
-    
+
+
     // START: UpdateCustomerIncidentsSummaryOperation1864454497
     public class UpdateCustomerIncidentsSummaryOperation1864454497 : Marten.Internal.Operations.StorageOperation<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>
     {
@@ -218,8 +219,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: UpdateCustomerIncidentsSummaryOperation1864454497
-    
-    
+
+
     // START: QueryOnlyCustomerIncidentsSummarySelector1864454497
     public class QueryOnlyCustomerIncidentsSummarySelector1864454497 : Marten.Internal.CodeGeneration.DocumentSelectorWithOnlySerializer, Marten.Linq.Selectors.ISelector<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary>
     {
@@ -254,8 +255,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: QueryOnlyCustomerIncidentsSummarySelector1864454497
-    
-    
+
+
     // START: LightweightCustomerIncidentsSummarySelector1864454497
     public class LightweightCustomerIncidentsSummarySelector1864454497 : Marten.Internal.CodeGeneration.DocumentSelectorWithVersions<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>, Marten.Linq.Selectors.ISelector<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary>
     {
@@ -294,8 +295,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: LightweightCustomerIncidentsSummarySelector1864454497
-    
-    
+
+
     // START: IdentityMapCustomerIncidentsSummarySelector1864454497
     public class IdentityMapCustomerIncidentsSummarySelector1864454497 : Marten.Internal.CodeGeneration.DocumentSelectorWithIdentityMap<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>, Marten.Linq.Selectors.ISelector<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary>
     {
@@ -338,8 +339,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: IdentityMapCustomerIncidentsSummarySelector1864454497
-    
-    
+
+
     // START: DirtyTrackingCustomerIncidentsSummarySelector1864454497
     public class DirtyTrackingCustomerIncidentsSummarySelector1864454497 : Marten.Internal.CodeGeneration.DocumentSelectorWithDirtyChecking<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>, Marten.Linq.Selectors.ISelector<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary>
     {
@@ -384,8 +385,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: DirtyTrackingCustomerIncidentsSummarySelector1864454497
-    
-    
+
+
     // START: QueryOnlyCustomerIncidentsSummaryDocumentStorage1864454497
     public class QueryOnlyCustomerIncidentsSummaryDocumentStorage1864454497 : Marten.Internal.Storage.QueryOnlyDocumentStorage<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>
     {
@@ -413,7 +414,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -426,7 +427,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -439,7 +440,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -464,8 +465,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: QueryOnlyCustomerIncidentsSummaryDocumentStorage1864454497
-    
-    
+
+
     // START: LightweightCustomerIncidentsSummaryDocumentStorage1864454497
     public class LightweightCustomerIncidentsSummaryDocumentStorage1864454497 : Marten.Internal.Storage.LightweightDocumentStorage<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>
     {
@@ -493,7 +494,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -506,7 +507,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -519,7 +520,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -544,8 +545,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: LightweightCustomerIncidentsSummaryDocumentStorage1864454497
-    
-    
+
+
     // START: IdentityMapCustomerIncidentsSummaryDocumentStorage1864454497
     public class IdentityMapCustomerIncidentsSummaryDocumentStorage1864454497 : Marten.Internal.Storage.IdentityMapDocumentStorage<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>
     {
@@ -573,7 +574,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -586,7 +587,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -599,7 +600,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -624,8 +625,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: IdentityMapCustomerIncidentsSummaryDocumentStorage1864454497
-    
-    
+
+
     // START: DirtyTrackingCustomerIncidentsSummaryDocumentStorage1864454497
     public class DirtyTrackingCustomerIncidentsSummaryDocumentStorage1864454497 : Marten.Internal.Storage.DirtyCheckedDocumentStorage<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>
     {
@@ -653,7 +654,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -666,7 +667,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -679,7 +680,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -704,8 +705,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: DirtyTrackingCustomerIncidentsSummaryDocumentStorage1864454497
-    
-    
+
+
     // START: CustomerIncidentsSummaryBulkLoader1864454497
     public class CustomerIncidentsSummaryBulkLoader1864454497 : Marten.Internal.CodeGeneration.BulkLoader<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary, System.Guid>
     {
@@ -778,8 +779,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: CustomerIncidentsSummaryBulkLoader1864454497
-    
-    
+
+
     // START: CustomerIncidentsSummaryProvider1864454497
     public class CustomerIncidentsSummaryProvider1864454497 : Marten.Internal.Storage.DocumentProvider<Helpdesk.Api.Incidents.GetCustomerIncidentsSummary.CustomerIncidentsSummary>
     {
@@ -794,7 +795,7 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: CustomerIncidentsSummaryProvider1864454497
-    
-    
+
+
 }
 

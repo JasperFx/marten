@@ -86,6 +86,20 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         }
     }
 
+    public sealed override void Store(IMartenSession session, T document, int revision)
+    {
+        store(session, document, out var id);
+
+        if (revision != 0)
+        {
+            session.Versions.StoreRevision<T, TId>(id, revision);
+        }
+        else
+        {
+            session.Versions.ClearRevision<T, TId>(id);
+        }
+    }
+
     public sealed override IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session)
     {
         var list = preselectLoadedDocuments(ids, session, out var command);

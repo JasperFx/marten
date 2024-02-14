@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal.Operations;
+using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
@@ -135,6 +136,11 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
     public void Store(IMartenSession session, T document, Guid? version)
     {
         _parent.Store(session, document, version);
+    }
+
+    public void Store(IMartenSession session, T document, int revision)
+    {
+        _parent.Store(session, document, revision);
     }
 
     public void Eject(IMartenSession session, T document)

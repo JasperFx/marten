@@ -89,6 +89,16 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         _workTracker.Add(op);
     }
 
+    public void UpdateRevision<T>(T entity, int revision) where T : notnull
+    {
+        assertNotDisposed();
+
+        var storage = StorageFor<T>();
+        storage.Store(this, entity, revision);
+        var op = storage.Upsert(entity, this, TenantId);
+        _workTracker.Add(op);
+    }
+
     public void Insert<T>(IEnumerable<T> entities) where T : notnull
     {
         Insert(entities.ToArray());
