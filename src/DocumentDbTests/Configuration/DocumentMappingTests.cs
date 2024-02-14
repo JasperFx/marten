@@ -689,6 +689,19 @@ public class DocumentMappingTests
         DocumentMapping.For<Customer>().DatabaseSchemaName.ShouldBe("organization");
     }
 
+    [Fact]
+    public void validate_should_fail_if_using_both_optimistic_concurrency_and_revisioning()
+    {
+        var mapping = DocumentMapping.For<Target>();
+        mapping.UseNumericRevisions = true;
+        mapping.UseOptimisticConcurrency = true;
+
+        var ex = Should.Throw<InvalidDocumentException>(() => mapping.CompileAndValidate());
+        ex.Message.ShouldContain("cannot be configured with UseNumericRevision and UseOptimisticConcurrency. Choose one or the other", Case.Insensitive);
+    }
+
+
+
     public class FieldId
     {
         public string id;

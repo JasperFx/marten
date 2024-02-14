@@ -18,8 +18,7 @@ internal class RevisionColumn: MetadataColumn<int>, ISelectableColumn
         DocumentMapping mapping)
     {
         var versionPosition = index; //mapping.IsHierarchy() ? 3 : 2;
-
-
+        
         async.Frames.CodeAsync(
             $"var version = await reader.GetFieldValueAsync<int>({versionPosition}, token);");
         sync.Frames.Code($"var version = reader.GetFieldValue<int>({versionPosition});");
