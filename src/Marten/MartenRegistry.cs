@@ -610,6 +610,24 @@ public class MartenRegistry
         }
 
         /// <summary>
+        /// Directs Marten to use the numeric revisioning for this specific
+        /// document type
+        /// </summary>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> UseNumericRevisions(bool enabled)
+        {
+            _builder.Alter = m =>
+            {
+                m.UseNumericRevisions = enabled;
+                if (enabled)
+                {
+                    m.Metadata.Revision.Enabled = true;
+                }
+            };
+            return this;
+        }
+
+        /// <summary>
         ///     Directs Marten to apply "soft deletes" to this document type
         /// </summary>
         /// <returns></returns>
