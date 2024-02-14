@@ -87,4 +87,81 @@ public class VersionTrackerTests
         theTracker.VersionFor<StringDoc, string>(stringDoc.Id)
             .ShouldBe(stringVersion);
     }
+
+    /*** START Revisions ******/
+
+    [Fact]
+    public void can_retrieve_revision_dictionary_for_document_type()
+    {
+        var dict = theTracker.RevisionsFor<IntDoc, int>();
+        var dict2 = theTracker.RevisionsFor<IntDoc, int>();
+        var dict3 = theTracker.RevisionsFor<IntDoc, int>();
+
+        dict.ShouldNotBeNull();
+        dict.ShouldBeSameAs(dict2);
+        dict.ShouldBeSameAs(dict3);
+    }
+
+    [Fact]
+    public void can_get_revision_when_it_is_empty_always_null()
+    {
+        theTracker.RevisionFor<StringDoc, string>(stringDoc.Id)
+            .ShouldBeNull();
+
+        theTracker.RevisionFor<IntDoc, int>(intDoc.Id)
+            .ShouldBeNull();
+
+        theTracker.RevisionFor<LongDoc, long>(longDoc.Id)
+            .ShouldBeNull();
+
+        theTracker.RevisionFor<GuidDoc, Guid>(guidDoc.Id)
+            .ShouldBeNull();
+    }
+
+    [Fact]
+    public void store_and_retrieve_revision()
+    {
+        var intVersion = 3;
+        var stringVersion = 4;
+        theTracker.StoreRevision<IntDoc, int>(intDoc.Id, intVersion);
+        theTracker.StoreRevision<StringDoc, string>(stringDoc.Id, stringVersion);
+
+        theTracker.RevisionFor<IntDoc, int>(intDoc.Id)
+            .ShouldBe(intVersion);
+
+        theTracker.RevisionFor<StringDoc, string>(stringDoc.Id)
+            .ShouldBe(stringVersion);
+    }
+
+    [Fact]
+    public void override_the_revision()
+    {
+        var intVersion = 3;
+        var intVersion2 = 11;
+        theTracker.StoreRevision<IntDoc, int>(intDoc.Id, intVersion);
+        theTracker.StoreRevision<IntDoc, int>(intDoc.Id, intVersion2);
+
+        theTracker.RevisionFor<IntDoc, int>(intDoc.Id)
+            .ShouldBe(intVersion2);
+
+    }
+
+    [Fact]
+    public void store_and_then_clear_revision()
+    {
+        var intVersion = 12;
+        var stringVersion = 25;
+        theTracker.StoreRevision<IntDoc, int>(intDoc.Id, intVersion);
+        theTracker.StoreRevision<StringDoc, string>(stringDoc.Id, stringVersion);
+
+        theTracker.ClearRevision<IntDoc, int>(intDoc.Id);
+
+        theTracker.RevisionFor<IntDoc, int>(intDoc.Id)
+            .ShouldBeNull();
+
+        // Not cleared
+        theTracker.RevisionFor<StringDoc, string>(stringDoc.Id)
+            .ShouldBe(stringVersion);
+    }
+
 }
