@@ -1,6 +1,7 @@
 using JasperFx.CodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
+using Marten.Schema.Arguments;
 using Marten.Storage.Metadata;
 
 namespace Marten.Storage;
@@ -13,23 +14,20 @@ internal class RevisionColumn: MetadataColumn<int>, ISelectableColumn
         DefaultExpression = "0";
     }
 
+    internal override UpsertArgument ToArgument()
+    {
+        return new RevisionArgument();
+    }
+
     public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async,
         GeneratedMethod sync, int index,
         DocumentMapping mapping)
     {
         var versionPosition = index; //mapping.IsHierarchy() ? 3 : 2;
-        
+
         async.Frames.CodeAsync(
             $"var version = await reader.GetFieldValueAsync<int>({versionPosition}, token);");
         sync.Frames.Code($"var version = reader.GetFieldValue<int>({versionPosition});");
-
-        if (storageStyle != StorageStyle.QueryOnly)
-        {
-            // Store it
-            sync.Frames.Code("_versions[id] = version;");
-            async.Frames.Code("_versions[id] = version;");
-        }
-
 
         if (Member != null)
         {
@@ -45,6 +43,6 @@ internal class RevisionColumn: MetadataColumn<int>, ISelectableColumn
             return true;
         }
 
-        return storageStyle != StorageStyle.QueryOnly && mapping.UseOptimisticConcurrency;
+        return storageStyle != StorageStyle.QueryOnly && mapping.UseNumericRevisions;
     }
 }

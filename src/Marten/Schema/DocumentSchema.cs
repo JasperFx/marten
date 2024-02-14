@@ -27,7 +27,7 @@ internal class DocumentSchema: IFeatureSchema
         Insert = new InsertFunction(_mapping);
         Update = new UpdateFunction(_mapping);
 
-        if (_mapping.UseOptimisticConcurrency)
+        if (_mapping.UseOptimisticConcurrency || _mapping.UseNumericRevisions)
         {
             Overwrite = new OverwriteFunction(_mapping);
         }

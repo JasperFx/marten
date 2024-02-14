@@ -111,7 +111,7 @@ internal class DocumentStorageBuilder
 
     private void buildStorageOperationMethods(DocumentOperations operations, GeneratedType type)
     {
-        if (_mapping.UseOptimisticConcurrency)
+        if (_mapping.UseOptimisticConcurrency || _mapping.UseNumericRevisions)
         {
             buildConditionalOperationBasedOnConcurrencyChecks(type, operations, "Upsert");
             buildOperationMethod(type, operations, "Insert");
@@ -126,7 +126,7 @@ internal class DocumentStorageBuilder
         }
 
 
-        if (_mapping.UseOptimisticConcurrency)
+        if (_mapping.UseOptimisticConcurrency || _mapping.UseNumericRevisions)
         {
             buildOperationMethod(type, operations, "Overwrite");
         }

@@ -77,6 +77,10 @@ internal class UpsertFunction: Function
         {
             Arguments.Add(new CurrentVersionArgument());
         }
+        else if (mapping.UseNumericRevisions)
+        {
+            Arguments.Add(new RevisionArgument());
+        }
 
         if (mapping.TenancyStyle == TenancyStyle.Conjoined)
         {
