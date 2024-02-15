@@ -18,7 +18,33 @@ internal class UpdateFunction: UpsertFunction
             ? $"UPDATE {_tableName} SET {updates} and id = docId;"
             : $"UPDATE {_tableName} SET {updates} where id = docId;";
 
-        if (_mapping.Metadata.Version.Enabled)
+        if (_mapping.Metadata.Revision.Enabled)
+        {
+            writer.WriteLine($@"
+CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS INTEGER LANGUAGE plpgsql {
+    securityDeclaration
+} AS $function$
+DECLARE
+  final_version INTEGER;
+  current_version INTEGER;
+BEGIN
+
+  if revision = 1 then
+    SELECT mt_version FROM {_tableName.QualifiedName} into current_version WHERE id = docId {_andTenantWhereClause};
+    if current_version is not null then
+      revision = current_version + 1;
+    end if;
+  end if;
+
+  {statement}
+
+  SELECT mt_version FROM {_tableName} into final_version WHERE id = docId {_andTenantWhereClause};
+  RETURN final_version;
+END;
+$function$;
+");
+        }
+        else if (_mapping.Metadata.Version.Enabled)
         {
             writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {
