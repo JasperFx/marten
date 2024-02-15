@@ -171,6 +171,10 @@ internal class DocumentStorageBuilder
             tenantDeclaration = ", tenant";
         }
 
+        var versionRetriever = _mapping.UseNumericRevisions
+            ? "null"
+            : $"{{1}}.Versions.ForType<{_mapping.DocumentType.FullNameInCode()}, {_mapping.IdType.FullNameInCode()}>()";
+
 
         if (_mapping.IsHierarchy())
         {
@@ -179,7 +183,7 @@ internal class DocumentStorageBuilder
 return new {assembly.Namespace}.{operationType.TypeName}
 (
     {{0}}, Identity({{0}}),
-    {{1}}.Versions.ForType<{_mapping.DocumentType.FullNameInCode()}, {_mapping.IdType.FullNameInCode()}>(),
+    {versionRetriever},
     {{2}}
     {tenantDeclaration}
 );"
@@ -192,7 +196,7 @@ return new {assembly.Namespace}.{operationType.TypeName}
 return new {assembly.Namespace}.{operationType.TypeName}
 (
     {{0}}, Identity({{0}}),
-    {{1}}.Versions.ForType<{_mapping.DocumentType.FullNameInCode()}, {_mapping.IdType.FullNameInCode()}>(),
+    {versionRetriever},
     {{2}}
     {tenantDeclaration}
 );"

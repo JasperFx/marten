@@ -132,6 +132,11 @@ internal class UpsertFunction: Function
 
         var whereClauses = new List<string>();
 
+        if (Arguments.Any(x => x is RevisionArgument) && !_disableConcurrency)
+        {
+            whereClauses.Add($"revision > {_tableName.QualifiedName}.{SchemaConstants.VersionColumn}");
+        }
+
         if (Arguments.Any(x => x is CurrentVersionArgument) && !_disableConcurrency)
         {
             whereClauses.Add($"{_tableName.QualifiedName}.{SchemaConstants.VersionColumn} = current_version");
@@ -166,7 +171,16 @@ CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS INTEGER
 } AS $function$
 DECLARE
   final_version INTEGER;
+  current_version INTEGER;
 BEGIN
+
+if revision = 1 then
+  SELECT mt_version FROM {_tableName.QualifiedName} into current_version WHERE id = docId {_andTenantWhereClause};
+  if current_version is not null then
+    revision = current_version + 1;
+  end if;
+end if;
+
 INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
   ON CONFLICT ({_primaryKeyFields})
   DO UPDATE SET {updates};
