@@ -13,7 +13,37 @@ internal class OverwriteFunction: UpsertFunction
         string inserts, string valueList,
         string updates)
     {
-        writer.WriteLine($@"
+        if (_mapping.Metadata.Revision.Enabled)
+        {
+            writer.WriteLine($@"
+CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS INTEGER LANGUAGE plpgsql {
+    securityDeclaration
+} AS $function$
+DECLARE
+  final_version INTEGER;
+  current_version INTEGER;
+BEGIN
+
+  if revision = 1 then
+    SELECT mt_version FROM {_tableName.QualifiedName} into current_version WHERE id = docId {_andTenantWhereClause};
+    if current_version is not null then
+      revision = current_version + 1;
+    end if;
+  end if;
+
+  INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
+  ON CONFLICT ({_primaryKeyFields})
+  DO UPDATE SET {updates};
+
+  SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId {_andTenantWhereClause};
+  RETURN final_version;
+END;
+$function$;
+");
+        }
+        else
+        {
+            writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {
     securityDeclaration
 } AS $function$
@@ -29,5 +59,8 @@ INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
 END;
 $function$;
 ");
+        }
+
+
     }
 }

@@ -96,7 +96,25 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         var storage = StorageFor<T>();
         storage.Store(this, entity, revision);
         var op = storage.Upsert(entity, this, TenantId);
-        if (op is IRevisionedOperation r) r.Revision = revision;
+        if (op is IRevisionedOperation r)
+        {
+            r.Revision = revision;
+        }
+        _workTracker.Add(op);
+    }
+
+    public void TryUpdateRevision<T>(T entity, int revision)
+    {
+        assertNotDisposed();
+
+        var storage = StorageFor<T>();
+        storage.Store(this, entity, revision);
+        var op = storage.Upsert(entity, this, TenantId);
+        if (op is IRevisionedOperation r)
+        {
+            r.Revision = revision;
+            r.IgnoreConcurrencyViolation = true;
+        }
         _workTracker.Add(op);
     }
 
@@ -319,7 +337,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         {
             var storage = StorageFor<T>();
 
-            if (Concurrency == ConcurrencyChecks.Disabled && storage.UseOptimisticConcurrency)
+            if (Concurrency == ConcurrencyChecks.Disabled && (storage.UseOptimisticConcurrency || storage.UseNumericRevisions))
             {
                 foreach (var entity in entities)
                 {

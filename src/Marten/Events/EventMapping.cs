@@ -199,6 +199,7 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
 
     public IQueryableMemberCollection QueryMembers { get; }
     public ISelectClause SelectClauseWithDuplicatedFields => this;
+    public bool UseNumericRevisions { get; } = false;
 
     public void TruncateDocumentStorage(IMartenDatabase database)
     {
