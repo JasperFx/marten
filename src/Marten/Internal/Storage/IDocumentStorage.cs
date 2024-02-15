@@ -53,6 +53,8 @@ public interface IDocumentStorage: ISelectClause
     /// Necessary (maybe) for usage within the temporary tables when using Includes()
     /// </summary>
     ISelectClause SelectClauseWithDuplicatedFields { get; }
+
+    bool UseNumericRevisions { get; }
 }
 
 internal class CreateFromDocumentMapping: Variable

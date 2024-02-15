@@ -18,6 +18,7 @@ namespace Marten.Internal.Operations;
 public interface IRevisionedOperation
 {
     int Revision { get; set; }
+    bool IgnoreConcurrencyViolation { get; set; }
 }
 
 public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExceptionTransform, IRevisionedOperation
@@ -41,6 +42,8 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
 
     // Using 1 as the default so that inserts "just work"
     public int Revision { get; set; } = 1;
+
+    public bool IgnoreConcurrencyViolation { get; set; }
 
     public TId Id => _id;
 
@@ -123,15 +126,18 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
 
     protected bool postprocessRevision(DbDataReader reader, IList<Exception> exceptions)
     {
-        var success = false;
+        if (IgnoreConcurrencyViolation) return true;
+
+        var success = true;
         if (reader.Read())
         {
             var revision = reader.GetFieldValue<int>(0);
-            if (Revision > 0) // don't care about zero
+            if (Revision > 1) // don't care about zero or 1
             {
                 if (revision > Revision)
                 {
                     exceptions.Add(new ConcurrencyException(typeof(T), _id));
+                    success = false;
                 }
                 else
                 {
@@ -147,6 +153,8 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
 
     protected async Task<bool> postprocessRevisionAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
+        if (IgnoreConcurrencyViolation) return true;
+
         var success = true;
         if (await reader.ReadAsync(token).ConfigureAwait(false))
         {

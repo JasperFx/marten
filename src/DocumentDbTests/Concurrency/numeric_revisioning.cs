@@ -4,6 +4,7 @@ using Castle.Components.DictionaryAdapter;
 using Marten.Exceptions;
 using Marten.Metadata;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -127,7 +128,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
     }
 
     [Fact]
-    public async Task optimistic_concurrency_failure()
+    public async Task optimistic_concurrency_failure_with_update_revision()
     {
         var doc1 = new RevisionedDoc { Name = "Tim" };
         theSession.Store(doc1);
@@ -151,6 +152,349 @@ public class numeric_revisioning: OneOffConfigurationsContext
             await theSession.SaveChangesAsync();
         });
     }
+
+    [Fact]
+    public async Task optimistic_concurrency_miss_with_try_update_revision()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        doc1.Name = "Bill";
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        doc1.Name = "Dru";
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Tron" };
+        theSession.UpdateRevision(doc2, doc1.Version + 1);
+        await theSession.SaveChangesAsync();
+
+        // No failure
+        theSession.TryUpdateRevision(doc2, 2);
+        await theSession.SaveChangesAsync();
+
+        (await theSession.LoadAsync<RevisionedDoc>(doc1.Id)).Name.ShouldBe("Tron");
+    }
+
+    [Fact]
+    public async Task update_just_overwrites_and_increments_version()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        doc1.Name = "Bill";
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        doc1.Name = "Dru";
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong", Version = 2};
+        theSession.UpdateRevision(doc2, doc1.Version + 1);
+        await theSession.SaveChangesAsync();
+
+        doc2.Name = "Last";
+        theSession.Update(doc2);
+        await theSession.SaveChangesAsync();
+
+        var doc3 = await theSession.LoadAsync<RevisionedDoc>(doc1.Id);
+        doc3.Name.ShouldBe("Last");
+        doc3.Version.ShouldBe(5);
+
+        (await theSession.MetadataForAsync(doc1)).CurrentRevision.ShouldBe(5);
+
+
+    }
+
+    [Fact]
+    public async Task update_revision_and_jumping_multiples()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        doc1.Name = "Bill";
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        doc1.Name = "Dru";
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Tron", Version = 2};
+        theSession.UpdateRevision(doc2, 10);
+        await theSession.SaveChangesAsync();
+
+        (await theSession.LoadAsync<RevisionedDoc>(doc1.Id)).Name.ShouldBe("Tron");
+        (await theSession.MetadataForAsync(doc2)).CurrentRevision.ShouldBe(10);
+    }
+
+    [Fact]
+    public async Task overwrite_increments_version()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        doc1.Name = "Bill";
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        doc1.Name = "Dru";
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong", Version = 2};
+        theSession.UpdateRevision(doc2, doc1.Version + 1);
+        await theSession.SaveChangesAsync();
+
+        using var session2 =
+            theStore.OpenSession(new SessionOptions { ConcurrencyChecks = ConcurrencyChecks.Disabled });
+
+
+        doc2.Name = "Last";
+        session2.Store(doc2);
+        await session2.SaveChangesAsync();
+
+        var doc3 = await session2.LoadAsync<RevisionedDoc>(doc1.Id);
+        doc3.Name.ShouldBe("Last");
+        doc3.Version.ShouldBe(5);
+
+        (await session2.MetadataForAsync(doc1)).CurrentRevision.ShouldBe(5);
+
+
+    }
+
+
+
+    /********** START SYNC *******************/
+
+    [Fact]
+    public void happy_path_insert_sync()
+    {
+        var doc = new RevisionedDoc { Name = "Tim" };
+        theSession.Insert(doc);
+        theSession.SaveChanges();
+
+        var loaded = theSession.Load<RevisionedDoc>(doc.Id);
+        loaded.Version.ShouldBe(1);
+
+        doc.Version.ShouldBe(1);
+    }
+
+    [Fact]
+    public void fetch_document_metadata_sync()
+    {
+        var doc = new RevisionedDoc { Name = "Tim" };
+        theSession.Insert(doc);
+        theSession.SaveChanges();
+
+        var metadata = theSession.MetadataFor(doc);
+        metadata.CurrentRevision.ShouldBe(1);
+    }
+
+    [Fact]
+    public void bulk_inserts_sync()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        var doc2 = new RevisionedDoc { Name = "Molly" };
+        var doc3 = new RevisionedDoc { Name = "JD" };
+
+        theStore.BulkInsertDocuments(new[] { doc1, doc2, doc3 });
+
+        (theSession.MetadataFor(doc1)).CurrentRevision.ShouldBe(1);
+        (theSession.MetadataFor(doc2)).CurrentRevision.ShouldBe(1);
+        (theSession.MetadataFor(doc3)).CurrentRevision.ShouldBe(1);
+
+        (theSession.Load<RevisionedDoc>(doc1.Id)).ShouldNotBeNull();
+        (theSession.Load<RevisionedDoc>(doc2.Id)).ShouldNotBeNull();
+        (theSession.Load<RevisionedDoc>(doc3.Id)).ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void store_with_no_revision_from_start_succeeds_with_revision_1_sync()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        (theSession.MetadataFor(doc1)).CurrentRevision.ShouldBe(1);
+        (theSession.Load<RevisionedDoc>(doc1.Id)).Version.ShouldBe(1);
+    }
+
+    [Fact]
+    public void store_twice_with_no_version_can_override_sync()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+        theSession.Store(new RevisionedDoc{Id = doc1.Id, Name = "Brad"});
+        theSession.SaveChanges();
+
+        (theSession.Load<RevisionedDoc>(doc1.Id)).Name.ShouldBe("Brad");
+    }
+
+    [Fact]
+    public void optimistic_concurrency_failure_with_update_revision_sync()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        doc1.Name = "Bill";
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        doc1.Name = "Dru";
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong" };
+        theSession.UpdateRevision(doc2, doc1.Version + 1);
+        theSession.SaveChanges();
+
+        Should.Throw<ConcurrencyException>(async () =>
+        {
+            theSession.UpdateRevision(doc2, 2);
+            theSession.SaveChanges();
+        });
+    }
+
+    [Fact]
+    public void optimistic_concurrency_miss_with_try_update_revision_sync()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        doc1.Name = "Bill";
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        doc1.Name = "Dru";
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Tron" };
+        theSession.UpdateRevision(doc2, doc1.Version + 1);
+        theSession.SaveChanges();
+
+        // No failure
+        theSession.TryUpdateRevision(doc2, 2);
+        theSession.SaveChanges();
+
+        (theSession.Load<RevisionedDoc>(doc1.Id)).Name.ShouldBe("Tron");
+    }
+
+    [Fact]
+    public void update_just_overwrites_and_increments_version_sync()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        doc1.Name = "Bill";
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        doc1.Name = "Dru";
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong", Version = 2};
+        theSession.UpdateRevision(doc2, doc1.Version + 1);
+        theSession.SaveChanges();
+
+        doc2.Name = "Last";
+        theSession.Update(doc2);
+        theSession.SaveChanges();
+
+        var doc3 = theSession.Load<RevisionedDoc>(doc1.Id);
+        doc3.Name.ShouldBe("Last");
+        doc3.Version.ShouldBe(5);
+
+        (theSession.MetadataFor(doc1)).CurrentRevision.ShouldBe(5);
+
+
+    }
+
+    [Fact]
+    public void update_revision_and_jumping_multiples_sync()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        doc1.Name = "Bill";
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        doc1.Name = "Dru";
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Tron", Version = 2};
+        theSession.UpdateRevision(doc2, 10);
+        theSession.SaveChanges();
+
+        (theSession.Load<RevisionedDoc>(doc1.Id)).Name.ShouldBe("Tron");
+        (theSession.MetadataFor(doc2)).CurrentRevision.ShouldBe(10);
+    }
+
+    [Fact]
+    public void overwrite_increments_version_sync()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        doc1.Name = "Bill";
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        doc1.Name = "Dru";
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong", Version = 2};
+        theSession.UpdateRevision(doc2, doc1.Version + 1);
+        theSession.SaveChanges();
+
+        using var session2 =
+            theStore.OpenSession(new SessionOptions { ConcurrencyChecks = ConcurrencyChecks.Disabled });
+
+
+        doc2.Name = "Last";
+        session2.Store(doc2);
+        session2.SaveChanges();
+
+        var doc3 = session2.Load<RevisionedDoc>(doc1.Id);
+        doc3.Name.ShouldBe("Last");
+        doc3.Version.ShouldBe(5);
+
+        (session2.MetadataFor(doc1)).CurrentRevision.ShouldBe(5);
+
+
+    }
+
+
+
 }
 
 
