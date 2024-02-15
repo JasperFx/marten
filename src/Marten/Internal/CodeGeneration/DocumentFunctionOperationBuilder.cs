@@ -147,6 +147,13 @@ internal class DocumentFunctionOperationBuilder
     private void buildConfigureMethod(GeneratedType type)
     {
         var method = type.MethodFor("ConfigureParameters");
+
+        if (_mapping.UseNumericRevisions && _mapping.Metadata.Revision.Member != null)
+        {
+            method.Frames.Code(
+                $"{nameof(IRevisionedOperation.Revision)} = document.{_mapping.Metadata.Revision.Member.Name};");
+        }
+
         var parameters = method.Arguments[0];
 
         var arguments = _function.OrderedArguments();
