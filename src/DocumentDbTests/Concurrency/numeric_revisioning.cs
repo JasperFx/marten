@@ -64,7 +64,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
     {
         var doc = new RevisionedDoc { Name = "Tim" };
         theSession.Insert(doc);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         var loaded = await theSession.LoadAsync<RevisionedDoc>(doc.Id);
         loaded.Version.ShouldBe(1);
@@ -77,7 +77,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
     {
         var doc = new RevisionedDoc { Name = "Tim" };
         theSession.Insert(doc);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         var metadata = await theSession.MetadataForAsync(doc);
         metadata.CurrentRevision.ShouldBe(1);
@@ -106,7 +106,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
     {
         var doc1 = new RevisionedDoc { Name = "Tim" };
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         (await theSession.MetadataForAsync(doc1)).CurrentRevision.ShouldBe(1);
         (await theSession.LoadAsync<RevisionedDoc>(doc1.Id)).Version.ShouldBe(1);
@@ -117,12 +117,12 @@ public class numeric_revisioning: OneOffConfigurationsContext
     {
         var doc1 = new RevisionedDoc { Name = "Tim" };
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
 
         theSession.Logger = new TestOutputMartenLogger(_output);
         theSession.Store(new RevisionedDoc{Id = doc1.Id, Name = "Brad"});
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         (await theSession.LoadAsync<RevisionedDoc>(doc1.Id)).Name.ShouldBe("Brad");
     }
@@ -132,24 +132,26 @@ public class numeric_revisioning: OneOffConfigurationsContext
     {
         var doc1 = new RevisionedDoc { Name = "Tim" };
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         doc1.Name = "Bill";
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         doc1.Name = "Dru";
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong" };
         theSession.UpdateRevision(doc2, doc1.Version + 1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
 
         await Should.ThrowAsync<ConcurrencyException>(async () =>
         {
             theSession.UpdateRevision(doc2, 2);
-            await theSession.SaveChangesAsync();
+            theSession.SaveChanges();
         });
     }
 
@@ -158,23 +160,23 @@ public class numeric_revisioning: OneOffConfigurationsContext
     {
         var doc1 = new RevisionedDoc { Name = "Tim" };
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         doc1.Name = "Bill";
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         doc1.Name = "Dru";
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Tron" };
         theSession.UpdateRevision(doc2, doc1.Version + 1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         // No failure
         theSession.TryUpdateRevision(doc2, 2);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         (await theSession.LoadAsync<RevisionedDoc>(doc1.Id)).Name.ShouldBe("Tron");
     }
@@ -184,27 +186,31 @@ public class numeric_revisioning: OneOffConfigurationsContext
     {
         var doc1 = new RevisionedDoc { Name = "Tim" };
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         doc1.Name = "Bill";
+        doc1.Version = 0;
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         doc1.Name = "Dru";
+        doc1.Version = 0;
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         theSession.Logger = new TestOutputMartenLogger(_output);
 
-        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong", Version = 2};
+        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong", Version = 0};
         theSession.UpdateRevision(doc2, doc1.Version + 1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         doc2.Name = "Last";
+        doc2.Version = 0;
         theSession.Update(doc2);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         var doc3 = await theSession.LoadAsync<RevisionedDoc>(doc1.Id);
+        doc2.Version = 0;
         doc3.Name.ShouldBe("Last");
         doc3.Version.ShouldBe(5);
 
@@ -218,19 +224,19 @@ public class numeric_revisioning: OneOffConfigurationsContext
     {
         var doc1 = new RevisionedDoc { Name = "Tim" };
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         doc1.Name = "Bill";
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         doc1.Name = "Dru";
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Tron", Version = 2};
         theSession.UpdateRevision(doc2, 10);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         (await theSession.LoadAsync<RevisionedDoc>(doc1.Id)).Name.ShouldBe("Tron");
         (await theSession.MetadataForAsync(doc2)).CurrentRevision.ShouldBe(10);
@@ -239,29 +245,34 @@ public class numeric_revisioning: OneOffConfigurationsContext
     [Fact]
     public async Task overwrite_increments_version()
     {
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
         var doc1 = new RevisionedDoc { Name = "Tim" };
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         doc1.Name = "Bill";
+        doc1.Version = 0;
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         doc1.Name = "Dru";
+        doc1.Version = 0;
         theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
+        theSession.SaveChanges();
 
         var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong", Version = 2};
         theSession.UpdateRevision(doc2, doc1.Version + 1);
-        await theSession.SaveChangesAsync();
+        theSession.SaveChanges();
 
         using var session2 =
             theStore.OpenSession(new SessionOptions { ConcurrencyChecks = ConcurrencyChecks.Disabled });
 
 
+        session2.Logger = new TestOutputMartenLogger(_output);
+
         doc2.Name = "Last";
+        doc2.Version = 0;
         session2.Store(doc2);
         await session2.SaveChangesAsync();
 
@@ -406,30 +417,32 @@ public class numeric_revisioning: OneOffConfigurationsContext
         theSession.SaveChanges();
 
         doc1.Name = "Bill";
+        doc1.Version = 0;
         theSession.Store(doc1);
         theSession.SaveChanges();
 
         doc1.Name = "Dru";
+        doc1.Version = 0;
         theSession.Store(doc1);
         theSession.SaveChanges();
 
         theSession.Logger = new TestOutputMartenLogger(_output);
 
-        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong", Version = 2};
+        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong", Version = 0};
         theSession.UpdateRevision(doc2, doc1.Version + 1);
         theSession.SaveChanges();
 
         doc2.Name = "Last";
+        doc2.Version = 0;
         theSession.Update(doc2);
         theSession.SaveChanges();
 
         var doc3 = theSession.Load<RevisionedDoc>(doc1.Id);
+        doc2.Version = 0;
         doc3.Name.ShouldBe("Last");
         doc3.Version.ShouldBe(5);
 
         (theSession.MetadataFor(doc1)).CurrentRevision.ShouldBe(5);
-
-
     }
 
     [Fact]
@@ -458,19 +471,21 @@ public class numeric_revisioning: OneOffConfigurationsContext
     [Fact]
     public void overwrite_increments_version_sync()
     {
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
         var doc1 = new RevisionedDoc { Name = "Tim" };
         theSession.Store(doc1);
         theSession.SaveChanges();
 
         doc1.Name = "Bill";
+        doc1.Version = 0;
         theSession.Store(doc1);
         theSession.SaveChanges();
 
         doc1.Name = "Dru";
+        doc1.Version = 0;
         theSession.Store(doc1);
         theSession.SaveChanges();
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong", Version = 2};
         theSession.UpdateRevision(doc2, doc1.Version + 1);
@@ -480,7 +495,10 @@ public class numeric_revisioning: OneOffConfigurationsContext
             theStore.OpenSession(new SessionOptions { ConcurrencyChecks = ConcurrencyChecks.Disabled });
 
 
+        session2.Logger = new TestOutputMartenLogger(_output);
+
         doc2.Name = "Last";
+        doc2.Version = 0;
         session2.Store(doc2);
         session2.SaveChanges();
 
@@ -489,7 +507,6 @@ public class numeric_revisioning: OneOffConfigurationsContext
         doc3.Version.ShouldBe(5);
 
         (session2.MetadataFor(doc1)).CurrentRevision.ShouldBe(5);
-
 
     }
 
