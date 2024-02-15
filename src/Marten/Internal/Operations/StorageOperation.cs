@@ -147,15 +147,16 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
 
     protected async Task<bool> postprocessRevisionAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
-        var success = false;
+        var success = true;
         if (await reader.ReadAsync(token).ConfigureAwait(false))
         {
             var revision = await reader.GetFieldValueAsync<int>(0, token).ConfigureAwait(false);
-            if (Revision > 0) // don't care about zero
+            if (Revision > 1) // don't care about zero or 1
             {
                 if (revision > Revision)
                 {
                     exceptions.Add(new ConcurrencyException(typeof(T), _id));
+                    success = false;
                 }
                 else
                 {
