@@ -12,6 +12,7 @@ internal class RevisionColumn: MetadataColumn<int>, ISelectableColumn
     {
         AllowNulls = false;
         DefaultExpression = "0";
+        Enabled = false;
     }
 
     internal override UpsertArgument ToArgument()
