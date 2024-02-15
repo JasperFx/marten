@@ -24,6 +24,8 @@ public class VersionAttribute: MartenAttribute
                 mapping.UseNumericRevisions = true;
                 mapping.Metadata.Revision.Enabled = true;
                 mapping.Metadata.Revision.Member = member;
+
+                mapping.Metadata.Version.Enabled = false;
                 return;
             }
 
