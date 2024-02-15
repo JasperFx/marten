@@ -1,19 +1,24 @@
 using System;
 using System.Threading.Tasks;
 using Castle.Components.DictionaryAdapter;
+using Marten.Exceptions;
 using Marten.Metadata;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace DocumentDbTests.Concurrency;
 
 public class numeric_revisioning: OneOffConfigurationsContext
 {
-    public numeric_revisioning()
+    private readonly ITestOutputHelper _output;
+
+    public numeric_revisioning(ITestOutputHelper output)
     {
+        _output = output;
     }
 
     [Fact]
@@ -106,8 +111,46 @@ public class numeric_revisioning: OneOffConfigurationsContext
         (await theSession.LoadAsync<RevisionedDoc>(doc1.Id)).Version.ShouldBe(1);
     }
 
+    [Fact]
+    public async Task store_twice_with_no_version_can_override()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
 
 
+        theSession.Logger = new TestOutputMartenLogger(_output);
+        theSession.Store(new RevisionedDoc{Id = doc1.Id, Name = "Brad"});
+        await theSession.SaveChangesAsync();
+
+        (await theSession.LoadAsync<RevisionedDoc>(doc1.Id)).Name.ShouldBe("Brad");
+    }
+
+    [Fact]
+    public async Task optimistic_concurrency_failure()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        doc1.Name = "Bill";
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        doc1.Name = "Dru";
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong" };
+        theSession.UpdateRevision(doc2, doc1.Version + 1);
+        await theSession.SaveChangesAsync();
+
+        await Should.ThrowAsync<ConcurrencyException>(async () =>
+        {
+            theSession.UpdateRevision(doc2, 2);
+            await theSession.SaveChangesAsync();
+        });
+    }
 }
 
 
