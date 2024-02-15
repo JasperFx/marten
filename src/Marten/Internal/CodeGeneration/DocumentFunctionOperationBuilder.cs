@@ -151,7 +151,7 @@ internal class DocumentFunctionOperationBuilder
         if (_mapping.UseNumericRevisions && _mapping.Metadata.Revision.Member != null)
         {
             method.Frames.Code(
-                $"{nameof(IRevisionedOperation.Revision)} = document.{_mapping.Metadata.Revision.Member.Name};");
+                $"if (document.{_mapping.Metadata.Revision.Member.Name} > 0 && {nameof(IRevisionedOperation.Revision)} == 1) {nameof(IRevisionedOperation.Revision)} = document.{_mapping.Metadata.Revision.Member.Name};");
         }
 
         var parameters = method.Arguments[0];
