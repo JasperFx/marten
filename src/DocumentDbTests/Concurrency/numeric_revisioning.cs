@@ -77,6 +77,35 @@ public class numeric_revisioning: OneOffConfigurationsContext
         metadata.CurrentRevision.ShouldBe(1);
     }
 
+    [Fact]
+    public async Task bulk_inserts()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        var doc2 = new RevisionedDoc { Name = "Molly" };
+        var doc3 = new RevisionedDoc { Name = "JD" };
+
+        await theStore.BulkInsertDocumentsAsync(new[] { doc1, doc2, doc3 });
+
+        (await theSession.MetadataForAsync(doc1)).CurrentRevision.ShouldBe(1);
+        (await theSession.MetadataForAsync(doc2)).CurrentRevision.ShouldBe(1);
+        (await theSession.MetadataForAsync(doc3)).CurrentRevision.ShouldBe(1);
+
+        (await theSession.LoadAsync<RevisionedDoc>(doc1.Id)).ShouldNotBeNull();
+        (await theSession.LoadAsync<RevisionedDoc>(doc2.Id)).ShouldNotBeNull();
+        (await theSession.LoadAsync<RevisionedDoc>(doc3.Id)).ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task store_with_no_revision_from_start_succeeds_with_revision_1()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        (await theSession.MetadataForAsync(doc1)).CurrentRevision.ShouldBe(1);
+        (await theSession.LoadAsync<RevisionedDoc>(doc1.Id)).Version.ShouldBe(1);
+    }
+
 
 
 }

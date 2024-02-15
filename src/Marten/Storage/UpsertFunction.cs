@@ -158,7 +158,27 @@ internal class UpsertFunction: Function
         string inserts,
         string valueList, string updates)
     {
-        if (_mapping.Metadata.Version.Enabled)
+        if (_mapping.Metadata.Revision.Enabled)
+        {
+            writer.WriteLine($@"
+CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS INTEGER LANGUAGE plpgsql {
+    securityDeclaration
+} AS $function$
+DECLARE
+  final_version INTEGER;
+BEGIN
+INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
+  ON CONFLICT ({_primaryKeyFields})
+  DO UPDATE SET {updates};
+
+  SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId {_andTenantWhereClause};
+  RETURN final_version;
+END;
+$function$;
+");
+
+        }
+        else if (_mapping.Metadata.Version.Enabled)
         {
             writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {
