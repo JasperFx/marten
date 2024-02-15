@@ -22,5 +22,17 @@ internal class VersionedPolicy: IDocumentPolicy
             mapping.Metadata.Revision.Enabled = true;
             mapping.Metadata.Revision.Member = mapping.DocumentType.GetProperty(nameof(IRevisioned.Version));
         }
+
+        if (mapping.UseOptimisticConcurrency)
+        {
+            mapping.Metadata.Version.Enabled = true;
+            mapping.Metadata.Revision.Enabled = false;
+        }
+
+        if (mapping.UseNumericRevisions)
+        {
+            mapping.Metadata.Version.Enabled = false;
+            mapping.Metadata.Revision.Enabled = true;
+        }
     }
 }
