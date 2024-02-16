@@ -54,6 +54,11 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
         _versioning = new AggregateVersioning<T>(scope);
 
         RegisterPublishedType(typeof(T));
+
+        if (typeof(T).TryGetAttribute<ProjectionVersionAttribute>(out var att))
+        {
+            ProjectionVersion = att.Version;
+        }
     }
 
     internal IList<Type> DeleteEvents { get; } = new List<Type>();

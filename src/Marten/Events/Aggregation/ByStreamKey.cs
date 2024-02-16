@@ -11,7 +11,7 @@ namespace Marten.Events.Aggregation;
 ///     Slicer strategy by stream key (string identified streams)
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
-public class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>
+public class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>, ISingleStreamSlicer
 {
     public ValueTask<IReadOnlyList<EventSlice<TDoc, string>>> SliceInlineActions(IQuerySession querySession,
         IEnumerable<StreamAction> streams)

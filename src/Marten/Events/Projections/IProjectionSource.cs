@@ -27,6 +27,12 @@ public interface IProjectionSource: IReadOnlyProjectionData
         CancellationToken cancellationToken);
 
     IProjection Build(DocumentStore store);
+
+    /// <summary>
+    /// Specify that this projection is a non 1 version of the original projection definition to opt
+    /// into Marten's parallel blue/green deployment of this projection.
+    /// </summary>
+    public uint ProjectionVersion { get; set; }
 }
 
 /// <summary>

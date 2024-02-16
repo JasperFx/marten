@@ -7,7 +7,7 @@ using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Weasel.Postgresql;
 
-namespace Marten.Events;
+namespace Marten.Events.Fetching;
 
 internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class
 {
@@ -28,7 +28,7 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
     public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate,
         CancellationToken cancellation = default)
     {
-        var selector = await _identityStrategy.EnsureAggregateStorageExists<TDoc>(session, cancellation)
+        var selector = await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation)
             .ConfigureAwait(false);
 
         if (forUpdate)
@@ -36,9 +36,10 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
             await session.BeginTransactionAsync(cancellation).ConfigureAwait(false);
         }
 
-        var command = _identityStrategy.BuildCommandForReadingVersionForStream(id, forUpdate);
-        var builder = new CommandBuilder(command);
-        builder.Append(";");
+        var builder = new BatchBuilder{TenantId = session.TenantId};
+        _identityStrategy.BuildCommandForReadingVersionForStream(builder, id, forUpdate);
+
+        builder.StartNewCommand();
 
         var handler = _identityStrategy.BuildEventQueryHandler(id, selector);
         handler.ConfigureCommand(builder, session);
@@ -80,12 +81,14 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
         long expectedStartingVersion,
         CancellationToken cancellation = default)
     {
-        var selector = await _identityStrategy.EnsureAggregateStorageExists<TDoc>(session, cancellation)
+
+        var selector = await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation)
             .ConfigureAwait(false);
 
-        var command = _identityStrategy.BuildCommandForReadingVersionForStream(id, false);
-        var builder = new CommandBuilder(command);
-        builder.Append(";");
+        var builder = new BatchBuilder{TenantId = session.TenantId};
+        _identityStrategy.BuildCommandForReadingVersionForStream(builder, id, false);
+
+        builder.StartNewCommand();
 
         var handler = _identityStrategy.BuildEventQueryHandler(id, selector);
         handler.ConfigureCommand(builder, session);

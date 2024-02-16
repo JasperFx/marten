@@ -15,7 +15,7 @@ public class AsyncProjectionShard
 {
     public AsyncProjectionShard(string shardName, IProjectionSource source)
     {
-        Name = new ShardName(source.ProjectionName, shardName);
+        Name = new ShardName(source.ProjectionName, shardName, source.ProjectionVersion);
         Source = source;
     }
 

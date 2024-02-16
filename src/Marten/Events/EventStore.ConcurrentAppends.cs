@@ -4,53 +4,50 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Storage;
-using Npgsql;
-using Weasel.Core;
+using Weasel.Postgresql;
 
 namespace Marten.Events;
 
 internal partial class EventStore
 {
-    public NpgsqlCommand BuildCommandForReadingVersionForStream(Guid streamId, bool forUpdate)
+    public void BuildCommandForReadingVersionForStream(ICommandBuilder builder, Guid streamId, bool forUpdate)
     {
-        var cmd = _store.Events.TenancyStyle switch
+        builder.Append("select version from ");
+        builder.Append(_store.Events.DatabaseSchemaName);
+        builder.Append('.');
+        builder.Append("mt_streams where id = ");
+        builder.AppendParameter(streamId);
+
+        if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)
         {
-            TenancyStyle.Conjoined => new NpgsqlCommand(
-                    $"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id and tenant_id = :tenant_id")
-                .With("id", streamId)
-                .With("tenant_id", _session.TenantId),
-            _ => new NpgsqlCommand(
-                    $"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
-                .With("id", streamId)
-        };
+            builder.Append(" and tenant_id = ");
+            builder.AppendParameter(builder.TenantId);
+        }
 
         if (forUpdate)
         {
-            cmd.CommandText += " for update";
+            builder.Append(" for update");
         }
-
-        return cmd;
     }
 
-    public NpgsqlCommand BuildCommandForReadingVersionForStream(string streamKey, bool forUpdate)
+    public void BuildCommandForReadingVersionForStream(ICommandBuilder builder, string streamKey, bool forUpdate)
     {
-        var cmd = _store.Events.TenancyStyle switch
+        builder.Append("select version from ");
+        builder.Append(_store.Events.DatabaseSchemaName);
+        builder.Append('.');
+        builder.Append("mt_streams where id = ");
+        builder.AppendParameter(streamKey);
+
+        if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)
         {
-            TenancyStyle.Conjoined => new NpgsqlCommand(
-                    $"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id and tenant_id = :tenant_id")
-                .With("id", streamKey)
-                .With("tenant_id", _session.TenantId),
-            _ => new NpgsqlCommand(
-                    $"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
-                .With("id", streamKey)
-        };
+            builder.Append(" and tenant_id = ");
+            builder.AppendParameter(builder.TenantId);
+        }
 
         if (forUpdate)
         {
-            cmd.CommandText += " for update";
+            builder.Append(" for update");
         }
-
-        return cmd;
     }
 
 
@@ -124,12 +121,13 @@ internal partial class EventStore
 
     private async Task<long> readVersionFromExistingStream(Guid streamId, bool forUpdate, CancellationToken token)
     {
-        var cmd = BuildCommandForReadingVersionForStream(streamId, forUpdate);
+        var builder = new CommandBuilder{TenantId = _session.TenantId};
+        BuildCommandForReadingVersionForStream(builder, streamId, forUpdate);
 
         long version = 0;
         try
         {
-            await using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            await using var reader = await _session.ExecuteReaderAsync(builder.Compile(), token).ConfigureAwait(false);
             if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 version = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
@@ -156,12 +154,13 @@ internal partial class EventStore
     private async Task<long> readVersionFromExistingStream(string streamKey, bool forUpdate,
         CancellationToken token)
     {
-        var cmd = BuildCommandForReadingVersionForStream(streamKey, forUpdate);
+        var builder = new CommandBuilder { TenantId = _session.TenantId };
+        BuildCommandForReadingVersionForStream(builder, streamKey, forUpdate);
 
         long version = 0;
         try
         {
-            await using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            await using var reader = await _session.ExecuteReaderAsync(builder.Compile(), token).ConfigureAwait(false);
             if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 version = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
