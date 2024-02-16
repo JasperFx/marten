@@ -88,9 +88,9 @@ The configuration above creates an index like this:
 CREATE INDEX mt_doc_user_idx_first_namelast_name ON public.mt_doc_user USING btree (((data ->> 'FirstName'::text)), ((data ->> 'LastName'::text)))
 ```
 
-## Multi-Column Indexes
+## Multi-Column Indexes <Badge type="tip" text="7.0" />
 
-As of Marten V7, you can specify multi-field computed indexes through anonymous types like so:
+You can specify multi-field computed indexes through anonymous types like so:
 
 <!-- snippet: sample_multi_column_index -->
 <a id='snippet-sample_multi_column_index'></a>

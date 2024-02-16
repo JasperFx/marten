@@ -1,10 +1,13 @@
 :root {
-  --vp-c-brand: #ac8464;
-  --vp-c-brand-light: #b38c6c;
-  --vp-c-brand-dark: #ac8464;
-  --vp-home-hero-name-color: var(--vp-c-brand); 
-  --vp-button-brand-bg: var(--vp-c-brand);
-  --vp-button-brand-border: #c9b8a9;
-  --vp-button-brand-hover-border: var(--vp-button-brand-border);
-  --vp-button-brand-hover-bg: var(--vp-c-brand-light);
+  --marten-brown-light: #b38c6c;
+  --marten-brown-dark: #ac8464;
+  --marten-brown: #ac8464;
+  --marten-brown-soft: rgba(196, 164, 132, 0.14);
+
+  --vp-c-brand-1: var(--marten-brown);
+  --vp-c-brand-2: var(--marten-brown-dark);
+  --vp-c-brand-3: var(--marten-brown-light);
+  --vp-c-brand-soft: var(--marten-brown-soft);
+  --vp-home-hero-name-color: var(--vp-c-brand-1); 
+
 }
