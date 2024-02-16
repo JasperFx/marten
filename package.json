@@ -14,14 +14,14 @@
   },
   "devDependencies": {
     "@mermaid-js/mermaid-mindmap": "^9.3.0",
-    "chai": "^4.3.7",
+    "chai": "^4",
     "lodash": "^4.17.21",
-    "mermaid": "^8",
+    "mermaid": "^10",
     "mocha": "^10.2.0",
-    "netlify-cli": "^15.0.2",
+    "netlify-cli": "^17.13.1",
     "npm-run-all": "^4.1.5",
-    "vitepress": "1.0.0-alpha.75",
-    "vitepress-plugin-mermaid": "2.0.10",
-    "vue": "^3.3.1"
+    "vitepress": "1.0.0-rc.36",
+    "vitepress-plugin-mermaid": "2.0.16",
+    "vue": "^3.4.10"
   }
 }
