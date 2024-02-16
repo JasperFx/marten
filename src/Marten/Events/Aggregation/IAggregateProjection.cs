@@ -21,4 +21,11 @@ public interface IAggregateProjection // THIS NEEDS TO REMAIN PUBLIC
     bool MatchesAnyDeleteType(StreamAction action);
     bool MatchesAnyDeleteType(IEventSlice slice);
     bool AppliesTo(IEnumerable<Type> eventTypes);
+
+
+    /// <summary>
+    /// Specify that this projection is a non 1 version of the original projection definition to opt
+    /// into Marten's parallel blue/green deployment of this projection.
+    /// </summary>
+    uint ProjectionVersion { get; set; }
 }

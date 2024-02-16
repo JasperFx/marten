@@ -153,4 +153,19 @@ public class AdvancedOperations
 
         return scenario.Execute(ct);
     }
+
+    /// <summary>
+    /// Convenience method to retrieve all valid "ShardName" identities of asynchronous projections
+    /// </summary>
+    /// <returns></returns>
+    public IReadOnlyList<ShardName> AllAsyncProjectionShardNames()
+    {
+        return _store
+            .Options
+            .Projections
+            .All
+            .SelectMany(x => x.AsyncProjectionShards(_store))
+            .Select(x => x.Name)
+            .ToList();
+    }
 }

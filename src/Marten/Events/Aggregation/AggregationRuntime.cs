@@ -10,6 +10,7 @@ using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Exceptions;
+using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Services;
@@ -96,10 +97,11 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
             }
         }
 
+        var lastEvent = slice.Events().LastOrDefault();
         if (aggregate != null)
         {
             Storage.SetIdentity(aggregate, slice.Id);
-            Versioning.TrySetVersion(aggregate, slice.Events().LastOrDefault());
+            Versioning.TrySetVersion(aggregate, lastEvent);
         }
 
         // Delete the aggregate *if* it existed prior to these events
@@ -114,7 +116,14 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
             return;
         }
 
-        session.QueueOperation(Storage.Upsert(aggregate, session, slice.Tenant.TenantId));
+        var storageOperation = Storage.Upsert(aggregate, session, slice.Tenant.TenantId);
+        if (Slicer is ISingleStreamSlicer && lastEvent != null && storageOperation is IRevisionedOperation op)
+        {
+            op.Revision = (int)lastEvent.Version;
+            op.IgnoreConcurrencyViolation = true;
+        }
+
+        session.QueueOperation(storageOperation);
     }
 
     public IAggregateVersioning Versioning { get; set; }
