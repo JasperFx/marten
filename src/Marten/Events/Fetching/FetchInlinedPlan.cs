@@ -7,7 +7,7 @@ using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
 using Weasel.Postgresql;
 
-namespace Marten.Events;
+namespace Marten.Events.Fetching;
 
 internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class
 {
@@ -26,7 +26,7 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
     public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate,
         CancellationToken cancellation = default)
     {
-        await _identityStrategy.EnsureAggregateStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
+        await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
         await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
 
         if (forUpdate)
@@ -34,9 +34,10 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
             await session.BeginTransactionAsync(cancellation).ConfigureAwait(false);
         }
 
-        var command = _identityStrategy.BuildCommandForReadingVersionForStream(id, forUpdate);
-        var builder = new CommandBuilder(command);
-        builder.Append(";");
+        var builder = new BatchBuilder{TenantId = session.TenantId};
+        _identityStrategy.BuildCommandForReadingVersionForStream(builder, id, forUpdate);
+
+        builder.StartNewCommand();
 
         var handler = new LoadByIdHandler<TDoc, TId>(_storage, id);
         handler.ConfigureCommand(builder, session);
@@ -72,12 +73,14 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
     public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id,
         long expectedStartingVersion, CancellationToken cancellation = default)
     {
-        await _identityStrategy.EnsureAggregateStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
+        await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
         await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
 
-        var command = _identityStrategy.BuildCommandForReadingVersionForStream(id, false);
-        var builder = new CommandBuilder(command);
+        var builder = new BatchBuilder { TenantId = session.TenantId };
+        _identityStrategy.BuildCommandForReadingVersionForStream(builder, id, false);
         builder.Append(";");
+
+        builder.StartNewCommand();
 
         var handler = new LoadByIdHandler<TDoc, TId>(_storage, id);
         handler.ConfigureCommand(builder, session);

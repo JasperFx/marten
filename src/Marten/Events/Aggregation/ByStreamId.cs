@@ -8,11 +8,13 @@ using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
 
+public interface ISingleStreamSlicer{}
+
 /// <summary>
 ///     Slicer strategy by stream id (Guid identified streams)
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
-public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>
+public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer
 {
     public ValueTask<IReadOnlyList<EventSlice<TDoc, Guid>>> SliceInlineActions(IQuerySession querySession,
         IEnumerable<StreamAction> streams)

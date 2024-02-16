@@ -6,6 +6,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
+using Marten.Events.Fetching;
 using Marten.Exceptions;
 
 namespace Marten.Events.Projections;
@@ -45,6 +46,8 @@ public class ProjectionOptions: DaemonSettings
     private Lazy<Dictionary<string, AsyncProjectionShard>> _asyncShards;
     private ImHashMap<Type, object> _liveAggregators = ImHashMap<Type, object>.Empty;
 
+    internal readonly IFetchPlanner[] _builtInPlanners = [new InlineFetchPlanner(), new AsyncFetchPlanner(), new LiveFetchPlanner()];
+
     internal ProjectionOptions(StoreOptions options)
     {
         _options = options;
@@ -67,6 +70,23 @@ public class ProjectionOptions: DaemonSettings
         SkipUnknownEvents = true
     };
 
+    internal IEnumerable<IFetchPlanner> allPlanners()
+    {
+        foreach (var planner in FetchPlanners)
+        {
+            yield return planner;
+        }
+
+        foreach (var planner in _builtInPlanners)
+        {
+            yield return planner;
+        }
+    }
+
+    /// <summary>
+    /// Any custom or extended IFetchPlanner strategies for customizing FetchForWriting() behavior
+    /// </summary>
+    public List<IFetchPlanner> FetchPlanners { get; } = new();
 
     internal IList<IProjectionSource> All { get; } = new List<IProjectionSource>();
 
@@ -86,6 +106,12 @@ public class ProjectionOptions: DaemonSettings
         foreach (var kv in _liveAggregators.Enumerate()) yield return kv.Key;
 
         foreach (var projection in All.OfType<IAggregateProjection>()) yield return projection.AggregateType;
+    }
+
+    public bool TryFindAggregate(Type documentType, out IAggregateProjection projection)
+    {
+        projection = All.OfType<IAggregateProjection>().FirstOrDefault(x => x.AggregateType == documentType);
+        return projection != null;
     }
 
     internal IProjection[] BuildInlineProjections(DocumentStore store)

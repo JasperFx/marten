@@ -148,6 +148,7 @@ public interface IProjectionDaemon: IDisposable
     /// <param name="projectionName"></param>
     /// <param name="token"></param>
     /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Prefer RebuildProjectionAsync() overloads")]
     Task RebuildProjection(string projectionName, CancellationToken token);
 
 
@@ -158,6 +159,7 @@ public interface IProjectionDaemon: IDisposable
     /// <typeparam name="TView">Projection view type</typeparam>
     /// <param name="token"></param>
     /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Prefer RebuildProjectionAsync() overloads")]
     Task RebuildProjection<TView>(CancellationToken token);
 
     /// <summary>
@@ -167,6 +169,7 @@ public interface IProjectionDaemon: IDisposable
     /// <param name="projectionType">The projection type</param>
     /// <param name="token"></param>
     /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Prefer RebuildProjectionAsync() overloads")]
     Task RebuildProjection(Type projectionType, CancellationToken token);
 
     /// <summary>
@@ -176,6 +179,7 @@ public interface IProjectionDaemon: IDisposable
     /// <param name="shardTimeout"></param>
     /// <param name="token"></param>
     /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Prefer RebuildProjectionAsync() overloads")]
     Task RebuildProjection(Type projectionType, TimeSpan shardTimeout, CancellationToken token);
 
     /// <summary>
@@ -185,6 +189,7 @@ public interface IProjectionDaemon: IDisposable
     /// <param name="shardTimeout"></param>
     /// <param name="token"></param>
     /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Prefer RebuildProjectionAsync() overloads")]
     Task RebuildProjection(string projectionName, TimeSpan shardTimeout, CancellationToken token);
 
 
@@ -194,6 +199,7 @@ public interface IProjectionDaemon: IDisposable
     /// <typeparam name="TView">Projection view type</typeparam>
     /// <param name="token"></param>
     /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Prefer RebuildProjectionAsync() overloads")]
     Task RebuildProjection<TView>(TimeSpan shardTimeout, CancellationToken token);
 
     /// <summary>

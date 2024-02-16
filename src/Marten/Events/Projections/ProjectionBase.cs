@@ -16,6 +16,12 @@ public abstract class ProjectionBase
     public string? ProjectionName { get; set; }
 
     /// <summary>
+    /// Specify that this projection is a non 1 version of the original projection definition to opt
+    /// into Marten's parallel blue/green deployment of this projection.
+    /// </summary>
+    public uint ProjectionVersion { get; set; } = 1;
+
+    /// <summary>
     ///     The projection lifecycle that governs when this projection is executed
     /// </summary>
     public ProjectionLifecycle Lifecycle { get; internal set; } = ProjectionLifecycle.Async;

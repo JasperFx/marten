@@ -1,0 +1,240 @@
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using JasperFx.Core;
+using Marten.Events.Projections;
+using Marten.Exceptions;
+using Marten.Internal.Sessions;
+using Marten.Internal.Storage;
+using Marten.Linq.QueryHandlers;
+using Marten.Schema;
+using Weasel.Core;
+using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
+
+namespace Marten.Events.Fetching;
+
+internal class AsyncFetchPlanner: IFetchPlanner
+{
+    public bool TryMatch<TDoc, TId>(IDocumentStorage<TDoc, TId> storage, IEventIdentityStrategy<TId> identity, StoreOptions options,
+        out IAggregateFetchPlan<TDoc, TId> plan) where TDoc : class
+    {
+        if (options.Projections.TryFindAggregate(typeof(TDoc), out var projection))
+        {
+            if (projection.Lifecycle == ProjectionLifecycle.Async)
+            {
+                var mapping = options.Storage.FindMapping(typeof(TDoc)) as DocumentMapping;
+                if (mapping != null && mapping.Metadata.Revision.Enabled)
+                {
+                    plan = new FetchAsyncPlan<TDoc, TId>(options.EventGraph, identity, storage);
+                    return true;
+                }
+            }
+        }
+
+        plan = default;
+        return false;
+    }
+}
+
+internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class
+{
+    private readonly EventGraph _events;
+    private readonly IEventIdentityStrategy<TId> _identityStrategy;
+    private readonly IDocumentStorage<TDoc, TId> _storage;
+    private readonly ILiveAggregator<TDoc> _aggregator;
+    private readonly string _versionSelectionSql;
+    private string _initialSql;
+
+    public FetchAsyncPlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy,
+        IDocumentStorage<TDoc, TId> storage)
+    {
+        _events = events;
+        _identityStrategy = identityStrategy;
+        _storage = storage;
+        _aggregator = _events.Options.Projections.AggregatorFor<TDoc>();
+
+        _versionSelectionSql =
+            $" left outer join {storage.TableName.QualifiedName} as a on d.stream_id = a.id where (a.mt_version is NULL or d.version > a.mt_version) and d.stream_id = ";
+    }
+
+    public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate, CancellationToken cancellation = default)
+    {
+        await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
+        await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
+
+        var selector = await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation)
+            .ConfigureAwait(false);
+
+        _initialSql ??=
+            $"select {selector.SelectFields().Select(x => "d." + x).Join(", ")} from {_events.DatabaseSchemaName}.mt_events as d";
+
+        // TODO -- use read only transaction????
+
+        if (forUpdate)
+        {
+            await session.BeginTransactionAsync(cancellation).ConfigureAwait(false);
+        }
+
+        var builder = new BatchBuilder{TenantId = session.TenantId};
+        _identityStrategy.BuildCommandForReadingVersionForStream(builder, id, forUpdate);
+
+        builder.StartNewCommand();
+
+        var loadHandler = new LoadByIdHandler<TDoc, TId>(_storage, id);
+        loadHandler.ConfigureCommand(builder, session);
+
+        builder.StartNewCommand();
+
+        writeEventFetchStatement(id, builder);
+
+        long version = 0;
+        try
+        {
+            var batch = builder.Compile();
+            await using var reader =
+                await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false);
+
+            // Read the latest version
+            if (await reader.ReadAsync(cancellation).ConfigureAwait(false))
+            {
+                version = await reader.GetFieldValueAsync<long>(0, cancellation).ConfigureAwait(false);
+            }
+
+            // Fetch the existing aggregate -- if any!
+            await reader.NextResultAsync(cancellation).ConfigureAwait(false);
+            var document = await loadHandler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+
+            // Read in any events from after the current state of the aggregate
+            await reader.NextResultAsync(cancellation).ConfigureAwait(false);
+            var events = await new ListQueryHandler<IEvent>(null, selector).HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+            document = await _aggregator.BuildAsync(events, session, document, cancellation).ConfigureAwait(false);
+
+            if (document != null)
+            {
+                _storage.SetIdentity(document, id);
+            }
+
+            return version == 0
+                ? _identityStrategy.StartStream(document, session, id, cancellation)
+                : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
+        }
+        catch (Exception e)
+        {
+            if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
+            {
+                throw new StreamLockedException(id, e.InnerException);
+            }
+
+            throw;
+        }
+    }
+
+    private void writeEventFetchStatement(TId id,
+        BatchBuilder builder)
+    {
+        builder.Append(_initialSql);
+        builder.Append(_versionSelectionSql);
+        builder.AppendParameter(id);
+    }
+
+    public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, long expectedStartingVersion,
+        CancellationToken cancellation = default)
+    {
+        await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
+        await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
+
+        var selector = await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation)
+            .ConfigureAwait(false);
+
+        _initialSql ??=
+            $"select {selector.SelectFields().Select(x => "d." + x).Join(", ")} from {_events.DatabaseSchemaName}.mt_events as d";
+
+        // TODO -- use read only transaction????
+
+        var builder = new BatchBuilder{TenantId = session.TenantId};
+        _identityStrategy.BuildCommandForReadingVersionForStream(builder, id, false);
+
+        builder.StartNewCommand();
+
+        var loadHandler = new LoadByIdHandler<TDoc, TId>(_storage, id);
+        loadHandler.ConfigureCommand(builder, session);
+
+        builder.StartNewCommand();
+
+        writeEventFetchStatement(id, builder);
+
+        long version = 0;
+        try
+        {
+            var batch = builder.Compile();
+            await using var reader =
+                await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false);
+
+            // Read the latest version
+            if (await reader.ReadAsync(cancellation).ConfigureAwait(false))
+            {
+                version = await reader.GetFieldValueAsync<long>(0, cancellation).ConfigureAwait(false);
+            }
+
+            if (expectedStartingVersion != version)
+            {
+                throw new ConcurrencyException(
+                    $"Expected the existing version to be {expectedStartingVersion}, but was {version}",
+                    typeof(TDoc), id);
+            }
+
+            // Fetch the existing aggregate -- if any!
+            await reader.NextResultAsync(cancellation).ConfigureAwait(false);
+            var document = await loadHandler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+
+            // Read in any events from after the current state of the aggregate
+            await reader.NextResultAsync(cancellation).ConfigureAwait(false);
+            var events = await new ListQueryHandler<IEvent>(null, selector).HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+            if (events.Any())
+            {
+                document = await _aggregator.BuildAsync(events, session, document, cancellation).ConfigureAwait(false);
+            }
+
+            if (document != null)
+            {
+                _storage.SetIdentity(document, id);
+            }
+
+            return version == 0
+                ? _identityStrategy.StartStream(document, session, id, cancellation)
+                : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
+        }
+        catch (Exception e)
+        {
+            if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
+            {
+                throw new StreamLockedException(id, e.InnerException);
+            }
+
+            throw;
+        }
+    }
+}
+
+internal class AggregateEventFloor<TId>: ISqlFragment
+{
+    private readonly DbObjectName _tableName;
+    private readonly TId _id;
+
+    public AggregateEventFloor(DbObjectName tableName, TId id)
+    {
+        _tableName = tableName;
+        _id = id;
+    }
+
+    public void Apply(ICommandBuilder builder)
+    {
+        builder.Append("version > (select mt_version from ");
+        builder.Append(_tableName.QualifiedName);
+        builder.Append(" as a where a.id = ");
+        builder.AppendParameter(_id);
+        builder.Append(")");
+    }
+}
