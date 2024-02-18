@@ -109,6 +109,10 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         {
             throw new ShardStopException(ProjectionShardIdentity, e);
         }
+        finally
+        {
+            Status = AgentStatus.Stopped;
+        }
     }
 
     public async Task HardStopAsync()

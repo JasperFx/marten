@@ -30,8 +30,6 @@ public class SingleTenantProjectionDistributor : IProjectionDistributor
         var database = _store.Storage.Database;
         var projectionShards = _store.Options.Projections.AllShards();
 
-        var random = new Random();
-
         IReadOnlyList<IProjectionSet> sets = projectionShards.Select(shard =>
         {
             // Make deterministic for each projection name
@@ -41,14 +39,14 @@ public class SingleTenantProjectionDistributor : IProjectionDistributor
 
             return new ProjectionSet(lockId, _store, (MartenDatabase)database,
                 new[] { shard.Name });
-        }).OrderBy(x => random.NextDouble()).ToList();
+        }).OrderBy(x => Random.Shared.NextDouble()).ToList();
 
         return ValueTask.FromResult(sets);
     }
 
     public virtual Task RandomWait(CancellationToken token)
     {
-        return Task.Delay(new Random().Next(0, 500).Milliseconds(), token);
+        return Task.Delay(Random.Shared.Next(0, 500).Milliseconds(), token);
     }
 
     public async ValueTask DisposeAsync()

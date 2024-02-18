@@ -23,7 +23,9 @@ public class ProjectionCoordinator : IProjectionCoordinator
     private readonly StoreOptions _options;
     private readonly ILogger<ProjectionCoordinator> _logger;
 
-    private readonly ConcurrentDictionary<IMartenDatabase, IProjectionDaemon> _daemons = new();
+    private ImHashMap<IMartenDatabase, IProjectionDaemon> _daemons = ImHashMap<IMartenDatabase, IProjectionDaemon>.Empty;
+    private readonly object _daemonLock = new ();
+
     private readonly ResiliencePipeline _resilience;
     private readonly CancellationTokenSource _cancellation = new();
     private Task _runner;
@@ -58,13 +60,27 @@ public class ProjectionCoordinator : IProjectionCoordinator
     public IProjectionDaemon DaemonForMainDatabase()
     {
         var database = (MartenDatabase)Store.Tenancy.Default.Database;
-        if (_daemons.TryGetValue(database, out var daemon))
+
+        return findDaemonForDatabase(database);
+    }
+
+    private IProjectionDaemon findDaemonForDatabase(MartenDatabase database)
+    {
+        if (_daemons.TryFind(database, out var daemon))
         {
             return daemon;
         }
 
-        daemon = database.StartProjectionDaemon(Store, _logger);
-        _daemons[database] = daemon;
+        lock (_daemonLock)
+        {
+            if (_daemons.TryFind(database, out daemon))
+            {
+                return daemon;
+            }
+
+            daemon = database.StartProjectionDaemon(Store, _logger);
+            _daemons = _daemons.AddOrUpdate(database, daemon);
+        }
 
         return daemon;
     }
@@ -72,15 +88,7 @@ public class ProjectionCoordinator : IProjectionCoordinator
     public async ValueTask<IProjectionDaemon> DaemonForDatabase(string databaseIdentifier)
     {
         var database = (MartenDatabase)await Store.Storage.FindOrCreateDatabase(databaseIdentifier).ConfigureAwait(false);
-        if (_daemons.TryGetValue(database, out var daemon))
-        {
-            return daemon;
-        }
-
-        daemon = database.StartProjectionDaemon(Store, _logger);
-        _daemons[database] = daemon;
-
-        return daemon;
+        return findDaemonForDatabase(database);
     }
 
     public DocumentStore Store { get; }
@@ -110,13 +118,17 @@ public class ProjectionCoordinator : IProjectionCoordinator
             await _runner.ConfigureAwait(false);
 #pragma warning restore VSTHRD003
         }
-        catch (Exception)
+        catch (TaskCanceledException)
         {
-            // Just trying to let it drain
+            // Nothing, just from shutting down
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error while trying to shut down the ProjectionCoordinator");
         }
         _runner.SafeDispose();
 
-        foreach (var pair in _daemons)
+        foreach (var pair in _daemons.Enumerate())
         {
             try
             {
@@ -128,9 +140,9 @@ public class ProjectionCoordinator : IProjectionCoordinator
             }
         }
 
-        foreach (var daemon in _daemons.Values)
+        foreach (var daemon in _daemons.Enumerate())
         {
-            daemon.SafeDispose();
+            daemon.Value.SafeDispose();
         }
 
         try
@@ -185,7 +197,7 @@ public class ProjectionCoordinator : IProjectionCoordinator
 
             try
             {
-                if (_daemons.Values.Any(x => x.HasAnyPaused()))
+                if (_daemons.Enumerate().Any(x => x.Value.HasAnyPaused()))
                 {
                     await Task.Delay(_options.Projections.AgentPauseTime, stoppingToken).ConfigureAwait(false);
                 }
@@ -220,13 +232,7 @@ public class ProjectionCoordinator : IProjectionCoordinator
 
     private IProjectionDaemon resolveDaemon(IProjectionSet set)
     {
-        if (!_daemons.TryGetValue(set.Database, out var daemon))
-        {
-            daemon = set.BuildDaemon();
-            _daemons[set.Database] = daemon;
-        }
-
-        return daemon;
+        return findDaemonForDatabase((MartenDatabase)set.Database);
     }
 
     private async Task tryStartAgent(CancellationToken stoppingToken, IProjectionDaemon daemon, ShardName name,
