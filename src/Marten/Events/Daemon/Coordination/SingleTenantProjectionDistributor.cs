@@ -53,7 +53,17 @@ public class SingleTenantProjectionDistributor : IProjectionDistributor
     {
         foreach (var advisoryLock in _locks)
         {
-            await advisoryLock.DisposeAsync().ConfigureAwait(false);
+            try
+            {
+                await advisoryLock.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                var logger = _store.Options.LogFactory?.CreateLogger<SingleTenantProjectionDistributor>() ??
+                             _store.Options.DotNetLogger ?? NullLogger.Instance;
+
+                logger.LogError(e, "Error while trying to dispose SingleTenantProjectionDistributor");
+            }
         }
     }
 
