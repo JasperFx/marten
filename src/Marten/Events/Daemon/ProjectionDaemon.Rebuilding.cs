@@ -89,11 +89,20 @@ public partial class ProjectionDaemon
         Logger.LogInformation("Starting to rebuild Projection {ProjectionName}@{DatabaseIdentifier}",
             source.ProjectionName, Database.Identifier);
 
-        var running = _active.Where(x => x.Name.ProjectionName == source.ProjectionName).ToArray();
-        foreach (var agent in running)
+        var running = CurrentAgents().Where(x => x.Name.ProjectionName == source.ProjectionName).ToArray();
+
+        await _semaphore.WaitAsync(_cancellation.Token).ConfigureAwait(false);
+
+        try
         {
-            await agent.HardStopAsync().ConfigureAwait(false);
-            _active.Remove(agent);
+            foreach (var agent in running)
+            {
+                await agent.HardStopAsync().ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            _semaphore.Release();
         }
 
         if (token.IsCancellationRequested) return;
@@ -141,8 +150,17 @@ public partial class ProjectionDaemon
 
         foreach (var agent in agents)
         {
-            // TODO -- timeout and harden here
-            await agent.StopAndDrainAsync(CancellationToken.None).ConfigureAwait(false);
+            using var cancellation = new CancellationTokenSource();
+            cancellation.CancelAfter(shardTimeout);
+
+            try
+            {
+                await agent.StopAndDrainAsync(cancellation.Token).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e, "Error trying to stop and drain agent {Name} after rebuilding", agent.Name.Identity);
+            }
         }
     }
 

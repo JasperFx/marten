@@ -19,11 +19,12 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
 {
     private readonly DocumentStore _store;
     private readonly IAgentFactory _factory;
-    private readonly List<ISubscriptionAgent> _active = new();
+    private ImHashMap<string, ISubscriptionAgent> _agents = ImHashMap<string, ISubscriptionAgent>.Empty;
     private CancellationTokenSource _cancellation = new();
     private readonly HighWaterAgent _highWater;
     private readonly IDisposable _breakSubscription;
     private RetryBlock<DeadLetterEvent> _deadLetterBlock;
+    private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
     public ProjectionDaemon(DocumentStore store, MartenDatabase database, ILogger logger, IHighWaterDetector detector,
         IAgentFactory factory)
@@ -74,39 +75,68 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
     public bool IsRunning => _highWater.IsRunning;
 
 
-    private async Task startAgent(ISubscriptionAgent agent, ShardExecutionMode mode)
+    private async Task<bool> tryStartAgentAsync(ISubscriptionAgent agent, ShardExecutionMode mode)
     {
         // Be idempotent, don't start an agent that is already running
-        if (_active.Any(x => Equals(x.Name, agent.Name))) return;
+        if (_agents.TryFind(agent.Name.Identity, out var running) && running.Status == AgentStatus.Running)
+        {
+            return false;
+        }
 
-        var position = mode == ShardExecutionMode.Continuous
-            ? await Database.ProjectionProgressFor(agent.Name, _cancellation.Token).ConfigureAwait(false)
+        // Lock
+        await _semaphore.WaitAsync(_cancellation.Token).ConfigureAwait(false);
 
-            // No point in doing the extra database hop
-            : 0;
+        try
+        {
+            // Be idempotent, don't start an agent that is already running now that we have the lock.
+            if (_agents.TryFind(agent.Name.Identity, out running) && running.Status == AgentStatus.Running)
+            {
+                return false;
+            }
 
-        var errorOptions = mode == ShardExecutionMode.Continuous
-            ? _store.Options.Projections.Errors
-            : _store.Options.Projections.RebuildErrors;
+            var position = mode == ShardExecutionMode.Continuous
+                ? await Database.ProjectionProgressFor(agent.Name, _cancellation.Token).ConfigureAwait(false)
 
-        await agent.StartAsync(new SubscriptionExecutionRequest(position, mode, errorOptions, this)).ConfigureAwait(false);
-        agent.MarkHighWater(HighWaterMark());
-        _active.Add(agent);
+                // No point in doing the extra database hop
+                : 0;
+
+            var errorOptions = mode == ShardExecutionMode.Continuous
+                ? _store.Options.Projections.Errors
+                : _store.Options.Projections.RebuildErrors;
+
+            await agent.StartAsync(new SubscriptionExecutionRequest(position, mode, errorOptions, this)).ConfigureAwait(false);
+            agent.MarkHighWater(HighWaterMark());
+
+            _agents = _agents.AddOrUpdate(agent.Name.Identity, agent);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+
+        return true;
     }
 
     private async Task rebuildAgent(ISubscriptionAgent agent, long highWaterMark, TimeSpan shardTimeout)
     {
-        // Ensure that the agent is stopped if it is already running
-        await StopAsync(agent.Name.Identity).ConfigureAwait(false);
+        await _semaphore.WaitAsync(_cancellation.Token).ConfigureAwait(false);
 
-        var errorOptions = _store.Options.Projections.Errors;
+        try
+        {
+            // Ensure that the agent is stopped if it is already running
+            await stopIfRunningAsync(agent.Name.Identity).ConfigureAwait(false);
 
-        var request = new SubscriptionExecutionRequest(0, ShardExecutionMode.Rebuild, errorOptions, this);
-        await agent.ReplayAsync(request, highWaterMark, shardTimeout).ConfigureAwait(false);
+            var errorOptions = _store.Options.Projections.Errors;
 
+            var request = new SubscriptionExecutionRequest(0, ShardExecutionMode.Rebuild, errorOptions, this);
+            await agent.ReplayAsync(request, highWaterMark, shardTimeout).ConfigureAwait(false);
 
-
-        _active.Add(agent);
+            _agents = _agents.AddOrUpdate(agent.Name.Identity, agent);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     public async Task StartShard(string shardName, CancellationToken token)
@@ -116,17 +146,19 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
             await StartHighWaterDetectionAsync().ConfigureAwait(false);
         }
 
-        var agent = _active.FirstOrDefault(x => x.Name.Identity == shardName);
-        if (agent != null) return;
+        var agent = _factory.BuildAgentForShard(shardName, Database);
+        var didStart = await tryStartAgentAsync(agent, ShardExecutionMode.Continuous).ConfigureAwait(false);
 
-        agent = _factory.BuildAgentForShard(shardName, Database);
-        await startAgent(agent, ShardExecutionMode.Continuous).ConfigureAwait(false);
+        if (!didStart && agent is IAsyncDisposable d)
+        {
+            // Could not be started
+            await d.DisposeAsync().ConfigureAwait(false);
+        }
     }
 
-    public async Task StopAsync(string shardName, Exception ex = null)
+    private async Task stopIfRunningAsync(string shardIdentity)
     {
-        var agent = _active.FirstOrDefault(x => x.Name.Identity == shardName);
-        if (agent != null)
+        if (_agents.TryFind(shardIdentity, out var agent))
         {
             var cancellation = new CancellationTokenSource();
             cancellation.CancelAfter(5.Seconds());
@@ -142,14 +174,45 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
             }
             finally
             {
-                _active.Remove(agent);
+                _agents = _agents.Remove(shardIdentity);
             }
         }
+    }
 
-        if (!_active.Any() && _highWater.IsRunning)
+    public async Task StopAsync(string shardName, Exception ex = null)
+    {
+        if (_agents.TryFind(shardName, out var agent))
         {
-            // Nothing happening, so might as well stop hammering the database!
-            await _highWater.StopAsync().ConfigureAwait(false);
+            await _semaphore.WaitAsync(_cancellation.Token).ConfigureAwait(false);
+            try
+            {
+                var cancellation = new CancellationTokenSource();
+                cancellation.CancelAfter(5.Seconds());
+
+                try
+                {
+                    await agent.StopAndDrainAsync(cancellation.Token).ConfigureAwait(true);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e, "Error trying to stop and drain a subscription agent for '{Name}'",
+                        agent.Name.Identity);
+                }
+                finally
+                {
+                    _agents = _agents.Remove(shardName);
+
+                    if (!_agents.Enumerate().Any() && _highWater.IsRunning)
+                    {
+                        // Nothing happening, so might as well stop hammering the database!
+                        await _highWater.StopAsync().ConfigureAwait(false);
+                    }
+                }
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
     }
 
@@ -163,37 +226,47 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
         var agents = _factory.BuildAllAgents(Database);
         foreach (var agent in agents)
         {
-            await startAgent(agent, ShardExecutionMode.Continuous).ConfigureAwait(false);
+            await tryStartAgentAsync(agent, ShardExecutionMode.Continuous).ConfigureAwait(false);
         }
     }
 
     public async Task StopAllAsync()
     {
-        await _highWater.StopAsync().ConfigureAwait(false);
-
-        var cancellation = new CancellationTokenSource();
-        cancellation.CancelAfter(5.Seconds());
-        try
-        {
-            await Parallel.ForEachAsync(_active, cancellation.Token, (agent, t) => new ValueTask(agent.StopAndDrainAsync(t))).ConfigureAwait(false);
-        }
-        catch (Exception e)
-        {
-            Logger.LogError(e, "Error trying to stop subscription agents for {Agents}", _active.Select(x => x.Name.Identity).Join(", "));
-        }
+        await _semaphore.WaitAsync(_cancellation.Token).ConfigureAwait(false);
 
         try
         {
-            await _deadLetterBlock.DrainAsync().ConfigureAwait(false);
+            await _highWater.StopAsync().ConfigureAwait(false);
+
+            var cancellation = new CancellationTokenSource();
+            cancellation.CancelAfter(5.Seconds());
+            try
+            {
+                var activeAgents = _agents.Enumerate().Select(x => x.Value).Where(x => x.Status == AgentStatus.Running).ToArray();
+                await Parallel.ForEachAsync(activeAgents, cancellation.Token, (agent, t) => new ValueTask(agent.StopAndDrainAsync(t))).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e, "Error trying to stop subscription agents for {Agents}", _agents.Enumerate().Select(x => x.Value.Name.Identity).Join(", "));
+            }
+
+            try
+            {
+                await _deadLetterBlock.DrainAsync().ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e, "Error trying to finish all outstanding DeadLetterEvent persistence");
+            }
+
+            _agents = ImHashMap<string, ISubscriptionAgent>.Empty;
+
+            _deadLetterBlock = buildDeadLetterBlock();
         }
-        catch (Exception e)
+        finally
         {
-            Logger.LogError(e, "Error trying to finish all outstanding DeadLetterEvent persistence");
+            _semaphore.Release();
         }
-
-        _active.Clear();
-
-        _deadLetterBlock = buildDeadLetterBlock();
     }
 
     public async Task StartHighWaterDetectionAsync()
@@ -213,7 +286,7 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
 
         while (stopWatch.Elapsed < timeout)
         {
-            if (_active.All(x => x.Position >= statistics.EventSequenceNumber))
+            if (_agents.Enumerate().All(x => x.Value.Position >= statistics.EventSequenceNumber))
             {
                 return;
             }
@@ -227,25 +300,28 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
 
     public AgentStatus StatusFor(string shardName)
     {
-        var agent = _active.FirstOrDefault(x => x.Name.Identity == shardName);
-        if (agent == null) return AgentStatus.Stopped;
+        if (_agents.TryFind(shardName, out var agent))
+        {
+            return agent.Status;
+        }
 
-        return agent.Status;
+        return AgentStatus.Stopped;
     }
 
     public IReadOnlyList<ISubscriptionAgent> CurrentAgents()
     {
-        return _active;
+        return _agents.Enumerate().Select(x => x.Value).ToList();
     }
 
     public bool HasAnyPaused()
     {
-        return _active.Any(x => x.Status == AgentStatus.Paused);
+        return CurrentAgents().Any(x => x.Status == AgentStatus.Paused);
     }
 
     public void EjectPausedShard(string shardName)
     {
-        _active.RemoveAll(x => x.Name.Identity == shardName && x.Status == AgentStatus.Paused);
+        // Not worried about a lock here.
+        _agents = _agents.Remove(shardName);
     }
 
     public Task PauseHighWaterAgentAsync()
@@ -277,7 +353,7 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
                 Logger.LogDebug("Event high water mark detected at {Sequence}", value.Sequence);
             }
 
-            foreach (var agent in _active)
+            foreach (var agent in CurrentAgents())
             {
                 agent.MarkHighWater(value.Sequence);
             }
