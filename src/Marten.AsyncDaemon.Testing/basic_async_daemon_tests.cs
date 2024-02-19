@@ -53,12 +53,23 @@ public class basic_async_daemon_tests: DaemonContext
 
     public class FakeListener: IChangeListener
     {
+        public List<IChangeSet> Befores = new();
         public IList<IChangeSet> Changes = new List<IChangeSet>();
 
         public Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
         {
             session.ShouldNotBeNull();
             Changes.Add(commit);
+            return Task.CompletedTask;
+        }
+
+        public Task BeforeCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
+        {
+            session.ShouldNotBeNull();
+            Befores.Add(commit);
+
+            Changes.Count.ShouldBeLessThan(Befores.Count);
+
             return Task.CompletedTask;
         }
     }
@@ -89,6 +100,7 @@ public class basic_async_daemon_tests: DaemonContext
 
         await daemon.StopAll();
 
+        listener.Befores.Any().ShouldBeTrue();
         listener.Changes.Any().ShouldBeTrue();
     }
 

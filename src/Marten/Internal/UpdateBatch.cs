@@ -58,6 +58,11 @@ public class UpdateBatch: IUpdateBatch
         return Task.CompletedTask;
     }
 
+    public Task PreUpdateAsync(IMartenSession session)
+    {
+        return Task.CompletedTask;
+    }
+
     public IReadOnlyList<OperationPage> BuildPages(IMartenSession session)
     {
         return buildPages(session).ToList();

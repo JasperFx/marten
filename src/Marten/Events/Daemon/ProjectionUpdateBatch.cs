@@ -210,6 +210,19 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         }
     }
 
+    public async Task PreUpdateAsync(IMartenSession session)
+    {
+        if (_mode == ShardExecutionMode.Continuous && _settings.AsyncListeners.Any())
+        {
+            var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
+            foreach (var listener in _settings.AsyncListeners)
+            {
+                await listener.BeforeCommitAsync((IDocumentSession)session, unitOfWorkData, _token)
+                    .ConfigureAwait(false);
+            }
+        }
+    }
+
     private void startNewPage(IMartenSession session)
     {
         if (_token.IsCancellationRequested)
