@@ -18,6 +18,34 @@ Marten has a facility for listening and even intercepting document persistence e
 public interface IChangeListener
 {
     /// <summary>
+    /// Used to carry out actions on potentially changed projected documents generated and updated
+    /// during the execution of asynchronous projections. This will give you "at most once" delivery guarantees
+    /// </summary>
+    /// <param name="session"></param>
+    /// <param name="commit"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
+
+    /// <summary>
+    /// Used to carry out actions on potentially changed projected documents generated and updated
+    /// during the execution of asynchronous projections. This will execute *before* database changes
+    /// are committed. Use this for "at least once" delivery guarantees.
+    /// </summary>
+    /// <param name="session"></param>
+    /// <param name="commit"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task BeforeCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
+}
+
+/// <summary>
+///     Used to listen to and intercept operations within an IDocumentSession.SaveChanges()/SaveChangesAsync()
+///     operation
+/// </summary>
+public interface IDocumentSessionListener
+{
+    /// <summary>
     ///     After an IDocumentSession is committed
     /// </summary>
     /// <param name="session"></param>
@@ -25,14 +53,7 @@ public interface IChangeListener
     /// <param name="token"></param>
     /// <returns></returns>
     Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
-}
 
-/// <summary>
-///     Used to listen to and intercept operations within an IDocumentSession.SaveChanges()/SaveChangesAsync()
-///     operation
-/// </summary>
-public interface IDocumentSessionListener: IChangeListener
-{
     /// <summary>
     ///     Called just after IDocumentSession.SaveChanges() is called, but before
     ///     any database calls are made
@@ -68,7 +89,7 @@ public interface IDocumentSessionListener: IChangeListener
     void DocumentAddedForStorage(object id, object document);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IDocumentSessionListener.cs#L8-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_idocumentsessionlistener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IDocumentSessionListener.cs#L8-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_idocumentsessionlistener' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can build and inject your own listeners by adding them to the `StoreOptions` object you use to configure a `DocumentStore`:
@@ -174,6 +195,7 @@ A sample listener:
 ```cs
 public class FakeListener: IChangeListener
 {
+    public List<IChangeSet> Befores = new();
     public IList<IChangeSet> Changes = new List<IChangeSet>();
 
     public Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
@@ -182,9 +204,19 @@ public class FakeListener: IChangeListener
         Changes.Add(commit);
         return Task.CompletedTask;
     }
+
+    public Task BeforeCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
+    {
+        session.ShouldNotBeNull();
+        Befores.Add(commit);
+
+        Changes.Count.ShouldBeLessThan(Befores.Count);
+
+        return Task.CompletedTask;
+    }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/basic_async_daemon_tests.cs#L52-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asyncdaemonlistener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/basic_async_daemon_tests.cs#L52-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asyncdaemonlistener' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Wiring a Async Daemon listener:
@@ -198,7 +230,7 @@ StoreOptions(x =>
     x.Projections.AsyncListeners.Add(listener);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/basic_async_daemon_tests.cs#L71-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asynclisteners' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/basic_async_daemon_tests.cs#L82-L91' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asynclisteners' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Logging
