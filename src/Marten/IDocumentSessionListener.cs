@@ -10,6 +10,34 @@ namespace Marten;
 public interface IChangeListener
 {
     /// <summary>
+    /// Used to carry out actions on potentially changed projected documents generated and updated
+    /// during the execution of asynchronous projections. This will give you "at most once" delivery guarantees
+    /// </summary>
+    /// <param name="session"></param>
+    /// <param name="commit"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
+
+    /// <summary>
+    /// Used to carry out actions on potentially changed projected documents generated and updated
+    /// during the execution of asynchronous projections. This will execute *before* database changes
+    /// are committed. Use this for "at least once" delivery guarantees.
+    /// </summary>
+    /// <param name="session"></param>
+    /// <param name="commit"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task BeforeCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
+}
+
+/// <summary>
+///     Used to listen to and intercept operations within an IDocumentSession.SaveChanges()/SaveChangesAsync()
+///     operation
+/// </summary>
+public interface IDocumentSessionListener
+{
+    /// <summary>
     ///     After an IDocumentSession is committed
     /// </summary>
     /// <param name="session"></param>
@@ -17,14 +45,7 @@ public interface IChangeListener
     /// <param name="token"></param>
     /// <returns></returns>
     Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
-}
 
-/// <summary>
-///     Used to listen to and intercept operations within an IDocumentSession.SaveChanges()/SaveChangesAsync()
-///     operation
-/// </summary>
-public interface IDocumentSessionListener: IChangeListener
-{
     /// <summary>
     ///     Called just after IDocumentSession.SaveChanges() is called, but before
     ///     any database calls are made

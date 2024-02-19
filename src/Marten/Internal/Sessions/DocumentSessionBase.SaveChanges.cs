@@ -187,17 +187,12 @@ public abstract partial class DocumentSessionBase
             try
             {
 
+                await executeBeforeCommitListeners(batch).ConfigureAwait(false);
+
                 await Options.ResiliencePipeline.ExecuteAsync(
                     static (e, t) => new ValueTask(e.Connection.ExecuteBatchPagesAsync(e.Pages, e.Exceptions, t)), execution, token).ConfigureAwait(false);
 
-                try
-                {
-                    await batch.PostUpdateAsync(this).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    Logger.LogFailure(new NpgsqlCommand(), e);
-                }
+                await executeAfterCommitListeners(batch).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -219,6 +214,30 @@ public abstract partial class DocumentSessionBase
         {
             await tryApplyTombstoneEventsAsync(token).ConfigureAwait(false);
             throw;
+        }
+    }
+
+    private async Task executeAfterCommitListeners(IUpdateBatch batch)
+    {
+        try
+        {
+            await batch.PostUpdateAsync(this).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Logger.LogFailure(new NpgsqlCommand(), e);
+        }
+    }
+
+    private async Task executeBeforeCommitListeners(IUpdateBatch batch)
+    {
+        try
+        {
+            await batch.PreUpdateAsync(this).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Logger.LogFailure(new NpgsqlCommand(), e);
         }
     }
 
