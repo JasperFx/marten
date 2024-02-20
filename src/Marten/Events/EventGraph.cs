@@ -413,6 +413,10 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         {
             // Ignore this
         }
+        catch (OperationCanceledException)
+        {
+            // Nothing, get out of here
+        }
 
         Dispose();
     }
