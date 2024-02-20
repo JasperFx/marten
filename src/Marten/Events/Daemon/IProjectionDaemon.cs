@@ -136,11 +136,6 @@ public interface IProjectionDaemon: IDisposable
 
     /* START OLD STUFF *****************************************/
 
-
-
-
-
-
     /// <summary>
     ///     Rebuilds a single projection by projection name inline.
     ///     Will timeout if a shard takes longer than 5 minutes.
