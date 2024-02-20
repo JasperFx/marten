@@ -105,6 +105,10 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
             // Just get out of here.
             return;
         }
+        catch (OperationCanceledException)
+        {
+            // Nothing, just from shutting down
+        }
         catch (Exception e)
         {
             throw new ShardStopException(ProjectionShardIdentity, e);
