@@ -6,8 +6,12 @@ using JasperFx.Core;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Coordination;
+using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Xunit;
 
@@ -73,6 +77,66 @@ public class blue_green_projection_deployments
 
         using var greenDaemon = await greenStore.BuildProjectionDaemonAsync();
         await greenDaemon.StartAllAsync();
+
+        var streamId = Guid.NewGuid();
+
+        using (var session = blueStore.LightweightSession())
+        {
+            session.Events.StartStream<MyAggregate>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(),
+                new CEvent(), new CEvent(), new DEvent());
+            await session.SaveChangesAsync();
+
+            await blueDaemon.WaitForNonStaleData(5.Seconds());
+
+            (await session.LoadAsync<MyAggregate>(streamId)).ShouldBeEquivalentTo(new MyAggregate
+            {
+                ACount = 2, BCount = 1, CCount = 3, DCount = 1, Version = 7, Id = streamId
+            });
+        }
+
+        await greenDaemon.WaitForNonStaleData(5.Seconds());
+        using (var session = greenStore.LightweightSession())
+        {
+            (await session.LoadAsync<MyAggregate>(streamId)).ShouldBeEquivalentTo(new MyAggregate
+            {
+                // The "green" version doubles the counts as a cheap way
+                // of being able to test that the data is different
+                ACount = 4, BCount = 2, CCount = 6, DCount = 2, Version = 7, Id = streamId
+            });
+        }
+    }
+
+    [Fact]
+    public async Task test_through_host()
+    {
+        using var blueHost = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.Projections.Add<BlueProjection>(ProjectionLifecycle.Async);
+                    opts.DatabaseSchemaName = "bluegreen";
+                }).AddAsyncDaemon(DaemonMode.HotCold);
+            }).StartAsync();
+
+        var blueStore = blueHost.Services.GetRequiredService<IDocumentStore>();
+
+        using var greenHost = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.Projections.Add<GreenProjection>(ProjectionLifecycle.Async);
+                    opts.DatabaseSchemaName = "bluegreen";
+                }).AddAsyncDaemon(DaemonMode.HotCold);
+            }).StartAsync();
+
+        var greenStore = greenHost.Services.GetRequiredService<IDocumentStore>();
+
+        var blueDaemon = blueHost.Services.GetRequiredService<IProjectionCoordinator>().DaemonForMainDatabase();
+        var greenDaemon = greenHost.Services.GetRequiredService<IProjectionCoordinator>().DaemonForMainDatabase();
 
         var streamId = Guid.NewGuid();
 
