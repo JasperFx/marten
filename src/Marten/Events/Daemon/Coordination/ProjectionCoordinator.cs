@@ -122,6 +122,10 @@ public class ProjectionCoordinator : IProjectionCoordinator
         {
             // Nothing, just from shutting down
         }
+        catch (OperationCanceledException)
+        {
+            // Nothing, just from shutting down
+        }
         catch (Exception e)
         {
             _logger.LogError(e, "Error while trying to shut down the ProjectionCoordinator");
@@ -209,6 +213,10 @@ public class ProjectionCoordinator : IProjectionCoordinator
             catch (TaskCanceledException)
             {
                 // just get out of here, this signals a graceful shutdown attempt
+            }
+            catch (OperationCanceledException)
+            {
+                // Nothing, just from shutting down
             }
         }
     }
