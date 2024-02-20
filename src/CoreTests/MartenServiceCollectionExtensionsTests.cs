@@ -138,23 +138,7 @@ public class MartenServiceCollectionExtensionsTests
         var rules = store.Options.CreateGenerationRules();
         rules.ApplicationAssembly.ShouldBe(store.Options.ApplicationAssembly);
     }
-
-    [Fact]
-    public void eager_initialization_of_the_store()
-    {
-        IDocumentStore store = null;
-
-        using var container = Container.For(x =>
-        {
-            store = x.AddMarten(ConnectionSource.ConnectionString)
-                .InitializeStore();
-        });
-
-        ShouldHaveAllTheExpectedRegistrations(container);
-
-        container.GetInstance<IDocumentStore>().ShouldBeSameAs(store);
-    }
-
+    
     [Fact]
     public async Task apply_changes_on_startup()
     {

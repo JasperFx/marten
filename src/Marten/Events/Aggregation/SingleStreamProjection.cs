@@ -73,14 +73,3 @@ public class SingleStreamProjection<T>: GeneratedAggregateProjectionBase<T>
     }
 }
 
-[EditorBrowsable(EditorBrowsableState.Never)]
-[Obsolete("Please switch to SingleStreamProjection<T> with the exact same syntax")]
-public class SingleStreamAggregation<T>: SingleStreamProjection<T>
-{
-}
-
-[EditorBrowsable(EditorBrowsableState.Never)]
-[Obsolete("Please switch to SingleStreamProjection<T> with the exact same syntax")]
-public class AggregateProjection<T>: SingleStreamProjection<T>
-{
-}

@@ -410,7 +410,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     ///     Supply a source for the connection string to a Postgresql database
     /// </summary>
     /// <param name="connectionSource"></param>
-    [Obsolete("User version with connection string")]
+    [Obsolete("Use version with connection string. This will be removed in Marten 8")]
     public void Connection(Func<string> connectionSource)
     {
         _tenancy = new Lazy<ITenancy>(() =>
