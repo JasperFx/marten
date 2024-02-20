@@ -1,9 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using EventSourcingTests.Aggregation;
 using JasperFx.Core;
-using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Coordination;
@@ -15,7 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Xunit;
 
-namespace EventSourcingTests.Projections;
+namespace Marten.AsyncDaemon.Testing;
 
 [Collection("OneOffs")]
 public class blue_green_projection_deployments
@@ -82,13 +80,13 @@ public class blue_green_projection_deployments
 
         using (var session = blueStore.LightweightSession())
         {
-            session.Events.StartStream<MyAggregate>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(),
-                new CEvent(), new CEvent(), new DEvent());
+            session.Events.StartStream<EventSourcingTests.Aggregation.MyAggregate>(streamId, new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent(),
+                new EventSourcingTests.Aggregation.CEvent(), new EventSourcingTests.Aggregation.CEvent(), new EventSourcingTests.Aggregation.DEvent());
             await session.SaveChangesAsync();
 
             await blueDaemon.WaitForNonStaleData(5.Seconds());
 
-            (await session.LoadAsync<MyAggregate>(streamId)).ShouldBeEquivalentTo(new MyAggregate
+            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(new EventSourcingTests.Aggregation.MyAggregate
             {
                 ACount = 2, BCount = 1, CCount = 3, DCount = 1, Version = 7, Id = streamId
             });
@@ -97,7 +95,7 @@ public class blue_green_projection_deployments
         await greenDaemon.WaitForNonStaleData(5.Seconds());
         using (var session = greenStore.LightweightSession())
         {
-            (await session.LoadAsync<MyAggregate>(streamId)).ShouldBeEquivalentTo(new MyAggregate
+            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(new EventSourcingTests.Aggregation.MyAggregate
             {
                 // The "green" version doubles the counts as a cheap way
                 // of being able to test that the data is different
@@ -142,13 +140,13 @@ public class blue_green_projection_deployments
 
         using (var session = blueStore.LightweightSession())
         {
-            session.Events.StartStream<MyAggregate>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(),
-                new CEvent(), new CEvent(), new DEvent());
+            session.Events.StartStream<EventSourcingTests.Aggregation.MyAggregate>(streamId, new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent(),
+                new EventSourcingTests.Aggregation.CEvent(), new EventSourcingTests.Aggregation.CEvent(), new EventSourcingTests.Aggregation.DEvent());
             await session.SaveChangesAsync();
 
             await blueDaemon.WaitForNonStaleData(5.Seconds());
 
-            (await session.LoadAsync<MyAggregate>(streamId)).ShouldBeEquivalentTo(new MyAggregate
+            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(new EventSourcingTests.Aggregation.MyAggregate
             {
                 ACount = 2, BCount = 1, CCount = 3, DCount = 1, Version = 7, Id = streamId
             });
@@ -157,7 +155,7 @@ public class blue_green_projection_deployments
         await greenDaemon.WaitForNonStaleData(5.Seconds());
         using (var session = greenStore.LightweightSession())
         {
-            (await session.LoadAsync<MyAggregate>(streamId)).ShouldBeEquivalentTo(new MyAggregate
+            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(new EventSourcingTests.Aggregation.MyAggregate
             {
                 // The "green" version doubles the counts as a cheap way
                 // of being able to test that the data is different
@@ -167,20 +165,20 @@ public class blue_green_projection_deployments
     }
 }
 
-public class BlueProjection: SingleStreamProjection<MyAggregate>
+public class BlueProjection: SingleStreamProjection<EventSourcingTests.Aggregation.MyAggregate>
 {
     public BlueProjection()
     {
         ProjectionName = "Baseline";
     }
 
-    public void Apply(MyAggregate aggregate, AEvent e) => aggregate.ACount++;
-    public void Apply(MyAggregate aggregate, BEvent e) => aggregate.BCount++;
-    public void Apply(MyAggregate aggregate, CEvent e) => aggregate.CCount++;
-    public void Apply(MyAggregate aggregate, DEvent e) => aggregate.DCount++;
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.AEvent e) => aggregate.ACount++;
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.BEvent e) => aggregate.BCount++;
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.CEvent e) => aggregate.CCount++;
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.DEvent e) => aggregate.DCount++;
 }
 
-public class GreenProjection: SingleStreamProjection<MyAggregate>
+public class GreenProjection: SingleStreamProjection<EventSourcingTests.Aggregation.MyAggregate>
 {
     public GreenProjection()
     {
@@ -188,8 +186,8 @@ public class GreenProjection: SingleStreamProjection<MyAggregate>
         ProjectionVersion = 2;
     }
 
-    public void Apply(MyAggregate aggregate, AEvent e) => aggregate.ACount += 2;
-    public void Apply(MyAggregate aggregate, BEvent e) => aggregate.BCount += 2;
-    public void Apply(MyAggregate aggregate, CEvent e) => aggregate.CCount += 2;
-    public void Apply(MyAggregate aggregate, DEvent e) => aggregate.DCount += 2;
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.AEvent e) => aggregate.ACount += 2;
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.BEvent e) => aggregate.BCount += 2;
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.CEvent e) => aggregate.CCount += 2;
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.DEvent e) => aggregate.DCount += 2;
 }
