@@ -28,71 +28,6 @@ namespace Marten;
 public static class MartenServiceCollectionExtensions
 {
     /// <summary>
-    ///     Meant for testing scenarios to "help" .Net understand where the IHostEnvironment for the
-    ///     Host. You may have to specify the relative path to the entry project folder from the AppContext.BaseDirectory
-    /// </summary>
-    /// <param name="services"></param>
-    /// <param name="assembly"></param>
-    /// <param name="hintPath"></param>
-    /// <returns></returns>
-    public static IHostBuilder UseApplicationProject(this IHostBuilder builder, Assembly assembly,
-        string? hintPath = null)
-    {
-        return builder.ConfigureServices((c, services) => services.SetApplicationProject(assembly, hintPath));
-    }
-
-    /// <summary>
-    ///     Meant for testing scenarios to "help" .Net understand where the IHostEnvironment for the
-    ///     Host. You may have to specify the relative path to the entry project folder from the AppContext.BaseDirectory
-    /// </summary>
-    /// <param name="services"></param>
-    /// <param name="assembly"></param>
-    /// <param name="hintPath"></param>
-    /// <returns></returns>
-    [Obsolete(
-        "Yeah, this didn't work so well in some hosting setups. Prefer StoreOptions.SetApplicationProject() instead if necessary")]
-    public static IServiceCollection SetApplicationProject(this IServiceCollection services, Assembly assembly,
-        string? hintPath = null)
-    {
-        var environment = services
-            .Where(x => !x.IsKeyedService)
-            .Select(x => x.ImplementationInstance)
-            .OfType<IHostEnvironment>().LastOrDefault();
-
-        var applicationName = assembly.GetName().Name;
-
-        // There are possible project setups where IHostEnvironment is
-        // not available
-        if (environment != null)
-        {
-            environment.ApplicationName = applicationName;
-        }
-
-        var path = AppContext.BaseDirectory.ToFullPath();
-        if (hintPath.IsNotEmpty())
-        {
-            path = path.AppendPath(hintPath).ToFullPath();
-        }
-        else
-        {
-            path = path.TrimEnd(Path.DirectorySeparatorChar);
-            while (!path.EndsWith("bin"))
-            {
-                path = path.ParentDirectory();
-            }
-
-            // Go up once to get to the test project directory, then up again to the "src" level,
-            // then "down" to the application directory
-            path = path.ParentDirectory().ParentDirectory().AppendPath(applicationName);
-        }
-
-        environment.ContentRootPath = path;
-
-        return services;
-    }
-
-
-    /// <summary>
     ///     Apply additional configuration to a Marten DocumentStore. This is applied *after*
     ///     AddMarten(), but before the DocumentStore is initialized
     /// </summary>
@@ -701,28 +636,6 @@ public static class MartenServiceCollectionExtensions
             return this;
         }
 
-        /// <summary>
-        ///     Eagerly build the application's DocumentStore during application
-        ///     bootstrapping rather than waiting for the first usage of IDocumentStore
-        ///     at runtime.
-        /// </summary>
-        /// <returns></returns>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete(
-            "Please prefer the InitializeWith() approach for applying start up actions to a DocumentStore. This should not be used in combination with the asynchronous projections. WILL BE REMOVED IN MARTEN V6.")]
-        public IDocumentStore InitializeStore()
-        {
-            if (_options == null)
-            {
-                throw new InvalidOperationException(
-                    "This operation is not valid when the StoreOptions is built by Func<IServiceProvider, StoreOptions>");
-            }
-
-            var store = new DocumentStore(_options);
-            Services.AddSingleton<IDocumentStore>(store);
-
-            return store;
-        }
 
         /// <summary>
         ///     Adds the optimized artifact workflow to this store.

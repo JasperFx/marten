@@ -206,28 +206,6 @@ public class ProjectionOptions: DaemonSettings
     }
 
 
-    // Note: recent one
-    /// <summary>
-    /// Register Snapshot or Live Stream aggregation for entity of type T.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="lifecycle">Override the aggregate lifecycle. The default is Inline</param>
-    /// <param name="asyncConfiguration">
-    ///     Optional configuration including teardown instructions for the usage of this
-    ///     projection within the async projection daempon
-    /// </param>
-    /// <returns>The extended storage configuration for document T</returns>
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [Obsolete(
-        "Please switch to Snapshot (in case of inline or async lifecycle) or LiveStreamAggregation method (for online lifecycle).")]
-    public MartenRegistry.DocumentMappingExpression<T> SelfAggregate<T>(
-        ProjectionLifecycle lifecycle,
-        Action<AsyncOptions> asyncConfiguration = null
-    ) =>
-        lifecycle == ProjectionLifecycle.Live
-            ? LiveStreamAggregation<T>(asyncConfiguration)
-            : Snapshot<T>(lifecycle.Map(), asyncConfiguration);
-
     /// <summary>
     /// Register live stream aggregation. It's needed for pre-building generated types
     /// (Read more in https://martendb.io/configuration/prebuilding.html).

@@ -44,7 +44,7 @@ public class Bug_964_optimistic_concurrency_with_subclass: BugIntegrationContext
 
         using (var session = theStore.LightweightSession())
         {
-            session.Store(minio1, minio1.Version);
+            session.UpdateExpectedVersion(minio1, minio1.Version);
 
             session.SaveChanges();
         }
@@ -87,7 +87,7 @@ public class Bug_964_optimistic_concurrency_with_subclass: BugIntegrationContext
                 UseSSL = true
             };
 
-            session.Store(minio2, minio2.Version);
+            session.UpdateExpectedVersion(minio2, minio2.Version);
 
             // It throws ConcurrencyException because there is only one
             // exception

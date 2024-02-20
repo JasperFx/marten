@@ -47,7 +47,7 @@
         <PackageReference Include="Polly" Version="8.2.1" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" Version="8.0.0" />
         <PackageReference Include="System.Text.Json" Version="8.0.0" />
-        <PackageReference Include="Weasel.Postgresql" Version="7.0.0-alpha.8" />
+        <PackageReference Include="Weasel.Postgresql" Version="7.0.0" />
     </ItemGroup>
 
     <!--SourceLink specific settings-->
