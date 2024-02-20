@@ -6,6 +6,7 @@ using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Internal.Operations;
 using Marten.Services;
+using Marten.Storage;
 
 namespace Marten.Internal;
 
@@ -242,7 +243,7 @@ internal class UnitOfWork: ISessionWorkTracker
             return false;
         }
 
-        if (_operations.Select(x => x.DocumentType).Distinct().Count() == 1)
+        if (_operations.Where(x => x.Role() != OperationRole.Other).Select(x => x.DocumentType).Distinct().Count(x => x != typeof(StorageFeatures)) == 1)
         {
             return false;
         }
