@@ -162,10 +162,11 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
         {
             var cancellation = new CancellationTokenSource();
             cancellation.CancelAfter(5.Seconds());
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellation.Token, _cancellation.Token);
 
             try
             {
-                await agent.StopAndDrainAsync(cancellation.Token).ConfigureAwait(true);
+                await agent.StopAndDrainAsync(linked.Token).ConfigureAwait(true);
             }
             catch (Exception e)
             {
@@ -188,10 +189,11 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
             {
                 var cancellation = new CancellationTokenSource();
                 cancellation.CancelAfter(5.Seconds());
+                using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellation.Token, _cancellation.Token);
 
                 try
                 {
-                    await agent.StopAndDrainAsync(cancellation.Token).ConfigureAwait(true);
+                    await agent.StopAndDrainAsync(linked.Token).ConfigureAwait(true);
                 }
                 catch (Exception e)
                 {
