@@ -509,7 +509,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         using (var session = theStore.LightweightSession())
         {
             doc1.Name = "Mozart's";
-            session.Store(doc1, metadata.CurrentVersion);
+            session.UpdateExpectedVersion(doc1, metadata.CurrentVersion);
 
             session.SaveChanges();
         }
@@ -542,7 +542,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         await using (var session = theStore.LightweightSession())
         {
             doc1.Name = "Mozart's";
-            session.Store(doc1, metadata.CurrentVersion);
+            session.UpdateExpectedVersion(doc1, metadata.CurrentVersion);
 
             await session.SaveChangesAsync();
         }
@@ -569,7 +569,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             doc1.Name = "Mozart's";
 
             // Some random version that won't match
-            session.Store(doc1, Guid.NewGuid());
+            session.UpdateExpectedVersion(doc1, Guid.NewGuid());
 
             Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
             {
@@ -593,7 +593,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             doc1.Name = "Mozart's";
 
             // Some random version that won't match
-            session.Store(doc1, Guid.NewGuid());
+            session.UpdateExpectedVersion(doc1, Guid.NewGuid());
 
             await Exception<ConcurrencyException>.ShouldBeThrownByAsync(async () =>
             {

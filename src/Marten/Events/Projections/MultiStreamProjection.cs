@@ -159,14 +159,3 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
     }
 }
 
-[EditorBrowsable(EditorBrowsableState.Never)]
-[Obsolete("Please switch to MultiStreamProjection<T> with the exact same syntax")]
-public abstract class MultiStreamAggregation<TDoc, TId>: MultiStreamProjection<TDoc, TId>
-{
-}
-
-[EditorBrowsable(EditorBrowsableState.Never)]
-[Obsolete("Please switch to MultiStreamProjection<T> with the exact same syntax")]
-public abstract class ViewProjection<TDoc, TId>: MultiStreamProjection<TDoc, TId>
-{
-}

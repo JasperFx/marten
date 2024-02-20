@@ -97,8 +97,4 @@ public abstract class ExperimentalMultiStreamProjection<TDoc, TId>: GeneratedAgg
     }
 }
 
-[EditorBrowsable(EditorBrowsableState.Never)]
-[Obsolete("Please switch to ExperimentalMultiStreamProjection<TDoc, TId> with the exact same syntax")]
-public abstract class ExperimentalMultiStreamAggregation<TDoc, TId>: ExperimentalMultiStreamProjection<TDoc, TId>
-{
-}
+

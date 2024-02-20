@@ -23,7 +23,7 @@ public class Bug_2607_aggregate_projection_with_guid_argument
     [Fact]
     public void codegen_will_ignore_the_constructor_with_args_that_cannot_be_an_event()
     {
-        var projection = new SingleStreamAggregation<BadCtorAggregate>();
+        var projection = new SingleStreamProjection<BadCtorAggregate>();
         projection.Compile(new StoreOptions());
 
         projection.InitializeSynchronously(new GenerationRules(), new EventGraph(new StoreOptions()), null);

@@ -83,16 +83,6 @@ public interface IDocumentOperations: IQuerySession
     /// <typeparam name="T"></typeparam>
     /// <param name="entity"></param>
     /// <param name="version"></param>
-    [Obsolete("Prefer UpdateExpectedVersion(). This will be removed in Marten 7")]
-    void Store<T>(T entity, Guid version) where T : notnull;
-
-    /// <summary>
-    ///     Explicitly marks a document as needing to be updated and supplies the
-    ///     current known version for the purpose of optimistic versioning checks
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="entity"></param>
-    /// <param name="version"></param>
     void UpdateExpectedVersion<T>(T entity, Guid version) where T : notnull;
 
     /// <summary>

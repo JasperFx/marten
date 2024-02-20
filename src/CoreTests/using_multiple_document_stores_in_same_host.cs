@@ -177,16 +177,22 @@ public class additional_document_store_registration_and_optimized_artifact_workf
         using var host = new HostBuilder()
             .ConfigureServices(services =>
             {
-                services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow();
+                services.AddMarten(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.SetApplicationProject(GetType().Assembly);
+                }).OptimizeArtifactWorkflow();
 
                 services.AddMartenStore<IFirstStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "first_store";
+                    opts.SetApplicationProject(GetType().Assembly);
                 }).OptimizeArtifactWorkflow();
+
+
             })
             .UseEnvironment("Development")
-            .UseApplicationProject(GetType().Assembly)
             .Start();
 
 
@@ -214,10 +220,10 @@ public class additional_document_store_registration_and_optimized_artifact_workf
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "first_store";
+                    opts.SetApplicationProject(GetType().Assembly);
                 }).OptimizeArtifactWorkflow();
             })
             .UseEnvironment("Production")
-            .UseApplicationProject(GetType().Assembly)
             .Start();
 
 
@@ -279,9 +285,9 @@ public class additional_document_store_registration_and_optimized_artifact_workf
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "first_store";
+                    opts.SetApplicationProject(typeof(IFirstStore).Assembly);
                 }).OptimizeArtifactWorkflow(TypeLoadMode.Static);
 
-                services.SetApplicationProject(typeof(IFirstStore).Assembly);
             })
             .Start();
 

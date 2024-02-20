@@ -17,9 +17,6 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
     private const string StreamId = "streamid";
     private const string Version = "version";
 
-    [Obsolete("let's get rid of this")]
-    public static readonly EventStreamUnexpectedMaxEventIdExceptionTransform Instance = new();
-
     private static readonly Regex EventStreamUniqueExceptionDetailsRegex =
         new(@"^Key \(stream_id, version\)=\((?<streamid>.*?), (?<version>\w+)\)");
 

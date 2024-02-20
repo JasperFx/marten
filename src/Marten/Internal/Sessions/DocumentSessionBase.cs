@@ -74,11 +74,6 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         store(entities);
     }
 
-    public void Store<T>(T entity, Guid version) where T : notnull
-    {
-        UpdateExpectedVersion(entity, version);
-    }
-
     public void UpdateExpectedVersion<T>(T entity, Guid version) where T : notnull
     {
         assertNotDisposed();

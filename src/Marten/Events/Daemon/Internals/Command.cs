@@ -10,12 +10,6 @@ internal class Command
 
     internal CommandType Type;
 
-    [Obsolete]
-    internal static Command Completed(EventRange range)
-    {
-        return new Command { Range = range, Type = CommandType.RangeCompleted };
-    }
-
     internal static Command Completed(long ceiling)
     {
         return new Command { LastCommitted = ceiling, Type = CommandType.RangeCompleted };
