@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -44,6 +45,8 @@ internal class ShardStatusWatcher: IObserver<ShardState>
         });
 
         _unsubscribe = tracker.Subscribe(this);
+
+        Debug.WriteLine("Subscribed to watch shard state: " + description);
     }
 
     public Task<ShardState> Task => _completion.Task;

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Events.Projections;
 using Marten.Services;
+using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using Weasel.Postgresql;
@@ -21,7 +22,7 @@ internal class HighWaterDetector: IHighWaterDetector
     private readonly NpgsqlCommand _updateStatus;
     private readonly ProjectionOptions _settings;
 
-    public HighWaterDetector(ISingleQueryRunner runner, EventGraph graph, ILogger logger)
+    public HighWaterDetector(MartenDatabase runner, EventGraph graph, ILogger logger)
     {
         _runner = runner;
         _logger = logger;
@@ -34,7 +35,11 @@ internal class HighWaterDetector: IHighWaterDetector
         _newSeq = _updateStatus.AddNamedParameter("seq", 0L);
 
         _settings = graph.Options.Projections;
+
+        DatabaseName = runner.Identifier;
     }
+
+    public string DatabaseName { get; }
 
     public async Task<HighWaterStatistics> DetectInSafeZone(CancellationToken token)
     {

@@ -115,6 +115,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         }
         finally
         {
+            _logger.LogInformation("Stopped projection agent {Name}", ProjectionShardIdentity);
             Status = AgentStatus.Stopped;
         }
     }
@@ -135,6 +136,8 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         await _execution.EnsureStorageExists().ConfigureAwait(false);
         _commandBlock.Post(Command.Started(_tracker.HighWaterMark, request.Floor));
         _tracker.Publish(new ShardState(Name, request.Floor){Action = ShardAction.Started});
+
+        _logger.LogInformation("Started projection agent {Name}", ProjectionShardIdentity);
     }
 
     private TaskCompletionSource? _rebuild;

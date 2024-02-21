@@ -155,7 +155,7 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
             await d.DisposeAsync().ConfigureAwait(false);
         }
     }
-    
+
     private async Task stopIfRunningAsync(string shardIdentity)
     {
         if (_agents.TryFind(shardIdentity, out var agent))
@@ -298,6 +298,20 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
 
         var message = $"The active projection shards did not reach sequence {statistics.EventSequenceNumber} in time";
         throw new TimeoutException(message);
+    }
+
+    public Task WaitForShardToBeRunning(string shardName, TimeSpan timeout)
+    {
+        if (StatusFor(shardName) == AgentStatus.Running) return Task.CompletedTask;
+
+        Func<ShardState, bool> match = state =>
+        {
+            if (!state.ShardName.EqualsIgnoreCase(shardName)) return false;
+
+            return state.Action == ShardAction.Started || state.Action == ShardAction.Updated;
+        };
+
+        return Tracker.WaitForShardCondition(match, $"Wait for '{shardName}' to be running",timeout);
     }
 
     public AgentStatus StatusFor(string shardName)

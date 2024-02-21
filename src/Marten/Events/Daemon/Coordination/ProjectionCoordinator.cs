@@ -23,7 +23,7 @@ public class ProjectionCoordinator : IProjectionCoordinator
     private readonly StoreOptions _options;
     private readonly ILogger<ProjectionCoordinator> _logger;
 
-    private ImHashMap<IMartenDatabase, IProjectionDaemon> _daemons = ImHashMap<IMartenDatabase, IProjectionDaemon>.Empty;
+    private ImHashMap<string, IProjectionDaemon> _daemons = ImHashMap<string, IProjectionDaemon>.Empty;
     private readonly object _daemonLock = new ();
 
     private readonly ResiliencePipeline _resilience;
@@ -66,20 +66,20 @@ public class ProjectionCoordinator : IProjectionCoordinator
 
     private IProjectionDaemon findDaemonForDatabase(MartenDatabase database)
     {
-        if (_daemons.TryFind(database, out var daemon))
+        if (_daemons.TryFind(database.Identifier, out var daemon))
         {
             return daemon;
         }
 
         lock (_daemonLock)
         {
-            if (_daemons.TryFind(database, out daemon))
+            if (_daemons.TryFind(database.Identifier, out daemon))
             {
                 return daemon;
             }
 
             daemon = database.StartProjectionDaemon(Store, _logger);
-            _daemons = _daemons.AddOrUpdate(database, daemon);
+            _daemons = _daemons.AddOrUpdate(database.Identifier, daemon);
         }
 
         return daemon;
@@ -140,7 +140,7 @@ public class ProjectionCoordinator : IProjectionCoordinator
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Error while trying to stop daemon agents in database {Name}", pair.Key.Identifier);
+                _logger.LogError(exception, "Error while trying to stop daemon agents in database {Name}", pair.Key);
             }
         }
 
