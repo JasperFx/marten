@@ -7,6 +7,7 @@ using Marten.Events;
 using Marten.Events.Daemon.HighWater;
 using Weasel.Postgresql;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Testing;
 using Microsoft.Extensions.Logging.Abstractions;
 using NpgsqlTypes;
@@ -24,7 +25,7 @@ public class HighWaterDetectorTests: DaemonContext
     public HighWaterDetectorTests(ITestOutputHelper output) : base(output)
     {
         theStore.EnsureStorageExists(typeof(IEvent));
-        theDetector = new HighWaterDetector((ISingleQueryRunner)theStore.Tenancy.Default.Database, theStore.Events, NullLogger.Instance);
+        theDetector = new HighWaterDetector((MartenDatabase)theStore.Tenancy.Default.Database, theStore.Events, NullLogger.Instance);
     }
 
     [Fact]

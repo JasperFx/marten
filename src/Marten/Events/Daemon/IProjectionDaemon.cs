@@ -255,4 +255,12 @@ public interface IProjectionDaemon: IDisposable
     /// </summary>
     /// <returns></returns>
     Task PauseHighWaterAgentAsync();
+
+    /// <summary>
+    /// Wait until the named shard has been started
+    /// </summary>
+    /// <param name="shardName"></param>
+    /// <param name="timeout"></param>
+    /// <returns></returns>
+    Task WaitForShardToBeRunning(string shardName, TimeSpan timeout);
 }
