@@ -36,12 +36,18 @@ public class WhereClauseParser: ExpressionVisitor
         _holder = holder;
     }
 
+    public override Expression Visit(Expression node)
+    {
+        return base.Visit(node);
+    }
+
     protected override Expression VisitConstant(ConstantExpression node)
     {
         var value = node.Value;
-        if (value is bool b && b)
+        if (value is bool b)
         {
-            _holder.Register(new WhereFragment("1 = 1"));
+            ISqlFragment filter = b ? new LiteralTrue() : new LiteralFalse();
+            _holder.Register(filter);
         }
 
         return null;
