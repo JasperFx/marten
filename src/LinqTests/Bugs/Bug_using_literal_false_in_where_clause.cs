@@ -19,10 +19,32 @@ public class Bug_using_literal_false_in_where_clause : BugIntegrationContext
     }
 
     [Fact]
+    public async Task query_soft_deleted_and_false()
+    {
+        var aggregate1 = new DeletableAggregate
+        {
+            Id = Guid.NewGuid(),
+            Deleted = true,
+        };
+
+        theSession.Store(aggregate1);
+        var aggregate2 = new DeletableAggregate
+        {
+            Id = Guid.NewGuid(),
+            Deleted = false,
+        };
+
+        theSession.Store(aggregate2);
+        await theSession.SaveChangesAsync();
+
+        var actual = await theSession.Query<DeletableAggregate>().Where(x => false).ToListAsync();
+
+        actual.ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task return_correct_results()
     {
-
-
         var aggregate1 = new DeletableAggregate
         {
             Id = Guid.NewGuid(),
