@@ -43,6 +43,7 @@ It's unhealthy, because the projection haven't progressed since last healthcheck
 ### Example use case #2 
 
 Assuming that `maxEventLag` = `100` and `maxSameLagTime` = `TimeSpan.FromSeconds(30)`:
+
 - `HighWaterMark` is 1000 and async projection was processed to sequence number 850 at 2024-02-07 01:30:00 -> 'Healthy'
 - `HighWaterMark` is 1000 and async projection was processed to sequence number 851 at 2024-02-07 01:30:30 -> 'Healthy'
 
