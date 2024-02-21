@@ -29,7 +29,7 @@ internal class ElementComparisonFilter: ISqlFragment, ICollectionAware
     {
         if (Value == null) return false;
         if (Value.GetType().IsDateTime()) return false;
-        if (Value.GetType() == typeof(DateTimeOffset)) return false;
+        if (Value is DateTimeOffset || Value is DateTimeOffset?) return false;
         return true;
     }
 

@@ -65,6 +65,9 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
         @where(x => x.StringArray != null && !x.StringArray.Contains("Red") && x.String.Equals("Orange"));
         @where(x => x.StringArray != null && x.String.Equals("Orange") && !x.StringArray.Contains("Red"));
         @where(x => x.StringArray != null && x.String.Equals("Orange") && x.StringArray.Contains("Red") && x.AnotherString.Equals("one"));
+
+        // GH-2975
+        @where(x => x.Children.Any(c => c.NullableDateOffset <= DateTimeOffset.UtcNow));
     }
 
     [Theory]

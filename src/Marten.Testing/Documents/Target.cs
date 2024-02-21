@@ -96,6 +96,11 @@ public class Target
 
         target.Date = DateTime.Today.AddDays(_random.Next(-10000, 10000));
 
+        if (value > 15)
+        {
+            target.NullableDateOffset = DateTimeOffset.Now.Subtract(_random.Next(-60, 60).Seconds());
+        }
+
         if (deep)
         {
             target.Inner = Random();
@@ -152,6 +157,7 @@ public class Target
     public decimal Decimal { get; set; }
     public DateTime Date { get; set; }
     public DateTimeOffset DateOffset { get; set; }
+    public DateTimeOffset? NullableDateOffset { get; set; }
 
     [JsonInclude] // this is needed to make System.Text.Json happy
     public float Float;
