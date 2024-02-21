@@ -1,11 +1,14 @@
 #nullable enable
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Events.Projections;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Marten.Events.Daemon;
@@ -25,11 +28,20 @@ public static class AsyncDaemonHealthCheckExtensions
     /// </summary>
     /// <param name="builder"><see cref="IHealthChecksBuilder"/></param>
     /// <param name="maxEventLag">(optional) Acceptable lag of an eventprojection before it's considered unhealthy - defaults to 100</param>
+    /// <param name="maxSameLagTime">(optional) Treat projection as healthy if maxEventLag exceeded, but projection sequence changed since last check in given time - defaults to null (uses just maxEventLag)</param>
     /// <returns>If healthy: <see cref="HealthCheckResult.Healthy"/> - else <see cref="HealthCheckResult.Unhealthy"/></returns>
-    public static IHealthChecksBuilder AddMartenAsyncDaemonHealthCheck(this IHealthChecksBuilder builder, int maxEventLag = 100)
+    public static IHealthChecksBuilder AddMartenAsyncDaemonHealthCheck(
+        this IHealthChecksBuilder builder,
+        int maxEventLag = 100,
+        TimeSpan? maxSameLagTime = null
+    )
     {
-        builder.Services.AddSingleton(new AsyncDaemonHealthCheckSettings(maxEventLag));
-        return builder.AddCheck<AsyncDaemonHealthCheck>(nameof(AsyncDaemonHealthCheck), tags: new[] { "Marten", "AsyncDaemon" });
+        builder.Services.AddSingleton(new AsyncDaemonHealthCheckSettings(maxEventLag, maxSameLagTime));
+        builder.Services.TryAddSingleton(TimeProvider.System);
+        return builder.AddCheck<AsyncDaemonHealthCheck>(
+            nameof(AsyncDaemonHealthCheck),
+            tags: new[] { "Marten", "AsyncDaemon" }
+        );
     }
 
     /// <summary>
@@ -37,7 +49,7 @@ public static class AsyncDaemonHealthCheckExtensions
     /// </summary>
     /// <param name="MaxEventLag"></param>
     /// <returns></returns>
-    internal record AsyncDaemonHealthCheckSettings(int MaxEventLag);
+    internal record AsyncDaemonHealthCheckSettings(int MaxEventLag, TimeSpan? MaxSameLagTime = null);
 
     /// <summary>
     /// Health check implementation
@@ -54,37 +66,99 @@ public static class AsyncDaemonHealthCheckExtensions
         /// </summary>
         private readonly int _maxEventLag;
 
-        public AsyncDaemonHealthCheck(IDocumentStore store, AsyncDaemonHealthCheckSettings settings)
+        /// <summary>
+        /// The allowed time for event projection is lagging (by maxEventLag).
+        /// If not provided every projection is considered lagging if HighWaterMark - projection.Position >= maxEventLag.
+        /// If provided only if projection.Position is still the same for given time.
+        /// When you want to rely only on time just set _maxEventLag=1 and maxSameLagTime to desired value.
+        /// </summary>
+        private readonly TimeSpan? _maxSameLagTime;
+
+        private readonly TimeProvider _timeProvider;
+
+        private readonly ConcurrentDictionary<string, (DateTime CheckedAt, long Sequence)>
+            _lastProjectionsChecks = new();
+
+        public AsyncDaemonHealthCheck(IDocumentStore store, AsyncDaemonHealthCheckSettings settings,
+            TimeProvider timeProvider)
         {
             _store = store;
+            _timeProvider = timeProvider;
             _maxEventLag = settings.MaxEventLag;
+            _maxSameLagTime = settings.MaxSameLagTime;
         }
-        public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context,
-                                                              CancellationToken cancellationToken = default)
+
+        public async Task<HealthCheckResult> CheckHealthAsync(
+            HealthCheckContext context,
+            CancellationToken cancellationToken = default
+        )
         {
             try
             {
-                var projectionsToCheck = _store.Options
-                                               .Events
-                                               .Projections()
-                                               .Where(x => x.Lifecycle == ProjectionLifecycle.Async) // Only check async projections to avoid issus where inline progression counter is set.
-                                               .Select(x => $"{x.ProjectionName}:All")
-                                               .ToHashSet();
+                var projectionsToCheck = _store.Options.Events.Projections()
+                    .Where(x => x.Lifecycle == ProjectionLifecycle.Async)
+                    .Select(x => $"{x.ProjectionName}:All")
+                    .ToHashSet();
 
-                var allProgress = await _store.Advanced.AllProjectionProgress(token: cancellationToken).ConfigureAwait(true);
+                var allProgress = await _store.Advanced.AllProjectionProgress(token: cancellationToken)
+                    .ConfigureAwait(true);
 
-                var highWaterMark = allProgress.First(x => string.Equals("HighWaterMark", x.ShardName));
-                var projectionMarks = allProgress.Where(x => !string.Equals("HighWaterMark", x.ShardName));
+                var highWaterMark = allProgress.FirstOrDefault(x => string.Equals("HighWaterMark", x.ShardName));
+                if (highWaterMark is null)
+                {
+                    return HealthCheckResult.Healthy("Healthy");
+                }
 
-                var unhealthy = projectionMarks
-                                .Where(x => projectionsToCheck.Contains(x.ShardName))
-                                .Where(x => x.Sequence <= highWaterMark.Sequence - _maxEventLag)
-                                .Select(x => x.ShardName)
-                                .ToArray();
+                var projectionMarks = allProgress.Where(x => !string.Equals("HighWaterMark", x.ShardName)).ToArray();
 
-                return unhealthy.Any()
-                  ? HealthCheckResult.Unhealthy($"Unhealthy: Async projection sequence is more than {_maxEventLag} events behind for projection(s): {unhealthy.Join(", ")}")
-                  : HealthCheckResult.Healthy("Healthy");
+                var projectionsSequences = projectionMarks.Where(x => projectionsToCheck.Contains(x.ShardName))
+                    .Select(x => new { x.ShardName, x.Sequence })
+                    .ToArray();
+
+                var laggingProjections = projectionsSequences
+                    .Where(x => x.Sequence <= highWaterMark.Sequence - _maxEventLag)
+                    .ToArray();
+
+                if (_maxSameLagTime is null)
+                {
+                    return laggingProjections.Any()
+                        ? HealthCheckResult.Unhealthy(
+                            $"Unhealthy: Async projection sequence is more than {_maxEventLag} events behind for projection(s): {laggingProjections.Select(x => x.ShardName).Join(", ")}"
+                        )
+                        : HealthCheckResult.Healthy("Healthy");
+                }
+
+                var now = _timeProvider.GetUtcNow().UtcDateTime;
+
+                var projectionsLaggingWithSamePositionForGivenTime = laggingProjections.Where(
+                        x =>
+                        {
+                            var (laggingSince, lastKnownPosition) =
+                                _lastProjectionsChecks.GetValueOrDefault(x.ShardName, (now, x.Sequence));
+
+                            var isLaggingWithSamePositionForGivenTime =
+                                now.Subtract(laggingSince) >= _maxSameLagTime &&
+                                x.Sequence == lastKnownPosition;
+
+                            return isLaggingWithSamePositionForGivenTime;
+                        }
+                    )
+                    .ToArray();
+
+                foreach (var laggingProjection in laggingProjections)
+                {
+                    _lastProjectionsChecks.AddOrUpdate(
+                        laggingProjection.ShardName,
+                        _ => (now, laggingProjection.Sequence),
+                        (_, _) => (now, laggingProjection.Sequence)
+                    );
+                }
+
+                return projectionsLaggingWithSamePositionForGivenTime.Any()
+                    ? HealthCheckResult.Unhealthy(
+                        $"Unhealthy: Async projection sequence is more than {_maxEventLag} events behind with same sequence for more than {_maxSameLagTime} for projection(s): {projectionsLaggingWithSamePositionForGivenTime.Select(x => x.ShardName).Join(", ")}"
+                    )
+                    : HealthCheckResult.Healthy("Healthy");
             }
             catch (Exception ex)
             {
