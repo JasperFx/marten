@@ -32,14 +32,16 @@ If you want to add some time toleration for the healthcheck, you may use additio
 It treats as unhealthy projections same as described below, but ONLY IF the same projection lag remains for the given time.
 
 ### Example use case #1 
+
 Assuming that `maxEventLag` = `100` and `maxSameLagTime` = `TimeSpan.FromSeconds(30)`:
+
 - `HighWaterMark` is 1000 and async projection was processed to sequence number 850 at 2024-02-07 01:30:00 -> 'Healthy' 
 - `HighWaterMark` is 1000 and async projection was processed to sequence number 850 at 2024-02-07 01:30:30 -> 'Unhealthy' 
 
-It's unhealty, because the projection haven't progressed since last healthcheck and `maxSameLagTime` elapsed on the same sequence number.
-
+It's unhealthy, because the projection haven't progressed since last healthcheck and `maxSameLagTime` elapsed on the same sequence number.
 
 ### Example use case #2 
+
 Assuming that `maxEventLag` = `100` and `maxSameLagTime` = `TimeSpan.FromSeconds(30)`:
 - `HighWaterMark` is 1000 and async projection was processed to sequence number 850 at 2024-02-07 01:30:00 -> 'Healthy'
 - `HighWaterMark` is 1000 and async projection was processed to sequence number 851 at 2024-02-07 01:30:30 -> 'Healthy'
