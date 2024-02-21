@@ -3,9 +3,9 @@ using Marten.Schema;
 namespace Marten.Events.Projections;
 
 /// <summary>
-/// Just adds a suffix to the document alias of a projected aggregate
+/// Makes several modifications to the documents of projections
 /// </summary>
-internal class AsyncProjectionVersionPolicy : IDocumentPolicy
+internal class ProjectionDocumentPolicy : IDocumentPolicy
 {
     public void Apply(DocumentMapping mapping)
     {

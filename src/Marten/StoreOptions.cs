@@ -58,7 +58,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
 
     private readonly IList<IDocumentPolicy> _policies = new List<IDocumentPolicy>
     {
-        new VersionedPolicy(), new SoftDeletedPolicy(), new TrackedPolicy(), new TenancyPolicy(), new AsyncProjectionVersionPolicy()
+        new VersionedPolicy(), new SoftDeletedPolicy(), new TrackedPolicy(), new TenancyPolicy(), new ProjectionDocumentPolicy()
     };
 
     /// <summary>
