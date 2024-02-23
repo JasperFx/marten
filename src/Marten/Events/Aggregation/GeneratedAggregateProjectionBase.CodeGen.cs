@@ -86,14 +86,14 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
 
     protected override void assembleTypes(GeneratedAssembly assembly, StoreOptions options)
     {
-        ReferenceAssembliesAndTypes(assembly);
-        AddUsingNamespaces(assembly);
-        CheckAndSetAsyncFlag();
-        ValidateAndSetAggregateMapping(options);
-        BuildAggregationTypes(assembly);
+        referenceAssembliesAndTypes(assembly);
+        addUsingNamespaces(assembly);
+        checkAndSetAsyncFlag();
+        validateAndSetAggregateMapping(options);
+        buildAggregationTypes(assembly);
     }
 
-    private void ReferenceAssembliesAndTypes(GeneratedAssembly assembly)
+    private void referenceAssembliesAndTypes(GeneratedAssembly assembly)
     {
         assembly.Rules.ReferenceTypes(GetType());
         assembly.ReferenceAssembly(GetType().Assembly);
@@ -107,18 +107,18 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         assembly.Rules.ReferenceTypes(GetType(), typeof(T));
     }
 
-    private static void AddUsingNamespaces(GeneratedAssembly assembly)
+    private static void addUsingNamespaces(GeneratedAssembly assembly)
     {
         assembly.UsingNamespaces.Add("System");
         assembly.UsingNamespaces.Add("System.Linq");
     }
 
-    private void CheckAndSetAsyncFlag()
+    private void checkAndSetAsyncFlag()
     {
         _isAsync = _createMethods.IsAsync || _applyMethods.IsAsync;
     }
 
-    private void ValidateAndSetAggregateMapping(StoreOptions options)
+    private void validateAndSetAggregateMapping(StoreOptions options)
     {
         _aggregateMapping = options.Storage.FindMapping(typeof(T));
         if (_aggregateMapping.IdMember == null)
@@ -128,7 +128,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         }
     }
 
-    private void BuildAggregationTypes(GeneratedAssembly assembly)
+    private void buildAggregationTypes(GeneratedAssembly assembly)
     {
         buildLiveAggregationType(assembly);
         buildInlineAggregationType(assembly);
