@@ -395,7 +395,7 @@ public class ProjectionOptions: DaemonSettings
         }
     }
 
-    internal IReadOnlyList<AsyncProjectionShard> AllShards()
+    public IReadOnlyList<AsyncProjectionShard> AllShards()
     {
         return _asyncShards.Value.Values.ToList();
     }
