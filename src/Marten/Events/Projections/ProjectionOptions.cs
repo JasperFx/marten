@@ -395,6 +395,7 @@ public class ProjectionOptions: DaemonSettings
         }
     }
 
+    // This has to be public for CritterStackPro
     public IReadOnlyList<AsyncProjectionShard> AllShards()
     {
         return _asyncShards.Value.Values.ToList();
