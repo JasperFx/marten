@@ -212,6 +212,11 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
     public void QueueSqlCommand(string sql, params object[] parameterValues)
     {
+        sql = sql.TrimEnd(';');
+        if (sql.Contains(';'))
+            throw new ArgumentOutOfRangeException(nameof(sql),
+                "You must specify one SQL command at a time because of Marten's usage of command batching. ';' cannot be used as a command separator here.");
+
         var operation = new ExecuteSqlStorageOperation(sql, parameterValues);
         QueueOperation(operation);
     }
