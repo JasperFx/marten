@@ -11,9 +11,8 @@ using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
-using Xunit;
 
-namespace CoreTests.DatabaseMultiTenancy;
+namespace MultiTenancyTests;
 
 [CollectionDefinition("multi-tenancy", DisableParallelization = true)]
 public class using_master_table_multi_tenancy : IAsyncLifetime

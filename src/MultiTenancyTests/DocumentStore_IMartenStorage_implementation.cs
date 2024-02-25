@@ -1,10 +1,7 @@
-using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
-using CoreTests.Diagnostics;
-using CoreTests.Util;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -14,9 +11,8 @@ using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
-using Xunit;
 
-namespace CoreTests.DatabaseMultiTenancy;
+namespace MultiTenancyTests;
 
 [CollectionDefinition("multi-tenancy", DisableParallelization = true)]
 public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
@@ -160,3 +156,5 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
         databases.Count.ShouldBe(3);
     }
 }
+
+public record AEvent{}

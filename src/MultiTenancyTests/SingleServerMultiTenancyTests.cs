@@ -7,9 +7,8 @@ using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Connections;
-using Xunit;
 
-namespace CoreTests.DatabaseMultiTenancy;
+namespace MultiTenancyTests;
 
 [CollectionDefinition("multi-tenancy", DisableParallelization = true)]
 public class SingleServerMultiTenancyTests: IAsyncLifetime

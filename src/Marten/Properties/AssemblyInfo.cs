@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Marten.AsyncDaemon.Testing")]
 [assembly: InternalsVisibleTo("ConfigurationTests")]
 [assembly: InternalsVisibleTo("CoreTests")]
+[assembly: InternalsVisibleTo("MultiTenancyTests")]
 [assembly: InternalsVisibleTo("LinqTests")]
 [assembly: InternalsVisibleTo("DocumentDbTests")]
 [assembly: InternalsVisibleTo("EventSourcingTests")]

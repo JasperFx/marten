@@ -1,117 +1,77 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
-using Marten.Exceptions;
-using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Shouldly;
-using Weasel.Core.Migrations;
 using Weasel.Postgresql;
-using Xunit;
+using Weasel.Postgresql.Migrations;
 
-namespace CoreTests.DatabaseMultiTenancy;
+namespace MultiTenancyTests;
 
 [CollectionDefinition("multi-tenancy", DisableParallelization = true)]
-public class using_per_database_multitenancy: IAsyncLifetime
+public class using_static_database_multitenancy: IAsyncLifetime
 {
     private IHost _host;
     private IDocumentStore theStore;
 
-    #region sample_MySpecialTenancy
-
-    // Make sure you implement the Dispose() method and
-    // dispose all MartenDatabase objects
-    public class MySpecialTenancy: ITenancy
-
-    #endregion
-
+    private async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
     {
-        public ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
+        var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
+
+        var exists = await conn.DatabaseExists(databaseName);
+        if (!exists)
         {
-            throw new System.NotImplementedException();
+            await new DatabaseSpecification().BuildDatabase(conn, databaseName);
         }
 
-        public Tenant GetTenant(string tenantId)
-        {
-            throw new System.NotImplementedException();
-        }
+        builder.Database = databaseName;
 
-        public Tenant Default { get; }
-        public IDocumentCleaner Cleaner { get; }
-
-        public ValueTask<Tenant> GetTenantAsync(string tenantId)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void Dispose()
-        {
-            //
-        }
-    }
-
-    public static void apply_custom_tenancy()
-    {
-        #region sample_apply_custom_tenancy
-
-        var store = DocumentStore.For(opts =>
-        {
-            opts.Connection("connection string");
-
-            // Apply custom tenancy model
-            opts.Tenancy = new MySpecialTenancy();
-        });
-
-        #endregion
+        return builder.ConnectionString;
     }
 
     public async Task InitializeAsync()
     {
-        #region sample_using_single_server_multi_tenancy
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");
+        var tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");
+        var tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant4");
+
+        #region sample_using_multi_tenanted_databases
 
         _host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
                 services.AddMarten(opts =>
-                {
-                    opts
-                        // You have to specify a connection string for "administration"
-                        // with rights to provision new databases on the fly
-                        .MultiTenantedWithSingleServer(
-                            ConnectionSource.ConnectionString,
-                            t => t
-                                // You can map multiple tenant ids to a single named database
-                                .WithTenants("tenant1", "tenant2").InDatabaseNamed("database1")
+                    {
+                        // Explicitly map tenant ids to database connection strings
+                        opts.MultiTenantedDatabases(x =>
+                        {
+                            // Map multiple tenant ids to a single named database
+                            x.AddMultipleTenantDatabase(db1ConnectionString, "database1")
+                                .ForTenants("tenant1", "tenant2");
 
-                                // Just declaring that there are additional tenant ids that should
-                                // have their own database
-                                .WithTenants("tenant3", "tenant4") // own database
-                        );
+                            // Map a single tenant id to a database, which uses the tenant id as well for the database identifier
+                            x.AddSingleTenantDatabase(tenant3ConnectionString, "tenant3");
+                            x.AddSingleTenantDatabase(tenant4ConnectionString, "tenant4");
+                        });
 
 
-                    opts.RegisterDocumentType<User>();
-                    opts.RegisterDocumentType<Target>();
-                }).ApplyAllDatabaseChangesOnStartup();
+                        opts.RegisterDocumentType<User>();
+                        opts.RegisterDocumentType<Target>();
+                    })
+
+                    // All detected changes will be applied to all
+                    // the configured tenant databases on startup
+                    .ApplyAllDatabaseChangesOnStartup();
             }).StartAsync();
 
         #endregion
@@ -125,27 +85,6 @@ public class using_per_database_multitenancy: IAsyncLifetime
         theStore.Dispose();
     }
 
-    [Theory]
-    [InlineData("tenant3", "tenant3", true)]
-    [InlineData("tenant1", "database1", true)]
-    [InlineData("tenant3", "tenant4", false)]
-    [InlineData("tenant3", "database1", false)]
-    public async Task tenant_is_in_database(string tenantId, string databaseName, bool isContained)
-    {
-        var tenancy = theStore.Options.Tenancy;
-        var database = await tenancy.FindOrCreateDatabase(databaseName);
-        tenancy.IsTenantStoredInCurrentDatabase(database, tenantId).ShouldBe(isContained);
-    }
-
-    [Fact]
-    public async Task assert_invalid_tenant_for_database()
-    {
-        using var session = theStore.LightweightSession("tenant1");
-        Should.Throw<InvalidTenantForDatabaseException>(() =>
-        {
-            var nested = session.ForTenant("tenant4");
-        });
-    }
 
     [Fact]
     public void default_tenant_usage_is_disabled()
@@ -237,5 +176,31 @@ public class using_per_database_multitenancy: IAsyncLifetime
         {
             (await query4.Query<Target>().AnyAsync()).ShouldBeFalse();
         }
+    }
+
+    public static async Task administering_multiple_databases(IDocumentStore store)
+    {
+        #region sample_administering_multiple_databases
+
+        // Apply all detected changes in every known database
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        // Only apply to the default database if not using multi-tenancy per
+        // database
+        await store.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        // Find a specific database
+        var database = await store.Storage.FindOrCreateDatabase("tenant1");
+
+        // Tear down everything
+        await database.CompletelyRemoveAllAsync();
+
+        // Check out the projection state in just this database
+        var state = await database.FetchEventStoreStatistics();
+
+        // Apply all outstanding database changes in just this database
+        await database.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        #endregion
     }
 }
