@@ -214,12 +214,15 @@ public class StorageFeatures: IFeatureSchema
     {
         var duplicates =
             AllDocumentMappings.Where(x => !x.StructuralTyped)
-                .GroupBy(x => x.Alias)
+                .GroupBy(x => $"{x.DatabaseSchemaName}.{x.Alias}")
                 .Where(x => x.Count() > 1)
                 .ToArray();
+
         if (duplicates.Any())
         {
-            var message = duplicates.Select(group =>
+            var message = duplicates
+                    // We are making it legal to use the same document alias across different schemas
+                .Select(group =>
             {
                 return
                     $"Document types {group.Select(x => x.DocumentType.FullName!).Join(", ")} all have the same document alias '{group.Key}'. You must explicitly make document type aliases to disambiguate the database schema objects";
