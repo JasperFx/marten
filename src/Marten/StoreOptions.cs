@@ -42,7 +42,17 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     internal static readonly Func<string, NpgsqlDataSourceBuilder> DefaultNpgsqlDataSourceBuilderFactory =
         connectionString => new NpgsqlDataSourceBuilder(connectionString);
 
+    internal Func<string, NpgsqlDataSourceBuilder> NpgsqlDataSourceBuilderFactory
+    {
+        get => _npgsqlDataSourceBuilderFactory;
+        private set => _npgsqlDataSourceBuilderFactory = value;
+    }
 
+    internal INpgsqlDataSourceFactory NpgsqlDataSourceFactory
+    {
+        get => _npgsqlDataSourceFactory;
+        private set => _npgsqlDataSourceFactory = value;
+    }
 
     internal readonly List<Action<ISerializer>> SerializationConfigurations = new();
 
@@ -81,7 +91,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
 
     public StoreOptions()
     {
-        NpgsqlDataSourceFactory = this;
         _eventGraph = new EventGraph(this);
         Schema = new MartenRegistry(this);
         _storage = new StorageFeatures(this);
@@ -325,6 +334,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
 
     private Lazy<ITenancy>? _tenancy;
     private Func<string, NpgsqlDataSourceBuilder> _npgsqlDataSourceBuilderFactory = DefaultNpgsqlDataSourceBuilderFactory;
+    private INpgsqlDataSourceFactory _npgsqlDataSourceFactory = new DefaultNpgsqlDataSourceFactory();
     private readonly IList<Type> _compiledQueryTypes = new List<Type>();
     private int _applyChangesLockId = 4004;
     private bool _shouldApplyChangesOnStartup = false;
