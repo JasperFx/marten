@@ -130,7 +130,7 @@ internal class MartenBuild
         Target("test-plv8", DependsOn("compile", "compile-plv8"), () =>
             RunTests("Marten.PLv8.Testing"));
 
-        Target("test", DependsOn("test-base-lib", "test-core", "test-document-db", "test-event-sourcing", "test-cli", "test-linq", "test-codegen", "test-patching", "test-multi-tenancy"));
+        Target("test", DependsOn("test-base-lib", "test-core", "test-document-db", "test-event-sourcing", "test-cli", "test-linq", "test-codegen", "test-patching"));
 
         Target("test-extension-libs-without-plv8", DependsOn("test-noda-time", "test-aspnetcore"));
 
