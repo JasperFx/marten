@@ -137,8 +137,10 @@ internal class HighWaterDetector: IHighWaterDetector
                 await Task.Delay(250.Milliseconds(), token).ConfigureAwait(false);
                 current = await _runner.Query(_gapDetector, token).ConfigureAwait(false);
             }
-
-            throw;
+            else
+            {
+                throw;
+            }
         }
 
         if (current.HasValue)

@@ -9,36 +9,34 @@ namespace Marten.Events.Daemon.HighWater;
 
 internal class GapDetector: ISingleQueryHandler<long?>
 {
-    private readonly NpgsqlCommand _gapDetection;
-    private readonly NpgsqlParameter _start;
+    private readonly EventGraph _graph;
 
     public GapDetector(EventGraph graph)
     {
-        _gapDetection = new NpgsqlCommand($@"
+        _graph = graph;
+    }
+
+    public long Start { get; set; }
+
+    public NpgsqlCommand BuildCommand()
+    {
+        var sql = $@"
 select seq_id
 from   (select
                seq_id,
                lead(seq_id)
                over (order by seq_id) as no
         from
-               {graph.DatabaseSchemaName}.mt_events where seq_id >= :start) ct
+               {_graph.DatabaseSchemaName}.mt_events where seq_id >= :start) ct
 where  no is not null
   and    no - seq_id > 1
 LIMIT 1;
-select max(seq_id) from {graph.DatabaseSchemaName}.mt_events where seq_id >= :start;
-".Trim());
+select max(seq_id) from {_graph.DatabaseSchemaName}.mt_events where seq_id >= :start;
+".Trim();
+        var command = new NpgsqlCommand(sql);
+        command.AddNamedParameter("start", Start);
 
-        _start = _gapDetection.AddNamedParameter("start", 0L);
-    }
-
-    public long Start
-    {
-        set => _start.Value = value;
-    }
-
-    public NpgsqlCommand BuildCommand()
-    {
-        return _gapDetection;
+        return command;
     }
 
     public async Task<long?> HandleAsync(DbDataReader reader, CancellationToken token)

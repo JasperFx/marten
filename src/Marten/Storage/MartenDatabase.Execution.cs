@@ -1,3 +1,4 @@
+using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,25 +8,54 @@ namespace Marten.Storage;
 
 public partial class MartenDatabase : ISingleQueryRunner
 {
-    public async Task<T> Query<T>(ISingleQueryHandler<T> handler, CancellationToken cancellation)
+    internal record SingleQuery<T>(ISingleQueryHandler<T> Handler, MartenDatabase Database)
     {
-        await using var conn = CreateConnection();
-
-        var command = handler.BuildCommand();
-        command.Connection = conn;
-
-        await conn.OpenAsync(cancellation).ConfigureAwait(false);
-        await using var reader = await command.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
-
-        try
+        public async Task<T> ExecuteAsync(CancellationToken cancellation)
         {
-            return await handler.HandleAsync(reader, cancellation).ConfigureAwait(false);
+            await using var conn = Database.CreateConnection();
+
+            var command = Handler.BuildCommand();
+            try
+            {
+                command.Connection = conn;
+            }
+            catch (InvalidOperationException e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            await conn.OpenAsync(cancellation).ConfigureAwait(false);
+            await using var reader = await command.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
+
+            try
+            {
+                return await Handler.HandleAsync(reader, cancellation).ConfigureAwait(false);
+            }
+            catch (InvalidOperationException e)
+            {
+                throw;
+            }
+            finally
+            {
+                try
+                {
+                    await reader.CloseAsync().ConfigureAwait(false);
+                    await reader.DisposeAsync().ConfigureAwait(false);
+                    await conn.CloseAsync().ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    // don't let anything escape here
+                }
+            }
         }
-        finally
-        {
-            await reader.CloseAsync().ConfigureAwait(false);
-            await reader.DisposeAsync().ConfigureAwait(false);
-        }
+    }
+
+    public Task<T> Query<T>(ISingleQueryHandler<T> handler, CancellationToken cancellation)
+    {
+        return _options.ResiliencePipeline.ExecuteAsync<T, SingleQuery<T>>(
+            static (query, t) => new ValueTask<T>(query.ExecuteAsync(t)), new SingleQuery<T>(handler, this), cancellation).AsTask();
     }
 
     public async Task SingleCommit(DbCommand command, CancellationToken cancellation)
