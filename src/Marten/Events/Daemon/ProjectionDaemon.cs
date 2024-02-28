@@ -61,7 +61,7 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
 
     internal MartenDatabase Database { get; }
 
-    internal ILogger Logger { get; }
+    public ILogger Logger { get; }
 
     public void Dispose()
     {
@@ -244,8 +244,14 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
             cancellation.CancelAfter(5.Seconds());
             try
             {
-                var activeAgents = _agents.Enumerate().Select(x => x.Value).Where(x => x.Status == AgentStatus.Running).ToArray();
-                await Parallel.ForEachAsync(activeAgents, cancellation.Token, (agent, t) => new ValueTask(agent.StopAndDrainAsync(t))).ConfigureAwait(false);
+                var activeAgents = _agents.Enumerate().Select(x => x.Value).Where(x => x.Status == AgentStatus.Running)
+                    .ToArray();
+                await Parallel.ForEachAsync(activeAgents, cancellation.Token,
+                    (agent, t) => new ValueTask(agent.StopAndDrainAsync(t))).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+                // Nothing, you're already trying to get out
             }
             catch (Exception e)
             {

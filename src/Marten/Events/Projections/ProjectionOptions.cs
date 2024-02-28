@@ -28,11 +28,6 @@ public class ErrorHandlingOptions
     /// Should the daemon skip any events that experience serialization errors?
     /// </summary>
     public bool SkipSerializationErrors { get; set; }
-
-    /// <summary>
-    /// LATER... TODO -- write something here, use these, something
-    /// </summary>
-    public TimeSpan[] PauseTimes { get; set; } = [1.Seconds(), 3.Seconds(), 5.Seconds()];
 }
 
 /// <summary>
