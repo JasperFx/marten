@@ -116,6 +116,18 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
         ResiliencePipeline = strategy;
 
         #endregion
+
+        // Add logging into our NpgsqlDataSource
+        NpgsqlDataSourceFactory = new DefaultNpgsqlDataSourceFactory(connectionString =>
+        {
+            var builder = new NpgsqlDataSourceBuilder(connectionString);
+            if (LogFactory != null)
+            {
+                builder.UseLoggerFactory(LogFactory);
+            }
+
+            return builder;
+        });
     }
 
     /// <summary>
@@ -334,7 +346,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
 
     private Lazy<ITenancy>? _tenancy;
     private Func<string, NpgsqlDataSourceBuilder> _npgsqlDataSourceBuilderFactory = DefaultNpgsqlDataSourceBuilderFactory;
-    private INpgsqlDataSourceFactory _npgsqlDataSourceFactory = new DefaultNpgsqlDataSourceFactory();
+    private INpgsqlDataSourceFactory _npgsqlDataSourceFactory;
     private readonly IList<Type> _compiledQueryTypes = new List<Type>();
     private int _applyChangesLockId = 4004;
     private bool _shouldApplyChangesOnStartup = false;
