@@ -79,7 +79,7 @@ internal class EventTypePatternMatchFrame: Frame
             var sorted = new Stack<Type>();
 
             // Topological sort
-            foreach (var type in typesSet.OrderByDescending(type => type.Name)) //Orders by name at top-level
+            foreach (var type in typesSet.OrderByDescending(type => type.FullName)) //Orders by name at top-level
             {
                 VisitGraph(type, visited, sorted);
             }
