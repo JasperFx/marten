@@ -6,6 +6,7 @@ using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
@@ -94,6 +95,18 @@ internal class EventLoader: IEventLoader
                 }
 
                 page.Add(@event);
+            }
+            catch (UnknownEventTypeException e)
+            {
+                if (request.ErrorOptions.SkipUnknownEvents)
+                {
+                    request.Runtime.Logger.LogWarning("Skipping unknown event type '{EventTypeName}'", e.EventTypeName);
+                }
+                else
+                {
+                    // Let any other exception throw
+                    throw;
+                }
             }
             catch (EventDeserializationFailureException e)
             {

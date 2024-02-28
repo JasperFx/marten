@@ -30,6 +30,15 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
     protected CustomProjection()
     {
         ProjectionName = GetType().NameInCode();
+
+        if (typeof(TId) == typeof(Guid))
+        {
+            Slicer = (IEventSlicer<TDoc, TId>)new ByStreamId<TDoc>();
+        }
+        else if (typeof(TId) == typeof(string))
+        {
+            Slicer = (IEventSlicer<TDoc, TId>)new ByStreamKey<TDoc>();
+        }
     }
 
     public IEventSlicer<TDoc, TId> Slicer { get; protected internal set; }

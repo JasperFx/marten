@@ -1,4 +1,6 @@
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Marten.Events.Daemon.Internals;
 
@@ -9,4 +11,6 @@ public class NulloDaemonRuntime: IDaemonRuntime
         // Nothing, but at least don't blow up
         return Task.CompletedTask;
     }
+
+    public ILogger Logger { get; } = NullLogger.Instance;
 }
