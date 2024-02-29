@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -21,6 +22,15 @@ internal class AnySubQueryParser: IMethodCallParser
                typeMatches(member.Type);
     }
 
+    private bool hasAny(object value)
+    {
+        if (value is IEnumerable<object> e) return e.Any();
+
+        if (value is ICollection c) return c.Count > 0;
+
+        return false;
+    }
+
     public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
         MethodCallExpression expression)
     {
@@ -40,7 +50,7 @@ internal class AnySubQueryParser: IMethodCallParser
                     return a.Length > 0 ? new LiteralTrue() : new LiteralFalse();
                 }
 
-                return c.Value.As<IEnumerable<object>>().Any() ? new LiteralTrue() : new LiteralFalse();
+                return hasAny(c.Value) ? new LiteralTrue() : new LiteralFalse();
             }
 
             // Where(filter).Any()
