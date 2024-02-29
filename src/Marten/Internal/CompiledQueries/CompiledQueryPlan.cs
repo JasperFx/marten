@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using JasperFx.CodeGeneration;
@@ -46,7 +47,7 @@ public class CompiledQueryPlan : ICommandBuilder
         var members = findMembers().ToArray();
         if (!members.Any())
         {
-            throw new InvalidCompiledQueryException(
+            Debug.WriteLine(
                 "No public properties or fields found. Sorry, but Marten cannot use primary constructor values as compiled query parameters at this time, use a class with settable properties instead.");
         }
 
