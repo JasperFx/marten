@@ -111,7 +111,7 @@ internal abstract class MethodCollection
 
     protected virtual BindingFlags flags()
     {
-        return BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        return BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
     }
 
     internal static Type[] AllEventTypes(params MethodCollection[] methods)
