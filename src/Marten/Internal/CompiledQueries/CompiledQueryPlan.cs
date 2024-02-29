@@ -43,7 +43,14 @@ public class CompiledQueryPlan : ICommandBuilder
 
     private void sortMembers()
     {
-        foreach (var member in findMembers())
+        var members = findMembers().ToArray();
+        if (!members.Any())
+        {
+            throw new InvalidCompiledQueryException(
+                "No public properties or fields found. Sorry, but Marten cannot use primary constructor values as compiled query parameters at this time, use a class with settable properties instead.");
+        }
+
+        foreach (var member in members)
         {
             var memberType = member.GetRawMemberType();
             if (memberType == typeof(QueryStatistics))
