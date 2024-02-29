@@ -43,7 +43,7 @@ public class MasterTableTenancy : ITenancy
     public async Task DeleteDatabaseRecordAsync(string tenantId)
     {
         await using var conn = new NpgsqlConnection(_connectionString);
-        await CommandExtensions.CreateCommand(conn, $"delete from {_schemaName}.{TenantTable.TableName} where tenant_id = :id")
+        await conn.CreateCommand($"delete from {_schemaName}.{TenantTable.TableName} where tenant_id = :id")
             .With("id", tenantId)
             .ExecuteOnce(CancellationToken.None).ConfigureAwait(false);
     }
@@ -51,7 +51,7 @@ public class MasterTableTenancy : ITenancy
     public async Task ClearAllDatabaseRecordsAsync()
     {
         await using var conn = new NpgsqlConnection(_connectionString);
-        await CommandExtensions.CreateCommand(conn, $"delete from {_schemaName}.{TenantTable.TableName}")
+        await conn.CreateCommand($"delete from {_schemaName}.{TenantTable.TableName}")
             .ExecuteOnce(CancellationToken.None).ConfigureAwait(false);
     }
 
@@ -64,14 +64,17 @@ public class MasterTableTenancy : ITenancy
             .ExecuteOnce(CancellationToken.None).ConfigureAwait(false);
     }
 
+    private bool _hasAppliedChanges;
+
     public async ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
     {
         var tenantDatabase = new TenantDatabase(_options, _connectionString, _schemaName);
 
-        if (_options.AutoCreateSchemaObjects != AutoCreate.None)
+        if (!_hasAppliedChanges && _options.AutoCreateSchemaObjects != AutoCreate.None)
         {
             await tenantDatabase
                 .ApplyAllConfiguredChangesToDatabaseAsync(_options.AutoCreateSchemaObjects).ConfigureAwait(false);
+            _hasAppliedChanges = true;
         }
 
         await using var conn = new NpgsqlConnection(_connectionString);
@@ -94,6 +97,8 @@ public class MasterTableTenancy : ITenancy
                 var database = new MartenDatabase(_options, new ConnectionFactory(new DefaultNpgsqlDataSourceFactory(), connectionString), tenantId);
                 _databases = _databases.AddOrUpdate(tenantId, database);
             }
+
+            await reader.CloseAsync().ConfigureAwait(false);
         }
         finally
         {
