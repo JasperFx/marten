@@ -10,6 +10,11 @@ Don't use asynchronous Linq operators in the expression body of a compiled query
 in asynchronous querying.
 :::
 
+::: warning
+Compiled queries cannot use the recently added [primary constructor feature in C#](https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/tutorials/primary-constructors), and so far we don't even have a way to validate
+when you are using this feature in compiled query planning. Be warned.
+:::
+
 Linq is easily one of the most popular features in .Net and arguably the one thing that other platforms strive to copy. We generally like being able
 to express document queries in compiler-safe manner, but there is a non-trivial cost in parsing the resulting [Expression trees](https://msdn.microsoft.com/en-us/library/bb397951.aspx) and then using plenty of string concatenation to build up the matching SQL query.
 

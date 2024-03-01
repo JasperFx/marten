@@ -91,6 +91,64 @@ _host = await Host.CreateDefaultBuilder()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/using_per_database_multitenancy.cs#L87-L114' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_single_server_multi_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Master Table Tenancy Model
+
+New in Marten 7.0 is a built in recipe for database multi-tenancy that allows for new tenant database to be discovered at
+runtime using this syntax option:
+
+snippet: sample_master_table_multi_tenancy
+
+With this model, Marten is setting up a table named `mt_tenant_databases` to store with just two columns:
+
+1. `tenant_id`
+2. `connection_string`
+
+At runtime, when you ask for a new session for a specific tenant like so:
+
+```csharp
+using var session = store.LightweightSession("tenant1");
+```
+
+This new Marten tenancy strategy will first look for a database with the “tenant1” identifier its own memory, 
+and if it’s not found, will try to reach into the database table to “find” the connection string for this 
+newly discovered tenant. If a record is found, the new tenancy strategy caches the information, and proceeds just like normal.
+
+Now, let me try to anticipate a couple questions you might have here:
+
+* **Can Marten track and apply database schema changes to new tenant databases at runtime?** Yes, Marten does the schema check tracking on a database by database basis. This means that if you add a new tenant database to that underlying table, Marten will absolutely be able to make schema changes as needed to just that tenant database regardless of the state of other tenant databases.
+* **Will the Marten command line tools recognize new tenant databases?** Yes, same thing. If you call dotnet run -- marten-apply for example, Marten will do the schema migrations independently for each tenant database, so any outstanding changes will be performed on each tenant database.
+* **Can Marten spin up asynchronous projections for a new tenant database without requiring downtime?** Yes! Check out this big ol’ integration test proving that the new Marten V7 version of the async daemon can handle that just fine:
+
+```csharp
+[Fact]
+public async Task add_tenant_database_and_verify_the_daemon_projections_are_running()
+{
+    // In this code block, I'm adding new tenant databases to the system that I
+    // would expect Marten to discover and start up an asynchronous projection
+    // daemon for all three newly discovered databases
+    var tenancy = (MasterTableTenancy)theStore.Options.Tenancy;
+    await tenancy.AddDatabaseRecordAsync("tenant1", tenant1ConnectionString);
+    await tenancy.AddDatabaseRecordAsync("tenant2", tenant2ConnectionString);
+    await tenancy.AddDatabaseRecordAsync("tenant3", tenant3ConnectionString);
+ 
+    // This is a new service in Marten specifically to help you interrogate or
+    // manipulate the state of running asynchronous projections within the current process
+    var coordinator = _host.Services.GetRequiredService<IProjectionCoordinator>();
+    var daemon1 = await coordinator.DaemonForDatabase("tenant1");
+    var daemon2 = await coordinator.DaemonForDatabase("tenant2");
+    var daemon3 = await coordinator.DaemonForDatabase("tenant3");
+ 
+    // Just proving that the configured projections for the 3 new databases
+    // are indeed spun up and running after Marten's new daemon coordinator
+    // "finds" the new databases
+    await daemon1.WaitForShardToBeRunning("TripCustomName:All", 30.Seconds());
+    await daemon2.WaitForShardToBeRunning("TripCustomName:All", 30.Seconds());
+    await daemon3.WaitForShardToBeRunning("TripCustomName:All", 30.Seconds());
+}
+```
+
+At runtime, if the Marten V7 version of the async daemon (our sub system for building asynchronous projections constantly in a background IHostedService) is constantly doing “health checks” to make sure that *some process* is running all known asynchronous projections on all known client databases. Long story, short, Marten 7 is able to detect new tenant databases and spin up the asynchronous projection handling for these new tenants with zero downtime.
+
 ## Dynamically applying changes to tenants databases
 
 If you didn't call the `ApplyAllDatabaseChangesOnStartup` method, Marten would still try to create a database [upon the session creation](/documents/sessions). This action is invasive and can cause issues like timeouts, cold starts, or deadlocks. It also won't apply all defined changes upfront (so, e.g. [indexes](/documents/indexing/), [custom schema extensions](/schema/extensions)).

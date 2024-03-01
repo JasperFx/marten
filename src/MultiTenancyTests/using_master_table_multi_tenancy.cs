@@ -57,6 +57,7 @@ public class using_master_table_multi_tenancy : IAsyncLifetime
             {
                 services.AddMarten(opts =>
                     {
+                        // This connection string is
                         opts.MultiTenantedDatabasesWithMasterDatabaseTable(ConnectionSource.ConnectionString, "tenants");
 
                         opts.RegisterDocumentType<User>();

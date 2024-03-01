@@ -1,13 +1,5 @@
 # Async Projections Daemon
 
-::: tip
-The *async daemon* subsystem was completely rewritten in Marten V4. As of right now, this is the only "in the box" solution
-for asynchronous projection support. The hope and plan is for Marten to grow into other alternatives based around data streaming tools
-like Kafka, but this has not been determined or started yet.
-:::
-
-For more information, see Jeremy's blog post on [Offline Event Processing in Marten with the new “Async Daemon”](https://jeremydmiller.com/2016/08/04/offline-event-processing-in-marten-with-the-new-async-daemon/).
-
 The *Async Daemon* is the nickname for Marten's built in asynchronous projection processing engine. The current async daemon from Marten V4 on requires no other infrastructure
 besides Postgresql and Marten itself. The daemon itself runs inside an [IHostedService](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/hosted-services?view=aspnetcore-5.0&tabs=visual-studio) implementation in your application. The **daemon is disabled by default**.
 
@@ -85,14 +77,28 @@ Marten's leader election is done with Postgresql advisory locks, so there is no 
 Postgresql and Marten itself.
 :::
 
+::: tip
+The "HotCold" mode was substantially changed for Marten 7.0 and will potentially run projections across different nodes
+:::
+
 As of right now, the daemon can run as one of two modes:
 
 1. *Solo* -- the daemon will be automatically started when the application is bootstrapped and all projections and projection shards will be started on that node. The assumption with Solo
    is that there is never more than one running system node for your application.
-1. *HotCold* -- the daemon will use a built in [leader election](https://en.wikipedia.org/wiki/Leader_election) function to guarantee that the daemon is only running on
-   one active node
+1. *HotCold* -- the daemon will use a built in [leader election](https://en.wikipedia.org/wiki/Leader_election) function individually for each
+   projection on each tenant database and **ensure that each projection is running on exactly one running process**.
 
 Regardless of how things are configured, the daemon is designed to detect when multiple running processes are updating the same projection shard and will shut down the process if concurrency issues persist.
+
+If your Marten store is only using a single database, Marten will distribute projection by projection. If your store is using
+[separate databases for multi-tenancy](/configuration/multitenancy), the async daemon will group all projections for a single
+database on the same executing node as a purposeful strategy to reduce the total number of connections to the databases.
+
+::: tip
+The built in capability of Marten to distribute projections is somewhat limited, and it's still likely that all projections
+will end up running on the first process to start up. If your system requires better load distribution for increased scalability,
+contact [JasperFx Software](https://jasperfx.net) about their "Critter Stack Pro" product.
+:::
 
 ## Daemon Logging
 
@@ -102,71 +108,86 @@ and be able to replay events later after the fix.
 
 ## Error Handling
 
-**In all examples, `opts` is a `StoreOptions` object.
+::: warning
+The async daemon error handling was rewritten for Marten 7.0. The new model uses
+[Polly](https://www.thepollyproject.org/) for typical transient errors like network hiccups or a database being too
+busy. Marten does have some configuration to alternatively skip certain errors in normal background operation or while
+doing rebuilds.
+:::
 
-The error handling in the daemon is configurable so that you can fine tune how the daemon handles
-exceptions that it encounters. There is a fluent interface API off of `StoreOptions.Projections` that
-will allow you to specify exception filters by a combination of exception type and/or a user supplied
-Lambda filter and an action to take when that event is encountered.
+**In all examples, `opts` is a `StoreOptions` object. Besides the basic [Polly error handling](/configuration/retries#resiliency-policies),
+you have these three options to configure error handling within your system's usage of asynchronous projections:
 
-The possible actions are to:
-
-* Retry the action that caused the exception immediately
-* Retry the action that caused the exception later after a configurable amount of time
-* Stop the current projection shard
-* Stop all the projection shards running on the current node
-* Pause the current projection shard for a user supplied duration of time
-* Pause all the running projection shards for a user supplied duration of time
-* Do nothing and pretend nothing is wrong -- but you probably shouldn't be opting for this very often
-
-For example, you can make the daemon stop a projection anytime a
-projection encounters an `InvalidOperationException` like so:
-
-<!-- snippet: sample_stop_shard_on_exception -->
-<a id='snippet-sample_stop_shard_on_exception'></a>
+<!-- snippet: sample_async_daemon_error_policies -->
+<a id='snippet-sample_async_daemon_error_policies'></a>
 ```cs
-// // Stop only the current exception
-// opts.Projections.OnException<InvalidOperationException>()
-//     .Stop();
-//
-// // or get more granular
-// opts.Projections
-//     .OnException<InvalidOperationException>(e => e.Message.Contains("Really bad!"))
-//     .Stop(); // stops just the current projection shard
+using var host = await Host.CreateDefaultBuilder()
+    .ConfigureServices(services =>
+    {
+        services.AddMarten(opts =>
+            {
+                // connection information...
+
+                opts.Projections.Errors.SkipApplyErrors = true;
+                opts.Projections.Errors.SkipSerializationErrors = true;
+                opts.Projections.Errors.SkipUnknownEvents = true;
+
+                opts.Projections.RebuildErrors.SkipApplyErrors = false;
+                opts.Projections.RebuildErrors.SkipSerializationErrors = false;
+                opts.Projections.RebuildErrors.SkipUnknownEvents = false;
+            })
+            .AddAsyncDaemon(DaemonMode.HotCold);
+    }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L51-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_stop_shard_on_exception' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/ErrorHandling.cs#L13-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_error_policies' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-For retry mechanics, you can specify a finite number of retries, then chain
-an additional action as shown below in this [exponential back-off error handling strategy](https://en.wikipedia.org/wiki/Exponential_back-off):
 
-<!-- snippet: sample_exponential_back-off_strategy -->
-<a id='snippet-sample_exponential_back-off_strategy'></a>
-```cs
-// opts.Projections.OnException<NpgsqlException>()
-//     .RetryLater(50.Milliseconds(), 250.Milliseconds(), 500.Milliseconds())
-//     .Then
-//     .Pause(1.Minutes());
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L72-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_exponential_back-off_strategy' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
+| Option                    | Description                                                                                                                      | Continuous Default | Rebuild Default |
+|---------------------------|----------------------------------------------------------------------------------------------------------------------------------|--------------------|-----------------|
+| `SkipApplyErrors`         | Should errors that occur in projection code (i.e., not Marten or PostgreSQL related errors) be skipped during Daemon processing? | True               | False           |
+| `SkipSerializationErrors` | Should errors from serialization or upcasters be ignored and that event skipped during processing?                               | True               | False           |
+| `SkipUnknownEvents`       | Should unknown event types be skipped by the daemon?                                                                             | True               | False           |
+
+In all cases, if a serialization, apply, or unknown error is encountered and Marten is not configured to skip that type of 
+error, the individual projection will be paused. In the case of projection rebuilds, this will immediately stop the rebuild
+operation. By default, all of these errors are skipped during continuous processing and enforced during rebuilds.
+
+::: tip
+Skipping unknown event types is important for "blue/green" deployment of system changes where a new application version
+introduces an entirely new event type.
+:::
 
 ## Poison Event Detection
 
-Occasionally there might be some kind of error applying a specific event in an asynchronous projection
-where the event data itself is problematic. In this case, you may want to treat it as a *poison pill message*
-and teach the daemon to ignore that event and continue without it in the sequence.
+See the section on error handling. Poison event detection is a little more automatically integrated into Marten 7.0.
 
-Here's an example of teaching the daemon to ignore and skip events that encounter a certain type of exception:
+## Accessing the Executing Async Daemon
 
-<!-- snippet: sample_poison_pill -->
-<a id='snippet-sample_poison_pill'></a>
+New in Marten 7.0 is the ability to readily access the executing instance of the daemon for each database in your system.
+You can use this approach to track progress or start or stop individual projections like so:
+
+<!-- snippet: sample_using_projection_coordinator -->
+<a id='snippet-sample_using_projection_coordinator'></a>
 ```cs
-// opts.Projections.OnApplyEventException()
-//     .AndInner<ArithmeticException>()
-//     .SkipEvent();
+public static async Task accessing_the_daemon(IHost host)
+{
+    // This is a new service introduced by Marten 7.0 that
+    // is automatically registered as a singleton in your
+    // application by IServiceCollection.AddMarten()
+
+    var coordinator = host.Services.GetRequiredService<IProjectionCoordinator>();
+
+    // If targeting only a single database with Marten
+    var daemon = coordinator.DaemonForMainDatabase();
+    await daemon.StopAgentAsync("Trip:All");
+
+    // If targeting multiple databases for multi-tenancy
+    var daemon2 = await coordinator.DaemonForDatabase("tenant1");
+    await daemon.StopAllAsync();
+}
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L64-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_poison_pill' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/DaemonUsage.cs#L10-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_projection_coordinator' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Testing Async Projections <Badge type="tip" text="7.0" />

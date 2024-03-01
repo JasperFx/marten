@@ -1,5 +1,12 @@
 # Aggregates, Events, Repositories
 
+::: warning
+This approach was popular years ago at the time that Marten was first released, but at this point the Marten team
+strongly recommends against using the approach shown in this example. Our recommendation is to use some form of the 
+[Decider Pattern](https://thinkbeforecoding.com/post/2021/12/17/functional-event-sourcing-decider). Definitely see the 
+Wolverine [Aggregate Handler Workflow](https://wolverine.netlify.app/guide/durability/marten/event-sourcing.html) for a low ceremony approach to the "Decider" pattern with Marten.
+:::
+
 This use case demonstrates how to capture state changes in events and then replaying that state from the database. This is done by first introducing some supporting infrastructure, then implementing a model of invoice, together with invoice lines, on top of that.
 
 ## Scenario

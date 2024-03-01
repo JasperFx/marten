@@ -1,8 +1,9 @@
 # CQRS Command Handler Workflow for Capturing Events
 
 ::: tip
-All of this functionality originated with Marten V5.4 as a way to optimize the development workflow of typical
-command handlers that possibly emit events to Marten
+Definitely see the
+Wolverine [Aggregate Handler Workflow](https://wolverine.netlify.app/guide/durability/marten/event-sourcing.html) for a low ceremony approach to CQRS "writes" that uses
+the `FetchForWriting()` API under the covers that is introduced in this topic.
 :::
 
 So you're using Marten's event sourcing functionality within some kind architecture (CQRS maybe?) where your business logic needs to emit events modeling
@@ -12,6 +13,11 @@ the incoming command altogether if the system is not in the proper state for the
 business data represented by a single event stream.
 
 ## FetchForWriting
+
+::: tip
+As of Marten 7, this API is usable with aggregation projections that are running with an asynchronous lifecycle. This 
+is key to create "zero downtime deployments" for projection changes.
+:::
 
 To that end, Marten has the `FetchForWriting()` operation for optimized command handling with Marten.
 
