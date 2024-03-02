@@ -24,6 +24,8 @@ public abstract partial class DocumentSessionBase
             return;
         }
 
+        foreach (var listener in Listeners) listener.BeforeSaveChanges(this);
+
         try
         {
             Options.EventGraph.ProcessEvents(this);
@@ -40,8 +42,6 @@ public abstract partial class DocumentSessionBase
         {
             foreach (var operationType in operationDocumentTypes()) Database.EnsureStorageExists(operationType);
         }
-
-        foreach (var listener in Listeners) listener.BeforeSaveChanges(this);
 
         var batch = new UpdateBatch(_workTracker.AllOperations);
 
@@ -68,6 +68,11 @@ public abstract partial class DocumentSessionBase
             return;
         }
 
+        foreach (var listener in Listeners)
+        {
+            await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
+        }
+
         try
         {
             await Options.EventGraph.ProcessEventsAsync(this, token).ConfigureAwait(false);
@@ -87,11 +92,6 @@ public abstract partial class DocumentSessionBase
             {
                 await Database.EnsureStorageExistsAsync(operationType, token).ConfigureAwait(false);
             }
-        }
-
-        foreach (var listener in Listeners)
-        {
-            await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
         }
 
         var batch = new UpdateBatch(_workTracker.AllOperations);
