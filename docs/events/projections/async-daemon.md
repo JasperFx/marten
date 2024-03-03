@@ -142,7 +142,6 @@ using var host = await Host.CreateDefaultBuilder()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/ErrorHandling.cs#L13-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_error_policies' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 | Option                    | Description                                                                                                                      | Continuous Default | Rebuild Default |
 |---------------------------|----------------------------------------------------------------------------------------------------------------------------------|--------------------|-----------------|
 | `SkipApplyErrors`         | Should errors that occur in projection code (i.e., not Marten or PostgreSQL related errors) be skipped during Daemon processing? | True               | False           |
