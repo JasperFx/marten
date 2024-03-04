@@ -82,11 +82,11 @@ public class Order
 
 #region sample_versioned_reservation
 
-public class Reservation: IVersioned
+public class Reservation: IRevisioned
 {
     public Guid Id { get; set; }
 
-    public Guid Version { get; set; }
+    public int Version { get; set; }
 }
 
 #endregion
