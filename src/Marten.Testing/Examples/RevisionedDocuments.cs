@@ -82,9 +82,16 @@ public class Order
 
 #region sample_versioned_reservation
 
+// By implementing the IRevisioned
+// interface, we're telling Marten to
+// use numeric revisioning with this
+// document type and keep the version number
+// on the Version property
 public class Reservation: IRevisioned
 {
     public Guid Id { get; set; }
+
+    // other properties
 
     public int Version { get; set; }
 }

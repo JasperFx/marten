@@ -174,6 +174,11 @@ public class Reservation: IVersioned
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L83-L92' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_versioned_reservation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: tip
+If using the `IRevisioned` interface, or by mapping another property to the version metadata, Marten will pass the 
+version number from the document itself such that `IDocumentSession.Store()` is essentially `IDocumentSession.UpdateVersion(entity, entity.Version)`
+:::
+
 or finally by adding the `[Version]` attribute to a public member on the document type to opt into the 
 `UseNumericRevisions` behavior on the parent type with the decorated member being tracked as the version number as
 shown in this sample:
