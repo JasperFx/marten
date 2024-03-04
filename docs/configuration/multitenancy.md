@@ -96,7 +96,34 @@ _host = await Host.CreateDefaultBuilder()
 New in Marten 7.0 is a built in recipe for database multi-tenancy that allows for new tenant database to be discovered at
 runtime using this syntax option:
 
-snippet: sample_master_table_multi_tenancy
+<!-- snippet: sample_master_table_multi_tenancy -->
+<a id='snippet-sample_master_table_multi_tenancy'></a>
+```cs
+using var host = await Host.CreateDefaultBuilder()
+    .ConfigureServices(services =>
+    {
+        services.AddMarten(sp =>
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                var masterConnection = configuration.GetConnectionString("master");
+                var options = new StoreOptions();
+
+                // This is opting into a multi-tenancy model where a database table in the
+                // master database holds information about all the possible tenants and their database connection
+                // strings
+                options.MultiTenantedDatabasesWithMasterDatabaseTable(masterConnection, "tenants");
+
+                // Other Marten configuration
+
+                return options;
+            })
+            // All detected changes will be applied to all
+            // the configured tenant databases on startup
+            .ApplyAllDatabaseChangesOnStartup();;
+    }).StartAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/MultiTenancyExamples.cs#L13-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_master_table_multi_tenancy' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 With this model, Marten is setting up a table named `mt_tenant_databases` to store with just two columns:
 

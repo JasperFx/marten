@@ -1,10 +1,27 @@
 # Optimistic Concurrency
 
-Recent versions of Marten (&gt;0.9.5) have a new feature that allows you to enforce offline optimistic concurrency checks against documents that you are attempting to persist. You would use this feature if you're concerned about a document in your current session having been modified by another session since you originally loaded the document.
+Marten allows you to opt into enforcing offline optimistic concurrency checks against documents that you are attempting to persist. You would use this feature if you're concerned 
+about a document in your current session having been modified by another session since you originally loaded the document or issued a command against a now
+obsolete version of the original document.
 
 I first learned about this concept from Martin Fowler's [PEAA book](http://martinfowler.com/eaaCatalog/). From [Fowler's definition](http://martinfowler.com/eaaCatalog/optimisticOfflineLock.html), offline optimistic concurrency:
 
 > Prevents conflicts between concurrent business transactions by detecting a conflict and rolling back the transaction.
+
+As of 7.0, Marten has two mechanisms for applying optimistic versioning to documents:
+
+1. The original optimistic concurrency protection that uses a `Guid` as the Marten assigned version
+2. "Revisioned" documents that use an integer version tracked by Marten to designate the current version of the document
+
+Note that these two modes are exclusionary and cannot be combined.
+
+::: tip
+Optimistic concurrency or the newer revisioned documents are both "opt in" feature in Marten meaning that this is not
+enabled by default -- with the exception case being that all projected aggregation documents are automatically marked
+as being revisioned
+:::
+
+## Guid Versioned Optimistic Concurrency
 
 In Marten's case, you have to explicitly opt into optimistic versioning for each document type. You can do that with either an attribute on your document type like so:
 
@@ -111,3 +128,115 @@ public class MyVersionedDoc: IVersioned
 Your document type will have the optimistic concurrency checks applied to updates _when_ the current version is given to Marten. Moreover, the current version
 will always be written to the `IVersioned.Version` property when the document is modified or loaded by Marten. This makes `IVersioned` an easy strategy to track
 the current version of documents in web applications.
+
+## Numeric Revisioned Documents
+
+::: info
+This feature was originally introduced to help support asynchronous projection aggregations through the `FetchForWriting()` API. The 
+behavior is slightly different than the older Guid-based optimistic concurrency option 
+:::
+
+In this newer feature introduced by Marten 7.0, documents can be marked with numeric revisions that can be used to enforce
+optimistic concurrency. In this approach, Marten is saving an integer value for the current document revision in the `mt_version`
+field. As in the older `Guid` versioned approach, you also have the option to track the current revision on the documents themselves by
+designating a public property or field on the document type as the "Version" (the recommended idiom is to just call it `Version`).
+
+You can opt into this behavior on a document by document basis by using the fluent interface
+like this:
+
+<!-- snippet: sample_UseNumericRevisions_fluent_interface -->
+<a id='snippet-sample_usenumericrevisions_fluent_interface'></a>
+```cs
+using var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // Enable numeric document revisioning through the
+    // fluent interface
+    opts.Schema.For<Incident>().UseNumericRevisions(true);
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L13-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usenumericrevisions_fluent_interface' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+or by implementing the `IRevisioned` interface in a document type:
+
+<!-- snippet: sample_versioned_reservation -->
+<a id='snippet-sample_versioned_reservation'></a>
+```cs
+public class Reservation: IVersioned
+{
+    public Guid Id { get; set; }
+
+    public Guid Version { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L83-L92' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_versioned_reservation' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+or finally by adding the `[Version]` attribute to a public member on the document type to opt into the 
+`UseNumericRevisions` behavior on the parent type with the decorated member being tracked as the version number as
+shown in this sample:
+
+<!-- snippet: sample_versioned_order -->
+<a id='snippet-sample_versioned_order'></a>
+```cs
+public class Order
+{
+    public Guid Id { get; set; }
+
+    // Marking an integer as the "version"
+    // of the document, and making Marten
+    // opt this document into the numeric revisioning
+    [Version]
+    public int Version { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L68-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_versioned_order' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+And here's an attempt to explain the usage and behavior:
+
+<!-- snippet: sample_using_numeric_revisioning -->
+<a id='snippet-sample_using_numeric_revisioning'></a>
+```cs
+public static async Task try_revisioning(IDocumentSession session, Reservation reservation)
+{
+    // This will create a new document with Version = 1
+    session.Insert(reservation);
+
+    // "Store" is an upsert, but if the revisioned document
+    // is all new, the Version = 1 after changes are committed
+    session.Store(reservation);
+
+    // If Store() is called on an existing document
+    // this will just assign the next revision
+    session.Store(reservation);
+
+    // *This* operation will enforce the optimistic concurrency
+    // The supplied revision number should be the *new* revision number,
+    // but will be rejected with a ConcurrencyException when SaveChanges() is
+    // called if the version
+    // in the database is equal or greater than the supplied revision
+    session.UpdateRevision(reservation, 3);
+
+    // This operation will update the document if the supplied revision
+    // number is greater than the known database version when
+    // SaveChanges() is called, but will do nothing if the known database
+    // version is equal to or greater than the supplied revision
+    session.TryUpdateRevision(reservation, 3);
+
+    // Any checks happen only here
+    await session.SaveChangesAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L27-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_numeric_revisioning' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+::: tip
+Not sure why you'd do this on purpose, but you can happily supply a version to `UpdateVersion()` or `TryUpdateVersion()`
+that is not the current version + 1 as long as that supplied version is greater than the current version, Marten will persist
+the document with that new version. This was done purposely to support projected aggregations in the event sourcing functionality.
+:::
+
+

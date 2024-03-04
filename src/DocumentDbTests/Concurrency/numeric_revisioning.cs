@@ -7,6 +7,7 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
@@ -532,3 +533,4 @@ public class OtherRevisionedDoc
     [Version]
     public int Version { get; set; }
 }
+
