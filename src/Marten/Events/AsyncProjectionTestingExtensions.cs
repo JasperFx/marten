@@ -51,7 +51,7 @@ public static class TestingExtensions
 
     public static async Task WaitForNonStaleProjectionDataAsync(this IMartenDatabase database, TimeSpan timeout)
     {
-        var cancellationSource = new CancellationTokenSource();
+        using var cancellationSource = new CancellationTokenSource();
         cancellationSource.CancelAfter(timeout);
 
         var initial = await database.FetchEventStoreStatistics(cancellationSource.Token).ConfigureAwait(false);
