@@ -164,14 +164,21 @@ or by implementing the `IRevisioned` interface in a document type:
 <!-- snippet: sample_versioned_reservation -->
 <a id='snippet-sample_versioned_reservation'></a>
 ```cs
-public class Reservation: IVersioned
+// By implementing the IRevisioned
+// interface, we're telling Marten to
+// use numeric revisioning with this
+// document type and keep the version number
+// on the Version property
+public class Reservation: IRevisioned
 {
     public Guid Id { get; set; }
 
-    public Guid Version { get; set; }
+    // other properties
+
+    public int Version { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L83-L92' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_versioned_reservation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L83-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_versioned_reservation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
