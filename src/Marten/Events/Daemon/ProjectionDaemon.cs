@@ -289,12 +289,31 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
 
     public async Task WaitForNonStaleData(TimeSpan timeout)
     {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.CancelAfter(timeout);
+
         var stopWatch = Stopwatch.StartNew();
         var statistics = await Database.FetchEventStoreStatistics(_cancellation.Token).ConfigureAwait(false);
 
+        var dictionary = new Dictionary<string, bool>();
+        var shards = _store.Options.Projections.AllShards();
+
         while (stopWatch.Elapsed < timeout)
         {
-            if (_agents.Enumerate().All(x => x.Value.Position >= statistics.EventSequenceNumber))
+
+            foreach (var shard in shards)
+            {
+                if (!dictionary.ContainsKey(shard.Name.Identity))
+                {
+                    var position = await Database.ProjectionProgressFor(shard.Name, _cancellation.Token).ConfigureAwait(false);
+                    if (position >= statistics.EventSequenceNumber)
+                    {
+                        dictionary[shard.Name.Identity] = true;
+                    }
+                }
+            }
+
+            if (shards.All(x => dictionary.ContainsKey(x.Name.Identity)))
             {
                 return;
             }
