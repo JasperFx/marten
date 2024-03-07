@@ -115,6 +115,10 @@ public class MasterTableTenancy : ITenancy
 
     public async Task DeleteDatabaseRecordAsync(string tenantId)
     {
+        var tenantDatabase = new TenantDatabase(_options, _connectionString, _schemaName);
+
+        await maybeApplyChanges(tenantDatabase).ConfigureAwait(false);
+
         await using var conn = new NpgsqlConnection(_connectionString);
         await conn.CreateCommand($"delete from {_schemaName}.{TenantTable.TableName} where tenant_id = :id")
             .With("id", tenantId)
@@ -123,6 +127,10 @@ public class MasterTableTenancy : ITenancy
 
     public async Task ClearAllDatabaseRecordsAsync()
     {
+        var tenantDatabase = new TenantDatabase(_options, _connectionString, _schemaName);
+
+        await maybeApplyChanges(tenantDatabase).ConfigureAwait(false);
+
         await using var conn = new NpgsqlConnection(_connectionString);
         await conn.CreateCommand($"delete from {_schemaName}.{TenantTable.TableName}")
             .ExecuteOnce(CancellationToken.None).ConfigureAwait(false);
@@ -145,12 +153,7 @@ public class MasterTableTenancy : ITenancy
     {
         var tenantDatabase = new TenantDatabase(_options, _connectionString, _schemaName);
 
-        if (!_hasAppliedChanges && (_configuration.AutoCreate ?? _options.AutoCreateSchemaObjects) != AutoCreate.None)
-        {
-            await tenantDatabase
-                .ApplyAllConfiguredChangesToDatabaseAsync(_options.AutoCreateSchemaObjects).ConfigureAwait(false);
-            _hasAppliedChanges = true;
-        }
+        await maybeApplyChanges(tenantDatabase).ConfigureAwait(false);
 
         await using var conn = new NpgsqlConnection(_connectionString);
         await conn.OpenAsync().ConfigureAwait(false);
@@ -173,6 +176,7 @@ public class MasterTableTenancy : ITenancy
                 if (_databases.Contains(tenantId)) continue;
 
                 var connectionString = await reader.GetFieldValueAsync<string>(1).ConfigureAwait(false);
+                connectionString = _configuration.CorrectConnectionString(connectionString);
 
                 var database = new MartenDatabase(_options, new ConnectionFactory(new DefaultNpgsqlDataSourceFactory(), connectionString), tenantId);
                 _databases = _databases.AddOrUpdate(tenantId, database);
@@ -191,8 +195,22 @@ public class MasterTableTenancy : ITenancy
         return list;
     }
 
+    private async Task maybeApplyChanges(TenantDatabase tenantDatabase)
+    {
+        if (!_hasAppliedChanges && (_configuration.AutoCreate ?? _options.AutoCreateSchemaObjects) != AutoCreate.None)
+        {
+#pragma warning disable MA0032
+            await tenantDatabase
+                .ApplyAllConfiguredChangesToDatabaseAsync(_options.AutoCreateSchemaObjects).ConfigureAwait(false);
+#pragma warning restore MA0032
+            _hasAppliedChanges = true;
+        }
+    }
+
     private async Task seedDatabasesAsync(NpgsqlConnection conn)
     {
+        if (!_configuration.SeedDatabases.Any()) return;
+
         var builder = new BatchBuilder();
         foreach (var pair in _configuration.SeedDatabases)
         {
