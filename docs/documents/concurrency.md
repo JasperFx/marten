@@ -250,5 +250,3 @@ Not sure why you'd do this on purpose, but you can happily supply a version to `
 that is not the current version + 1 as long as that supplied version is greater than the current version, Marten will persist
 the document with that new version. This was done purposely to support projected aggregations in the event sourcing functionality.
 :::
-
-
