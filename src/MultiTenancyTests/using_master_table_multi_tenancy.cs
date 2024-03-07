@@ -62,9 +62,9 @@ public class master_table_multi_tenancy_independent_auto_create
 
                             x.AutoCreate = AutoCreate.CreateOrUpdate;
 
-                            x.SeedDatabase("tenant1", tenant1ConnectionString);
-                            x.SeedDatabase("tenant2", tenant2ConnectionString);
-                            x.SeedDatabase("tenant3", tenant3ConnectionString);
+                            x.RegisterDatabase("tenant1", tenant1ConnectionString);
+                            x.RegisterDatabase("tenant2", tenant2ConnectionString);
+                            x.RegisterDatabase("tenant3", tenant3ConnectionString);
                         });
 
                         opts.RegisterDocumentType<User>();
@@ -131,10 +131,10 @@ public class master_table_multi_tenancy_seeding : IAsyncLifetime
                             x.ConnectionString = ConnectionSource.ConnectionString;
                             x.SchemaName = "tenants";
                             x.ApplicationName = "Sample";
-                            x.SeedDatabase("tenant1", tenant1ConnectionString);
-                            x.SeedDatabase("tenant2", tenant2ConnectionString);
-                            x.SeedDatabase("tenant3", tenant3ConnectionString);
-                            x.SeedDatabase("tenant4", tenant4ConnectionString);
+                            x.RegisterDatabase("tenant1", tenant1ConnectionString);
+                            x.RegisterDatabase("tenant2", tenant2ConnectionString);
+                            x.RegisterDatabase("tenant3", tenant3ConnectionString);
+                            x.RegisterDatabase("tenant4", tenant4ConnectionString);
                         });
 
                         opts.RegisterDocumentType<User>();

@@ -46,7 +46,7 @@ public class MasterTableTenancyOptions
     /// </summary>
     /// <param name="tenantId"></param>
     /// <param name="connectionString"></param>
-    public void SeedDatabase(string tenantId, string connectionString)
+    public void RegisterDatabase(string tenantId, string connectionString)
     {
         SeedDatabases[tenantId] = connectionString;
     }

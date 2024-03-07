@@ -19,6 +19,11 @@ First off, let's try to answer the obvious questions you probably have:
 
 ## Static Database to Tenant Mapping
 
+::: info
+This is a simple option for a static number of tenant databases that may or may not be housed in the same physical PostgreSQL
+instance. Marten does not automatically create the databases themselves.
+:::
+
 The first and simplest option built in is the `MultiTenantedDatabases()` syntax that assumes that all tenant databases are built upfront
 and there is no automatic database provisioning at runtime. In this case, you can supply the mapping of databases to tenant id as shown
 in the following code sample:
@@ -57,6 +62,11 @@ _host = await Host.CreateDefaultBuilder()
 
 ## Single Instance Multi-Tenancy
 
+::: info
+This might be the simplest possible way to get started with multi-tenancy per database. In only this case, Marten is able
+to build any missing tenant databases based on the tenant id.
+:::
+
 The second out of the box option is to use a separate named database in the same database instance for each individual tenant. In this case, Marten is able to provision new tenant databases on the fly when a new tenant id is encountered for the first time. That will obviously depend on the application having sufficient permissions for this to work. We think this option may be mostly suitable for development and automated testing rather than production usage.
 
 This usage is shown below:
@@ -92,6 +102,12 @@ _host = await Host.CreateDefaultBuilder()
 <!-- endSnippet -->
 
 ## Master Table Tenancy Model
+
+::: info
+Use this option if you have any need to add new tenant databases at runtime without incurring any application downtime.
+This option may also be easier to maintain than the static mapped option if the number of tenant databases grows large, but that's
+going to be a matter of preference and taste rather than any hard technical reasoning
+:::
 
 New in Marten 7.0 is a built in recipe for database multi-tenancy that allows for new tenant database to be discovered at
 runtime using this syntax option:
