@@ -16,7 +16,7 @@ PM> Install-Package Marten
 ```
 
 ```shell [Paket]
-paket add nuget Marten
+dotnet paket add Marten
 ```
 
 :::
