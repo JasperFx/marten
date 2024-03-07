@@ -810,6 +810,27 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
         Advanced.DefaultTenantUsageEnabled = false;
         Tenancy = tenancy;
     }
+
+    /// <summary>
+    /// Multi-tenancy strategy where the tenant database connection strings are defined in a table
+    /// named "mt_tenant_databases"
+    /// </summary>
+    /// <param name="configure"></param>
+    public void MultiTenantedDatabasesWithMasterDatabaseTable(Action<MasterTableTenancyOptions> configure)
+    {
+        var configuration = new MasterTableTenancyOptions();
+        configure(configuration);
+
+        if (configuration.ConnectionString.IsEmpty())
+        {
+            throw new ArgumentOutOfRangeException(nameof(configure),
+                $"{nameof(MasterTableTenancyOptions.ConnectionString)} must be supplied");
+        }
+
+        var tenancy = new MasterTableTenancy(this, configuration);
+        Advanced.DefaultTenantUsageEnabled = false;
+        Tenancy = tenancy;
+    }
 }
 
 internal class LambdaDocumentPolicy: IDocumentPolicy

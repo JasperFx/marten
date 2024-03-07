@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -16,6 +17,66 @@ using CommandExtensions = Weasel.Core.CommandExtensions;
 
 namespace Marten.Storage;
 
+public class MasterTableTenancyOptions
+{
+    /// <summary>
+    /// The connection string of the master database holding the tenant table
+    /// </summary>
+    public string ConnectionString { get; set; }
+
+    /// <summary>
+    /// If specified, override the database schema name for the tenants table
+    /// Default is "public"
+    /// </summary>
+    public string SchemaName { get; set; } = "public";
+
+    /// <summary>
+    /// Set an application name in the connection strings strictly for diagnostics
+    /// </summary>
+    public string ApplicationName { get; set; } = Assembly.GetEntryAssembly()?.FullName ?? "Marten";
+
+    /// <summary>
+    /// If set, this will override the AutoCreate setting for just the master tenancy table
+    /// </summary>
+    public AutoCreate? AutoCreate { get; set; }
+
+    /// <summary>
+    /// For the sake of testing, seed the master tenancy table with a tenant
+    /// database
+    /// </summary>
+    /// <param name="tenantId"></param>
+    /// <param name="connectionString"></param>
+    public void SeedDatabase(string tenantId, string connectionString)
+    {
+        SeedDatabases[tenantId] = connectionString;
+    }
+
+    internal readonly Dictionary<string, string> SeedDatabases = new();
+
+    internal string CorrectedConnectionString()
+    {
+        if (ApplicationName.IsNotEmpty())
+        {
+            var builder = new NpgsqlConnectionStringBuilder(ConnectionString);
+            builder.ApplicationName = ApplicationName;
+            return builder.ConnectionString;
+        }
+
+        return ConnectionString;
+    }
+
+    internal string CorrectConnectionString(string connectionString)
+    {
+        if (ApplicationName.IsNotEmpty())
+        {
+            var builder = new NpgsqlConnectionStringBuilder(connectionString) { ApplicationName = ApplicationName };
+            return builder.ConnectionString;
+        }
+
+        return connectionString;
+    }
+}
+
 public class MasterTableTenancy : ITenancy
 {
     private readonly StoreOptions _options;
@@ -23,13 +84,25 @@ public class MasterTableTenancy : ITenancy
     private readonly string _schemaName;
     private ImHashMap<string, MartenDatabase> _databases = ImHashMap<string, MartenDatabase>.Empty;
 
-    public MasterTableTenancy(StoreOptions options, string connectionString, string schemaName)
+    public MasterTableTenancy(StoreOptions options, string connectionString, string schemaName) : this(options, new MasterTableTenancyOptions
+    {
+        ConnectionString = connectionString,
+        SchemaName = schemaName
+    })
+    {
+
+
+    }
+
+    public MasterTableTenancy(StoreOptions options, MasterTableTenancyOptions tenancyOptions)
     {
         _options = options;
-        _connectionString = connectionString;
-        _schemaName = schemaName;
-        Cleaner = new CompositeDocumentCleaner(this);
 
+        _configuration = tenancyOptions;
+
+        _connectionString = _configuration.CorrectedConnectionString();
+        _schemaName = tenancyOptions.SchemaName;
+        Cleaner = new CompositeDocumentCleaner(this);
     }
 
     public void Dispose()
@@ -65,12 +138,14 @@ public class MasterTableTenancy : ITenancy
     }
 
     private bool _hasAppliedChanges;
+    private bool _hasAppliedDefaults;
+    private readonly MasterTableTenancyOptions _configuration;
 
     public async ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
     {
         var tenantDatabase = new TenantDatabase(_options, _connectionString, _schemaName);
 
-        if (!_hasAppliedChanges && _options.AutoCreateSchemaObjects != AutoCreate.None)
+        if (!_hasAppliedChanges && (_configuration.AutoCreate ?? _options.AutoCreateSchemaObjects) != AutoCreate.None)
         {
             await tenantDatabase
                 .ApplyAllConfiguredChangesToDatabaseAsync(_options.AutoCreateSchemaObjects).ConfigureAwait(false);
@@ -82,6 +157,11 @@ public class MasterTableTenancy : ITenancy
 
         try
         {
+            if (!_hasAppliedDefaults)
+            {
+                await seedDatabasesAsync(conn).ConfigureAwait(false);
+            }
+
             await using var reader = await ((DbCommand)conn
                 .CreateCommand($"select tenant_id, connection_string from {_schemaName}.{TenantTable.TableName}")).ExecuteReaderAsync().ConfigureAwait(false);
 
@@ -109,6 +189,27 @@ public class MasterTableTenancy : ITenancy
 
         list.Insert(0, tenantDatabase);
         return list;
+    }
+
+    private async Task seedDatabasesAsync(NpgsqlConnection conn)
+    {
+        var builder = new BatchBuilder();
+        foreach (var pair in _configuration.SeedDatabases)
+        {
+            builder.StartNewCommand();
+            var parameters = builder.AppendWithParameters(
+                $"insert into {_schemaName}.{TenantTable.TableName} (tenant_id, connection_string) values (?, ?) on conflict (tenant_id) do update set connection_string = ?");
+
+            parameters[0].Value = pair.Key;
+            parameters[1].Value = pair.Value;
+            parameters[2].Value = pair.Value;
+        }
+
+        var batch = builder.Compile();
+        batch.Connection = conn;
+        await batch.ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+
+        _hasAppliedDefaults = true;
     }
 
     public Tenant Default => throw new NotSupportedException($"Default tenant does not supported");
