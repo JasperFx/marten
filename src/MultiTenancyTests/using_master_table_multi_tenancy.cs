@@ -9,10 +9,190 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
 
 namespace MultiTenancyTests;
+
+public class master_table_multi_tenancy_independent_auto_create
+{
+    private async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
+    {
+        var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
+
+        var exists = await conn.DatabaseExists(databaseName);
+        if (!exists)
+        {
+            await new DatabaseSpecification().BuildDatabase(conn, databaseName);
+        }
+
+        builder.Database = databaseName;
+
+        return builder.ConnectionString;
+    }
+
+    [Fact]
+    public async Task can_still_create_own_tables()
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        await conn.DropSchemaAsync("tenants");
+
+        var tenant1ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant1");
+        var tenant2ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant2");
+        var tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");
+        var tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant4");
+
+        await conn.CloseAsync();
+
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(opts =>
+                    {
+                        opts.AutoCreateSchemaObjects = AutoCreate.None;
+
+                        opts.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+                        {
+                            x.ConnectionString = ConnectionSource.ConnectionString;
+                            x.SchemaName = "tenants";
+                            x.ApplicationName = "Sample";
+
+                            x.AutoCreate = AutoCreate.CreateOrUpdate;
+
+                            x.SeedDatabase("tenant1", tenant1ConnectionString);
+                            x.SeedDatabase("tenant2", tenant2ConnectionString);
+                            x.SeedDatabase("tenant3", tenant3ConnectionString);
+                        });
+
+                        opts.RegisterDocumentType<User>();
+                        opts.RegisterDocumentType<Target>();
+                    })
+
+                    // All detected changes will be applied to all
+                    // the configured tenant databases on startup
+                    .ApplyAllDatabaseChangesOnStartup();
+            }).StartAsync();
+
+        await host.AddTenantDatabaseAsync("tenant4", tenant4ConnectionString);
+    }
+}
+
+
+[CollectionDefinition("multi-tenancy", DisableParallelization = true)]
+public class master_table_multi_tenancy_seeding : IAsyncLifetime
+{
+    private IHost _host;
+    private IDocumentStore theStore;
+    private string tenant1ConnectionString;
+    private string tenant2ConnectionString;
+    private string tenant3ConnectionString;
+    private string tenant4ConnectionString;
+
+    private async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
+    {
+        var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
+
+        var exists = await conn.DatabaseExists(databaseName);
+        if (!exists)
+        {
+            await new DatabaseSpecification().BuildDatabase(conn, databaseName);
+        }
+
+        builder.Database = databaseName;
+
+        return builder.ConnectionString;
+    }
+
+    public async Task InitializeAsync()
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        await conn.DropSchemaAsync("tenants");
+
+
+        tenant1ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant1");
+        tenant2ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant2");
+        tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");
+        tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant4");
+
+        _host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(opts =>
+                    {
+                        // This connection string is
+
+                        opts.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+                        {
+                            x.ConnectionString = ConnectionSource.ConnectionString;
+                            x.SchemaName = "tenants";
+                            x.ApplicationName = "Sample";
+                            x.SeedDatabase("tenant1", tenant1ConnectionString);
+                            x.SeedDatabase("tenant2", tenant2ConnectionString);
+                            x.SeedDatabase("tenant3", tenant3ConnectionString);
+                            x.SeedDatabase("tenant4", tenant4ConnectionString);
+                        });
+
+                        opts.RegisterDocumentType<User>();
+                        opts.RegisterDocumentType<Target>();
+                    })
+
+                    // All detected changes will be applied to all
+                    // the configured tenant databases on startup
+                    .ApplyAllDatabaseChangesOnStartup();
+            }).StartAsync();
+
+
+        theStore = _host.Services.GetRequiredService<IDocumentStore>();
+
+        await _host.ClearAllTenantDatabaseRecordsAsync();
+    }
+
+    public async Task DisposeAsync()
+    {
+        await _host.StopAsync();
+        theStore.Dispose();
+    }
+
+    [Fact]
+    public void add_application_name_to_connections()
+    {
+        using var query3 = theStore.QuerySession("tenant3");
+        var builder = new NpgsqlConnectionStringBuilder(query3.Connection.ConnectionString);
+        builder.ApplicationName.ShouldBe("Sample");
+    }
+
+    [Fact]
+    public async Task can_be_immediately_using_tenant_databases_that_were_seeded()
+    {
+        var targets3 = Target.GenerateRandomData(100).ToArray();
+        var targets4 = Target.GenerateRandomData(50).ToArray();
+
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+
+        await theStore.BulkInsertDocumentsAsync("tenant3", targets3);
+        await theStore.BulkInsertDocumentsAsync("tenant4", targets4);
+
+        await using (var query3 = theStore.QuerySession("tenant3"))
+        {
+            var ids = await query3.Query<Target>().Select(x => x.Id).ToListAsync();
+
+            ids.OrderBy(x => x).ShouldHaveTheSameElementsAs(targets3.OrderBy(x => x.Id).Select(x => x.Id).ToList());
+        }
+
+        await using (var query4 = theStore.QuerySession("tenant4"))
+        {
+            var ids = await query4.Query<Target>().Select(x => x.Id).ToListAsync();
+
+            ids.OrderBy(x => x).ShouldHaveTheSameElementsAs(targets4.OrderBy(x => x.Id).Select(x => x.Id).ToList());
+        }
+    }
+
+}
 
 [CollectionDefinition("multi-tenancy", DisableParallelization = true)]
 public class using_master_table_multi_tenancy : IAsyncLifetime
@@ -67,8 +247,6 @@ public class using_master_table_multi_tenancy : IAsyncLifetime
 
                         });
 
-                        opts.MultiTenantedDatabasesWithMasterDatabaseTable(ConnectionSource.ConnectionString, "tenants");
-
                         opts.RegisterDocumentType<User>();
                         opts.RegisterDocumentType<Target>();
                     })
@@ -81,8 +259,7 @@ public class using_master_table_multi_tenancy : IAsyncLifetime
 
         theStore = _host.Services.GetRequiredService<IDocumentStore>();
 
-        var tenancy = (MasterTableTenancy)theStore.Options.Tenancy;
-        await tenancy.ClearAllDatabaseRecordsAsync();
+        await _host.ClearAllTenantDatabaseRecordsAsync();
     }
 
     public async Task DisposeAsync()
@@ -101,12 +278,10 @@ public class using_master_table_multi_tenancy : IAsyncLifetime
     [Fact]
     public async Task can_open_a_session_to_a_different_database()
     {
-        var tenancy = (MasterTableTenancy)theStore.Options.Tenancy;
-
-        await tenancy.AddDatabaseRecordAsync("tenant1", tenant1ConnectionString);
-        await tenancy.AddDatabaseRecordAsync("tenant2", tenant2ConnectionString);
-        await tenancy.AddDatabaseRecordAsync("tenant3", tenant3ConnectionString);
-        await tenancy.AddDatabaseRecordAsync("tenant4", tenant4ConnectionString);
+        await _host.AddTenantDatabaseAsync("tenant1", tenant1ConnectionString);
+        await _host.AddTenantDatabaseAsync("tenant2", tenant2ConnectionString);
+        await _host.AddTenantDatabaseAsync("tenant3", tenant3ConnectionString);
+        await _host.AddTenantDatabaseAsync("tenant4", tenant4ConnectionString);
 
         await using var session =
             await theStore.LightweightSerializableSessionAsync(new SessionOptions { TenantId = "tenant1" });
