@@ -25,8 +25,7 @@ public static class TestingExtensions
         }
         else
         {
-            var tasks = databases
-                .Select(db => db.WaitForNonStaleProjectionDataAsync(timeout)).ToArray();
+            var tasks = databases.Select(db => db.WaitForNonStaleProjectionDataAsync(timeout));
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
     }
