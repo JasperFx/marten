@@ -24,6 +24,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\Analysis.Build.props = ..\Analysis.Build.props
 		.editorconfig = .editorconfig
 		..\docker-compose.yml = ..\docker-compose.yml
+		..\package.json = ..\package.json
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCoreWithMarten", "AspNetCoreWithMarten\AspNetCoreWithMarten.csproj", "{739B657C-4E0D-40E8-853E-ADF5C2D3D89D}"
