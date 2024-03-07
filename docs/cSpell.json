@@ -37,7 +37,9 @@
     "helpdesk",
     "HealthCheck",
     "HealthChecks",
-    "Replayability"
+    "Replayability",
+    "revisioned",
+    "Revisioned"
   ],
   "ignoreWords": [
     "JSONB",
