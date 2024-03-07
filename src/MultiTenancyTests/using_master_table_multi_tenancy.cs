@@ -58,6 +58,15 @@ public class using_master_table_multi_tenancy : IAsyncLifetime
                 services.AddMarten(opts =>
                     {
                         // This connection string is
+
+                        opts.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+                        {
+                            x.ConnectionString = ConnectionSource.ConnectionString;
+                            x.SchemaName = "tenants";
+                            x.ApplicationName = "Sample";
+
+                        });
+
                         opts.MultiTenantedDatabasesWithMasterDatabaseTable(ConnectionSource.ConnectionString, "tenants");
 
                         opts.RegisterDocumentType<User>();
