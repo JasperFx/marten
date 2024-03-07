@@ -216,6 +216,13 @@ public partial class CollectionUsage
 
                     selection.ApplyAggregateOperator("SUM");
                 }
+                else if (SingleValueMode == Marten.Linq.Parsing.SingleValueMode.LongCount)
+                {
+                    selection.SelectClause = new NewScalarSelectClause<long>(
+                        $"jsonb_array_length({collectionMember.JSONBLocator})", selection.SelectClause.FromObject);
+
+                    selection.ApplyAggregateOperator("SUM");
+                }
                 else
                 {
                     var next = new CollectionUsage(_options, collectionMember.MemberType);
