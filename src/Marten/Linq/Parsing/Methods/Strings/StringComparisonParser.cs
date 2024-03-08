@@ -14,10 +14,6 @@ internal abstract class StringComparisonParser: IMethodCallParser
     public const string CaseSensitiveLike = " LIKE ";
     public const string CaseInSensitiveLike = " ILIKE ";
 
-    // Do not use escape char when using case insensitivity
-    // this way backslash does not have special meaning and works as string literal
-    public const string EscapeSuffix = " ESCAPE '' ";
-
     public static readonly StringComparison[] CaseInSensitiveComparisons =
     {
         StringComparison.CurrentCultureIgnoreCase, StringComparison.InvariantCultureIgnoreCase,
@@ -94,6 +90,11 @@ internal abstract class StringComparisonParser: IMethodCallParser
                                                               && method1.GetParameters().Select(p => p.ParameterType)
                                                                   .SequenceEqual(method2.GetParameters()
                                                                       .Select(p => p.ParameterType));
+    }
+
+    public static string EscapeValue(string raw)
+    {
+        return raw.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
     }
 
 }

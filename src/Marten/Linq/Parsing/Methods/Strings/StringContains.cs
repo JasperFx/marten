@@ -56,9 +56,7 @@ internal class StringContainsFilter: ISqlFragment, ICompiledQueryAwareFilter
         builder.Append(_member.RawLocator);
         builder.Append(_caseInsensitive ? StringComparisonParser.CaseInSensitiveLike : StringComparisonParser.CaseSensitiveLike);
 
-        builder.AppendParameter($"%{_rawValue}%");
-
-        builder.Append(StringComparisonParser.EscapeSuffix);
+        builder.AppendParameter($"%{StringComparisonParser.EscapeValue(_rawValue)}%");
 
         ParameterName = builder.LastParameterName;
     }
