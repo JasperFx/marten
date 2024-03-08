@@ -6,7 +6,7 @@ using Npgsql;
 namespace Marten.Exceptions;
 #nullable enable
 
-public class MissingGinExtensionException: Exception
+public class MissingGinExtensionException: MartenException
 {
     public MissingGinExtensionException(Exception? innerException) : base("Unable to create GIN/GIST index. See https://stackoverflow.com/questions/32138996/why-error-occurred-while-creating-gin-index for a possible remedy", innerException)
     {

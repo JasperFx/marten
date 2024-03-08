@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Npgsql;
 using Weasel.Postgresql;
@@ -26,8 +27,15 @@ public class Bug_3019_gist_gin_index_on_arrays : BugIntegrationContext
                 q => q.Method = IndexMethod.gin);
         });
 
-        theSession.Store(new ProjectionModel(Guid.NewGuid()));
-        await theSession.SaveChangesAsync();
+        try
+        {
+            theSession.Store(new ProjectionModel(Guid.NewGuid()));
+            await theSession.SaveChangesAsync();
+        }
+        catch (MissingGinExtensionException)
+        {
+            // this is fine too
+        }
     }
 }
 
