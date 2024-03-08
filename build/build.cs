@@ -113,9 +113,9 @@ internal class MartenBuild
         Target("test-codegen", () =>
         {
             var projectPath = "src/CommandLineRunner";
-            Run("dotnet", $"run -- codegen delete", projectPath);
-            Run("dotnet", $"run -- codegen write", projectPath);
-            Run("dotnet", $"run -- test", projectPath);
+            Run("dotnet", $"run --framework net8.0 -- codegen delete", projectPath);
+            Run("dotnet", $"run --framework net8.0 -- codegen write", projectPath);
+            Run("dotnet", $"run --framework net8.0 -- test", projectPath);
         });
 
         Target("rebuild-database", () =>
