@@ -42,9 +42,9 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
 
     public SingleServerMultiTenancy(
         INpgsqlDataSourceFactory dataSourceFactory,
-        NpgsqlDataSource npgsqlDataSource,
+        string masterConnectionString,
         StoreOptions options
-    ): base(dataSourceFactory, npgsqlDataSource)
+    ): base(dataSourceFactory, masterConnectionString)
     {
         _options = options;
         Cleaner = new CompositeDocumentCleaner(this);

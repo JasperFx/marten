@@ -24,9 +24,7 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
         await DropDatabaseIfExists("database1");
         await DropDatabaseIfExists("database2");
 
-        var dataSource = dataSourceFactory.Create(ConnectionSource.ConnectionString);
-
-        theTenancy = new SingleServerMultiTenancy(dataSourceFactory, dataSource, new StoreOptions());
+        theTenancy = new SingleServerMultiTenancy(dataSourceFactory, ConnectionSource.ConnectionString, new StoreOptions());
     }
 
     public Task DisposeAsync()

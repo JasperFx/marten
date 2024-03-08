@@ -416,7 +416,7 @@ public class using_master_table_multi_tenancy : IAsyncLifetime
         await tenancy.BuildDatabases();
 
         var tenant = tenancy.GetTenant("tenant1");
-        tenant.Database.CreateConnection().ConnectionString.ShouldBe(tenant1ConnectionString);
+        tenant.Database.CreateConnection().Database.ShouldBe("tenant1");
     }
 
     [Fact]
@@ -428,7 +428,7 @@ public class using_master_table_multi_tenancy : IAsyncLifetime
         await tenancy.BuildDatabases();
 
         var tenant = await tenancy.GetTenantAsync("tenant1");
-        tenant.Database.CreateConnection().ConnectionString.ShouldBe(tenant1ConnectionString);
+        tenant.Database.CreateConnection().Database.ShouldBe("tenant1");
     }
 
     [Fact]
@@ -470,7 +470,8 @@ public class using_master_table_multi_tenancy : IAsyncLifetime
         await tenancy.AddDatabaseRecordAsync("tenant2", tenant2ConnectionString);
 
         var tenant = tenancy.GetTenant("tenant2");
-        tenant.Database.CreateConnection().ConnectionString.ShouldBe(tenant2ConnectionString);
+        tenant.Database.CreateConnection().Database.ShouldBe("tenant2");
+
     }
 
     [Fact]
@@ -484,6 +485,8 @@ public class using_master_table_multi_tenancy : IAsyncLifetime
         await tenancy.AddDatabaseRecordAsync("tenant2", tenant2ConnectionString);
 
         var tenant = await tenancy.GetTenantAsync("tenant2");
-        tenant.Database.CreateConnection().ConnectionString.ShouldBe(tenant2ConnectionString);
+
+        tenant.Database.CreateConnection().Database.ShouldBe("tenant2");
+
     }
 }
