@@ -20,7 +20,7 @@ public class Bug_1683_query_against_dict_string_object : BugIntegrationContext
 
     public class MyData
     {
-        public Dictionary<string, Object> Data { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object> Data { get; set; } = new();
         public Guid Id { get; set; }
     }
 

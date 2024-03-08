@@ -107,6 +107,9 @@ internal class SimpleExpression: ExpressionVisitor
         {
             if (right.Constant != null)
             {
+                // Thanks JT. https://github.com/JasperFx/marten/issues/3027
+                if (Constant.Value == null && right.Constant.Value == null) return new LiteralTrue();
+
                 return new ComparisonFilter(new CommandParameter(Constant.Value), new CommandParameter(right.Constant.Value), op);
             }
 

@@ -109,43 +109,57 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
 
     protected override void compileAnySubQueries(IMartenSession session)
     {
-        if (Wheres[0] is CompoundWhereFragment compound && compound.Children.OfType<ISubQueryFilter>().Any())
+        if (Wheres[0] is CompoundWhereFragment compound)
         {
-            var subQueries = compound.Children.OfType<ISubQueryFilter>().ToArray();
-            if (compound.Separator.ContainsIgnoreCase("and"))
+            if (compound.Children.OfType<ISubQueryFilter>().Any())
             {
-                var others = compound.Children.Where(x => !subQueries.Contains(x)).ToArray();
-
-                ISqlFragment topLevel = null;
-                switch (others.Length)
+                var subQueries = compound.Children.OfType<ISubQueryFilter>().ToArray();
+                if (compound.Separator.ContainsIgnoreCase("and"))
                 {
-                    case 0:
-                        break;
+                    var others = compound.Children.Where(x => !subQueries.Contains(x)).ToArray();
 
-                    case 1:
-                        topLevel = others.Single();
-                        break;
+                    ISqlFragment topLevel = null;
+                    switch (others.Length)
+                    {
+                        case 0:
+                            break;
 
-                    default:
-                        topLevel = CompoundWhereFragment.And(others);
-                        break;
+                        case 1:
+                            topLevel = others.Single();
+                            break;
+
+                        default:
+                            topLevel = CompoundWhereFragment.And(others);
+                            break;
+                    }
+
+                    foreach (var subQuery in subQueries) subQuery.PlaceUnnestAbove(session, this, topLevel);
+
+                    // We've moved all the non-sub query filters up to the various explode statements
+                    Wheres.Clear();
+                    Wheres.Add(CompoundWhereFragment.And(subQueries));
                 }
-
-                foreach (var subQuery in subQueries) subQuery.PlaceUnnestAbove(session, this, topLevel);
-
-                // We've moved all the non-sub query filters up to the various explode statements
-                Wheres.Clear();
-                Wheres.Add(CompoundWhereFragment.And(subQueries));
+                else
+                {
+                    foreach (var subQuery in subQueries) subQuery.PlaceUnnestAbove(session, this);
+                }
             }
-            else
+
+            // See https://github.com/JasperFx/marten/issues/3025
+            foreach (var deepCompound in compound.Children.OfType<CompoundWhereFragment>())
             {
-                foreach (var subQuery in subQueries) subQuery.PlaceUnnestAbove(session, this);
+                foreach (var subQueryFilter in deepCompound.Children.OfType<ISubQueryFilter>())
+                {
+                    subQueryFilter.PlaceUnnestAbove(session, this);
+                }
             }
         }
         else if (Wheres[0] is ISubQueryFilter subQuery)
         {
             subQuery.PlaceUnnestAbove(session, this);
         }
+
+
 
         // The else is perfectly fine as is
     }
