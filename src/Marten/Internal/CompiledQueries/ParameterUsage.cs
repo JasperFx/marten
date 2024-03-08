@@ -22,6 +22,9 @@ internal class ParameterUsage
         Index = index;
         Parameter = new NpgsqlParameter { Value = value, ParameterName = name};
         if (dbType.HasValue) Parameter.NpgsqlDbType = dbType.Value;
+
+        if (value is int) Parameter.NpgsqlDbType = NpgsqlDbType.Integer;
+
         Name = name;
     }
 
@@ -60,7 +63,7 @@ internal class ParameterUsage
         else
         {
             method.Frames.Code($"{parametersVariableName}[{Index}].Value = {{0}};", Constant.For(Parameter.Value));
-            method.Frames.Code($"{parametersVariableName}[{Index}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};", Constant.ForEnum(Parameter.NpgsqlDbType));
+            method.Frames.Code($"{parametersVariableName}[{Index}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {typeof(NpgsqlDbType).FullNameInCode()}.{Parameter.NpgsqlDbType};");
         }
     }
 
