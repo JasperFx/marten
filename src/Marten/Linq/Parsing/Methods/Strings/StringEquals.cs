@@ -33,7 +33,7 @@ internal class StringEqualsIgnoreCaseFilter : ISqlFragment
     public StringEqualsIgnoreCaseFilter(IQueryableMember member, CommandParameter value)
     {
         Member = member;
-        Value = value;
+        Value = new CommandParameter(StringComparisonParser.EscapeValue(value.Value?.ToString() ?? string.Empty));
     }
 
     public void Apply(ICommandBuilder builder)
@@ -41,7 +41,6 @@ internal class StringEqualsIgnoreCaseFilter : ISqlFragment
         builder.Append(Member.RawLocator);
         builder.Append(StringComparisonParser.CaseInSensitiveLike);
         Value.Apply(builder);
-        builder.Append(StringComparisonParser.EscapeSuffix);
     }
 
 }

@@ -45,8 +45,7 @@ internal class StringStartsWithFilter: ISqlFragment, ICompiledQueryAwareFilter
     {
         builder.Append(_member.RawLocator);
         builder.Append(_operator);
-        builder.AppendParameter($"{_rawValue}%");
-        builder.Append(StringComparisonParser.EscapeSuffix);
+        builder.AppendParameter($"{StringComparisonParser.EscapeValue(_rawValue)}%");
 
         ParameterName = builder.LastParameterName;
     }
