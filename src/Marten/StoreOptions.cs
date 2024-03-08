@@ -668,7 +668,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     /// <param name="masterConnectionString"></param>
     /// <returns></returns>
     public void MultiTenantedWithSingleServer(
-        string masterConnectionString, // TODO: Consider if we could pull that from NpgsqlDataSource
+        string masterConnectionString,
         Action<ISingleServerMultiTenancy>? configure = null
     )
     {
@@ -679,7 +679,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
             var tenancy =
                 new SingleServerMultiTenancy(
                     NpgsqlDataSourceFactory,
-                    NpgsqlDataSourceFactory.Create(masterConnectionString),
+                    masterConnectionString,
                     this
                 );
 
