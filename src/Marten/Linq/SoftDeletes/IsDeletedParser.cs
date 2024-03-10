@@ -16,7 +16,7 @@ internal class IsDeletedParser: IMethodCallParser
 
     public bool Matches(MethodCallExpression expression)
     {
-        return expression.Method == _method;
+        return expression.Method.GetGenericMethodDefinition() == _method;
     }
 
     public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,

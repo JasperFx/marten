@@ -20,7 +20,7 @@ internal class DeletedBeforeParser: IMethodCallParser
 
     public bool Matches(MethodCallExpression expression)
     {
-        return Equals(expression.Method, _method);
+        return expression.Method.GetGenericMethodDefinition() == _method;
     }
 
     public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,

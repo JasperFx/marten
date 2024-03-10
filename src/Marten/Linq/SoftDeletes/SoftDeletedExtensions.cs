@@ -8,10 +8,8 @@ public static class SoftDeletedExtensions
     ///     The search results should include all documents, whether
     ///     soft-deleted or not
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="doc"></param>
     /// <returns></returns>
-    public static bool MaybeDeleted(this object doc)
+    public static bool MaybeDeleted<T>(this T doc)
     {
         return true;
     }
@@ -23,7 +21,7 @@ public static class SoftDeletedExtensions
     /// <typeparam name="T"></typeparam>
     /// <param name="doc"></param>
     /// <returns></returns>
-    public static bool IsDeleted(this object doc)
+    public static bool IsDeleted<T>(this T doc)
     {
         return true;
     }
@@ -34,7 +32,7 @@ public static class SoftDeletedExtensions
     /// <param name="doc"></param>
     /// <param name="time"></param>
     /// <returns></returns>
-    public static bool DeletedSince(this object doc, DateTimeOffset time)
+    public static bool DeletedSince<T>(this T doc, DateTimeOffset time)
     {
         return true;
     }
@@ -45,7 +43,7 @@ public static class SoftDeletedExtensions
     /// <param name="doc"></param>
     /// <param name="time"></param>
     /// <returns></returns>
-    public static bool DeletedBefore(this object doc, DateTimeOffset time)
+    public static bool DeletedBefore<T>(this T doc, DateTimeOffset time)
     {
         return true;
     }
