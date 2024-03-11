@@ -198,6 +198,25 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <returns></returns>
     Task<IReadOnlyList<T>> QueryAsync<T>(string sql, params object[] parameters);
 
+
+    /// <summary>
+    ///     Asynchronously queries the document storage with the supplied SQL.
+    ///     The SQL must contain a select with the required fields in the correct order,
+    ///     depending on the metadata the document might use:
+    ///     <list type="bullet">
+    ///         <item>id</item>
+    ///         <item>data</item>
+    ///         <item>mt_type</item>
+    ///         <item>mt_version</item>
+    ///         <item>...TODO!</item>
+    ///     </list>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="sql"></param>
+    /// <param name="parameters"></param>
+    /// <returns></returns>
+    Task<IReadOnlyList<T>> AdvancedSqlQueryAsync<T>(string sql, CancellationToken token, params object[] parameters);
+
     /// <summary>
     ///     Define a batch of deferred queries and load operations to be conducted in one asynchronous request to the
     ///     database for potentially performance
