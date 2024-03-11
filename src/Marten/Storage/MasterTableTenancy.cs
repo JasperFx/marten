@@ -22,7 +22,12 @@ public class MasterTableTenancyOptions
     /// <summary>
     /// The connection string of the master database holding the tenant table
     /// </summary>
-    public string ConnectionString { get; set; }
+    public string? ConnectionString { get; set; }
+
+    /// <summary>
+    /// A configured data source for managing the tenancy
+    /// </summary>
+    public NpgsqlDataSource? DataSource { get; set; }
 
     /// <summary>
     /// If specified, override the database schema name for the tenants table
@@ -57,8 +62,11 @@ public class MasterTableTenancyOptions
     {
         if (ApplicationName.IsNotEmpty())
         {
-            var builder = new NpgsqlConnectionStringBuilder(ConnectionString);
-            builder.ApplicationName = ApplicationName;
+            var builder = new NpgsqlConnectionStringBuilder(ConnectionString)
+            {
+                ApplicationName = ApplicationName
+            };
+
             return builder.ConnectionString;
         }
 
@@ -69,7 +77,11 @@ public class MasterTableTenancyOptions
     {
         if (ApplicationName.IsNotEmpty())
         {
-            var builder = new NpgsqlConnectionStringBuilder(connectionString) { ApplicationName = ApplicationName };
+            var builder = new NpgsqlConnectionStringBuilder(connectionString)
+            {
+                ApplicationName = ApplicationName
+            };
+
             return builder.ConnectionString;
         }
 
@@ -77,12 +89,12 @@ public class MasterTableTenancyOptions
     }
 }
 
-public class MasterTableTenancy : ITenancy
+public class MasterTableTenancy : ITenancy, ITenancyWithMasterDatabase
 {
     private readonly StoreOptions _options;
-    private readonly string _connectionString;
     private readonly string _schemaName;
     private ImHashMap<string, MartenDatabase> _databases = ImHashMap<string, MartenDatabase>.Empty;
+    private readonly Lazy<NpgsqlDataSource> _dataSource;
 
     public MasterTableTenancy(StoreOptions options, string connectionString, string schemaName) : this(options, new MasterTableTenancyOptions
     {
@@ -100,10 +112,29 @@ public class MasterTableTenancy : ITenancy
 
         _configuration = tenancyOptions;
 
-        _connectionString = _configuration.CorrectedConnectionString();
+        if (tenancyOptions.DataSource != null)
+        {
+            _dataSource = new Lazy<NpgsqlDataSource>(() => tenancyOptions.DataSource);
+        }
+        else if (tenancyOptions.ConnectionString.IsNotEmpty())
+        {
+            _dataSource = new Lazy<NpgsqlDataSource>(() => _options.NpgsqlDataSourceFactory.Create(tenancyOptions.ConnectionString));
+        }
+        else
+        {
+            // TODO -- remove this when we figure out how to use the DI data source
+            throw new ArgumentOutOfRangeException(nameof(tenancyOptions),
+                "Either an NpgsqlDataSource or ConnectionString is required at this point");
+        }
+
         _schemaName = tenancyOptions.SchemaName;
         Cleaner = new CompositeDocumentCleaner(this);
+
+        _tenantDatabase = new Lazy<TenantLookupDatabase>(() =>
+            new TenantLookupDatabase(_options, _dataSource.Value, tenancyOptions.SchemaName));
     }
+
+    public PostgresqlDatabase TenantDatabase => _tenantDatabase.Value;
 
     public void Dispose()
     {
@@ -115,47 +146,39 @@ public class MasterTableTenancy : ITenancy
 
     public async Task DeleteDatabaseRecordAsync(string tenantId)
     {
-        var tenantDatabase = new TenantDatabase(_options, _connectionString, _schemaName);
+        await maybeApplyChanges(_tenantDatabase.Value).ConfigureAwait(false);
 
-        await maybeApplyChanges(tenantDatabase).ConfigureAwait(false);
-
-        await using var conn = new NpgsqlConnection(_connectionString);
-        await conn.CreateCommand($"delete from {_schemaName}.{TenantTable.TableName} where tenant_id = :id")
+        await _dataSource.Value.CreateCommand($"delete from {_schemaName}.{TenantTable.TableName} where tenant_id = :id")
             .With("id", tenantId)
-            .ExecuteOnce(CancellationToken.None).ConfigureAwait(false);
+            .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
     }
 
     public async Task ClearAllDatabaseRecordsAsync()
     {
-        var tenantDatabase = new TenantDatabase(_options, _connectionString, _schemaName);
+        await maybeApplyChanges(_tenantDatabase.Value).ConfigureAwait(false);
 
-        await maybeApplyChanges(tenantDatabase).ConfigureAwait(false);
-
-        await using var conn = new NpgsqlConnection(_connectionString);
-        await conn.CreateCommand($"delete from {_schemaName}.{TenantTable.TableName}")
-            .ExecuteOnce(CancellationToken.None).ConfigureAwait(false);
+        await _dataSource.Value.CreateCommand($"delete from {_schemaName}.{TenantTable.TableName}")
+            .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
     }
 
     public async Task AddDatabaseRecordAsync(string tenantId, string connectionString)
     {
-        await using var conn = new NpgsqlConnection(_connectionString);
-        await conn.CreateCommand($"insert into {_schemaName}.{TenantTable.TableName} (tenant_id, connection_string) values (:id, :connection) on conflict (tenant_id) do update set connection_string = :connection")
+        await _dataSource.Value.CreateCommand($"insert into {_schemaName}.{TenantTable.TableName} (tenant_id, connection_string) values (:id, :connection) on conflict (tenant_id) do update set connection_string = :connection")
             .With("id", tenantId)
             .With("connection", connectionString)
-            .ExecuteOnce(CancellationToken.None).ConfigureAwait(false);
+            .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
     }
 
     private bool _hasAppliedChanges;
     private bool _hasAppliedDefaults;
     private readonly MasterTableTenancyOptions _configuration;
+    private readonly Lazy<TenantLookupDatabase> _tenantDatabase;
 
     public async ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
     {
-        var tenantDatabase = new TenantDatabase(_options, _connectionString, _schemaName);
+        await maybeApplyChanges(_tenantDatabase.Value).ConfigureAwait(false);
 
-        await maybeApplyChanges(tenantDatabase).ConfigureAwait(false);
-
-        await using var conn = new NpgsqlConnection(_connectionString);
+        await using var conn = _dataSource.Value.CreateConnection();
         await conn.OpenAsync().ConfigureAwait(false);
 
         try
@@ -191,11 +214,11 @@ public class MasterTableTenancy : ITenancy
 
         var list = _databases.Enumerate().Select(x => x.Value).OfType<IDatabase>().ToList();
 
-        list.Insert(0, tenantDatabase);
+        list.Insert(0, _tenantDatabase.Value);
         return list;
     }
 
-    private async Task maybeApplyChanges(TenantDatabase tenantDatabase)
+    private async Task maybeApplyChanges(TenantLookupDatabase tenantDatabase)
     {
         if (!_hasAppliedChanges && (_configuration.AutoCreate ?? _options.AutoCreateSchemaObjects) != AutoCreate.None)
         {
@@ -235,14 +258,13 @@ public class MasterTableTenancy : ITenancy
 
     private async Task<MartenDatabase?> tryFindTenantDatabase(string tenantId)
     {
-        await using var conn = new NpgsqlConnection(_connectionString);
-        await conn.OpenAsync(CancellationToken.None).ConfigureAwait(false);
-
-        var connectionString = (string)await conn.CreateCommand($"select connection_string from {_schemaName}.{TenantTable.TableName} where tenant_id = :id")
+        var connectionString = (string)await _dataSource.Value.CreateCommand($"select connection_string from {_schemaName}.{TenantTable.TableName} where tenant_id = :id")
             .With("id", tenantId)
             .ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false);
 
-        await conn.CloseAsync().ConfigureAwait(false);
+        if (connectionString.IsEmpty()) return null;
+
+        connectionString = _configuration.CorrectConnectionString(connectionString);
 
         return connectionString.IsNotEmpty()
             ? new MartenDatabase(_options,
@@ -309,11 +331,11 @@ public class MasterTableTenancy : ITenancy
         return database.Identifier == tenantId;
     }
 
-    internal class TenantDatabase: PostgresqlDatabase
+    internal class TenantLookupDatabase: PostgresqlDatabase
     {
         private readonly TenantDatabaseStorage _feature;
 
-        public TenantDatabase(StoreOptions options, string connectionString, string schemaName) : base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, "TenantDatabases", NpgsqlDataSource.Create(connectionString))
+        public TenantLookupDatabase(StoreOptions options, NpgsqlDataSource dataSource, string schemaName) : base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, "TenantDatabases", dataSource)
         {
             _feature = new TenantDatabaseStorage(schemaName, options);
         }
