@@ -133,6 +133,27 @@ public class advanced_sql_query: IntegrationContext
         #endregion
     }
 
+    [Fact]
+    public void can_query_synchrounously()
+    {
+        using var session = theStore.LightweightSession();
+
+        var singleResult  = session.AdvancedSqlQuery<int>("select 5 from (values(1)) as dummy").First();
+        var tuple2Result = session.AdvancedSqlQuery<int, string>(
+            "select row(5), row('foo')from (values(1)) as dummy").First();
+        var tuple3Result = session.AdvancedSqlQuery<int, string, bool>(
+            "select row(5), row('foo'), row(true) from (values(1)) as dummy").First();
+
+        singleResult.ShouldBe(5);
+
+        tuple2Result.Item1.ShouldBe(5);
+        tuple2Result.Item2.ShouldBe("foo");
+
+        tuple3Result.Item1.ShouldBe(5);
+        tuple3Result.Item2.ShouldBe("foo");
+        tuple3Result.Item3.ShouldBe(true);
+    }
+
     public class DocWithoutMeta
     {
         public int Id { get; set; }

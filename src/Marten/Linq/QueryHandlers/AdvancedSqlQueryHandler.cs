@@ -23,7 +23,13 @@ internal class AdvancedSqlQueryHandler<T>: AdvancedSqlQueryHandlerBase, IQueryHa
 
     public IReadOnlyList<T> Handle(DbDataReader reader, IMartenSession session)
     {
-        throw new NotImplementedException();
+        var list = new List<T>();
+        while (reader.Read())
+        {
+            var item = ((ISelector<T>)Selectors[0]).Resolve(reader);
+            list.Add(item);
+        }
+        return list;
     }
 
     public async Task<IReadOnlyList<T>> HandleAsync(DbDataReader reader, IMartenSession session,
@@ -49,7 +55,14 @@ internal class AdvancedSqlQueryHandler<T1, T2>: AdvancedSqlQueryHandlerBase, IQu
 
     public IReadOnlyList<(T1, T2)> Handle(DbDataReader reader, IMartenSession session)
     {
-        throw new NotImplementedException();
+        var list = new List<(T1, T2)>();
+        while (reader.Read())
+        {
+            var item1 = ReadNestedRow<T1>(reader, 0);
+            var item2 = ReadNestedRow<T2>(reader, 1);
+            list.Add((item1, item2));
+        }
+        return list;
     }
 
     public async Task<IReadOnlyList<(T1, T2)>> HandleAsync(DbDataReader reader, IMartenSession session,
@@ -76,7 +89,15 @@ internal class AdvancedSqlQueryHandler<T1, T2, T3>: AdvancedSqlQueryHandlerBase,
 
     public IReadOnlyList<(T1, T2, T3)> Handle(DbDataReader reader, IMartenSession session)
     {
-        throw new NotImplementedException();
+        var list = new List<(T1, T2, T3)>();
+        while (reader.Read())
+        {
+            var item1 = ReadNestedRow<T1>(reader, 0);
+            var item2 = ReadNestedRow<T2>(reader, 1);
+            var item3 = ReadNestedRow<T3>(reader, 2);
+            list.Add((item1, item2, item3));
+        }
+        return list;
     }
 
     public async Task<IReadOnlyList<(T1, T2, T3)>> HandleAsync(DbDataReader reader, IMartenSession session,
@@ -151,6 +172,21 @@ internal class AdvancedSqlQueryHandlerBase
             if (await innerReader.ReadAsync(token).ConfigureAwait(false))
             {
                 return await ((ISelector<T>)Selectors[rowIndex]).ResolveAsync(innerReader, token).ConfigureAwait(false);
+            }
+        }
+        return default;
+    }
+
+    protected T ReadNestedRow<T>(DbDataReader reader, int rowIndex)
+    {
+        var innerReader = reader.GetData(rowIndex) ??
+                          throw new ArgumentException("Invalid row index", nameof(rowIndex));
+
+        using (innerReader)
+        {
+            if (innerReader.Read())
+            {
+                return ((ISelector<T>)Selectors[rowIndex]).Resolve(innerReader);
             }
         }
         return default;

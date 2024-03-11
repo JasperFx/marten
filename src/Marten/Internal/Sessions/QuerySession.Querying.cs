@@ -52,6 +52,11 @@ public partial class QuerySession
         return await provider.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
     }
 
+    public Task<IReadOnlyList<T>> QueryAsync<T>(string sql, params object[] parameters)
+    {
+        return QueryAsync<T>(sql, CancellationToken.None, parameters);
+    }
+
     public async Task<IReadOnlyList<T>> AdvancedSqlQueryAsync<T>(string sql, CancellationToken token, params object[] parameters)
     {
         assertNotDisposed();
@@ -88,7 +93,7 @@ public partial class QuerySession
 
         var handler = new AdvancedSqlQueryHandler<T1, T2, T3>(this, sql, parameters);
 
-        foreach (var documentType in handler.DocumentTypes) 
+        foreach (var documentType in handler.DocumentTypes)
         {
             await Database.EnsureStorageExistsAsync(documentType, token).ConfigureAwait(false);
         }
@@ -97,9 +102,49 @@ public partial class QuerySession
         return await provider.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
     }
 
-    public Task<IReadOnlyList<T>> QueryAsync<T>(string sql, params object[] parameters)
+    public IReadOnlyList<T> AdvancedSqlQuery<T>(string sql, params object[] parameters)
     {
-        return QueryAsync<T>(sql, CancellationToken.None, parameters);
+        assertNotDisposed();
+
+        var handler = new AdvancedSqlQueryHandler<T>(this, sql, parameters);
+
+        foreach (var documentType in handler.DocumentTypes)
+        {
+            Database.EnsureStorageExists(documentType);
+        }
+
+        var provider = new MartenLinqQueryProvider(this, typeof(T));
+        return provider.ExecuteHandler(handler);
+    }
+
+    public IReadOnlyList<(T1, T2)> AdvancedSqlQuery<T1, T2>(string sql, params object[] parameters)
+    {
+        assertNotDisposed();
+
+        var handler = new AdvancedSqlQueryHandler<T1, T2>(this, sql, parameters);
+
+        foreach (var documentType in handler.DocumentTypes)
+        {
+            Database.EnsureStorageExists(documentType);
+        }
+
+        var provider = new MartenLinqQueryProvider(this, typeof((T1, T2)));
+        return provider.ExecuteHandler(handler);
+    }
+
+    public IReadOnlyList<(T1, T2, T3)> AdvancedSqlQuery<T1, T2, T3>(string sql, params object[] parameters)
+    {
+        assertNotDisposed();
+
+        var handler = new AdvancedSqlQueryHandler<T1, T2, T3>(this, sql, parameters);
+
+        foreach (var documentType in handler.DocumentTypes)
+        {
+            Database.EnsureStorageExists(documentType);
+        }
+
+        var provider = new MartenLinqQueryProvider(this, typeof((T1, T2, T3)));
+        return provider.ExecuteHandler(handler);
     }
 
     public IBatchedQuery CreateBatchQuery()
