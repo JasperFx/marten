@@ -243,7 +243,7 @@ var store = DocumentStore.For(storeOptions =>
     // Apply custom policy
     storeOptions.Policies.OnDocuments<TenancyPolicy>();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Policies.cs#L19-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-policy-configure' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Policies.cs#L20-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-policy-configure' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The actual policy is shown below:
@@ -266,7 +266,7 @@ public class TenancyPolicy: IDocumentPolicy
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Policies.cs#L31-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-policy-implementation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Policies.cs#L32-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-policy-implementation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To set all types to be multi-tenanted, the pre-baked `Policies.AllDocumentsAreMultiTenanted` could also have been used.

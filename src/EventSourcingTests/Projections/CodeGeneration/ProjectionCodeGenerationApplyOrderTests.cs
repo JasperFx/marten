@@ -6,6 +6,7 @@ using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Internal.CodeGeneration;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -18,7 +19,7 @@ public class ProjectionCodeGenerationApplyOrderTests
     public void Snapshot_GeneratedCodeFile_Compiles()
     {
         var options = new StoreOptions();
-        options.Connection("Dummy");
+        options.Connection(ConnectionSource.ConnectionString);
 
         // Given
         options.Projections.Snapshot<Something>(SnapshotLifecycle.Inline);
@@ -82,7 +83,7 @@ public class ProjectionCodeGenerationApplyOrderTests
 
     public record Something(Guid Id)
     {
-        public string SomethingSomething { get; set; } 
+        public string SomethingSomething { get; set; }
 
         public static Something Create(SomethingCreated @event) => new(@event.Id);
 
@@ -96,7 +97,7 @@ public class ProjectionCodeGenerationApplyOrderTests
 
         public Something Apply(SomethingUpdated @event) => this with { SomethingSomething = @event.SomethingSomething };
 
-        
+
 
     }
 }

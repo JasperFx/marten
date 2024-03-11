@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Storage;
+using Npgsql;
 using Weasel.Core;
 
 namespace Marten;
@@ -64,6 +65,6 @@ public partial class DocumentStore: IMartenStorage
 
     private MartenDatabase nulloDatabase()
     {
-        return new MartenDatabase(Options, new ConnectionFactory(dataSourceFactory, string.Empty), "NULLO");
+        return new MartenDatabase(Options, NpgsqlDataSource.Create("Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5"), "NULLO");
     }
 }

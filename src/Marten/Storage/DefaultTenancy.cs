@@ -2,19 +2,20 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten.Schema;
+using Npgsql;
 using Weasel.Core.Migrations;
 
 namespace Marten.Storage;
 
 internal class DefaultTenancy: Tenancy, ITenancy
 {
-    private readonly IConnectionFactory _factory;
+    private readonly NpgsqlDataSource _dataSource;
     private readonly StoreOptions _options;
 
 
-    public DefaultTenancy(IConnectionFactory factory, StoreOptions options): base(options)
+    public DefaultTenancy(NpgsqlDataSource dataSource, StoreOptions options): base(options)
     {
-        _factory = factory;
+        _dataSource = dataSource;
     }
 
     public Tenant GetTenant(string tenantId)
@@ -48,7 +49,7 @@ internal class DefaultTenancy: Tenancy, ITenancy
 
     internal void Initialize()
     {
-        Default = new Tenant(DefaultTenantId, new MartenDatabase(Options, _factory, Options.StoreName));
+        Default = new Tenant(DefaultTenantId, new MartenDatabase(Options, _dataSource, Options.StoreName));
     }
 
     public void Dispose()

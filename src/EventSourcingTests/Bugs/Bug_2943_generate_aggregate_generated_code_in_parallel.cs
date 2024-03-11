@@ -7,6 +7,7 @@ using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Internal.CodeGeneration;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -18,7 +19,7 @@ public class Bug_2943_generate_aggregate_generated_code_in_parallel
     public void aggregates_do_not_fail_code_generation_on_parallel_execution()
     {
         var options = new StoreOptions();
-        options.Connection("Dummy");
+        options.Connection(ConnectionSource.ConnectionString);
 
         // Given
         options.Projections.LiveStreamAggregation<ProjectionCodeGenerationTests.Something>();

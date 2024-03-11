@@ -28,24 +28,6 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
 
     public MartenDatabase(
         StoreOptions options,
-        IConnectionFactory connectionFactory,
-        string identifier
-    ): base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, identifier, connectionFactory.Create)
-    {
-        _features = options.Storage;
-        _options = options;
-
-        resetSequences();
-
-        Providers = options.Providers;
-
-        Tracker = new ShardStateTracker(options.LogFactory?.CreateLogger<MartenDatabase>() ?? options.DotNetLogger ??
-                                        NullLogger<MartenDatabase>.Instance);
-    }
-
-
-    public MartenDatabase(
-        StoreOptions options,
         NpgsqlDataSource npgsqlDataSource,
         string identifier
     ): base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, identifier, npgsqlDataSource)

@@ -14,7 +14,10 @@ public class Bug_2610_do_not_create_tables_for_live_aggregates : BugIntegrationC
     [Fact]
     public async Task do_not_create_tables()
     {
-        StoreOptions(opts => opts.Projections.LiveStreamAggregation<QuestParty>());
+        StoreOptions(opts =>
+        {
+            opts.Projections.LiveStreamAggregation<QuestParty>();
+        });
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 

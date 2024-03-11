@@ -415,7 +415,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
         }
 
         _tenancy = new Lazy<ITenancy>(() =>
-            new DefaultTenancy(new ConnectionFactory(NpgsqlDataSourceFactory, connectionString), this));
+            new DefaultTenancy(NpgsqlDataSourceFactory.Create(connectionString), this));
     }
 
     /// <summary>
@@ -425,9 +425,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     [Obsolete("Use version with connection string. This will be removed in Marten 8")]
     public void Connection(Func<string> connectionSource)
     {
-        _tenancy = new Lazy<ITenancy>(() =>
-            new DefaultTenancy(new ConnectionFactory(NpgsqlDataSourceFactory, connectionSource), this)
-        );
+        throw new NotSupportedException(
+            "Sorry, but this feature is no longer supported. Please use the overload that uses NpgsqlDataSource instead for similar functionality");
     }
 
     /// <summary>

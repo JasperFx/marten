@@ -1,6 +1,7 @@
 using Marten.Linq;
 using Marten.Linq.Parsing;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Examples;
@@ -16,7 +17,7 @@ public sealed class CamelCasing
             // Change default casing to CamelCase
             storeOptions.UseDefaultSerialization(casing: Casing.CamelCase);
             #endregion
-            storeOptions.Connection("");
+            storeOptions.Connection(ConnectionSource.ConnectionString);
         });
 
         var field = store.StorageFeatures.MappingFor(typeof(User))

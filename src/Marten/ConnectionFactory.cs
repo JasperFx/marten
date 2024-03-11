@@ -8,6 +8,7 @@ namespace Marten;
 /// <summary>
 ///     Default, simple implementation of IConnectionFactory
 /// </summary>
+[Obsolete("This will be removed in Marten 8. Prefer NpgsqlDataSource instead")]
 public class ConnectionFactory: IConnectionFactory
 {
     private readonly INpgsqlDataSourceFactory _npgsqlDataSourceFactory;

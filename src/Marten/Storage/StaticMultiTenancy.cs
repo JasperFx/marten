@@ -72,7 +72,7 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
 
         var database = new MartenDatabase(
             Options,
-            new ConnectionFactory(_dataSourceFactory, connectionString),
+            _dataSourceFactory.Create(connectionString),
             identifier
         );
         _databases = _databases.AddOrUpdate(identifier, database);
@@ -84,7 +84,7 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
     {
         var database = new MartenDatabase(
             Options,
-            new ConnectionFactory(_dataSourceFactory, connectionString),
+            _dataSourceFactory.Create(connectionString),
             tenantId
         );
         _databases = _databases.AddOrUpdate(tenantId, database);
