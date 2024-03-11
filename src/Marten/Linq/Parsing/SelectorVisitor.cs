@@ -103,7 +103,7 @@ public class SelectorVisitor: ExpressionVisitor
         else
         {
             _statement.SelectClause =
-                typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(_statement.SelectClause.FromObject,
+                typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(_statement.FromObject,
                     member.RawLocator,
                     member.MemberType);
         }

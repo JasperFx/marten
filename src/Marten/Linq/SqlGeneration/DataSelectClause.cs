@@ -9,7 +9,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
-internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause
+internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifyableFromObject
 {
     public DataSelectClause(string from)
     {
@@ -41,7 +41,7 @@ internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause
 
     public Type SelectedType => typeof(T);
 
-    public string FromObject { get; }
+    public string FromObject { get; set; }
 
     public void Apply(ICommandBuilder sql)
     {

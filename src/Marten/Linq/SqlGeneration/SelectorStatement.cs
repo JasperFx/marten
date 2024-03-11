@@ -18,6 +18,9 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
     public OrderByFragment Ordering { get; internal set; } = new();
 
     public ISelectClause SelectClause { get; internal set; }
+
+    public virtual string FromObject => SelectClause?.FromObject;
+
     public bool IsDistinct { get; set; }
 
     public void Register(ISqlFragment fragment)
