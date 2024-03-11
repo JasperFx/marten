@@ -62,6 +62,12 @@ internal class ChildCollectionMember: QueryableMember, ICollectionMember, IQuery
 
     public string ExplodeLocator { get; }
 
+    public override void PlaceValueInDictionaryForContainment(Dictionary<string, object> dict,
+        ConstantExpression constant)
+    {
+        dict[MemberName] = new[] { constant.Value };
+    }
+
     public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
         SelectorStatement parentStatement, QueryStatistics statistics)
     {
