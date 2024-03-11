@@ -100,6 +100,28 @@ internal class SimpleExpression: ExpressionVisitor
 
     public bool HasConstant { get; set; }
 
+    private ISqlFragment compareConstants(SimpleExpression right, string op)
+    {
+        // Thanks JT. https://github.com/JasperFx/marten/issues/3027
+        if (Constant.Value == null)
+        {
+            if (right.Constant.Value == null)
+            {
+                // NULL = NULL
+                return op == "=" ? new LiteralTrue() : new LiteralFalse();
+            }
+
+            return op == "=" ? new LiteralFalse() : new LiteralTrue();
+        }
+
+        if (right.Constant.Value == null)
+        {
+            return op == "=" ? new LiteralFalse() : new LiteralTrue();
+        }
+
+        return new ComparisonFilter(new CommandParameter(Constant.Value), new CommandParameter(right.Constant.Value), op);
+    }
+
     public ISqlFragment CompareTo(SimpleExpression right, string op)
     {
         // See GH-2895
@@ -107,10 +129,7 @@ internal class SimpleExpression: ExpressionVisitor
         {
             if (right.Constant != null)
             {
-                // Thanks JT. https://github.com/JasperFx/marten/issues/3027
-                if (Constant.Value == null && right.Constant.Value == null) return new LiteralTrue();
-
-                return new ComparisonFilter(new CommandParameter(Constant.Value), new CommandParameter(right.Constant.Value), op);
+                return compareConstants(right, op);
             }
 
             return right.CompareTo(this, ComparisonFilter.OppositeOperators[op]);
