@@ -52,6 +52,22 @@ public partial class QuerySession
         return await provider.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
     }
 
+    public async Task<IReadOnlyList<T>> AdvancedSqlQueryAsync<T>(string sql, CancellationToken token, params object[] parameters)
+    {
+        assertNotDisposed();
+
+        var handler = new AdvancedSqlQueryHandler<T>(this, sql, parameters);
+
+        if (handler.SqlSelectContainsStandardColumns)
+        {
+            await Database.EnsureStorageExistsAsync(typeof(T), token).ConfigureAwait(false);
+        }
+
+        var provider = new MartenLinqQueryProvider(this, typeof(T));
+        return await provider.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
+    }
+
+
     public Task<IReadOnlyList<T>> QueryAsync<T>(string sql, params object[] parameters)
     {
         return QueryAsync<T>(sql, CancellationToken.None, parameters);
