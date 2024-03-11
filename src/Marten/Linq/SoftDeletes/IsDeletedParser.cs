@@ -22,7 +22,9 @@ internal class IsDeletedParser: IMethodCallParser
     public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
         MethodCallExpression expression)
     {
-        options.AssertDocumentTypeIsSoftDeleted(expression.Arguments[0].Type);
+        var argument = expression.Arguments[0];
+        var type = argument is UnaryExpression u ? u.Operand.Type : argument.Type;
+        options.AssertDocumentTypeIsSoftDeleted(type);
         return IsDeletedFilter.Instance;
     }
 
