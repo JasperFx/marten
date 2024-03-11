@@ -58,15 +58,44 @@ public partial class QuerySession
 
         var handler = new AdvancedSqlQueryHandler<T>(this, sql, parameters);
 
-        if (handler.SqlSelectContainsStandardColumns)
+        foreach (var documentType in handler.DocumentTypes)
         {
-            await Database.EnsureStorageExistsAsync(typeof(T), token).ConfigureAwait(false);
+            await Database.EnsureStorageExistsAsync(documentType, token).ConfigureAwait(false);
         }
 
         var provider = new MartenLinqQueryProvider(this, typeof(T));
         return await provider.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
     }
 
+    public async Task<IReadOnlyList<(T1, T2)>> AdvancedSqlQueryAsync<T1, T2>(string sql, CancellationToken token, params object[] parameters)
+    {
+        assertNotDisposed();
+
+        var handler = new AdvancedSqlQueryHandler<T1, T2>(this, sql, parameters);
+
+        foreach (var documentType in handler.DocumentTypes)
+        {
+            await Database.EnsureStorageExistsAsync(documentType, token).ConfigureAwait(false);
+        }
+
+        var provider = new MartenLinqQueryProvider(this, typeof((T1, T2)));
+        return await provider.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
+    }
+
+    public async Task<IReadOnlyList<(T1, T2, T3)>> AdvancedSqlQueryAsync<T1, T2, T3>(string sql, CancellationToken token, params object[] parameters)
+    {
+        assertNotDisposed();
+
+        var handler = new AdvancedSqlQueryHandler<T1, T2, T3>(this, sql, parameters);
+
+        foreach (var documentType in handler.DocumentTypes) 
+        {
+            await Database.EnsureStorageExistsAsync(documentType, token).ConfigureAwait(false);
+        }
+
+        var provider = new MartenLinqQueryProvider(this, typeof((T1, T2, T3)));
+        return await provider.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
+    }
 
     public Task<IReadOnlyList<T>> QueryAsync<T>(string sql, params object[] parameters)
     {
