@@ -370,7 +370,7 @@ public class using_master_table_multi_tenancy : IAsyncLifetime
         var databases = await tenancy.BuildDatabases();
 
         databases.Count.ShouldBe(5);
-        databases.OfType<MasterTableTenancy.TenantDatabase>().Count().ShouldBe(1);
+        databases.OfType<MasterTableTenancy.TenantLookupDatabase>().Count().ShouldBe(1);
     }
 
     [Fact]
