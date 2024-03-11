@@ -9,7 +9,12 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
-internal class StatsSelectClause<T>: ISelectClause
+internal interface IStatsSelectClause
+{
+    ISelectClause Inner { get; }
+}
+
+internal class StatsSelectClause<T>: ISelectClause, IModifyableFromObject, IStatsSelectClause
 {
     private QueryStatistics _statistics;
 
@@ -17,13 +22,14 @@ internal class StatsSelectClause<T>: ISelectClause
     {
         Inner = inner;
         _statistics = statistics;
+        FromObject = Inner.FromObject;
     }
 
     public ISelectClause Inner { get; }
 
     public Type SelectedType => Inner.SelectedType;
 
-    public string FromObject => Inner.FromObject;
+    public string FromObject { get; set; }
 
     public void Apply(ICommandBuilder sql)
     {
@@ -32,7 +38,7 @@ internal class StatsSelectClause<T>: ISelectClause
         sql.Append(", ");
         sql.Append(LinqConstants.StatsColumn);
         sql.Append(" from ");
-        sql.Append(Inner.FromObject);
+        sql.Append(FromObject);
         sql.Append(" as d");
     }
 

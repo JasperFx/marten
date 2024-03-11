@@ -1,3 +1,4 @@
+using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 
@@ -14,12 +15,26 @@ internal class PassthroughSelectStatement: SelectorStatement
         TableName = tableName;
     }
 
+    public override string FromObject => TableName;
+
     public string TableName { get; set; }
 
     protected override void configure(ICommandBuilder sql)
     {
-        sql.Append("select * from ");
-        sql.Append(TableName);
-        sql.Append(" as d;");
+        if (SelectClause is IDocumentStorage || (SelectClause is IStatsSelectClause stats && stats.Inner is IDocumentStorage))
+        {
+            sql.Append("select * from ");
+            sql.Append(TableName);
+            sql.Append(" as d;");
+        }
+        else
+        {
+            // Hack, but makes SelectMany() work where the exact table gets lost
+            if (SelectClause is IModifyableFromObject o) o.FromObject = TableName;
+
+            SelectClause.Apply(sql);
+        }
+
+
     }
 }

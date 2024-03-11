@@ -7,6 +7,11 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
+public interface IModifyableFromObject
+{
+    string FromObject { get; set; }
+}
+
 /// <summary>
 ///     Internal interface for the Linq subsystem
 /// </summary>
