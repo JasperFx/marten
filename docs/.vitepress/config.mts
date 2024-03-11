@@ -123,6 +123,7 @@ const config: UserConfig<DefaultTheme.Config> = {
                 { text: 'Searching with Boolean Flags', link: '/documents/querying/linq/booleans' },
                 { text: 'Searching for NULL Values', link: '/documents/querying/linq/nulls' },
                 { text: 'Querying with Postgres SQL', link: '/documents/querying/sql' },
+                { text: 'Advanced Querying with Postgres SQL', link: '/documents/querying/advanced-sql' },
                 { text: 'Querying for Raw JSON', link: '/documents/querying/query-json' },
                 { text: 'Compiled Queries', link: '/documents/querying/compiled-queries' },
                 { text: 'Batched Queries', link: '/documents/querying/batched-queries' },]
