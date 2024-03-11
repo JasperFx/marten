@@ -32,7 +32,9 @@ internal class DeletedBeforeParser: IMethodCallParser
             throw new BadLinqExpressionException($"{_method.Name} can only be used to query against documents");
         }
 
-        options.AssertDocumentTypeIsSoftDeleted(expression.Arguments[0].Type);
+        var argument = expression.Arguments[0];
+        var type = argument is UnaryExpression u ? u.Operand.Type : argument.Type;
+        options.AssertDocumentTypeIsSoftDeleted(type);
 
         var time = expression.Arguments.Last().Value().As<DateTimeOffset>();
 
