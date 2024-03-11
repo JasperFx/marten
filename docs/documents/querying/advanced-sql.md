@@ -4,9 +4,9 @@ Besides Linq queries or simple raw SQL queries via `session.Query<T>("where...")
 With this method Marten does not try to add any missing parts to the SQL query, instead you have to provide the whole query string yourself.
 
 Marten just makes some assumptions on how the schema of the SQl query result must look like, in order to be able to map the query result to documents, scalars or other JSON serializable types.
-With `AdvancedSqlQueryAsync` it is even possible to return multiple documents, objects and scalars as a tuple.
+With `AdvancedSqlQueryAsync` / `AdvancedSqlQuery` it is even possible to return multiple documents, objects and scalars as a tuple. Currently up to three result types can be queried for.
 
-The following rules must be followed when doing queries with `AdvancedSqlQueryAsync`:
+The following rules must be followed when doing queries with `AdvancedSqlQueryAsync` / `AdvancedSqlQuery`:
 
 - If a document should be returned, the SQL `SELECT` statement must contain all the columns required by Marten to build
   the document in the correct order. Which columns are needed depends on the session type and if any meta data are
@@ -134,3 +134,5 @@ results[1].detail.Detail.ShouldBe("Likes to cook");
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L97-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_related_documents_and_scalar' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+For sync queries you can use the `AdvancedSqlQuery<T>(...)` overloads.
