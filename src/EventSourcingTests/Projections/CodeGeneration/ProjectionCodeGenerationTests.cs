@@ -6,6 +6,7 @@ using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Internal.CodeGeneration;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -17,7 +18,7 @@ public class ProjectionCodeGenerationTests
     public void Snapshot_GeneratesCodeFiles()
     {
         var options = new StoreOptions();
-        options.Connection("Dummy");
+        options.Connection(ConnectionSource.ConnectionString);
 
         // Given
         options.Projections.Snapshot<Something>(SnapshotLifecycle.Inline);
@@ -40,7 +41,7 @@ public class ProjectionCodeGenerationTests
     public void LiveStreamAggregation_GeneratesCodeFiles()
     {
         var options = new StoreOptions();
-        options.Connection("Dummy");
+        options.Connection(ConnectionSource.ConnectionString);
 
         // Given
         options.Projections.LiveStreamAggregation<Something>();
@@ -63,7 +64,7 @@ public class ProjectionCodeGenerationTests
     public void SingleStreamProjection_GeneratesCodeFiles()
     {
         var options = new StoreOptions();
-        options.Connection("Dummy");
+        options.Connection(ConnectionSource.ConnectionString);
 
         // Given
         options.Projections.Add<SomethingElseSingleStreamProjection>(ProjectionLifecycle.Inline);
@@ -86,7 +87,7 @@ public class ProjectionCodeGenerationTests
     public void MultiStreamProjection_GeneratesCodeFiles()
     {
         var options = new StoreOptions();
-        options.Connection("Dummy");
+        options.Connection(ConnectionSource.ConnectionString);
 
         // Given
         options.Projections.Add<SomethingElseMultiStreamProjection>(ProjectionLifecycle.Inline);

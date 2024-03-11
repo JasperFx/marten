@@ -178,7 +178,7 @@ public class MasterTableTenancy : ITenancy
                 var connectionString = await reader.GetFieldValueAsync<string>(1).ConfigureAwait(false);
                 connectionString = _configuration.CorrectConnectionString(connectionString);
 
-                var database = new MartenDatabase(_options, new ConnectionFactory(new DefaultNpgsqlDataSourceFactory(), connectionString), tenantId);
+                var database = new MartenDatabase(_options, _options.NpgsqlDataSourceFactory.Create(connectionString), tenantId);
                 _databases = _databases.AddOrUpdate(tenantId, database);
             }
 
@@ -238,7 +238,7 @@ public class MasterTableTenancy : ITenancy
         await using var conn = new NpgsqlConnection(_connectionString);
         await conn.OpenAsync(CancellationToken.None).ConfigureAwait(false);
 
-        var connectionString = (string)await CommandExtensions.CreateCommand(conn, $"select connection_string from {_schemaName}.{TenantTable.TableName} where tenant_id = :id")
+        var connectionString = (string)await conn.CreateCommand($"select connection_string from {_schemaName}.{TenantTable.TableName} where tenant_id = :id")
             .With("id", tenantId)
             .ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false);
 
@@ -246,7 +246,7 @@ public class MasterTableTenancy : ITenancy
 
         return connectionString.IsNotEmpty()
             ? new MartenDatabase(_options,
-                new ConnectionFactory(new DefaultNpgsqlDataSourceFactory(), connectionString), tenantId)
+                _options.NpgsqlDataSourceFactory.Create(connectionString), tenantId)
             : null;
     }
 

@@ -34,7 +34,7 @@ public class StoreOptionsTests
     [Fact]
     public void DefaultAutoCreateShouldBeCreateOrUpdateWhenProvidingNoConfig()
     {
-        var store = DocumentStore.For("");
+        var store = DocumentStore.For(ConnectionSource.ConnectionString);
 
         Assert.Equal(AutoCreate.CreateOrUpdate, store.Options.AutoCreateSchemaObjects);
     }

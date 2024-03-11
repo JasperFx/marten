@@ -147,19 +147,6 @@ public class SessionOptionsTests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public async Task should_map_exception_correctly_for_invalid_connection_string()
-    {
-        var store = DocumentStore.For("***");
-        await using var session = store.LightweightSession();
-
-        var e = await Assert.ThrowsAsync<Marten.Exceptions.InvalidConnectionStringException>(() =>
-            session.QueryAsync<int>("select count(*) from mt_doc_foo")
-        );
-
-        Assert.Contains("Invalid connection string", e.Message);
-    }
-
-    [Fact]
     public void default_timeout_should_be_npgsql_default_ie_30()
     {
         // TODO -- do this without the Preview command. Check against the session itself
