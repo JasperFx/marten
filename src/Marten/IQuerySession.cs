@@ -171,7 +171,6 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     Stream the results of a user-supplied query directly to a stream as a JSON array
     /// </summary>
     /// <param name="destination"></param>
-    /// <param name="token"></param>
     /// <param name="sql"></param>
     /// <param name="parameters"></param>
     /// <typeparam name="T"></typeparam>
@@ -195,7 +194,6 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="sql"></param>
-    /// <param name="token"></param>
     /// <param name="parameters"></param>
     /// <returns></returns>
     Task<IReadOnlyList<T>> QueryAsync<T>(string sql, params object[] parameters);
