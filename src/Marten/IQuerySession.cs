@@ -148,7 +148,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
 
     /// <summary>
     ///     Queries the document storage table for the document type T by supplied SQL. See
-    ///     http://jasperfx.github.io/marten/documentation/documents/querying/sql/ for more information on usage.
+    ///     https://martendb.io/documents/querying/sql.html for more information on usage.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="sql"></param>
@@ -179,7 +179,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
 
     /// <summary>
     ///     Asynchronously queries the document storage table for the document type T by supplied SQL. See
-    ///     http://jasperfx.github.io/marten/documentation/documents/querying/sql/ for more information on usage.
+    ///     https://martendb.io/documents/querying/sql.html for more information on usage.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="sql"></param>
@@ -190,7 +190,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
 
     /// <summary>
     ///     Asynchronously queries the document storage table for the document type T by supplied SQL. See
-    ///     http://jasperfx.github.io/marten/documentation/documents/querying/sql/ for more information on usage.
+    ///     https://martendb.io/documents/querying/sql.html for more information on usage.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="sql"></param>
