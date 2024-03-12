@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Storage;
 using Marten.Testing.Harness;
@@ -47,6 +48,12 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
         await conn.OpenAsync();
 
         return await conn.DatabaseExists(databaseName);
+    }
+
+    [Fact]
+    public void can_get_at_the_master_database()
+    {
+        theTenancy.As<ITenancyWithMasterDatabase>().TenantDatabase.ShouldNotBeNull();
     }
 
     [Theory]
