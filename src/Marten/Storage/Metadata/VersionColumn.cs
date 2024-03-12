@@ -2,9 +2,8 @@ using System;
 using JasperFx.CodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
-using Marten.Storage.Metadata;
 
-namespace Marten.Storage;
+namespace Marten.Storage.Metadata;
 
 internal class VersionColumn: MetadataColumn<Guid>, ISelectableColumn
 {
