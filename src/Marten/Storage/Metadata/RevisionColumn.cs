@@ -3,10 +3,9 @@ using JasperFx.Core;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Schema.Arguments;
-using Marten.Storage.Metadata;
 using Weasel.Postgresql.Tables;
 
-namespace Marten.Storage;
+namespace Marten.Storage.Metadata;
 
 internal class RevisionColumn: MetadataColumn<int>, ISelectableColumn
 {
