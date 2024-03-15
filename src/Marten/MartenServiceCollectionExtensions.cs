@@ -752,6 +752,49 @@ public static class MartenServiceCollectionExtensions
 
             return this;
         }
+
+        /// <summary>
+        /// Add a projection to this application that requires IoC services. The projection itself will
+        /// be created with the application's IoC container
+        /// </summary>
+        /// <param name="lifecycle">The projection lifecycle for Marten</param>
+        /// <param name="lifetime">The IoC lifecycle for the projection instance. Note that the Transient lifetime will still be treated as Scoped</param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public MartenConfigurationExpression AddProjectionWithServices<T>(ProjectionLifecycle lifecycle,
+            ServiceLifetime lifetime, string projectionName) where T : class, IProjection
+        {
+            switch (lifetime)
+            {
+                case ServiceLifetime.Singleton:
+                    Services.AddSingleton<T>();
+                    Services.ConfigureMarten((s, opts) =>
+                    {
+                        var projection = s.GetRequiredService<T>();
+                        opts.Projections.Add(projection, lifecycle, projectionName);
+                    });
+                    break;
+
+                case ServiceLifetime.Transient:
+                case ServiceLifetime.Scoped:
+                    Services.AddScoped<T>();
+                    Services.ConfigureMarten((s, opts) =>
+                    {
+                        var projection = new ScopedProjectionWrapper<T>(s)
+                        {
+                            Lifecycle = lifecycle,
+                            ProjectionType = typeof(T),
+                            ProjectionName = projectionName
+                        };
+
+                        opts.Projections.Add(projection, lifecycle, projectionName);
+                    });
+                    break;
+            }
+
+
+            return this;
+        }
     }
 
     internal class AddInitialData<T, TData>: IConfigureMarten<T> where T : IDocumentStore where TData : IInitialData

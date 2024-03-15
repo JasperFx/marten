@@ -66,6 +66,10 @@ internal class ScopedProjectionWrapper<TProjection> : IProjection, IProjectionSo
 
             return _projectionName;
         }
+        set
+        {
+            _projectionName = value;
+        }
     }
 
     public ProjectionLifecycle Lifecycle { get; set; }
