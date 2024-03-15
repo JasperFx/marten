@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -6,11 +7,14 @@ using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
+using Marten.Storage;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Npgsql;
 using Xunit;
 using Shouldly;
+using Weasel.Postgresql;
 
 namespace EventSourcingTests.Projections;
 
@@ -18,11 +22,48 @@ namespace EventSourcingTests.Projections;
 public class projections_with_IoC_services
 {
     [Fact]
+    public async Task can_apply_database_changes_at_runtime_with_projection_with_services()
+    {
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            await conn.DropSchemaAsync("ioc");
+            await conn.CloseAsync();
+        }
+
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<IPriceLookup, PriceLookup>();
+
+                services.AddMarten(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.DatabaseSchemaName = "ioc";
+                    })
+                    // Note that this is chained after the call to AddMarten()
+                    .AddProjectionWithServices<ProductProjection>(
+                        ProjectionLifecycle.Inline,
+                        ServiceLifetime.Scoped
+                    ).ApplyAllDatabaseChangesOnStartup();
+            })
+            .StartAsync();
+
+        var store = host.Services.GetRequiredService<IDocumentStore>();
+        var tables = store.Storage.AllObjects().OfType<DocumentTable>();
+
+        tables.Any(x => x.DocumentType == typeof(Product)).ShouldBeTrue();
+
+        var existing = await store.Storage.Database.ExistingTableFor(typeof(Product));
+        existing.ShouldNotBeNull();
+    }
+
+    [Fact]
     public async Task use_projection_as_singleton_and_inline()
     {
         #region sample_registering_projection_built_by_services
 
-        using var host = await Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
+        using var host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
                 services.AddSingleton<IPriceLookup, PriceLookup>();

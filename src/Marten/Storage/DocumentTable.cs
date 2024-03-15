@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -72,6 +73,8 @@ internal class DocumentTable: Table
         Indexes.AddRange(mapping.Indexes);
         ForeignKeys.AddRange(mapping.ForeignKeys);
     }
+
+    public Type DocumentType => _mapping.DocumentType;
 
     public void AddIfActive(MetadataColumn column)
     {

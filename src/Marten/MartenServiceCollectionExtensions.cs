@@ -738,7 +738,12 @@ public static class MartenServiceCollectionExtensions
                     Services.AddScoped<T>();
                     Services.ConfigureMarten((s, opts) =>
                     {
-                        var projection = new ScopedProjectionWrapper<T>(s);
+                        var projection = new ScopedProjectionWrapper<T>(s)
+                        {
+                            Lifecycle = lifecycle,
+                            ProjectionType = typeof(T)
+                        };
+
                         opts.Projections.Add(projection, lifecycle);
                     });
                     break;
