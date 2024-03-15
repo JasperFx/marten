@@ -54,6 +54,11 @@ There's a couple things to be aware of with type hierarchies:
 
 ## Multi Level Hierarchies
 
+::: tip
+Use the `AddSubClassHierarchy()` if you want to be able to query against intermediate levels of a document hierarchy. Calling
+`AddSubClass<T>()` just directly adds a base class to the top level document type. 
+:::
+
 Say you have a document type named `ISmurf` that is implemented by `Smurf`. Now, say the latter has a pair of specialized
 subclasses called `PapaSmurf` and `PapySmurf` and that both implement `IPapaSmurf` and that `PapaSmurf` has the subclass
 `BrainySmurf` like so:

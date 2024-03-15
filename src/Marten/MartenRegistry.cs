@@ -580,7 +580,7 @@ public class MartenRegistry
         }
 
         /// <summary>
-        ///     Add a sub class type to this document type so that Marten will store that document in the parent
+        ///     Add a sub class type to the top level document type so that Marten will store that document in the parent
         ///     table storage
         /// </summary>
         /// <param name="alias"></param>
