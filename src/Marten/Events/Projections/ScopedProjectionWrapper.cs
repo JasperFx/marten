@@ -3,6 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Daemon;
+using Marten.Events.Daemon.Internals;
+using Marten.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marten.Events.Projections;
@@ -12,7 +15,7 @@ namespace Marten.Events.Projections;
 /// IoC services during execution
 /// </summary>
 /// <typeparam name="TProjection"></typeparam>
-internal class ScopedProjectionWrapper<TProjection> : IProjection
+internal class ScopedProjectionWrapper<TProjection> : IProjection, IProjectionSource
     where TProjection : IProjection
 {
     private readonly IServiceProvider _serviceProvider;
@@ -37,4 +40,108 @@ internal class ScopedProjectionWrapper<TProjection> : IProjection
         var projection = sp.GetRequiredService<TProjection>();
         await projection.ApplyAsync(operations, streams, cancellation).ConfigureAwait(false);
     }
+
+    private string _projectionName;
+
+    public string ProjectionName
+    {
+        get
+        {
+            if (_projectionName.IsEmpty())
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var sp = scope.ServiceProvider;
+                var projection = sp.GetRequiredService<TProjection>();
+
+                if (projection is IProjectionSource s)
+                {
+                    _projectionName = s.ProjectionName;
+                }
+                else
+                {
+                    var wrapper = new ProjectionWrapper(projection, Lifecycle);
+                    _projectionName = wrapper.ProjectionName;
+                }
+            }
+
+            return _projectionName;
+        }
+    }
+
+    public ProjectionLifecycle Lifecycle { get; set; }
+    public Type ProjectionType { get; init; }
+
+    private AsyncOptions _asyncOptions;
+    public AsyncOptions Options
+    {
+
+        get
+        {
+            if (_asyncOptions == null)
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var sp = scope.ServiceProvider;
+                var projection = sp.GetRequiredService<TProjection>();
+
+                if (projection is IProjectionSource s)
+                {
+                    _asyncOptions = s.Options;
+                }
+                else
+                {
+                    var wrapper = new ProjectionWrapper(projection, Lifecycle);
+                    _asyncOptions = wrapper.Options;
+                }
+            }
+
+            return _asyncOptions;
+        }
+    }
+
+    public IEnumerable<Type> PublishedTypes()
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var sp = scope.ServiceProvider;
+        var projection = sp.GetRequiredService<TProjection>();
+
+        if (projection is IProjectionSource s)
+        {
+            return s.PublishedTypes();
+        }
+        else
+        {
+            var wrapper = new ProjectionWrapper(projection, Lifecycle);
+            return wrapper.PublishedTypes();
+        }
+    }
+
+    public IReadOnlyList<AsyncProjectionShard> AsyncProjectionShards(DocumentStore store)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var sp = scope.ServiceProvider;
+        var projection = sp.GetRequiredService<TProjection>();
+
+        if (projection is IProjectionSource s)
+        {
+            return s.AsyncProjectionShards(store);
+        }
+        else
+        {
+            var wrapper = (IProjectionSource)new ProjectionWrapper(projection, Lifecycle);
+            return wrapper.AsyncProjectionShards(store);
+        }
+    }
+
+    public ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase, EventRange range,
+        CancellationToken cancellationToken)
+    {
+        throw new NotSupportedException();
+    }
+
+    public IProjection Build(DocumentStore store)
+    {
+        return this;
+    }
+
+    public uint ProjectionVersion { get; set; }
 }
