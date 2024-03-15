@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -143,10 +144,13 @@ public class projections_with_IoC_services
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "ioc";
-                }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped);
+                }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped, "MyProjection");
             }).StartAsync();
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
+
+        store.Options.As<StoreOptions>().Projections.All.Single()
+            .ShouldBeOfType<ScopedProjectionWrapper<ProductProjection>>().ProjectionName.ShouldBe("MyProjection");
 
         await using var session = store.LightweightSession();
         var streamId = session.Events.StartStream<Product>(new ProductRegistered("Ankle Socks", "Socks")).Id;
