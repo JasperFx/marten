@@ -81,7 +81,7 @@ public class SystemTextJsonSerializer: ISerializer
     public async ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index,
         CancellationToken cancellationToken = default)
     {
-        await using var stream = await reader.As<NpgsqlDataReader>().GetStreamAsync(index, cancellationToken)
+        await using var stream = await reader.GetFieldValueAsync<Stream>(index, cancellationToken)
             .ConfigureAwait(false);
         return await FromJsonAsync<T>(stream, cancellationToken).ConfigureAwait(false);
     }
@@ -94,7 +94,7 @@ public class SystemTextJsonSerializer: ISerializer
 
     public object FromJson(Type type, DbDataReader reader, int index)
     {
-        return FromJson(type, reader.As<NpgsqlDataReader>().GetStream(index));
+        return FromJson(type, reader.GetFieldValue<Stream>(index));
     }
 
     public async ValueTask<object> FromJsonAsync(Type type, Stream stream,
@@ -108,7 +108,7 @@ public class SystemTextJsonSerializer: ISerializer
     public async ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index,
         CancellationToken cancellationToken = default)
     {
-        await using var stream = await reader.As<NpgsqlDataReader>().GetStreamAsync(index, cancellationToken)
+        await using var stream = await reader.GetFieldValueAsync<Stream>(index, cancellationToken)
             .ConfigureAwait(false);
         return await FromJsonAsync(type, stream, cancellationToken).ConfigureAwait(false);
     }
@@ -211,6 +211,6 @@ public class SystemTextJsonSerializer: ISerializer
 
     public JsonDocument JsonDocumentFromJson(DbDataReader reader, int index)
     {
-        return JsonDocumentFromJson(reader.As<NpgsqlDataReader>().GetStream(index));
+        return JsonDocumentFromJson(reader.GetFieldValue<Stream>(index));
     }
 }
