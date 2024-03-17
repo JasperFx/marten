@@ -46,7 +46,7 @@ Here's what your `Migrations.csproj` could look like:
 
 Note that this is just a shell project that does not contain any classes or code. But some prefer to be able to see the migrations scripts from within the solution. The project directory will contain a folder that contains the SQL scripts for the database migrations: `src\Migrations\scripts\up`
 
-The dockerfile for the migration project does not build anything but uses Grade:
+The dockerfile for the migration project does not build anything but uses [grate](https://erikbra.github.io/grate/):
 
 ```dockerfile
 FROM erikbra/grate:1.5.4 as migrations
