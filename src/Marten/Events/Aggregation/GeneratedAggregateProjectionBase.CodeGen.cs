@@ -18,11 +18,19 @@ namespace Marten.Events.Aggregation;
 
 public abstract partial class GeneratedAggregateProjectionBase<T>
 {
+    private readonly object _compilationLock = new();
+
     public ILiveAggregator<T> Build(StoreOptions options)
     {
         if (_liveType == null)
         {
-            Compile(options);
+            lock (_compilationLock)
+            {
+                if (_liveType == null)
+                {
+                    Compile(options);
+                }
+            }
         }
 
         return BuildLiveAggregator();
@@ -54,7 +62,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         this.As<ICodeFile>().InitializeSynchronously(rules, options.EventGraph, null);
 
         // You have to do this for the sake of the Setters
-        if (_liveGeneratedType == null)
+        if (_liveGeneratedType == null || _liveType == null)
         {
             lock (_assembleLocker)
             {
