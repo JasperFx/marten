@@ -1,8 +1,10 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Storage;
@@ -127,11 +129,20 @@ internal class ScopedProjectionWrapper<TProjection> : IProjection, IProjectionSo
 
         if (projection is IProjectionSource s)
         {
-            return s.AsyncProjectionShards(store);
+            var shards = s.AsyncProjectionShards(store);
+            if (_projectionName.IsNotEmpty())
+            {
+                foreach (var shard in shards)
+                {
+                    shard.OverrideProjectionName(_projectionName);
+                }
+            }
+
+            return shards;
         }
         else
         {
-            var wrapper = (IProjectionSource)new ProjectionWrapper(projection, Lifecycle);
+            var wrapper = (IProjectionSource)new ProjectionWrapper(projection, Lifecycle){ProjectionName = _projectionName};
             return wrapper.AsyncProjectionShards(store);
         }
     }
