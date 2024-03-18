@@ -156,6 +156,9 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
             if (runtime.IsNew(slice))
             {
                 _builder.Post(slice);
+
+                // Don't use it any farther, it's ready to do its thing
+                Slices.Remove(slice.Id);
             }
             else
             {
