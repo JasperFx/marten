@@ -101,7 +101,7 @@ public class LinqParsing: IReadOnlyLinqParsing
     /// </summary>
     public readonly IList<IMethodCallParser> MethodCallParsers = new List<IMethodCallParser>();
 
-    private ImHashMap<int, IMethodCallParser> _methodParsers = ImHashMap<int, IMethodCallParser>.Empty;
+    private ImHashMap<long, IMethodCallParser> _methodParsers = ImHashMap<long, IMethodCallParser>.Empty;
 
     internal LinqParsing(StoreOptions options)
     {
@@ -121,13 +121,15 @@ public class LinqParsing: IReadOnlyLinqParsing
 
     internal IMethodCallParser FindMethodParser(MethodCallExpression expression)
     {
-        if (_methodParsers.TryFind(expression.Method.MetadataToken, out var parser))
+        var key = ToKey(expression.Method);
+
+        if (_methodParsers.TryFind(key, out var parser))
         {
             return parser;
         }
 
         parser = determineMethodParser(expression);
-        _methodParsers = _methodParsers.AddOrUpdate(expression.Method.MetadataToken, parser);
+        _methodParsers = _methodParsers.AddOrUpdate(key, parser);
         return parser;
     }
 
@@ -135,5 +137,14 @@ public class LinqParsing: IReadOnlyLinqParsing
     {
         return MethodCallParsers.FirstOrDefault(x => x.Matches(expression))
                ?? _parsers.FirstOrDefault(x => x.Matches(expression));
+    }
+
+    /// <summary>
+    ///     https://learn.microsoft.com/en-us/dotnet/api/system.reflection.memberinfo.metadatatoken?view=net-8.0
+    ///     MetadataToken -- "A value which, in combination with Module, uniquely identifies a metadata element."
+    /// </summary>
+    private static long ToKey(MethodInfo expressionMethod)
+    {
+        return (long)expressionMethod.Module.MetadataToken << 32 | (uint)expressionMethod.MetadataToken;
     }
 }
