@@ -15,6 +15,7 @@ using Marten.Linq.Parsing.Methods;
 using Marten.Linq.Parsing.Methods.FullText;
 using Marten.Linq.Parsing.Methods.Strings;
 using Marten.Linq.SoftDeletes;
+using Newtonsoft.Json.Linq;
 
 namespace Marten;
 
@@ -95,13 +96,14 @@ public class LinqParsing: IReadOnlyLinqParsing
 
     private readonly StoreOptions _options;
 
+    private static readonly HashSet<string> Encoutered = new HashSet<string>();
 
     /// <summary>
     ///     Add custom Linq expression parsers for your own methods
     /// </summary>
     public readonly IList<IMethodCallParser> MethodCallParsers = new List<IMethodCallParser>();
 
-    private ImHashMap<long, IMethodCallParser> _methodParsers = ImHashMap<long, IMethodCallParser>.Empty;
+    private ImHashMap<string, IMethodCallParser> _methodParsers = ImHashMap<string, IMethodCallParser>.Empty;
 
     internal LinqParsing(StoreOptions options)
     {
@@ -143,8 +145,20 @@ public class LinqParsing: IReadOnlyLinqParsing
     ///     https://learn.microsoft.com/en-us/dotnet/api/system.reflection.memberinfo.metadatatoken?view=net-8.0
     ///     MetadataToken -- "A value which, in combination with Module, uniquely identifies a metadata element."
     /// </summary>
-    private static long ToKey(MethodInfo expressionMethod)
+    private static string ToKey(MethodInfo expressionMethod)
     {
-        return (long)expressionMethod.Module.MetadataToken << 32 | (uint)expressionMethod.MetadataToken;
+        Encoutered.Add(
+            $"{expressionMethod.Module.Name}_{expressionMethod.Module.MetadataToken}_{expressionMethod.MetadataToken}_{expressionMethod.DeclaringType?.Name}_{expressionMethod.Name}");
+
+        Console.WriteLine();
+        Console.WriteLine();
+        Console.WriteLine("---");
+        Console.WriteLine();
+        foreach (var x in Encoutered.ToArray())
+        {
+            Console.WriteLine(x);
+        }
+
+        return $"{expressionMethod.Module.Name}_{expressionMethod.MetadataToken}";
     }
 }
