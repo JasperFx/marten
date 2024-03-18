@@ -160,6 +160,32 @@ public class projections_with_IoC_services
         product.Price.ShouldBeGreaterThan(0);
         product.Name.ShouldBe("Ankle Socks");
     }
+
+    [Fact]
+    public async Task get_async_shards_with_custom_name()
+    {
+        using var host = await Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<IPriceLookup, PriceLookup>();
+
+                services.AddMarten(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "ioc";
+                }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Async, ServiceLifetime.Scoped, "MyProjection");
+            }).StartAsync();
+
+        var store = host.Services.GetRequiredService<IDocumentStore>();
+
+        var projectionSource = store.Options.As<StoreOptions>().Projections.All.Single();
+        projectionSource
+            .ShouldBeOfType<ScopedProjectionWrapper<ProductProjection>>().ProjectionName.ShouldBe("MyProjection");
+
+        projectionSource.AsyncProjectionShards((DocumentStore)store).Single().Name.Identity.ShouldBe("MyProjection:All");
+
+
+    }
 }
 
 public interface IPriceLookup

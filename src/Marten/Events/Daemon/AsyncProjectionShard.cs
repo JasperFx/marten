@@ -24,6 +24,12 @@ public class AsyncProjectionShard
     {
     }
 
+    internal void OverrideProjectionName(string projectionName)
+    {
+        var name = new ShardName(projectionName, Name.Key);
+        Name = name;
+    }
+
     public IProjectionSource Source { get; }
 
     public Type? StreamType { get; set; }
@@ -53,5 +59,5 @@ public class AsyncProjectionShard
     /// <summary>
     ///     The identity of this projection shard
     /// </summary>
-    public ShardName Name { get; }
+    public ShardName Name { get; private set; }
 }
