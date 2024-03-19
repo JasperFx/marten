@@ -1,8 +1,7 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Threading;
 using JasperFx.Core;
 using Marten.Events.Archiving;
 using Marten.Linq.CreatedAt;
@@ -101,8 +100,6 @@ public class LinqParsing: IReadOnlyLinqParsing
     public readonly IList<IMethodCallParser> MethodCallParsers = new List<IMethodCallParser>();
 
     private ImHashMap<long, IMethodCallParser> _methodParsers = ImHashMap<long, IMethodCallParser>.Empty;
-    private ImHashMap<string, int> _moduleMap = ImHashMap<string, int>.Empty;
-    private int _moduleMapIndex = 0;
 
     internal LinqParsing(StoreOptions options)
     {
@@ -115,9 +112,9 @@ public class LinqParsing: IReadOnlyLinqParsing
     /// </summary>
     public IList<IMemberSource> MemberSources { get; } = new List<IMemberSource>();
 
-    IReadOnlyList<IMemberSource> IReadOnlyLinqParsing.FieldSources => MemberSources.ToList();
+    IReadOnlyList<IMemberSource> IReadOnlyLinqParsing.FieldSources => MemberSources.ToImmutableArray();
 
-    IReadOnlyList<IMethodCallParser> IReadOnlyLinqParsing.MethodCallParsers => _parsers.ToList();
+    IReadOnlyList<IMethodCallParser> IReadOnlyLinqParsing.MethodCallParsers => _parsers.ToImmutableArray();
 
     internal IMethodCallParser FindMethodParser(MethodCallExpression expression)
     {
@@ -145,22 +142,8 @@ public class LinqParsing: IReadOnlyLinqParsing
     /// </summary>
     private long ToKey(MethodCallExpression expression)
     {
-        int moduleKey = ToKey(expression.Method.Module);
+        int moduleKey = expression.Method.Module.Name.GetHashCode();
         int expressionKey = expression.Method.MetadataToken;
         return (long)moduleKey << 32 | (uint)expressionKey;
-    }
-
-    private int ToKey(Module module)
-    {
-        string key = module.Name;
-
-        if (_moduleMap.TryFind(key, out var moduleKey))
-        {
-            return moduleKey;
-        }
-
-        moduleKey = Interlocked.Increment(ref _moduleMapIndex);
-        _moduleMap = _moduleMap.AddOrKeep(key, moduleKey);
-        return moduleKey;
     }
 }
