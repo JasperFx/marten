@@ -140,10 +140,14 @@ public class LinqParsing: IReadOnlyLinqParsing
     ///     https://learn.microsoft.com/en-us/dotnet/api/system.reflection.memberinfo.metadatatoken?view=net-8.0
     ///     MetadataToken -- "A value which, in combination with Module, uniquely identifies a metadata element."
     /// </summary>
-    private long ToKey(MethodCallExpression expression)
+    private static long ToKey(MethodCallExpression expression)
     {
-        int moduleKey = expression.Method.Module.Name.GetHashCode();
-        int expressionKey = expression.Method.MetadataToken;
-        return (long)moduleKey << 32 | (uint)expressionKey;
+        var method = expression.Method;
+        unchecked
+        {
+            int moduleKey = method.Module.FullyQualifiedName.GetHashCode();
+            int expressionKey = method.MetadataToken;
+            return (long)moduleKey << 32 | (uint)expressionKey;
+        }
     }
 }
