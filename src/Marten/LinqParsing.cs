@@ -1,8 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 using JasperFx.Core;
 using Marten.Events.Archiving;
 using Marten.Linq.CreatedAt;
@@ -15,7 +15,6 @@ using Marten.Linq.Parsing.Methods;
 using Marten.Linq.Parsing.Methods.FullText;
 using Marten.Linq.Parsing.Methods.Strings;
 using Marten.Linq.SoftDeletes;
-using Newtonsoft.Json.Linq;
 
 namespace Marten;
 
@@ -96,14 +95,14 @@ public class LinqParsing: IReadOnlyLinqParsing
 
     private readonly StoreOptions _options;
 
-    private static readonly HashSet<string> Encoutered = new HashSet<string>();
-
     /// <summary>
     ///     Add custom Linq expression parsers for your own methods
     /// </summary>
     public readonly IList<IMethodCallParser> MethodCallParsers = new List<IMethodCallParser>();
 
-    private ImHashMap<string, IMethodCallParser> _methodParsers = ImHashMap<string, IMethodCallParser>.Empty;
+    private ImHashMap<long, IMethodCallParser> _methodParsers = ImHashMap<long, IMethodCallParser>.Empty;
+    private ImHashMap<string, int> _moduleMap = ImHashMap<string, int>.Empty;
+    private int _moduleMapIndex = 0;
 
     internal LinqParsing(StoreOptions options)
     {
@@ -120,10 +119,9 @@ public class LinqParsing: IReadOnlyLinqParsing
 
     IReadOnlyList<IMethodCallParser> IReadOnlyLinqParsing.MethodCallParsers => _parsers.ToList();
 
-
     internal IMethodCallParser FindMethodParser(MethodCallExpression expression)
     {
-        var key = ToKey(expression.Method);
+        var key = ToKey(expression);
 
         if (_methodParsers.TryFind(key, out var parser))
         {
@@ -145,20 +143,24 @@ public class LinqParsing: IReadOnlyLinqParsing
     ///     https://learn.microsoft.com/en-us/dotnet/api/system.reflection.memberinfo.metadatatoken?view=net-8.0
     ///     MetadataToken -- "A value which, in combination with Module, uniquely identifies a metadata element."
     /// </summary>
-    private static string ToKey(MethodInfo expressionMethod)
+    private long ToKey(MethodCallExpression expression)
     {
-        Encoutered.Add(
-            $"{expressionMethod.Module.Name}_{expressionMethod.Module.MetadataToken}_{expressionMethod.MetadataToken}_{expressionMethod.DeclaringType?.Name}_{expressionMethod.Name}");
+        int moduleKey = ToKey(expression.Method.Module);
+        int expressionKey = expression.Method.MetadataToken;
+        return (long)moduleKey << 32 | (uint)expressionKey;
+    }
 
-        Console.WriteLine();
-        Console.WriteLine();
-        Console.WriteLine("---");
-        Console.WriteLine();
-        foreach (var x in Encoutered.ToArray())
+    private int ToKey(Module module)
+    {
+        string key = module.Name;
+
+        if (_moduleMap.TryFind(key, out var moduleKey))
         {
-            Console.WriteLine(x);
+            return moduleKey;
         }
 
-        return $"{expressionMethod.Module.Name}_{expressionMethod.MetadataToken}";
+        moduleKey = Interlocked.Increment(ref _moduleMapIndex);
+        _moduleMap = _moduleMap.AddOrKeep(key, moduleKey);
+        return moduleKey;
     }
 }
