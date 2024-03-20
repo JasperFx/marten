@@ -132,6 +132,19 @@ public class CompiledQueryPlan : ICommandBuilder
         _current.CommandText += character;
     }
 
+    NpgsqlParameter ICommandBuilder.AppendParameter<T>(T value)
+    {
+        _current ??= appendCommand();
+        var name = "p" + _parameterIndex;
+        _parameterIndex++;
+        var usage = new ParameterUsage(_current.Parameters.Count, name, value);
+        _current.Parameters.Add(usage);
+
+        _current.CommandText += ParameterPlaceholder;
+
+        return usage.Parameter;
+    }
+
     private int _parameterIndex = 0;
 
     NpgsqlParameter ICommandBuilder.AppendParameter(object value)
