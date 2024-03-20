@@ -11,12 +11,19 @@ namespace Marten.Linq.Members.ValueCollections;
 /// </summary>
 internal class SelectManyValueCollection: IValueCollectionMember
 {
+    private readonly StoreOptions _options;
+    private readonly IQueryableMember _parentMember;
+    private readonly RootMember _root;
     public Type ElementType { get; }
 
     public SelectManyValueCollection(ValueCollectionMember valueCollectionMember, MemberInfo parentMember,
         Type elementType, StoreOptions options)
     {
+        _options = options;
+
         ElementType = elementType;
+        _root = new RootMember(ElementType) { Ancestors = Array.Empty<IQueryableMember>() };
+
         var elementMember = new ElementMember(parentMember, elementType);
         var element = (QueryableMember)options.CreateQueryableMember(elementMember, valueCollectionMember, elementType);
         element.RawLocator = element.TypedLocator = "data";
@@ -27,9 +34,14 @@ internal class SelectManyValueCollection: IValueCollectionMember
     public SelectManyValueCollection(Type elementType, IQueryableMember parentMember, StoreOptions options)
     {
         ElementType = elementType;
+        _options = options;
+        _root = new RootMember(ElementType) { Ancestors = Array.Empty<IQueryableMember>() };
+
         var elementMember = new ElementMember(typeof(ICollection<>).MakeGenericType(elementType), elementType);
         var element = (QueryableMember)options.CreateQueryableMember(elementMember, parentMember, elementType);
         element.RawLocator = element.TypedLocator = "data";
+
+        _parentMember = parentMember;
 
         Element = element;
     }
@@ -38,7 +50,12 @@ internal class SelectManyValueCollection: IValueCollectionMember
 
     public IQueryableMember FindMember(MemberInfo member)
     {
-        return Element;
+        if (member is ElementMember)
+        {
+            return Element;
+        }
+
+        return _options.CreateQueryableMember(member, _root);
     }
 
     public void ReplaceMember(MemberInfo member, IQueryableMember queryableMember)
