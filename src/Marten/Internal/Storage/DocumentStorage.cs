@@ -432,9 +432,8 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 }
 
 
-internal class DuplicatedFieldSelectClause: ISelectClause
+internal class DuplicatedFieldSelectClause: ISelectClause, IModifyableFromObject
 {
-    private readonly string _selector;
     private readonly string[] _selectFields;
     private readonly IDocumentStorage _parent;
 
@@ -442,7 +441,6 @@ internal class DuplicatedFieldSelectClause: ISelectClause
         IDocumentStorage parent)
     {
         FromObject = fromObject;
-        _selector = selector;
         _selectFields = selectFields;
         _parent = parent;
         SelectedType = selectedType;
@@ -450,10 +448,19 @@ internal class DuplicatedFieldSelectClause: ISelectClause
 
     public void Apply(ICommandBuilder builder)
     {
-        builder.Append(_selector);
+        builder.Append("select ");
+        builder.Append(_selectFields.Join(", "));
+        builder.Append(" from ");
+        builder.Append(FromObject);
+        builder.Append(" as d");
     }
 
-    public string FromObject { get; }
+    public string FromObject
+    {
+        get;
+        set;
+    }
+
 
     public Type SelectedType { get; }
     public string[] SelectFields()
