@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -20,11 +21,18 @@ namespace Marten.Linq.Members.Dictionaries;
 internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IValueCollectionMember
 {
     private readonly IDictionaryMember _parent;
+    private readonly StoreOptions _options;
+    private ImHashMap<string, IQueryableMember> _members = ImHashMap<string, IQueryableMember>.Empty;
+    private readonly RootMember _root;
+
 
     public DictionaryValuesMember(IDictionaryMember parent, StoreOptions options) : base(parent, "Values", typeof(ICollection<>).MakeGenericType(parent.ValueType))
     {
         _parent = parent;
+        _options = options;
+
         ElementType = parent.ValueType;
+        _root = new RootMember(ElementType) { Ancestors = Array.Empty<IQueryableMember>() };
 
         var rawLocator = RawLocator;
 
@@ -34,10 +42,22 @@ internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IVal
         var pgType = PostgresqlProvider.Instance.HasTypeMapping(ElementType) ? innerPgType + "[]" : "jsonb";
         Element = new SimpleElementMember(ElementType, pgType);
 
-        ExplodeLocator = $"jsonb_path_query({_parent.TypedLocator}, '$.*') ->> 0";
+        if (ElementType.IsSimple() || (ElementType.IsNullable() && ElementType.GenericTypeArguments[0].IsSimple()))
+        {
+            ExplodeLocator = $"jsonb_path_query({_parent.TypedLocator}, '$.*') ->> 0";
+        }
+        else
+        {
+            ExplodeLocator = $"jsonb_path_query({_parent.TypedLocator}, '$.*')";
+        }
 
         ArrayLocator = $"CAST(ARRAY(SELECT jsonb_array_elements_text(CAST({rawLocator} as jsonb))) as {innerPgType}[])";
 
+    }
+
+    public override void PlaceValueInDictionaryForContainment(Dictionary<string, object> dict, ConstantExpression constant)
+    {
+        base.PlaceValueInDictionaryForContainment(dict, constant);
     }
 
     public Type ElementType { get; }
@@ -53,16 +73,38 @@ internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IVal
             return _parent.Count;
         }
 
-        return Element;
+        if (member is ElementMember) return Element;
+
+        if (_members.TryFind(member.Name, out var m))
+        {
+            return m;
+        }
+
+        m = _options.CreateQueryableMember(member, _root);
+        _members = _members.AddOrUpdate(member.Name, m);
+
+        return m;
+    }
+
+    private SelectorStatement createSelectManySelectorStatement(IMartenSession session,
+        SelectorStatement parentStatement, CollectionUsage collectionUsage, QueryStatistics statistics)
+    {
+        if (ElementType == typeof(string)) return new ScalarSelectManyStringStatement(parentStatement);
+        if (ElementType.IsPrimitive() || (ElementType.IsNullable() && ElementType.GenericTypeArguments[0].IsPrimitive))
+        {
+            return typeof(ScalarSelectManyStatement<>).CloseAndBuildAs<SelectorStatement>(parentStatement,
+                session.Serializer, ElementType);
+        }
+
+        var selectClause =
+            typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(parentStatement.ExportName, ElementType);
+        return (SelectorStatement)collectionUsage.BuildSelectManyStatement(session, this, selectClause, statistics, parentStatement);
     }
 
     public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
         SelectorStatement parentStatement, QueryStatistics statistics)
     {
-        var statement = ElementType == typeof(string)
-            ? new ScalarSelectManyStringStatement(parentStatement)
-            : typeof(ScalarSelectManyStatement<>).CloseAndBuildAs<SelectorStatement>(parentStatement,
-                session.Serializer, ElementType);
+        var statement = createSelectManySelectorStatement(session, parentStatement, collectionUsage, statistics);
 
         // If the collection has any Where() or OrderBy() usages, you'll need an extra statement
         if (collectionUsage.OrderingExpressions.Any() || collectionUsage.WhereExpressions.Any())
@@ -99,7 +141,8 @@ internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IVal
 
     public IComparableMember ParseComparableForCount(Expression body)
     {
-        throw new NotImplementedException();
+        throw new BadLinqExpressionException(
+            "Marten does not (yet) support Comparing the Count against Dictionary pair collections");
     }
 
     public ISqlFragment ParseWhereForAll(MethodCallExpression body, IReadOnlyStoreOptions options)

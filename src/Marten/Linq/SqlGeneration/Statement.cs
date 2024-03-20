@@ -1,3 +1,4 @@
+using System;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
@@ -46,6 +47,12 @@ public abstract partial class Statement: ISqlFragment
             descendent.Next = Next;
         }
 
+        if (object.ReferenceEquals(this, descendent))
+        {
+            throw new InvalidOperationException(
+                "Whoa pardner, you cannot set Next to yourself, that's a stack overflow!");
+        }
+
         Next = descendent;
         descendent.Previous = this;
     }
@@ -62,6 +69,11 @@ public abstract partial class Statement: ISqlFragment
         }
         else
         {
+            if (object.ReferenceEquals(this, descendent))
+            {
+                return;
+            }
+
             Next = descendent;
             descendent.Previous = this;
         }

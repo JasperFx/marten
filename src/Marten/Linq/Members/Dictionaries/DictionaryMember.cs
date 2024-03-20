@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -80,6 +81,11 @@ internal class DictionaryMember<TKey, TValue>: QueryableMember, IComparableMembe
             childDict[pair.Key] = pair.Value;
 
             dict[MemberName] = childDict;
+        }
+        else if (constant.Value is Dictionary<string, object> raw)
+        {
+            throw new BadLinqExpressionException("Marten can not (yet) support value " + constant.Value +
+                                                 " in a search involving a nested dictionary member. You may need to resort to MatchesSql(), and using the PostgreSQL '#>' JSONPath operator. See https://www.postgresql.org/docs/12/functions-json.html");
         }
         else
         {
