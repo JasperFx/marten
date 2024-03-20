@@ -10,7 +10,6 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -20,6 +19,7 @@ using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services.Json;
 using Marten.Storage;
+using Marten.Util;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using Polly;
@@ -102,20 +102,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
 
         _linq = new LinqParsing(this);
 
-        #region sample_default_Polly_setup
-
         // Default Polly setup
-        var strategy = new ResiliencePipelineBuilder().AddRetry(new()
-        {
-            ShouldHandle = new PredicateBuilder().Handle<NpgsqlException>().Handle<MartenCommandException>().Handle<EventLoaderException>(),
-            MaxRetryAttempts = 3,
-            Delay = TimeSpan.FromMilliseconds(50),
-            BackoffType = DelayBackoffType.Exponential
-        }).Build();
-
-        ResiliencePipeline = strategy;
-
-        #endregion
+        ResiliencePipeline = new ResiliencePipelineBuilder().AddMartenDefaults().Build();
 
         // Add logging into our NpgsqlDataSource
         NpgsqlDataSourceFactory = new DefaultNpgsqlDataSourceFactory(connectionString =>
@@ -140,6 +128,18 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
         configure(builder);
 
         ResiliencePipeline = builder.Build();
+    }
+
+    /// <summary>
+    /// Extend default error handling policies for this DocumentStore.
+    /// Any user supplied policies will take precedence over the default policies.
+    /// </summary>
+    public void ExtendPolly(Action<ResiliencePipelineBuilder> configure)
+    {
+        var builder = new ResiliencePipelineBuilder();
+        configure(builder);
+
+        ResiliencePipeline = builder.AddMartenDefaults().Build();
     }
 
     /// <summary>
