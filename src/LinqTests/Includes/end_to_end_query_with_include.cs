@@ -122,7 +122,7 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         var issue2 = query
             .Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
-            .Single(x => Enumerable.Contains(x.Tags, "DIY"));
+            .Single(x => x.Tags.Contains("DIY"));
 
         included.ShouldNotBeNull();
         included.Id.ShouldBe(user.Id);
