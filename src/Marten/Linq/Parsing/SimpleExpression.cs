@@ -288,7 +288,14 @@ internal class SimpleExpression: ExpressionVisitor
 
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
-        // TODO -- add new IQueryableMember.TryResolveMemberForMethod(node.Method). See https://github.com/JasperFx/marten/issues/2707
+        if (node.Object == null && !(node.Arguments.FirstOrDefault() is MemberExpression))
+        {
+            // It's a method of a static, so this has to be a constant
+            HasConstant = true;
+            Constant = _expression.ReduceToConstant();
+            return null;
+        }
+
         if (node.Method.Name == "Count" && node.Method.DeclaringType == typeof(Enumerable))
         {
             if (node.Arguments.Count == 1)
