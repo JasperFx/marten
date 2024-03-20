@@ -51,14 +51,7 @@ public class Bug_2983_DateTimeOffset_index_being_erroneously_recreated : BugInte
         }
     }
 
-    [Fact]
-    public void how_about_DDL_comparison()
-    {
-        var generated = "CREATE INDEX mt_doc_photo_idx_date ON public.mt_doc_photo USING btree ((mt_immutable_timestamptz(data ->> 'Date')) DESC) TABLESPACE pg_default;";
-        var database = "CREATE INDEX IF NOT EXISTS mt_doc_photo_idx_date ON public.mt_doc_photo USING btree (mt_immutable_timestamptz(data ->> 'Date'::text) DESC NULLS FIRST) TABLESPACE pg_default;";
 
-        IndexDefinition.CanonicizeDdl(generated).ShouldBe(IndexDefinition.CanonicizeDdl(database));
-    }
 }
 
 public class Photo

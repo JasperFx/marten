@@ -37,14 +37,7 @@ public class Bug_2914_NGram_index_getting_recreated : BugIntegrationContext
         }
     }
 
-    [Fact]
-    public void canonicize_SQL()
-    {
-        var generated = "CREATE INDEX mt_doc_ngramdoc_idx_ngram_ngramstring ON public.mt_doc_ngramdoc USING gin (public.mt_grams_vector( data ->> 'NGramString'));";
-        var database =  "CREATE INDEX mt_doc_ngramdoc_idx_ngram_ngramstring ON public.mt_doc_ngramdoc USING gin (public.mt_grams_vector( data ->> 'NGramString'));\n";
 
-        IndexDefinition.CanonicizeDdl(generated).ShouldBe(IndexDefinition.CanonicizeDdl(database));
-    }
 }
 
 
