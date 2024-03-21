@@ -147,6 +147,7 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Optimistic Concurrency', link: '/documents/concurrency' },
             { text: 'Full Text Searching', link: '/documents/full-text' },
             { text: 'Noda Time Support', link: '/documents/noda-time' },
+            { text: 'Partial updates/patching', link: '/documents/partial-updates-patching' },
             { text: 'PLv8 Support', link: '/documents/plv8' },
             { text: 'AspNetCore Support', link: '/documents/aspnetcore' },
           ]

@@ -54,7 +54,7 @@ public class patching_api: OneOffConfigurationsContext
         }
     }
 
-    #region sample_set_an_immediate_property_by_id
+    #region sample_plv8_set_an_immediate_property_by_id
 
     [Fact]
     public void set_an_immediate_property_by_id()
@@ -82,7 +82,7 @@ public class patching_api: OneOffConfigurationsContext
         theSession.Store(Target.Random(), Target.Random(), Target.Random());
         theSession.SaveChanges();
 
-        #region sample_initialise_a_new_property_by_expression
+        #region sample_plv8_initialise_a_new_property_by_expression
         const string where = "(data ->> 'UpdatedAt') is null";
         theSession.Query<Target>(where).Count.ShouldBe(3);
         theSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
@@ -126,7 +126,7 @@ public class patching_api: OneOffConfigurationsContext
         theSession.Store(target1, target2, target3, target4, target5, target6);
         theSession.SaveChanges();
 
-        #region sample_set_an_immediate_property_by_where_clause
+        #region sample_plv8_set_an_immediate_property_by_where_clause
         // Change every Target document where the Color is Blue
         theSession.Patch<Target>(x => x.Color == Colors.Blue).Set(x => x.Number, 2);
         #endregion
@@ -150,7 +150,7 @@ public class patching_api: OneOffConfigurationsContext
     [Fact]
     public void duplicate_to_new_field()
     {
-        #region sample_duplicate_to_new_field
+        #region sample_plv8_duplicate_to_new_field
         var target = Target.Random();
         target.AnotherString = null;
         theSession.Store(target);
@@ -176,7 +176,7 @@ public class patching_api: OneOffConfigurationsContext
         theSession.Store(target);
         theSession.SaveChanges();
 
-        #region sample_duplicate_to_multiple_new_fields
+        #region sample_plv8_duplicate_to_multiple_new_fields
         theSession.Patch<Target>(target.Id).Duplicate(t => t.String,
             t => t.StringField,
             t => t.Inner.String,
@@ -195,7 +195,7 @@ public class patching_api: OneOffConfigurationsContext
         }
     }
 
-    #region sample_increment_for_int
+    #region sample_plv8_increment_for_int
     [Fact]
     public void increment_for_int()
     {
@@ -216,7 +216,7 @@ public class patching_api: OneOffConfigurationsContext
 
     #endregion
 
-    #region sample_increment_for_int_with_explicit_increment
+    #region sample_plv8_increment_for_int_with_explicit_increment
     [Fact]
     public void increment_for_int_with_explicit_increment()
     {
@@ -338,7 +338,7 @@ public class patching_api: OneOffConfigurationsContext
         }
     }
 
-    #region sample_append_complex_element
+    #region sample_plv8_append_complex_element
     [Fact]
     public void append_complex_element()
     {
@@ -494,7 +494,7 @@ public class patching_api: OneOffConfigurationsContext
         }
     }
 
-    #region sample_insert_first_complex_element
+    #region sample_plv8_insert_first_complex_element
     [Fact]
     public void insert_first_complex_element()
     {
@@ -586,7 +586,7 @@ public class patching_api: OneOffConfigurationsContext
         }
     }
 
-    #region sample_rename_deep_prop
+    #region sample_plv8_rename_deep_prop
     [Fact]
     public void rename_deep_prop()
     {
@@ -610,7 +610,7 @@ public class patching_api: OneOffConfigurationsContext
 
     #endregion
 
-    #region sample_remove_primitive_element
+    #region sample_plv8_remove_primitive_element
     [Fact]
     public void remove_primitive_element()
     {
@@ -640,7 +640,7 @@ public class patching_api: OneOffConfigurationsContext
 
     #endregion
 
-    #region sample_remove_repeated_primitive_element
+    #region sample_plv8_remove_repeated_primitive_element
     [Fact]
     public void remove_repeated_primitive_elements()
     {
@@ -678,7 +678,7 @@ public class patching_api: OneOffConfigurationsContext
 
     #endregion
 
-    #region sample_remove_complex_element
+    #region sample_plv8_remove_complex_element
     [Fact]
     public void remove_complex_element()
     {
@@ -712,7 +712,7 @@ public class patching_api: OneOffConfigurationsContext
         theSession.Store(target);
         theSession.SaveChanges();
 
-        #region sample_delete_redundant_property
+        #region sample_plv8_delete_redundant_property
         theSession.Patch<Target>(target.Id).Delete("String");
         #endregion
         theSession.SaveChanges();
@@ -732,7 +732,7 @@ public class patching_api: OneOffConfigurationsContext
         theSession.Store(target);
         theSession.SaveChanges();
 
-        #region sample_delete_redundant_nested_property
+        #region sample_plv8_delete_redundant_nested_property
         theSession.Patch<Target>(target.Id).Delete("String", t => t.Inner);
         #endregion
         theSession.SaveChanges();
@@ -752,7 +752,7 @@ public class patching_api: OneOffConfigurationsContext
         theSession.Store(target);
         theSession.SaveChanges();
 
-        #region sample_delete_existing_property
+        #region sample_plv8_delete_existing_property
         theSession.Patch<Target>(target.Id).Delete(t => t.Inner);
         #endregion
         theSession.SaveChanges();
@@ -774,7 +774,7 @@ public class patching_api: OneOffConfigurationsContext
         }
         theSession.SaveChanges();
 
-        #region sample_delete_property_from_many_documents
+        #region sample_plv8_delete_property_from_many_documents
         const string where = "(data ->> 'String') is not null";
         theSession.Query<Target>(where).Count.ShouldBe(15);
         theSession.Patch<Target>(new WhereFragment(where)).Delete("String");
@@ -834,7 +834,7 @@ public class patching_api: OneOffConfigurationsContext
 
     public void SampleSetup()
     {
-        #region sample_registering_custom_projection
+        #region sample_plv8_registering_custom_projection
 
         var store = DocumentStore.For(opts =>
         {
@@ -887,7 +887,7 @@ public class patching_api: OneOffConfigurationsContext
         (await theSession.Events.FetchStreamStateAsync(aggregateId)).Version.ShouldBe(2);
     }
 
-    #region sample_QuestPatchTestProjection
+    #region sample_plv8_QuestPatchTestProjection
 
     public class QuestPatchTestProjection: IProjection
     {
