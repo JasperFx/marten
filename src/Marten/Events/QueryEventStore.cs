@@ -138,7 +138,7 @@ internal class QueryEventStore: IQueryEventStore
         T? state = null, long fromVersion = 0, CancellationToken token = default) where T : class
     {
         var events = await FetchStreamAsync(streamId, version, timestamp, fromVersion, token).ConfigureAwait(false);
-        if (!events.Any())
+        if (!events.Any() || events.Last().Version < version)
         {
             return state;
         }
