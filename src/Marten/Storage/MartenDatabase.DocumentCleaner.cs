@@ -84,7 +84,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
     public void DeleteDocumentsExcept(params Type[] documentTypes)
     {
         var documentMappings =
-            _options.Storage.DocumentMappingsWithSchema.Where(x => !documentTypes.Contains(x.DocumentType));
+            Options.Storage.DocumentMappingsWithSchema.Where(x => !documentTypes.Contains(x.DocumentType));
         foreach (var mapping in documentMappings)
         {
             var storage = Providers.StorageFor(mapping.DocumentType);
@@ -95,7 +95,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
     public async Task DeleteDocumentsExceptAsync(CancellationToken ct, params Type[] documentTypes)
     {
         var documentMappings =
-            _options.Storage.DocumentMappingsWithSchema.Where(x => !documentTypes.Contains(x.DocumentType));
+            Options.Storage.DocumentMappingsWithSchema.Where(x => !documentTypes.Contains(x.DocumentType));
         foreach (var mapping in documentMappings)
         {
             var storage = Providers.StorageFor(mapping.DocumentType);
@@ -105,13 +105,13 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
     public void CompletelyRemove(Type documentType)
     {
-        var mapping = _options.Storage.MappingFor(documentType);
+        var mapping = Options.Storage.MappingFor(documentType);
         using var conn = CreateConnection();
         conn.Open();
 
         var writer = new StringWriter();
         foreach (var schemaObject in ((IFeatureSchema)mapping.Schema).Objects)
-            schemaObject.WriteDropStatement(_options.Advanced.Migrator, writer);
+            schemaObject.WriteDropStatement(Options.Advanced.Migrator, writer);
 
         var sql = writer.ToString();
         var cmd = conn.CreateCommand(sql);
@@ -133,13 +133,13 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
     public async Task CompletelyRemoveAsync(Type documentType, CancellationToken ct = default)
     {
-        var mapping = _options.Storage.MappingFor(documentType);
+        var mapping = Options.Storage.MappingFor(documentType);
         await using var conn = CreateConnection();
         await conn.OpenAsync(ct).ConfigureAwait(false);
 
         var writer = new StringWriter();
         foreach (var schemaObject in ((IFeatureSchema)mapping.Schema).Objects)
-            schemaObject.WriteDropStatement(_options.Advanced.Migrator, writer);
+            schemaObject.WriteDropStatement(Options.Advanced.Migrator, writer);
 
         var sql = writer.ToString();
         var cmd = conn.CreateCommand(sql);
@@ -237,33 +237,33 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
     {
         return $@"
 DO $$ BEGIN
-ALTER SEQUENCE IF EXISTS {_options.Events.DatabaseSchemaName}.mt_events_sequence RESTART WITH 1;
+ALTER SEQUENCE IF EXISTS {Options.Events.DatabaseSchemaName}.mt_events_sequence RESTART WITH 1;
 IF EXISTS(SELECT * FROM information_schema.tables
-WHERE table_name = 'mt_events' AND table_schema = '{_options.Events.DatabaseSchemaName}')
-THEN TRUNCATE TABLE {_options.Events.DatabaseSchemaName}.mt_events CASCADE; END IF;
+WHERE table_name = 'mt_events' AND table_schema = '{Options.Events.DatabaseSchemaName}')
+THEN TRUNCATE TABLE {Options.Events.DatabaseSchemaName}.mt_events CASCADE; END IF;
 IF EXISTS(SELECT * FROM information_schema.tables
-WHERE table_name = 'mt_streams' AND table_schema = '{_options.Events.DatabaseSchemaName}')
-THEN TRUNCATE TABLE {_options.Events.DatabaseSchemaName}.mt_streams CASCADE; END IF;
+WHERE table_name = 'mt_streams' AND table_schema = '{Options.Events.DatabaseSchemaName}')
+THEN TRUNCATE TABLE {Options.Events.DatabaseSchemaName}.mt_streams CASCADE; END IF;
 IF EXISTS(SELECT * FROM information_schema.tables
-WHERE table_name = 'mt_mark_event_progression' AND table_schema = '{_options.Events.DatabaseSchemaName}')
-THEN TRUNCATE TABLE {_options.Events.DatabaseSchemaName}.mt_mark_event_progression CASCADE; END IF;
+WHERE table_name = 'mt_mark_event_progression' AND table_schema = '{Options.Events.DatabaseSchemaName}')
+THEN TRUNCATE TABLE {Options.Events.DatabaseSchemaName}.mt_mark_event_progression CASCADE; END IF;
 END; $$;
 ";
     }
 
     private void DeleteSingleEventStream<T>(T streamId, string? tenantId = null)
     {
-        if (typeof(T) != _options.EventGraph.GetStreamIdType())
+        if (typeof(T) != Options.EventGraph.GetStreamIdType())
         {
             throw new ArgumentException(
-                $"{nameof(streamId)} should  be of type {_options.EventGraph.GetStreamIdType()}", nameof(streamId));
+                $"{nameof(streamId)} should  be of type {Options.EventGraph.GetStreamIdType()}", nameof(streamId));
         }
 
         using var conn = CreateConnection();
         var streamsWhere = "id = :id";
         var eventsWhere = "stream_id = :id";
 
-        if (_options.Events.TenancyStyle == TenancyStyle.Conjoined)
+        if (Options.Events.TenancyStyle == TenancyStyle.Conjoined)
         {
             var tenantPart = " AND tenant_id = :tenantId";
             streamsWhere += tenantPart;
@@ -271,10 +271,10 @@ END; $$;
         }
 
         var cmd = conn.CreateCommand(
-            $"delete from {_options.Events.DatabaseSchemaName}.mt_events where {eventsWhere};delete from {_options.Events.DatabaseSchemaName}.mt_streams where {streamsWhere}");
+            $"delete from {Options.Events.DatabaseSchemaName}.mt_events where {eventsWhere};delete from {Options.Events.DatabaseSchemaName}.mt_streams where {streamsWhere}");
         cmd.AddNamedParameter("id", streamId);
 
-        if (_options.Events.TenancyStyle == TenancyStyle.Conjoined && tenantId.IsNotEmpty())
+        if (Options.Events.TenancyStyle == TenancyStyle.Conjoined && tenantId.IsNotEmpty())
         {
             cmd.AddNamedParameter("tenantId", tenantId);
         }
@@ -287,17 +287,17 @@ END; $$;
     private async Task DeleteSingleEventStreamAsync<T>(T streamId, string? tenantId = null,
         CancellationToken ct = default)
     {
-        if (typeof(T) != _options.EventGraph.GetStreamIdType())
+        if (typeof(T) != Options.EventGraph.GetStreamIdType())
         {
             throw new ArgumentException(
-                $"{nameof(streamId)} should  be of type {_options.EventGraph.GetStreamIdType()}", nameof(streamId));
+                $"{nameof(streamId)} should  be of type {Options.EventGraph.GetStreamIdType()}", nameof(streamId));
         }
 
         await using var conn = CreateConnection();
         var streamsWhere = "id = :id";
         var eventsWhere = "stream_id = :id";
 
-        if (_options.Events.TenancyStyle == TenancyStyle.Conjoined)
+        if (Options.Events.TenancyStyle == TenancyStyle.Conjoined)
         {
             var tenantPart = " AND tenant_id = :tenantId";
             streamsWhere += tenantPart;
@@ -305,10 +305,10 @@ END; $$;
         }
 
         var cmd = conn.CreateCommand(
-            $"delete from {_options.Events.DatabaseSchemaName}.mt_events where {eventsWhere};delete from {_options.Events.DatabaseSchemaName}.mt_streams where {streamsWhere}");
+            $"delete from {Options.Events.DatabaseSchemaName}.mt_events where {eventsWhere};delete from {Options.Events.DatabaseSchemaName}.mt_streams where {streamsWhere}");
         cmd.AddNamedParameter("id", streamId);
 
-        if (_options.Events.TenancyStyle == TenancyStyle.Conjoined && tenantId.IsNotEmpty())
+        if (Options.Events.TenancyStyle == TenancyStyle.Conjoined && tenantId.IsNotEmpty())
         {
             cmd.AddNamedParameter("tenantId", tenantId);
         }
