@@ -22,8 +22,6 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
 {
     private readonly StorageFeatures _features;
 
-    private readonly StoreOptions _options;
-
     private Lazy<SequenceFactory> _sequences;
 
     public MartenDatabase(
@@ -33,7 +31,7 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
     ): base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, identifier, npgsqlDataSource)
     {
         _features = options.Storage;
-        _options = options;
+        Options = options;
 
         resetSequences();
 
@@ -42,6 +40,8 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
         Tracker = new ShardStateTracker(options.LogFactory?.CreateLogger<MartenDatabase>() ?? options.DotNetLogger ??
             NullLogger<MartenDatabase>.Instance);
     }
+
+    public StoreOptions Options { get; }
 
     public ISequences Sequences => _sequences.Value;
 
@@ -89,7 +89,7 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
 
     public override IFeatureSchema[] BuildFeatureSchemas()
     {
-        return _options.Storage.AllActiveFeatures(this).ToArray();
+        return Options.Storage.AllActiveFeatures(this).ToArray();
     }
 
     public override void ResetSchemaExistenceChecks()
@@ -107,7 +107,7 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
     {
         _sequences = new Lazy<SequenceFactory>(() =>
         {
-            var sequences = new SequenceFactory(_options, this);
+            var sequences = new SequenceFactory(Options, this);
 
             generateOrUpdateFeature(typeof(SequenceFactory), sequences, default).AsTask().GetAwaiter().GetResult();
 

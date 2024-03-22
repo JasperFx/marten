@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Storage;
@@ -13,46 +14,50 @@ namespace Marten.Events;
 public static class TestingExtensions
 {
     /// <summary>
-    /// Wait for any running async daemons to catch up to the latest event sequence at the time
-    /// this method is invoked for all projections. This method is meant to aid in automated testing
+    ///     Wait for any running async daemons to catch up to the latest event sequence at the time
+    ///     this method is invoked for all projections. This method is meant to aid in automated testing
     /// </summary>
-    public static async Task WaitForNonStaleProjectionDataAsync(this IDocumentStore store, TimeSpan timeout)
+    /// <param name="store"></param>
+    /// <param name="timeout"></param>
+    public static Task WaitForNonStaleProjectionDataAsync(this IDocumentStore store, TimeSpan timeout)
     {
-        var databases = await store.Storage.AllDatabases().ConfigureAwait(false);
-        var projectionsCount = store.AsyncProjectionsCount();
+        if (store.As<DocumentStore>().Tenancy is DefaultTenancy)
+        {
+            return store.Storage.Database.WaitForNonStaleProjectionDataAsync(timeout);
+        }
 
-        if (databases.Count == 1)
-        {
-            await WaitForNonStaleProjectionDataAsync(databases.Single(), projectionsCount, timeout).ConfigureAwait(false);
-        }
-        else
-        {
-            var tasks = databases.Select(db => db.WaitForNonStaleProjectionDataAsync(projectionsCount, timeout));
-            await Task.WhenAll(tasks).ConfigureAwait(false);
-        }
+        throw new InvalidOperationException(
+            "If using multi-tenancy through any kind of separate databases per tenant, please specify a tenant id or database name");
     }
 
     /// <summary>
-    /// Wait for any running async daemon for a specific tenant id or database name to catch up to the latest event sequence at the time
-    /// this method is invoked for all projections. This method is meant to aid in automated testing
+    ///     Wait for any running async daemon for a specific tenant id or database name to catch up to the latest event
+    ///     sequence at the time
+    ///     this method is invoked for all projections. This method is meant to aid in automated testing
     /// </summary>
     /// <param name="tenantIdOrDatabaseName">Either a tenant id or the name of a database within the system</param>
-    public static async Task WaitForNonStaleProjectionDataAsync(this IDocumentStore store, string tenantIdOrDatabaseName, TimeSpan timeout)
+    public static async Task WaitForNonStaleProjectionDataAsync(this IDocumentStore store,
+        string tenantIdOrDatabaseName, TimeSpan timeout)
     {
         // Assuming there's only one database in this usage
         var database = await store.Storage.FindOrCreateDatabase(tenantIdOrDatabaseName).ConfigureAwait(false);
 
-        if (store.Storage is DefaultTenancy)
-            await WaitForNonStaleProjectionDataAsync(database, store.AsyncProjectionsCount(), timeout).ConfigureAwait(false);
+        await WaitForNonStaleProjectionDataAsync(database, timeout).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Wait for any running async daemon to catch up to the latest event sequence at the time
+    ///     Wait for any running async daemon to catch up to the latest event sequence at the time
     /// </summary>
-    /// <param name="projectionsCount">Will be awaited till all shards have been started before checking if they've caught up with the sequence number</param>
+    /// <param name="projectionsCount">
+    ///     Will be awaited till all shards have been started before checking if they've caught up
+    ///     with the sequence number
+    /// </param>
     /// <exception cref="TimeoutException"></exception>
-    public static async Task WaitForNonStaleProjectionDataAsync(this IMartenDatabase database, int projectionsCount, TimeSpan timeout)
+    public static async Task WaitForNonStaleProjectionDataAsync(this IMartenDatabase database, TimeSpan timeout)
     {
+        // Number of active projection shards, plus the high water mark
+        var projectionsCount = database.As<MartenDatabase>().Options.Projections.AllShards().Count + 1;
+
         using var cancellationSource = new CancellationTokenSource();
         cancellationSource.CancelAfter(timeout);
 
@@ -61,7 +66,9 @@ public static class TestingExtensions
         {
             initial = await database.FetchEventStoreStatistics(cancellationSource.Token).ConfigureAwait(false);
             if (initial.EventSequenceNumber > 0 || cancellationSource.IsCancellationRequested)
+            {
                 break;
+            }
 
             await Task.Delay(100.Milliseconds(), cancellationSource.Token).ConfigureAwait(false);
         } while (true);
@@ -75,9 +82,12 @@ public static class TestingExtensions
         do
         {
             projections = await database.AllProjectionProgress(cancellationSource.Token).ConfigureAwait(false);
-            if ((projections.Count >= projectionsCount && projections.All(x => x.Sequence >= initial.EventSequenceNumber))
+            if ((projections.Count >= projectionsCount &&
+                 projections.All(x => x.Sequence >= initial.EventSequenceNumber))
                 || cancellationSource.IsCancellationRequested)
+            {
                 break;
+            }
 
             await Task.Delay(100.Milliseconds(), cancellationSource.Token).ConfigureAwait(false);
         } while (true);
@@ -94,8 +104,4 @@ public static class TestingExtensions
                 $"The projections timed out before reaching the initial sequence of {initial.EventSequenceNumber}");
         }
     }
-
-    private static int AsyncProjectionsCount(this IDocumentStore store)
-        => store.Options.Events.Projections().Count(p => p.Lifecycle == ProjectionLifecycle.Async)
-           + new[] { ShardState.HighWaterMark }.Length;
 }

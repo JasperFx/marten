@@ -30,9 +30,9 @@ public partial class MartenDatabase
         CancellationToken token = default)
     {
         var sql = $@"
-select count(*) from {_options.Events.DatabaseSchemaName}.mt_events;
-select count(*) from {_options.Events.DatabaseSchemaName}.mt_streams;
-select last_value from {_options.Events.DatabaseSchemaName}.mt_events_sequence;
+select count(*) from {Options.Events.DatabaseSchemaName}.mt_events;
+select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
+select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
 ";
 
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
@@ -83,7 +83,7 @@ select last_value from {_options.Events.DatabaseSchemaName}.mt_events_sequence;
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
         var handler = (IQueryHandler<IReadOnlyList<ShardState>>)new ListQueryHandler<ShardState>(
-            new ProjectionProgressStatement(_options.EventGraph),
+            new ProjectionProgressStatement(Options.EventGraph),
             new ShardStateSelector());
 
         await using var conn = CreateConnection();
@@ -110,7 +110,7 @@ select last_value from {_options.Events.DatabaseSchemaName}.mt_events_sequence;
     {
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
-        var statement = new ProjectionProgressStatement(_options.EventGraph) { Name = name };
+        var statement = new ProjectionProgressStatement(Options.EventGraph) { Name = name };
 
         var handler = new OneResultHandler<ShardState>(statement,
             new ShardStateSelector(), true, false);
@@ -139,7 +139,7 @@ select last_value from {_options.Events.DatabaseSchemaName}.mt_events_sequence;
         logger ??= store.Options.LogFactory?.CreateLogger<ProjectionDaemon>() ??
                    store.Options.DotNetLogger ?? NullLogger.Instance;
 
-        var detector = new HighWaterDetector(this, _options.EventGraph, logger);
+        var detector = new HighWaterDetector(this, Options.EventGraph, logger);
 
         return new ProjectionDaemon(store, this, logger, detector, new AgentFactory(store));
     }

@@ -54,7 +54,7 @@ public partial class MartenDatabase : ISingleQueryRunner
 
     public Task<T> Query<T>(ISingleQueryHandler<T> handler, CancellationToken cancellation)
     {
-        return _options.ResiliencePipeline.ExecuteAsync<T, SingleQuery<T>>(
+        return Options.ResiliencePipeline.ExecuteAsync<T, SingleQuery<T>>(
             static (query, t) => new ValueTask<T>(query.ExecuteAsync(t)), new SingleQuery<T>(handler, this), cancellation).AsTask();
     }
 
