@@ -82,6 +82,11 @@ public sealed class SessionOptions
     /// </summary>
     public bool AllowAnyTenant { get; set; }
 
+    /// <summary>
+    /// Used to enable or disable Marten's OpenTelemetry features for just this session.
+    /// </summary>
+    public OpenTelemetryOptions OpenTelemetryOptions { get; set; } = new OpenTelemetryOptions();
+
     internal IConnectionLifetime Initialize(DocumentStore store, CommandRunnerMode mode)
     {
         Mode = mode;
