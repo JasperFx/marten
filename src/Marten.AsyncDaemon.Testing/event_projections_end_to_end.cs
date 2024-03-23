@@ -127,6 +127,7 @@ public class event_projections_end_to_end : DaemonContext
         var events = (await session.Events.QueryAllRawEvents().ToListAsync());
         var travels = events.OfType<Event<Travel>>().ToDictionary(x => x.Id);
 
+        distances.Count.ShouldBe(travels.Count);
         foreach (var distance in distances)
         {
             if (travels.TryGetValue(distance.Id, out var travel))
