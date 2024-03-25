@@ -57,6 +57,10 @@ public class Bug_2943_generate_aggregate_generated_code_in_parallel
 
         // When
         var store = new DocumentStore(options);
+
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+
         Parallel.For(1, 100, _ =>
         {
             store.LightweightSession().Events.FetchForWriting<ProjectionCodeGenerationTests.Something>(Guid.NewGuid()).GetAwaiter().GetResult();
