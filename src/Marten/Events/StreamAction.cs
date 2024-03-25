@@ -272,7 +272,7 @@ public class StreamAction
     /// <exception cref="EventStreamUnexpectedMaxEventIdException"></exception>
     internal void PrepareEvents(long currentVersion, EventGraph graph, Queue<long> sequences, IMartenSession session)
     {
-        var timestamp = DateTimeOffset.UtcNow;
+        var timestamp = graph.TimeProvider.GetUtcNow();
 
         if (AggregateType != null)
         {

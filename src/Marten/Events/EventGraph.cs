@@ -73,6 +73,12 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     internal EventMetadataCollection Metadata { get; } = new();
 
     /// <summary>
+    /// TimeProvider used for event timestamping metadata. Replace for controlling the timestamps
+    /// in testing
+    /// </summary>
+    public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
+
+    /// <summary>
     ///     Configure whether event streams are identified with Guid or strings
     /// </summary>
     public StreamIdentity StreamIdentity
