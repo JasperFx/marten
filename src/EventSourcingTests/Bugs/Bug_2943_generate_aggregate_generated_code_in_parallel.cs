@@ -47,7 +47,7 @@ public class Bug_2943_generate_aggregate_generated_code_in_parallel
     }
 
     [Fact]
-    public void aggregates_do_not_fail_code_generation_on_parallel_FetchForWriting_execution()
+    public async Task aggregates_do_not_fail_code_generation_on_parallel_FetchForWriting_execution()
     {
         var options = new StoreOptions();
         options.Connection(ConnectionSource.ConnectionString);
@@ -58,7 +58,7 @@ public class Bug_2943_generate_aggregate_generated_code_in_parallel
         // When
         var store = new DocumentStore(options);
 
-        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync().ConfigureAwait(false);
 
 
         Parallel.For(1, 100, _ =>

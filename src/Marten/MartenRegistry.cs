@@ -601,8 +601,10 @@ public class MartenRegistry
             _builder.Alter = m =>
             {
                 m.UseOptimisticConcurrency = enabled;
+
                 if (enabled)
                 {
+                    m.UseNumericRevisions = false;
                     m.Metadata.Version.Enabled = true;
                 }
             };
@@ -619,9 +621,12 @@ public class MartenRegistry
             _builder.Alter = m =>
             {
                 m.UseNumericRevisions = enabled;
+
                 if (enabled)
                 {
+                    m.UseOptimisticConcurrency = false;
                     m.Metadata.Revision.Enabled = true;
+                    m.Metadata.Version.Enabled = false;
                 }
             };
             return this;

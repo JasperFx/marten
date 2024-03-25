@@ -1,8 +1,10 @@
 using JasperFx.CodeGeneration;
+using JasperFx.Core;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Storage.Metadata;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage;
 
@@ -45,5 +47,15 @@ internal class RevisionColumn: MetadataColumn<int>, ISelectableColumn
         }
 
         return storageStyle != StorageStyle.QueryOnly && mapping.UseNumericRevisions;
+    }
+
+    public override string AlterColumnTypeSql(Table table, TableColumn changeActual)
+    {
+        return $"ALTER TABLE {table.Identifier.QualifiedName} DROP COLUMN {Name};{AddColumnSql(table)}";
+    }
+
+    public override bool CanAlter(TableColumn actual)
+    {
+        return actual.Type.EqualsIgnoreCase("uuid");
     }
 }
