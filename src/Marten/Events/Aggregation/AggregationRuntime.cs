@@ -58,7 +58,6 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         EventSlice<TDoc, TId> slice, CancellationToken cancellation,
         ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
     {
-
         session = session.UseTenancyBasedOnSliceAndStorage(Storage, slice);
 
         if (Projection.MatchesAnyDeleteType(slice))

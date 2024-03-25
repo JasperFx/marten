@@ -70,14 +70,17 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
         _initialSql ??=
             $"select {selector.SelectFields().Select(x => "d." + x).Join(", ")} from {_events.DatabaseSchemaName}.mt_events as d";
 
-        // TODO -- use read only transaction????
-
         if (forUpdate)
         {
             await session.BeginTransactionAsync(cancellation).ConfigureAwait(false);
         }
 
         var builder = new BatchBuilder{TenantId = session.TenantId};
+        if (!forUpdate)
+        {
+            builder.Append("begin transaction isolation level repeatable read read only");
+            builder.StartNewCommand();
+        }
         _identityStrategy.BuildCommandForReadingVersionForStream(builder, id, forUpdate);
 
         builder.StartNewCommand();
@@ -88,6 +91,12 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
         builder.StartNewCommand();
 
         writeEventFetchStatement(id, builder);
+
+        if (!forUpdate)
+        {
+            builder.StartNewCommand();
+            builder.Append("end");
+        }
 
         long version = 0;
         try
@@ -100,6 +109,10 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
             if (await reader.ReadAsync(cancellation).ConfigureAwait(false))
             {
                 version = await reader.GetFieldValueAsync<long>(0, cancellation).ConfigureAwait(false);
+            }
+            else
+            {
+                return null;
             }
 
             // Fetch the existing aggregate -- if any!

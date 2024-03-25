@@ -1,7 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
 using Marten.Schema;
 using Marten.Testing.Harness;
@@ -24,7 +26,7 @@ public class Bug_9999_fetch_for_writing_async_projection_with_no_additional_even
 
         var streamKey = Guid.NewGuid().ToString();
 
-        theSession.Events.StartStream(streamKey, new EventA("foo"), new EventB());
+        theSession.Events.StartStream(streamKey, new NamedEvent("foo"), new EventB());
         await theSession.SaveChangesAsync();
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
@@ -40,22 +42,28 @@ public class Bug_9999_fetch_for_writing_async_projection_with_no_additional_even
         Assert.Equal("foo", result.Aggregate.Name);
     }
 
-    public record EventA(string Name);
-    public record EventB;
+
+
 }
+
+public record NamedEvent(string Name);
 
 // put it here to avoid a bug with rebuilding projections whose types are nested classes
 // TODO: Write up this bug
 public record TestProjection
 {
+    public TestProjection()
+    {
+        Debug.WriteLine("Called with default Ctor");
+    }
+
     [Identity]
     public string StreamKey { get; set; } = null!;
 
     public string Name { get; set; } = null!;
 
-    public static TestProjection Create(EventA @event) =>
-        new TestProjection
-        {
-            Name = @event.Name,
-        };
+    public static TestProjection Create(NamedEvent @event) => new()
+    {
+        Name = @event.Name
+    };
 }
