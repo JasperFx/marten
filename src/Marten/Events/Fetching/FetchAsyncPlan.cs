@@ -110,10 +110,6 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
             {
                 version = await reader.GetFieldValueAsync<long>(0, cancellation).ConfigureAwait(false);
             }
-            else
-            {
-                return null;
-            }
 
             // Fetch the existing aggregate -- if any!
             await reader.NextResultAsync(cancellation).ConfigureAwait(false);
