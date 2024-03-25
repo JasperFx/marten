@@ -16,13 +16,10 @@ internal class ProjectionDocumentPolicy : IDocumentPolicy
                 mapping.Alias += "_" + projection.ProjectionVersion;
             }
 
-            if (projection.Lifecycle == ProjectionLifecycle.Async)
-            {
-                mapping.UseOptimisticConcurrency = false;
-                mapping.Metadata.Version.Enabled = false;
-                mapping.UseNumericRevisions = true;
-                mapping.Metadata.Revision.Enabled = true;
-            }
+            mapping.UseOptimisticConcurrency = false;
+            mapping.Metadata.Version.Enabled = false;
+            mapping.UseNumericRevisions = true;
+            mapping.Metadata.Revision.Enabled = true;
         }
     }
 }
