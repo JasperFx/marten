@@ -280,14 +280,11 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
 
         buildMethod.DerivedVariables.Add(Variable.For<IQuerySession>("(IQuerySession)session"));
 
-        buildMethod.Frames.Code("if (!events.Any()) return null;");
-
-        buildMethod.Frames.Add(new DeclareAggregateFrame(typeof(T)));
-
-        var callCreateAggregateFrame = new CallCreateAggregateFrame(_createMethods);
-
         // This is the existing snapshot passed into the LiveAggregator
         var snapshot = buildMethod.Arguments.Single(x => x.VariableType == typeof(T));
+        buildMethod.Frames.Code($"if (!events.Any()) return {snapshot.Usage};");
+
+        var callCreateAggregateFrame = new CallCreateAggregateFrame(_createMethods);
         callCreateAggregateFrame.CoalesceAssignTo(snapshot);
 
         buildMethod.Frames.Add(callCreateAggregateFrame);
