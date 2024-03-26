@@ -39,6 +39,16 @@ internal class HighWaterDetector: IHighWaterDetector
         DatabaseName = runner.Identifier;
     }
 
+    /// <summary>
+    /// Advance the high water mark to the latest detected sequence
+    /// </summary>
+    /// <param name="token"></param>
+    public async Task AdvanceHighWaterMarkToLatest(CancellationToken token)
+    {
+        var statistics = await loadCurrentStatistics(token).ConfigureAwait(false);
+        await markHighWaterMarkInDatabaseAsync(token, statistics.HighestSequence).ConfigureAwait(false);
+    }
+
     public string DatabaseName { get; }
 
     public async Task<HighWaterStatistics> DetectInSafeZone(CancellationToken token)
@@ -105,8 +115,8 @@ internal class HighWaterDetector: IHighWaterDetector
 
         if (statistics.HasChanged)
         {
-            _newSeq.Value = statistics.CurrentMark;
-            await _runner.SingleCommit(_updateStatus, token).ConfigureAwait(false);
+            var currentMark = statistics.CurrentMark;
+            await markHighWaterMarkInDatabaseAsync(token, currentMark).ConfigureAwait(false);
 
             if (!statistics.LastUpdated.HasValue)
             {
@@ -114,6 +124,12 @@ internal class HighWaterDetector: IHighWaterDetector
                 statistics.LastUpdated = current.LastUpdated;
             }
         }
+    }
+
+    private async Task markHighWaterMarkInDatabaseAsync(CancellationToken token, long currentMark)
+    {
+        _newSeq.Value = currentMark;
+        await _runner.SingleCommit(_updateStatus, token).ConfigureAwait(false);
     }
 
     private async Task<HighWaterStatistics> loadCurrentStatistics(CancellationToken token)

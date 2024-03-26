@@ -144,6 +144,17 @@ public class ProjectionControllerTests: IProjectionHost
     }
 
     [Fact]
+    public async Task advance_to_latest_smoke_test()
+    {
+        var store = withStore("Marten", new("Foo:All", ProjectionLifecycle.Async),
+            new("Bar:All", ProjectionLifecycle.Inline));
+
+        await theController.Execute(new ProjectionInput { ListFlag = true, AdvanceFlag = true});
+
+        theView.Received().ListShards(store);
+    }
+
+    [Fact]
     public async Task run_list_with_multiple_stores()
     {
         var store1 = withStore("Marten", new("Foo:All", ProjectionLifecycle.Async),

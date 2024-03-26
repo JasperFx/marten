@@ -51,6 +51,28 @@ public class basic_async_daemon_tests: DaemonContext
         await daemon2.StartAllAsync();
     }
 
+    [Fact]
+    public async Task advance_to_latest_smoke_test()
+    {
+        StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async));
+
+        using var daemon = await StartDaemon();
+        await daemon.StartAllAsync();
+
+        NumberOfStreams = 10;
+        await PublishSingleThreaded();
+
+        await daemon.Tracker.WaitForHighWaterMark(NumberOfEvents);
+
+        await daemon.StopAllAsync();
+
+        NumberOfStreams = 10;
+        await PublishSingleThreaded();
+
+        await theStore.Advanced.AdvanceHighWaterMarkToLatestAsync(CancellationToken.None);
+
+    }
+
     #region sample_AsyncDaemonListener
 
     public class FakeListener: IChangeListener
