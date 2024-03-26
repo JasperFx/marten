@@ -12,6 +12,8 @@ public class Bug_3082_trouble_with_repeated_include_usage : BugIntegrationContex
     [Fact]
     public async Task query_multiple_times()
     {
+        await theSession.BeginTransactionAsync(CancellationToken.None);
+
         await executeQuery();
         await executeQuery();
     }
