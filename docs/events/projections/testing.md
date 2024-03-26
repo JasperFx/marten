@@ -399,6 +399,3 @@ public async Task test_async_aggregation_with_wait_for_and_fake_time_provider()
 <!-- endSnippet -->
 
 In the sample above, I used the `FakeTimeProvider` from the Microsoft.Extensions.TimeProvider.Testing Nuget package.
-
-
-
