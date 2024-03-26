@@ -29,15 +29,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Marten\Marten.csproj"/>
+        <ProjectReference Include="..\Marten\Marten.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="mt_patching.js"/>
+        <EmbeddedResource Include="mt_patching.js" />
     </ItemGroup>
-    <Import Project="../../Analysis.Build.props"/>
+    <Import Project="../../Analysis.Build.props" />
 </Project>

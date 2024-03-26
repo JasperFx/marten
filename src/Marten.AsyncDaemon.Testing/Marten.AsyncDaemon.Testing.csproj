@@ -5,26 +5,26 @@
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Lamar.Microsoft.DependencyInjection" Version="13.0.2" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0"/>
-        <PackageReference Include="Divergic.Logging.Xunit" Version="4.3.0"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0"/>
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.5.4">
+        <PackageReference Include="Lamar.Microsoft.DependencyInjection" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" />
+        <PackageReference Include="Microsoft.Extensions.Logging" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+        <PackageReference Include="Divergic.Logging.Xunit" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit.runner.visualstudio">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="xunit" Version="2.6.2"/>
+        <PackageReference Include="xunit" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\EventSourcingTests\EventSourcingTests.csproj"/>
-        <ProjectReference Include="..\Marten.AspNetCore\Marten.AspNetCore.csproj"/>
-        <ProjectReference Include="..\Marten\Marten.csproj"/>
+        <ProjectReference Include="..\EventSourcingTests\EventSourcingTests.csproj" />
+        <ProjectReference Include="..\Marten.AspNetCore\Marten.AspNetCore.csproj" />
+        <ProjectReference Include="..\Marten\Marten.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="MarkdownSnippets.MsBuild" Version="25.1.0">
+        <PackageReference Include="MarkdownSnippets.MsBuild">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
