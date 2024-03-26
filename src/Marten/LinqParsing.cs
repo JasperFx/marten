@@ -81,6 +81,7 @@ public class LinqParsing: IReadOnlyLinqParsing
 
         // matches sql
         new MatchesSqlParser(),
+        new MatchesJsonPathParser(),
 
         // dictionaries
         new DictionaryContainsKey(),
