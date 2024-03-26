@@ -287,42 +287,9 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
         await _highWater.StartAsync().ConfigureAwait(false);
     }
 
-    public async Task WaitForNonStaleData(TimeSpan timeout)
+    public Task WaitForNonStaleData(TimeSpan timeout)
     {
-        using var cancellation = new CancellationTokenSource();
-        cancellation.CancelAfter(timeout);
-
-        var stopWatch = Stopwatch.StartNew();
-        var statistics = await Database.FetchEventStoreStatistics(_cancellation.Token).ConfigureAwait(false);
-
-        var dictionary = new Dictionary<string, bool>();
-        var shards = _store.Options.Projections.AllShards();
-
-        while (stopWatch.Elapsed < timeout)
-        {
-
-            foreach (var shard in shards)
-            {
-                if (!dictionary.ContainsKey(shard.Name.Identity))
-                {
-                    var position = await Database.ProjectionProgressFor(shard.Name, _cancellation.Token).ConfigureAwait(false);
-                    if (position >= statistics.EventSequenceNumber)
-                    {
-                        dictionary[shard.Name.Identity] = true;
-                    }
-                }
-            }
-
-            if (shards.All(x => dictionary.ContainsKey(x.Name.Identity)))
-            {
-                return;
-            }
-
-            await Task.Delay(100.Milliseconds(), _cancellation.Token).ConfigureAwait(false);
-        }
-
-        var message = $"The active projection shards did not reach sequence {statistics.EventSequenceNumber} in time";
-        throw new TimeoutException(message);
+        return Database.WaitForNonStaleProjectionDataAsync(timeout);
     }
 
     public Task WaitForShardToBeRunning(string shardName, TimeSpan timeout)

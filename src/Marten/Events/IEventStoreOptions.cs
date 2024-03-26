@@ -37,6 +37,12 @@ namespace Marten.Events
         public MetadataConfig MetadataConfig { get; }
 
         /// <summary>
+        /// TimeProvider used for event timestamping metadata. Replace for controlling the timestamps
+        /// in testing
+        /// </summary>
+        TimeProvider TimeProvider { get; set; }
+
+        /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
         ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
         ///     the event type. It can also be used for the event namespace migration.

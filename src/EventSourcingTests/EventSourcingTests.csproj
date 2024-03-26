@@ -17,6 +17,7 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
         <PackageReference Include="Jil" Version="3.0.0-alpha2" />
         <PackageReference Include="Lamar" Version="13.0.2" />
+        <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.3.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.5.4">
             <PrivateAssets>all</PrivateAssets>

@@ -26,6 +26,8 @@ public enum IncidentNoteType
     FromCustomer
 }
 
+#region sample_IncidentDetailsProjection
+
 public class IncidentDetailsProjection: SingleStreamProjection<IncidentDetails>
 {
     public static IncidentDetails Create(IncidentLogged logged) =>
@@ -79,3 +81,5 @@ public class IncidentDetailsProjection: SingleStreamProjection<IncidentDetails>
     public IncidentDetails Apply(IncidentClosed closed, IncidentDetails current) =>
         current with { Status = IncidentStatus.Closed };
 }
+
+#endregion
