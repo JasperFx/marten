@@ -6,9 +6,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.HighWater;
 using Marten.Events.TestSupport;
 using Marten.Schema;
 using Marten.Storage;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Marten;
 
@@ -30,6 +32,22 @@ public class AdvancedOperations
     public IDocumentCleaner Clean => _store.Tenancy.Cleaner;
 
     public ISerializer Serializer => _store.Serializer;
+
+    /// <summary>
+    /// Advance the high water mark to the latest detected sequence. Use with caution!
+    /// This is mostly meant for teams that retrofit asynchronous projections to a
+    /// very large event store that has never before used projections. This will help
+    /// the daemon start and function in its "catch up" mode
+    /// </summary>
+    public async Task AdvanceHighWaterMarkToLatestAsync(CancellationToken token)
+    {
+        var databases = await _store.Tenancy.BuildDatabases().ConfigureAwait(false);
+        foreach (var database in databases.OfType<MartenDatabase>())
+        {
+            var detector = new HighWaterDetector(database, _store.Events, NullLogger.Instance);
+            await detector.AdvanceHighWaterMarkToLatest(token).ConfigureAwait(false);
+        }
+    }
 
     /// <summary>
     ///     Mostly for testing support. Register a new IInitialData object

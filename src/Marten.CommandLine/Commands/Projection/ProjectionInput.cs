@@ -41,6 +41,9 @@ public class ProjectionInput: MartenInput
     [FlagAlias("shard-timeout", longAliasOnly: true)]
     public string ShardTimeoutFlag { get; set; }
 
+    [Description("If specified, advances the projection high water mark to the latest event sequence")]
+    public bool AdvanceFlag { get; set; }
+
     internal IList<AsyncProjectionShard> BuildShards(DocumentStore store)
     {
         var projections = store

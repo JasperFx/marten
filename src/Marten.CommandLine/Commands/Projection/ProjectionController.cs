@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Events.Daemon;
@@ -94,6 +95,14 @@ public class ProjectionController
             {
                 _view.DisplayNoDatabases();
                 break;
+            }
+
+            if (input.AdvanceFlag)
+            {
+                foreach (var database in databases)
+                {
+                    await database.AdvanceHighWaterMarkToLatestAsync(CancellationToken.None).ConfigureAwait(false);
+                }
             }
 
             if (input.RebuildFlag)

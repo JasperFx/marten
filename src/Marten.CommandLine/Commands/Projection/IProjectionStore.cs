@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
 
@@ -22,4 +23,5 @@ public interface IProjectionDatabase
     string Identifier { get; }
 
     IProjectionDaemon BuildDaemon();
+    Task AdvanceHighWaterMarkToLatestAsync(CancellationToken none);
 }
