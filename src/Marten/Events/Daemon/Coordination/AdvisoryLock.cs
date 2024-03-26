@@ -39,7 +39,7 @@ internal class AdvisoryLock : IAsyncDisposable
             await _conn.OpenAsync(token).ConfigureAwait(false);
         }
 
-        if (_conn.State == ConnectionState.Broken)
+        if (_conn.State == ConnectionState.Closed)
         {
             try
             {
@@ -53,6 +53,8 @@ internal class AdvisoryLock : IAsyncDisposable
             {
                 _conn = null;
             }
+
+            return false;
         }
 
 
