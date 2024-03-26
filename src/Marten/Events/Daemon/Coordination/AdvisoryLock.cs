@@ -28,7 +28,7 @@ internal class AdvisoryLock : IAsyncDisposable
 
     public bool HasLock(int lockId)
     {
-        return _conn is not { State: ConnectionState.Broken } && _locks.Contains(lockId);
+        return _conn is not { State: ConnectionState.Closed } && _locks.Contains(lockId);
     }
 
     public async Task<bool> TryAttainLockAsync(int lockId, CancellationToken token)
@@ -73,7 +73,7 @@ internal class AdvisoryLock : IAsyncDisposable
     {
         if (!_locks.Contains(lockId)) return;
 
-        if (_conn == null || _conn.State == ConnectionState.Broken)
+        if (_conn == null || _conn.State == ConnectionState.Closed)
         {
             _locks.Remove(lockId);
             return;
