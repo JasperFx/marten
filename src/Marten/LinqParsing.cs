@@ -1,8 +1,7 @@
-using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using JasperFx.Core;
 using Marten.Events.Archiving;
 using Marten.Linq.CreatedAt;
@@ -96,13 +95,12 @@ public class LinqParsing: IReadOnlyLinqParsing
 
     private readonly StoreOptions _options;
 
-
     /// <summary>
     ///     Add custom Linq expression parsers for your own methods
     /// </summary>
     public readonly IList<IMethodCallParser> MethodCallParsers = new List<IMethodCallParser>();
 
-    private ImHashMap<int, IMethodCallParser> _methodParsers = ImHashMap<int, IMethodCallParser>.Empty;
+    private ImHashMap<long, IMethodCallParser> _methodParsers = ImHashMap<long, IMethodCallParser>.Empty;
 
     internal LinqParsing(StoreOptions options)
     {
@@ -115,20 +113,21 @@ public class LinqParsing: IReadOnlyLinqParsing
     /// </summary>
     public IList<IMemberSource> MemberSources { get; } = new List<IMemberSource>();
 
-    IReadOnlyList<IMemberSource> IReadOnlyLinqParsing.FieldSources => MemberSources.ToList();
+    IReadOnlyList<IMemberSource> IReadOnlyLinqParsing.FieldSources => MemberSources.ToImmutableArray();
 
-    IReadOnlyList<IMethodCallParser> IReadOnlyLinqParsing.MethodCallParsers => _parsers.ToList();
-
+    IReadOnlyList<IMethodCallParser> IReadOnlyLinqParsing.MethodCallParsers => _parsers.ToImmutableArray();
 
     internal IMethodCallParser FindMethodParser(MethodCallExpression expression)
     {
-        if (_methodParsers.TryFind(expression.Method.MetadataToken, out var parser))
+        var key = ToKey(expression);
+
+        if (_methodParsers.TryFind(key, out var parser))
         {
             return parser;
         }
 
         parser = determineMethodParser(expression);
-        _methodParsers = _methodParsers.AddOrUpdate(expression.Method.MetadataToken, parser);
+        _methodParsers = _methodParsers.AddOrUpdate(key, parser);
         return parser;
     }
 
@@ -136,5 +135,20 @@ public class LinqParsing: IReadOnlyLinqParsing
     {
         return MethodCallParsers.FirstOrDefault(x => x.Matches(expression))
                ?? _parsers.FirstOrDefault(x => x.Matches(expression));
+    }
+
+    /// <summary>
+    ///     https://learn.microsoft.com/en-us/dotnet/api/system.reflection.memberinfo.metadatatoken?view=net-8.0
+    ///     MetadataToken -- "A value which, in combination with Module, uniquely identifies a metadata element."
+    /// </summary>
+    private static long ToKey(MethodCallExpression expression)
+    {
+        var method = expression.Method;
+        unchecked
+        {
+            int moduleKey = method.Module.FullyQualifiedName.GetHashCode();
+            int expressionKey = method.MetadataToken;
+            return (long)moduleKey << 32 | (uint)expressionKey;
+        }
     }
 }
