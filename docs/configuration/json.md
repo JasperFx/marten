@@ -30,7 +30,27 @@ var store = DocumentStore.For(_ =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L83-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_serializer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Fields Names Casing
+## Enum Storage
+
+Marten allows you to configure how enum values are being stored. By default, they are stored as integers but it is possible to change that to strings:
+
+<!-- snippet: sample_customize_json_enum_storage_serialization -->
+<a id='snippet-sample_customize_json_enum_storage_serialization'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    // Newtonsoft // [!code focus:5]
+    _.UseNewtonsoftForSerialization(enumStorage: EnumStorage.AsString);
+
+    // STJ
+    _.UseSystemTextJsonForSerialization(enumStorage: EnumStorage.AsString);
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L124-L134' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_enum_storage_serialization' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+## Field Names Casing
 
 By default, Marten stores field names "as they are" (C# naming convention is PascalCase for public properties).
 
@@ -55,7 +75,6 @@ var store = DocumentStore.For(_ =>
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L139-L149' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_camelcase_casing_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
 
 ## Non Public Members Storage
 
@@ -95,6 +114,35 @@ public class User
     public int Id { get; init; }
 }
 ```
+
+## Collection Storage <Badge type="warning" text="Newtonsoft Only" />
+
+Marten by default stores the collections as strongly typed (so with $type and $value). Because of that and current `MartenQueryable` limitations, it might result in not properly resolved nested collections queries.
+
+Changing the collection storage to `AsArray` using a custom `JsonConverter` will store it as regular JSON array for the following:
+
+- `ICollection<>`,
+- `IList<>`,
+- `IReadOnlyCollection<>`,
+- `IEnumerable<>`.
+
+That improves the nested collections queries handling.
+
+To do that you need to change the serialization settings in the `DocumentStore` options.
+
+<!-- snippet: sample_customize_json_net_snakecase_collectionstorage -->
+<a id='snippet-sample_customize_json_net_snakecase_collectionstorage'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    // Replace the default (strongly typed) JsonNetSerializer collection storage // [!code focus:3]
+    // with JSON array formatting
+    _.UseNewtonsoftForSerialization(collectionStorage: CollectionStorage.AsArray);
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L154-L162' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_collectionstorage' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 
 ## Custom Configuration
 
