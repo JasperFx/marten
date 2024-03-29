@@ -383,7 +383,7 @@ namespace EventSourcingTests.SchemaChange
             {
                 #region sample_upcast_event_lambda_with_systemtextjson_json_document
 
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
 
                 options.Events
                     .Upcast<ShoppingCartOpenedWithStatus>(
@@ -409,7 +409,7 @@ namespace EventSourcingTests.SchemaChange
             {
                 #region sample_async_upcast_event_lambda_with_systemtextjson_json_document
 
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
 
                 options.Events
                     .Upcast<ShoppingCartOpenedWithStatus>(
@@ -441,7 +441,7 @@ namespace EventSourcingTests.SchemaChange
             {
                 #region sample_upcast_event_class_with_systemtextjson_json_document
 
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
 
                 options.Events.Upcast<ShoppingCartOpenedUpcaster>();
 
@@ -452,7 +452,7 @@ namespace EventSourcingTests.SchemaChange
             {
                 #region sample_upcast_event_class_with_systemtextjson_json_document
 
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
 
                 options.Events.Upcast(new ShoppingCartOpenedAsyncOnlyUpcaster(clientRepository));
 
@@ -461,52 +461,52 @@ namespace EventSourcingTests.SchemaChange
 
             public static void LambdaWithClrTypes(StoreOptions options)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
                 ClrTypes.SampleEventsUpcasting.LambdaWithClrTypes(options);
             }
 
             public static void AsyncLambdaWithClrTypes(StoreOptions options, IClientRepository clientRepository)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
                 ClrTypes.SampleEventsUpcasting.AsyncLambdaWithClrTypes(options, clientRepository);
             }
 
             public static void LambdaWithClrTypesAndExplicitEventTypeName(StoreOptions options)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
                 ClrTypes.SampleEventsUpcasting.LambdaWithClrTypesAndExplicitEventTypeName(options);
             }
 
             public static void AsyncLambdaWithClrTypesAndExplicitEventTypeName(StoreOptions options,
                 IClientRepository clientRepository)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
                 ClrTypes.SampleEventsUpcasting.AsyncLambdaWithClrTypesAndExplicitEventTypeName(options,
                     clientRepository);
             }
 
             public static void ClassWithClrTypes(StoreOptions options)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
                 ClrTypes.SampleEventsUpcasting.ClassWithClrTypes(options);
             }
 
             public static void AsyncClassWithClrTypes(StoreOptions options, IClientRepository clientRepository)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
                 ClrTypes.SampleEventsUpcasting.AsyncClassWithClrTypes(options, clientRepository);
             }
 
             public static void ClassWithClrTypesWithExplicitEventTypeName(StoreOptions options)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
                 ClrTypes.SampleEventsUpcasting.ClassWithClrTypesWithExplicitEventTypeName(options);
             }
 
             public static void AsyncClassWithClrTypesWithExplicitEventTypeName(StoreOptions options,
                 IClientRepository clientRepository)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
                 ClrTypes.SampleEventsUpcasting.AsyncClassWithClrTypesWithExplicitEventTypeName(options,
                     clientRepository);
             }
@@ -584,7 +584,7 @@ namespace EventSourcingTests.SchemaChange
             {
                 #region sample_upcast_event_lambda_with_jsonnet_jobject
 
-                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                options.UseNewtonsoftForSerialization();
 
                 options.Events
                     .Upcast<ShoppingCartOpenedWithStatus>(
@@ -607,7 +607,7 @@ namespace EventSourcingTests.SchemaChange
             {
                 #region sample_async_upcast_event_lambda_with_jsonnet_jobject
 
-                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                options.UseNewtonsoftForSerialization();
 
                 options.Events
                     .Upcast<ShoppingCartOpenedWithStatus>(
@@ -637,7 +637,7 @@ namespace EventSourcingTests.SchemaChange
             {
                 #region sample_upcast_event_class_with_jsonnet_json_jobject
 
-                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                options.UseNewtonsoftForSerialization();
 
                 options.Events.Upcast<ShoppingCartOpenedUpcaster>();
 
@@ -648,7 +648,7 @@ namespace EventSourcingTests.SchemaChange
             {
                 #region sample_async_upcast_event_class_with_jsonnet_json_jobject
 
-                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                options.UseNewtonsoftForSerialization();
 
                 options.Events.Upcast(new ShoppingCartOpenedAsyncOnlyUpcaster(clientRepository));
 
@@ -657,52 +657,52 @@ namespace EventSourcingTests.SchemaChange
 
             public static void LambdaWithClrTypes(StoreOptions options)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                options.UseNewtonsoftForSerialization();
                 ClrTypes.SampleEventsUpcasting.LambdaWithClrTypes(options);
             }
 
             public static void AsyncLambdaWithClrTypes(StoreOptions options, IClientRepository clientRepository)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                options.UseNewtonsoftForSerialization();
                 ClrTypes.SampleEventsUpcasting.AsyncLambdaWithClrTypes(options, clientRepository);
             }
 
             public static void LambdaWithClrTypesAndExplicitEventTypeName(StoreOptions options)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                options.UseNewtonsoftForSerialization();
                 ClrTypes.SampleEventsUpcasting.LambdaWithClrTypesAndExplicitEventTypeName(options);
             }
 
             public static void AsyncLambdaWithClrTypesAndExplicitEventTypeName(StoreOptions options,
                 IClientRepository clientRepository)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                options.UseNewtonsoftForSerialization();
                 ClrTypes.SampleEventsUpcasting.AsyncLambdaWithClrTypesAndExplicitEventTypeName(options,
                     clientRepository);
             }
 
             public static void ClassWithClrTypes(StoreOptions options)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                options.UseNewtonsoftForSerialization();
                 ClrTypes.SampleEventsUpcasting.ClassWithClrTypes(options);
             }
 
             public static void AsyncClassWithClrTypes(StoreOptions options, IClientRepository clientRepository)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                options.UseNewtonsoftForSerialization();
                 ClrTypes.SampleEventsUpcasting.AsyncClassWithClrTypes(options, clientRepository);
             }
 
             public static void ClassWithClrTypesWithExplicitEventTypeName(StoreOptions options)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                options.UseNewtonsoftForSerialization();
                 ClrTypes.SampleEventsUpcasting.ClassWithClrTypes(options);
             }
 
             public static void AsyncClassWithClrTypesWithExplicitEventTypeName(StoreOptions options,
                 IClientRepository clientRepository)
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+                options.UseNewtonsoftForSerialization();
                 ClrTypes.SampleEventsUpcasting.AsyncClassWithClrTypesWithExplicitEventTypeName(options,
                     clientRepository);
             }

@@ -387,7 +387,7 @@ options.Events
 <!-- snippet: sample_upcast_event_lambda_with_jsonnet_jobject -->
 <a id='snippet-sample_upcast_event_lambda_with_jsonnet_jobject'></a>
 ```cs
-options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+options.UseNewtonsoftForSerialization();
 
 options.Events
     .Upcast<ShoppingCartOpenedWithStatus>(
@@ -421,7 +421,7 @@ using static Marten.Services.Json.Transformations.JsonNet.JsonTransformations;
 <!-- snippet: sample_upcast_event_lambda_with_systemtextjson_json_document -->
 <a id='snippet-sample_upcast_event_lambda_with_systemtextjson_json_document'></a>
 ```cs
-options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+options.UseSystemTextJsonForSerialization();
 
 options.Events
     .Upcast<ShoppingCartOpenedWithStatus>(
@@ -663,7 +663,7 @@ options.Events
 <!-- snippet: sample_async_upcast_event_lambda_with_jsonnet_jobject -->
 <a id='snippet-sample_async_upcast_event_lambda_with_jsonnet_jobject'></a>
 ```cs
-options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+options.UseNewtonsoftForSerialization();
 
 options.Events
     .Upcast<ShoppingCartOpenedWithStatus>(
@@ -704,7 +704,7 @@ using static Marten.Services.Json.Transformations.JsonNet.JsonTransformations;
 <!-- snippet: sample_async_upcast_event_lambda_with_systemtextjson_json_document -->
 <a id='snippet-sample_async_upcast_event_lambda_with_systemtextjson_json_document'></a>
 ```cs
-options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+options.UseSystemTextJsonForSerialization();
 
 options.Events
     .Upcast<ShoppingCartOpenedWithStatus>(

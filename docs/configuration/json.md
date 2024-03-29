@@ -11,7 +11,7 @@ with previous Marten versions and because it handles some unique edge-cases that
 That being said, if you're working on a new application
 we recommend enabling System.Text.Json for improved performance and serializer alignment with ASP.NET Core & Wolverine defaults.
 
-Configuration for both serializers hang off the `DocumentStore`s `UseNewtonsoftForSerialization` and `UseSystemTextJsonForSerialization` extensions respectively:
+Configuration for both serializers hang off the `DocumentStore` `UseNewtonsoftForSerialization` and `UseSystemTextJsonForSerialization` extensions respectively:
 
 <!-- snippet: sample_customize_serializer -->
 <a id='snippet-sample_customize_serializer'></a>
@@ -179,7 +179,7 @@ Marten actually has to keep two Newtonsoft.Json serializers, with one being a "c
 
 ## External Configuration
 
-You might prefer to configure the serializer separately from the document store configuration and can do so via passing the serializer instance to the `Serializer` method.
+You might prefer to configure the serializer separately from the document store and can do so via passing the serializer instance to the `Serializer` method.
 
 An example of configuring Marten's `JsonNetSerializer` is shown below:
 

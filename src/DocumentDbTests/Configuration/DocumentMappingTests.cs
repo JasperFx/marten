@@ -132,7 +132,7 @@ public class DocumentMappingTests
     public void enum_storage_should_be_taken_from_store_options(EnumStorage enumStorage)
     {
         var storeOptions = new StoreOptions();
-        storeOptions.UseDefaultSerialization(enumStorage);
+        storeOptions.UseNewtonsoftForSerialization(enumStorage);
 
         var mapping = new DocumentMapping<User>(storeOptions);
         mapping.EnumStorage.ShouldBe(enumStorage);
