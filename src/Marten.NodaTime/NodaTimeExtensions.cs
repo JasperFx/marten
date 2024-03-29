@@ -32,13 +32,13 @@ public static class NodaTimeExtensions
             switch (serializer)
             {
                 case JsonNetSerializer jsonNetSerializer:
-                    jsonNetSerializer.Customize(s =>
+                    jsonNetSerializer.Configure(s =>
                     {
                         s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
                     });
                     break;
                 case SystemTextJsonSerializer systemTextJsonSerializer:
-                    systemTextJsonSerializer.Customize(s =>
+                    systemTextJsonSerializer.Configure(s =>
                     {
                         s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
                     });

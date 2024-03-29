@@ -1,170 +1,63 @@
 # Json Serialization
 
-::: tip
-Newtonsoft.Json is still the default JSON serializer in Marten for backwards compatibility
-with previous Marten versions and because it is the most battle-hardened JSON serializer
-in the .Net space that "just works."
-
-If you're working on a new system, we recommend enabling the System.Text.Json integration for improved throughput.
-:::
-
 An absolutely essential ingredient in Marten's persistence strategy is JSON serialization of the document objects. Marten aims to make the
-JSON serialization extensible and configurable through the native mechanisms in each JSON serialization library. For the purposes of having
-a smooth "getting started" story, Marten comes out of the box with support for Newtonsoft.Json as the main JSON serializer.
+JSON serialization extensible and configurable through the native mechanisms in each JSON serialization library. 
 
-## Serializing with Newtonsoft.Json
+## Serializer Choice
 
-The default JSON serialization strategy inside of Marten uses [Newtonsoft.Json](http://www.newtonsoft.com/json). We have standardized on Newtonsoft.Json
-because of its flexibility and ability to handle polymorphism within child collections. Marten also uses Newtonsoft.Json internally to do JSON diff's for the automatic dirty checking option.
+Marten ships with implementations for both Newtonsoft.Json & System.Text.Json. Newtonsoft.Json is enabled by default in Marten for backwards compatibility
+with previous Marten versions and because it handles some unique edge-cases that System.Text.Json might not. 
 
-Out of the box, Marten uses this configuration for Newtonsoft.Json:
+That being said, if you're working on a new application
+we recommend enabling System.Text.Json for improved performance and serializer alignment with ASP.NET Core & Wolverine defaults.
 
-<!-- snippet: sample_newtonsoft-configuration -->
-<a id='snippet-sample_newtonsoft-configuration'></a>
-```cs
-private readonly JsonSerializer _serializer = new()
-{
-    TypeNameHandling = TypeNameHandling.Auto,
+Configuration for both serializers hang off the `DocumentStore`s `UseNewtonsoftForSerialization` and `UseSystemTextJsonForSerialization` extensions respectively:
 
-    // ISO 8601 formatting of DateTime's is mandatory
-    DateFormatHandling = DateFormatHandling.IsoDateFormat,
-    MetadataPropertyHandling = MetadataPropertyHandling.ReadAhead,
-    ContractResolver = new JsonNetContractResolver()
-};
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Services/JsonNetSerializer.cs#L34-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_newtonsoft-configuration' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-To customize the Newtonsoft.Json serialization, you need to explicitly supply an instance of Marten's `JsonNetSerializer` as shown below:
-
-<!-- snippet: sample_customize_json_net_serialization -->
-<a id='snippet-sample_customize_json_net_serialization'></a>
-```cs
-var serializer = new Marten.Services.JsonNetSerializer();
-
-// To change the enum storage policy to store Enum's as strings:
-serializer.EnumStorage = EnumStorage.AsString;
-
-// All other customizations:
-serializer.Customize(_ =>
-{
-    // Code directly against a Newtonsoft.Json JsonSerializer
-    _.DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind;
-    _.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
-});
-
-var store = DocumentStore.For(_ =>
-{
-    _.Connection("some connection string");
-
-    // Replace the default JsonNetSerializer with the one we configured
-    // above
-    _.Serializer(serializer);
-});
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L83-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_serialization' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-::: tip INFO
-You should not override the Newtonsoft.Json `ContractResolver` with `CamelCasePropertyNamesContractResolver` for Json Serialization. Newtonsoft.Json by default respects the casing used in property / field names which is typically PascalCase.
-This can be overridden to serialize the names to camelCase and Marten will store the JSON in the database as specified by the Newtonsoft.Json settings. However, Marten uses the property / field names casing for its SQL queries and queries are case sensitive and as such, querying will not work correctly.
-
-Marten actually has to keep two Newtonsoft.Json serializers, with one being a "clean" Json serializer that omits all Type metadata. The need for two serializers is why the customization is done with a nested closure so that the same configuration is always applied to both internal `JsonSerializer's`.
-:::
-
-### Enum Storage
-
-Marten allows how enum values are being stored. By default, they are stored as integers but it is possible to change that to storing them as strings.
-
-To do that you need to change the serialization settings in the `DocumentStore` options.
-
-<!-- snippet: sample_customize_json_net_enum_storage_serialization -->
-<a id='snippet-sample_customize_json_net_enum_storage_serialization'></a>
+<!-- snippet: sample_customize_serializer -->
+<a id='snippet-sample_customize_serializer'></a>
 ```cs
 var store = DocumentStore.For(_ =>
 {
     _.Connection("some connection string");
 
-    // Replace the default JsonNetSerializer default enum storage
-    // with storing them as string
-    _.UseDefaultSerialization(enumStorage: EnumStorage.AsString);
+    // Newtonsoft - Enabled by default
+    _.UseNewtonsoftForSerialization(); // [!code ++]
+
+    // System.Text.Json - Opt in
+    _.UseSystemTextJsonForSerialization(); // [!code ++]
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L110-L120' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_enum_storage_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L83-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_serializer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### Fields Names Casing
+## Fields Names Casing
 
-Marten by default stores field names "as they are" (C# naming convention is PascalCase for public properties).
+By default, Marten stores field names "as they are" (C# naming convention is PascalCase for public properties).
 
 You can have them also automatically formatted to:
 
 - `CamelCase`,
 - `snake_case`
 
-by changing the serialization settings in the `DocumentStore` options.
+by changing the relevant serializer settings:
 
-<!-- snippet: sample_customize_json_net_camelcase_casing_serialization -->
-<a id='snippet-sample_customize_json_net_camelcase_casing_serialization'></a>
+<!-- snippet: sample_customize_json_camelcase_casing_serialization -->
+<a id='snippet-sample_customize_json_camelcase_casing_serialization'></a>
 ```cs
 var store = DocumentStore.For(_ =>
 {
-    _.Connection("some connection string");
+    // Newtonsoft // [!code focus:5]
+    _.UseNewtonsoftForSerialization(casing: Casing.CamelCase);
 
-    // Replace the default (as is) JsonNetSerializer field names casing
-    // with camelCase formatting
-    _.UseDefaultSerialization(casing: Casing.CamelCase);
+    // STJ
+    _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L125-L135' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_camelcase_casing_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L139-L149' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_camelcase_casing_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-<!-- snippet: sample_customize_json_net_snakecase_casing_serialization -->
-<a id='snippet-sample_customize_json_net_snakecase_casing_serialization'></a>
-```cs
-var store = DocumentStore.For(_ =>
-{
-    _.Connection("some connection string");
 
-    // Replace the default (as is) JsonNetSerializer field names casing
-    // with snake_case formatting
-    _.UseDefaultSerialization(casing: Casing.SnakeCase);
-});
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L140-L150' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_casing_serialization' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-### Collection Storage
-
-Marten by default stores the collections as strongly typed (so with $type and $value). Because of that and current `MartenQueryable` limitations, it might result in not properly resolved nested collections queries.
-
-Changing the collection storage to `AsArray` using a custom `JsonConverter` will store it as regular JSON array for the following:
-
-- `ICollection<>`,
-- `IList<>`,
-- `IReadOnlyCollection<>`,
-- `IEnumerable<>`.
-
-That improves the nested collections queries handling.
-
-To do that you need to change the serialization settings in the `DocumentStore` options.
-
-<!-- snippet: sample_customize_json_net_snakecase_collectionstorage -->
-<a id='snippet-sample_customize_json_net_snakecase_collectionstorage'></a>
-```cs
-var store = DocumentStore.For(_ =>
-{
-    _.Connection("some connection string");
-
-    // Replace the default (strongly typed) JsonNetSerializer collection storage
-    // with JSON array formatting
-    _.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray);
-});
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L155-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_collectionstorage' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-### Non Public Members Storage
+## Non Public Members Storage
 
 By default `Newtonsoft.Json` only deserializes properties with public setters.
 
@@ -175,14 +68,11 @@ You can allow deserialization of properties with non-public setters by changing 
 ```cs
 var store = DocumentStore.For(_ =>
 {
-    _.Connection("some connection string");
-
-    // Replace the default (only public setters) JsonNetSerializer deserialization settings
-    // with allowing to also deserialize using non-public setters
-    _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
+     // Allow the JsonNetSerializer to also deserialize using non-public setters // [!code focus:2]
+    _.UseNewtonsoftForSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L170-L180' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_nonpublicsetters' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L167-L174' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_nonpublicsetters' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also use other options of `NonPublicMembersStorage`:
@@ -206,34 +96,72 @@ public class User
 }
 ```
 
-## Serialization with System.Text.Json
+## Custom Configuration
 
-Marten natively supports the [System.Text.Json](https://docs.microsoft.com/en-us/dotnet/api/system.text.json?view=net-7.0) serializer. STJ is significantly faster than Newtonsoft and is recommended for new systems
+Marten also allows you to completely override all serializer settings via the last configuration parameter:
 
-<!-- snippet: sample_using_STJ_serialization -->
-<a id='snippet-sample_using_stj_serialization'></a>
+<!-- snippet: sample_customize_json_advanced -->
+<a id='snippet-sample_customize_json_advanced'></a>
 ```cs
-var store = DocumentStore.For(opts =>
+var store = DocumentStore.For(_ =>
 {
-    opts.Connection("some connection string");
-
-    // Opt into System.Text.Json serialization
-    opts.UseDefaultSerialization(
-        serializerType: SerializerType.SystemTextJson,
-        // Optionally override the enum storage
+    _.UseNewtonsoftForSerialization( // [!code focus:14]
         enumStorage: EnumStorage.AsString,
-        // Optionally override the member casing
-        casing: Casing.CamelCase
-    );
+        configure: settings =>
+        {
+            settings.DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind;
+            settings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
+        });
+
+    _.UseSystemTextJsonForSerialization(
+        enumStorage: EnumStorage.AsString,
+        configure: settings =>
+        {
+            settings.MaxDepth = 100;
+        });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/UsingSystemTextJsonSerializer.cs#L11-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_stj_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L179-L197' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_advanced' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-::: tip
-The behavior of STJ is different enough from Newtonsoft.Json that conversions of existing Marten
-applications should be done with quite a bit of caution and testing.
+::: warning WARNING
+You should not override the Newtonsoft.Json `ContractResolver` with `CamelCasePropertyNamesContractResolver` for Json Serialization. Newtonsoft.Json by default respects the casing used in property / field names which is typically PascalCase.
+This can be overridden to serialize the names to camelCase and Marten will store the JSON in the database as specified by the Newtonsoft.Json settings. However, Marten uses the property / field names casing for its SQL queries and queries are case sensitive and as such, querying will not work correctly.
+
+Marten actually has to keep two Newtonsoft.Json serializers, with one being a "clean" Json serializer that omits all Type metadata. The need for two serializers is why the customization is done with a nested closure so that the same configuration is always applied to both internal `JsonSerializer's`.
 :::
+
+## External Configuration
+
+You might prefer to configure the serializer seperately from the document store configuration and can do so via passing the serializer instance to the `Serializer` method.
+
+An example of configuring Marten's `JsonNetSerializer` is shown below:
+
+<!-- snippet: sample_customize_json_net_serialization -->
+<a id='snippet-sample_customize_json_net_serialization'></a>
+```cs
+var serializer = new Marten.Services.JsonNetSerializer();
+
+// To change the enum storage policy to store Enum's as strings:
+serializer.EnumStorage = EnumStorage.AsString;
+
+// All other customizations:
+serializer.Configure(_ =>
+{
+    // Code directly against a Newtonsoft.Json JsonSerializer
+    _.DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind;
+    _.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
+});
+
+var store = DocumentStore.For(_ =>
+{
+    // Replace the default JsonNetSerializer with the one we configured
+    // above
+    _.Serializer(serializer);
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L99-L119' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_serialization' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Integrating a Custom serializer
 

@@ -78,6 +78,22 @@ public class ConfiguringDocumentStore
         #endregion
     }
 
+    public void customize_serializer()
+    {
+        #region sample_customize_serializer
+        var store = DocumentStore.For(_ =>
+        {
+            _.Connection("some connection string");
+
+            // Newtonsoft - Enabled by default
+            _.UseNewtonsoftForSerialization(); // [!code ++]
+
+            // System.Text.Json - Opt in
+            _.UseSystemTextJsonForSerialization(); // [!code ++]
+        });
+        #endregion
+    }
+
     public void customize_json_net_serialization()
     {
         #region sample_customize_json_net_serialization
@@ -87,7 +103,7 @@ public class ConfiguringDocumentStore
         serializer.EnumStorage = EnumStorage.AsString;
 
         // All other customizations:
-        serializer.Customize(_ =>
+        serializer.Configure(_ =>
         {
             // Code directly against a Newtonsoft.Json JsonSerializer
             _.DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind;
@@ -96,8 +112,6 @@ public class ConfiguringDocumentStore
 
         var store = DocumentStore.For(_ =>
         {
-            _.Connection("some connection string");
-
             // Replace the default JsonNetSerializer with the one we configured
             // above
             _.Serializer(serializer);
@@ -105,47 +119,32 @@ public class ConfiguringDocumentStore
         #endregion
     }
 
-    public void customize_json_net_enum_storage_serialization()
+    public void customize_json_enum_storage_serialization()
     {
-        #region sample_customize_json_net_enum_storage_serialization
+        #region sample_customize_json_enum_storage_serialization
 
         var store = DocumentStore.For(_ =>
         {
-            _.Connection("some connection string");
+            // Newtonsoft // [!code focus:5]
+            _.UseNewtonsoftForSerialization(enumStorage: EnumStorage.AsString);
 
-            // Replace the default JsonNetSerializer default enum storage
-            // with storing them as string
-            _.UseDefaultSerialization(enumStorage: EnumStorage.AsString);
+            // STJ
+            _.UseSystemTextJsonForSerialization(enumStorage: EnumStorage.AsString);
         });
         #endregion
     }
 
-    public void customize_json_net_camelcase_casing_serialization()
+    public void customize_json_camelcase_casing_serialization()
     {
-        #region sample_customize_json_net_camelcase_casing_serialization
+        #region sample_customize_json_camelcase_casing_serialization
 
         var store = DocumentStore.For(_ =>
         {
-            _.Connection("some connection string");
+            // Newtonsoft // [!code focus:5]
+            _.UseNewtonsoftForSerialization(casing: Casing.CamelCase);
 
-            // Replace the default (as is) JsonNetSerializer field names casing
-            // with camelCase formatting
-            _.UseDefaultSerialization(casing: Casing.CamelCase);
-        });
-        #endregion
-    }
-
-    public void customize_json_net_snakecase_casing_serialization()
-    {
-        #region sample_customize_json_net_snakecase_casing_serialization
-
-        var store = DocumentStore.For(_ =>
-        {
-            _.Connection("some connection string");
-
-            // Replace the default (as is) JsonNetSerializer field names casing
-            // with snake_case formatting
-            _.UseDefaultSerialization(casing: Casing.SnakeCase);
+            // STJ
+            _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase);
         });
         #endregion
     }
@@ -156,11 +155,9 @@ public class ConfiguringDocumentStore
 
         var store = DocumentStore.For(_ =>
         {
-            _.Connection("some connection string");
-
-            // Replace the default (strongly typed) JsonNetSerializer collection storage
+            // Replace the default (strongly typed) JsonNetSerializer collection storage // [!code focus:3]
             // with JSON array formatting
-            _.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray);
+            _.UseNewtonsoftForSerialization(collectionStorage: CollectionStorage.AsArray);
         });
         #endregion
     }
@@ -171,11 +168,31 @@ public class ConfiguringDocumentStore
 
         var store = DocumentStore.For(_ =>
         {
-            _.Connection("some connection string");
+             // Allow the JsonNetSerializer to also deserialize using non-public setters // [!code focus:2]
+            _.UseNewtonsoftForSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
+        });
+        #endregion
+    }
 
-            // Replace the default (only public setters) JsonNetSerializer deserialization settings
-            // with allowing to also deserialize using non-public setters
-            _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
+    public void customize_serializers_advanced()
+    {
+        #region sample_customize_json_advanced
+        var store = DocumentStore.For(_ =>
+        {
+            _.UseNewtonsoftForSerialization( // [!code focus:14]
+                enumStorage: EnumStorage.AsString,
+                configure: settings =>
+                {
+                    settings.DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind;
+                    settings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
+                });
+
+            _.UseSystemTextJsonForSerialization(
+                enumStorage: EnumStorage.AsString,
+                configure: settings =>
+                {
+                    settings.MaxDepth = 100;
+                });
         });
         #endregion
     }
