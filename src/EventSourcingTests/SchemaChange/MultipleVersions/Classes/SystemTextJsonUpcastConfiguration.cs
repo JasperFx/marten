@@ -252,7 +252,7 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
         public static Action<StoreOptions> V2WithTheSameName =>
             options =>
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
                 options.Events
                     .Upcast
                     (
@@ -268,7 +268,7 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
         public static Action<StoreOptions> V3WithTheSameName =>
             options =>
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
                 options.Events
                     .Upcast
                     (
@@ -286,7 +286,7 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
         public static Action<StoreOptions> V2WithDifferentName =>
             options =>
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
                 options.Events
                     .Upcast
                     (
@@ -298,7 +298,7 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
         public static Action<StoreOptions> V3WithDifferentName =>
             options =>
             {
-                options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+                options.UseSystemTextJsonForSerialization();
                 options.Events
                     .Upcast
                     (

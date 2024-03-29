@@ -12,7 +12,7 @@ public class SystemTextJsonUpcastConfiguration
     public static Action<StoreOptions> V2WithTheSameName =>
         options =>
         {
-            options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+            options.UseSystemTextJsonForSerialization();
             options.Events
                 .Upcast<V2.WithTheSameName.ShoppingCartOpened>(
                     Upcast(oldEventJson =>
@@ -46,7 +46,7 @@ public class SystemTextJsonUpcastConfiguration
     public static Action<StoreOptions> V3WithTheSameName =>
         options =>
         {
-            options.UseDefaultSerialization(serializerType:SerializerType.SystemTextJson);
+            options.UseSystemTextJsonForSerialization();
             options.Events
                 .Upcast<V3.WithTheSameName.ShoppingCartOpened>(
                     Upcast(oldEventJson =>
@@ -110,7 +110,7 @@ public class SystemTextJsonUpcastConfiguration
     public static Action<StoreOptions> V2WithDifferentName =>
         options =>
         {
-            options.UseDefaultSerialization(serializerType:SerializerType.SystemTextJson);
+            options.UseSystemTextJsonForSerialization();
             options.Events
                 .Upcast<V2.WithDifferentName.ShoppingCartOpenedV2>(
                     "shopping_cart_opened",
@@ -142,7 +142,7 @@ public class SystemTextJsonUpcastConfiguration
     public static Action<StoreOptions> V3WithDifferentName =>
         options =>
         {
-            options.UseDefaultSerialization(serializerType:SerializerType.SystemTextJson);
+            options.UseSystemTextJsonForSerialization();
             options.Events
                 .Upcast<V3.WithDifferentName.ShoppingCartOpenedV3>(
                     "shopping_cart_opened",
