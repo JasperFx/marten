@@ -22,18 +22,20 @@ public class JsonNetSerializer: ISerializer
 {
     private readonly ArrayPool<char> _charPool = ArrayPool<char>.Create();
 
-    private readonly JsonSerializer _clean = new()
+    private readonly JsonSerializerSettings _cleanSettings = new()
     {
         TypeNameHandling = TypeNameHandling.None,
         DateFormatHandling = DateFormatHandling.IsoDateFormat,
         ContractResolver = new JsonNetContractResolver()
     };
 
+    private readonly Lazy<JsonSerializer> _clean;
+
     private readonly JsonArrayPool<char> _jsonArrayPool;
 
     #region sample_newtonsoft-configuration
 
-    private readonly JsonSerializer _serializer = new()
+    private readonly JsonSerializerSettings _serializerSettings = new()
     {
         TypeNameHandling = TypeNameHandling.Auto,
 
@@ -45,12 +47,16 @@ public class JsonNetSerializer: ISerializer
 
     #endregion
 
-    private readonly JsonSerializer _withTypes = new()
+    private readonly Lazy<JsonSerializer> _serializer;
+
+    private readonly JsonSerializerSettings _withTypesSettings = new()
     {
         TypeNameHandling = TypeNameHandling.Objects,
         DateFormatHandling = DateFormatHandling.IsoDateFormat,
         ContractResolver = new JsonNetContractResolver()
     };
+
+    private readonly Lazy<JsonSerializer> _withTypes;
 
     private Casing _casing = Casing.Default;
     private CollectionStorage _collectionStorage = CollectionStorage.Default;
@@ -61,6 +67,9 @@ public class JsonNetSerializer: ISerializer
     public JsonNetSerializer()
     {
         _jsonArrayPool = new JsonArrayPool<char>(_charPool);
+        _clean = new(() => JsonSerializer.Create(_cleanSettings));
+        _serializer = new(() => JsonSerializer.Create(_serializerSettings));
+        _withTypes = new(() => JsonSerializer.Create(_withTypesSettings));
     }
 
     /// <summary>
@@ -73,9 +82,9 @@ public class JsonNetSerializer: ISerializer
         {
             _collectionStorage = value;
 
-            _serializer.ContractResolver =
+            _serializerSettings.ContractResolver =
                 new JsonNetContractResolver(Casing, _collectionStorage, NonPublicMembersStorage);
-            _clean.ContractResolver = new JsonNetContractResolver(Casing, _collectionStorage, NonPublicMembersStorage);
+            _cleanSettings.ContractResolver = new JsonNetContractResolver(Casing, _collectionStorage, NonPublicMembersStorage);
         }
     }
 
@@ -91,12 +100,12 @@ public class JsonNetSerializer: ISerializer
 
             if (_nonPublicMembersStorage.HasFlag(NonPublicMembersStorage.NonPublicDefaultConstructor))
             {
-                _serializer.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
+                _serializerSettings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
             }
 
-            _serializer.ContractResolver =
+            _serializerSettings.ContractResolver =
                 new JsonNetContractResolver(Casing, CollectionStorage, _nonPublicMembersStorage);
-            _clean.ContractResolver = new JsonNetContractResolver(Casing, CollectionStorage, _nonPublicMembersStorage);
+            _cleanSettings.ContractResolver = new JsonNetContractResolver(Casing, CollectionStorage, _nonPublicMembersStorage);
         }
     }
 
@@ -112,7 +121,7 @@ public class JsonNetSerializer: ISerializer
     {
         using var jsonReader = GetJsonTextReader(stream);
 
-        return _serializer.Deserialize<T>(jsonReader)!;
+        return _serializer.Value.Deserialize<T>(jsonReader)!;
     }
 
     public T FromJson<T>(DbDataReader reader, int index)
@@ -120,7 +129,7 @@ public class JsonNetSerializer: ISerializer
         using var textReader = reader.GetTextReader(index);
         using var jsonReader = GetJsonTextReader(textReader);
 
-        return _serializer.Deserialize<T>(jsonReader)!;
+        return _serializer.Value.Deserialize<T>(jsonReader)!;
     }
 
     public ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
@@ -137,7 +146,7 @@ public class JsonNetSerializer: ISerializer
     {
         using var jsonReader = GetJsonTextReader(stream);
 
-        return _serializer.Deserialize(jsonReader, type)!;
+        return _serializer.Value.Deserialize(jsonReader, type)!;
     }
 
     public object FromJson(Type type, DbDataReader reader, int index)
@@ -145,7 +154,7 @@ public class JsonNetSerializer: ISerializer
         using var textReader = reader.GetTextReader(index);
         using var jsonReader = GetJsonTextReader(textReader);
 
-        return _serializer.Deserialize(jsonReader, type)!;
+        return _serializer.Value.Deserialize(jsonReader, type)!;
     }
 
     public ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
@@ -163,7 +172,7 @@ public class JsonNetSerializer: ISerializer
     {
         var writer = new StringWriter();
 
-        _clean.Serialize(writer, document);
+        _clean.Value.Serialize(writer, document);
 
         return writer.ToString();
     }
@@ -172,7 +181,7 @@ public class JsonNetSerializer: ISerializer
     {
         var writer = new StringWriter();
 
-        _withTypes.Serialize(writer, document);
+        _withTypes.Value.Serialize(writer, document);
 
         return writer.ToString();
     }
@@ -191,13 +200,13 @@ public class JsonNetSerializer: ISerializer
             if (value == EnumStorage.AsString)
             {
                 var converter = new StringEnumConverter();
-                _serializer.Converters.Add(converter);
-                _clean.Converters.Add(converter);
+                _serializerSettings.Converters.Add(converter);
+                _cleanSettings.Converters.Add(converter);
             }
             else
             {
-                _serializer.Converters.RemoveAll(x => x is StringEnumConverter);
-                _clean.Converters.RemoveAll(x => x is StringEnumConverter);
+                _serializerSettings.Converters.RemoveAll(x => x is StringEnumConverter);
+                _cleanSettings.Converters.RemoveAll(x => x is StringEnumConverter);
             }
         }
     }
@@ -212,9 +221,9 @@ public class JsonNetSerializer: ISerializer
         {
             _casing = value;
 
-            _serializer.ContractResolver =
+            _serializerSettings.ContractResolver =
                 new JsonNetContractResolver(_casing, CollectionStorage, NonPublicMembersStorage);
-            _clean.ContractResolver =
+            _cleanSettings.ContractResolver =
                 new JsonNetContractResolver(_casing, CollectionStorage, NonPublicMembersStorage);
         }
     }
@@ -225,14 +234,29 @@ public class JsonNetSerializer: ISerializer
     ///     Customize the inner Newtonsoft formatter.
     /// </summary>
     /// <param name="configure"></param>
+    [Obsolete("Use Configure(Action<JsonSerializerSettings> configure) instead. This overload will be removed in the next major release.")]
     public void Customize(Action<JsonSerializer> configure)
     {
-        configure(_clean);
-        configure(_serializer);
-        configure(_withTypes);
+        configure(_clean.Value);
+        configure(_serializer.Value);
+        configure(_withTypes.Value);
 
-        _clean.TypeNameHandling = TypeNameHandling.None;
-        _withTypes.TypeNameHandling = TypeNameHandling.Objects;
+        _clean.Value.TypeNameHandling = TypeNameHandling.None;
+        _withTypes.Value.TypeNameHandling = TypeNameHandling.Objects;
+    }
+
+    /// <summary>
+    /// Configure the <see cref="JsonSerializerSettings"/> of the Newtonsoft serializer.
+    /// </summary>
+    /// <param name="configure"></param>
+    public void Configure(Action<JsonSerializerSettings> configure)
+    {
+        configure(_cleanSettings);
+        configure(_serializerSettings);
+        configure(_withTypesSettings);
+
+        _cleanSettings.TypeNameHandling = TypeNameHandling.None;
+        _withTypesSettings.TypeNameHandling = TypeNameHandling.Objects;
     }
 
     private void ToJson(object? document, TextWriter writer)
@@ -242,7 +266,7 @@ public class JsonNetSerializer: ISerializer
             ArrayPool = _jsonArrayPool, CloseOutput = false, AutoCompleteOnClose = false
         };
 
-        _serializer.Serialize(jsonWriter, document);
+        _serializer.Value.Serialize(jsonWriter, document);
 
         writer.Flush();
     }

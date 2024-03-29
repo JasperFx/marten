@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -17,10 +18,12 @@ using Marten.Linq;
 using Marten.Metadata;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
+using Marten.Services;
 using Marten.Services.Json;
 using Marten.Storage;
 using Marten.Util;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Npgsql;
 using Polly;
 using Weasel.Core;
@@ -499,6 +502,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     /// <param name="casing">Casing style to be used in serialization</param>
     /// <param name="collectionStorage">Allow to set collection storage as raw arrays (without explicit types)</param>
     /// <param name="nonPublicMembersStorage">Allow non public members to be used during deserialization</param>
+    [Obsolete("Prefer UseNewtonsoftForSerialization or UseSystemTextJsonForSerialization to configure JSON options")]
     public void UseDefaultSerialization(
         EnumStorage enumStorage = EnumStorage.AsInteger,
         Casing casing = Casing.Default,
@@ -515,6 +519,52 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
                 CollectionStorage = collectionStorage,
                 NonPublicMembersStorage = nonPublicMembersStorage
             });
+
+        Serializer(serializer);
+    }
+
+    /// <summary>
+    ///     Configure the Newtonsoft serializer settings
+    /// </summary>
+    /// <param name="enumStorage">Enum storage style</param>
+    /// <param name="casing">Casing style to be used in serialization</param>
+    /// <param name="collectionStorage">Allow to set collection storage as raw arrays (without explicit types)</param>
+    /// <param name="nonPublicMembersStorage">Allow non public members to be used during deserialization</param>
+    public void UseNewtonsoftForSerialization(
+        EnumStorage enumStorage = EnumStorage.AsInteger,
+        Casing casing = Casing.Default,
+        CollectionStorage collectionStorage = CollectionStorage.Default,
+        NonPublicMembersStorage nonPublicMembersStorage = NonPublicMembersStorage.Default,
+        Action<JsonSerializerSettings>? configure = null)
+    {
+        var serializer = new JsonNetSerializer
+        {
+            EnumStorage = enumStorage,
+            Casing = casing,
+            CollectionStorage = collectionStorage,
+            NonPublicMembersStorage = nonPublicMembersStorage
+        };
+
+        if (configure is not null)
+            serializer.Configure(configure);
+
+        Serializer(serializer);
+    }
+
+    /// <summary>
+    ///     Configure the System.Text.Json serializer settings
+    /// </summary>
+    /// <param name="enumStorage">Enum storage style</param>
+    /// <param name="casing">Casing style to be used in serialization</param>
+    public void UseSystemTextJsonForSerialization(
+        EnumStorage enumStorage = EnumStorage.AsInteger,
+        Casing casing = Casing.Default,
+        Action<JsonSerializerOptions>? configure = null)
+    {
+        var serializer = new SystemTextJsonSerializer() { EnumStorage = enumStorage, Casing = casing, };
+
+        if(configure is not null)
+            serializer.Configure(configure);
 
         Serializer(serializer);
     }

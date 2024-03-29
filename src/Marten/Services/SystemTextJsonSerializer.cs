@@ -183,7 +183,17 @@ public class SystemTextJsonSerializer: ISerializer
     ///     Customize the inner System.Text.Json formatter.
     /// </summary>
     /// <param name="configure"></param>
+    [Obsolete("Use Configure(Action<JsonSerializerOptions> configure) instead.")]
     public void Customize(Action<JsonSerializerOptions> configure)
+    {
+        Configure(configure);
+    }
+
+    /// <summary>
+    ///  Configure the <see cref="JsonSerializerOptions"/> of the System.Text.Json serializer.
+    /// </summary>
+    /// <param name="configure"></param>
+    public void Configure(Action<JsonSerializerOptions> configure)
     {
         configure(_clean);
         configure(_options);
