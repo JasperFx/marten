@@ -49,7 +49,6 @@ var store = DocumentStore.For(_ =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L124-L134' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_enum_storage_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Field Names Casing
 
 By default, Marten stores field names "as they are" (C# naming convention is PascalCase for public properties).
@@ -143,7 +142,6 @@ var store = DocumentStore.For(_ =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L154-L162' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_collectionstorage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Custom Configuration
 
 Marten also allows you to completely override all serializer settings via the last configuration parameter:
@@ -181,7 +179,7 @@ Marten actually has to keep two Newtonsoft.Json serializers, with one being a "c
 
 ## External Configuration
 
-You might prefer to configure the serializer seperately from the document store configuration and can do so via passing the serializer instance to the `Serializer` method.
+You might prefer to configure the serializer separately from the document store configuration and can do so via passing the serializer instance to the `Serializer` method.
 
 An example of configuring Marten's `JsonNetSerializer` is shown below:
 
