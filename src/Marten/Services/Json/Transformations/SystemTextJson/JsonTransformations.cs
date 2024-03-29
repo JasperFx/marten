@@ -56,8 +56,9 @@ public static class JsonTransformations
                     $"Cannot use SystemTextJson upcaster with serializer of type {serializer.GetType().FullName}");
             }
 
-            return transform(
-                systemTextJsonSerializer.JsonDocumentFromJson(dbDataReader, index));
+            using var doc = systemTextJsonSerializer.JsonDocumentFromJson(dbDataReader, index);
+
+            return transform(doc);
         };
     }
 
@@ -66,7 +67,7 @@ public static class JsonTransformations
             Func<JsonDocument, CancellationToken, Task<TEvent>> transform
         ) where TEvent : notnull
     {
-        return (serializer, dbDataReader, index, ct) =>
+        return async (serializer, dbDataReader, index, ct) =>
         {
             if (serializer is not SystemTextJsonSerializer systemTextJsonSerializer)
             {
@@ -74,7 +75,9 @@ public static class JsonTransformations
                     $"Cannot use SystemTextJson upcaster with serializer of type {serializer.GetType().FullName}");
             }
 
-            return transform(systemTextJsonSerializer.JsonDocumentFromJson(dbDataReader, index), ct);
+            using var doc = systemTextJsonSerializer.JsonDocumentFromJson(dbDataReader, index);
+
+            return await transform(doc, ct).ConfigureAwait(false);
         };
     }
 }
