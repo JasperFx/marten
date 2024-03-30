@@ -65,5 +65,8 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Internal\OpenTelemetry\" />
+    </ItemGroup>
     <Import Project="../../Analysis.Build.props" />
 </Project>

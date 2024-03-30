@@ -2,13 +2,16 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using Marten.Exceptions;
+using Marten.Internal.OpenTelemetry;
 using Marten.Internal.Sessions;
 using Marten.Storage;
 using Npgsql;
+using static Marten.Internal.OpenTelemetry.MartenTracing;
 using IsolationLevel = System.Data.IsolationLevel;
 
 namespace Marten.Services;
@@ -98,6 +101,23 @@ public sealed class SessionOptions
             throw new DefaultTenantUsageDisabledException();
         }
 
+        var innerConnectionLifetime =GetInnerConnectionLifetime(store, mode);
+
+        var corelationId = Activity.Current is not null ? Activity.Current.RootId : Guid.NewGuid().ToString();
+        var tags = new Dictionary<string, object>
+        {
+            { MartenCorelationId, corelationId },
+            { MartenTenantId, Tenant.TenantId }
+        };
+
+        return OpenTelemetryOptions.TrackConnectionEvents
+            ? new EventTracingConnectionLifetime(innerConnectionLifetime, OpenTelemetryOptions,
+                StartConnectionActivity(Activity.Current, tags))
+            : innerConnectionLifetime;
+    }
+
+    private IConnectionLifetime GetInnerConnectionLifetime(DocumentStore store, CommandRunnerMode mode)
+    {
         if (!OwnsTransactionLifecycle && mode != CommandRunnerMode.ReadOnly)
         {
             Mode = CommandRunnerMode.External;
@@ -118,6 +138,7 @@ public sealed class SessionOptions
             {
                 return new TransactionalConnection(this){CommandTimeout = Timeout ?? store.Options.CommandTimeout};
             }
+
             {
                 return new AutoClosingLifetime(this, store.Options);
             }
