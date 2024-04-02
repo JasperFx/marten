@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Marten.Internal.Operations;
+using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;
@@ -19,11 +20,14 @@ internal class PatchFragment: IOperationFragment
     private readonly ISerializer _serializer;
     private readonly IDocumentStorage _storage;
     private readonly DbObjectName _function;
+    private readonly DocumentSessionBase _session;
     private readonly List<PatchData> _patchSet;
 
-    public PatchFragment(List<PatchData> patchSet, ISerializer serializer, DbObjectName function,
+    public PatchFragment(DocumentSessionBase session, List<PatchData> patchSet, ISerializer serializer,
+        DbObjectName function,
         IDocumentStorage storage)
     {
+        _session = session;
         _patchSet = patchSet;
         _patchSet = patchSet;
         _serializer = serializer;
@@ -59,12 +63,16 @@ internal class PatchFragment: IOperationFragment
         builder.Append(_function.QualifiedName);
         builder.Append("(data, ");
         builder.AppendParameter("[" + string.Join(",", patchSetStr.ToArray()) + "]", NpgsqlDbType.Jsonb);
-        builder.Append("), ");
-        builder.Append(SchemaConstants.LastModifiedColumn);
-        builder.Append(" = (now() at time zone 'utc'), ");
-        builder.Append(SchemaConstants.VersionColumn);
-        builder.Append(" = ");
-        builder.AppendParameter(CombGuidIdGeneration.NewGuid());
+        builder.Append(")");
+
+        if (_storage is IHaveMetadataColumns metadata)
+        {
+            foreach (var column in metadata.MetadataColumns().Where(x => x.Enabled && x.ShouldUpdatePartials))
+            {
+                builder.Append(", ");
+                column.WriteMetadataInUpdateStatement(builder, _session);
+            }
+        }
     }
 
     public OperationRole Role()
@@ -79,8 +87,9 @@ internal class PatchOperation: StatementOperation, NoDataReturnedCall
     private readonly IDocumentStorage _storage;
     private readonly List<PatchData> _patchSet;
 
-    public PatchOperation(DbObjectName function, IDocumentStorage storage, List<PatchData> patchSet , ISerializer serializer):
-        base(storage, new PatchFragment(patchSet, serializer, function, storage))
+    public PatchOperation(DocumentSessionBase session, DbObjectName function, IDocumentStorage storage,
+        List<PatchData> patchSet, ISerializer serializer):
+        base(storage, new PatchFragment(session, patchSet, serializer, function, storage))
     {
         _storage = storage;
         _patchSet = patchSet;

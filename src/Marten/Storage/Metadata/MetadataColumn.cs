@@ -9,6 +9,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
+using Marten.Internal.Sessions;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Schema.Arguments;
@@ -34,6 +35,8 @@ public abstract class MetadataColumn: TableColumn
     ///     Is this metadata column enabled?
     /// </summary>
     public bool Enabled { get; set; } = true;
+
+    public bool ShouldUpdatePartials { get; protected set; }
 
     internal abstract Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
         DbDataReader reader, CancellationToken token);
@@ -87,6 +90,11 @@ public abstract class MetadataColumn: TableColumn
         {
             async.AssignMemberFromReaderAsync(generatedType, index, mapping.DocumentType, Member.Name);
         });
+    }
+
+    public virtual void WriteMetadataInUpdateStatement(ICommandBuilder builder, DocumentSessionBase session)
+    {
+        throw new NotSupportedException();
     }
 }
 
