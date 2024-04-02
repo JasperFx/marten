@@ -20,6 +20,7 @@ public class EventQueryMapping: DocumentMapping
 
         TableName = new PostgresqlObjectName(DatabaseSchemaName, "mt_events");
 
+        registerQueryableMember(x => x.Id, "id");
         registerQueryableMember(x => x.Sequence, "seq_id");
         if (storeOptions.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
