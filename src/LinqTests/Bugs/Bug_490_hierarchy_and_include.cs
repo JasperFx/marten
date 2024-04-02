@@ -68,7 +68,7 @@ public class Bug_490_hierarchy_and_include: BugIntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            List<Account> accounts = new List<Account>();
+            var accounts = new List<Account>();
             session.Query<Activity>()
                 .Include(a => a.AccountId, accounts)
                 .ToList()

@@ -750,6 +750,8 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
+            query.Logger = new TestOutputMartenLogger(_output);
+
             var list = new List<User>();
 
             query.Query<Group>()
