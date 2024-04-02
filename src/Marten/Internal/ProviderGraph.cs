@@ -13,6 +13,7 @@ namespace Marten.Internal;
 
 public class ProviderGraph: IProviderGraph
 {
+    private readonly object _storageLock = new();
     private readonly StoreOptions _options;
     private ImHashMap<Type, object> _storage = ImHashMap<Type, object>.Empty;
 
@@ -23,7 +24,10 @@ public class ProviderGraph: IProviderGraph
 
     public void Append<T>(DocumentProvider<T> provider) where T : notnull
     {
-        _storage = _storage.AddOrUpdate(typeof(T), provider);
+        lock (_storageLock)
+        {
+            _storage = _storage.AddOrUpdate(typeof(T), provider);
+        }
     }
 
     public DocumentProvider<T> StorageFor<T>() where T : notnull
@@ -35,70 +39,78 @@ public class ProviderGraph: IProviderGraph
             return stored.As<DocumentProvider<T>>();
         }
 
-        if (documentType == typeof(IEvent))
+        lock (_storageLock)
         {
-            var rules = _options.CreateGenerationRules();
-            _options.EventGraph.InitializeSynchronously(rules, _options.EventGraph, null);
-
-            _storage = _storage.AddOrUpdate(documentType, _options.EventGraph.Provider);
-
-            return _options.EventGraph.Provider.As<DocumentProvider<T>>();
-        }
-
-        var mapping = _options.Storage.FindMapping(documentType);
-
-        switch (mapping)
-        {
-            case DocumentMapping m:
+            if (_storage.TryFind(documentType, out stored))
             {
-                try
+                return stored.As<DocumentProvider<T>>();
+            }
+
+            if (documentType == typeof(IEvent))
+            {
+                var rules = _options.CreateGenerationRules();
+                _options.EventGraph.InitializeSynchronously(rules, _options.EventGraph, null);
+
+                _storage = _storage.AddOrUpdate(documentType, _options.EventGraph.Provider);
+
+                return _options.EventGraph.Provider.As<DocumentProvider<T>>();
+            }
+
+            var mapping = _options.Storage.FindMapping(documentType);
+
+            switch (mapping)
+            {
+                case DocumentMapping m:
                 {
-                    var builder = new DocumentProviderBuilder(m, _options);
+                    try
+                    {
+                        var builder = new DocumentProviderBuilder(m, _options);
 
-                    var rules = _options.CreateGenerationRules();
-                    rules.ReferenceTypes(m.DocumentType);
-                    builder.InitializeSynchronously(rules, _options, null);
-                    var slot = builder.BuildProvider<T>();
+                        var rules = _options.CreateGenerationRules();
+                        rules.ReferenceTypes(m.DocumentType);
+                        builder.InitializeSynchronously(rules, _options, null);
+                        var slot = builder.BuildProvider<T>();
 
+                        _storage = _storage.AddOrUpdate(documentType, slot);
+
+                        return slot;
+                    }
+                    catch (Exception e)
+                    {
+                        if (e.Message.Contains("is inaccessible due to its protection level"))
+                        {
+                            throw new InvalidOperationException(
+                                $"Requested document type '{mapping.DocumentType.FullNameInCode()}' must be scoped as 'public' in order to be used as a document type inside of Marten",
+                                e);
+                        }
+
+                        throw;
+                    }
+                }
+                case SubClassMapping s:
+                {
+                    var loader =
+                        typeof(SubClassLoader<,,>).CloseAndBuildAs<ISubClassLoader<T>>(mapping.Root.DocumentType,
+                            documentType,
+                            mapping.IdType);
+
+                    var slot = loader.BuildPersistence(this, s);
                     _storage = _storage.AddOrUpdate(documentType, slot);
 
                     return slot;
                 }
-                catch (Exception e)
+                case EventMapping em:
                 {
-                    if (e.Message.Contains("is inaccessible due to its protection level"))
-                    {
-                        throw new InvalidOperationException(
-                            $"Requested document type '{mapping.DocumentType.FullNameInCode()}' must be scoped as 'public' in order to be used as a document type inside of Marten",
-                            e);
-                    }
+                    var storage = (IDocumentStorage<T>)em;
+                    var slot = new DocumentProvider<T>(null, storage, storage, storage, storage);
+                    _storage = _storage.AddOrUpdate(documentType, slot);
 
-                    throw;
+                    return slot;
                 }
+                default:
+                    throw new NotSupportedException("Unable to build document persistence handlers for " +
+                                                    mapping.DocumentType.FullNameInCode());
             }
-            case SubClassMapping s:
-            {
-                var loader =
-                    typeof(SubClassLoader<,,>).CloseAndBuildAs<ISubClassLoader<T>>(mapping.Root.DocumentType,
-                        documentType,
-                        mapping.IdType);
-
-                var slot = loader.BuildPersistence(this, s);
-                _storage = _storage.AddOrUpdate(documentType, slot);
-
-                return slot;
-            }
-            case EventMapping em:
-            {
-                var storage = (IDocumentStorage<T>)em;
-                var slot = new DocumentProvider<T>(null, storage, storage, storage, storage);
-                _storage = _storage.AddOrUpdate(documentType, slot);
-
-                return slot;
-            }
-            default:
-                throw new NotSupportedException("Unable to build document persistence handlers for " +
-                                                mapping.DocumentType.FullNameInCode());
         }
     }
 
