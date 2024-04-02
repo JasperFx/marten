@@ -64,12 +64,12 @@ public class Bug_2223_list_contains_any_with_include_generates_invalid_sql: BugI
             var otherTestEntityLookup = new Dictionary<Guid, OtherTestEntity>();
             var entities = await session.Query<TestEntity>()
                 .Include(x => x.OtherIds, otherTestEntityLookup)
-                .Where(x => Enumerable.Any<Guid>(x.OtherIds, id => otherIdsQuery.Contains(id)))
+                .Where(x => x.OtherIds.Any<Guid>(id => otherIdsQuery.Contains(id)))
                 .ToListAsync();
 
             entities.Count.ShouldBe(1);
-            ShouldBeTestExtensions.ShouldBe(entities[0].OtherIds.Count, 2);
-            ShouldBeEnumerableTestExtensions.ShouldContain(entities[0].OtherIds, otherEntityTestId);
+            entities[0].OtherIds.Count.ShouldBe(2);
+            entities[0].OtherIds.ShouldContain(otherEntityTestId);
 
             otherTestEntityLookup.Count.ShouldBe(2);
             otherTestEntityLookup.ShouldContainKey(otherEntityTestId);
