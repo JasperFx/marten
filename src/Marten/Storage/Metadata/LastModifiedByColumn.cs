@@ -4,9 +4,11 @@ using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
+using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using NpgsqlTypes;
+using Weasel.Postgresql;
 
 namespace Marten.Storage.Metadata;
 
@@ -17,6 +19,7 @@ internal class LastModifiedByColumn: MetadataColumn<string>, ISelectableColumn
     public LastModifiedByColumn(): base(ColumnName, x => x.LastModifiedBy)
     {
         Enabled = false;
+        ShouldUpdatePartials = true;
     }
 
     public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async,
@@ -34,6 +37,13 @@ internal class LastModifiedByColumn: MetadataColumn<string>, ISelectableColumn
     internal override UpsertArgument ToArgument()
     {
         return new LastModifiedByArgument();
+    }
+
+    public override void WriteMetadataInUpdateStatement(ICommandBuilder builder, DocumentSessionBase session)
+    {
+        builder.Append(ColumnName);
+        builder.Append(" = ");
+        builder.AppendParameter(session.LastModifiedBy);
     }
 }
 

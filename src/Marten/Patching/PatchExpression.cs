@@ -27,7 +27,7 @@ internal class PatchExpression<T>: IPatchExpression<T>
     {
         _session = session;
         var storage = _session.StorageFor(typeof(T));
-        var operation = new PatchOperation(PatchFunction, storage, _patchSet, _session.Serializer);
+        var operation = new PatchOperation(session, PatchFunction, storage, _patchSet, _session.Serializer);
         if (filter != null)
         {
             operation.Wheres.Add(storage.FilterDocuments(filter, _session));
@@ -43,7 +43,7 @@ internal class PatchExpression<T>: IPatchExpression<T>
     {
         _session = session;
         var storage = _session.StorageFor(typeof(T));
-        var operation = new PatchOperation(PatchFunction, storage, _patchSet, _session.Serializer);
+        var operation = new PatchOperation(session, PatchFunction, storage, _patchSet, _session.Serializer);
         if (filterExpression != null)
         {
             operation.ApplyFiltering(_session, filterExpression);

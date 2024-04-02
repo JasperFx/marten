@@ -6,9 +6,11 @@ using Marten.Events;
 using Marten.Events.Schema;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
+using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using NpgsqlTypes;
+using Weasel.Postgresql;
 
 namespace Marten.Storage.Metadata;
 
@@ -19,6 +21,7 @@ internal class CorrelationIdColumn: MetadataColumn<string>, ISelectableColumn, I
     public CorrelationIdColumn(): base(ColumnName, x => x.CorrelationId)
     {
         Enabled = false;
+        ShouldUpdatePartials = true;
     }
 
     public void GenerateSelectorCodeSync(GeneratedMethod method, EventGraph graph, int index)
@@ -57,6 +60,13 @@ internal class CorrelationIdColumn: MetadataColumn<string>, ISelectableColumn, I
     internal override UpsertArgument ToArgument()
     {
         return new CorrelationIdArgument();
+    }
+
+    public override void WriteMetadataInUpdateStatement(ICommandBuilder builder, DocumentSessionBase session)
+    {
+        builder.Append(ColumnName);
+        builder.Append(" = ");
+        builder.AppendParameter(session.CorrelationId);
     }
 }
 
