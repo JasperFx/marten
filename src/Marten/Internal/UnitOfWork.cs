@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events;
@@ -243,15 +244,20 @@ internal class UnitOfWork: ISessionWorkTracker
             return false;
         }
 
-        if (_operations.Where(x => x.Role() != OperationRole.Other).Select(x => x.DocumentType).Distinct().Count(x => x != typeof(StorageFeatures)) == 1)
-        {
-            return false;
-        }
-
-        var types = _operations
+        var rawTypes = _operations
+            .Where(x => x.Role() != OperationRole.Other)
             .Select(x => x.DocumentType)
             .Where(x => x != null)
-            .Distinct()
+            .Where(x => x != typeof(StorageFeatures))
+            .Distinct().ToArray();
+
+        if (rawTypes.Length <= 1) return false;
+
+        var hasRelationship = rawTypes.Any(x => options.Storage.GetTypeDependencies(x).Intersect(rawTypes).Any());
+
+        if (!hasRelationship) return false;
+
+        var types = rawTypes
             .TopologicalSort(type => options.Storage.GetTypeDependencies(type)).ToArray();
 
         if (_operations.OfType<IDeletion>().Any())
