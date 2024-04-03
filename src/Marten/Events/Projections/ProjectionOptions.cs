@@ -365,15 +365,15 @@ public class ProjectionOptions: DaemonSettings
 
     internal void AssertValidity(DocumentStore store)
     {
-        var duplicateNames = All
-            .GroupBy(x => x.ProjectionName)
+        var duplicateNames = All.Select(x => x.ProjectionName).Concat(_subscriptions.Select(x => x.SubscriptionName))
+            .GroupBy(x => x)
             .Where(x => x.Count() > 1)
-            .Select(group => $"Duplicate projection name '{group.Key}': {group.Select(x => x.ToString()).Join(", ")}")
+            .Select(group => $"Duplicate projection or subscription name '{group.Key}': {group.Select(x => x.ToString()).Join(", ")}")
             .ToArray();
 
         if (duplicateNames.Any())
         {
-            throw new InvalidOperationException(duplicateNames.Join("; "));
+            throw new DuplicateSubscriptionNamesException(duplicateNames.Join("; "));
         }
 
         var messages = All.Concat(_liveAggregateSources.Values)
@@ -422,5 +422,12 @@ public class ProjectionOptions: DaemonSettings
     internal IEnumerable<Type> AllPublishedTypes()
     {
         return All.Where(x => x.Lifecycle != ProjectionLifecycle.Live).SelectMany(x => x.PublishedTypes()).Distinct();
+    }
+}
+
+public class DuplicateSubscriptionNamesException: MartenException
+{
+    public DuplicateSubscriptionNamesException(string message) : base(message)
+    {
     }
 }
