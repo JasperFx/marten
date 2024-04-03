@@ -14,7 +14,7 @@ public class cannot_register_duplicate_projections_by_name
     [Fact]
     public void cannot_register_duplicate_projection_names()
     {
-        Should.Throw<InvalidOperationException>(() =>
+        Should.Throw<DuplicateSubscriptionNamesException>(() =>
         {
             DocumentStore.For(opts =>
             {
