@@ -328,7 +328,7 @@ public class ProjectionOptions: DaemonSettings
 
     public void Subscribe(ISubscription subscription, Action<ISubscriptionOptions>? configure = null)
     {
-        var wrapper = new SubscriptionServiceWrapper(subscription);
+        var wrapper = new SubscriptionWrapper(subscription);
         configure?.Invoke(wrapper);
 
         _subscriptions.Add(wrapper);
