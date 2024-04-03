@@ -111,7 +111,7 @@ public sealed class SessionOptions
         };
 
         return OpenTelemetryOptions.TrackConnectionEvents
-            ? new EventTracingConnectionLifetime(innerConnectionLifetime, OpenTelemetryOptions,
+            ? new EventTracingConnectionLifetime(innerConnectionLifetime,
                 StartConnectionActivity(Activity.Current, tags))
             : innerConnectionLifetime;
     }
