@@ -8,15 +8,19 @@ using Marten.Events.Projections;
 
 namespace Marten.Subscriptions;
 
-public abstract class SubscriptionBase: EventFilterable, ISubscription, ISubscriptionSource
+public interface ISubscriptionOptions : IEventFilterable
+{
+    string SubscriptionName { get; set; }
+    uint SubscriptionVersion { get; set; }
+    AsyncOptions Options { get; }
+}
+
+public abstract class SubscriptionBase: EventFilterable, ISubscription, ISubscriptionSource, ISubscriptionOptions
 {
     protected SubscriptionBase()
     {
         SubscriptionName = GetType().NameInCode();
     }
-
-    public string SubscriptionName { get; set; }
-    public uint SubscriptionVersion { get; set; } = 1;
 
     public virtual ValueTask DisposeAsync()
     {
@@ -24,12 +28,12 @@ public abstract class SubscriptionBase: EventFilterable, ISubscription, ISubscri
     }
     public abstract Task ProcessEventsAsync(EventRange page, IDocumentOperations operations, CancellationToken cancellationToken);
 
-    public AsyncOptions Options { get; } = new();
-
     ISubscription ISubscriptionSource.Build(DocumentStore store)
     {
-        return this;
+        return buildSubscription(store);
     }
+
+    protected virtual ISubscription buildSubscription(DocumentStore store) => this;
 
     IReadOnlyList<AsyncProjectionShard> ISubscriptionSource.AsyncProjectionShards(DocumentStore store)
     {
@@ -40,4 +44,8 @@ public abstract class SubscriptionBase: EventFilterable, ISubscription, ISubscri
             IncludeArchivedEvents = false
         } };
     }
+
+    public string SubscriptionName { get; set; }
+    public uint SubscriptionVersion { get; set; } = 1;
+    public AsyncOptions Options { get; } = new();
 }

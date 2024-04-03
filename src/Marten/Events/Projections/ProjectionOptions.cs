@@ -326,6 +326,14 @@ public class ProjectionOptions: DaemonSettings
         _subscriptions.Add(subscription);
     }
 
+    public void Subscribe(ISubscription subscription, Action<ISubscriptionOptions>? configure = null)
+    {
+        var wrapper = new SubscriptionServiceWrapper(subscription);
+        configure?.Invoke(wrapper);
+
+        _subscriptions.Add(wrapper);
+    }
+
     internal bool Any()
     {
         return All.Any() || _subscriptions.Any();

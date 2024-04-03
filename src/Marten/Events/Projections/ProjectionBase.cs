@@ -2,10 +2,35 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Marten.Events.Daemon;
 
 namespace Marten.Events.Projections;
 
-public abstract class EventFilterable
+public interface IEventFilterable
+{
+    /// <summary>
+    ///     Short hand syntax to tell Marten that this projection takes in the event type T
+    ///     This is not mandatory, but can be used to optimize the asynchronous projections
+    ///     to create an "allow list" in the IncludedEventTypes collection
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    void IncludeType<T>();
+
+    /// <summary>
+    ///     Limit the events processed by this projection to only streams
+    ///     marked with the given streamType.
+    ///     ONLY APPLIED TO ASYNCHRONOUS PROJECTIONS OR SUBSCRIPTIONS
+    /// </summary>
+    /// <param name="streamType"></param>
+    void FilterIncomingEventsOnStreamType(Type streamType);
+
+    /// <summary>
+    /// Should archived events be considered for this filtered set? Default is false.
+    /// </summary>
+    bool IncludeArchivedEvents { get; set; }
+}
+
+public abstract class EventFilterable: IEventFilterable
 {
     /// <summary>
     ///     Optimize this projection within the Async Daemon by
@@ -50,6 +75,7 @@ public abstract class EventFilterable
     /// Should archived events be considered for this filtered set? Default is false.
     /// </summary>
     public bool IncludeArchivedEvents { get; set; }
+
 
 }
 
