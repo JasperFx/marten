@@ -43,13 +43,14 @@ public class subscription_configuration : OneOffConfigurationsContext
     [Fact]
     public void validate_on_uniqueness_of_shard_names_with_subscriptions_and_projections()
     {
-        StoreOptions(opts =>
+        Should.Throw<DuplicateSubscriptionNamesException>(() =>
         {
-            opts.Projections.Subscribe(new FakeSubscription());
-            opts.Projections.Add(new FakeProjection(), ProjectionLifecycle.Async, projectionName: "Fake");
+            StoreOptions(opts =>
+            {
+                opts.Projections.Subscribe(new FakeSubscription());
+                opts.Projections.Add(new FakeProjection(), ProjectionLifecycle.Async, projectionName: "Fake");
+            });
         });
-
-        theStore.ShouldNotBeNull();
     }
 }
 
