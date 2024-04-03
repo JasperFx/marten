@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
 using Marten.Storage;
+using Marten.Subscriptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -10,7 +11,7 @@ namespace Marten.Events.Daemon.Internals;
 
 public interface IAgentFactory
 {
-    IReadOnlyList<ISubscriptionAgent> BuildAgentsForProjection(string projectionName, MartenDatabase database);
+    IReadOnlyList<ISubscriptionAgent> BuildAgents(string projectionOrSubscriptionName, MartenDatabase database);
     IReadOnlyList<ISubscriptionAgent> BuildAllProjectionAgents(MartenDatabase database);
     ISubscriptionAgent BuildProjectionAgentForShard(string shardName, MartenDatabase database);
 }
@@ -25,12 +26,12 @@ public class AgentFactory : IAgentFactory
         _store = store;
     }
 
-    public IReadOnlyList<ISubscriptionAgent> BuildAgentsForProjection(string projectionName, MartenDatabase database)
+    public IReadOnlyList<ISubscriptionAgent> BuildAgents(string projectionOrSubscriptionName, MartenDatabase database)
     {
-        if (!_store.Options.Projections.TryFindProjection(projectionName, out var projection))
+        if (!_store.Options.Projections.TryFindProjection(projectionOrSubscriptionName, out var projection))
         {
-            throw new ArgumentOutOfRangeException(nameof(projectionName),
-                $"No registered projection matches the name '{projectionName}'. Available names are {_store.Options.Projections.AllProjectionNames().Join(", ")}");
+            throw new ArgumentOutOfRangeException(nameof(projectionOrSubscriptionName),
+                $"No registered projection matches the name '{projectionOrSubscriptionName}'. Available names are {_store.Options.Projections.AllProjectionNames().Join(", ")}");
         }
 
         var shards = projection.AsyncProjectionShards(_store);
@@ -42,11 +43,28 @@ public class AgentFactory : IAgentFactory
         var logger = _store.Options.LogFactory?.CreateLogger<SubscriptionAgent>() ?? _store.Options.DotNetLogger
             ?? NullLogger<SubscriptionAgent>.Instance;
 
-        var execution = new GroupedProjectionExecution(shard, _store, database, logger);
-        var loader = new EventLoader(_store, database, shard, shard.Source.Options);
-        var wrapped = new ResilientEventLoader(_store.Options.ResiliencePipeline, loader);
+        if (shard.Source != null)
+        {
+            var execution = new GroupedProjectionExecution(shard, _store, database, logger);
+            var options = shard.Source.Options;
+            var loader = new EventLoader(_store, database, shard, options);
+            var wrapped = new ResilientEventLoader(_store.Options.ResiliencePipeline, loader);
 
-        return new SubscriptionAgent(shard.Name, shard.Source.Options, wrapped, execution, database.Tracker, logger);
+            return new SubscriptionAgent(shard.Name, options, wrapped, execution, database.Tracker, logger);
+        }
+
+        if (shard.SubscriptionSource != null)
+        {
+            var subscription = shard.SubscriptionSource.Build(_store);
+            var execution = new SubscriptionExecution(shard.Name, subscription, _store, database, logger);
+            var options = shard.SubscriptionSource.Options;
+            var loader = new EventLoader(_store, database, shard, options);
+            var wrapped = new ResilientEventLoader(_store.Options.ResiliencePipeline, loader);
+
+            return new SubscriptionAgent(shard.Name, options, wrapped, execution, database.Tracker, logger);
+        }
+
+        throw new ArgumentOutOfRangeException(nameof(shard), "This shard has neither a subscription nor projection");
     }
 
     public IReadOnlyList<ISubscriptionAgent> BuildAllProjectionAgents(MartenDatabase database)
