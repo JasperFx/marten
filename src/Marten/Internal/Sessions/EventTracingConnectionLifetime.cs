@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Services;
 using Npgsql;
 
 namespace Marten.Internal.Sessions;
@@ -21,19 +20,13 @@ internal class EventTracingConnectionLifetime:
     private const string MartenBatchPagesExecutionFailed = "MartenBatchPagesExecutionFailed";
 
     private readonly IConnectionLifetime _innerConnectionLifetime;
-    private readonly OpenTelemetryOptions _openTelemetryOptions;
     private readonly Activity _databaseActivity;
 
-    public EventTracingConnectionLifetime(IConnectionLifetime innerConnectionLifetime, OpenTelemetryOptions openTelemetryOptions, Activity databaseActivity)
+    public EventTracingConnectionLifetime(IConnectionLifetime innerConnectionLifetime, Activity databaseActivity)
     {
         if (innerConnectionLifetime == null)
         {
             throw new ArgumentNullException(nameof(innerConnectionLifetime));
-        }
-
-        if (openTelemetryOptions == null)
-        {
-            throw new ArgumentNullException(nameof(openTelemetryOptions));
         }
 
         if (databaseActivity == null)
@@ -44,7 +37,6 @@ internal class EventTracingConnectionLifetime:
         Logger = innerConnectionLifetime.Logger;
         CommandTimeout = innerConnectionLifetime.CommandTimeout;
         _innerConnectionLifetime = innerConnectionLifetime;
-        _openTelemetryOptions = openTelemetryOptions;
         _databaseActivity = databaseActivity;
     }
 
@@ -62,10 +54,7 @@ internal class EventTracingConnectionLifetime:
     public int CommandTimeout { get; }
     public int Execute(NpgsqlCommand cmd)
     {
-        if (_openTelemetryOptions.TrackConnectionEvents)
-        {
             _databaseActivity.AddEvent(new ActivityEvent(MartenCommandExecutionStarted));
-        }
 
         try
         {
@@ -73,21 +62,15 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-            if (_openTelemetryOptions.TrackConnectionEvents)
-            {
                 RecordException(e, MartenCommandExecutionFailed);
-            }
 
-            throw;
+                throw;
         }
     }
 
     public Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new CancellationToken())
     {
-        if (_openTelemetryOptions.TrackConnectionEvents)
-        {
             _databaseActivity.AddEvent(new ActivityEvent("Database command execution started"));
-        }
 
         try
         {
@@ -95,76 +78,56 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-            if (_openTelemetryOptions.TrackConnectionEvents)
-            {
                 RecordException(e, MartenCommandExecutionFailed);
-            }
 
-            throw;
+                throw;
         }
     }
 
     public DbDataReader ExecuteReader(NpgsqlCommand command)
     {
-        if (_openTelemetryOptions.TrackConnectionEvents)
-        {
             _databaseActivity.AddEvent(new ActivityEvent("Database command execution started"));
-        }
 
-        try
+            try
         {
             return _innerConnectionLifetime.ExecuteReader(command);
         }
         catch (Exception e)
         {
-            if (_openTelemetryOptions.TrackConnectionEvents)
-            {
                 RecordException(e, MartenCommandExecutionFailed);
-            }
-
+            
             throw;
         }
     }
 
     public Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default)
     {
-        if (_openTelemetryOptions.TrackConnectionEvents)
-        {
             _databaseActivity.AddEvent(new ActivityEvent("Database command execution started"));
-        }
 
-        try
+    try
         {
             return _innerConnectionLifetime.ExecuteReaderAsync(command, token);
         }
         catch (Exception e)
         {
-            if (_openTelemetryOptions.TrackConnectionEvents)
-            {
                 RecordException(e, MartenCommandExecutionFailed);
-            }
 
-            throw;
+                throw;
         }
     }
 
     public DbDataReader ExecuteReader(NpgsqlBatch batch)
     {
-        if (_openTelemetryOptions.TrackConnectionEvents)
-        {
             _databaseActivity.AddEvent(new ActivityEvent(MartenBatchExecutionStarted));
-        }
 
-        try
+            try
         {
             return _innerConnectionLifetime.ExecuteReader(batch);
         }
         catch (Exception e)
         {
-            if (_openTelemetryOptions.TrackConnectionEvents)
-            {
                 RecordException(e, MartenBatchExecutionFailed);
-            }
+            
 
             throw;
         }
@@ -172,10 +135,7 @@ internal class EventTracingConnectionLifetime:
 
     public Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, CancellationToken token = default)
     {
-        if (_openTelemetryOptions.TrackConnectionEvents)
-        {
-            _databaseActivity.AddEvent(new ActivityEvent(MartenBatchExecutionStarted));
-        }
+            _databaseActivity.AddEvent(new ActivityEvent(MartenBatchExecutionStarted)); 
 
         try
         {
@@ -183,73 +143,52 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-            if (_openTelemetryOptions.TrackConnectionEvents)
-            {
                 RecordException(e, MartenBatchExecutionFailed);
-            }
 
-            throw;
+                throw;
         }
     }
 
     public void ExecuteBatchPages(IReadOnlyList<OperationPage> pages, List<Exception> exceptions)
     {
-        if (_openTelemetryOptions.TrackConnectionEvents)
-        {
             _databaseActivity.AddEvent(new ActivityEvent(MartenBatchPagesExecutionStarted));
-        }
 
-        try
+            try
         {
             _innerConnectionLifetime.ExecuteBatchPages(pages, exceptions);
         }
         catch (AggregateException e)
         {
-            if (_openTelemetryOptions.TrackConnectionEvents)
-            {
                 RecordExceptions(e, MartenBatchPagesExecutionFailed);
-            }
-
+            
             throw;
         }
         catch (Exception e)
         {
-            if (_openTelemetryOptions.TrackConnectionEvents)
-            {
                 RecordException(e, MartenBatchPagesExecutionFailed);
-            }
 
-            throw;
+                throw;
         }
     }
 
     public Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages, List<Exception> exceptions, CancellationToken token)
     {
-        if (_openTelemetryOptions.TrackConnectionEvents)
-        {
             _databaseActivity.AddEvent(new ActivityEvent(MartenBatchPagesExecutionStarted));
-        }
 
-        try
+            try
         {
             return _innerConnectionLifetime.ExecuteBatchPagesAsync(pages, exceptions, token);
         }
         catch (AggregateException e)
         {
-            if (_openTelemetryOptions.TrackConnectionEvents)
-            {
                 RecordExceptions(e, MartenBatchPagesExecutionFailed);
-            }
 
-            throw;
+                throw;
         }
         catch (Exception e)
         {
-            if (_openTelemetryOptions.TrackConnectionEvents)
-            {
                 RecordException(e, MartenBatchPagesExecutionFailed);
-            }
-
+            
             throw;
         }
     }
