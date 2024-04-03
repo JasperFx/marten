@@ -24,6 +24,12 @@ public class EventRange
         SequenceCeiling = ceiling;
     }
 
+
+    /// <summary>
+    /// Runtime listeners that may be registered by a subscription or IProjection
+    /// </summary>
+    public List<IChangeListener> Listeners { get; } = new();
+
     /// <summary>
     ///     Identifies the projection shard consuming this event range
     /// </summary>

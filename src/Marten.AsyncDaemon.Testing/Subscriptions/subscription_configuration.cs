@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
+using Marten.Services;
 using Marten.Subscriptions;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -76,7 +77,29 @@ public class FakeSubscription: SubscriptionBase
 
     public override Task ProcessEventsAsync(EventRange page, IDocumentOperations operations, CancellationToken cancellationToken)
     {
+        page.Listeners.Add(Listener);
         EventsEncountered.AddRange(page.Events);
         return Task.CompletedTask;
     }
+
+    public FakeChangeListener Listener { get; } = new();
+}
+
+public class FakeChangeListener: IChangeListener
+{
+    public Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
+    {
+        AfterCommitWasCalled = true;
+        return Task.CompletedTask;
+    }
+
+    public bool AfterCommitWasCalled { get; set; }
+
+    public Task BeforeCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
+    {
+        BeforeCommitWasCalled = true;
+        return Task.CompletedTask;
+    }
+
+    public bool BeforeCommitWasCalled { get; set; }
 }

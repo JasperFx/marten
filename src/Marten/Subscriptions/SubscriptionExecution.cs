@@ -57,11 +57,10 @@ internal class SubscriptionExecution: ISubscriptionExecution
 
             await _subscription.ProcessEventsAsync(range, session, _cancellation.Token).ConfigureAwait(false);
 
+
             // Polly is already around the basic retry here, so anything that gets past this
             // probably deserves a full circuit break
             await session.ExecuteBatchAsync(batch, _cancellation.Token).ConfigureAwait(false);
-
-            await batch.WaitForCompletion().ConfigureAwait(false);
 
             range.Agent.MarkSuccess(range.SequenceCeiling);
 
