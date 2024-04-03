@@ -15,6 +15,7 @@ using Marten.Internal;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Sessions;
+using Marten.Subscriptions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -795,6 +796,44 @@ public static class MartenServiceCollectionExtensions
 
             return this;
         }
+
+
+        /// <summary>
+        /// Add a subscription to this Marten store that will require resolution
+        /// from the application's IoC container in order to function correctly
+        /// </summary>
+        /// <param name="lifetime">IoC service lifetime</param>
+        /// <param name="configure">Optional configuration of the subscription within Marten</param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public MartenConfigurationExpression AddSubscriptionWithServices<T>(
+            ServiceLifetime lifetime, Action<ISubscriptionOptions>? configure = null) where T : class, ISubscription
+        {
+            switch (lifetime)
+            {
+                case ServiceLifetime.Singleton:
+                    Services.AddSingleton<T>();
+                    Services.ConfigureMarten((s, opts) =>
+                    {
+                        var subscription = s.GetRequiredService<T>();
+                        opts.Projections.Subscribe(subscription, configure);
+                    });
+                    break;
+
+                case ServiceLifetime.Transient:
+                case ServiceLifetime.Scoped:
+                    Services.AddScoped<T>();
+                    Services.ConfigureMarten((s, opts) =>
+                    {
+                        var subscription = new ScopedSubscriptionServiceWrapper<T>(s);
+                        opts.Projections.Subscribe(subscription, configure);
+                    });
+                    break;
+            }
+
+            return this;
+        }
+
     }
 
     internal class AddInitialData<T, TData>: IConfigureMarten<T> where T : IDocumentStore where TData : IInitialData

@@ -1,16 +1,17 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core;
 using Marten.Events.Daemon.Internals;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marten.Subscriptions;
 
-internal class SubscriptionServiceWrapper: SubscriptionBase
+internal class SubscriptionWrapper: SubscriptionBase
 {
     private readonly ISubscription _subscription;
 
-    public SubscriptionServiceWrapper(ISubscription subscription)
+    public SubscriptionWrapper(ISubscription subscription)
     {
         _subscription = subscription;
         SubscriptionName = _subscription.GetType().Name;
@@ -34,10 +35,27 @@ internal class ScopedSubscriptionServiceWrapper<T>: SubscriptionBase where T : I
 
     public override async Task ProcessEventsAsync(EventRange page, IDocumentOperations operations, CancellationToken cancellationToken)
     {
-        using var scope = _provider.CreateScope();
+        var scope = _provider.CreateScope();
         var sp = scope.ServiceProvider;
-        var subscription = sp.GetRequiredService<T>();
 
-        await subscription.ProcessEventsAsync(page, operations, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var subscription = sp.GetRequiredService<T>();
+
+            await subscription.ProcessEventsAsync(page, operations, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            if (scope is IAsyncDisposable ad)
+            {
+                await ad.DisposeAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                scope.SafeDispose();
+            }
+        }
+
+
     }
 }
