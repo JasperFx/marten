@@ -10,7 +10,7 @@ using Npgsql;
 
 namespace Marten.Internal.Sessions;
 
-internal class EventTracingConnectionLifetime :
+internal class EventTracingConnectionLifetime:
     IConnectionLifetime
 {
     private const string MartenCommandExecutionStarted = "MartenCommandExecutionStarted";
@@ -75,7 +75,7 @@ internal class EventTracingConnectionLifetime :
         {
             if (_openTelemetryOptions.TrackConnectionEvents)
             {
-                _databaseActivity.AddEvent(new ActivityEvent(MartenCommandExecutionFailed, DateTimeOffset.UtcNow, new ActivityTagsCollection(new KeyValuePair<string, object>[] {new KeyValuePair<string, object>("ExceptionType", e.GetType()) })));
+                RecordException(e, MartenCommandExecutionFailed);
             }
 
             throw;
@@ -97,11 +97,7 @@ internal class EventTracingConnectionLifetime :
         {
             if (_openTelemetryOptions.TrackConnectionEvents)
             {
-                _databaseActivity.AddEvent(new ActivityEvent(MartenCommandExecutionFailed, DateTimeOffset.UtcNow,
-                    new ActivityTagsCollection(new[]
-                    {
-                        new KeyValuePair<string, object>("ExceptionType", e.GetType())
-                    })));
+                RecordException(e, MartenCommandExecutionFailed);
             }
 
             throw;
@@ -123,11 +119,7 @@ internal class EventTracingConnectionLifetime :
         {
             if (_openTelemetryOptions.TrackConnectionEvents)
             {
-                _databaseActivity.AddEvent(new ActivityEvent(MartenCommandExecutionFailed, DateTimeOffset.UtcNow,
-                    new ActivityTagsCollection(new[]
-                    {
-                        new KeyValuePair<string, object>("ExceptionType", e.GetType())
-                    })));
+                RecordException(e, MartenCommandExecutionFailed);
             }
 
             throw;
@@ -143,17 +135,13 @@ internal class EventTracingConnectionLifetime :
 
         try
         {
-return _innerConnectionLifetime.ExecuteReaderAsync(command, token);
+            return _innerConnectionLifetime.ExecuteReaderAsync(command, token);
         }
         catch (Exception e)
         {
             if (_openTelemetryOptions.TrackConnectionEvents)
             {
-                _databaseActivity.AddEvent(new ActivityEvent(MartenCommandExecutionFailed, DateTimeOffset.UtcNow,
-                    new ActivityTagsCollection(new[]
-                    {
-                        new KeyValuePair<string, object>("ExceptionType", e.GetType())
-                    })));
+                RecordException(e, MartenCommandExecutionFailed);
             }
 
             throw;
@@ -175,7 +163,7 @@ return _innerConnectionLifetime.ExecuteReaderAsync(command, token);
         {
             if (_openTelemetryOptions.TrackConnectionEvents)
             {
-                _databaseActivity.AddEvent(new ActivityEvent(MartenBatchExecutionFailed, DateTimeOffset.UtcNow, new ActivityTagsCollection(new [] { new KeyValuePair<string, object>("ExceptionType", e.GetType())})));
+                RecordException(e, MartenBatchExecutionFailed);
             }
 
             throw;
@@ -197,7 +185,7 @@ return _innerConnectionLifetime.ExecuteReaderAsync(command, token);
         {
             if (_openTelemetryOptions.TrackConnectionEvents)
             {
-                _databaseActivity.AddEvent(new ActivityEvent(MartenBatchExecutionFailed, DateTimeOffset.UtcNow, new ActivityTagsCollection(new[] { new KeyValuePair<string, object>("ExceptionType", e.GetType()) })));
+                RecordException(e, MartenBatchExecutionFailed);
             }
 
             throw;
@@ -219,12 +207,7 @@ return _innerConnectionLifetime.ExecuteReaderAsync(command, token);
         {
             if (_openTelemetryOptions.TrackConnectionEvents)
             {
-                var innerExceptionTypes = e.InnerExceptions.Select(t => t.GetType());
-                _databaseActivity.AddEvent(new ActivityEvent(MartenBatchPagesExecutionFailed, DateTimeOffset.UtcNow,
-                    new ActivityTagsCollection(new[]
-                    {
-                        new KeyValuePair<string, object>("ExceptionTypes", innerExceptionTypes)
-                    })));
+                RecordExceptions(e, MartenBatchPagesExecutionFailed);
             }
 
             throw;
@@ -233,11 +216,7 @@ return _innerConnectionLifetime.ExecuteReaderAsync(command, token);
         {
             if (_openTelemetryOptions.TrackConnectionEvents)
             {
-                _databaseActivity.AddEvent(new ActivityEvent(MartenBatchPagesExecutionFailed, DateTimeOffset.UtcNow,
-                    new ActivityTagsCollection(new[]
-                    {
-                        new KeyValuePair<string, object>("ExceptionType", e.GetType())
-                    })));
+                RecordException(e, MartenBatchPagesExecutionFailed);
             }
 
             throw;
@@ -259,12 +238,7 @@ return _innerConnectionLifetime.ExecuteReaderAsync(command, token);
         {
             if (_openTelemetryOptions.TrackConnectionEvents)
             {
-                var innerExceptionTypes = e.InnerExceptions.Select(t => t.GetType());
-                _databaseActivity.AddEvent(new ActivityEvent(MartenBatchPagesExecutionFailed, DateTimeOffset.UtcNow,
-                    new ActivityTagsCollection(new[]
-                    {
-                        new KeyValuePair<string, object>("ExceptionTypes", innerExceptionTypes)
-                    })));
+                RecordExceptions(e, MartenBatchPagesExecutionFailed);
             }
 
             throw;
@@ -273,14 +247,26 @@ return _innerConnectionLifetime.ExecuteReaderAsync(command, token);
         {
             if (_openTelemetryOptions.TrackConnectionEvents)
             {
-                _databaseActivity.AddEvent(new ActivityEvent(MartenBatchPagesExecutionFailed, DateTimeOffset.UtcNow,
-                    new ActivityTagsCollection(new[]
-                    {
-                        new KeyValuePair<string, object>("ExceptionType", e.GetType())
-                    })));
+                RecordException(e, MartenBatchPagesExecutionFailed);
             }
 
             throw;
         }
+    }
+
+    private void RecordException(Exception exceptionToRecord, string eventName, IEnumerable<KeyValuePair<string, object?>>? tags = null)
+    {
+        var tagsToAdd = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>("ExceptionType", exceptionToRecord.GetType()) });
+        _databaseActivity.AddEvent(new ActivityEvent(eventName, DateTimeOffset.UtcNow, tagsToAdd));
+    }
+
+    private void RecordExceptions(AggregateException exceptionsToRecord, string eventName)
+    {
+        var innerExceptionTypes = exceptionsToRecord.InnerExceptions.Select(t => t.GetType());
+        var tagsToAdd = new ActivityTagsCollection(new[]
+        {
+            new KeyValuePair<string, object>("ExceptionTypes", innerExceptionTypes)
+        });
+        _databaseActivity.AddEvent(new ActivityEvent(eventName, DateTimeOffset.UtcNow, tagsToAdd));
     }
 }
