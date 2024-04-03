@@ -210,27 +210,42 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     public async Task PostUpdateAsync(IMartenSession session)
     {
-        if (_mode == ShardExecutionMode.Continuous && _settings.AsyncListeners.Any())
+        if (shouldApplyListeners())
         {
-            var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
-            foreach (var listener in _settings.AsyncListeners)
-            {
-                await listener.AfterCommitAsync((IDocumentSession)session, unitOfWorkData, _token)
-                    .ConfigureAwait(false);
-            }
+            return;
         }
+
+        var listeners = _settings.AsyncListeners.Concat(Range.Listeners).ToArray();
+        if (!listeners.Any()) return;
+
+        var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
+        foreach (var listener in listeners)
+        {
+            await listener.AfterCommitAsync((IDocumentSession)session, unitOfWorkData, _token)
+                .ConfigureAwait(false);
+        }
+    }
+
+    private bool shouldApplyListeners()
+    {
+        return _mode == ShardExecutionMode.Rebuild || !Range.Events.Any();
     }
 
     public async Task PreUpdateAsync(IMartenSession session)
     {
-        if (_mode == ShardExecutionMode.Continuous && _settings.AsyncListeners.Any())
+        if (shouldApplyListeners())
         {
-            var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
-            foreach (var listener in _settings.AsyncListeners)
-            {
-                await listener.BeforeCommitAsync((IDocumentSession)session, unitOfWorkData, _token)
-                    .ConfigureAwait(false);
-            }
+            return;
+        }
+
+        var listeners = _settings.AsyncListeners.Concat(Range.Listeners).ToArray();
+        if (!listeners.Any()) return;
+
+        var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
+        foreach (var listener in _settings.AsyncListeners)
+        {
+            await listener.BeforeCommitAsync((IDocumentSession)session, unitOfWorkData, _token)
+                .ConfigureAwait(false);
         }
     }
 
