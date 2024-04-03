@@ -6,8 +6,8 @@ namespace Marten.Internal.OpenTelemetry;
 internal static class MartenTracing
 {
     // See https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/messaging/ for more information
-    public static string MartenTenantId = "MartenTentantId";
-    public static string MartenCorelationId = "MartenCorelationId";
+    public const string MartenTenantId = "MartenTenantId";
+    public const string MartenCorelationId = "MartenCorelationId";
 
     internal static ActivitySource ActivitySource { get; } = new(
         "Marten",
