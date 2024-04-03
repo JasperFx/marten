@@ -4,6 +4,7 @@ using System.Linq;
 using Marten.Events.Archiving;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
+using Marten.Subscriptions;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Daemon;
@@ -18,6 +19,14 @@ public class AsyncProjectionShard
         Name = new ShardName(source.ProjectionName, shardName, source.ProjectionVersion);
         Source = source;
     }
+
+    public AsyncProjectionShard(string shardName, ISubscriptionSource source)
+    {
+        Name = new ShardName(source.SubscriptionName, shardName, source.SubscriptionVersion);
+        SubscriptionSource = source;
+    }
+
+    public ISubscriptionSource SubscriptionSource { get; }
 
     public AsyncProjectionShard(IProjectionSource source): this(ShardName.All,
         source)

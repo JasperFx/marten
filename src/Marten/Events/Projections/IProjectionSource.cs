@@ -9,6 +9,7 @@ using Weasel.Core;
 
 namespace Marten.Events.Projections;
 
+
 public interface IProjectionSource: IReadOnlyProjectionData
 {
     AsyncOptions Options { get; }

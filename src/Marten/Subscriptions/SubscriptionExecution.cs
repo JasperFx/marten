@@ -11,16 +11,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Subscriptions;
 
-public interface ISubscription : IAsyncDisposable
-{
-    Task ProcessEventsAsync(EventRange page, IDocumentOperations operations, CancellationToken cancellationToken);
-}
-
-public interface ISubscriptionSource
-{
-
-}
-
 internal class SubscriptionExecution: ISubscriptionExecution
 {
     private readonly ISubscription _subscription;
@@ -118,7 +108,7 @@ internal class SubscriptionExecution: ISubscriptionExecution
         await _executionBlock.Completion.ConfigureAwait(false);
 #if NET8_0_OR_GREATER
         await _cancellation.CancelAsync().ConfigureAwait(false);
-        #else
+#else
         _cancellation.Cancel();
 #endif
     }
