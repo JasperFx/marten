@@ -15,7 +15,7 @@ env:
   config: Release
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-  node_version: 18.x
+  node_version: 20.x
 
 jobs:
   build-and-test-code:
@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.node_version }}
 

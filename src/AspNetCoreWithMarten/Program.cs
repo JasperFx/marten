@@ -1,5 +1,6 @@
 using AspNetCoreWithMarten;
 using Marten;
+using Marten.Services.Json;
 using Microsoft.AspNetCore.Mvc;
 using Oakton;
 using Weasel.Core;
@@ -18,6 +19,9 @@ builder.Services.AddMarten(options =>
 {
     // Establish the connection string to your Marten database
     options.Connection(builder.Configuration.GetConnectionString("Marten")!);
+
+    // Specify that we want to use STJ as our serializer
+    options.UseSystemTextJsonForSerialization();
 
     // If we're running in development mode, let Marten just take care
     // of all necessary schema building and patching behind the scenes
