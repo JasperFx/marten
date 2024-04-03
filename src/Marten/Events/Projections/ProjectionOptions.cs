@@ -8,6 +8,7 @@ using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Fetching;
 using Marten.Exceptions;
+using Marten.Subscriptions;
 
 namespace Marten.Events.Projections;
 
@@ -42,6 +43,8 @@ public class ProjectionOptions: DaemonSettings
     private ImHashMap<Type, object> _liveAggregators = ImHashMap<Type, object>.Empty;
 
     internal readonly IFetchPlanner[] _builtInPlanners = [new InlineFetchPlanner(), new AsyncFetchPlanner(), new LiveFetchPlanner()];
+
+    private readonly List<ISubscriptionSource> _subscriptions = new();
 
     internal ProjectionOptions(StoreOptions options)
     {
@@ -85,15 +88,9 @@ public class ProjectionOptions: DaemonSettings
 
     internal IList<IProjectionSource> All { get; } = new List<IProjectionSource>();
 
-    internal bool DoesPersistAggregate(Type aggregateType)
-    {
-        return All.OfType<IAggregateProjection>().Any(x =>
-            x.AggregateType == aggregateType && x.Lifecycle != ProjectionLifecycle.Live);
-    }
-
     internal bool HasAnyAsyncProjections()
     {
-        return All.Any(x => x.Lifecycle == ProjectionLifecycle.Async);
+        return All.Any(x => x.Lifecycle == ProjectionLifecycle.Async) || _subscriptions.Any();
     }
 
     internal IEnumerable<Type> AllAggregateTypes()
@@ -320,9 +317,18 @@ public class ProjectionOptions: DaemonSettings
         All.Add(projection);
     }
 
+    /// <summary>
+    /// Add a new event subscription to this store
+    /// </summary>
+    /// <param name="subscription"></param>
+    public void Subscribe(ISubscriptionSource subscription)
+    {
+        _subscriptions.Add(subscription);
+    }
+
     internal bool Any()
     {
-        return All.Any();
+        return All.Any() || _subscriptions.Any();
     }
 
     internal ILiveAggregator<T> AggregatorFor<T>() where T : class
@@ -381,6 +387,7 @@ public class ProjectionOptions: DaemonSettings
             return All
                 .Where(x => x.Lifecycle == ProjectionLifecycle.Async)
                 .SelectMany(x => x.AsyncProjectionShards(store))
+                .Concat(_subscriptions.SelectMany(x => x.AsyncProjectionShards(store)))
                 .ToDictionary(x => x.Name.Identity);
         });
 
@@ -395,7 +402,6 @@ public class ProjectionOptions: DaemonSettings
     {
         return _asyncShards.Value.Values.ToList();
     }
-
     internal bool TryFindAsyncShard(string projectionOrShardName, out AsyncProjectionShard shard)
     {
         return _asyncShards.Value.TryGetValue(projectionOrShardName, out shard);

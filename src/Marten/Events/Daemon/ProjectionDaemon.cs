@@ -146,7 +146,7 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
             await StartHighWaterDetectionAsync().ConfigureAwait(false);
         }
 
-        var agent = _factory.BuildAgentForShard(shardName, Database);
+        var agent = _factory.BuildProjectionAgentForShard(shardName, Database);
         var didStart = await tryStartAgentAsync(agent, ShardExecutionMode.Continuous).ConfigureAwait(false);
 
         if (!didStart && agent is IAsyncDisposable d)
@@ -225,7 +225,7 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
             await StartHighWaterDetectionAsync().ConfigureAwait(false);
         }
 
-        var agents = _factory.BuildAllAgents(Database);
+        var agents = _factory.BuildAllProjectionAgents(Database);
         foreach (var agent in agents)
         {
             await tryStartAgentAsync(agent, ShardExecutionMode.Continuous).ConfigureAwait(false);

@@ -11,8 +11,8 @@ namespace Marten.Events.Daemon.Internals;
 public interface IAgentFactory
 {
     IReadOnlyList<ISubscriptionAgent> BuildAgentsForProjection(string projectionName, MartenDatabase database);
-    IReadOnlyList<ISubscriptionAgent> BuildAllAgents(MartenDatabase database);
-    ISubscriptionAgent BuildAgentForShard(string shardName, MartenDatabase database);
+    IReadOnlyList<ISubscriptionAgent> BuildAllProjectionAgents(MartenDatabase database);
+    ISubscriptionAgent BuildProjectionAgentForShard(string shardName, MartenDatabase database);
 }
 
 
@@ -49,13 +49,13 @@ public class AgentFactory : IAgentFactory
         return new SubscriptionAgent(shard.Name, shard.Source.Options, wrapped, execution, database.Tracker, logger);
     }
 
-    public IReadOnlyList<ISubscriptionAgent> BuildAllAgents(MartenDatabase database)
+    public IReadOnlyList<ISubscriptionAgent> BuildAllProjectionAgents(MartenDatabase database)
     {
         var shards = _store.Options.Projections.AllShards();
         return shards.Select(x => buildAgentForShard(database, x)).ToList();
     }
 
-    public ISubscriptionAgent BuildAgentForShard(string shardName, MartenDatabase database)
+    public ISubscriptionAgent BuildProjectionAgentForShard(string shardName, MartenDatabase database)
     {
         var shard = _store.Options.Projections.AllShards().FirstOrDefault(x => x.Name.Identity == shardName);
         if (shard == null)
