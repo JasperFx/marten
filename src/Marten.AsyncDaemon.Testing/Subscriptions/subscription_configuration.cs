@@ -2,15 +2,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten;
 using Marten.Events;
 using Marten.Events.Daemon.Internals;
+using Marten.Events.Projections;
 using Marten.Subscriptions;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace EventSourcingTests.Subscriptions;
+namespace Marten.AsyncDaemon.Testing.Subscriptions;
 
 public class subscription_configuration : OneOffConfigurationsContext
 {
@@ -37,6 +37,31 @@ public class subscription_configuration : OneOffConfigurationsContext
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAgentAsync("Fake:All", CancellationToken.None);
+    }
+
+    [Fact]
+    public void validate_on_uniqueness_of_shard_names_with_subscriptions_and_projections()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Subscribe(new FakeSubscription());
+            opts.Projections.Add(new FakeProjection(), ProjectionLifecycle.Async, projectionName: "Fake");
+        });
+
+        theStore.ShouldNotBeNull();
+    }
+}
+
+public class FakeProjection: IProjection
+{
+    public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
+    {
+        throw new System.NotImplementedException();
     }
 }
 
