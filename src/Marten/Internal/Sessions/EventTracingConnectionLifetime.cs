@@ -50,7 +50,7 @@ internal class EventTracingConnectionLifetime:
     public int CommandTimeout { get; }
     public int Execute(NpgsqlCommand cmd)
     {
-            _databaseActivity?.AddEvent(new ActivityEvent(MartenCommandExecutionStarted));
+        _databaseActivity?.AddEvent(new ActivityEvent(MartenCommandExecutionStarted));
 
         try
         {
@@ -58,15 +58,15 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-                RecordException(e, MartenCommandExecutionFailed);
+            RecordException(e, MartenCommandExecutionFailed);
 
-                throw;
+            throw;
         }
     }
 
     public Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new CancellationToken())
     {
-            _databaseActivity?.AddEvent(new ActivityEvent("Database command execution started"));
+        _databaseActivity?.AddEvent(new ActivityEvent(MartenCommandExecutionStarted));
 
         try
         {
@@ -74,56 +74,55 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-                RecordException(e, MartenCommandExecutionFailed);
+            RecordException(e, MartenCommandExecutionFailed);
 
-                throw;
+            throw;
         }
     }
 
     public DbDataReader ExecuteReader(NpgsqlCommand command)
     {
-            _databaseActivity?.AddEvent(new ActivityEvent("Database command execution started"));
+        _databaseActivity?.AddEvent(new ActivityEvent(MartenCommandExecutionStarted));
 
-            try
+        try
         {
             return _innerConnectionLifetime.ExecuteReader(command);
         }
         catch (Exception e)
         {
-                RecordException(e, MartenCommandExecutionFailed);
-            
+            RecordException(e, MartenCommandExecutionFailed);
+
             throw;
         }
     }
 
     public Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default)
     {
-            _databaseActivity?.AddEvent(new ActivityEvent("Database command execution started"));
+        _databaseActivity?.AddEvent(new ActivityEvent(MartenCommandExecutionStarted));
 
-    try
+        try
         {
             return _innerConnectionLifetime.ExecuteReaderAsync(command, token);
         }
         catch (Exception e)
         {
-                RecordException(e, MartenCommandExecutionFailed);
+            RecordException(e, MartenCommandExecutionFailed);
 
-                throw;
+            throw;
         }
     }
 
     public DbDataReader ExecuteReader(NpgsqlBatch batch)
     {
-            _databaseActivity?.AddEvent(new ActivityEvent(MartenBatchExecutionStarted));
+        _databaseActivity?.AddEvent(new ActivityEvent(MartenBatchExecutionStarted));
 
-            try
+        try
         {
             return _innerConnectionLifetime.ExecuteReader(batch);
         }
         catch (Exception e)
         {
-                RecordException(e, MartenBatchExecutionFailed);
-            
+            RecordException(e, MartenBatchExecutionFailed);
 
             throw;
         }
@@ -131,7 +130,7 @@ internal class EventTracingConnectionLifetime:
 
     public Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, CancellationToken token = default)
     {
-            _databaseActivity?.AddEvent(new ActivityEvent(MartenBatchExecutionStarted)); 
+        _databaseActivity?.AddEvent(new ActivityEvent(MartenBatchExecutionStarted));
 
         try
         {
@@ -139,57 +138,57 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-                RecordException(e, MartenBatchExecutionFailed);
+            RecordException(e, MartenBatchExecutionFailed);
 
-                throw;
+            throw;
         }
     }
 
     public void ExecuteBatchPages(IReadOnlyList<OperationPage> pages, List<Exception> exceptions)
     {
-            _databaseActivity?.AddEvent(new ActivityEvent(MartenBatchPagesExecutionStarted));
+        _databaseActivity?.AddEvent(new ActivityEvent(MartenBatchPagesExecutionStarted));
 
-            try
+        try
         {
             _innerConnectionLifetime.ExecuteBatchPages(pages, exceptions);
         }
         catch (AggregateException e)
         {
-                RecordExceptions(e, MartenBatchPagesExecutionFailed);
-            
+            RecordExceptions(e, MartenBatchPagesExecutionFailed);
+
             throw;
         }
         catch (Exception e)
         {
-                RecordException(e, MartenBatchPagesExecutionFailed);
+            RecordException(e, MartenBatchPagesExecutionFailed);
 
-                throw;
+            throw;
         }
     }
 
     public Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages, List<Exception> exceptions, CancellationToken token)
     {
-            _databaseActivity?.AddEvent(new ActivityEvent(MartenBatchPagesExecutionStarted));
+        _databaseActivity?.AddEvent(new ActivityEvent(MartenBatchPagesExecutionStarted));
 
-            try
+        try
         {
             return _innerConnectionLifetime.ExecuteBatchPagesAsync(pages, exceptions, token);
         }
         catch (AggregateException e)
         {
-                RecordExceptions(e, MartenBatchPagesExecutionFailed);
+            RecordExceptions(e, MartenBatchPagesExecutionFailed);
 
-                throw;
+            throw;
         }
         catch (Exception e)
         {
-                RecordException(e, MartenBatchPagesExecutionFailed);
-            
+            RecordException(e, MartenBatchPagesExecutionFailed);
+
             throw;
         }
     }
 
-    private void RecordException(Exception exceptionToRecord, string eventName, IEnumerable<KeyValuePair<string, object?>>? tags = null)
+    private void RecordException(Exception exceptionToRecord, string eventName)
     {
         var tagsToAdd = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>("ExceptionType", exceptionToRecord.GetType()) });
         _databaseActivity?.AddEvent(new ActivityEvent(eventName, DateTimeOffset.UtcNow, tagsToAdd));
@@ -200,7 +199,7 @@ internal class EventTracingConnectionLifetime:
         var innerExceptionTypes = exceptionsToRecord.InnerExceptions.Select(t => t.GetType());
         var tagsToAdd = new ActivityTagsCollection(new[]
         {
-            new KeyValuePair<string, object>("ExceptionTypes", innerExceptionTypes)
+            new KeyValuePair<string, object?>("ExceptionTypes", innerExceptionTypes)
         });
         _databaseActivity?.AddEvent(new ActivityEvent(eventName, DateTimeOffset.UtcNow, tagsToAdd));
     }
