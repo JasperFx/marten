@@ -50,7 +50,7 @@ public class ProviderGraph: IProviderGraph
         }
     }
 
-    private DocumentProvider<T> CreateDocumentProvider<T>() where T : notnull
+    internal DocumentProvider<T> CreateDocumentProvider<T>() where T : notnull
     {
         var documentType = typeof(T);
 
