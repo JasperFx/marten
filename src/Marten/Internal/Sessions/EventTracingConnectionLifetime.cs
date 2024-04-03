@@ -13,13 +13,14 @@ namespace Marten.Internal.Sessions;
 internal class EventTracingConnectionLifetime:
     IConnectionLifetime
 {
-    private const string MartenCommandExecutionStarted = "MartenCommandExecutionStarted";
-    private const string MartenCommandExecutionFailed = "MartenCommandExecutionFailed";
-    private const string MartenBatchExecutionStarted = "MartenBatchExecutionStarted";
-    private const string MartenBatchExecutionFailed = "MartenBatchExecutionFailed";
-    private const string MartenBatchPagesExecutionStarted = "MartenBatchPagesExecutionStarted";
-    private const string MartenBatchPagesExecutionFailed = "MartenBatchPagesExecutionFailed";
-
+    private const string MartenCommandExecutionStarted = "marten.command.execution.started";
+    private const string MartenCommandExecutionFailed = "marten.command.execution.failed";
+    private const string MartenBatchExecutionStarted = "marten.batch.execution.started";
+    private const string MartenBatchExecutionFailed = "marten.batch.execution.failed";
+    private const string MartenBatchPagesExecutionStarted = "marten.batch.pages.execution.started";
+    private const string MartenBatchPagesExecutionFailed = "marten.batch.pages.execution.failed";
+    private const string MartenCommandFailedExceptionType = "marten.command.failed.exception.type";
+    private const string MartenCommandFailedExceptionTypes = "marten.command.failed.exception.types";
     private readonly IConnectionLifetime _innerConnectionLifetime;
     private readonly Activity? _databaseActivity;
 
@@ -190,17 +191,14 @@ internal class EventTracingConnectionLifetime:
 
     private void RecordException(Exception exceptionToRecord, string eventName)
     {
-        var tagsToAdd = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>("ExceptionType", exceptionToRecord.GetType()) });
+        var tagsToAdd = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(MartenCommandFailedExceptionType, exceptionToRecord.GetType()) });
         _databaseActivity?.AddEvent(new ActivityEvent(eventName, DateTimeOffset.UtcNow, tagsToAdd));
     }
 
     private void RecordExceptions(AggregateException exceptionsToRecord, string eventName)
     {
         var innerExceptionTypes = exceptionsToRecord.InnerExceptions.Select(t => t.GetType());
-        var tagsToAdd = new ActivityTagsCollection(new[]
-        {
-            new KeyValuePair<string, object?>("ExceptionTypes", innerExceptionTypes)
-        });
+        var tagsToAdd = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(MartenCommandFailedExceptionTypes, innerExceptionTypes) });
         _databaseActivity?.AddEvent(new ActivityEvent(eventName, DateTimeOffset.UtcNow, tagsToAdd));
     }
 }
