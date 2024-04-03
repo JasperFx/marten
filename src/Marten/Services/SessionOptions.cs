@@ -11,7 +11,6 @@ using Marten.Internal.OpenTelemetry;
 using Marten.Internal.Sessions;
 using Marten.Storage;
 using Npgsql;
-using static Marten.Internal.OpenTelemetry.MartenTracing;
 using IsolationLevel = System.Data.IsolationLevel;
 
 namespace Marten.Services;
@@ -105,9 +104,11 @@ public sealed class SessionOptions
 
         if (OpenTelemetryOptions.TrackConnectionEvents && MartenTracing.ActivitySource.HasListeners())
         {
-            var tags = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(MartenTenantId, Tenant.TenantId) });
+            var currentActivity = Activity.Current ?? null;
+            var tags = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(MartenTracing.MartenTenantId, Tenant.TenantId) });
+
             return new EventTracingConnectionLifetime(innerConnectionLifetime,
-                StartConnectionActivity(Activity?.Current, tags));
+                MartenTracing.StartConnectionActivity(currentActivity, tags));
         }
 
         return innerConnectionLifetime;
