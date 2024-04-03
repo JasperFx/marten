@@ -495,8 +495,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     }
 
     /// <summary>
-    ///     Use the default serialization (ilmerged Newtonsoft.Json) with Enum values
-    ///     stored as either integers or strings
+    ///     Configure the default serializer settings
     /// </summary>
     /// <param name="enumStorage"></param>
     /// <param name="casing">Casing style to be used in serialization</param>

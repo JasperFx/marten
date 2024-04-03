@@ -33,6 +33,9 @@ builder.Services.AddMarten(options =>
     // Establish the connection string to your Marten database
     options.Connection(builder.Configuration.GetConnectionString("Marten")!);
 
+    // Specify that we want to use STJ as our serializer
+    options.UseSystemTextJsonForSerialization();
+
     // If we're running in development mode, let Marten just take care
     // of all necessary schema building and patching behind the scenes
     if (builder.Environment.IsDevelopment())
@@ -41,7 +44,7 @@ builder.Services.AddMarten(options =>
     }
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L14-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L15-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 See [Bootstrapping with HostBuilder](/configuration/hostbuilder) for more information and options about this integration.
@@ -52,7 +55,7 @@ Use of the `.AddMarten` integration is not mandatory, see [Creating a standalone
 
 ## Postgres
 
-The next step is to get access to a PostgreSQL **9.6+** database schema. If you want to let Marten build database schema objects on the fly at development time,
+The next step is to get access to a PostgreSQL **12+** database schema. If you want to let Marten build database schema objects on the fly at development time,
 make sure that your user account has rights to execute `CREATE TABLE/FUNCTION` statements.
 
 Marten uses the [Npgsql](http://www.npgsql.org) library to access PostgreSQL from .NET, so you'll likely want to read their [documentation on connection string syntax](http://www.npgsql.org/doc/connection-string-parameters.html).
@@ -118,7 +121,7 @@ app.MapGet("/user/{id:guid}",
     return await session.LoadAsync<User>(id, ct);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L40-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_userendpoints' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L44-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_userendpoints' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip INFO

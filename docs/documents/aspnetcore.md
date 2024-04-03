@@ -4,7 +4,7 @@
 For a little more context, see the blog post [Efficient Web Services with Marten V4](https://jeremydmiller.com/2021/09/28/efficient-web-services-with-marten-v4/).
 :::
 
-In Marten V4, there is a small new addon that adds helpers for ASP.Net Core development, expressly
+Marten has a small addon that adds helpers for ASP.Net Core development, expressly
 the ability to very efficiently _stream_ the raw JSON of persisted documents straight to an HTTP response
 without every having to waste time with deserialization/serialization or even reading the data into a JSON
 string in memory.
