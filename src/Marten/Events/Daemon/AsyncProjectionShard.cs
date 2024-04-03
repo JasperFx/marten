@@ -38,6 +38,7 @@ public class AsyncProjectionShard
 
     public bool IncludeArchivedEvents { get; set; }
 
+    // TODO -- reuse this somewhere
     public IEnumerable<ISqlFragment> BuildFilters(DocumentStore store)
     {
         if (EventTypes.Any() && !EventTypes.Any(x => x.IsAbstract || x.IsInterface))
