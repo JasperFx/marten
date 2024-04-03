@@ -121,7 +121,7 @@ public partial class ProjectionDaemon
 
         if (token.IsCancellationRequested) return;
 
-        var agents = _factory.BuildAgentsForProjection(source.ProjectionName, Database);
+        var agents = _factory.BuildAgents(source.ProjectionName, Database);
 
         foreach (var agent in agents)
         {

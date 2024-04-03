@@ -95,7 +95,7 @@ public static class TestingExtensions
         if (projections.Count < projectionsCount)
         {
             throw new TimeoutException(
-                $"The projection shards (in total of {projectionsCount}) haven't been started within the timeout span");
+                $"The projection shards (in total of {projectionsCount}) haven't been completely started within the timeout span");
         }
 
         if (cancellationSource.IsCancellationRequested)
