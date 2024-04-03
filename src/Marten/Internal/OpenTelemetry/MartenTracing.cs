@@ -13,13 +13,13 @@ internal static class MartenTracing
         "Marten",
         typeof(MartenTracing).Assembly.GetName().Version!.ToString());
 
-    public static Activity? StartConnectionActivity(Activity? parentActivity =null, IEnumerable<KeyValuePair<string, object?>>? tags =null)
+    public static Activity? StartConnectionActivity(Activity? parentActivity = null, IEnumerable<KeyValuePair<string, object?>>? tags = null)
     {
         return StartActivity("connection", parentActivity, tags);
     }
 
-    public static Activity StartActivity(string spanName, Activity? parentActivity =null, IEnumerable<KeyValuePair<string, object?>>? tags =null, ActivityKind activityKind =ActivityKind.Internal)
+    public static Activity StartActivity(string spanName, Activity? parentActivity = null, IEnumerable<KeyValuePair<string, object?>>? tags = null, ActivityKind activityKind = ActivityKind.Internal)
     {
-        return ActivitySource.CreateActivity(spanName, activityKind, parentActivity?.ParentId, tags);
+        return ActivitySource.StartActivity(spanName, activityKind, parentActivity?.ParentId, tags);
     }
 }
