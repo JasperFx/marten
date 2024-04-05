@@ -157,6 +157,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         _execution.Mode = ShardExecutionMode.Rebuild;
         ErrorOptions = request.ErrorHandling;
         _runtime = request.Runtime;
+        LastCommitted = request.Floor; // Force it to start here!
 
         try
         {

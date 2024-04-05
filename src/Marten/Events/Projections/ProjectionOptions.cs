@@ -424,7 +424,7 @@ public class ProjectionOptions: DaemonSettings
 
     internal string[] AllProjectionNames()
     {
-        return All.Select(x => $"'{x.ProjectionName}'").ToArray();
+        return All.Select(x => $"'{x.ProjectionName}'").Concat(_subscriptions.Select(x => $"'{x.SubscriptionName}'")).ToArray();
     }
 
     internal IEnumerable<Type> AllPublishedTypes()

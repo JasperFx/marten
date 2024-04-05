@@ -28,13 +28,16 @@ public class AgentFactory : IAgentFactory
 
     public IReadOnlyList<ISubscriptionAgent> BuildAgents(string projectionOrSubscriptionName, MartenDatabase database)
     {
-        if (!_store.Options.Projections.TryFindProjection(projectionOrSubscriptionName, out var projection))
+        var shards = _store.Options.Projections.AllShards()
+            .Where(x => x.Name.ProjectionName == projectionOrSubscriptionName)
+            .ToArray();
+
+        if (!shards.Any())
         {
             throw new ArgumentOutOfRangeException(nameof(projectionOrSubscriptionName),
                 $"No registered projection matches the name '{projectionOrSubscriptionName}'. Available names are {_store.Options.Projections.AllProjectionNames().Join(", ")}");
         }
 
-        var shards = projection.AsyncProjectionShards(_store);
         return shards.Select(shard => buildAgentForShard(database, shard)).ToList();
     }
 

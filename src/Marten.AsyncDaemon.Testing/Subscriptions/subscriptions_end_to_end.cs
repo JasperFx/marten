@@ -59,6 +59,70 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task run_events_through_and_rewind_from_scratch()
+    {
+        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+
+        var events1 = new object[] { new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events2 = new object[] { new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events3 = new object[] { new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events4 = new object[] { new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+
+        theSession.Events.StartStream(Guid.NewGuid(), events1);
+        theSession.Events.StartStream(Guid.NewGuid(), events2);
+        theSession.Events.StartStream(Guid.NewGuid(), events3);
+        theSession.Events.StartStream(Guid.NewGuid(), events4);
+
+        await theSession.SaveChangesAsync();
+
+        await theStore.WaitForNonStaleProjectionDataAsync(20.Seconds());
+
+        theSubscription.EventsEncountered.Clear();
+
+        await daemon.RewindSubscriptionAsync("Fake", CancellationToken.None);
+
+        await theStore.WaitForNonStaleProjectionDataAsync(30.Seconds());
+
+        theSubscription.EventsEncountered.Count.ShouldBe(16);
+
+        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All"));
+        progress.ShouldBe(16);
+    }
+
+    [Fact]
+    public async Task run_events_through_and_rewind_from_middle()
+    {
+        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+
+        var events1 = new object[] { new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events2 = new object[] { new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events3 = new object[] { new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events4 = new object[] { new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+
+        theSession.Events.StartStream(Guid.NewGuid(), events1);
+        theSession.Events.StartStream(Guid.NewGuid(), events2);
+        theSession.Events.StartStream(Guid.NewGuid(), events3);
+        theSession.Events.StartStream(Guid.NewGuid(), events4);
+
+        await theSession.SaveChangesAsync();
+
+        await theStore.WaitForNonStaleProjectionDataAsync(20.Seconds());
+
+        theSubscription.EventsEncountered.Clear();
+
+        await daemon.RewindSubscriptionAsync("Fake", CancellationToken.None, 8);
+
+        await theStore.WaitForNonStaleProjectionDataAsync(20.Seconds());
+
+        theSubscription.EventsEncountered.Count.ShouldBe(8);
+
+        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All"));
+        progress.ShouldBe(16);
+    }
+
+    [Fact]
     public async Task listener_registered_by_a_subscription_is_called()
     {
         using var daemon = await theStore.BuildProjectionDaemonAsync();

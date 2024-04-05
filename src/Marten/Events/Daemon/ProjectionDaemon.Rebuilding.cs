@@ -86,24 +86,11 @@ public partial class ProjectionDaemon
     {
         await Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
+        var subscriptionName = source.ProjectionName;
         Logger.LogInformation("Starting to rebuild Projection {ProjectionName}@{DatabaseIdentifier}",
-            source.ProjectionName, Database.Identifier);
+            subscriptionName, Database.Identifier);
 
-        var running = CurrentAgents().Where(x => x.Name.ProjectionName == source.ProjectionName).ToArray();
-
-        await _semaphore.WaitAsync(_cancellation.Token).ConfigureAwait(false);
-
-        try
-        {
-            foreach (var agent in running)
-            {
-                await agent.HardStopAsync().ConfigureAwait(false);
-            }
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
+        await stopRunningAgents(subscriptionName).ConfigureAwait(false);
 
         if (token.IsCancellationRequested) return;
 
@@ -121,7 +108,7 @@ public partial class ProjectionDaemon
 
         if (token.IsCancellationRequested) return;
 
-        var agents = _factory.BuildAgents(source.ProjectionName, Database);
+        var agents = _factory.BuildAgents(subscriptionName, Database);
 
         foreach (var agent in agents)
         {
@@ -164,6 +151,25 @@ public partial class ProjectionDaemon
         }
     }
 
+    private async Task stopRunningAgents(string subscriptionName)
+    {
+        var running = CurrentAgents().Where(x => x.Name.ProjectionName == subscriptionName).ToArray();
+
+        await _semaphore.WaitAsync(_cancellation.Token).ConfigureAwait(false);
+
+        try
+        {
+            foreach (var agent in running)
+            {
+                await agent.HardStopAsync().ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
 
     private async Task teardownExistingProjectionProgress(IProjectionSource source, CancellationToken token,
         IReadOnlyList<ISubscriptionAgent> agents)
@@ -192,5 +198,53 @@ public partial class ProjectionDaemon
         }
 
         await _highWater.CheckNowAsync().ConfigureAwait(false);
+    }
+
+    public async Task RewindSubscriptionAsync(string subscriptionName, CancellationToken token, long? sequenceFloor = 0,
+        DateTimeOffset? timestamp = null)
+    {
+        if (timestamp.HasValue)
+        {
+            sequenceFloor = await Database.FindEventStoreFloorAtTimeAsync(timestamp.Value, token).ConfigureAwait(false);
+            if (sequenceFloor == null) return;
+        }
+
+        if (_cancellation.IsCancellationRequested) return;
+
+        await stopRunningAgents(subscriptionName).ConfigureAwait(false);
+
+        if (_cancellation.IsCancellationRequested) return;
+
+        var agents = _factory.BuildAgents(subscriptionName, Database);
+
+        var sessionOptions = SessionOptions.ForDatabase(Database);
+        sessionOptions.AllowAnyTenant = true;
+        await using var session = _store.LightweightSession(sessionOptions);
+
+        foreach (var agent in agents)
+        {
+            if (sequenceFloor.Value == 0)
+            {
+                session.QueueSqlCommand($"delete from {_store.Options.EventGraph.ProgressionTable} where name = ?", agent.Name.Identity);
+            }
+            else
+            {
+                session.QueueSqlCommand($"update {_store.Options.EventGraph.ProgressionTable} set last_seq_id = ? where name = ?", sequenceFloor, agent.Name.Identity);
+            }
+        }
+
+        // Rewind previous DeadLetterEvents because you're going to replay them all anyway
+        session.DeleteWhere<DeadLetterEvent>(x => x.ProjectionName == subscriptionName && x.EventSequence >= sequenceFloor);
+
+        await session.SaveChangesAsync(token).ConfigureAwait(false);
+
+        foreach (var agent in agents)
+        {
+            Tracker.MarkAsRestarted(agent.Name);
+            var errorOptions = _store.Options.Projections.RebuildErrors;
+            await agent.StartAsync(new SubscriptionExecutionRequest(sequenceFloor.Value, ShardExecutionMode.Continuous,
+                errorOptions, this)).ConfigureAwait(false);
+            agent.MarkHighWater(HighWaterMark());
+        }
     }
 }
