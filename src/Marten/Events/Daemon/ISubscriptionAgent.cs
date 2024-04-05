@@ -23,6 +23,17 @@ public interface ISubscriptionAgent
     void MarkSuccess(long processedCeiling);
     void MarkHighWater(long sequence);
 
+    /// <summary>
+    /// The current error handling configuration for this projection or subscription
+    /// </summary>
+    ErrorHandlingOptions ErrorOptions { get; }
+
+    /// <summary>
+    /// Tell the governing subscription agent that there was a critical error that
+    /// should pause the subscription or projection
+    /// </summary>
+    /// <param name="ex"></param>
+    /// <returns></returns>
     Task ReportCriticalFailureAsync(Exception ex);
 
     long Position { get; }
@@ -33,6 +44,12 @@ public interface ISubscriptionAgent
 
     Task StartAsync(SubscriptionExecutionRequest request);
 
+    /// <summary>
+    /// Record a dead letter event for the failure to process the current
+    /// event
+    /// </summary>
+    /// <param name="event"></param>
+    /// <returns></returns>
     Task RecordDeadLetterEventAsync(DeadLetterEvent @event);
 
     DateTimeOffset? PausedTime { get; }

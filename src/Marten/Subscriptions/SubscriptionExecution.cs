@@ -55,8 +55,10 @@ internal class SubscriptionExecution: ISubscriptionExecution
                     Tenant = new Tenant(Tenancy.DefaultTenantId, _database)
                 });
 
+
             await _subscription.ProcessEventsAsync(range, session, _cancellation.Token).ConfigureAwait(false);
 
+            await batch.WaitForCompletion().ConfigureAwait(false);
 
             // Polly is already around the basic retry here, so anything that gets past this
             // probably deserves a full circuit break
