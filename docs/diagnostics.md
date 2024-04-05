@@ -89,7 +89,7 @@ public interface IDocumentSessionListener
     void DocumentAddedForStorage(object id, object document);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IDocumentSessionListener.cs#L8-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_idocumentsessionlistener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IDocumentSessionListener.cs#L27-L103' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_idocumentsessionlistener' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can build and inject your own listeners by adding them to the `StoreOptions` object you use to configure a `DocumentStore`:

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Marten.Events.Daemon.Progress;
@@ -23,12 +24,6 @@ public class EventRange
         ShardName = shardName;
         SequenceCeiling = ceiling;
     }
-
-
-    /// <summary>
-    /// Runtime listeners that may be registered by a subscription or IProjection
-    /// </summary>
-    public List<IChangeListener> Listeners { get; } = new();
 
     /// <summary>
     ///     Identifies the projection shard consuming this event range
@@ -58,6 +53,7 @@ public class EventRange
     public int Size => Events?.Count ?? (int)(SequenceCeiling - SequenceFloor);
 
     // TODO -- make this come through the constructor later
+    [Obsolete("This property will be removed in Marten 8 in favor of passing in the ISubscriptionController")]
     public ISubscriptionAgent Agent { get; set; }
 
     protected bool Equals(EventRange other)

@@ -56,8 +56,9 @@ internal class SubscriptionExecution: ISubscriptionExecution
                 });
 
 
-            await _subscription.ProcessEventsAsync(range, session, _cancellation.Token).ConfigureAwait(false);
+            var listener = await _subscription.ProcessEventsAsync(range, range.Agent, session, _cancellation.Token).ConfigureAwait(false);
 
+            batch.Listeners.Add(listener);
             await batch.WaitForCompletion().ConfigureAwait(false);
 
             // Polly is already around the basic retry here, so anything that gets past this
