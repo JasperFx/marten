@@ -421,6 +421,12 @@ public class ProjectionOptions: DaemonSettings
         return source != null;
     }
 
+    internal bool TryFindSubscription(string projectionName, out ISubscriptionSource source)
+    {
+        source = _subscriptions.FirstOrDefault(x => x.SubscriptionName.EqualsIgnoreCase(projectionName));
+        return source != null;
+    }
+
 
     internal string[] AllProjectionNames()
     {
