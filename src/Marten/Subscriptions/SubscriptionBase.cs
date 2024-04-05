@@ -28,7 +28,8 @@ public abstract class SubscriptionBase: EventFilterable, ISubscription, ISubscri
     {
         return new ValueTask();
     }
-    public abstract Task ProcessEventsAsync(EventRange page, IDocumentOperations operations, CancellationToken cancellationToken);
+    public abstract Task<IChangeListener> ProcessEventsAsync(EventRange page, ISubscriptionController controller,
+        IDocumentOperations operations, CancellationToken cancellationToken);
 
     ISubscription ISubscriptionSource.Build(DocumentStore store)
     {

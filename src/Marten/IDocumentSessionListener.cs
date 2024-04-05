@@ -5,6 +5,25 @@ using Marten.Services;
 
 namespace Marten;
 
+public class NullChangeListener: IChangeListener
+{
+    public static IChangeListener Instance { get; } = new NullChangeListener();
+
+    private NullChangeListener()
+    {
+    }
+
+    public Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task BeforeCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
+    {
+        return Task.CompletedTask;
+    }
+}
+
 #region sample_IDocumentSessionListener
 
 public interface IChangeListener

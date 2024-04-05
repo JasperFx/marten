@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Services;
@@ -76,11 +77,11 @@ public class FakeSubscription: SubscriptionBase
 
     public List<IEvent> EventsEncountered { get; } = new List<IEvent>();
 
-    public override Task ProcessEventsAsync(EventRange page, IDocumentOperations operations, CancellationToken cancellationToken)
+    public override Task<IChangeListener> ProcessEventsAsync(EventRange page, ISubscriptionController controller,
+        IDocumentOperations operations, CancellationToken cancellationToken)
     {
-        page.Listeners.Add(Listener);
         EventsEncountered.AddRange(page.Events);
-        return Task.CompletedTask;
+        return Task.FromResult((IChangeListener)Listener);
     }
 
     public FakeChangeListener Listener { get; } = new();

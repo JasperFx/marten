@@ -276,9 +276,11 @@ public class SimpleSubscription: ISubscription
         return new ValueTask();
     }
 
-    public Task ProcessEventsAsync(EventRange page, IDocumentOperations operations, CancellationToken cancellationToken)
+    public Task<IChangeListener> ProcessEventsAsync(EventRange page, ISubscriptionController controller,
+        IDocumentOperations operations,
+        CancellationToken cancellationToken)
     {
         EventsEncountered[Instance].AddRange(page.Events);
-        return Task.CompletedTask;
+        return Task.FromResult((IChangeListener)NullChangeListener.Instance);
     }
 }

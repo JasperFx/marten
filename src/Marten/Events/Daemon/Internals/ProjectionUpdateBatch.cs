@@ -31,6 +31,8 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         get => _session ?? throw new InvalidOperationException("Session already released");
     }
 
+    public List<IChangeListener> Listeners { get; } = new();
+
     public bool IsDisposed()
     {
         return _session == null;
@@ -215,7 +217,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             return;
         }
 
-        var listeners = _settings.AsyncListeners.Concat(Range.Listeners).ToArray();
+        var listeners = _settings.AsyncListeners.Concat(Listeners).ToArray();
         if (!listeners.Any()) return;
 
         var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
@@ -238,7 +240,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             return;
         }
 
-        var listeners = _settings.AsyncListeners.Concat(Range.Listeners).ToArray();
+        var listeners = _settings.AsyncListeners.Concat(Listeners).ToArray();
         if (!listeners.Any()) return;
 
         var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));

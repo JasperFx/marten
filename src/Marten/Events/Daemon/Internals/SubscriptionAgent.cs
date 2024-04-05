@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
 using Marten.Events.Projections;
+using Marten.Exceptions;
 using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon.Internals;
@@ -53,6 +54,12 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     public long LastCommitted { get; internal set; }
 
     public long HighWaterMark { get; internal set; }
+
+    public async Task ReportCriticalFailureAsync(Exception ex, long lastProcessed)
+    {
+        await ReportCriticalFailureAsync(ex).ConfigureAwait(false);
+        MarkSuccess(lastProcessed);
+    }
 
     public async Task ReportCriticalFailureAsync(Exception ex)
     {
@@ -173,6 +180,12 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     public Task RecordDeadLetterEventAsync(DeadLetterEvent @event)
     {
         return _runtime.RecordDeadLetterEventAsync(@event);
+    }
+
+    public Task RecordDeadLetterEventAsync(IEvent @event, Exception ex)
+    {
+        var dlEvent = new DeadLetterEvent(@event, Name, new ApplyEventException(@event, ex));
+        return _runtime.RecordDeadLetterEventAsync(dlEvent);
     }
 
     public DateTimeOffset? PausedTime { get; private set; }
