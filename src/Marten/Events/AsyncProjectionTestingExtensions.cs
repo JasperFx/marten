@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
-using Marten.Events.Projections;
 using Marten.Storage;
 
 namespace Marten.Events;
@@ -89,7 +88,7 @@ public static class TestingExtensions
                 break;
             }
 
-            await Task.Delay(100.Milliseconds(), cancellationSource.Token).ConfigureAwait(false);
+            await Task.Delay(250.Milliseconds(), cancellationSource.Token).ConfigureAwait(false);
         } while (true);
 
         if (projections.Count < projectionsCount)

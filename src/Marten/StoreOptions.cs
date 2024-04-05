@@ -112,7 +112,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
         NpgsqlDataSourceFactory = new DefaultNpgsqlDataSourceFactory(connectionString =>
         {
             var builder = new NpgsqlDataSourceBuilder(connectionString);
-            if (LogFactory != null)
+            if (LogFactory != null && !DisableNpgsqlLogging)
             {
                 builder.UseLoggerFactory(LogFactory);
             }
@@ -120,6 +120,11 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
             return builder;
         });
     }
+
+    /// <summary>
+    /// Npgsql logging is absurdly noisy, you may want to disable the logging. Default is false
+    /// </summary>
+    public bool DisableNpgsqlLogging { get; set; }
 
     /// <summary>
     /// Configure and override the Polly error handling policies for this DocumentStore

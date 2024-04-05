@@ -18,7 +18,6 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     public ShardName Name { get; }
     private readonly CancellationTokenSource _cancellation = new();
     private readonly ActionBlock<Command> _commandBlock;
-    private ErrorHandlingOptions _errorOptions = new();
     private IDaemonRuntime _runtime = new NulloDaemonRuntime();
 
     public SubscriptionAgent(ShardName name, AsyncOptions options, IEventLoader loader,
@@ -43,6 +42,8 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     public string ProjectionShardIdentity { get; private set; }
 
     public CancellationToken CancellationToken => _cancellation.Token;
+
+    public ErrorHandlingOptions ErrorOptions { get; private set; } = new();
 
     // Making the setter internal so the test harness can override it
     // It's naughty, will make some people get very upset, and
@@ -131,7 +132,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     {
         Mode = request.Mode;
         _execution.Mode = request.Mode;
-        _errorOptions = request.ErrorHandling;
+        ErrorOptions = request.ErrorHandling;
         _runtime = request.Runtime;
         await _execution.EnsureStorageExists().ConfigureAwait(false);
         _commandBlock.Post(Command.Started(_tracker.HighWaterMark, request.Floor));
@@ -147,7 +148,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         Mode = ShardExecutionMode.Rebuild;
         _rebuild = new TaskCompletionSource();
         _execution.Mode = ShardExecutionMode.Rebuild;
-        _errorOptions = request.ErrorHandling;
+        ErrorOptions = request.ErrorHandling;
         _runtime = request.Runtime;
 
         try
@@ -265,7 +266,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
             HighWater = HighWaterMark,
             BatchSize = _options.BatchSize,
             Floor = LastEnqueued,
-            ErrorOptions = _errorOptions,
+            ErrorOptions = ErrorOptions,
             Runtime = _runtime,
             Name = Name
         };

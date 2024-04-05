@@ -13,6 +13,8 @@ public interface ISubscriptionOptions : IEventFilterable
     string SubscriptionName { get; set; }
     uint SubscriptionVersion { get; set; }
     AsyncOptions Options { get; }
+
+
 }
 
 public abstract class SubscriptionBase: EventFilterable, ISubscription, ISubscriptionSource, ISubscriptionOptions
@@ -47,5 +49,5 @@ public abstract class SubscriptionBase: EventFilterable, ISubscription, ISubscri
 
     public string SubscriptionName { get; set; }
     public uint SubscriptionVersion { get; set; } = 1;
-    public AsyncOptions Options { get; } = new();
+    public AsyncOptions Options { get; protected set; } = new();
 }
