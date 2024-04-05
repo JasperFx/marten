@@ -9,6 +9,12 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Daemon;
 
+public enum ShardRole
+{
+    Subscription,
+    Projection
+}
+
 /// <summary>
 ///     Definition of a single projection shard to be executed asynchronously
 /// </summary>
@@ -25,6 +31,8 @@ public class AsyncProjectionShard
         Name = new ShardName(source.SubscriptionName, shardName, source.SubscriptionVersion);
         SubscriptionSource = source;
     }
+
+    public ShardRole Role => Source != null ? ShardRole.Projection : ShardRole.Subscription;
 
     public ISubscriptionSource SubscriptionSource { get; }
 
