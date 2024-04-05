@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,12 +11,33 @@ using Marten.Events.Daemon.Progress;
 using Marten.Linq.QueryHandlers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using NpgsqlTypes;
 using Weasel.Postgresql;
 
 namespace Marten.Storage;
 
 public partial class MartenDatabase
 {
+    public async Task<long?> FindEventStoreFloorAtTimeAsync(DateTimeOffset timestamp, CancellationToken token)
+    {
+        var sql =
+            $"select seq_id from {Options.Events.DatabaseSchemaName}.mt_events where timestamp >= :timestamp order by seq_id limit 1";
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        await using var conn = CreateConnection();
+
+        try
+        {
+            await conn.OpenAsync(token).ConfigureAwait(false);
+            var raw = await conn.CreateCommand(sql).With("timestamp", timestamp.ToUniversalTime(), NpgsqlDbType.TimestampTz).ExecuteScalarAsync(token).ConfigureAwait(false);
+            return raw is DBNull ? null : (long?)raw;
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
     /// <summary>
     ///     Fetch the current size of the event store tables, including the current value
     ///     of the event sequence number
