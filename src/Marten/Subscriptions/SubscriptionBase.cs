@@ -17,6 +17,9 @@ public interface ISubscriptionOptions : IEventFilterable
 
 }
 
+/// <summary>
+/// Base class for custom subscriptions for Marten event data
+/// </summary>
 public abstract class SubscriptionBase: EventFilterable, ISubscription, ISubscriptionSource, ISubscriptionOptions
 {
     protected SubscriptionBase()
@@ -28,6 +31,15 @@ public abstract class SubscriptionBase: EventFilterable, ISubscription, ISubscri
     {
         return new ValueTask();
     }
+
+    /// <summary>
+    /// How to process events
+    /// </summary>
+    /// <param name="page"></param>
+    /// <param name="controller"></param>
+    /// <param name="operations"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public abstract Task<IChangeListener> ProcessEventsAsync(EventRange page, ISubscriptionController controller,
         IDocumentOperations operations, CancellationToken cancellationToken);
 
@@ -36,6 +48,11 @@ public abstract class SubscriptionBase: EventFilterable, ISubscription, ISubscri
         return buildSubscription(store);
     }
 
+    /// <summary>
+    /// Build the actual subscription object. By default, this just returns itself
+    /// </summary>
+    /// <param name="store"></param>
+    /// <returns></returns>
     protected virtual ISubscription buildSubscription(DocumentStore store) => this;
 
     IReadOnlyList<AsyncProjectionShard> ISubscriptionSource.AsyncProjectionShards(DocumentStore store)
@@ -48,7 +65,19 @@ public abstract class SubscriptionBase: EventFilterable, ISubscription, ISubscri
         } };
     }
 
+    /// <summary>
+    /// Descriptive name for Marten progress tracking and rebuild/replays
+    /// </summary>
     public string SubscriptionName { get; set; }
+
+    /// <summary>
+    /// If this value is greater than 1, it will be treated as an all new subscription and will played from zero
+    /// when deployed
+    /// </summary>
     public uint SubscriptionVersion { get; set; } = 1;
+
+    /// <summary>
+    /// Fine tune the behavior of this subscription at runtime
+    /// </summary>
     public AsyncOptions Options { get; protected set; } = new();
 }
