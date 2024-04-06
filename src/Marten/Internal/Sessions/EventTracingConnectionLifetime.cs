@@ -3,10 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
+using OpenTelemetry.Trace;
 
 namespace Marten.Internal.Sessions;
 
@@ -59,7 +59,7 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-            RecordException(e, MartenCommandExecutionFailed);
+            _databaseActivity?.RecordException(e);
 
             throw;
         }
@@ -75,8 +75,8 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-            RecordException(e, MartenCommandExecutionFailed);
-
+            _databaseActivity?.RecordException(e);
+            
             throw;
         }
     }
@@ -91,7 +91,7 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-            RecordException(e, MartenCommandExecutionFailed);
+            _databaseActivity?.RecordException(e);
 
             throw;
         }
@@ -107,7 +107,7 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-            RecordException(e, MartenCommandExecutionFailed);
+            _databaseActivity?.RecordException(e);
 
             throw;
         }
@@ -123,8 +123,8 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-            RecordException(e, MartenBatchExecutionFailed);
-
+            _databaseActivity?.RecordException(e);
+            
             throw;
         }
     }
@@ -139,7 +139,7 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-            RecordException(e, MartenBatchExecutionFailed);
+            _databaseActivity?.RecordException(e);
 
             throw;
         }
@@ -155,13 +155,13 @@ internal class EventTracingConnectionLifetime:
         }
         catch (AggregateException e)
         {
-            RecordExceptions(e, MartenBatchPagesExecutionFailed);
+            _databaseActivity?.RecordException(e);
 
             throw;
         }
         catch (Exception e)
         {
-            RecordException(e, MartenBatchPagesExecutionFailed);
+            _databaseActivity?.RecordException(e);
 
             throw;
         }
@@ -177,28 +177,16 @@ internal class EventTracingConnectionLifetime:
         }
         catch (AggregateException e)
         {
-            RecordExceptions(e, MartenBatchPagesExecutionFailed);
-
+            _databaseActivity?.RecordException(e);
+            
             throw;
         }
         catch (Exception e)
         {
-            RecordException(e, MartenBatchPagesExecutionFailed);
+            _databaseActivity?.RecordException(e);
+
 
             throw;
         }
-    }
-
-    private void RecordException(Exception exceptionToRecord, string eventName)
-    {
-        var tagsToAdd = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(MartenCommandFailedExceptionType, exceptionToRecord.GetType()) });
-        _databaseActivity?.AddEvent(new ActivityEvent(eventName, DateTimeOffset.UtcNow, tagsToAdd));
-    }
-
-    private void RecordExceptions(AggregateException exceptionsToRecord, string eventName)
-    {
-        var innerExceptionTypes = exceptionsToRecord.InnerExceptions.Select(t => t.GetType());
-        var tagsToAdd = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(MartenCommandFailedExceptionTypes, innerExceptionTypes) });
-        _databaseActivity?.AddEvent(new ActivityEvent(eventName, DateTimeOffset.UtcNow, tagsToAdd));
     }
 }
