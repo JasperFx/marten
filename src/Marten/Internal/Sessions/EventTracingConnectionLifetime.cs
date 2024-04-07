@@ -14,13 +14,8 @@ internal class EventTracingConnectionLifetime:
     IConnectionLifetime
 {
     private const string MartenCommandExecutionStarted = "marten.command.execution.started";
-    private const string MartenCommandExecutionFailed = "marten.command.execution.failed";
     private const string MartenBatchExecutionStarted = "marten.batch.execution.started";
-    private const string MartenBatchExecutionFailed = "marten.batch.execution.failed";
     private const string MartenBatchPagesExecutionStarted = "marten.batch.pages.execution.started";
-    private const string MartenBatchPagesExecutionFailed = "marten.batch.pages.execution.failed";
-    private const string MartenCommandFailedExceptionType = "marten.command.failed.exception.type";
-    private const string MartenCommandFailedExceptionTypes = "marten.command.failed.exception.types";
     private readonly IConnectionLifetime _innerConnectionLifetime;
     private readonly Activity? _databaseActivity;
 
