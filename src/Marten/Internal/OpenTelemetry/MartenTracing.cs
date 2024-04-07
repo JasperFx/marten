@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+#nullable enable
 using System.Diagnostics;
 
 namespace Marten.Internal.OpenTelemetry;
@@ -17,7 +17,7 @@ internal static class MartenTracing
         return StartActivity("connection", parentActivity, tags);
     }
 
-    public static Activity StartActivity(string spanName, Activity? parentActivity = null, ActivityTagsCollection? tags = null, ActivityKind activityKind = ActivityKind.Internal)
+    public static Activity? StartActivity(string spanName, Activity? parentActivity = null, ActivityTagsCollection? tags = null, ActivityKind activityKind = ActivityKind.Internal)
     {
         return ActivitySource.StartActivity(spanName, activityKind, parentActivity?.ParentId, tags);
     }
