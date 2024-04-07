@@ -149,11 +149,25 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
 
     internal ILiveAggregator<T> BuildLiveAggregator()
     {
+        if (_liveType == null)
+        {
+            throw new ArgumentNullException(nameof(_liveType), $"Expected {nameof(_liveType)} to have value");
+        }
+
+        if (_liveGeneratedType == null)
+        {
+            throw new ArgumentNullException(nameof(_liveGeneratedType), $"Expected {nameof(_liveGeneratedType)} to have value");
+        }
+
         var aggregator = (ILiveAggregator<T>)Activator.CreateInstance(_liveType, this);
 
         foreach (var setter in _liveGeneratedType.Setters)
         {
             var prop = _liveType.GetProperty(setter.PropName);
+            if (prop == null)
+            {
+                throw new ArgumentNullException(nameof(prop), $"Expected {nameof(prop)} to have value");
+            }
             prop.SetValue(aggregator, setter.InitialValue);
         }
 
@@ -182,12 +196,21 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         var storage = store.Options.Providers.StorageFor<T>().Lightweight;
         var slicer = buildEventSlicer(store.Options);
 
+        if (_inlineType == null)
+        {
+            throw new ArgumentNullException(nameof(_inlineType), $"Expected {nameof(_inlineType)} to have value");
+        }
+
         var inline = (IAggregationRuntime)Activator.CreateInstance(_inlineType, store, this, slicer,
             storage, this);
 
         foreach (var setter in _inlineGeneratedType.Setters)
         {
             var prop = _inlineType.GetProperty(setter.PropName);
+            if (prop == null)
+            {
+                throw new ArgumentNullException(nameof(prop), $"Expected {nameof(prop)} to have value");
+            }
             prop.SetValue(inline, setter.InitialValue);
         }
 
