@@ -1,10 +1,12 @@
 using System;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using Marten;
+using Marten.Internal.OpenTelemetry;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
@@ -288,6 +290,39 @@ public class SessionOptionsTests: OneOffConfigurationsContext
             .ShouldBeOfType<TransactionalConnection>()
             .CommandTimeout.ShouldBe(2)
             ;
+    }
+
+    [Fact]
+    public void Session_Should_Not_Track_Open_Telemetry_Events_By_Default()
+    {
+        var commandRunnerMode = CommandRunnerMode.ReadOnly;
+        var options = new SessionOptions();
+        var connectionLifetime = options.Initialize(theStore, commandRunnerMode);
+        connectionLifetime.ShouldNotBeOfType<EventTracingConnectionLifetime>();
+    }
+
+    [Fact]
+    public void Session_Should_Not_Track_Open_Telemetry_Events_When_Asked_To_Do_So_If_No_Listeners_Are_configured()
+    {
+        var commandRunnerMode = CommandRunnerMode.ReadOnly;
+        var options = new SessionOptions { OpenTelemetryOptions = { TrackConnectionEvents = true } };
+        var connectionLifetime = options.Initialize(theStore, commandRunnerMode);
+        connectionLifetime.ShouldNotBeOfType<EventTracingConnectionLifetime>();
+    }
+
+    [Fact]
+    public void Session_Should_Track_Open_Telemetry_Events_When_Asked_To_Do_So_If_Listeners_Are_configured()
+    {
+        using var listener = new ActivityListener
+        {
+            ShouldListenTo = _ => _.Name == "Marten",
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+        };
+        ActivitySource.AddActivityListener(listener);
+            var commandRunnerMode = CommandRunnerMode.ReadOnly;
+        var options = new SessionOptions { OpenTelemetryOptions = { TrackConnectionEvents = true } };
+        var connectionLifetime = options.Initialize(theStore, commandRunnerMode);
+        connectionLifetime.ShouldBeOfType<EventTracingConnectionLifetime>();
     }
 
     public class FryGuy
