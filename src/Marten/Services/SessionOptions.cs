@@ -102,17 +102,16 @@ public sealed class SessionOptions
 
         var innerConnectionLifetime = GetInnerConnectionLifetime(store, mode);
 
-        if (OpenTelemetryOptions.TrackConnectionEvents && MartenTracing.ActivitySource.HasListeners())
-        {
-            var currentActivity = Activity.Current ?? null;
-            var tags = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(MartenTracing.MartenTenantId, Tenant.TenantId) });
+        if (!OpenTelemetryOptions.TrackConnectionEvents || !MartenTracing.ActivitySource.HasListeners())
+            return innerConnectionLifetime;
 
-            return new EventTracingConnectionLifetime(innerConnectionLifetime,
-                MartenTracing.StartConnectionActivity(currentActivity, tags));
-        }
+        var currentActivity = Activity.Current ?? null;
+        var tags = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(MartenTracing.MartenTenantId, Tenant.TenantId) });
 
-        return innerConnectionLifetime;
-        }
+        return new EventTracingConnectionLifetime(innerConnectionLifetime,
+            MartenTracing.StartConnectionActivity(currentActivity, tags));
+
+    }
 
     private IConnectionLifetime GetInnerConnectionLifetime(DocumentStore store, CommandRunnerMode mode)
     {
