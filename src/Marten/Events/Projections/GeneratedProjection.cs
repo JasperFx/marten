@@ -18,7 +18,7 @@ namespace Marten.Events.Projections;
 /// </summary>
 public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, ICodeFile
 {
-    private bool _hasGenerated;
+    protected bool _hasGenerated;
 
     protected GeneratedProjection(string projectionName)
     {
