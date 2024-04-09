@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
@@ -18,13 +19,11 @@ namespace Marten.Events.Aggregation;
 
 public abstract partial class GeneratedAggregateProjectionBase<T>
 {
-    private readonly object _compilationLock = new();
-
     public ILiveAggregator<T> Build(StoreOptions options)
     {
         if (!_hasGenerated)
         {
-            lock (_compilationLock)
+            lock (_assembleLocker)
             {
                 if (!_hasGenerated)
                 {
