@@ -37,8 +37,6 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
 
     void ICodeFile.AssembleTypes(GeneratedAssembly assembly)
     {
-        lock (_assembleLocker)
-        {
             if (_hasGenerated)
                 return;
             lock (_assembleLocker)
@@ -48,7 +46,6 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
                 assembleTypes(assembly, StoreOptions);
                 _hasGenerated = true;
             }
-        }
     }
 
     Task<bool> ICodeFile.AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services,
