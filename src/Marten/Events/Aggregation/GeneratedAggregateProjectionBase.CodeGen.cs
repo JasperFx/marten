@@ -22,11 +22,11 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
 
     public ILiveAggregator<T> Build(StoreOptions options)
     {
-        if (_liveType == null)
+        if (!_hasGenerated)
         {
             lock (_compilationLock)
             {
-                if (_liveType == null)
+                if (!_hasGenerated)
                 {
                     Compile(options);
                 }
@@ -62,11 +62,11 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         this.As<ICodeFile>().InitializeSynchronously(rules, options.EventGraph, null);
 
         // You have to do this for the sake of the Setters
-        if (_liveGeneratedType == null || _liveType == null)
+        if (!_hasGenerated)
         {
             lock (_assembleLocker)
             {
-                if (_liveGeneratedType == null)
+                if (!_hasGenerated)
                 {
                     assembleTypes(new GeneratedAssembly(rules), options);
                 }
