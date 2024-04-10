@@ -35,11 +35,12 @@ Querying for a simple scalar value can be done like this:
 <!-- snippet: sample_advanced_sql_query_single_scalar -->
 <a id='snippet-sample_advanced_sql_query_single_scalar'></a>
 ```cs
+var schema = session.DocumentStore.Options.Schema;
 var name = (await session.AdvancedSqlQueryAsync<string>(
-    "select data ->> 'Name' from mt_doc_advanced_sql_query_docwithmeta limit 1",
+    $"select data ->> 'Name' from {schema.For<DocWithMeta>()} limit 1",
     CancellationToken.None)).First();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L25-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_single_scalar' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L25-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_single_scalar' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or for multiple scalars returned as a tuple:
@@ -51,7 +52,7 @@ var (number,text, boolean) = (await session.AdvancedSqlQueryAsync<int, string, b
     "select row(5), row('foo'), row(true) from (values(1)) as dummy",
     CancellationToken.None)).First();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L37-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_multiple_scalars' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L38-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_multiple_scalars' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also query for any arbitrary JSON that will get deserialized:
@@ -63,7 +64,7 @@ var result = (await session.AdvancedSqlQueryAsync<Foo, Bar>(
     "select row(json_build_object('Name', 'foo')), row(json_build_object('Name', 'bar')) from (values(1)) as dummy",
     CancellationToken.None)).First();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L51-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_json_object' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L52-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_json_object' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Querying for documents requires to return the correct columns:
@@ -71,11 +72,12 @@ Querying for documents requires to return the correct columns:
 <!-- snippet: sample_advanced_sql_query_documents -->
 <a id='snippet-sample_advanced_sql_query_documents'></a>
 ```cs
+var schema = session.DocumentStore.Options.Schema;
 var docs = await session.AdvancedSqlQueryAsync<DocWithoutMeta>(
-    "select id, data from mt_doc_advanced_sql_query_docwithoutmeta order by data ->> 'Name'",
+    $"select id, data from {schema.For<DocWithoutMeta>()} order by data ->> 'Name'",
     CancellationToken.None);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L67-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_documents' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L68-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_documents' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If metadata are available, remember to add the correct metadata columns to the result. The order of the columns is
@@ -84,11 +86,12 @@ important!:
 <!-- snippet: sample_advanced_sql_query_documents_with_metadata -->
 <a id='snippet-sample_advanced_sql_query_documents_with_metadata'></a>
 ```cs
+var schema = session.DocumentStore.Options.Schema;
 var doc = (await session.AdvancedSqlQueryAsync<DocWithMeta>(
-    "select id, data, mt_version from mt_doc_advanced_sql_query_docwithmeta where data ->> 'Name' = 'Max'",
+    $"select id, data, mt_version from {schema.For<DocWithMeta>()} where data ->> 'Name' = 'Max'",
     CancellationToken.None)).First();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L83-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_documents_with_metadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L85-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_documents_with_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also query for multiple related documents and scalar, e.g. for paging:
@@ -106,17 +109,18 @@ session.Store(new DocWithMeta { Id = 4, Name = "Beatrix" });
 session.Store(new DocDetailsWithMeta { Id = 4, Detail = "Likes to cook" });
 await session.SaveChangesAsync();
 
+var schema = session.DocumentStore.Options.Schema;
 IReadOnlyList<(DocWithMeta doc, DocDetailsWithMeta detail, long totalResults)> results =
     await session.AdvancedSqlQueryAsync<DocWithMeta, DocDetailsWithMeta, long>(
-        """
+        $"""
         select
           row(a.id, a.data, a.mt_version),
           row(b.id, b.data, b.mt_version),
           row(count(*) over())
         from
-          mt_doc_advanced_sql_query_docwithmeta a
+          {schema.For<DocWithMeta>()} a
         left join
-          mt_doc_advanced_sql_query_docdetailswithmeta b on a.id = b.id
+          {schema.For<DocDetailsWithMeta>()} b on a.id = b.id
         where
           (a.data ->> 'Id')::int > 1
         order by
@@ -132,7 +136,7 @@ results[0].detail.Detail.ShouldBe("Hates soap operas");
 results[1].doc.Name.ShouldBe("Beatrix");
 results[1].detail.Detail.ShouldBe("Likes to cook");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L97-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_related_documents_and_scalar' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L100-L137' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_related_documents_and_scalar' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For sync queries you can use the `AdvancedSqlQuery<T>(...)` overloads.

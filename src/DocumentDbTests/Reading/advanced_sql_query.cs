@@ -19,12 +19,13 @@ public class advanced_sql_query: IntegrationContext
     [Fact]
     public async void can_query_scalar()
     {
-        using var session = theStore.LightweightSession();
+        await using var session = theStore.LightweightSession();
         session.Store(new DocWithMeta { Id = 1, Name = "Max" });
         await session.SaveChangesAsync();
         #region sample_advanced_sql_query_single_scalar
+        var schema = session.DocumentStore.Options.Schema;
         var name = (await session.AdvancedSqlQueryAsync<string>(
-            "select data ->> 'Name' from mt_doc_advanced_sql_query_docwithmeta limit 1",
+            $"select data ->> 'Name' from {schema.For<DocWithMeta>()} limit 1",
             CancellationToken.None)).First();
         #endregion
         name.ShouldBe("Max");
@@ -33,7 +34,7 @@ public class advanced_sql_query: IntegrationContext
     [Fact]
     public async void can_query_multiple_scalars()
     {
-        using var session = theStore.LightweightSession();
+        await using var session = theStore.LightweightSession();
         #region sample_advanced_sql_query_multiple_scalars
         var (number,text, boolean) = (await session.AdvancedSqlQueryAsync<int, string, bool>(
             "select row(5), row('foo'), row(true) from (values(1)) as dummy",
@@ -47,7 +48,7 @@ public class advanced_sql_query: IntegrationContext
     [Fact]
     public async void can_query_non_document_classes_from_json()
     {
-        using var session = theStore.LightweightSession();
+        await using var session = theStore.LightweightSession();
         #region sample_advanced_sql_query_json_object
         var result = (await session.AdvancedSqlQueryAsync<Foo, Bar>(
             "select row(json_build_object('Name', 'foo')), row(json_build_object('Name', 'bar')) from (values(1)) as dummy",
@@ -60,13 +61,14 @@ public class advanced_sql_query: IntegrationContext
     [Fact]
     public async void can_query_documents()
     {
-        using var session = theStore.LightweightSession();
+        await using var session = theStore.LightweightSession();
         session.Store(new DocWithoutMeta { Id = 1, Name = "Max" });
         session.Store(new DocWithoutMeta { Id = 2, Name = "Anne" });
         await session.SaveChangesAsync();
         #region sample_advanced_sql_query_documents
+        var schema = session.DocumentStore.Options.Schema;
         var docs = await session.AdvancedSqlQueryAsync<DocWithoutMeta>(
-            "select id, data from mt_doc_advanced_sql_query_docwithoutmeta order by data ->> 'Name'",
+            $"select id, data from {schema.For<DocWithoutMeta>()} order by data ->> 'Name'",
             CancellationToken.None);
         #endregion
         docs.Count.ShouldBe(2);
@@ -77,12 +79,13 @@ public class advanced_sql_query: IntegrationContext
     [Fact]
     public async void can_query_documents_and_will_set_metadata_on_result_documents()
     {
-        using var session = theStore.LightweightSession();
+        await using var session = theStore.LightweightSession();
         session.Store(new DocWithMeta { Id = 1, Name = "Max" });
         await session.SaveChangesAsync();
         #region sample_advanced_sql_query_documents_with_metadata
+        var schema = session.DocumentStore.Options.Schema;
         var doc = (await session.AdvancedSqlQueryAsync<DocWithMeta>(
-            "select id, data, mt_version from mt_doc_advanced_sql_query_docwithmeta where data ->> 'Name' = 'Max'",
+            $"select id, data, mt_version from {schema.For<DocWithMeta>()} where data ->> 'Name' = 'Max'",
             CancellationToken.None)).First();
         #endregion
         doc.Id.ShouldBe(1);
@@ -93,7 +96,7 @@ public class advanced_sql_query: IntegrationContext
     [Fact]
     public async void can_query_multiple_documents_and_scalar()
     {
-        using var session = theStore.LightweightSession();
+        await using var session = theStore.LightweightSession();
         #region sample_advanced_sql_query_related_documents_and_scalar
         session.Store(new DocWithMeta { Id = 1, Name = "Max" });
         session.Store(new DocDetailsWithMeta { Id = 1, Detail = "Likes bees" });
@@ -105,17 +108,18 @@ public class advanced_sql_query: IntegrationContext
         session.Store(new DocDetailsWithMeta { Id = 4, Detail = "Likes to cook" });
         await session.SaveChangesAsync();
 
+        var schema = session.DocumentStore.Options.Schema;
         IReadOnlyList<(DocWithMeta doc, DocDetailsWithMeta detail, long totalResults)> results =
             await session.AdvancedSqlQueryAsync<DocWithMeta, DocDetailsWithMeta, long>(
-                """
+                $"""
                 select
                   row(a.id, a.data, a.mt_version),
                   row(b.id, b.data, b.mt_version),
                   row(count(*) over())
                 from
-                  mt_doc_advanced_sql_query_docwithmeta a
+                  {schema.For<DocWithMeta>()} a
                 left join
-                  mt_doc_advanced_sql_query_docdetailswithmeta b on a.id = b.id
+                  {schema.For<DocDetailsWithMeta>()} b on a.id = b.id
                 where
                   (a.data ->> 'Id')::int > 1
                 order by

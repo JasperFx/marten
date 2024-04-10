@@ -12,6 +12,7 @@ using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
+using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Linq;
@@ -38,7 +39,7 @@ namespace Marten;
 ///     necessary to customize and bootstrap a working
 ///     DocumentStore
 /// </summary>
-public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
+public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDocumentSchemaResolver
 {
     public const int DefaultTimeout = 5;
 
@@ -883,6 +884,31 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
         var tenancy = new MasterTableTenancy(this, configuration);
         Advanced.DefaultTenantUsageEnabled = false;
         Tenancy = tenancy;
+    }
+
+    IDocumentSchemaResolver IReadOnlyStoreOptions.Schema => this;
+
+    string IDocumentSchemaResolver.EventsSchemaName => Events.DatabaseSchemaName;
+
+    string IDocumentSchemaResolver.For<TDocument>(bool qualified)
+    {
+        var docType = ((IReadOnlyStoreOptions)this).FindOrResolveDocumentType(typeof(TDocument));
+        return qualified ? docType.TableName.QualifiedName : docType.TableName.Name;
+    }
+
+    string IDocumentSchemaResolver.ForEvents(bool qualified)
+    {
+        return qualified ? _eventGraph.Table.QualifiedName : _eventGraph.Table.Name;
+    }
+
+    string IDocumentSchemaResolver.ForStreams(bool qualified)
+    {
+        return qualified ? _eventGraph.StreamsTable.QualifiedName : _eventGraph.StreamsTable.Name;
+    }
+
+    string IDocumentSchemaResolver.ForEventProgression(bool qualified)
+    {
+        return qualified ? _eventGraph.ProgressionTable.QualifiedName : _eventGraph.ProgressionTable.Name;
     }
 }
 
