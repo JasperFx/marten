@@ -42,9 +42,10 @@ At runtime, when your application needs to resolve `IDocumentStore` for the firs
 
 1. Resolve a `StoreOptions` object from the initial `AddMarten()` configuration
 2. Apply all registered `IConfigureMarten` services to alter that `StoreOptions` object
-3. Reads the `IHostEnvironment` for the application if it exists to try to determine the main application assembly and paths for generated code output
-4. Attaches any `IInitialData` services that were registered in the IoC container to the `StoreOptions` object
-5. *Finally*, Marten builds a new `DocumentStore` object using the now configured `StoreOptions` object
+3. Apply all registered `IAsyncConfigureMarten` services to alter that `StoreOptions` object
+4. Reads the `IHostEnvironment` for the application if it exists to try to determine the main application assembly and paths for generated code output
+5. Attaches any `IInitialData` services that were registered in the IoC container to the `StoreOptions` object
+6. *Finally*, Marten builds a new `DocumentStore` object using the now configured `StoreOptions` object
 
 This model is comparable to the .Net `IOptions` model.
 
@@ -211,7 +212,7 @@ public interface IConfigureMarten
     void Configure(IServiceProvider services, StoreOptions options);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L855-L866' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L894-L905' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You could alternatively implement a custom `IConfigureMarten` (or `IConfigureMarten<T> where T : IDocumentStore` if you're [working with multiple databases](#working-with-multiple-marten-databases)) class like so:
@@ -254,7 +255,67 @@ public static IServiceCollection AddUserModule2(this IServiceCollection services
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L36-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addusermodule2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Using Lightweight Sessions
+### Using IoC Services for Configuring Marten <Badge type="tip" text="7.7" />
+
+There is also a newer mechanism called `IAsyncConfigureMarten` that was originally built to enable services
+like the [Feature Management library from Microsoft](https://learn.microsoft.com/en-us/azure/azure-app-configuration/use-feature-flags-dotnet-core) to
+be used to selectively configure Marten using potentially asynchronous methods and IoC resolved services. 
+
+That interface signature is:
+
+<!-- snippet: sample_IAsyncConfigureMarten -->
+<a id='snippet-sample_iasyncconfiguremarten'></a>
+```cs
+/// <summary>
+///     Mechanism to register additional Marten configuration that is applied after AddMarten()
+///     configuration, but before DocumentStore is initialized when you need to utilize some
+/// kind of asynchronous services like Microsoft's FeatureManagement feature to configure Marten
+/// </summary>
+public interface IAsyncConfigureMarten
+{
+    ValueTask Configure(StoreOptions options, CancellationToken cancellationToken);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L907-L919' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+As an example from the tests, here's a custom version that uses the Feature Management service:
+
+<!-- snippet: sample_FeatureManagementUsingExtension -->
+<a id='snippet-sample_featuremanagementusingextension'></a>
+```cs
+public class FeatureManagementUsingExtension: IAsyncConfigureMarten
+{
+    private readonly IFeatureManager _manager;
+
+    public FeatureManagementUsingExtension(IFeatureManager manager)
+    {
+        _manager = manager;
+    }
+
+    public async ValueTask Configure(StoreOptions options, CancellationToken cancellationToken)
+    {
+        if (await _manager.IsEnabledAsync("Module1"))
+        {
+            options.Events.MapEventType<Module1Event>("module1:event");
+        }
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/configuring_marten_with_async_extensions.cs#L77-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_featuremanagementusingextension' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+And lastly, these extensions can be registered directly against `IServiceCollection` like so:
+
+<!-- snippet: sample_registering_async_config_marten -->
+<a id='snippet-sample_registering_async_config_marten'></a>
+```cs
+services.ConfigureMartenWithServices<FeatureManagementUsingExtension>();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/configuring_marten_with_async_extensions.cs#L34-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_async_config_marten' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Using Lightweight Sessions 
 
 ::: tip
 Most usages of Marten should default to the lightweight sessions for better performance
