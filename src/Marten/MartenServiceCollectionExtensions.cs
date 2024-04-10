@@ -5,6 +5,8 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -28,6 +30,20 @@ namespace Marten;
 
 public static class MartenServiceCollectionExtensions
 {
+    /// <summary>
+    ///     Apply additional configuration to a Marten DocumentStore. This is applied *after*
+    ///     AddMarten(), but before the DocumentStore is initialized
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="configure"></param>
+    /// <returns></returns>
+    public static IServiceCollection ConfigureMartenWithServices<T>(this IServiceCollection services) where T : class, IAsyncConfigureMarten
+    {
+        services.EnsureAsyncConfigureMartenApplicationIsRegistered();
+        services.AddSingleton<IAsyncConfigureMarten, T>();
+        return services;
+    }
+
     /// <summary>
     ///     Apply additional configuration to a Marten DocumentStore. This is applied *after*
     ///     AddMarten(), but before the DocumentStore is initialized
@@ -301,13 +317,36 @@ public static class MartenServiceCollectionExtensions
         return list;
     }
 
+    internal static void EnsureAsyncConfigureMartenApplicationIsRegistered(this IServiceCollection services)
+    {
+        if (!services.Any(
+                x => x.ServiceType == typeof(IHostedService) && x.ImplementationType == typeof(AsyncConfigureMartenApplication)))
+        {
+            services.Insert(0,
+                new ServiceDescriptor(typeof(IHostedService), typeof(AsyncConfigureMartenApplication), ServiceLifetime.Singleton));
+        }
+    }
+
     internal static void EnsureMartenActivatorIsRegistered(this IServiceCollection services)
     {
         if (!services.Any(
                 x => x.ServiceType == typeof(IHostedService) && x.ImplementationType == typeof(MartenActivator)))
         {
-            services.Insert(0,
-                new ServiceDescriptor(typeof(IHostedService), typeof(MartenActivator), ServiceLifetime.Singleton));
+            var descriptor = services.FirstOrDefault(x =>
+                x.ServiceType == typeof(IHostedService) &&
+                x.ImplementationType == typeof(AsyncConfigureMartenApplication));
+
+            if (descriptor != null)
+            {
+                var index = services.IndexOf(descriptor);
+                services.Insert(index + 1,
+                    new ServiceDescriptor(typeof(IHostedService), typeof(MartenActivator), ServiceLifetime.Singleton));
+            }
+            else
+            {
+                services.Insert(0,
+                    new ServiceDescriptor(typeof(IHostedService), typeof(MartenActivator), ServiceLifetime.Singleton));
+            }
         }
     }
 
@@ -864,6 +903,45 @@ public interface IConfigureMarten
 }
 
 #endregion
+
+#region sample_IAsyncConfigureMarten
+
+/// <summary>
+///     Mechanism to register additional Marten configuration that is applied after AddMarten()
+///     configuration, but before DocumentStore is initialized when you need to utilize some
+/// kind of asynchronous services like Microsoft's FeatureManagement feature to configure Marten
+/// </summary>
+public interface IAsyncConfigureMarten
+{
+    ValueTask Configure(StoreOptions options, CancellationToken cancellationToken);
+}
+
+#endregion
+
+internal class AsyncConfigureMartenApplication: IHostedService
+{
+    private readonly IList<IAsyncConfigureMarten> _configures;
+    private readonly StoreOptions _options;
+
+    public AsyncConfigureMartenApplication(IEnumerable<IAsyncConfigureMarten> configures, StoreOptions options)
+    {
+        _configures = configures.ToList();
+        _options = options;
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        foreach (var configure in _configures)
+        {
+            await configure.Configure(_options, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
+}
 
 internal class LambdaConfigureMarten: IConfigureMarten
 {
