@@ -413,7 +413,10 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     {
         try
         {
-            await _tombstones.DrainAsync().ConfigureAwait(false);
+            if (_tombstones != null)
+            {
+                await _tombstones.DrainAsync().ConfigureAwait(false);
+            }
         }
         catch (TaskCanceledException)
         {
