@@ -140,3 +140,65 @@ results[1].detail.Detail.ShouldBe("Likes to cook");
 <!-- endSnippet -->
 
 For sync queries you can use the `AdvancedSqlQuery<T>(...)` overloads.
+
+## Getting document and schema names
+
+Tables can be referenced with raw sql, but it is also possible to have marten tell you names of documents and aggregates.
+
+These names can be found on the `Schema` property of the StoreOptions:
+
+<!-- snippet: sample_document_schema_resolver_options -->
+<a id='snippet-sample_document_schema_resolver_options'></a>
+```cs
+var schema = theSession.DocumentStore.Options.Schema;
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DocumentSchemaResolverTests.cs#L40-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_document_schema_resolver_options' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Using this you can resolve schemas:
+
+<!-- snippet: sample_document_schema_resolver_resolve_schemas -->
+<a id='snippet-sample_document_schema_resolver_resolve_schemas'></a>
+```cs
+var schema = theSession.DocumentStore.Options.Schema;
+
+schema.DatabaseSchemaName.ShouldBe("public");
+schema.EventsSchemaName.ShouldBe("public");
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DocumentSchemaResolverTests.cs#L24-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_document_schema_resolver_resolve_schemas' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+And documents/aggregates:
+
+<!-- snippet: sample_document_schema_resolver_resolve_documents -->
+<a id='snippet-sample_document_schema_resolver_resolve_documents'></a>
+```cs
+var schema = theSession.DocumentStore.Options.Schema;
+
+schema.For<Account>().ShouldBe("public.mt_doc_account");
+schema.For<Company>().ShouldBe("public.mt_doc_company");
+schema.For<User>().ShouldBe("public.mt_doc_user");
+
+// `qualified: false` returns the table name without schema
+schema.For<Account>(qualified: false).ShouldBe("mt_doc_account");
+schema.For<Company>(qualified: false).ShouldBe("mt_doc_company");
+schema.For<User>(qualified: false).ShouldBe("mt_doc_user");
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DocumentSchemaResolverTests.cs#L93-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_document_schema_resolver_resolve_documents' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+And also marten event tables:
+
+<!-- snippet: sample_document_schema_resolver_resolve_event_tables -->
+<a id='snippet-sample_document_schema_resolver_resolve_event_tables'></a>
+```cs
+schema.ForStreams().ShouldBe("public.mt_streams");
+schema.ForEvents().ShouldBe("public.mt_events");
+schema.ForEventProgression().ShouldBe("public.mt_event_progression");
+
+schema.ForStreams(qualified: false).ShouldBe("mt_streams");
+schema.ForEvents(qualified: false).ShouldBe("mt_events");
+schema.ForEventProgression(qualified: false).ShouldBe("mt_event_progression");
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DocumentSchemaResolverTests.cs#L134-L143' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_document_schema_resolver_resolve_event_tables' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
