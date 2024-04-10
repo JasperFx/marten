@@ -94,18 +94,22 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
                 return false;
             }
 
-            var position = mode == ShardExecutionMode.Continuous
-                ? await Database.ProjectionProgressFor(agent.Name, _cancellation.Token).ConfigureAwait(false)
+            var highWaterMark = HighWaterMark();
+            var position = await agent
+                .Options
+                .DetermineStartingPositionAsync(highWaterMark, agent.Name, mode, Database, _cancellation.Token).ConfigureAwait(false);
 
-                // No point in doing the extra database hop
-                : 0;
+            if (position.ShouldUpdateProgressFirst)
+            {
+                await rewindAgentProgress(agent.Name.Identity, _cancellation.Token, position.Floor).ConfigureAwait(false);
+            }
 
             var errorOptions = mode == ShardExecutionMode.Continuous
                 ? _store.Options.Projections.Errors
                 : _store.Options.Projections.RebuildErrors;
 
-            await agent.StartAsync(new SubscriptionExecutionRequest(position, mode, errorOptions, this)).ConfigureAwait(false);
-            agent.MarkHighWater(HighWaterMark());
+            await agent.StartAsync(new SubscriptionExecutionRequest(position.Floor, mode, errorOptions, this)).ConfigureAwait(false);
+            agent.MarkHighWater(highWaterMark);
 
             _agents = _agents.AddOrUpdate(agent.Name.Identity, agent);
         }

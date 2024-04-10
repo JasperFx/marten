@@ -11,7 +11,6 @@ namespace Marten.Events.Daemon.Internals;
 
 public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
 {
-    private readonly AsyncOptions _options;
     private readonly IEventLoader _loader;
     private readonly ISubscriptionExecution _execution;
     private readonly ShardStateTracker _tracker;
@@ -24,7 +23,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     public SubscriptionAgent(ShardName name, AsyncOptions options, IEventLoader loader,
         ISubscriptionExecution execution, ShardStateTracker tracker, ILogger logger)
     {
-        _options = options;
+        Options = options;
         _loader = loader;
         _execution = execution;
         _tracker = tracker;
@@ -39,6 +38,8 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
             ProjectionShardIdentity += $"@{_execution.DatabaseName}";
         }
     }
+
+    public AsyncOptions Options { get; }
 
     public string ProjectionShardIdentity { get; private set; }
 
@@ -248,7 +249,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         var inflight = LastEnqueued - LastCommitted;
 
         // Back pressure, slow down
-        if (inflight >= _options.MaximumHopperSize) return;
+        if (inflight >= Options.MaximumHopperSize) return;
 
         // If all caught up, do nothing!
         // Not sure how either of these numbers could actually be higher than
@@ -257,7 +258,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         if (LastEnqueued >= HighWaterMark) return;
 
         // You could maybe get a full size batch, so go get the next
-        if (HighWaterMark - LastEnqueued > _options.BatchSize)
+        if (HighWaterMark - LastEnqueued > Options.BatchSize)
         {
             await loadNextAsync().ConfigureAwait(false);
         }
@@ -265,7 +266,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         {
             // If the execution is busy, let's let events accumulate a little
             // more
-            var twoBatchSize = 2 * _options.BatchSize;
+            var twoBatchSize = 2 * Options.BatchSize;
             if (inflight < twoBatchSize)
             {
                 await loadNextAsync().ConfigureAwait(false);
@@ -278,7 +279,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         var request = new EventRequest
         {
             HighWater = HighWaterMark,
-            BatchSize = _options.BatchSize,
+            BatchSize = Options.BatchSize,
             Floor = LastEnqueued,
             ErrorOptions = ErrorOptions,
             Runtime = _runtime,
