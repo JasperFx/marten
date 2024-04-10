@@ -5,6 +5,7 @@ using Marten.Events.Projections;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
 namespace CoreTests;
@@ -20,10 +21,12 @@ public class DocumentSchemaResolverTests : OneOffConfigurationsContext
             options.DatabaseSchemaName = newOptions.DatabaseSchemaName;
         }, false);
 
+        #region sample_document_schema_resolver_resolve_schemas
         var schema = theSession.DocumentStore.Options.Schema;
 
-        Assert.Equal("public", schema.DatabaseSchemaName);
-        Assert.Equal("public", schema.EventsSchemaName);
+        schema.DatabaseSchemaName.ShouldBe("public");
+        schema.EventsSchemaName.ShouldBe("public");
+        #endregion
     }
 
     [Fact]
@@ -34,10 +37,12 @@ public class DocumentSchemaResolverTests : OneOffConfigurationsContext
             options.DatabaseSchemaName = "custom_schema_name";
         }, false);
 
+        #region sample_document_schema_resolver_options
         var schema = theSession.DocumentStore.Options.Schema;
+        #endregion
 
-        Assert.Equal("custom_schema_name", schema.DatabaseSchemaName);
-        Assert.Equal("custom_schema_name", schema.EventsSchemaName);
+        schema.DatabaseSchemaName.ShouldBe("custom_schema_name");
+        schema.EventsSchemaName.ShouldBe("custom_schema_name");
     }
 
     [Fact]
@@ -51,8 +56,8 @@ public class DocumentSchemaResolverTests : OneOffConfigurationsContext
 
         var schema = theSession.DocumentStore.Options.Schema;
 
-        Assert.Equal("custom_schema_name", schema.DatabaseSchemaName);
-        Assert.Equal("custom_event_schema_name", schema.EventsSchemaName);
+        schema.DatabaseSchemaName.ShouldBe("custom_schema_name");
+        schema.EventsSchemaName.ShouldBe("custom_event_schema_name");
     }
 
     [Fact]
@@ -67,29 +72,36 @@ public class DocumentSchemaResolverTests : OneOffConfigurationsContext
 
         var schema = theSession.DocumentStore.Options.Schema;
 
-        Assert.Equal("documentschemaresolvertests.mt_doc_account", schema.For<Account>());
-        Assert.Equal("documentschemaresolvertests.mt_doc_company", schema.For<Company>());
-        Assert.Equal("documentschemaresolvertests.mt_doc_user", schema.For<User>());
+        schema.For<Account>().ShouldBe("documentschemaresolvertests.mt_doc_account");
+        schema.For<Company>().ShouldBe("documentschemaresolvertests.mt_doc_company");
+        schema.For<User>().ShouldBe("documentschemaresolvertests.mt_doc_user");
 
-        Assert.Equal("mt_doc_account", schema.For<Account>(qualified: false));
-        Assert.Equal("mt_doc_company", schema.For<Company>(qualified: false));
-        Assert.Equal("mt_doc_user", schema.For<User>(qualified: false));
+        schema.For<Account>(qualified: false).ShouldBe("mt_doc_account");
+        schema.For<Company>(qualified: false).ShouldBe("mt_doc_company");
+        schema.For<User>(qualified: false).ShouldBe("mt_doc_user");
     }
 
     [Fact]
     public void ValidateUnregisteredDocumentNames()
     {
-        StoreOptions(_ => { }, false);
+        StoreOptions(options =>
+        {
+            var newOptions = new StoreOptions();
+            options.DatabaseSchemaName = newOptions.DatabaseSchemaName;
+        }, false);
 
+        #region sample_document_schema_resolver_resolve_documents
         var schema = theSession.DocumentStore.Options.Schema;
 
-        Assert.Equal("documentschemaresolvertests.mt_doc_account", schema.For<Account>());
-        Assert.Equal("documentschemaresolvertests.mt_doc_company", schema.For<Company>());
-        Assert.Equal("documentschemaresolvertests.mt_doc_user", schema.For<User>());
+        schema.For<Account>().ShouldBe("public.mt_doc_account");
+        schema.For<Company>().ShouldBe("public.mt_doc_company");
+        schema.For<User>().ShouldBe("public.mt_doc_user");
 
-        Assert.Equal("mt_doc_account", schema.For<Account>(qualified: false));
-        Assert.Equal("mt_doc_company", schema.For<Company>(qualified: false));
-        Assert.Equal("mt_doc_user", schema.For<User>(qualified: false));
+        // `qualified: false` returns the table name without schema
+        schema.For<Account>(qualified: false).ShouldBe("mt_doc_account");
+        schema.For<Company>(qualified: false).ShouldBe("mt_doc_company");
+        schema.For<User>(qualified: false).ShouldBe("mt_doc_user");
+        #endregion
     }
 
     [Fact]
@@ -104,25 +116,31 @@ public class DocumentSchemaResolverTests : OneOffConfigurationsContext
 
         var schema = theSession.DocumentStore.Options.Schema;
 
-        Assert.Equal("custom_doc_schema.mt_doc_custom_account", schema.For<Account>());
+        schema.For<Account>().ShouldBe("custom_doc_schema.mt_doc_custom_account");
 
-        Assert.Equal("mt_doc_custom_account", schema.For<Account>(qualified: false));
+        schema.For<Account>(qualified: false).ShouldBe("mt_doc_custom_account");
     }
 
     [Fact]
     public void ValidateEventTableNames()
     {
-        StoreOptions(_ => { }, false);
+        StoreOptions(options => {
+            var newOptions = new StoreOptions();
+            options.DatabaseSchemaName = newOptions.DatabaseSchemaName;
+        }, false);
 
         var schema = theSession.DocumentStore.Options.Schema;
 
-        Assert.Equal("documentschemaresolvertests.mt_streams", schema.ForStreams());
-        Assert.Equal("documentschemaresolvertests.mt_events", schema.ForEvents());
-        Assert.Equal("documentschemaresolvertests.mt_event_progression", schema.ForEventProgression());
+        #region sample_document_schema_resolver_resolve_event_tables
 
-        Assert.Equal("mt_streams", schema.ForStreams(qualified: false));
-        Assert.Equal("mt_events", schema.ForEvents(qualified: false));
-        Assert.Equal("mt_event_progression", schema.ForEventProgression(qualified: false));
+        schema.ForStreams().ShouldBe("public.mt_streams");
+        schema.ForEvents().ShouldBe("public.mt_events");
+        schema.ForEventProgression().ShouldBe("public.mt_event_progression");
+
+        schema.ForStreams(qualified: false).ShouldBe("mt_streams");
+        schema.ForEvents(qualified: false).ShouldBe("mt_events");
+        schema.ForEventProgression(qualified: false).ShouldBe("mt_event_progression");
+        #endregion
     }
 
     [Fact]
@@ -135,13 +153,13 @@ public class DocumentSchemaResolverTests : OneOffConfigurationsContext
 
         var schema = theSession.DocumentStore.Options.Schema;
 
-        Assert.Equal("custom_event_schema_name.mt_streams", schema.ForStreams());
-        Assert.Equal("custom_event_schema_name.mt_events", schema.ForEvents());
-        Assert.Equal("custom_event_schema_name.mt_event_progression", schema.ForEventProgression());
+        schema.ForStreams().ShouldBe("custom_event_schema_name.mt_streams");
+        schema.ForEvents().ShouldBe("custom_event_schema_name.mt_events");
+        schema.ForEventProgression().ShouldBe("custom_event_schema_name.mt_event_progression");
 
-        Assert.Equal("mt_streams", schema.ForStreams(qualified: false));
-        Assert.Equal("mt_events", schema.ForEvents(qualified: false));
-        Assert.Equal("mt_event_progression", schema.ForEventProgression(qualified: false));
+        schema.ForStreams(qualified: false).ShouldBe("mt_streams");
+        schema.ForEvents(qualified: false).ShouldBe("mt_events");
+        schema.ForEventProgression(qualified: false).ShouldBe("mt_event_progression");
     }
 
     [Fact]
@@ -155,13 +173,11 @@ public class DocumentSchemaResolverTests : OneOffConfigurationsContext
 
         var schema = theSession.DocumentStore.Options.Schema;
 
-        Assert.Equal(
-            "documentschemaresolvertests.mt_doc_documentschemaresolvertests_projectiona",
-            schema.For<ProjectionA>());
-        Assert.Equal("documentschemaresolvertests.mt_doc_custom_projection_alias", schema.For<ProjectionB>());
+        schema.For<ProjectionA>().ShouldBe("documentschemaresolvertests.mt_doc_documentschemaresolvertests_projectiona");
+        schema.For<ProjectionB>().ShouldBe("documentschemaresolvertests.mt_doc_custom_projection_alias");
 
-        Assert.Equal("mt_doc_documentschemaresolvertests_projectiona", schema.For<ProjectionA>(qualified: false));
-        Assert.Equal("mt_doc_custom_projection_alias",                 schema.For<ProjectionB>(qualified: false));
+        schema.For<ProjectionA>(qualified: false).ShouldBe("mt_doc_documentschemaresolvertests_projectiona");
+        schema.For<ProjectionB>(qualified: false).ShouldBe("mt_doc_custom_projection_alias");
     }
 
     public record FooEvent;
