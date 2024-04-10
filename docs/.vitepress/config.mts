@@ -181,8 +181,11 @@ const config: UserConfig<DefaultTheme.Config> = {
                 { text: 'Rebuilding Projections', link: '/events/projections/rebuilding' },
                 { text: 'Projections and IoC Services', link: '/events/projections/ioc' },
                 { text: 'Async Daemon HealthChecks', link: '/events/projections/healthchecks' },]
+            }, 
+            {
+                text: 'Event Subscriptions',
+                link: '/events/subscriptions'
             },
-
             {
               text: 'Event Versioning',
               link: '/events/versioning'

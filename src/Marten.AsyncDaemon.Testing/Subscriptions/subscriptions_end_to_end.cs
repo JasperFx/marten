@@ -59,6 +59,42 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task start_subscription_at_sequence_floor()
+    {
+        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+
+        var events1 = new object[] { new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events2 = new object[] { new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events3 = new object[] { new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events4 = new object[] { new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+
+        theSession.Events.StartStream(Guid.NewGuid(), events1);
+        theSession.Events.StartStream(Guid.NewGuid(), events2);
+        theSession.Events.StartStream(Guid.NewGuid(), events3);
+        theSession.Events.StartStream(Guid.NewGuid(), events4);
+
+        await theSession.SaveChangesAsync();
+
+        await theStore.WaitForNonStaleProjectionDataAsync(20.Seconds());
+
+        var secondSubscription = new FakeSubscription();
+        var secondStore = SeparateStore(opts =>
+        {
+            opts.Projections.Subscribe(secondSubscription, o => o.Options.SubscribeFromSequence(8));
+        });
+
+        await daemon.StopAllAsync();
+
+        using var daemon2 = await secondStore.BuildProjectionDaemonAsync();
+        await daemon2.StartAllAsync();
+        await Task.Delay(2000); // yeah, I know
+        await secondStore.WaitForNonStaleProjectionDataAsync(20.Seconds());
+
+        secondSubscription.EventsEncountered.Count.ShouldBe(8);
+    }
+
+    [Fact]
     public async Task run_events_through_and_rewind_from_scratch()
     {
         using var daemon = await theStore.BuildProjectionDaemonAsync();

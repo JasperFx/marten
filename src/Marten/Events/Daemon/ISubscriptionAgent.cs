@@ -75,5 +75,6 @@ public interface ISubscriptionAgent: ISubscriptionController
     Task RecordDeadLetterEventAsync(DeadLetterEvent @event);
 
     DateTimeOffset? PausedTime { get; }
+    AsyncOptions Options { get; }
     Task ReplayAsync(SubscriptionExecutionRequest request, long highWaterMark, TimeSpan timeout);
 }

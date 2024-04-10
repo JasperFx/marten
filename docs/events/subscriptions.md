@@ -1,13 +1,11 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Marten.Events.Daemon;
-using Marten.Events.Daemon.Internals;
+# Event Subscriptions <Badge type="tip" text="7.7" />
 
-namespace Marten.Subscriptions;
+Hey folks, there will be much more on this topic soon. Right now, it's in Marten > 7.6, but part of the core Marten team is
+working with a client to prove out this feature. When that's done, we'll fill in the docs and sample code.
 
-#region sample_ISubscription
-
+<!-- snippet: sample_ISubscription -->
+<a id='snippet-sample_isubscription'></a>
+```cs
 /// <summary>
 /// Basic abstraction for custom subscriptions to Marten events through the async daemon. Use this in
 /// order to do custom processing against an ordered stream of the events
@@ -26,5 +24,12 @@ public interface ISubscription : IAsyncDisposable
         IDocumentOperations operations,
         CancellationToken cancellationToken);
 }
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Subscriptions/ISubscription.cs#L9-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_isubscription' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
-#endregion
+## Registering Subscriptions
+
+## Event Filtering
+
+## Rewinding or Replaying Subscriptions

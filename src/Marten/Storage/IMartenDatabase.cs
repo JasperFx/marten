@@ -110,4 +110,12 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
         CancellationToken token = default);
 
 
+    /// <summary>
+    /// Find the position of the event store sequence just below the supplied timestamp. Will
+    /// return null if there are no events below that time threshold
+    /// </summary>
+    /// <param name="timestamp"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<long?> FindEventStoreFloorAtTimeAsync(DateTimeOffset timestamp, CancellationToken token);
 }

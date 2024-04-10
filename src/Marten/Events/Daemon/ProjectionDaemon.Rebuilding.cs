@@ -217,6 +217,36 @@ public partial class ProjectionDaemon
 
         var agents = _factory.BuildAgents(subscriptionName, Database);
 
+        await rewindSubscriptionProgress(subscriptionName, token, sequenceFloor, agents).ConfigureAwait(false);
+
+        foreach (var agent in agents)
+        {
+            Tracker.MarkAsRestarted(agent.Name);
+            var errorOptions = _store.Options.Projections.RebuildErrors;
+            await agent.StartAsync(new SubscriptionExecutionRequest(sequenceFloor.Value, ShardExecutionMode.Continuous,
+                errorOptions, this)).ConfigureAwait(false);
+            agent.MarkHighWater(HighWaterMark());
+        }
+    }
+
+    private async Task rewindAgentProgress(string shardName, CancellationToken token, long sequenceFloor)
+    {
+        var sessionOptions = SessionOptions.ForDatabase(Database);
+        sessionOptions.AllowAnyTenant = true;
+        await using var session = _store.LightweightSession(sessionOptions);
+
+        session.QueueSqlCommand($"delete from {_store.Options.EventGraph.ProgressionTable} where name = ?", shardName);
+        if (sequenceFloor > 0)
+        {
+            session.QueueSqlCommand($"update {_store.Options.EventGraph.ProgressionTable} set last_seq_id = ? where name = ?", sequenceFloor, shardName);
+        }
+
+        await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    private async Task rewindSubscriptionProgress(string subscriptionName, CancellationToken token, long? sequenceFloor,
+        IReadOnlyList<ISubscriptionAgent> agents)
+    {
         var sessionOptions = SessionOptions.ForDatabase(Database);
         sessionOptions.AllowAnyTenant = true;
         await using var session = _store.LightweightSession(sessionOptions);
@@ -237,14 +267,5 @@ public partial class ProjectionDaemon
         session.DeleteWhere<DeadLetterEvent>(x => x.ProjectionName == subscriptionName && x.EventSequence >= sequenceFloor);
 
         await session.SaveChangesAsync(token).ConfigureAwait(false);
-
-        foreach (var agent in agents)
-        {
-            Tracker.MarkAsRestarted(agent.Name);
-            var errorOptions = _store.Options.Projections.RebuildErrors;
-            await agent.StartAsync(new SubscriptionExecutionRequest(sequenceFloor.Value, ShardExecutionMode.Continuous,
-                errorOptions, this)).ConfigureAwait(false);
-            agent.MarkHighWater(HighWaterMark());
-        }
     }
 }
