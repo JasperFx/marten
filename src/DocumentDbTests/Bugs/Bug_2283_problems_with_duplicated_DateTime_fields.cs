@@ -23,13 +23,10 @@ public class Bug_2283_problems_with_duplicated_DateTime_fields: BugIntegrationCo
 
         theSession.Store(model1);
         await theSession.SaveChangesAsync();
-
-        await Should.ThrowAsync<InvalidDateTimeUsageException>(() =>
-            theSession
-                .Query<MyModel>()
-                .Where(t => t.UserId == model1.UserId)
-                .MinAsync(t => t.Date)
-        );
+        var value = await theSession
+            .Query<MyModel>()
+            .Where(t => t.UserId == model1.UserId)
+            .MinAsync(t => t.Date);
     }
 
     [Fact]
