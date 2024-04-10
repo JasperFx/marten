@@ -72,7 +72,7 @@ public class DocumentSchemaResolverTests : OneOffConfigurationsContext
 
         var schema = theSession.DocumentStore.Options.Schema;
 
-        schema.For<Account>().ShouldBe("documentschemaresolvertests.mt_doc_account");
+        schema.For(typeof(Account)).ShouldBe("documentschemaresolvertests.mt_doc_account");
         schema.For<Company>().ShouldBe("documentschemaresolvertests.mt_doc_company");
         schema.For<User>().ShouldBe("documentschemaresolvertests.mt_doc_user");
 

@@ -896,6 +896,12 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         return qualified ? docType.TableName.QualifiedName : docType.TableName.Name;
     }
 
+    public string For(Type documentType, bool qualified = true)
+    {
+        var docType = ((IReadOnlyStoreOptions)this).FindOrResolveDocumentType(documentType);
+        return qualified ? docType.TableName.QualifiedName : docType.TableName.Name;
+    }
+
     string IDocumentSchemaResolver.ForEvents(bool qualified)
     {
         return qualified ? _eventGraph.Table.QualifiedName : _eventGraph.Table.Name;

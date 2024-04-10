@@ -1,4 +1,6 @@
 #nullable enable
+using System;
+
 namespace Marten;
 
 public interface IDocumentSchemaResolver
@@ -24,6 +26,17 @@ public interface IDocumentSchemaResolver
     /// </param>
     /// <returns>The name of <typeparamref name="TDocument"/> in the database.</returns>
     string For<TDocument>(bool qualified = true);
+
+    /// <summary>
+    ///     Find the database name of the table backing <typeparamref name="TDocument"/>. Supports documents and projections.
+    /// </summary>
+    /// <param name="documentType">The document type</param>
+    /// <param name="qualified" default="true">
+    ///     When true (default) the qualified name is returned (schema and table name).
+    ///     Otherwise only the table name is returned.
+    /// </param>
+    /// <returns>The name of <typeparamref name="TDocument"/> in the database.</returns>
+    string For(Type documentType, bool qualified = true);
 
     /// <summary>
     ///     Find the database name of the table backing the events table. Supports documents and projections.
