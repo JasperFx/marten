@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Internal.OpenTelemetry;
 using Npgsql;
 using OpenTelemetry.Trace;
 
@@ -19,7 +20,7 @@ internal class EventTracingConnectionLifetime:
     private readonly IConnectionLifetime _innerConnectionLifetime;
     private readonly Activity? _databaseActivity;
 
-    public EventTracingConnectionLifetime(IConnectionLifetime innerConnectionLifetime, Activity? databaseActivity = null)
+    public EventTracingConnectionLifetime(IConnectionLifetime innerConnectionLifetime, string tenantId)
     {
         if (innerConnectionLifetime == null)
         {
@@ -29,16 +30,21 @@ internal class EventTracingConnectionLifetime:
         Logger = innerConnectionLifetime.Logger;
         CommandTimeout = innerConnectionLifetime.CommandTimeout;
         _innerConnectionLifetime = innerConnectionLifetime;
-        _databaseActivity = databaseActivity;
+
+        var currentActivity = Activity.Current ?? null;
+        var tags = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(MartenTracing.MartenTenantId, tenantId) });
+        _databaseActivity = MartenTracing.StartConnectionActivity(currentActivity, tags);
     }
 
     public ValueTask DisposeAsync()
     {
+        _databaseActivity.Stop();
         return _innerConnectionLifetime.DisposeAsync();
     }
 
     public void Dispose()
     {
+        _databaseActivity.Stop();
         _innerConnectionLifetime.Dispose();
     }
 

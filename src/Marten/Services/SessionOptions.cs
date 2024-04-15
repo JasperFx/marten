@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -102,15 +101,9 @@ public sealed class SessionOptions
 
         var innerConnectionLifetime = GetInnerConnectionLifetime(store, mode);
 
-        if (!OpenTelemetryOptions.TrackConnectionEvents || !MartenTracing.ActivitySource.HasListeners())
-            return innerConnectionLifetime;
-
-        var currentActivity = Activity.Current ?? null;
-        var tags = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(MartenTracing.MartenTenantId, Tenant.TenantId) });
-
-        return new EventTracingConnectionLifetime(innerConnectionLifetime,
-            MartenTracing.StartConnectionActivity(currentActivity, tags));
-
+        return !OpenTelemetryOptions.TrackConnectionEvents || !MartenTracing.ActivitySource.HasListeners()
+            ? innerConnectionLifetime
+            : new EventTracingConnectionLifetime(innerConnectionLifetime, Tenant.TenantId);
     }
 
     private IConnectionLifetime GetInnerConnectionLifetime(DocumentStore store, CommandRunnerMode mode)
