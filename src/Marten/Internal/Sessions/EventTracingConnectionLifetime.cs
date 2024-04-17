@@ -27,6 +27,11 @@ internal class EventTracingConnectionLifetime:
             throw new ArgumentNullException(nameof(innerConnectionLifetime));
         }
 
+        if (string.IsNullOrWhiteSpace(tenantId))
+        {
+            throw new ArgumentException("The tenant id cannot be null, an empty string or whitespace.", nameof(tenantId));
+        }
+
         Logger = innerConnectionLifetime.Logger;
         CommandTimeout = innerConnectionLifetime.CommandTimeout;
         _innerConnectionLifetime = innerConnectionLifetime;
