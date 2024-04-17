@@ -67,6 +67,11 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     string? CorrelationId { get; set; }
 
     /// <summary>
+    /// The tenant id for this session. If not opened with a tenant id, this value will be "*DEFAULT*"
+    /// </summary>
+    string TenantId { get; }
+
+    /// <summary>
     ///     Find or load a single document of type T by a string id
     /// </summary>
     /// <typeparam name="T"></typeparam>
@@ -216,7 +221,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     Asynchronously queries the document storage with the supplied SQL.
     ///     The type parameters can be any document class, scalar or JSON-serializable class.
     ///     For each result type parameter, the SQL SELECT statement must contain a ROW.
-    ///     For document types, the row must contain the required fields in the correct order, 
+    ///     For document types, the row must contain the required fields in the correct order,
     ///     depending on the session type and the metadata the document might use, at least id and data must be
     ///     provided.
     /// </summary>
@@ -231,7 +236,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     Asynchronously queries the document storage with the supplied SQL.
     ///     The type parameters can be any document class, scalar or JSON-serializable class.
     ///     For each result type parameter, the SQL SELECT statement must contain a ROW.
-    ///     For document types, the row must contain the required fields in the correct order, 
+    ///     For document types, the row must contain the required fields in the correct order,
     ///     depending on the session type and the metadata the document might use, at least id and data must be
     ///     provided.
     /// </summary>
@@ -260,7 +265,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     Asynchronously queries the document storage with the supplied SQL.
     ///     The type parameters can be any document class, scalar or JSON-serializable class.
     ///     For each result type parameter, the SQL SELECT statement must contain a ROW.
-    ///     For document types, the row must contain the required fields in the correct order, 
+    ///     For document types, the row must contain the required fields in the correct order,
     ///     depending on the session type and the metadata the document might use, at least id and data must be
     ///     provided.
     /// </summary>
@@ -275,7 +280,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     Asynchronously queries the document storage with the supplied SQL.
     ///     The type parameters can be any document class, scalar or JSON-serializable class.
     ///     For each result type parameter, the SQL SELECT statement must contain a ROW.
-    ///     For document types, the row must contain the required fields in the correct order, 
+    ///     For document types, the row must contain the required fields in the correct order,
     ///     depending on the session type and the metadata the document might use, at least id and data must be
     ///     provided.
     /// </summary>
