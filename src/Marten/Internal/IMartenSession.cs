@@ -17,7 +17,7 @@ public interface IMartenSession: IDisposable, IAsyncDisposable
 {
     ISerializer Serializer { get; }
     Dictionary<Type, object> ItemMap { get; }
-    string TenantId { get; }
+    public string TenantId { get; }
     IMartenDatabase Database { get; }
 
     VersionTracker Versions { get; }
