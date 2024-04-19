@@ -5,6 +5,7 @@
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
     <ItemGroup>
+        <PackageReference Include="Confluent.Kafka" Version="2.3.0" />
         <PackageReference Include="Lamar.Microsoft.DependencyInjection" Version="13.0.2" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0"/>
         <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0"/>
