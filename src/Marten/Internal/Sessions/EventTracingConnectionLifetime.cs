@@ -71,13 +71,13 @@ internal class EventTracingConnectionLifetime:
         }
     }
 
-    public Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new CancellationToken())
+    public async Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new CancellationToken())
     {
         _databaseActivity?.AddEvent(new ActivityEvent(MartenCommandExecutionStarted));
 
         try
         {
-            return _innerConnectionLifetime.ExecuteAsync(command, token);
+            return await _innerConnectionLifetime.ExecuteAsync(command, token).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -103,13 +103,13 @@ internal class EventTracingConnectionLifetime:
         }
     }
 
-    public Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default)
+    public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default)
     {
         _databaseActivity?.AddEvent(new ActivityEvent(MartenCommandExecutionStarted));
 
         try
         {
-            return _innerConnectionLifetime.ExecuteReaderAsync(command, token);
+            return await _innerConnectionLifetime.ExecuteReaderAsync(command, token).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -135,13 +135,13 @@ internal class EventTracingConnectionLifetime:
         }
     }
 
-    public Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, CancellationToken token = default)
+    public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, CancellationToken token = default)
     {
         _databaseActivity?.AddEvent(new ActivityEvent(MartenBatchExecutionStarted));
 
         try
         {
-            return _innerConnectionLifetime.ExecuteReaderAsync(batch, token);
+            return await _innerConnectionLifetime.ExecuteReaderAsync(batch, token).ConfigureAwait(false);
         }
         catch (Exception e)
         {
