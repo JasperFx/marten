@@ -61,7 +61,7 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[2.0.0, 8.0.0)" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[2.0.0, 9.0.0)" />
     </ItemGroup>
 
 
