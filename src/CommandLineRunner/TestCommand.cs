@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx.CodeGeneration;
 using Marten;
-using Marten.AsyncDaemon.Testing.TestingSupport;
+using DaemonTests.TestingSupport;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;

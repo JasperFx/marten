@@ -225,7 +225,7 @@ public async Task run_simultaneously()
     await CheckExpectedResults();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/event_projections_end_to_end.cs#L42-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_waitfornonstaleprojectiondataasync' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/event_projections_end_to_end.cs#L43-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_waitfornonstaleprojectiondataasync' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The basic idea in your tests is to:

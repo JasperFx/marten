@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Marten.PLv8")]
 [assembly: InternalsVisibleTo("Marten.PLv8.Testing")]
 [assembly: InternalsVisibleTo("Marten.Schema.Testing")]
-[assembly: InternalsVisibleTo("Marten.AsyncDaemon.Testing")]
+[assembly: InternalsVisibleTo("DaemonTests")]
 [assembly: InternalsVisibleTo("ConfigurationTests")]
 [assembly: InternalsVisibleTo("CoreTests")]
 [assembly: InternalsVisibleTo("MultiTenancyTests")]

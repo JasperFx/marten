@@ -7,7 +7,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
-using Marten.AsyncDaemon.Testing.TestingSupport;
+using DaemonTests.TestingSupport;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
