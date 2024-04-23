@@ -162,7 +162,7 @@ public static class Program
                     // *try* to use pre-generated code at runtime
                     opts.GeneratedCodeMode = TypeLoadMode.Auto;
 
-                    opts.Schema.For<Activity>().AddSubClass<Marten.AsyncDaemon.Testing.TestingSupport.Trip>();
+                    opts.Schema.For<Activity>().AddSubClass<DaemonTests.TestingSupport.Trip>();
 
                     // You have to register all persisted document types ahead of time
                     // RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()

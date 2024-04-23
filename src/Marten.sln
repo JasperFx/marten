@@ -29,7 +29,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCoreWithMarten", "AspNetCoreWithMarten\AspNetCoreWithMarten.csproj", "{739B657C-4E0D-40E8-853E-ADF5C2D3D89D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.AsyncDaemon.Testing", "Marten.AsyncDaemon.Testing\Marten.AsyncDaemon.Testing.csproj", "{5F7D1952-24BB-4A60-8C45-DF1911097A4F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaemonTests", "DaemonTests\DaemonTests.csproj", "{5F7D1952-24BB-4A60-8C45-DF1911097A4F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourceWorker", "EventSourceWorker\EventSourceWorker.csproj", "{3688AF80-FB24-4C3C-95FD-A2AB4680CD67}"
 EndProject

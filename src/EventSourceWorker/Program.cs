@@ -1,5 +1,5 @@
 using Marten;
-using Marten.AsyncDaemon.Testing.TestingSupport;
+using DaemonTests.TestingSupport;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Microsoft.Extensions.Configuration;

@@ -1,7 +1,7 @@
 ﻿using JasperFx.CodeGeneration;
 using Marten;
-using Marten.AsyncDaemon.Testing;
-using Marten.AsyncDaemon.Testing.TestingSupport;
+using DaemonTests;
+using DaemonTests.TestingSupport;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Testing.Documents;
