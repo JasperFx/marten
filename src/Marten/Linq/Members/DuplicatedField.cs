@@ -216,6 +216,8 @@ public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenM
 
     public IQueryableMember FindMember(MemberInfo member)
     {
+        if (member.Name == "Value") return this;
+
         // Only really using this for string ToLower() and ToUpper()
         if (MemberType == typeof(string))
         {
