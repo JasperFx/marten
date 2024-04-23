@@ -461,7 +461,7 @@ Some people prefer to use classes instead of pure functions. It may help encapsu
 
 ::: tip
 Note the base class used below has 2 generic arguments, the `Upcast()` method only exists
-on *this* base class
+on _this_ base class
 :::
 
 <!-- snippet: sample_upcaster_with_clr_types_and_event_type_name_from_old_type -->
