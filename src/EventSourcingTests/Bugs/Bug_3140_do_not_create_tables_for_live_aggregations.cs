@@ -37,23 +37,3 @@ public class MyAggregateProjection: SingleStreamProjection<MyAggregate>
 {
     public void Apply(MyAggregate aggregate, AEvent e) => aggregate.ACount++;
 }
-
-[DocumentAlias("aggregate")]
-public class MyAggregate
-{
-    // This will be the aggregate version
-    public int Version { get; set; }
-
-
-    public Guid Id { get; set; }
-
-    public int ACount { get; set; }
-    public int BCount { get; set; }
-    public int CCount { get; set; }
-    public int DCount { get; set; }
-    public int ECount { get; set; }
-
-    public string Created { get; set; }
-    public string UpdatedBy { get; set; }
-    public Guid EventId { get; set; }
-}
