@@ -46,6 +46,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     private readonly string[] _selectFields;
     private ISqlFragment? _defaultWhere;
     protected Action<T, TId> _setter;
+    private readonly DocumentMapping _document;
 
     public DocumentStorage(StorageStyle storageStyle, DocumentMapping document)
     {
@@ -65,20 +66,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         var fieldSelector = _selectFields.Join(", ");
         _selectClause = $"select {fieldSelector} from {document.TableName.QualifiedName} as d";
 
-
-        if (DuplicatedFields.Any())
-        {
-            var duplicatedFields = DuplicatedFields.Select(x => "d." + x.ColumnName).Where(x => !_selectFields.Contains(x));
-            var allFields = _selectFields.Concat(duplicatedFields).ToArray();
-            SelectClauseWithDuplicatedFields = new DuplicatedFieldSelectClause(TableName.QualifiedName, $"select {allFields.Join(", ")} from {document.TableName.QualifiedName} as d",
-                allFields, typeof(T), this);
-        }
-        else
-        {
-            SelectClauseWithDuplicatedFields = this;
-        }
-
-
+        _document = document;
 
         _loaderSql =
             $"select {fieldSelector} from {document.TableName.QualifiedName} as d where id = $1";
@@ -107,7 +95,26 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     public bool UseNumericRevisions { get;  }
 
-    public ISelectClause SelectClauseWithDuplicatedFields { get; }
+    // TODO -- convert to a method in V8
+    // this has to be a new instance every time because of how it gets the FromObject
+    // renamed in Include() batches
+    public ISelectClause SelectClauseWithDuplicatedFields
+    {
+        get
+        {
+            if (DuplicatedFields.Any())
+            {
+                var duplicatedFields = DuplicatedFields.Select(x => "d." + x.ColumnName).Where(x => !_selectFields.Contains(x));
+                var allFields = _selectFields.Concat(duplicatedFields).ToArray();
+                return new DuplicatedFieldSelectClause(TableName.QualifiedName, $"select {allFields.Join(", ")} from {_document.TableName.QualifiedName} as d",
+                    allFields, typeof(T), this);
+            }
+            else
+            {
+                return this;
+            }
+        }
+    }
 
     MetadataColumn[] IHaveMetadataColumns.MetadataColumns()
     {
