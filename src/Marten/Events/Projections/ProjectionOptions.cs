@@ -314,6 +314,12 @@ public class ProjectionOptions: DaemonSettings
 
         projection.AssembleAndAssertValidity();
 
+        if (lifecycle == ProjectionLifecycle.Live)
+        {
+            // Hack to address https://github.com/JasperFx/marten/issues/3140
+            _options.Storage.MappingFor(typeof(T)).SkipSchemaGeneration = true;
+        }
+
         All.Add(projection);
     }
 
