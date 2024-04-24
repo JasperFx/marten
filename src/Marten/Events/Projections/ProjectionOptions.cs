@@ -332,6 +332,12 @@ public class ProjectionOptions: DaemonSettings
         _subscriptions.Add(subscription);
     }
 
+    /// <summary>
+    /// Add a new event subscription to this store with the option to configure the filtering
+    /// and async daemon behavior
+    /// </summary>
+    /// <param name="subscription"></param>
+    /// <param name="configure"></param>
     public void Subscribe(ISubscription subscription, Action<ISubscriptionOptions>? configure = null)
     {
         var wrapper = new SubscriptionWrapper(subscription);
