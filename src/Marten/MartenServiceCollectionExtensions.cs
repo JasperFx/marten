@@ -855,7 +855,15 @@ public static class MartenServiceCollectionExtensions
                     Services.ConfigureMarten((s, opts) =>
                     {
                         var subscription = s.GetRequiredService<T>();
-                        opts.Projections.Subscribe(subscription, configure);
+                        if (subscription is SubscriptionBase subscriptionBase)
+                        {
+                            configure?.Invoke(subscriptionBase);
+                            opts.Projections.Subscribe(subscriptionBase);
+                        }
+                        else
+                        {
+                            opts.Projections.Subscribe(subscription, configure);
+                        }
                     });
                     break;
 

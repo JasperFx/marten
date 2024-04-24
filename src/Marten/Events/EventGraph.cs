@@ -15,6 +15,7 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
+using Marten.Subscriptions;
 using Marten.Util;
 using Microsoft.Extensions.Logging.Abstractions;
 using NpgsqlTypes;
@@ -252,6 +253,16 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     }
 
     IReadonlyMetadataConfig IReadOnlyEventStoreOptions.MetadataConfig => MetadataConfig;
+
+    void IEventStoreOptions.Subscribe(ISubscription subscription)
+    {
+        Options.Projections.Subscribe(subscription);
+    }
+
+    void IEventStoreOptions.Subscribe(ISubscription subscription, Action<ISubscriptionOptions>? configure)
+    {
+        Options.Projections.Subscribe(subscription, configure);
+    }
 
     private Type findAggregateType(string name)
     {
