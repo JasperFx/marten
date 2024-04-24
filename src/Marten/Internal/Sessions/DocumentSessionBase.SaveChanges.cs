@@ -114,6 +114,8 @@ public abstract partial class DocumentSessionBase
 
     internal void ExecuteBatch(IUpdateBatch batch)
     {
+        BeginTransaction();
+
         try
         {
             batch.ApplyChanges(this);
