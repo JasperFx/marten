@@ -233,7 +233,6 @@ await host.StartAsync();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L168-L192' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_kafkasubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Registering Subscriptions
 
 ::: info
@@ -597,9 +596,3 @@ public class ReallyBadException: Exception
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L48-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_errorhandlingsubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
-
-
-
-
-
