@@ -54,7 +54,7 @@ So far, the subscription model gives you these abilities:
 
 * Access to the Marten `IDocumentOperations` service that is scoped to the processing of a single page and can
   be used to either query additional data or to make database writes within the context of the same transaction that
-  Marten will use to record the current progress of the subscription to the databsae
+  Marten will use to record the current progress of the subscription to the database
 * Error handling abilities via the `ISubscriptionController` interface argument that can be used to record events
   that were skipped by the subscription or to completely stop all further processing
 * By returning an `IChangeListener`, the subscription can be notified right before and right after Marten commits
@@ -511,7 +511,7 @@ subscription will be "rewound" to its previous position when Marten tries to res
 As the author of a subscription, you should strive to handle exceptions internally within the 
 subscription itself as much as possible. You do have the ability to use the `ISubscriptionController`
 argument to record "dead letter events" that are skipped internally with an exception or 
-to signal to Marten when a subscription has to be stopped partway throught the current page. Doing this
+to signal to Marten when a subscription has to be stopped partway thought the current page. Doing this
 will allow the previous work to go forward, but the subscription will be paused afterward at the point
 that the controller is told. 
 
