@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Threading;
+using Marten.Linq.Includes;
 
 namespace Marten.Linq;
 
@@ -81,4 +81,10 @@ public interface IMartenQueryable<T>: IQueryable<T>
     IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
         IDictionary<TKey, TInclude> dictionary, Expression<Func<TInclude, bool>> filter) where TInclude : notnull where TKey : notnull;
 
+    IMartenQueryableIncludeBuilder<T, TInclude> Include<TInclude>(Action<TInclude> callback) where TInclude : notnull;
+    IMartenQueryableIncludeBuilder<T, TInclude> Include<TInclude>(IList<TInclude> list) where TInclude : notnull;
+    IMartenQueryableIncludeBuilder<T, TId, TInclude> Include<TId, TInclude>(
+        IDictionary<TId, TInclude> dictionary) where TInclude : notnull where TId : notnull;
+    IMartenQueryableIncludeBuilder<T, TId, TInclude> Include<TId, TInclude>(
+        IDictionary<TId, IList<TInclude>> dictionary) where TInclude : notnull where TId : notnull;
 }

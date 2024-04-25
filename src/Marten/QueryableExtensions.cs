@@ -10,9 +10,7 @@ using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Linq;
 using Marten.Linq.Includes;
-using Marten.Linq.Parsing.Operators;
 using Marten.Services.BatchQuerying;
-using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using Npgsql;
 
 namespace Marten;
@@ -118,6 +116,40 @@ public static class QueryableExtensions
     {
         return queryable.As<MartenLinqQueryable<T>>()
             .Include(idSource, dictionary);
+    }
+
+    public static IMartenQueryableIncludeBuilder<T, TInclude> Include<T, TInclude>(
+        this IQueryable<T> queryable,
+        Action<TInclude> callback)
+        where TInclude : notnull
+    {
+        return queryable.As<MartenLinqQueryable<T>>().Include(callback);
+    }
+
+    public static IMartenQueryableIncludeBuilder<T, TInclude> Include<T, TInclude>(
+        this IQueryable<T> queryable,
+        IList<TInclude> list)
+        where TInclude : notnull
+    {
+        return queryable.As<MartenLinqQueryable<T>>().Include(list);
+    }
+
+    public static IMartenQueryableIncludeBuilder<T, TId, TInclude> Include<T, TId, TInclude>(
+        this IQueryable<T> queryable,
+        IDictionary<TId, TInclude> dictionary)
+        where TInclude : notnull
+        where TId : notnull
+    {
+        return queryable.As<MartenLinqQueryable<T>>().Include(dictionary);
+    }
+
+    public static IMartenQueryableIncludeBuilder<T, TId, TInclude> Include<T, TId, TInclude>(
+        this IQueryable<T> queryable,
+        IDictionary<TId, IList<TInclude>> dictionary)
+        where TInclude : notnull
+        where TId : notnull
+    {
+        return queryable.As<MartenLinqQueryable<T>>().Include(dictionary);
     }
 
     /// <summary>

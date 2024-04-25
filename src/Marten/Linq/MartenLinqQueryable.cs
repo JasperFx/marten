@@ -8,9 +8,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
-using Marten.Exceptions;
 using Marten.Internal.Sessions;
-using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
@@ -29,7 +27,7 @@ internal interface IMartenLinqQueryable
     LinqQueryParser BuildLinqParser();
 }
 
-internal class MartenLinqQueryable<T>: IOrderedQueryable<T>, IMartenQueryable<T>, IMartenLinqQueryable
+internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T>, IMartenLinqQueryable
 {
     public MartenLinqQueryable(QuerySession session, MartenLinqQueryProvider provider, Expression expression)
     {
@@ -67,45 +65,58 @@ internal class MartenLinqQueryable<T>: IOrderedQueryable<T>, IMartenQueryable<T>
         return new LinqQueryParser(MartenProvider, Session, Expression);
     }
 
-
     public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback)
         where TInclude : notnull
     {
-        var include = BuildInclude(idSource, callback);
-        return this.IncludePlan(include);
+        return Include(callback).On(idSource);
     }
 
     public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list)
         where TInclude : notnull
     {
-        return Include<TInclude>(idSource, list.Add);
+        return Include(list).On(idSource);
     }
 
     public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list,
         Expression<Func<TInclude, bool>> filter) where TInclude : notnull
     {
-        return Include(idSource, list.Add, filter);
+        return Include(list).On(idSource, filter);
     }
 
     public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback, Expression<Func<TInclude, bool>> filter) where TInclude : notnull
     {
-        var include = BuildInclude(idSource, callback, filter);
-        return this.IncludePlan(include);
+        return Include(callback).On(idSource, filter);
     }
-
-
+    
     public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
         IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey : notnull
     {
-        var include = BuildInclude(idSource, dictionary);
-        return this.IncludePlan(include);
+        return Include(dictionary).On(idSource);
     }
 
     public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource, IDictionary<TKey, TInclude> dictionary, Expression<Func<TInclude, bool>> filter) where TInclude : notnull where TKey : notnull
     {
-        var include = BuildInclude(idSource, dictionary);
-        include.Where = filter;
-        return this.IncludePlan(include);
+        return Include(dictionary).On(idSource, filter);
+    }
+
+    public IMartenQueryableIncludeBuilder<T, TInclude> Include<TInclude>(Action<TInclude> callback) where TInclude : notnull
+    {
+        return new MartenQueryableIncludeBuilder<T, TInclude>(this, callback);
+    }
+
+    public IMartenQueryableIncludeBuilder<T, TInclude> Include<TInclude>(IList<TInclude> list) where TInclude : notnull
+    {
+        return new MartenQueryableIncludeBuilder<T, TInclude>(this, list.Add);
+    }
+
+    public IMartenQueryableIncludeBuilder<T, TId, TInclude> Include<TId, TInclude>(IDictionary<TId, TInclude> dictionary) where TId : notnull where TInclude : notnull
+    {
+        return new MartenQueryableIncludeBuilder<T, TId, TInclude>(this, dictionary);
+    }
+
+    public IMartenQueryableIncludeBuilder<T, TId, TInclude> Include<TId, TInclude>(IDictionary<TId, IList<TInclude>> dictionary) where TId : notnull where TInclude : notnull
+    {
+        return new MartenQueryableIncludeBuilder<T, TId, TInclude>(this, dictionary);
     }
 
     public IEnumerator<T> GetEnumerator()
@@ -222,42 +233,7 @@ internal class MartenLinqQueryable<T>: IOrderedQueryable<T>, IMartenQueryable<T>
     {
         return MartenProvider.StreamMany(Expression, destination, token);
     }
-
-    internal IIncludePlan BuildInclude<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback, Expression? where = null)
-        where TInclude : notnull
-    {
-        var storage = (IDocumentStorage<TInclude>)Session.StorageFor(typeof(TInclude));
-        var identityMember = Session.StorageFor(typeof(T)).QueryMembers.MemberFor(idSource);
-
-        var include = new IncludePlan<TInclude>(storage, identityMember, callback)
-        {
-            Where = where
-        };
-
-        return include;
-    }
-
-    internal IIncludePlan BuildInclude<TInclude, TKey>(Expression<Func<T, object>> idSource,
-        IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey : notnull
-    {
-        var storage = (IDocumentStorage<TInclude>)Session.StorageFor(typeof(TInclude));
-
-        if (storage is IDocumentStorage<TInclude, TKey> s)
-        {
-            var identityMember = Session.StorageFor(typeof(T)).QueryMembers.MemberFor(idSource);
-
-            void Callback(TInclude item)
-            {
-                var id = s.Identity(item);
-                dictionary[id] = item;
-            }
-
-            return new IncludePlan<TInclude>(storage, identityMember, Callback);
-        }
-
-        throw new DocumentIdTypeMismatchException(storage, typeof(TKey));
-    }
-
+    
     public NpgsqlCommand ToPreviewCommand(FetchType fetchType)
     {
         var parser = new LinqQueryParser(MartenProvider, Session, Expression);

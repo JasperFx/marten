@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Marten;
-using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -16,7 +13,7 @@ using User = Marten.Testing.Documents.User;
 
 namespace LinqTests.Includes;
 
-public class end_to_end_query_with_include: OneOffConfigurationsContext
+public class end_to_end_query_with_include: IntegrationContext
 {
     private readonly ITestOutputHelper _output;
 
@@ -896,7 +893,7 @@ public class end_to_end_query_with_include: OneOffConfigurationsContext
         }
     }
 
-    public end_to_end_query_with_include(ITestOutputHelper output)
+    public end_to_end_query_with_include(ITestOutputHelper output, DefaultStoreFixture fixture) : base(fixture)
     {
         _output = output;
     }
