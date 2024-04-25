@@ -1,4 +1,3 @@
-using System.Linq;
 using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;
@@ -30,6 +29,7 @@ public class TemporaryTableStatement: Statement
     {
         sql.Append("drop table if exists ");
         sql.Append(ExportName);
+        sql.Append("; ");
         sql.StartNewCommand();
         sql.Append("create temp table ");
         sql.Append(ExportName);
