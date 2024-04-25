@@ -94,10 +94,8 @@ public partial class ProjectionDaemon
 
         if (token.IsCancellationRequested) return;
 
-        if (Tracker.HighWaterMark == 0)
-        {
-            await _highWater.CheckNowAsync().ConfigureAwait(false);
-        }
+        // Check now regardless
+        await _highWater.CheckNowAsync().ConfigureAwait(false);
 
         // If there's no data, do nothing
         if (Tracker.HighWaterMark == 0)
