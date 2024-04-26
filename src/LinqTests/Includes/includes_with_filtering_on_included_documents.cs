@@ -54,7 +54,7 @@ public class includes_with_filtering_on_included_documents: IntegrationContext
         var list = new List<Target>();
 
         var holders = await theSession.Query<TargetHolder>()
-            .Include<Target>(x => x.TargetId, x => list.Add(x), t => t.Color == Colors.Blue)
+            .Include(list).On(x => x.TargetId, t => t.Color == Colors.Blue)
             .ToListAsync();
 
         list.Select(x => x.Color).Distinct()

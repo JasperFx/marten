@@ -49,10 +49,10 @@ public class end_to_end_query_with_include: IntegrationContext
         #endregion
 
         var toList = batch.Query<Issue>()
-            .Include<User>(x => x.AssigneeId, list).ToList();
+            .Include(list).On(x => x.AssigneeId).ToList();
 
         var toDict = batch.Query<Issue>()
-            .Include(x => x.AssigneeId, dict).ToList();
+            .Include(dict).On(x => x.AssigneeId).ToList();
 
         await batch.Execute();
 
@@ -93,7 +93,7 @@ public class end_to_end_query_with_include: IntegrationContext
         User included = null;
         var issue2 = query
             .Query<Issue>()
-            .Include<User>(x => x.AssigneeId, x => included = x)
+            .Include<User>(x => included = x).On(x => x.AssigneeId)
             .Single(x => x.Title == issue.Title);
 
         included.ShouldNotBeNull();
@@ -488,7 +488,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var query = theStore.QuerySession();
         var dict = new Dictionary<Guid, User>();
 
-        query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
+        query.Query<Issue>().Include(dict).On(x => x.AssigneeId).ToArray();
 
         dict.Count.ShouldBe(2);
         dict.ContainsKey(user1.Id).ShouldBeTrue();
@@ -711,8 +711,8 @@ public class end_to_end_query_with_include: IntegrationContext
         query.Logger = new TestOutputMartenLogger(_output);
         query
             .Query<Issue>()
-            .Include<User>(x => x.AssigneeId, x => assignee2 = x)
-            .Include<User>(x => x.ReporterId, x => reporter2 = x)
+            .Include<User>(x => assignee2 = x).On(x => x.AssigneeId)
+            .Include<User>(x => reporter2 = x).On(x => x.ReporterId)
             .Single()
             .ShouldNotBeNull();
 
