@@ -240,7 +240,7 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
 
         var command = new NpgsqlCommand();
 
-        var sql = new CommandBuilder(command);
+        var sql = new CommandBuilder(command) {TenantId = Session.TenantId};
 
         parser.BuildDiagnosticCommand(fetchType, sql);
         command.CommandText = sql.ToString();
