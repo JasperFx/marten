@@ -196,6 +196,27 @@ public static class QueryableExtensions
     }
 
     /// <summary>
+    ///     Also fetch related documents, and add the related documents to
+    ///     the supplied dictionary of lists organized by the property mapped to the
+    ///     related document. Follow this with <c>.On(idSource)</c> to specify how
+    ///     to map to this document.
+    /// </summary>
+    /// <param name="idSource"></param>
+    /// <param name="dictionary"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TInclude"></typeparam>
+    /// <typeparam name="TKey"></typeparam>
+    /// <returns></returns>
+    public static IMartenQueryableIncludeBuilder<T, TKey, TInclude> Include<T, TKey, TInclude>(
+        this IQueryable<T> queryable,
+        IDictionary<TKey, List<TInclude>> dictionary)
+        where TInclude : notnull
+        where TKey : notnull
+    {
+        return queryable.As<MartenLinqQueryable<T>>().Include(dictionary);
+    }
+
+    /// <summary>
     ///     Execute this query to an IAsyncEnumerable. This is valuable for reading
     ///     and processing large result sets without having to keep the entire
     ///     result set in memory

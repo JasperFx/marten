@@ -112,6 +112,20 @@ public interface IBatchedQueryable<T>: IBatchedFetcher<T>
     IBatchedQueryableIncludeBuilder<T, TKey, TInclude> Include<TKey, TInclude>(
         IDictionary<TKey, IList<TInclude>> dictionary) where TInclude : notnull where TKey : notnull;
 
+    /// <summary>
+    ///     Also fetch related documents, and add the related documents to
+    ///     the supplied dictionary of lists organized by the property mapped to the
+    ///     related document. Follow this with <c>.On(idSource)</c> to specify how
+    ///     to map to this document.
+    /// </summary>
+    /// <param name="idSource"></param>
+    /// <param name="dictionary"></param>
+    /// <typeparam name="TInclude"></typeparam>
+    /// <typeparam name="TKey"></typeparam>
+    /// <returns></returns>
+    IBatchedQueryableIncludeBuilder<T, TKey, TInclude> Include<TKey, TInclude>(
+        IDictionary<TKey, List<TInclude>> dictionary) where TInclude : notnull where TKey : notnull;
+
     Task<TResult> Min<TResult>(Expression<Func<T, TResult>> expression);
 
     Task<TResult> Max<TResult>(Expression<Func<T, TResult>> expression);
