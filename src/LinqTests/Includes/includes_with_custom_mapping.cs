@@ -55,7 +55,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         SchoolUser? teacher = null;
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom>()
             .Include<SchoolUser>(u => teacher = u).On(r => r.TeacherId, u => u.StaffId)
             .Where(r => r.RoomCode == "AA-1");
@@ -76,7 +76,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         Classroom? homeRoom = null;
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<SchoolUser>()
             .Include<Classroom>(c => homeRoom = c).On(u => u.HomeRoom, c => c.RoomCode)
             .Where(u => u.Name == "Student-1002");
@@ -96,7 +96,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var students = new List<SchoolUser>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom)
             .Where(r => r.RoomCode == "AA-1");
@@ -117,7 +117,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var students = new List<SchoolUser>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom);
 
@@ -137,7 +137,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var homeRooms = new List<Classroom>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<SchoolUser>()
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode)
             .Where(s => s.StaffId == null);
@@ -158,7 +158,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var homeRooms = new Dictionary<string, Classroom>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<SchoolUser>()
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode)
             .Where(s => s.StaffId == null);
@@ -179,7 +179,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var teachers = new Dictionary<int, SchoolUser>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom>()
             .Include(teachers).On(r => r.TeacherId, u => u.StaffId);
 
@@ -199,7 +199,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var students = new Dictionary<string, IList<SchoolUser>>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom);
 
@@ -226,7 +226,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         SchoolUser? teacher = null;
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom>()
             .Include<SchoolUser>(u => teacher = u).On(r => r.TeacherId, u => u.StaffId, u => u.Name == "Invalid")
             .Where(r => r.RoomCode == "AA-1");
@@ -244,7 +244,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         Classroom? homeRoom = null;
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<SchoolUser>()
             .Include<Classroom>(c => homeRoom = c)
             .On(u => u.HomeRoom, c => c.RoomCode, c => c.RoomCode == "Invalid")
@@ -263,7 +263,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var students = new List<SchoolUser>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom, u => u.Name.EndsWith("1"))
             .Where(r => r.RoomCode == "AA-1");
@@ -284,7 +284,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var students = new List<SchoolUser>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom, u => u.Name.EndsWith("1"));
 
@@ -304,7 +304,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var homeRooms = new List<Classroom>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<SchoolUser>()
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode, r => r.TeacherId < 13)
             .Where(s => s.StaffId == null);
@@ -325,7 +325,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var homeRooms = new Dictionary<string, Classroom>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<SchoolUser>()
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode, r => r.TeacherId < 13)
             .Where(s => s.StaffId == null);
@@ -346,7 +346,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var teachers = new Dictionary<int, SchoolUser>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom>()
             .Include(teachers).On(r => r.TeacherId, u => u.StaffId, u => u.StaffId < 13);
 
@@ -366,7 +366,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var students = new Dictionary<string, IList<SchoolUser>>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom, u => u.Name.EndsWith("1"));
 
@@ -393,7 +393,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         SchoolUser2? teacher = null;
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom2>()
             .Include<SchoolUser2>(u => teacher = u).On(r => r.TeacherId, u => u.StaffId)
             .Where(r => r.RoomCode == "AA-1");
@@ -414,7 +414,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         Classroom2? homeRoom = null;
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<SchoolUser2>()
             .Include<Classroom2>(c => homeRoom = c).On(u => u.HomeRoom, c => c.RoomCode)
             .Where(u => u.Name == "Student-1002");
@@ -434,7 +434,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var students = new List<SchoolUser2>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom2>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom)
             .Where(r => r.RoomCode == "AA-1");
@@ -455,7 +455,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var students = new List<SchoolUser2>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom2>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom);
 
@@ -475,7 +475,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var homeRooms = new List<Classroom2>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<SchoolUser2>()
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode)
             .Where(s => s.StaffId == null);
@@ -496,7 +496,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var homeRooms = new Dictionary<string, Classroom2>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<SchoolUser2>()
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode)
             .Where(s => s.StaffId == null);
@@ -517,7 +517,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var teachers = new Dictionary<int, SchoolUser2>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom2>()
             .Include(teachers).On(r => r.TeacherId, u => u.StaffId);
 
@@ -537,7 +537,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var students = new Dictionary<string, IList<SchoolUser2>>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom2>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom);
 
@@ -564,7 +564,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         SchoolUser2? teacher = null;
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom2>()
             .Include<SchoolUser2>(u => teacher = u).On(r => r.TeacherId, u => u.StaffId, u => u.Name == "Invalid")
             .Where(r => r.RoomCode == "AA-1");
@@ -582,7 +582,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         Classroom2? homeRoom = null;
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<SchoolUser2>()
             .Include<Classroom2>(c => homeRoom = c)
             .On(u => u.HomeRoom, c => c.RoomCode, c => c.RoomCode == "Invalid")
@@ -601,7 +601,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var students = new List<SchoolUser2>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom2>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom, u => u.Name.EndsWith("1"))
             .Where(r => r.RoomCode == "AA-1");
@@ -622,7 +622,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var students = new List<SchoolUser2>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom2>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom, u => u.Name.EndsWith("1"));
 
@@ -642,7 +642,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var homeRooms = new List<Classroom2>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<SchoolUser2>()
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode, r => r.TeacherId < 13)
             .Where(s => s.StaffId == null);
@@ -663,7 +663,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var homeRooms = new Dictionary<string, Classroom2>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<SchoolUser2>()
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode, r => r.TeacherId < 13)
             .Where(s => s.StaffId == null);
@@ -684,7 +684,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var teachers = new Dictionary<int, SchoolUser2>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom2>()
             .Include(teachers).On(r => r.TeacherId, u => u.StaffId, u => u.StaffId < 13);
 
@@ -704,7 +704,7 @@ public class includes_with_custom_mapping : IntegrationContext
     {
         var students = new Dictionary<string, IList<SchoolUser2>>();
 
-        var query = theStore.LightweightSession(TenantId)
+        var query = theStore.QuerySession(TenantId)
             .Query<Classroom2>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom, u => u.Name.EndsWith("1"));
 
@@ -723,6 +723,50 @@ public class includes_with_custom_mapping : IntegrationContext
     }
 
     #endregion
+
+    [Fact]
+    public async Task batch_query_mapped_includes()
+    {
+        await using var session = theStore.QuerySession(TenantId);
+        var batch = session.CreateBatchQuery();
+
+        SchoolUser? include1 = null;
+        var query1 = batch
+            .Query<Classroom>()
+            .Include<SchoolUser>(u => include1 = u).On(r => r.TeacherId, u => u.StaffId)
+            .Where(r => r.RoomCode == "AA-1").Single();
+
+        var include2 = new List<SchoolUser>();
+
+        var query2 = batch
+            .Query<Classroom>()
+            .Include(include2).On(r => r.RoomCode, u => u.HomeRoom)
+            .ToList();
+
+        var include3 = new Dictionary<string, IList<SchoolUser2>>();
+        var query3 = batch
+            .Query<Classroom2>()
+            .Include(include3).On(r => r.RoomCode, u => u.HomeRoom, u => u.Name.EndsWith("1"))
+            .ToList();
+
+
+        await batch.Execute();
+
+
+        include1.ShouldNotBeNull().StaffId.ShouldBe(11);
+        (await query1).ShouldNotBeNull();
+
+        include2.Count.ShouldBe(100);
+        include2.ShouldBeUnique();
+        (await query2).ShouldNotBeNull().Count.ShouldBe(5);
+
+        include3.Count.ShouldBe(2);
+        include3.SelectMany(kvp => kvp.Value.Select(v => (k: kvp.Key, v)))
+            .ShouldAllBe(kvp => kvp.k.Equals(kvp.v.HomeRoom));
+        include3.SelectMany(kvp => kvp.Value).ShouldBeUnique();
+        include3.SelectMany(kvp => kvp.Value).Count().ShouldBe(10);
+        (await query3).ShouldNotBeNull().Count.ShouldBe(5);
+    }
 
     /// <summary>
     /// Easy preview of the sql query
