@@ -224,7 +224,6 @@ public void include_to_dictionary_list()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L926-L959' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_list_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Asynchronous Support
 
 Marten supports Include within an asynchronous context. The query will be run asynchronously when you append your query with the corresponding Async method, like:
