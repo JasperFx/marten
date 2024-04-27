@@ -104,6 +104,11 @@ internal class BatchedQueryable<T>: IBatchedQueryable<T> where T : class
 
     public IBatchedQueryableIncludeBuilder<T, TKey, TInclude> Include<TKey, TInclude>(IDictionary<TKey, IList<TInclude>> dictionary) where TKey : notnull where TInclude : notnull
     {
+        return new BatchedQueryableIncludeDictionaryIListBuilder<T, TKey, TInclude>(this, dictionary);
+    }
+
+    public IBatchedQueryableIncludeBuilder<T, TKey, TInclude> Include<TKey, TInclude>(IDictionary<TKey, List<TInclude>> dictionary) where TKey : notnull where TInclude : notnull
+    {
         return new BatchedQueryableIncludeDictionaryListBuilder<T, TKey, TInclude>(this, dictionary);
     }
 
