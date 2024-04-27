@@ -33,13 +33,13 @@ public class includes_with_custom_mapping : IntegrationContext
         var classrooms = Enumerable.Range(0, 5)
             .Select(i => new Classroom(CombGuidIdGeneration.NewGuid(), $"AA-{i}", 10 + i)).ToList();
         var teachers = Enumerable.Range(10, 10)
-            .Select(i => new SchoolUser(CombGuidIdGeneration.NewGuid(), i, $"Teacher-{i}", null)).ToList();
+            .Select(i => new SchoolUser(CombGuidIdGeneration.NewGuid(), $"Teacher-{i}", null, i)).ToList();
         var students = Enumerable.Range(1000, 100)
-            .Select(i => new SchoolUser(CombGuidIdGeneration.NewGuid(), null, $"Student-{i}", $"AA-{i % 4}")).ToList();
+            .Select(i => new SchoolUser(CombGuidIdGeneration.NewGuid(), $"Student-{i}", $"AA-{i % 4}")).ToList();
 
         var classrooms2 = classrooms.Select(c => new Classroom2(c.Id, c.RoomCode, c.TeacherId));
-        var teachers2 = teachers.Select(t => new SchoolUser2(t.Id, t.StaffId, t.Name, t.HomeRoom));
-        var students2 = students.Select(s => new SchoolUser2(s.Id, s.StaffId, s.Name, s.HomeRoom));
+        var teachers2 = teachers.Select(t => new SchoolUser2(t.Id, t.Name, t.HomeRoom, t.StaffId));
+        var students2 = students.Select(s => new SchoolUser2(s.Id, s.Name, s.HomeRoom, s.StaffId));
 
         return theStore.BulkInsertDocumentsAsync(
             TenantId,
@@ -741,23 +741,24 @@ public class includes_with_custom_mapping : IntegrationContext
 
     // alias is to avoid long name issues
     [DocumentAlias("school_user")]
-    public record SchoolUser(Guid Id, int? StaffId, string Name, string? HomeRoom);
+    public record SchoolUser(Guid Id, string Name, string? HomeRoom, int? StaffId = null);
+
     [DocumentAlias("classroom")]
-    public record Classroom(Guid Id, string RoomCode, int TeacherId);
+    public record Classroom(Guid Id, string RoomCode, int? TeacherId = null);
 
     // duplicate field variants
     [DocumentAlias("school_user_dup_field")]
     public record SchoolUser2(
         Guid Id,
-        [property: DuplicateField] int? StaffId,
         string Name,
-        [property: DuplicateField] string? HomeRoom);
+        [property: DuplicateField] string? HomeRoom,
+        [property: DuplicateField] int? StaffId = null);
 
     [DocumentAlias("classroom_dup_field")]
     public record Classroom2(
         Guid Id,
         [property: DuplicateField] string RoomCode,
-        [property: DuplicateField] int TeacherId);
+        [property: DuplicateField] int? TeacherId = null);
 
     #endregion
 }

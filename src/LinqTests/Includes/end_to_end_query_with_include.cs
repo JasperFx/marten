@@ -10,6 +10,8 @@ using Weasel.Core;
 using Xunit.Abstractions;
 using Issue = Marten.Testing.Documents.Issue;
 using User = Marten.Testing.Documents.User;
+using Classroom = LinqTests.Includes.includes_with_custom_mapping.Classroom;
+using SchoolUser = LinqTests.Includes.includes_with_custom_mapping.SchoolUser;
 
 namespace LinqTests.Includes;
 
@@ -42,7 +44,7 @@ public class end_to_end_query_with_include: IntegrationContext
         var batch = query.CreateBatchQuery();
 
         var found = batch.Query<Issue>()
-            .Include<User>(x => x.AssigneeId, x => included = x)
+            .Include<User>(x => included = x).On(x => x.AssigneeId)
             .Where(x => x.Title == issue1.Title)
             .Single();
 
@@ -892,6 +894,70 @@ public class end_to_end_query_with_include: IntegrationContext
             list.Any(x => x.Id == user3.Id).ShouldBeTrue();
         }
     }
+
+    #nullable enable
+    #region sample_include_using_custom_map
+
+    [Fact]
+    public void include_using_custom_map()
+    {
+        var classroom = new Classroom(Id: Guid.NewGuid(), RoomCode: "Classroom-1A");
+        var user = new SchoolUser(Id: Guid.NewGuid(), Name: "Student #1", HomeRoom: "Classroom-1A");
+
+        using var session = theStore.IdentitySession();
+        session.Store<object>(classroom, user);
+        session.SaveChanges();
+
+        using var query = theStore.QuerySession();
+        Classroom? included = null;
+
+        var user2 = query
+            .Query<SchoolUser>()
+            .Include<Classroom>(c => included = c).On(u => u.HomeRoom, c => c.RoomCode)
+            .Single(u => u.Name == "Student #1");
+
+        included.ShouldNotBeNull();
+        included.Id.ShouldBe(classroom.Id);
+        user2.ShouldNotBeNull();
+    }
+
+    #endregion
+
+    #region sample_dictionary_list_include
+
+    [Fact]
+    public void include_to_dictionary_list()
+    {
+        var class1 = new Classroom(Id: Guid.NewGuid(), RoomCode: "Classroom-1A");
+        var class2 = new Classroom(Id: Guid.NewGuid(), RoomCode: "Classroom-2B");
+
+        var user1 = new SchoolUser(Id: Guid.NewGuid(), Name: "Student #1", HomeRoom: "Classroom-1A");
+        var user2 = new SchoolUser(Id: Guid.NewGuid(), Name: "Student #2", HomeRoom: "Classroom-2B");
+        var user3 = new SchoolUser(Id: Guid.NewGuid(), Name: "Student #3", HomeRoom: "Classroom-2B");
+
+        using var session = theStore.IdentitySession();
+        session.Store(class1, class2);
+        session.Store(user1, user2, user3);
+        session.SaveChanges();
+
+        using var query = theStore.QuerySession();
+        var dict = new Dictionary<string, IList<SchoolUser>>();
+
+        var classes = query
+            .Query<Classroom>()
+            .Include(dict).On(c => c.RoomCode, u => u.HomeRoom)
+            .ToArray();
+
+        classes.Length.ShouldBe(2);
+        dict.Count.ShouldBe(2);
+        dict.ContainsKey(class1.RoomCode).ShouldBeTrue();
+        dict.ContainsKey(class2.RoomCode).ShouldBeTrue();
+        dict[class1.RoomCode].Count.ShouldBe(1);
+        dict[class2.RoomCode].Count.ShouldBe(2);
+    }
+
+    #endregion
+    #nullable restore
 
     public end_to_end_query_with_include(ITestOutputHelper output, DefaultStoreFixture fixture) : base(fixture)
     {
