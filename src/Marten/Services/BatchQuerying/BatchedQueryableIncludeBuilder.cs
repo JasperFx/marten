@@ -111,8 +111,7 @@ internal class BatchedQueryableIncludeDictionaryBuilder<T, TKey, TInclude>
     }
 }
 
-
-internal class BatchedQueryableIncludeDictionaryListBuilder<T, TKey, TInclude>
+internal class BatchedQueryableIncludeDictionaryIListBuilder<T, TKey, TInclude>
     : IBatchedQueryableIncludeBuilder<T, TKey, TInclude>
     where T : class
     where TInclude : notnull
@@ -121,9 +120,73 @@ internal class BatchedQueryableIncludeDictionaryListBuilder<T, TKey, TInclude>
     private readonly BatchedQueryable<T> _batchedQueryable;
     private readonly IDictionary<TKey, IList<TInclude>> _dictionary;
 
-    public BatchedQueryableIncludeDictionaryListBuilder(
+    public BatchedQueryableIncludeDictionaryIListBuilder(
         BatchedQueryable<T> batchedQueryable,
         IDictionary<TKey, IList<TInclude>> dictionary)
+    {
+        _batchedQueryable = batchedQueryable;
+        _dictionary = dictionary;
+    }
+
+    public IBatchedQueryable<T> On(Expression<Func<T, object>> idSource)
+    {
+        _batchedQueryable.Inner = _batchedQueryable.Inner.Include(_dictionary).On(idSource);
+        return _batchedQueryable;
+    }
+
+    public IBatchedQueryable<T> On(Expression<Func<T, object>> idSource, Expression<Func<TInclude, bool>> filter)
+    {
+        _batchedQueryable.Inner = _batchedQueryable.Inner.Include(_dictionary).On(idSource, filter);
+        return _batchedQueryable;
+    }
+
+    public IBatchedQueryable<T> On(Expression<Func<T, TKey?>> idSource, Expression<Func<TInclude, TKey?>> idMapping)
+    {
+        _batchedQueryable.Inner = _batchedQueryable.Inner.Include(_dictionary).On(idSource, idMapping);
+        return _batchedQueryable;
+    }
+
+    public IBatchedQueryable<T> On(
+        Expression<Func<T, TKey?>> idSource,
+        Expression<Func<TInclude, TKey?>> idMapping,
+        Expression<Func<TInclude, bool>> filter)
+    {
+        _batchedQueryable.Inner = _batchedQueryable.Inner.Include(_dictionary).On(idSource, idMapping, filter);
+        return _batchedQueryable;
+    }
+
+    public IBatchedQueryable<T> On<TId>(
+        Expression<Func<T, TId?>> idSource,
+        Expression<Func<TInclude, TId?>> idMapping)
+        where TId : struct, TKey
+    {
+        _batchedQueryable.Inner = _batchedQueryable.Inner.Include(_dictionary).On(idSource, idMapping);
+        return _batchedQueryable;
+    }
+
+    public IBatchedQueryable<T> On<TId>(
+        Expression<Func<T, TId?>> idSource,
+        Expression<Func<TInclude, TId?>> idMapping,
+        Expression<Func<TInclude, bool>> filter)
+        where TId : struct, TKey
+    {
+        _batchedQueryable.Inner = _batchedQueryable.Inner.Include(_dictionary).On(idSource, idMapping, filter);
+        return _batchedQueryable;
+    }
+}
+
+internal class BatchedQueryableIncludeDictionaryListBuilder<T, TKey, TInclude>
+    : IBatchedQueryableIncludeBuilder<T, TKey, TInclude>
+    where T : class
+    where TInclude : notnull
+    where TKey : notnull
+{
+    private readonly BatchedQueryable<T> _batchedQueryable;
+    private readonly IDictionary<TKey, List<TInclude>> _dictionary;
+
+    public BatchedQueryableIncludeDictionaryListBuilder(
+        BatchedQueryable<T> batchedQueryable,
+        IDictionary<TKey, List<TInclude>> dictionary)
     {
         _batchedQueryable = batchedQueryable;
         _dictionary = dictionary;

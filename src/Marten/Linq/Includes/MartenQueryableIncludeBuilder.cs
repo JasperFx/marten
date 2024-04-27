@@ -106,6 +106,23 @@ internal class MartenQueryableIncludeBuilder<T, TKey, TInclude>
         };
     }
 
+    public MartenQueryableIncludeBuilder(
+        MartenLinqQueryable<T> martenLinqQueryable,
+        IDictionary<TKey, List<TInclude>> dictionary)
+    {
+        _martenLinqQueryable = martenLinqQueryable;
+        _dictionaryCallback = (id, include) =>
+        {
+            if (!dictionary.TryGetValue(id, out var list))
+            {
+                list = new List<TInclude>();
+                dictionary[id] = list;
+            }
+
+            list.Add(include);
+        };
+    }
+
     public IMartenQueryable<T> On(Expression<Func<T, object>> idSource)
     {
         var include = BuildInclude(idSource);

@@ -129,4 +129,18 @@ public interface IMartenQueryable<T>: IQueryable<T>
     /// <returns></returns>
     IMartenQueryableIncludeBuilder<T, TKey, TInclude> Include<TKey, TInclude>(
         IDictionary<TKey, IList<TInclude>> dictionary) where TInclude : notnull where TKey : notnull;
+
+    /// <summary>
+    ///     Also fetch related documents, and add the related documents to
+    ///     the supplied dictionary of lists organized by the property mapped to the
+    ///     related document. Follow this with <c>.On(idSource)</c> to specify how
+    ///     to map to this document.
+    /// </summary>
+    /// <param name="idSource"></param>
+    /// <param name="dictionary"></param>
+    /// <typeparam name="TInclude"></typeparam>
+    /// <typeparam name="TKey"></typeparam>
+    /// <returns></returns>
+    IMartenQueryableIncludeBuilder<T, TKey, TInclude> Include<TKey, TInclude>(
+        IDictionary<TKey, List<TInclude>> dictionary) where TInclude : notnull where TKey : notnull;
 }
