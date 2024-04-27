@@ -109,14 +109,14 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
         return new MartenQueryableIncludeBuilder<T, TInclude>(this, list.Add);
     }
 
-    public IMartenQueryableIncludeBuilder<T, TId, TInclude> Include<TId, TInclude>(IDictionary<TId, TInclude> dictionary) where TId : notnull where TInclude : notnull
+    public IMartenQueryableIncludeBuilder<T, TKey, TInclude> Include<TKey, TInclude>(IDictionary<TKey, TInclude> dictionary) where TKey : notnull where TInclude : notnull
     {
-        return new MartenQueryableIncludeBuilder<T, TId, TInclude>(this, dictionary);
+        return new MartenQueryableIncludeBuilder<T, TKey, TInclude>(this, dictionary);
     }
 
-    public IMartenQueryableIncludeBuilder<T, TId, TInclude> Include<TId, TInclude>(IDictionary<TId, IList<TInclude>> dictionary) where TId : notnull where TInclude : notnull
+    public IMartenQueryableIncludeBuilder<T, TKey, TInclude> Include<TKey, TInclude>(IDictionary<TKey, IList<TInclude>> dictionary) where TKey : notnull where TInclude : notnull
     {
-        return new MartenQueryableIncludeBuilder<T, TId, TInclude>(this, dictionary);
+        return new MartenQueryableIncludeBuilder<T, TKey, TInclude>(this, dictionary);
     }
 
     public IEnumerator<T> GetEnumerator()

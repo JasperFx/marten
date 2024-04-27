@@ -118,6 +118,15 @@ public static class QueryableExtensions
             .Include(idSource, dictionary);
     }
 
+    /// <summary>
+    ///     Also fetch related documents, and call the callback lambda for each
+    ///     related document. Follow this with <c>.On(idSource)</c> to specify how to
+    ///     map to this document.
+    /// </summary>
+    /// <param name="callback"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TInclude"></typeparam>
+    /// <returns></returns>
     public static IMartenQueryableIncludeBuilder<T, TInclude> Include<T, TInclude>(
         this IQueryable<T> queryable,
         Action<TInclude> callback)
@@ -126,6 +135,16 @@ public static class QueryableExtensions
         return queryable.As<MartenLinqQueryable<T>>().Include(callback);
     }
 
+    /// <summary>
+    ///     Also fetch related documents, and add the related documents to
+    ///     the supplied list. Follow this with <c>.On(idSource)</c> to specify how to
+    ///     map to this document.
+    /// </summary>
+    /// <param name="idSource"></param>
+    /// <param name="list"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TInclude"></typeparam>
+    /// <returns></returns>
     public static IMartenQueryableIncludeBuilder<T, TInclude> Include<T, TInclude>(
         this IQueryable<T> queryable,
         IList<TInclude> list)
@@ -134,20 +153,44 @@ public static class QueryableExtensions
         return queryable.As<MartenLinqQueryable<T>>().Include(list);
     }
 
-    public static IMartenQueryableIncludeBuilder<T, TId, TInclude> Include<T, TId, TInclude>(
+    /// <summary>
+    ///     Also fetch related documents, and add the related documents to
+    ///     the supplied dictionary organized by the property mapped to the related
+    ///     document. Follow this with <c>.On(idSource)</c> to specify how to map to
+    ///     this document.
+    /// </summary>
+    /// <param name="idSource"></param>
+    /// <param name="dictionary"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TInclude"></typeparam>
+    /// <typeparam name="TKey"></typeparam>
+    /// <returns></returns>
+    public static IMartenQueryableIncludeBuilder<T, TKey, TInclude> Include<T, TKey, TInclude>(
         this IQueryable<T> queryable,
-        IDictionary<TId, TInclude> dictionary)
+        IDictionary<TKey, TInclude> dictionary)
         where TInclude : notnull
-        where TId : notnull
+        where TKey : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().Include(dictionary);
     }
 
-    public static IMartenQueryableIncludeBuilder<T, TId, TInclude> Include<T, TId, TInclude>(
+    /// <summary>
+    ///     Also fetch related documents, and add the related documents to
+    ///     the supplied dictionary of lists organized by the property mapped to the
+    ///     related document. Follow this with <c>.On(idSource)</c> to specify how
+    ///     to map to this document.
+    /// </summary>
+    /// <param name="idSource"></param>
+    /// <param name="dictionary"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TInclude"></typeparam>
+    /// <typeparam name="TKey"></typeparam>
+    /// <returns></returns>
+    public static IMartenQueryableIncludeBuilder<T, TKey, TInclude> Include<T, TKey, TInclude>(
         this IQueryable<T> queryable,
-        IDictionary<TId, IList<TInclude>> dictionary)
+        IDictionary<TKey, IList<TInclude>> dictionary)
         where TInclude : notnull
-        where TId : notnull
+        where TKey : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().Include(dictionary);
     }
