@@ -241,7 +241,7 @@ public abstract partial class DocumentSessionBase
         }
     }
 
-    private Task tryApplyTombstoneEventsAsync(CancellationToken token)
+    protected virtual Task tryApplyTombstoneEventsAsync(CancellationToken token)
     {
         if (Options.EventGraph.TryCreateTombstoneBatch(this, out var tombstoneBatch))
         {

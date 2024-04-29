@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
@@ -19,7 +20,7 @@ public class SubscriptionAgentTests
 
     public SubscriptionAgentTests()
     {
-        theAgent = new SubscriptionAgent(new ShardName("Projection1"), theOptions, theLoader, theExecution, new ShardStateTracker(NullLogger.Instance), NullLogger.Instance);
+        theAgent = new SubscriptionAgent(new ShardName("Projection1"), theOptions, TimeProvider.System, theLoader, theExecution, new ShardStateTracker(NullLogger.Instance), NullLogger.Instance);
     }
 
     [Fact]

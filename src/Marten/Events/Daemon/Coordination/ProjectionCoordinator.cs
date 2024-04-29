@@ -29,6 +29,7 @@ public class ProjectionCoordinator : IProjectionCoordinator
     private readonly ResiliencePipeline _resilience;
     private readonly CancellationTokenSource _cancellation = new();
     private Task _runner;
+    private readonly TimeProvider _timeProvider;
 
     public ProjectionCoordinator(IDocumentStore documentStore, ILogger<ProjectionCoordinator> logger)
     {
@@ -53,7 +54,7 @@ public class ProjectionCoordinator : IProjectionCoordinator
         _options = store.Options;
         _logger = logger;
         _resilience = store.Options.ResiliencePipeline;
-
+        _timeProvider = _options.Events.TimeProvider;
         Store = store;
     }
 
@@ -231,7 +232,7 @@ public class ProjectionCoordinator : IProjectionCoordinator
             {
                 await tryStartAgent(stoppingToken, daemon, name, set).ConfigureAwait(false);
             }
-            else if (agent.Status == AgentStatus.Paused && agent.PausedTime.HasValue && DateTimeOffset.UtcNow.Subtract(agent.PausedTime.Value) > _options.Projections.HealthCheckPollingTime)
+            else if (agent.Status == AgentStatus.Paused && agent.PausedTime.HasValue && _timeProvider.GetUtcNow().Subtract(agent.PausedTime.Value) > _options.Projections.HealthCheckPollingTime)
             {
                 await tryStartAgent(stoppingToken, daemon, name, set).ConfigureAwait(false);
             }

@@ -57,7 +57,7 @@ public class AgentFactory : IAgentFactory
             var loader = new EventLoader(_store, database, shard, options);
             var wrapped = new ResilientEventLoader(_store.Options.ResiliencePipeline, loader);
 
-            return new SubscriptionAgent(shard.Name, options, wrapped, execution, database.Tracker, logger);
+            return new SubscriptionAgent(shard.Name, options, _store.Events.TimeProvider, wrapped, execution, database.Tracker, logger);
         }
 
         if (shard.SubscriptionSource != null)
@@ -68,7 +68,7 @@ public class AgentFactory : IAgentFactory
             var loader = new EventLoader(_store, database, shard, options);
             var wrapped = new ResilientEventLoader(_store.Options.ResiliencePipeline, loader);
 
-            return new SubscriptionAgent(shard.Name, options, wrapped, execution, database.Tracker, logger);
+            return new SubscriptionAgent(shard.Name, options, _store.Options.Events.TimeProvider, wrapped, execution, database.Tracker, logger);
         }
 
         throw new ArgumentOutOfRangeException(nameof(shard), "This shard has neither a subscription nor projection");

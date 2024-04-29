@@ -69,6 +69,8 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     // TODO -- make this private
     public ActionBlock<IStorageOperation> Queue { get; }
 
+
+
     IEnumerable<IDeletion> IUnitOfWork.Deletions()
     {
         throw new NotSupportedException();
@@ -165,7 +167,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         throw new NotSupportedException();
     }
 
-    List<StreamAction> ISessionWorkTracker.Streams => throw new NotSupportedException();
+    List<StreamAction> ISessionWorkTracker.Streams => new();
 
 
     IReadOnlyList<IStorageOperation> ISessionWorkTracker.AllOperations => throw new NotSupportedException();
