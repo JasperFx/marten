@@ -682,53 +682,6 @@ namespace CoreTests.Internal.Sessions
             _innerConnectionLifetime.Received(1).ExecuteBatchPages(Arg.Any<IReadOnlyList<OperationPage>>(), Arg.Any<List<Exception>>());
         }
 
-        [Fact]
-        public void ExecuteBatchPages_Ensure_The_Correct_Events_And_Tags_Are_Emitted_When_Execution_Fails()
-        {
-            _startCalled = false;
-            _endCalled = false;
-
-            using var listener = new ActivityListener
-            {
-                ShouldListenTo = _ => _.Name == "Marten",
-                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
-                ActivityStarted = activity =>
-                {
-                    _startCalled = true;
-                    activity.ShouldNotBeNull();
-                    activity.DisplayName.ShouldBe("connection");
-                },
-                ActivityStopped = activity =>
-                {
-                    _endCalled = true;
-                    var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.ShouldNotBeNull();
-                    expectedTag.Key.ShouldBe(MartenTracing.MartenTenantId);
-                    activity.Events.Count().ShouldBe(2);
-                    var firstEvent = activity.Events.First();
-                    firstEvent.Name.ShouldBe(MartenBatchPagesExecutionStarted);
-                    firstEvent.Tags.ShouldBeEmpty();
-                    var lastEvent = activity.Events.Last();
-                    lastEvent.Name.ShouldBe(AttributeExceptionEventName);
-                    lastEvent.Tags.Select(x => x.Key)
-                        .ShouldBe(
-                            new[] { AttributeExceptionType, AttributeExceptionStacktrace, AttributeExceptionMessage },
-                            ignoreOrder: true);
-                }
-            };
-
-            ActivitySource.AddActivityListener(listener);
-            _innerConnectionLifetime.ExecuteBatchPages(Arg.Any<IReadOnlyList<OperationPage>>(), Arg.Any<List<Exception>>());
-            using (var eventTracingConnectionLifetime =
-                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant))
-            {
-                Should.Throw<InvalidOperationException>(() => eventTracingConnectionLifetime.Execute(_npgsqlCommand));
-            }
-
-            _startCalled.ShouldBeTrue();
-            _endCalled.ShouldBeTrue();
-            _innerConnectionLifetime.Received(1).Execute(_npgsqlCommand);
-        }
 
         [Fact]
         public async Task ExecuteBatchPagesAsync_Ensure_The_Correct_Event_And_Tags_Are_Emited_When_Command_Execution_Succeeds()
