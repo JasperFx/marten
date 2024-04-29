@@ -86,7 +86,7 @@ public sealed class SessionOptions
     /// <summary>
     /// Used to enable or disable Marten's OpenTelemetry features for just this session.
     /// </summary>
-    public OpenTelemetryOptions OpenTelemetryOptions { get; set; } = new OpenTelemetryOptions();
+    public OpenTelemetryOptions OpenTelemetryOptions { get; set; } = new();
 
     internal IConnectionLifetime Initialize(DocumentStore store, CommandRunnerMode mode)
     {
@@ -99,14 +99,14 @@ public sealed class SessionOptions
             throw new DefaultTenantUsageDisabledException();
         }
 
-        var innerConnectionLifetime = GetInnerConnectionLifetime(store, mode);
+        var innerConnectionLifetime = buildConnectionLifetime(store, mode);
 
         return !OpenTelemetryOptions.TrackConnectionEvents || !MartenTracing.ActivitySource.HasListeners()
             ? innerConnectionLifetime
             : new EventTracingConnectionLifetime(innerConnectionLifetime, Tenant.TenantId);
     }
 
-    private IConnectionLifetime GetInnerConnectionLifetime(DocumentStore store, CommandRunnerMode mode)
+    private IConnectionLifetime buildConnectionLifetime(DocumentStore store, CommandRunnerMode mode)
     {
         if (!OwnsTransactionLifecycle && mode != CommandRunnerMode.ReadOnly)
         {
