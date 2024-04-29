@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using Marten.Exceptions;
+using Marten.Internal.OpenTelemetry;
 using Marten.Internal.Sessions;
 using Marten.Storage;
 using Npgsql;
@@ -82,6 +83,11 @@ public sealed class SessionOptions
     /// </summary>
     public bool AllowAnyTenant { get; set; }
 
+    /// <summary>
+    /// Used to enable or disable Marten's OpenTelemetry features for just this session.
+    /// </summary>
+    public OpenTelemetryOptions OpenTelemetryOptions { get; set; } = new OpenTelemetryOptions();
+
     internal IConnectionLifetime Initialize(DocumentStore store, CommandRunnerMode mode)
     {
         Mode = mode;
@@ -93,6 +99,15 @@ public sealed class SessionOptions
             throw new DefaultTenantUsageDisabledException();
         }
 
+        var innerConnectionLifetime = GetInnerConnectionLifetime(store, mode);
+
+        return !OpenTelemetryOptions.TrackConnectionEvents || !MartenTracing.ActivitySource.HasListeners()
+            ? innerConnectionLifetime
+            : new EventTracingConnectionLifetime(innerConnectionLifetime, Tenant.TenantId);
+    }
+
+    private IConnectionLifetime GetInnerConnectionLifetime(DocumentStore store, CommandRunnerMode mode)
+    {
         if (!OwnsTransactionLifecycle && mode != CommandRunnerMode.ReadOnly)
         {
             Mode = CommandRunnerMode.External;
@@ -103,16 +118,17 @@ public sealed class SessionOptions
             if (IsolationLevel == IsolationLevel.Serializable)
             {
                 var transaction = mode == CommandRunnerMode.ReadOnly
-                    ? new ReadOnlyTransactionalConnection(this){CommandTimeout = Timeout ?? store.Options.CommandTimeout}
-                    : new TransactionalConnection(this){CommandTimeout = Timeout ?? store.Options.CommandTimeout};
+                    ? new ReadOnlyTransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout }
+                    : new TransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout };
                 transaction.BeginTransaction();
 
                 return transaction;
             }
             else if (store.Options.UseStickyConnectionLifetimes)
             {
-                return new TransactionalConnection(this){CommandTimeout = Timeout ?? store.Options.CommandTimeout};
+                return new TransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout };
             }
+
             {
                 return new AutoClosingLifetime(this, store.Options);
             }
@@ -121,18 +137,18 @@ public sealed class SessionOptions
 
         if (Transaction != null)
         {
-            return new ExternalTransaction(this){CommandTimeout = Timeout ?? store.Options.CommandTimeout};
+            return new ExternalTransaction(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout };
         }
 
 
         if (DotNetTransaction != null)
         {
-            return new AmbientTransactionLifetime(this){CommandTimeout = Timeout ?? store.Options.CommandTimeout};
+            return new AmbientTransactionLifetime(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout };
         }
 
         if (Connection != null)
         {
-            return new TransactionalConnection(this){CommandTimeout = Timeout ?? store.Options.CommandTimeout};
+            return new TransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout };
         }
 
 
