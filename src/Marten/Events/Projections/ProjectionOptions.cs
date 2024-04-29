@@ -340,10 +340,18 @@ public class ProjectionOptions: DaemonSettings
     /// <param name="configure"></param>
     public void Subscribe(ISubscription subscription, Action<ISubscriptionOptions>? configure = null)
     {
-        var wrapper = new SubscriptionWrapper(subscription);
-        configure?.Invoke(wrapper);
+        var source = subscription as ISubscriptionSource ?? new SubscriptionWrapper(subscription);
 
-        _subscriptions.Add(wrapper);
+        if (source is ISubscriptionOptions options)
+        {
+            configure?.Invoke(options);
+        }
+        else if (configure != null)
+        {
+            throw new InvalidOperationException("Unable to apply subscription options to " + subscription);
+        }
+
+        _subscriptions.Add(source);
     }
 
     internal bool Any()

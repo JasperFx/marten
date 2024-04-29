@@ -11,6 +11,7 @@ namespace Marten.Events.Daemon.Internals;
 
 public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
 {
+    private readonly TimeProvider _timeProvider;
     private readonly IEventLoader _loader;
     private readonly ISubscriptionExecution _execution;
     private readonly ShardStateTracker _tracker;
@@ -20,10 +21,11 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     private readonly ActionBlock<Command> _commandBlock;
     private IDaemonRuntime _runtime = new NulloDaemonRuntime();
 
-    public SubscriptionAgent(ShardName name, AsyncOptions options, IEventLoader loader,
+    public SubscriptionAgent(ShardName name, AsyncOptions options, TimeProvider timeProvider, IEventLoader loader,
         ISubscriptionExecution execution, ShardStateTracker tracker, ILogger logger)
     {
         Options = options;
+        _timeProvider = timeProvider;
         _loader = loader;
         _execution = execution;
         _tracker = tracker;
@@ -72,7 +74,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
             _cancellation.Cancel();
 #endif
             await _execution.HardStopAsync().ConfigureAwait(false);
-            PausedTime = DateTimeOffset.UtcNow;
+            PausedTime = _timeProvider.GetUtcNow();
             Status = AgentStatus.Paused;
             _tracker.Publish(new ShardState(Name, LastCommitted) { Action = ShardAction.Paused, Exception = ex});
 

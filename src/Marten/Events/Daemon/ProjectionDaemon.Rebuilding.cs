@@ -233,10 +233,9 @@ public partial class ProjectionDaemon
         sessionOptions.AllowAnyTenant = true;
         await using var session = _store.LightweightSession(sessionOptions);
 
-        session.QueueSqlCommand($"delete from {_store.Options.EventGraph.ProgressionTable} where name = ?", shardName);
         if (sequenceFloor > 0)
         {
-            session.QueueSqlCommand($"update {_store.Options.EventGraph.ProgressionTable} set last_seq_id = ? where name = ?", sequenceFloor, shardName);
+            session.QueueSqlCommand($"insert into {_store.Options.EventGraph.ProgressionTable} (name, last_seq_id) values (?, ?) on conflict (name) do update set last_seq_id = ?", shardName, sequenceFloor, sequenceFloor);
         }
 
         await session.SaveChangesAsync(token).ConfigureAwait(false);

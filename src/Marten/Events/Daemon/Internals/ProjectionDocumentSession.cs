@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Services;
@@ -23,6 +25,12 @@ internal class ProjectionDocumentSession: DocumentSessionBase
 
     protected internal override IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider) =>
         TrackingMode == DocumentTracking.IdentityOnly ? provider.IdentityMap : provider.Lightweight;
+
+    // Do nothing here! See GH-3167
+    protected override Task tryApplyTombstoneEventsAsync(CancellationToken token)
+    {
+        return Task.CompletedTask;
+    }
 
     protected internal override void ejectById<T>(long id)
     {

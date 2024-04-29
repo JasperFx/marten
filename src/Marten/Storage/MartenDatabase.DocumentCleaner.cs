@@ -246,7 +246,7 @@ WHERE table_name = 'mt_streams' AND table_schema = '{Options.Events.DatabaseSche
 THEN TRUNCATE TABLE {Options.Events.DatabaseSchemaName}.mt_streams CASCADE; END IF;
 IF EXISTS(SELECT * FROM information_schema.tables
 WHERE table_name = 'mt_mark_event_progression' AND table_schema = '{Options.Events.DatabaseSchemaName}')
-THEN TRUNCATE TABLE {Options.Events.DatabaseSchemaName}.mt_mark_event_progression CASCADE; END IF;
+THEN delete from {Options.Events.DatabaseSchemaName}.mt_mark_event_progression; END IF;
 END; $$;
 ";
     }
