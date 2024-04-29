@@ -43,13 +43,13 @@ internal class EventTracingConnectionLifetime:
 
     public ValueTask DisposeAsync()
     {
-        _databaseActivity.Stop();
+        _databaseActivity?.Stop();
         return _innerConnectionLifetime.DisposeAsync();
     }
 
     public void Dispose()
     {
-        _databaseActivity.Stop();
+        _databaseActivity?.Stop();
         _innerConnectionLifetime.Dispose();
     }
 
@@ -82,7 +82,7 @@ internal class EventTracingConnectionLifetime:
         catch (Exception e)
         {
             _databaseActivity?.RecordException(e);
-            
+
             throw;
         }
     }
@@ -130,7 +130,7 @@ internal class EventTracingConnectionLifetime:
         catch (Exception e)
         {
             _databaseActivity?.RecordException(e);
-            
+
             throw;
         }
     }
@@ -184,14 +184,11 @@ internal class EventTracingConnectionLifetime:
         catch (AggregateException e)
         {
             _databaseActivity?.RecordException(e);
-            
             throw;
         }
         catch (Exception e)
         {
             _databaseActivity?.RecordException(e);
-
-
             throw;
         }
     }
