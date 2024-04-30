@@ -12,7 +12,7 @@ namespace Marten.Internal.Sessions;
 // TODO -- look at how much more could be put here
 internal class ConnectionLifetimeBase
 {
-    public IMartenSessionLogger Logger { get; set; }
+    public IMartenSessionLogger Logger { get; set; } = new NulloMartenLogger();
 
     protected void handleCommandException(NpgsqlCommand cmd, Exception e)
     {
