@@ -70,7 +70,7 @@ and the database.
 
 There is also a verbose mode that will also tag Open Telemetry activity events for all the Marten operations
 (storing documents, appending events, etc.) performed by an `IDocumentSession.SaveChangesAsync()` call immediately
-after successfully commiting a database transaction. This mode is probably most appropriate for troubleshooting
+after successfully committing a database transaction. This mode is probably most appropriate for troubleshooting
 or performance testing where the extra information being emitted might help you spot database usage issues. That
 option is shown below:
 
