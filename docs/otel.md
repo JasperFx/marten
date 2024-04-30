@@ -117,6 +117,3 @@ This metric has tags for:
 ## Async Daemon Metrics and Spans
 
 See [Open Telemetry and Metrics within the Async Daemon documentation](/events/projections/async-daemon.html#open-telemetry-and-metrics).
-
-
-
