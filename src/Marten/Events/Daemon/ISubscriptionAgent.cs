@@ -76,5 +76,6 @@ public interface ISubscriptionAgent: ISubscriptionController
 
     DateTimeOffset? PausedTime { get; }
     AsyncOptions Options { get; }
+    ISubscriptionMetrics Metrics { get; }
     Task ReplayAsync(SubscriptionExecutionRequest request, long highWaterMark, TimeSpan timeout);
 }

@@ -50,6 +50,8 @@ public class AgentFactory : IAgentFactory
         var logger = _store.Options.LogFactory?.CreateLogger<SubscriptionAgent>() ?? _store.Options.DotNetLogger
             ?? NullLogger<SubscriptionAgent>.Instance;
 
+        var metrics = new SubscriptionMetrics(_store.Options.OpenTelemetry.Meter, shard.Name, database.Identifier);
+
         if (shard.Source != null)
         {
             var execution = new GroupedProjectionExecution(shard, _store, database, logger);
@@ -57,7 +59,7 @@ public class AgentFactory : IAgentFactory
             var loader = new EventLoader(_store, database, shard, options);
             var wrapped = new ResilientEventLoader(_store.Options.ResiliencePipeline, loader);
 
-            return new SubscriptionAgent(shard.Name, options, _store.Events.TimeProvider, wrapped, execution, database.Tracker, logger);
+            return new SubscriptionAgent(shard.Name, options, _store.Events.TimeProvider, wrapped, execution, database.Tracker, metrics, logger);
         }
 
         if (shard.SubscriptionSource != null)
@@ -68,7 +70,7 @@ public class AgentFactory : IAgentFactory
             var loader = new EventLoader(_store, database, shard, options);
             var wrapped = new ResilientEventLoader(_store.Options.ResiliencePipeline, loader);
 
-            return new SubscriptionAgent(shard.Name, options, _store.Options.Events.TimeProvider, wrapped, execution, database.Tracker, logger);
+            return new SubscriptionAgent(shard.Name, options, _store.Options.Events.TimeProvider, wrapped, execution, database.Tracker, metrics, logger);
         }
 
         throw new ArgumentOutOfRangeException(nameof(shard), "This shard has neither a subscription nor projection");

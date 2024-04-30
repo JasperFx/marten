@@ -20,7 +20,7 @@ public class SubscriptionAgentTests
 
     public SubscriptionAgentTests()
     {
-        theAgent = new SubscriptionAgent(new ShardName("Projection1"), theOptions, TimeProvider.System, theLoader, theExecution, new ShardStateTracker(NullLogger.Instance), NullLogger.Instance);
+        theAgent = new SubscriptionAgent(new ShardName("Projection1"), theOptions, TimeProvider.System, theLoader, theExecution, new ShardStateTracker(NullLogger.Instance), Substitute.For<ISubscriptionMetrics>(), NullLogger.Instance);
     }
 
     [Fact]

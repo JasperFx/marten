@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using OpenTelemetry.Trace;
 using Polly;
 
 namespace Marten.Events.Daemon.Internals;
@@ -14,8 +15,22 @@ internal class ResilientEventLoader: IEventLoader
     {
         public async ValueTask<EventPage> ExecuteAsync(CancellationToken token)
         {
-            var results = await Loader.LoadAsync(Request, token).ConfigureAwait(false);
-            return results;
+            using var activity = Request.Metrics.TrackLoading(Request);
+
+            try
+            {
+                var results = await Loader.LoadAsync(Request, token).ConfigureAwait(false);
+                return results;
+            }
+            catch (Exception e)
+            {
+                activity?.RecordException(e);
+                throw;
+            }
+            finally
+            {
+                activity?.Stop();
+            }
         }
     }
 

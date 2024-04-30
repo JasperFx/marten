@@ -8,6 +8,7 @@ using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry.Trace;
 
 namespace Marten.Subscriptions;
 
@@ -19,6 +20,7 @@ internal class SubscriptionExecution: ISubscriptionExecution
     private readonly ILogger _logger;
     private readonly CancellationTokenSource _cancellation = new();
     private readonly ActionBlock<EventRange> _executionBlock;
+    private readonly SubscriptionMetrics _metrics;
 
     public SubscriptionExecution(ShardName shard, ISubscription subscription, DocumentStore store, IMartenDatabase database,
         ILogger logger)
@@ -41,6 +43,8 @@ internal class SubscriptionExecution: ISubscriptionExecution
     {
         if (_cancellation.IsCancellationRequested) return;
 
+        using var activity = range.Agent.Metrics.TrackExecution(range);
+
         try
         {
             await using var parent = (DocumentSessionBase)_store.OpenSession(SessionOptions.ForDatabase(_database));
@@ -56,7 +60,8 @@ internal class SubscriptionExecution: ISubscriptionExecution
                 });
 
 
-            var listener = await _subscription.ProcessEventsAsync(range, range.Agent, session, _cancellation.Token).ConfigureAwait(false);
+            var listener = await _subscription.ProcessEventsAsync(range, range.Agent, session, _cancellation.Token)
+                .ConfigureAwait(false);
 
             batch.Listeners.Add(listener);
             await batch.WaitForCompletion().ConfigureAwait(false);
@@ -72,6 +77,8 @@ internal class SubscriptionExecution: ISubscriptionExecution
                 _logger.LogInformation("Subscription '{ShardIdentity}': Executed for {Range}",
                     ShardIdentity, batch.Range);
             }
+
+            range.Agent.Metrics.UpdateProcessed(range.Size);
         }
         catch (OperationCanceledException)
         {
@@ -79,8 +86,13 @@ internal class SubscriptionExecution: ISubscriptionExecution
         }
         catch (Exception e)
         {
+            activity?.RecordException(e);
             _logger.LogError(e, "Error trying to process subscription {Name}", ShardIdentity);
             await range.Agent.ReportCriticalFailureAsync(e).ConfigureAwait(false);
+        }
+        finally
+        {
+            activity?.Stop();
         }
     }
 
