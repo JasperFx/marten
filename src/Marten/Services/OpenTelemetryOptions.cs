@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Diagnostics.Metrics;
 using System.Reflection;
 
@@ -29,16 +30,10 @@ public sealed class OpenTelemetryOptions
     /// </summary>
     public TrackLevel TrackConnections { get; set; } = TrackLevel.None;
 
-    /// <summary>
-    /// If already tracking connections, this will also tag the activities with any events appended with the connection
-    /// </summary>
-    public bool TrackEvents { get; set; }
-
-    public bool ExportEventsAppended { get; set; }
-    public bool ExportDocumentsStored { get; set; }
-    public bool ExportDocumentsInserted { get; set; }
-    public bool ExportDocumentsUpdated { get; set; }
-    public bool ExportDocumentsChanged { get; set; }
+    public void ExportCounterOnChangeSets<T>(string name, Action<Counter<T>, IChangeSet> recordAction) where T : struct
+    {
+        throw new NotImplementedException();
+    }
 
 
     public Meter Meter { get; } = new Meter("Marten");
