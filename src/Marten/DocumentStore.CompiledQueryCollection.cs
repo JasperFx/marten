@@ -79,7 +79,7 @@ public partial class DocumentStore: ICodeFileCollection
 
         var options = new SessionOptions { AllowAnyTenant = true, Tenant = tenant };
 
-        var connection = options.Initialize(this, CommandRunnerMode.ReadOnly);
+        var connection = options.Initialize(this, CommandRunnerMode.ReadOnly, Options.OpenTelemetry);
 
         using var readOnly = new QuerySession(this, options, connection);
 

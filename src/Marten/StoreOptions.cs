@@ -77,6 +77,11 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     public readonly IList<IDocumentSessionListener> Listeners = new List<IDocumentSessionListener>();
 
     /// <summary>
+    /// Used to enable or disable Marten's OpenTelemetry features for just this session.
+    /// </summary>
+    public OpenTelemetryOptions OpenTelemetry { get; } = new();
+
+    /// <summary>
     ///     Modify the document and event store database mappings for indexes and searching options
     /// </summary>
     public readonly MartenRegistry Schema;

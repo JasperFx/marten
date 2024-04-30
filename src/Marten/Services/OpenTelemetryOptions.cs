@@ -1,4 +1,5 @@
 #nullable enable
+using System.Diagnostics.Metrics;
 using System.Reflection;
 
 namespace Marten.Services;
@@ -11,9 +12,17 @@ public sealed class OpenTelemetryOptions
     public bool TrackConnectionEvents { get; set; }
 
     /// <summary>
-    /// Name of the metrics source name for Marten within this application. The default is Marten:{entry assembly name}
+    /// Name of the metrics source name for Marten within this application. The default is "Marten"
     /// </summary>
-    public string MetricsSourceName { get; set; } = $"Marten:{Assembly.GetEntryAssembly().GetName().Name}";
+    public string MetricsSourceName { get; set; } = "Marten";
 
+    public bool ExportEventsAppended { get; set; }
+    public bool ExportDocumentsStored { get; set; }
+    public bool ExportDocumentsInserted { get; set; }
+    public bool ExportDocumentsUpdated { get; set; }
+    public bool ExportDocumentsChanged { get; set; }
+
+
+    public Meter Meter { get; } = new Meter("Marten");
 
 }

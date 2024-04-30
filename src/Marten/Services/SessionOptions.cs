@@ -83,12 +83,8 @@ public sealed class SessionOptions
     /// </summary>
     public bool AllowAnyTenant { get; set; }
 
-    /// <summary>
-    /// Used to enable or disable Marten's OpenTelemetry features for just this session.
-    /// </summary>
-    public OpenTelemetryOptions OpenTelemetryOptions { get; set; } = new();
-
-    internal IConnectionLifetime Initialize(DocumentStore store, CommandRunnerMode mode)
+    internal IConnectionLifetime Initialize(DocumentStore store, CommandRunnerMode mode,
+        OpenTelemetryOptions telemetryOptions)
     {
         Mode = mode;
         Tenant ??= TenantId != Tenancy.DefaultTenantId ? store.Tenancy.GetTenant(TenantId) : store.Tenancy.Default;
@@ -101,7 +97,7 @@ public sealed class SessionOptions
 
         var innerConnectionLifetime = buildConnectionLifetime(store, mode);
 
-        return !OpenTelemetryOptions.TrackConnectionEvents || !MartenTracing.ActivitySource.HasListeners()
+        return !telemetryOptions.TrackConnectionEvents || !MartenTracing.ActivitySource.HasListeners()
             ? innerConnectionLifetime
             : new EventTracingConnectionLifetime(innerConnectionLifetime, Tenant.TenantId);
     }
