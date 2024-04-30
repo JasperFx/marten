@@ -16,32 +16,6 @@ public interface ISubscriptionMetrics
     Activity? TrackGrouping(EventRange page);
 }
 
-public class NulloSubscriptionMetrics: ISubscriptionMetrics
-{
-    public Activity? TrackExecution(EventRange page)
-    {
-        return null;
-    }
-
-    public Activity? TrackLoading(EventRequest request)
-    {
-        return null;
-    }
-
-    public void UpdateGap(long highWaterMark, long lastCeiling)
-    {
-    }
-
-    public void UpdateProcessed(long count)
-    {
-    }
-
-    public Activity? TrackGrouping(EventRange page)
-    {
-        return null;
-    }
-}
-
 internal class SubscriptionMetrics: ISubscriptionMetrics
 {
     private readonly Meter _meter;
