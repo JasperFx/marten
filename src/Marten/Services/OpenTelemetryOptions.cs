@@ -3,9 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Internal.OpenTelemetry;
 using Microsoft.Extensions.Logging;
 
 namespace Marten.Services;
@@ -37,6 +37,13 @@ public sealed class OpenTelemetryOptions
 
     internal List<Action<IChangeSet>> Applications { get; } = new();
 
+    /// <summary>
+    /// Add a custom counter that will be applied after a DocumentSession is committed
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="units"></param>
+    /// <param name="recordAction"></param>
+    /// <typeparam name="T"></typeparam>
     public void ExportCounterOnChangeSets<T>(string name, string units, Action<Counter<T>, IChangeSet> recordAction) where T : struct
     {
         var counter = Meter.CreateCounter<T>(name, units);
@@ -46,11 +53,29 @@ public sealed class OpenTelemetryOptions
         });
     }
 
-    public Meter Meter { get; } = new Meter("Marten");
+    /// <summary>
+    /// Direct Marten to export counters on the events being appended
+    /// </summary>
+    public void TrackEventCounters()
+    {
+        ExportCounterOnChangeSets<long>("marten.event.append", "events", (counter, commit) =>
+        {
+            foreach (var e in commit.GetEvents())
+            {
+                counter.Add(1, new TagList
+                {
+                    { MartenTracing.EventType, e.EventTypeName },
+                    { MartenTracing.TenantId, e.TenantId }
+                });
+            }
+        });
+    }
+
+    public Meter Meter { get; } = new("Marten");
 
 }
 
-internal class MartenCommitMetrics(ILogger logger, List<Action<IChangeSet>> applications): DocumentSessionListenerBase
+internal class MartenCommitMetrics(ILogger Logger, List<Action<IChangeSet>> applications): DocumentSessionListenerBase
 {
     public List<Action<IChangeSet>> Applications { get; } = applications;
 
@@ -65,8 +90,7 @@ internal class MartenCommitMetrics(ILogger logger, List<Action<IChangeSet>> appl
             catch (Exception e)
             {
                 // Really don't expect this as the metrics should be
-                Debug.WriteLine("Metrics gathering failure");
-                Debug.WriteLine(e.ToString());
+                Logger.LogError(e, "Metrics gathering failure");
             }
         }
     }
