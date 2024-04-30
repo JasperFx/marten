@@ -33,6 +33,9 @@ internal static class Program
 
 
         var builder = Host.CreateApplicationBuilder();
+
+        builder.Logging.AddConsole();
+
         builder.Logging.AddOpenTelemetry(logging =>
         {
             logging.IncludeFormattedMessage = true;
@@ -59,6 +62,10 @@ internal static class Program
 
         // The following lines enable the Prometheus exporter (requires the OpenTelemetry.Exporter.Prometheus.AspNetCore package)
         builder.Services.AddOpenTelemetry()
+            .WithTracing(tracing =>
+            {
+                tracing.AddSource("Marten");
+            })
             // BUG: Part of the workaround for https://github.com/open-telemetry/opentelemetry-dotnet-contrib/issues/1617
             .WithMetrics(metrics =>
             {
@@ -73,6 +80,8 @@ internal static class Program
             opts.AutoCreateSchemaObjects = AutoCreate.All;
             opts.DatabaseSchemaName = "cli";
             opts.DisableNpgsqlLogging = true;
+
+            opts.OpenTelemetry.TrackConnectionEvents = true;
 
             opts.MultiTenantedWithSingleServer(
                 ConnectionSource.ConnectionString,
