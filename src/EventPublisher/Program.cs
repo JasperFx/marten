@@ -71,6 +71,7 @@ internal static class Program
             {
                 metrics.AddPrometheusExporter(options => options.DisableTotalNameSuffixForCounters = true);
                 metrics.AddMeter("EventPublisher");
+                metrics.AddMeter("Marten");
             });
 
         builder.Services.AddHostedService<HostedPublisher>();
@@ -82,6 +83,8 @@ internal static class Program
             opts.DisableNpgsqlLogging = true;
 
             opts.OpenTelemetry.TrackConnections = TrackLevel.Verbose;
+
+            opts.OpenTelemetry.TrackEventCounters();
 
             opts.MultiTenantedWithSingleServer(
                 ConnectionSource.ConnectionString,

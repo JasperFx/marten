@@ -44,7 +44,7 @@ internal class EventTracingConnectionLifetime:
         _telemetryOptions = telemetryOptions;
 
         var currentActivity = Activity.Current ?? null;
-        var tags = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(MartenTracing.MartenTenantId, tenantId) });
+        var tags = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(MartenTracing.TenantId, tenantId) });
         _databaseActivity = MartenTracing.StartConnectionActivity(currentActivity, tags);
     }
 
