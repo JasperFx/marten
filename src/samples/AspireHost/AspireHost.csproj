@@ -14,8 +14,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\CommandLineRunner\CommandLineRunner.csproj" />
       <ProjectReference Include="..\..\EventPublisher\EventPublisher.csproj" />
+      <ProjectReference Include="..\AspireHeadlessTripService\AspireHeadlessTripService.csproj" />
     </ItemGroup>
 
 </Project>
