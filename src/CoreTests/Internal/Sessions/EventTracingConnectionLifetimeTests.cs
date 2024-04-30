@@ -69,7 +69,7 @@ namespace CoreTests.Internal.Sessions
         public void Ctor_Should_Throw_Argument_Null_Exception_When_Inner_Connection_Lifetime_Is_Null()
         {
             _innerConnectionLifetime = null;
-            var act = () => new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant);
+            var act = () => new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new());
             Should.Throw<ArgumentNullException>(act);
         }
 
@@ -79,7 +79,7 @@ namespace CoreTests.Internal.Sessions
         [InlineData(null)]
         public void Ctor_Should_Throw_Argument_Exception_When_Tenant_Id_Is_Null(string tenantId)
         {
-            var act = () => new EventTracingConnectionLifetime(_innerConnectionLifetime, tenantId);
+            var act = () => new EventTracingConnectionLifetime(_innerConnectionLifetime, tenantId, new());
             Should.Throw<ArgumentException>(act);
         }
 
@@ -116,7 +116,7 @@ namespace CoreTests.Internal.Sessions
             ActivitySource.AddActivityListener(listener);
             _innerConnectionLifetime.Execute(_npgsqlCommand).Returns(1);
             using (var eventTracingConnectionLifetime =
-                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant))
+                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new()))
             {
                 eventTracingConnectionLifetime.Execute(_npgsqlCommand);
             }
@@ -164,7 +164,7 @@ namespace CoreTests.Internal.Sessions
             ActivitySource.AddActivityListener(listener);
             _innerConnectionLifetime.Execute(_npgsqlCommand).Throws<InvalidOperationException>();
             using (var eventTracingConnectionLifetime =
-                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant))
+                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new()))
             {
                 Should.Throw<InvalidOperationException>(() => eventTracingConnectionLifetime.Execute(_npgsqlCommand));
             }
@@ -208,7 +208,7 @@ namespace CoreTests.Internal.Sessions
             _innerConnectionLifetime.ExecuteAsync(_npgsqlCommand, Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(1));
             using (var eventTracingConnectionLifetime =
-                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant))
+                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new()))
             {
                 await eventTracingConnectionLifetime.ExecuteAsync(_npgsqlCommand);
             }
@@ -256,7 +256,7 @@ namespace CoreTests.Internal.Sessions
             ActivitySource.AddActivityListener(listener);
                 _innerConnectionLifetime.ExecuteAsync(_npgsqlCommand, Arg.Any<CancellationToken>())
                     .ThrowsAsync<InvalidOperationException>();
-            using (var eventTracingConnectionLifetime =new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant))
+            using (var eventTracingConnectionLifetime =new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new()))
             {
                 await Should.ThrowAsync<InvalidOperationException>(() => eventTracingConnectionLifetime.ExecuteAsync(_npgsqlCommand));
             }
@@ -301,7 +301,7 @@ namespace CoreTests.Internal.Sessions
             using var dataReader = dataTable.CreateDataReader();
             _innerConnectionLifetime.ExecuteReader(_npgsqlCommand).Returns(dataReader);
             using (var eventTracingConnectionLifetime =
-                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant))
+                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new()))
             {
                 eventTracingConnectionLifetime.ExecuteReader(_npgsqlCommand);
             }
@@ -349,7 +349,7 @@ namespace CoreTests.Internal.Sessions
             ActivitySource.AddActivityListener(listener);
                 _innerConnectionLifetime.ExecuteReader(_npgsqlCommand).Throws<InvalidOperationException>();
                 using (var eventTracingConnectionLifetime =
-                       new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant))
+                       new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new()))
                 {
                     Should.Throw<InvalidOperationException>(
                         () => eventTracingConnectionLifetime.ExecuteReader(_npgsqlCommand));
@@ -395,7 +395,7 @@ namespace CoreTests.Internal.Sessions
             _innerConnectionLifetime.ExecuteReaderAsync(_npgsqlCommand, Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(_dataReader));
             using (var eventTracingConnectionLifetime =
-                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant))
+                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new()))
             {
                 await eventTracingConnectionLifetime.ExecuteReaderAsync(_npgsqlCommand);
             }
@@ -443,7 +443,7 @@ namespace CoreTests.Internal.Sessions
             ActivitySource.AddActivityListener(listener);
             _innerConnectionLifetime.ExecuteAsync(_npgsqlCommand, Arg.Any<CancellationToken>())
                 .ThrowsAsync<InvalidOperationException>();
-            using (var eventTracingConnectionLifetime = new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant))
+            using (var eventTracingConnectionLifetime = new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new()))
             {
                 await Should.ThrowAsync<InvalidOperationException>(() => eventTracingConnectionLifetime.ExecuteAsync(_npgsqlCommand));
             }
@@ -488,7 +488,7 @@ namespace CoreTests.Internal.Sessions
             using DbDataReader dataReader = dataTable.CreateDataReader();
             _innerConnectionLifetime.ExecuteReader(Arg.Any<NpgsqlBatch>()).Returns(dataReader);
                 using (var eventTracingConnectionLifetime =
-                       new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant))
+                       new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new()))
                 {
                     eventTracingConnectionLifetime.ExecuteReader(_batch);
                 }
@@ -536,7 +536,7 @@ namespace CoreTests.Internal.Sessions
             ActivitySource.AddActivityListener(listener);
                 _innerConnectionLifetime.ExecuteReader(Arg.Any<NpgsqlBatch>()).Throws<InvalidOperationException>();
                 using (var eventTracingConnectionLifetime =
-                       new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant))
+                       new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new()))
             {
                 Should.Throw<InvalidOperationException>(() => eventTracingConnectionLifetime.ExecuteReader(_batch));
             }
@@ -581,7 +581,7 @@ namespace CoreTests.Internal.Sessions
             using DbDataReader dataReader = dataTable.CreateDataReader();
             _innerConnectionLifetime.ExecuteReaderAsync(Arg.Any<NpgsqlBatch>()).Returns(Task.FromResult(dataReader));
             using (var eventTracingConnectionLifetime =
-                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant))
+                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new()))
             {
                 await eventTracingConnectionLifetime.ExecuteReaderAsync(_batch);
             }
@@ -629,7 +629,7 @@ namespace CoreTests.Internal.Sessions
             ActivitySource.AddActivityListener(listener);
             _innerConnectionLifetime.ExecuteReaderAsync(Arg.Any<NpgsqlBatch>(), Arg.Any<CancellationToken>())
                 .ThrowsAsync<InvalidOperationException>();
-            using (var eventTracingConnectionLifetime = new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant))
+            using (var eventTracingConnectionLifetime = new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new()))
             {
                 await Should.ThrowAsync<InvalidOperationException>(() => eventTracingConnectionLifetime.ExecuteReaderAsync(_batch));
             }
@@ -672,7 +672,7 @@ namespace CoreTests.Internal.Sessions
             ActivitySource.AddActivityListener(listener);
             _innerConnectionLifetime.ExecuteBatchPages(Arg.Any<IReadOnlyList<OperationPage>>(), Arg.Any<List<Exception>>());
             using (var eventTracingConnectionLifetime =
-                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant))
+                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new()))
             {
                 eventTracingConnectionLifetime.ExecuteBatchPages(_batchPages, _exceptions);
             }
@@ -681,7 +681,6 @@ namespace CoreTests.Internal.Sessions
             _endCalled.ShouldBeTrue();
             _innerConnectionLifetime.Received(1).ExecuteBatchPages(Arg.Any<IReadOnlyList<OperationPage>>(), Arg.Any<List<Exception>>());
         }
-
 
         [Fact]
         public async Task ExecuteBatchPagesAsync_Ensure_The_Correct_Event_And_Tags_Are_Emited_When_Command_Execution_Succeeds()
@@ -717,7 +716,7 @@ namespace CoreTests.Internal.Sessions
             _innerConnectionLifetime.ExecuteBatchPagesAsync(_batchPages, _exceptions, Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(1));
             using (var eventTracingConnectionLifetime =
-                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant))
+                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new()))
             {
                 await eventTracingConnectionLifetime.ExecuteBatchPagesAsync(_batchPages, _exceptions, CancellationToken.None);
             }

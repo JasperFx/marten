@@ -81,7 +81,7 @@ internal static class Program
             opts.DatabaseSchemaName = "cli";
             opts.DisableNpgsqlLogging = true;
 
-            opts.OpenTelemetry.TrackConnectionEvents = true;
+            opts.OpenTelemetry.TrackConnections = TrackLevel.Verbose;
 
             opts.MultiTenantedWithSingleServer(
                 ConnectionSource.ConnectionString,

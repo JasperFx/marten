@@ -97,9 +97,9 @@ public sealed class SessionOptions
 
         var innerConnectionLifetime = buildConnectionLifetime(store, mode);
 
-        return !telemetryOptions.TrackConnectionEvents || !MartenTracing.ActivitySource.HasListeners()
+        return telemetryOptions.TrackConnections == TrackLevel.None || !MartenTracing.ActivitySource.HasListeners()
             ? innerConnectionLifetime
-            : new EventTracingConnectionLifetime(innerConnectionLifetime, Tenant.TenantId);
+            : new EventTracingConnectionLifetime(innerConnectionLifetime, Tenant.TenantId, telemetryOptions);
     }
 
     private IConnectionLifetime buildConnectionLifetime(DocumentStore store, CommandRunnerMode mode)
