@@ -3,9 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Operations;
 using Marten.Internal.OpenTelemetry;
+using Marten.Internal.Operations;
+using Marten.Services;
 using Npgsql;
 using OpenTelemetry.Trace;
 
@@ -18,9 +22,11 @@ internal class EventTracingConnectionLifetime:
     private const string MartenBatchExecutionStarted = "marten.batch.execution.started";
     private const string MartenBatchPagesExecutionStarted = "marten.batch.pages.execution.started";
     private readonly IConnectionLifetime _innerConnectionLifetime;
+    private readonly OpenTelemetryOptions _telemetryOptions;
     private readonly Activity? _databaseActivity;
 
-    public EventTracingConnectionLifetime(IConnectionLifetime innerConnectionLifetime, string tenantId)
+    public EventTracingConnectionLifetime(IConnectionLifetime innerConnectionLifetime, string tenantId,
+        OpenTelemetryOptions telemetryOptions)
     {
         if (innerConnectionLifetime == null)
         {
@@ -35,6 +41,7 @@ internal class EventTracingConnectionLifetime:
         Logger = innerConnectionLifetime.Logger;
         CommandTimeout = innerConnectionLifetime.CommandTimeout;
         _innerConnectionLifetime = innerConnectionLifetime;
+        _telemetryOptions = telemetryOptions;
 
         var currentActivity = Activity.Current ?? null;
         var tags = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(MartenTracing.MartenTenantId, tenantId) });
@@ -158,6 +165,7 @@ internal class EventTracingConnectionLifetime:
         try
         {
             _innerConnectionLifetime.ExecuteBatchPages(pages, exceptions);
+            writeVerboseEvents(pages);
         }
         catch (AggregateException e)
         {
@@ -173,13 +181,15 @@ internal class EventTracingConnectionLifetime:
         }
     }
 
-    public Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages, List<Exception> exceptions, CancellationToken token)
+    public async Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages, List<Exception> exceptions, CancellationToken token)
     {
         _databaseActivity?.AddEvent(new ActivityEvent(MartenBatchPagesExecutionStarted));
 
         try
         {
-            return _innerConnectionLifetime.ExecuteBatchPagesAsync(pages, exceptions, token);
+            await _innerConnectionLifetime.ExecuteBatchPagesAsync(pages, exceptions, token).ConfigureAwait(false);
+
+            writeVerboseEvents(pages);
         }
         catch (AggregateException e)
         {
@@ -190,6 +200,29 @@ internal class EventTracingConnectionLifetime:
         {
             _databaseActivity?.RecordException(e);
             throw;
+        }
+    }
+
+    private void writeVerboseEvents(IReadOnlyList<OperationPage> pages)
+    {
+        if (_telemetryOptions.TrackConnections == TrackLevel.Verbose)
+        {
+            var ops = pages.SelectMany(x => x.Operations);
+            foreach (var op in ops)
+            {
+                if (op is AppendEventOperationBase eventOp)
+                {
+                    _databaseActivity?.AddEvent(new ActivityEvent("marten.append.event",
+                        tags: new ActivityTagsCollection { { "Type", eventOp.Event.EventTypeName } }));
+                }
+                else if (op.Role() != OperationRole.Events)
+                {
+                    _databaseActivity?.AddEvent(new ActivityEvent("marten." + op.Role().ToString().ToLower(),
+                        tags: new ActivityTagsCollection { { "Type", op.DocumentType?.Name } }));
+                }
+
+
+            }
         }
     }
 }
