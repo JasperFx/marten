@@ -1,17 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Lamar;
-using JasperFx.CodeGeneration;
+using DaemonTests.TestingSupport;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
-using DaemonTests.TestingSupport;
-using Lamar.Microsoft.DependencyInjection;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
@@ -19,7 +15,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
-using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using Weasel.Core;
@@ -28,10 +23,8 @@ namespace EventPublisher;
 
 internal static class Program
 {
-    static async Task Main(string[] args)
+    private static async Task Main(string[] args)
     {
-
-
         var builder = Host.CreateApplicationBuilder();
 
         builder.Logging.AddConsole();
@@ -47,7 +40,6 @@ internal static class Program
             {
                 metrics
                     .AddRuntimeInstrumentation().AddMeter("EventPublisher");
-
             })
             .WithTracing(tracing =>
             {
@@ -93,17 +85,14 @@ internal static class Program
         });
 
         await builder.Build().RunAsync();
-
     }
 }
-
-
 
 internal class HostedPublisher: BackgroundService
 {
     private readonly IServiceProvider _container;
-    private readonly Meter _meter;
     private readonly Counter<long> _counter;
+    private readonly Meter _meter;
 
     public HostedPublisher(IServiceProvider container)
     {
@@ -141,10 +130,10 @@ internal class HostedPublisher: BackgroundService
 
 internal class Publisher
 {
-    private readonly IDocumentStore _store;
-    private readonly IMartenDatabase _database;
     private readonly StatusBoard _board;
+    private readonly IMartenDatabase _database;
     private readonly string _name;
+    private readonly IDocumentStore _store;
 
     public Publisher(IDocumentStore store, IMartenDatabase database, StatusBoard board)
     {
