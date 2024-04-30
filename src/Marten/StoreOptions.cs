@@ -24,6 +24,7 @@ using Marten.Services.Json;
 using Marten.Storage;
 using Marten.Util;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Npgsql;
 using Polly;
@@ -920,6 +921,16 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     string IDocumentSchemaResolver.ForEventProgression(bool qualified)
     {
         return qualified ? _eventGraph.ProgressionTable.QualifiedName : _eventGraph.ProgressionTable.Name;
+    }
+
+    internal void ApplyMetricsIfAny()
+    {
+        if (OpenTelemetry.Applications.Any())
+        {
+            var logger = DotNetLogger ?? LogFactory?.CreateLogger<MartenCommitMetrics>() ?? NullLogger<MartenCommitMetrics>.Instance;
+            var metrics = new MartenCommitMetrics(logger, OpenTelemetry.Applications);
+            Listeners.Add(metrics);
+        }
     }
 }
 

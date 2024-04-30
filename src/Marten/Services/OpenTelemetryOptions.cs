@@ -1,7 +1,12 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Marten.Services;
 
@@ -30,12 +35,45 @@ public sealed class OpenTelemetryOptions
     /// </summary>
     public TrackLevel TrackConnections { get; set; } = TrackLevel.None;
 
-    public void ExportCounterOnChangeSets<T>(string name, Action<Counter<T>, IChangeSet> recordAction) where T : struct
-    {
-        throw new NotImplementedException();
-    }
+    internal List<Action<IChangeSet>> Applications { get; } = new();
 
+    public void ExportCounterOnChangeSets<T>(string name, string units, Action<Counter<T>, IChangeSet> recordAction) where T : struct
+    {
+        var counter = Meter.CreateCounter<T>(name, units);
+        Applications.Add(commit =>
+        {
+            recordAction(counter, commit);
+        });
+    }
 
     public Meter Meter { get; } = new Meter("Marten");
 
+}
+
+internal class MartenCommitMetrics(ILogger logger, List<Action<IChangeSet>> applications): DocumentSessionListenerBase
+{
+    public List<Action<IChangeSet>> Applications { get; } = applications;
+
+    public override void AfterCommit(IDocumentSession session, IChangeSet commit)
+    {
+        foreach (var application in Applications)
+        {
+            try
+            {
+                application(commit);
+            }
+            catch (Exception e)
+            {
+                // Really don't expect this as the metrics should be
+                Debug.WriteLine("Metrics gathering failure");
+                Debug.WriteLine(e.ToString());
+            }
+        }
+    }
+
+    public override Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
+    {
+        AfterCommit(session, commit);
+        return Task.CompletedTask;
+    }
 }

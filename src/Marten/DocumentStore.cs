@@ -69,6 +69,8 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         _queryOnlyCompiledQueries = new CompiledQueryCollection(DocumentTracking.QueryOnly, this);
 
         warnIfAsyncDaemonIsDisabledWithAsyncProjections();
+
+        options.ApplyMetricsIfAny();
     }
 
     private void warnIfAsyncDaemonIsDisabledWithAsyncProjections()
