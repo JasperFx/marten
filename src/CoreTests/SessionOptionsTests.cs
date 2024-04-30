@@ -271,7 +271,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         using var store = DocumentStore.For(ConnectionSource.ConnectionString);
 
         var options = new SessionOptions{Timeout = 7};
-        options.Initialize(store, CommandRunnerMode.Transactional)
+        options.Initialize(store, CommandRunnerMode.Transactional, new OpenTelemetryOptions(){ TrackConnectionEvents = false })
             .ShouldBeOfType<AutoClosingLifetime>()
             .CommandTimeout.ShouldBe(7);
     }
@@ -286,7 +286,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         });
 
         var options = new SessionOptions{Timeout = 2};
-        options.Initialize(store, CommandRunnerMode.Transactional)
+        options.Initialize(store, CommandRunnerMode.Transactional, new OpenTelemetryOptions(){ TrackConnectionEvents = false })
             .ShouldBeOfType<TransactionalConnection>()
             .CommandTimeout.ShouldBe(2)
             ;
@@ -297,7 +297,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
     {
         var commandRunnerMode = CommandRunnerMode.ReadOnly;
         var options = new SessionOptions();
-        var connectionLifetime = options.Initialize(theStore, commandRunnerMode);
+        var connectionLifetime = options.Initialize(theStore, commandRunnerMode, new OpenTelemetryOptions(){ TrackConnectionEvents = false });
         connectionLifetime.ShouldNotBeOfType<EventTracingConnectionLifetime>();
     }
 
@@ -305,8 +305,8 @@ public class SessionOptionsTests: OneOffConfigurationsContext
     public void Session_Should_Not_Track_Open_Telemetry_Events_When_Asked_To_Do_So_If_No_Listeners_Are_configured()
     {
         var commandRunnerMode = CommandRunnerMode.ReadOnly;
-        var options = new SessionOptions { OpenTelemetryOptions = { TrackConnectionEvents = true } };
-        var connectionLifetime = options.Initialize(theStore, commandRunnerMode);
+        var options = new SessionOptions();
+        var connectionLifetime = options.Initialize(theStore, commandRunnerMode, new OpenTelemetryOptions(){ TrackConnectionEvents = true });
         connectionLifetime.ShouldNotBeOfType<EventTracingConnectionLifetime>();
     }
 
@@ -320,8 +320,8 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         };
         ActivitySource.AddActivityListener(listener);
             var commandRunnerMode = CommandRunnerMode.ReadOnly;
-        var options = new SessionOptions { OpenTelemetryOptions = { TrackConnectionEvents = true } };
-        var connectionLifetime = options.Initialize(theStore, commandRunnerMode);
+        var options = new SessionOptions();
+        var connectionLifetime = options.Initialize(theStore, commandRunnerMode, new OpenTelemetryOptions(){ TrackConnectionEvents = true });
         connectionLifetime.ShouldBeOfType<EventTracingConnectionLifetime>();
     }
 

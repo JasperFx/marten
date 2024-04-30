@@ -351,7 +351,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
 
     public IQuerySession QuerySession(SessionOptions options)
     {
-        var connection = options.Initialize(this, CommandRunnerMode.ReadOnly);
+        var connection = options.Initialize(this, CommandRunnerMode.ReadOnly, Options.OpenTelemetry);
 
         return new QuerySession(this, options, connection);
     }
@@ -519,7 +519,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
 
     private IDocumentSession openSession(SessionOptions options)
     {
-        var connection = options.Initialize(this, CommandRunnerMode.Transactional);
+        var connection = options.Initialize(this, CommandRunnerMode.Transactional, Options.OpenTelemetry);
 
         IDocumentSession session = options.Tracking switch
         {
