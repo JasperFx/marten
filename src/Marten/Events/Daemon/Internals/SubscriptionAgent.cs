@@ -22,13 +22,14 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
     private IDaemonRuntime _runtime = new NulloDaemonRuntime();
 
     public SubscriptionAgent(ShardName name, AsyncOptions options, TimeProvider timeProvider, IEventLoader loader,
-        ISubscriptionExecution execution, ShardStateTracker tracker, ILogger logger)
+        ISubscriptionExecution execution, ShardStateTracker tracker, ISubscriptionMetrics metrics, ILogger logger)
     {
         Options = options;
         _timeProvider = timeProvider;
         _loader = loader;
         _execution = execution;
         _tracker = tracker;
+        Metrics = metrics;
         _logger = logger;
         Name = name;
 
@@ -233,6 +234,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
 
                 HighWaterMark = command.HighWaterMark;
                 LastCommitted = LastEnqueued = command.LastCommitted;
+
                 break;
 
             case CommandType.RangeCompleted:
@@ -247,6 +249,9 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
 
                 break;
         }
+
+        // Mind the gap!
+        Metrics.UpdateGap(HighWaterMark, LastCommitted);
 
         var inflight = LastEnqueued - LastCommitted;
 
@@ -276,6 +281,8 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         }
     }
 
+    public ISubscriptionMetrics Metrics { get; }
+
     private async Task loadNextAsync()
     {
         var request = new EventRequest
@@ -285,7 +292,8 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
             Floor = LastEnqueued,
             ErrorOptions = ErrorOptions,
             Runtime = _runtime,
-            Name = Name
+            Name = Name,
+            Metrics = Metrics
         };
 
         try

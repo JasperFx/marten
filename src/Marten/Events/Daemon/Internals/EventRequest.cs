@@ -14,6 +14,7 @@ public class EventRequest
     public ErrorHandlingOptions ErrorOptions { get; init; }
 
     public IDaemonRuntime Runtime { get; init; }
+    public ISubscriptionMetrics Metrics { get; init; }
 
     public override string ToString()
     {

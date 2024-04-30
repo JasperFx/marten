@@ -8,6 +8,7 @@ using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry.Trace;
 using Weasel.Core;
 
 namespace Marten.Events.Daemon.Internals;
@@ -72,35 +73,47 @@ public class GroupedProjectionExecution: ISubscriptionExecution
             return null;
         }
 
+        using var activity = range.Agent.Metrics.TrackGrouping(range);
+
         try
         {
             var group = await _source.GroupEvents(_store, _database, range, _cancellation.Token).ConfigureAwait(false);
 
             if (_logger.IsEnabled(LogLevel.Debug) && Mode == ShardExecutionMode.Continuous)
             {
-                _logger.LogDebug("Subscription {Name} successfully grouped {Number} events with a floor of {Floor} and ceiling of {Ceiling}", ProjectionShardIdentity, range.Events.Count, range.SequenceFloor, range.SequenceCeiling);
+                _logger.LogDebug(
+                    "Subscription {Name} successfully grouped {Number} events with a floor of {Floor} and ceiling of {Ceiling}",
+                    ProjectionShardIdentity, range.Events.Count, range.SequenceFloor, range.SequenceCeiling);
             }
 
             return group;
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Failure trying to group events for {Name} from {Floor} to {Ceiling}", ProjectionShardIdentity, range.SequenceFloor, range.SequenceCeiling);
+            activity?.RecordException(e);
+            _logger.LogError(e, "Failure trying to group events for {Name} from {Floor} to {Ceiling}",
+                ProjectionShardIdentity, range.SequenceFloor, range.SequenceCeiling);
             await range.Agent.ReportCriticalFailureAsync(e).ConfigureAwait(false);
 
             return null;
+        }
+        finally
+        {
+            activity?.Stop();
         }
     }
 
     private async Task processRange(EventRangeGroup group)
     {
+        if (_cancellation.IsCancellationRequested)
+        {
+            return;
+        }
+
+        using var activity = group.Range.Agent.Metrics.TrackExecution(group.Range);
+
         try
         {
-            if (_cancellation.IsCancellationRequested)
-            {
-                return;
-            }
-
             await using var session = (DocumentSessionBase)_store.IdentitySession(_sessionOptions!);
 
             // This should be done *once* before proceeding
@@ -118,11 +131,20 @@ public class GroupedProjectionExecution: ISubscriptionExecution
 
             // Executing the SQL commands for the ProjectionUpdateBatch
             await applyBatchOperationsToDatabaseAsync(group, session, batch).ConfigureAwait(false);
+
+            group.Agent.Metrics.UpdateProcessed(group.Range.Size);
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Error trying to build and apply changes to event subscription {Name} from {Floor} to {Ceiling}", ProjectionShardIdentity, group.Range.SequenceFloor, group.Range.SequenceCeiling);
+            activity?.RecordException(e);
+            _logger.LogError(e,
+                "Error trying to build and apply changes to event subscription {Name} from {Floor} to {Ceiling}",
+                ProjectionShardIdentity, group.Range.SequenceFloor, group.Range.SequenceCeiling);
             await group.Agent.ReportCriticalFailureAsync(e).ConfigureAwait(false);
+        }
+        finally
+        {
+            activity?.Stop();
         }
     }
 
