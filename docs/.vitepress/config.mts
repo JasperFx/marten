@@ -220,6 +220,7 @@ const config: UserConfig<DefaultTheme.Config> = {
           collapsed: false,
           items: [
             { text: 'Diagnostics and Instrumentation', link: '/diagnostics' },
+            { text: 'Open Telemetry and Metrics', link: '/otel' },
           ]
         },
         {

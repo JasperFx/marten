@@ -372,3 +372,57 @@ public static async Task UseAsyncDaemon(IDocumentStore store, CancellationToken 
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L135-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_async_daemon_alone' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Open Telemetry and Metrics <Badge type="tip" text="7.10" />~~~~
+
+::: info
+All of these facilities are used automatically by Marten. 
+:::
+
+See [Open Telemetry and Metrics](/otel) to learn more about exporting Open Telemetry data and metrics
+from systems using Marten. 
+
+If your system is configured to export metrics and Open Telemetry data from Marten like this:
+
+<!-- snippet: sample_enabling_open_telemetry_exporting_from_Marten -->
+<a id='snippet-sample_enabling_open_telemetry_exporting_from_marten'></a>
+```cs
+// This is passed in by Project Aspire. The exporter usage is a little
+// different for other tools like Prometheus or SigNoz
+var endpointUri = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+Console.WriteLine("OLTP endpoint: " + endpointUri);
+
+builder.Services.AddOpenTelemetry().UseOtlpExporter();
+
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing =>
+    {
+        tracing.AddSource("Marten");
+    })
+    .WithMetrics(metrics =>
+    {
+        metrics.AddMeter("Marten");
+    });
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/AspireHeadlessTripService/Program.cs#L21-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_open_telemetry_exporting_from_marten' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+*And* you are running the async daemon in your system, you should see potentially activities for each running projection
+or subscription with the prefix: `marten.{Subscription or Projection Name}.{shard key, basically always "all" at this point}`:
+
+* `execution` -- traces the execution of a page of events through the projection or subscription, with tags for the tenant id, event sequence floor and ceiling, and database name
+* `loading` -- traces the loading of a page of events for a projection or subscription. Same tags as above
+* `grouping` -- traces the grouping process for projections that happens prior to execution. This does not apply to subscriptions. Same tags as above
+
+In addition, there are two metrics built for every combination of projection or subscription shard on each
+Marten database (in the case of using separate databases for multi-tenancy), again using the same prefix as above
+with the addition of the Marten database identifier in the case of multi-tenancy through separate databases like `marten.{database name}.{projection or subscription name}.all.*:
+
+* `processed` - a counter giving you an indication of how many events are being processed by the currently running subscription or projection shard
+* `gap` - a histogram telling you the "gap" between the high water mark of the system and the furthest progression of the running subscription or projection. 
+
+::: tip
+The `gap` metrics are a good health check on the performance of any given projection or subscription. If this gap
+is growing, that's a sign that your projection or subscription isn't being able to keep up with the incoming
+events
+:::
