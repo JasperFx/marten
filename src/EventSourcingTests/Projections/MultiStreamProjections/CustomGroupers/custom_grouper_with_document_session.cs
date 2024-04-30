@@ -17,30 +17,30 @@ public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>
 {
     public async Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<Guid> grouping)
     {
-        var licenceFeatureTogglesEvents = events
+        var licenseFeatureTogglesEvents = events
             .OfType<IEvent<LicenseFeatureToggled>>()
             .ToList();
 
-        if (!licenceFeatureTogglesEvents.Any())
+        if (!licenseFeatureTogglesEvents.Any())
         {
             return;
         }
 
         // TODO -- let's build more samples first, but see if there's a useful
         // pattern for the next 3/4 operations later
-        var licenceIds = licenceFeatureTogglesEvents
+        var licenseIds = licenseFeatureTogglesEvents
             .Select(e => e.Data.LicenseId)
             .ToList();
 
         var result = await session.Query<UserFeatureToggles>()
-            .Where(x => licenceIds.Contains(x.LicenseId))
+            .Where(x => licenseIds.Contains(x.LicenseId))
             .Select(x => new {x.Id, x.LicenseId})
             .ToListAsync();
 
         var streamIds = (IDictionary<Guid, List<Guid>>)result.GroupBy(ks => ks.LicenseId, vs => vs.Id)
             .ToDictionary(ks => ks.Key, vs => vs.ToList());
 
-        grouping.AddEvents<LicenseFeatureToggled>(e => streamIds[e.LicenseId], licenceFeatureTogglesEvents);
+        grouping.AddEvents<LicenseFeatureToggled>(e => streamIds[e.LicenseId], licenseFeatureTogglesEvents);
     }
 }
 
