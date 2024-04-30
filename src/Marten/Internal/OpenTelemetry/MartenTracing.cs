@@ -16,7 +16,7 @@ internal static class MartenTracing
 
     public static Activity? StartConnectionActivity(Activity? parentActivity = null, ActivityTagsCollection? tags = null)
     {
-        return StartActivity("connection", parentActivity, tags);
+        return StartActivity("marten.connection", parentActivity, tags);
     }
 
     public static Activity? StartActivity(string spanName, Activity? parentActivity = null, ActivityTagsCollection? tags = null, ActivityKind activityKind = ActivityKind.Internal)

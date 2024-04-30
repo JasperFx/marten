@@ -18,22 +18,26 @@ builder.Logging.AddOpenTelemetry(logging =>
     logging.IncludeScopes = true;
 });
 
+#region sample_enabling_open_telemetry_exporting_from_Marten
+
+// This is passed in by Project Aspire. The exporter usage is a little
+// different for other tools like Prometheus or SigNoz
 var endpointUri = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
 Console.WriteLine("OLTP endpoint: " + endpointUri);
 
 builder.Services.AddOpenTelemetry().UseOtlpExporter();
 
-// The following lines enable the Prometheus exporter (requires the OpenTelemetry.Exporter.Prometheus.AspNetCore package)
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing =>
     {
         tracing.AddSource("Marten");
     })
-    // BUG: Part of the workaround for https://github.com/open-telemetry/opentelemetry-dotnet-contrib/issues/1617
     .WithMetrics(metrics =>
     {
         metrics.AddMeter("Marten");
     });
+
+#endregion
 
 builder.Services.AddMarten(opts =>
 {
