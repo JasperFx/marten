@@ -117,6 +117,7 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
 
     public void Dispose()
     {
+        DataSource?.Dispose();
         ((IDisposable)Tracker)?.Dispose();
     }
 }

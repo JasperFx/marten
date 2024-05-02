@@ -130,6 +130,11 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
     public void Dispose()
     {
         foreach (var entry in _databases.Enumerate()) entry.Value.Dispose();
+
+        if (_dataSource.IsValueCreated)
+        {
+            _dataSource.Value.Dispose();
+        }
     }
 
     public async ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()

@@ -108,7 +108,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
     public ValueTask DisposeAsync()
     {
         return DisposableExtensions
-            .MaybeDisposeAllAsync<object>([dataSourceFactory, Options.Events]);
+            .MaybeDisposeAllAsync<object>([dataSourceFactory, Options.Events, Tenancy]);
     }
 
     public AdvancedOperations Advanced { get; }
