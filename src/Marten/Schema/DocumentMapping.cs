@@ -482,7 +482,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         string indexName = null
     )
     {
-        var index = FullTextIndexDefinitionFactory.From(this, regConfig);
+        var index = FullTextIndexDefinitionFactory.From(this, members, regConfig);
         if (indexName != null)
             index.Name = indexName;
 
