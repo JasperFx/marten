@@ -86,7 +86,7 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
             entry.Value.Database.Dispose();
         }
 
-        _default.Database.Dispose();
+        _default?.Database?.Dispose();
     }
 
     public ISingleServerMultiTenancy WithTenants(params string[] tenantIds)
