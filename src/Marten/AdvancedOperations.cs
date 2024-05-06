@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
+using Marten.Events.Projections;
 using Marten.Events.TestSupport;
 using Marten.Schema;
 using Marten.Storage;
@@ -182,6 +183,7 @@ public class AdvancedOperations
             .Options
             .Projections
             .All
+            .Where(x => x.Lifecycle == ProjectionLifecycle.Async)
             .SelectMany(x => x.AsyncProjectionShards(_store))
             .Select(x => x.Name)
             .ToList();

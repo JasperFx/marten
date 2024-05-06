@@ -314,12 +314,12 @@ public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>
 
         // TODO -- let's build more samples first, but see if there's a useful
         // pattern for the next 3/4 operations later
-        var licenceIds = licenseFeatureTogglesEvents
+        var licenseIds = licenseFeatureTogglesEvents
             .Select(e => e.Data.LicenseId)
             .ToList();
 
         var result = await session.Query<UserFeatureToggles>()
-            .Where(x => licenceIds.Contains(x.LicenseId))
+            .Where(x => licenseIds.Contains(x.LicenseId))
             .Select(x => new {x.Id, x.LicenseId})
             .ToListAsync();
 
