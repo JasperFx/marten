@@ -3,6 +3,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
+using Npgsql;
 
 namespace Marten.Storage;
 
@@ -67,4 +68,15 @@ public partial class MartenDatabase : ISingleQueryRunner
 
         await command.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
     }
+
+    public NpgsqlConnection CreateConnection(ConnectionUsage connectionUsage = ConnectionUsage.ReadWrite)
+    {
+        if (connectionUsage == ConnectionUsage.Read)
+        {
+            return CreateConnection(Options.Advanced.MultiHostSettings.ReadSessionPreference);
+        }
+
+        return CreateConnection(Options.Advanced.MultiHostSettings.WriteSessionPreference);
+    }
+
 }

@@ -101,7 +101,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         Logger.OnBeforeExecute(command);
 
         // Do NOT use a using block here because we're returning the reader
-        var conn = _database.CreateConnection();
+        var conn = _database.CreateConnection(ConnectionUsage.Read);
         conn.Open();
 
         try
@@ -125,7 +125,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         Logger.OnBeforeExecute(command);
 
         // Do NOT use a using block here because we're returning the reader
-        var conn = _database.CreateConnection();
+        var conn = _database.CreateConnection(ConnectionUsage.Read);
         await conn.OpenAsync(token).ConfigureAwait(false);
 
         try
@@ -149,7 +149,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         Logger.OnBeforeExecute(batch);
 
         // Do NOT use a using block here because we're returning the reader
-        var conn = _database.CreateConnection();
+        var conn = _database.CreateConnection(ConnectionUsage.Read);
         conn.Open();
 
         try
@@ -172,7 +172,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         Logger.OnBeforeExecute(batch);
 
         // Do NOT use a using block here because we're returning the reader
-        var conn = _database.CreateConnection();
+        var conn = _database.CreateConnection(ConnectionUsage.Read);
         await conn.OpenAsync(token).ConfigureAwait(false);
 
         try
