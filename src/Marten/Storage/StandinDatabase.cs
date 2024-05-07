@@ -228,6 +228,11 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
+    public NpgsqlConnection CreateConnection(ConnectionUsage connectionUsage = ConnectionUsage.ReadWrite)
+    {
+        throw new NotImplementedException();
+    }
+
     public void Dispose()
     {
         ((IDisposable)Tracker)?.Dispose();

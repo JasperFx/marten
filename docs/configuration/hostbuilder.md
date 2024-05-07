@@ -129,7 +129,7 @@ services.AddMarten()
     .UseLightweightSessions()
     .UseNpgsqlDataSource();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L291-L299' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L292-L300' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you're on .NET 8 (and above), you can also use a dedicated [keyed registration](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-8#keyed-di-services). This can be useful for scenarios where you need more than one data source registered:
@@ -143,8 +143,38 @@ services.AddMarten()
     .UseLightweightSessions()
     .UseNpgsqlDataSource();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L291-L299' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L292-L300' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Using a Multi-Host Data Source <Badge type="tip" text="7.11" />
+
+Marten includes support for `NpgsqlMultiHostDataSource`, allowing you to spread queries over your read replicas, potentially improving throughput in read-heavy applications. To get started, your connection string should specify your primary host along a list of replicas, per [Npgsql documentation](https://www.npgsql.org/doc/failover-and-load-balancing.html).
+
+Configuring `NpgsqlMultiHostDataSource` is very similar to a normal data source, simply swapping it for `AddMultiHostNpgsqlDataSource`. Marten will always use the primary node for queries with a `NpgsqlMultiHostDataSource` unless you explicitly opt to use the standby nodes. You can adjust what type of node Marten uses for querying via the `MultiHostSettings` store options:
+
+<!-- snippet: sample_using_UseNpgsqlDataSourceMultiHost -->
+<a id='snippet-sample_using_usenpgsqldatasourcemultihost'></a>
+```cs
+services.AddMultiHostNpgsqlDataSource(ConnectionSource.ConnectionString);
+
+services.AddMarten(x =>
+    {
+        // Will prefer standby nodes for querying.
+        x.Advanced.MultiHostSettings.ReadSessionPreference = TargetSessionAttributes.PreferStandby;
+    })
+    .UseLightweightSessions()
+    .UseNpgsqlDataSource();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L314-L326' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasourcemultihost' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+::: warning
+Marten will only use your read node preference with user queries (using IQuerySession) that are using a Marten-managed lifetime. 
+
+Internal queries, including the async daemon, will always use your primary node for reliability.
+
+Ensure your replication delay is acceptable as you risk returning outdated queries.
+:::
 
 ## Composite Configuration with ConfigureMarten()
 

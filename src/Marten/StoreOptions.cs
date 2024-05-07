@@ -966,6 +966,20 @@ public interface IReadOnlyAdvancedOptions
     ///     Option to enable or disable usage of default tenant when using multi-tenanted documents
     /// </summary>
     bool DefaultTenantUsageEnabled { get; }
+
+}
+
+public sealed class MultiHostSettings
+{
+    /// <summary>
+    /// Sets the target session attributes for read-only sessions. Defaults to <see cref="TargetSessionAttributes.Primary"/>
+    /// </summary>
+    public TargetSessionAttributes ReadSessionPreference { get; set; } = TargetSessionAttributes.Primary;
+
+    /// <summary>
+    /// Sets the target session attributes for write sessions. Defaults to <see cref="TargetSessionAttributes.Primary"/>
+    /// </summary>
+    public TargetSessionAttributes WriteSessionPreference { get; set; } = TargetSessionAttributes.Primary;
 }
 
 public class AdvancedOptions: IReadOnlyAdvancedOptions
@@ -1009,6 +1023,11 @@ public class AdvancedOptions: IReadOnlyAdvancedOptions
     ///     written
     /// </summary>
     public PostgresqlMigrator Migrator { get; } = new();
+
+    /// <summary>
+    /// Configuration options when using a <see cref="NpgsqlMultiHostDataSource"/>
+    /// </summary>
+    public MultiHostSettings MultiHostSettings { get; } = new();
 
     /// <summary>
     ///     Decides if `timestamp without time zone` database type should be used for `DateTime` DuplicatedField.

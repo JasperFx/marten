@@ -14,6 +14,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Npgsql;
 using Shouldly;
 using Weasel.Core.Migrations;
 using Xunit;
@@ -138,7 +139,7 @@ public class MartenServiceCollectionExtensionsTests
         var rules = store.Options.CreateGenerationRules();
         rules.ApplicationAssembly.ShouldBe(store.Options.ApplicationAssembly);
     }
-    
+
     [Fact]
     public async Task apply_changes_on_startup()
     {
@@ -304,6 +305,34 @@ public class MartenServiceCollectionExtensionsTests
         Func<bool> Call(IDocumentSession s) => () => s.Query<Target>().Any();
         Call(session).ShouldNotThrow();
     }
+
+    [Fact]
+    public async Task use_npgsql_multi_host_data_source()
+    {
+        var services = new ServiceCollection();
+
+        #region sample_using_UseNpgsqlDataSourceMultiHost
+
+        services.AddMultiHostNpgsqlDataSource(ConnectionSource.ConnectionString);
+
+        services.AddMarten(x =>
+            {
+                // Will prefer standby nodes for querying.
+                x.Advanced.MultiHostSettings.ReadSessionPreference = TargetSessionAttributes.PreferStandby;
+            })
+            .UseLightweightSessions()
+            .UseNpgsqlDataSource();
+
+        #endregion
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        await using var session = serviceProvider.GetService<IDocumentSession>();
+        Func<bool> Call(IDocumentSession s) => () => s.Query<Target>().Any();
+        Call(session).ShouldNotThrow();
+    }
+
+
 
 #if NET8_0
     [Fact]

@@ -109,6 +109,7 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     Task<long> ProjectionProgressFor(ShardName name,
         CancellationToken token = default);
 
+    NpgsqlConnection CreateConnection(ConnectionUsage connectionUsage = ConnectionUsage.ReadWrite);
 
     /// <summary>
     /// Find the position of the event store sequence just below the supplied timestamp. Will
@@ -118,4 +119,10 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     /// <param name="token"></param>
     /// <returns></returns>
     Task<long?> FindEventStoreFloorAtTimeAsync(DateTimeOffset timestamp, CancellationToken token);
+}
+
+public enum ConnectionUsage
+{
+    Read,
+    ReadWrite
 }
