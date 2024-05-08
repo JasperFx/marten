@@ -36,8 +36,7 @@
 
     <ItemGroup>
         <PackageReference Include="JasperFx.Core" Version="1.5.1" />
-        <PackageReference Include="JasperFx.CodeGeneration" Version="3.5.2" />
-        <PackageReference Include="JasperFx.RuntimeCompiler" Version="3.5.2" />
+        <PackageReference Include="JasperFx.CodeGeneration" Version="3.5.3" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <!-- This is forced by Npgsql peer dependency -->
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
