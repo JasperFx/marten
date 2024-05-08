@@ -31,8 +31,6 @@ public class fetch_a_single_event_with_metadata: IntegrationContext
             x.Events.MetadataConfig.HeadersEnabled = true;
             x.Events.MetadataConfig.CausationIdEnabled = true;
             x.Events.MetadataConfig.CorrelationIdEnabled = true;
-
-
         });
 
         theSession.CorrelationId = "The Correlation";
@@ -60,8 +58,6 @@ public class fetch_a_single_event_with_metadata: IntegrationContext
             x.Events.MetadataConfig.HeadersEnabled = true;
             x.Events.MetadataConfig.CausationIdEnabled = true;
             x.Events.MetadataConfig.CorrelationIdEnabled = true;
-
-
         });
 
         theSession.CorrelationId = "The Correlation";
