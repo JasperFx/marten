@@ -181,6 +181,19 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
         method.Frames.SetMemberValue(member, variableName, documentType, generatedType);
     }
 
+    public static void AssignMemberFromReader<T>(this GeneratedMethod method, GeneratedType generatedType,
+        int index,
+        Expression<Func<T, Dictionary<string, object>>> memberExpression)
+    {
+        var member = FindMembers.Determine(memberExpression).Single();
+        var variableName = member.Name.ToCamelCase();
+
+        method.Frames.Code(
+            $"var {variableName} = _options.Serializer().FromJson<{member.GetMemberType().FullNameInCode()}>(reader, {index});");
+
+        method.Frames.SetMemberValue(member, variableName, typeof(T), generatedType);
+    }
+
     public static void AssignMemberFromReaderAsync<T>(this GeneratedMethod method, GeneratedType generatedType,
         int index,
         Expression<Func<T, object>> memberExpression)
