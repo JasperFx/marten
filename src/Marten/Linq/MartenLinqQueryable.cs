@@ -131,7 +131,7 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
 
     IEnumerator IEnumerable.GetEnumerator()
     {
-        return Provider.Execute<IEnumerable>(Expression).GetEnumerator();
+        return Provider.Execute<IEnumerable<T>>(Expression).GetEnumerator();
     }
 
     public Type ElementType => typeof(T);
