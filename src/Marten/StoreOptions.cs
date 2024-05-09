@@ -881,10 +881,11 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         var configuration = new MasterTableTenancyOptions();
         configure(configuration);
 
-        if (configuration.ConnectionString.IsEmpty())
+        // TODO -- remove this when we figure out how to use the DI data source
+        if (configuration.ConnectionString.IsEmpty() && configuration.DataSource == null)
         {
             throw new ArgumentOutOfRangeException(nameof(configure),
-                $"{nameof(MasterTableTenancyOptions.ConnectionString)} must be supplied");
+                $"Either an {nameof(MasterTableTenancyOptions.ConnectionString)} or {nameof(MasterTableTenancyOptions.DataSource)} must be supplied");
         }
 
         var tenancy = new MasterTableTenancy(this, configuration);
