@@ -27,7 +27,7 @@ public class ProjectionCoordinator : IProjectionCoordinator
     private readonly object _daemonLock = new ();
 
     private readonly ResiliencePipeline _resilience;
-    private readonly CancellationTokenSource _cancellation = new();
+    private CancellationTokenSource _cancellation;
     private Task _runner;
     private readonly TimeProvider _timeProvider;
 
@@ -100,18 +100,21 @@ public class ProjectionCoordinator : IProjectionCoordinator
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        _cancellation = new();
         _runner = Task.Run(() => executeAsync(_cancellation.Token), _cancellation.Token);
 
         return Task.CompletedTask;
     }
 
-    public async Task StopAsync(CancellationToken cancellationToken)
+    public async Task PauseAsync()
     {
+        _logger.LogInformation("Pausing ProjectionCoordinator");
 #if NET8_0_OR_GREATER
         await _cancellation.CancelAsync().ConfigureAwait(false);
 #else
         _cancellation.Cancel();
 #endif
+        _cancellation.SafeDispose();
 
         try
         {
@@ -129,9 +132,8 @@ public class ProjectionCoordinator : IProjectionCoordinator
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Error while trying to shut down the ProjectionCoordinator");
+            _logger.LogError(e, "Error while trying to stop the ProjectionCoordinator");
         }
-        _runner.SafeDispose();
 
         foreach (var pair in _daemons.Enumerate())
         {
@@ -144,6 +146,13 @@ public class ProjectionCoordinator : IProjectionCoordinator
                 _logger.LogError(exception, "Error while trying to stop daemon agents in database {Name}", pair.Key);
             }
         }
+    }
+
+    public Task ResumeAsync() => StartAsync(default);
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        await PauseAsync().ConfigureAwait(false);
 
         foreach (var daemon in _daemons.Enumerate())
         {
