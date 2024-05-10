@@ -129,6 +129,30 @@ public class numeric_revisioning: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task each_store_should_increase_the_version()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+        doc1.Version.ShouldBe(1);
+
+        doc1.Name = "Brad";
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+        doc1.Version.ShouldBe(2);
+
+        doc1.Name = "Janet";
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+        doc1.Version.ShouldBe(3);
+
+        doc1.Name = "Arthur";
+        theSession.Store(doc1);
+        theSession.SaveChanges();
+        doc1.Version.ShouldBe(4);
+    }
+
+    [Fact]
     public async Task optimistic_concurrency_failure_with_update_revision()
     {
         var doc1 = new RevisionedDoc { Name = "Tim" };
