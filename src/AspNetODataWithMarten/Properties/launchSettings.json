@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "Container (Dockerfile)": {
+      "commandName": "Docker",
+      "launchBrowser": fa,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/weatherforecast",
+      "environmentVariables": {
+        "ASPNETCORE_HTTP_PORTS": "8080"
+      },
+      "publishAllPorts": true
+    }
+  },
+  "$schema": "http://json.schemastore.org/launchsettings.json"
+}
