@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using Castle.Components.DictionaryAdapter;
+using JasperFx.CodeGeneration;
+using JasperFx.Core;
 using Marten.Exceptions;
 using Marten.Metadata;
 using Marten.Schema;
@@ -133,23 +135,22 @@ public class numeric_revisioning: OneOffConfigurationsContext
     {
         var doc1 = new RevisionedDoc { Name = "Tim" };
         theSession.Store(doc1);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
         doc1.Version.ShouldBe(1);
 
         doc1.Name = "Brad";
         theSession.Store(doc1);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
         doc1.Version.ShouldBe(2);
 
         doc1.Name = "Janet";
         theSession.Store(doc1);
-        theSession.SaveChanges();
-        doc1.Version.ShouldBe(3);
 
-        doc1.Name = "Arthur";
-        theSession.Store(doc1);
-        theSession.SaveChanges();
-        doc1.Version.ShouldBe(4);
+        // It's going to warn you to use UpdateRevision here.
+        var ex = await Should.ThrowAsync<ConcurrencyException>(async () =>
+        {
+            await theSession.SaveChangesAsync();
+        });
     }
 
     [Fact]

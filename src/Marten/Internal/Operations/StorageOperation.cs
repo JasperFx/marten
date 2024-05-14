@@ -161,7 +161,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
             var revision = await reader.GetFieldValueAsync<int>(0, token).ConfigureAwait(false);
             if (Revision > 1) // don't care about zero or 1
             {
-                if (revision > Revision)
+                if (revision >= Revision)
                 {
                     exceptions.Add(new ConcurrencyException(typeof(T), _id));
                     success = false;
