@@ -1,8 +1,9 @@
 # Indexing Documents
 
-::: tip
-If you intend to write your own indexes against Marten document tables, just ensure that the index names are **not** prefixed with "mt_" so
-that Marten will ignore your manual indexes when calculating schema differences.
+::: warning
+In all recent versions, Marten owns all the indexes on Marten controlled tables, so any custom indexes needs to be done
+through Marten itself, or you need to bypass Marten's own facilities for schema management to avoid having Marten drop
+your custom indexes.
 :::
 
 Marten gives you a couple options for speeding up queries --
