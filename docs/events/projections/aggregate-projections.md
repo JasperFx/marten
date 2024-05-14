@@ -605,8 +605,8 @@ public class TripProjection: SingleStreamProjection<Trip>
 ## Working with Event Metadata <Badge type="tip" text="7.12" />
 
 At any point in an `Apply()` or `Create()` or `ShouldDelete()` method, you can take in either the generic `IEvent` wrapper
-or the specific `IEvent<T>` wrapper type for the specific event. *Sometimes* though, you may want to automatically take your
-aggregated document with metadata from the very last event the projection is encountering at one time. *If* you are using
+or the specific `IEvent<T>` wrapper type for the specific event. _Sometimes_ though, you may want to automatically take your
+aggregated document with metadata from the very last event the projection is encountering at one time. _If_ you are using
 either `SingleStreamProjection<T>` or `MultiStreamProjection<TDoc, TId>` as the base class for a projection, you can 
 override the `ApplyMetadata(T aggregate, IEvent lastEvent)` method in your projection to manually map event metadata to 
 your aggregate in any way you wish.
