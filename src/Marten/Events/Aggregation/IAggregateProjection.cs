@@ -28,4 +28,6 @@ public interface IAggregateProjection // THIS NEEDS TO REMAIN PUBLIC
     /// into Marten's parallel blue/green deployment of this projection.
     /// </summary>
     uint ProjectionVersion { get; set; }
+
+    object ApplyMetadata(object aggregate, IEvent lastEvent);
 }
