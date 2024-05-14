@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
@@ -101,6 +100,8 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         {
             Storage.SetIdentity(aggregate, slice.Id);
             Versioning.TrySetVersion(aggregate, lastEvent);
+
+            Projection.ApplyMetadata(aggregate, lastEvent);
         }
 
         // Delete the aggregate *if* it existed prior to these events

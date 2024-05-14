@@ -66,6 +66,25 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
 
     Type IAggregateProjection.AggregateType => typeof(T);
 
+    /// <summary>
+    /// Template method that is called on the last event in a slice of events that
+    /// are updating an aggregate. This was added specifically to add metadata like "LastModifiedBy"
+    /// from the last event to an aggregate with user-defined logic. Override this for your own specific logic
+    /// </summary>
+    /// <param name="aggregate"></param>
+    /// <param name="lastEvent"></param>
+    public virtual T ApplyMetadata(T aggregate, IEvent lastEvent)
+    {
+        return aggregate;
+    }
+
+    object IAggregateProjection.ApplyMetadata(object aggregate, IEvent lastEvent)
+    {
+        if (aggregate is T t) return ApplyMetadata(t, lastEvent);
+
+        return aggregate;
+    }
+
     public bool AppliesTo(IEnumerable<Type> eventTypes)
     {
         return eventTypes

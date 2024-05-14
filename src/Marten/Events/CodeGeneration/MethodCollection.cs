@@ -11,6 +11,7 @@ using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Marten.Events.Aggregation;
 using Marten.Schema;
 
 namespace Marten.Events.CodeGeneration;
@@ -237,7 +238,7 @@ internal abstract class MethodCollection
 
     public static MethodSlot[] FindInvalidMethods(Type projectionType, params MethodCollection[] collections)
     {
-        var methodNames = collections.SelectMany(x => x.MethodNames).Distinct().ToArray();
+        var methodNames = collections.SelectMany(x => x.MethodNames).Concat([nameof(IAggregateProjection.ApplyMetadata)]).Distinct().ToArray();
 
         var invalidMethods = projectionType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
             .Where(x => !x.HasAttribute<MartenIgnoreAttribute>())

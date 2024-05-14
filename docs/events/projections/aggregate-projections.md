@@ -601,3 +601,107 @@ public class TripProjection: SingleStreamProjection<Trip>
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TripProjectionWithEventMetadata.cs#L23-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregation_using_event_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Working with Event Metadata <Badge type="tip" text="7.12" />
+
+At any point in an `Apply()` or `Create()` or `ShouldDelete()` method, you can take in either the generic `IEvent` wrapper
+or the specific `IEvent<T>` wrapper type for the specific event. *Sometimes* though, you may want to automatically take your
+aggregated document with metadata from the very last event the projection is encountering at one time. *If* you are using
+either `SingleStreamProjection<T>` or `MultiStreamProjection<TDoc, TId>` as the base class for a projection, you can 
+override the `ApplyMetadata(T aggregate, IEvent lastEvent)` method in your projection to manually map event metadata to 
+your aggregate in any way you wish.
+
+Here's an example of using a custom header value of the events captured to update an aggregate based on the last event encountered:
+
+<!-- snippet: sample_using_ApplyMetadata -->
+<a id='snippet-sample_using_applymetadata'></a>
+```cs
+public class Item
+{
+    public Guid Id { get; set; }
+    public string Description { get; set; }
+    public bool Started { get; set; }
+    public DateTimeOffset WorkedOn { get; set; }
+    public bool Completed { get; set; }
+    public string LastModifiedBy { get; set; }
+    public DateTimeOffset? LastModified { get; set; }
+}
+
+public record ItemStarted(string Description);
+
+public record ItemWorked;
+
+public record ItemFinished;
+
+public class ItemProjection: SingleStreamProjection<Item>
+{
+    public void Apply(Item item, ItemStarted started)
+    {
+        item.Started = true;
+        item.Description = started.Description;
+    }
+
+    public void Apply(Item item, IEvent<ItemWorked> worked)
+    {
+        // Nothing, I know, this is weird
+    }
+
+    public void Apply(Item item, ItemFinished finished)
+    {
+        item.Completed = true;
+    }
+
+    public override Item ApplyMetadata(Item aggregate, IEvent lastEvent)
+    {
+        // Apply the last timestamp
+        aggregate.LastModified = lastEvent.Timestamp;
+
+        if (lastEvent.Headers.TryGetValue("last-modified-by", out var person))
+        {
+            aggregate.LastModifiedBy = person?.ToString() ?? "System";
+        }
+
+        return aggregate;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L46-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_applymetadata' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+And the same projection in usage in a unit test to see how it's all put together:
+
+<!-- snippet: sample_apply_metadata -->
+<a id='snippet-sample_apply_metadata'></a>
+```cs
+public class using_apply_metadata : OneOffConfigurationsContext
+{
+    [Fact]
+    public async Task apply_metadata()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add<ItemProjection>(ProjectionLifecycle.Inline);
+
+            // THIS IS NECESSARY FOR THIS SAMPLE!
+            opts.Events.MetadataConfig.HeadersEnabled = true;
+        });
+
+        // Setting a header value on the session, which will get tagged on each
+        // event captured by the current session
+        theSession.SetHeader("last-modified-by", "Glenn Frey");
+
+        var id = theSession.Events.StartStream<Item>(new ItemStarted("Blue item")).Id;
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(id, new ItemWorked(), new ItemWorked(), new ItemFinished());
+        await theSession.SaveChangesAsync();
+
+        var item = await theSession.LoadAsync<Item>(id);
+
+        // RIP Glenn Frey, take it easy!
+        item.LastModifiedBy.ShouldBe("Glenn Frey");
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L12-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_metadata' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
