@@ -500,6 +500,42 @@ public class end_to_end_query_with_include: IntegrationContext
     #endregion
 
     [Fact]
+    public void include_to_dictionary_with_select()
+    {
+        var user1 = new User();
+        var user2 = new User();
+        var user3 = new User();
+
+        var issue1 = new Issue { AssigneeId = user1.Id, Title = "Garage Door is busted", Status = "Done", Number = 1};
+        var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted", Status = "Done", Number = 2};
+        var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
+        var issue4 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
+        var issue5 = new Issue { AssigneeId = user3.Id, Title = "Garage Door is busted" };
+
+        using var session = theStore.IdentitySession();
+        session.Store(user1, user2);
+        session.Store(issue1, issue2, issue3);
+        session.SaveChanges();
+
+        using var query = theStore.QuerySession();
+        var dict = new Dictionary<Guid, User>();
+
+        query.Logger = new TestOutputMartenLogger(_output);
+
+        var ids = query.Query<Issue>().Include(dict).On(x => x.AssigneeId)
+            .Where(x => x.Status == "Done")
+            .Select(x => x.Number).ToArray();
+
+        dict.Count.ShouldBe(2);
+        dict.ContainsKey(user1.Id).ShouldBeTrue();
+        dict.ContainsKey(user2.Id).ShouldBeTrue();
+
+        ids.Length.ShouldBe(2);
+        ids.ShouldContain(1);
+        ids.ShouldContain(2);
+    }
+
+    [Fact]
     public void include_to_dictionary_using_inner_join()
     {
         var user1 = new User();
