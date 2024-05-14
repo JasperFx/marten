@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core.Reflection;
 using Marten.Linq;
+using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Schema.Indexing.Unique;
 using Marten.Storage.Metadata;
@@ -90,8 +91,11 @@ public class ComputedIndex: IndexDefinition
             }
 
             var sql = member.MemberType.IsEnumerable()
-                ? member.RawLocator.Replace("d.", "")
-                : member.TypedLocator.Replace("d.", "");
+                ? member is ChildCollectionMember ? member.TypedLocator : member.RawLocator
+                : member.TypedLocator;
+
+            sql = sql.Replace("d.", "");
+
             switch (casing)
             {
                 case Casings.Upper:
