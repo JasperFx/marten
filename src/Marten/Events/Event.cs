@@ -117,7 +117,7 @@ public interface IEvent<out T>: IEvent where T : notnull
     new T Data { get; }
 }
 
-internal class Event<T>: IEvent<T> where T : notnull
+public class Event<T>: IEvent<T> where T : notnull
 {
     public Event(T data)
     {
