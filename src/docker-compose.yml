@@ -1,0 +1,23 @@
+version: '3.4'
+
+services:
+  aspnetodatawithmarten:
+    build:
+      context: .
+      dockerfile: AspNetODataWithMarten/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_HTTP_PORTS: 8080
+      POSTGRES_CONNECTION_STRING: "Host=postgres;Port=5432;Database=weatherforecast;Username=postgres;password=Password123!"
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_DB: "weatherforecast"
+      POSTGRES_PASSWORD: "Password123!"
+    ports:
+      - "5432:5432"
