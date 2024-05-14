@@ -12,7 +12,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
-internal class NewScalarStringSelectClause: ISelectClause, IScalarSelectClause, ISelector<string>
+internal class NewScalarStringSelectClause: ISelectClause, IScalarSelectClause, ISelector<string>, IModifyableFromObject
 {
     public NewScalarStringSelectClause(string member, string from)
     {
@@ -47,7 +47,7 @@ internal class NewScalarStringSelectClause: ISelectClause, IScalarSelectClause, 
 
     public Type SelectedType => typeof(string);
 
-    public string FromObject { get; }
+    public string FromObject { get; set; }
 
     public void Apply(ICommandBuilder sql)
     {
