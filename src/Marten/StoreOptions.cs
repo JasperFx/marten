@@ -571,10 +571,23 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         EnumStorage enumStorage = EnumStorage.AsInteger,
         Casing casing = Casing.Default,
         Action<JsonSerializerOptions>? configure = null)
-    {
-        var serializer = new SystemTextJsonSerializer() { EnumStorage = enumStorage, Casing = casing, };
+        => UseSystemTextJsonForSerialization(null, enumStorage, casing, configure);
 
-        if(configure is not null)
+    /// <summary>
+    ///     Configure the System.Text.Json serializer settings
+    /// </summary>
+    /// <param name="options">The base settings.</param>
+    /// <param name="enumStorage">Enum storage style</param>
+    /// <param name="casing">Casing style to be used in serialization</param>
+    public void UseSystemTextJsonForSerialization(
+        JsonSerializerOptions? options,
+        EnumStorage enumStorage = EnumStorage.AsInteger,
+        Casing casing = Casing.Default,
+        Action<JsonSerializerOptions>? configure = null)
+    {
+        var serializer = new SystemTextJsonSerializer(options) { EnumStorage = enumStorage, Casing = casing, };
+
+        if (configure is not null)
             serializer.Configure(configure);
 
         Serializer(serializer);
