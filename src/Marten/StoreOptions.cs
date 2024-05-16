@@ -129,10 +129,9 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     }
 
     /// <summary>
-    /// Npgsql logging is absurdly noisy, you may want to disable the logging. Default is *true* as of
-    /// Marten 7.13
+    /// Npgsql logging is absurdly noisy, you may want to disable the logging. Default is false
     /// </summary>
-    public bool DisableNpgsqlLogging { get; set; } = true;
+    public bool DisableNpgsqlLogging { get; set; }
 
     /// <summary>
     /// Configure and override the Polly error handling policies for this DocumentStore

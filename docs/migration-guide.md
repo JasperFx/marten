@@ -2,10 +2,6 @@
 
 ## Key Changes in 7.0.0
 
-::: warning
-We turned off Npgsql logging by default in Marten 7.13. You're welcome. 
-:::
-
 The V7 release significantly impacted Marten internals and also included support for .NET 8 and and upgrade to Npgsql 8.
 In addition, Marten 7.0 requires at least PostgreSQL 12 because of the dependence upon sql/json constructs introduced in PostgreSQL 12.
 
