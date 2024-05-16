@@ -26,9 +26,5 @@
         <ProjectReference Include="..\Marten\Marten.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="MarkdownSnippets.MsBuild" Version="25.1.0">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-        </PackageReference>
     </ItemGroup>
 </Project>
