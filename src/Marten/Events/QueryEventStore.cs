@@ -249,26 +249,30 @@ internal class QueryEventStore: IQueryEventStore
 
     public StreamState? FetchStreamState(Guid streamId)
     {
+        _tenant.Database.EnsureStorageExists(typeof(IEvent));
         var handler = eventStorage().QueryForStream(StreamAction.ForReference(streamId, _tenant.TenantId));
         return _session.ExecuteHandler(handler);
     }
 
-    public Task<StreamState?> FetchStreamStateAsync(Guid streamId, CancellationToken token = default)
+    public async Task<StreamState?> FetchStreamStateAsync(Guid streamId, CancellationToken token = default)
     {
+        await _tenant.Database.EnsureStorageExistsAsync(typeof(StreamAction), token).ConfigureAwait(false);
         var handler = eventStorage().QueryForStream(StreamAction.ForReference(streamId, _tenant.TenantId));
-        return _session.ExecuteHandlerAsync(handler, token);
+        return await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
     }
 
     public StreamState? FetchStreamState(string streamKey)
     {
+        _tenant.Database.EnsureStorageExists(typeof(IEvent));
         var handler = eventStorage().QueryForStream(StreamAction.ForReference(streamKey, _tenant.TenantId));
         return _session.ExecuteHandler(handler);
     }
 
-    public Task<StreamState?> FetchStreamStateAsync(string streamKey, CancellationToken token = default)
+    public async Task<StreamState?> FetchStreamStateAsync(string streamKey, CancellationToken token = default)
     {
+        await _tenant.Database.EnsureStorageExistsAsync(typeof(StreamAction), token).ConfigureAwait(false);
         var handler = eventStorage().QueryForStream(StreamAction.ForReference(streamKey, _tenant.TenantId));
-        return _session.ExecuteHandlerAsync(handler, token);
+        return await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
     }
 
     private IEventStorage eventStorage()
