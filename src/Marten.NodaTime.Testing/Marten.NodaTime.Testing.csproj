@@ -19,8 +19,6 @@
         </PackageReference>
         <PackageReference Include="xunit" Version="2.6.2"/>
     </ItemGroup>
-    <ItemGroup>
-    </ItemGroup>
     <PropertyGroup>
         <NoWarn>xUnit1013</NoWarn>
     </PropertyGroup>

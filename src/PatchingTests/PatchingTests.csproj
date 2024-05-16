@@ -32,7 +32,4 @@
         </None>
         <EmbeddedResource Include="*.js" />
     </ItemGroup>
-
-    <ItemGroup>
-    </ItemGroup>
 </Project>

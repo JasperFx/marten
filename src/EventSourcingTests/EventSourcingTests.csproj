@@ -29,9 +29,6 @@
     </ItemGroup>
 
     <ItemGroup>
-    </ItemGroup>
-
-    <ItemGroup>
         <Compile Include="..\Marten.Testing\DocumentStoreExtensions.cs">
             <Link>DocumentStoreExtensions.cs</Link>
         </Compile>

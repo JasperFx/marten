@@ -120,9 +120,6 @@
         </Compile>
     </ItemGroup>
 
-    <ItemGroup>
-    </ItemGroup>
-
     <PropertyGroup>
         <NoWarn>xUnit1013</NoWarn>
     </PropertyGroup>

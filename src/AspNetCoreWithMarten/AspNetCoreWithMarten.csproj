@@ -11,7 +11,4 @@
         <ProjectReference Include="..\Marten.CommandLine\Marten.CommandLine.csproj"/>
         <ProjectReference Include="..\Marten\Marten.csproj"/>
     </ItemGroup>
-
-    <ItemGroup>
-    </ItemGroup>
 </Project>
