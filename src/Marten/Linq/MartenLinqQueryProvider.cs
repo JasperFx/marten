@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
-using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
@@ -153,7 +152,7 @@ internal class MartenLinqQueryProvider: IQueryProvider
 
 
     public async IAsyncEnumerable<T> ExecuteAsyncEnumerable<T>(Expression expression,
-        [EnumeratorCancellation] CancellationToken token)
+        MartenLinqQueryProvider martenProvider, [EnumeratorCancellation] CancellationToken token)
     {
         var parser = new LinqQueryParser(this, _session, expression);
         var statements = parser.BuildStatements();
@@ -166,8 +165,13 @@ internal class MartenLinqQueryProvider: IQueryProvider
         var cmd = _session.BuildCommand(statement);
 
         await using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+        var totalRowsColumnIndex = martenProvider.Statistics != null ? reader.GetOrdinal("total_rows") : -1;
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
+            if (martenProvider.Statistics != null)
+            {
+                martenProvider.Statistics.TotalResults = await reader.GetFieldValueAsync<int>(totalRowsColumnIndex, token).ConfigureAwait(false);
+            }
             yield return await selector.ResolveAsync(reader, token).ConfigureAwait(false);
         }
     }

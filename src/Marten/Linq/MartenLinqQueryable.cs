@@ -150,7 +150,7 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
 
     public IAsyncEnumerable<T> ToAsyncEnumerable(CancellationToken token = default)
     {
-        return MartenProvider.ExecuteAsyncEnumerable<T>(Expression, token);
+        return MartenProvider.ExecuteAsyncEnumerable<T>(Expression, MartenProvider, token);
     }
 
     public Task<bool> AnyAsync(CancellationToken token)
