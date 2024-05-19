@@ -13,7 +13,7 @@ We take Pull Requests!
 ## After you have sent Pull Request
 
 1. Make sure that you applied or answered all the feedback from the maintainers.
-2. We're trying to be as much responsive as we can, but if we didn't respond to you, feel free to ping us on the [Gitter channel](https://gitter.im/JasperFx/marten).
+2. We're trying to be as much responsive as we can, but if we didn't respond to you, feel free to ping us on the [Discord channel](https://discord.gg/WMxrvegf8H).
 3. Pull request will be merged when you get approvals from at least 2 of the maintainers (and no rejection from others). Pull request will be tagged with the target Marten version in which it will be released. We also label the Pull Requests with information about the type of change.
 
 ## Setup your work environment
