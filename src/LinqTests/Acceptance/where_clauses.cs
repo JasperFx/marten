@@ -16,6 +16,8 @@ public class where_clauses: LinqTestContext<where_clauses>
 
     static where_clauses()
     {
+        @where(x => (x.Number == 1) == true);
+
         @where(x => x.Number == 1);
         @where(x => x.Number > 3);
         @where(x => x.Number < 3);

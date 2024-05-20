@@ -62,8 +62,6 @@ public class Startup
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "IssueService v1"));
         }
 
-        app.UseHttpsRedirection();
-
         app.UseRouting();
 
         app.UseAuthorization();

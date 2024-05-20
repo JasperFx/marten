@@ -99,6 +99,16 @@ public class WhereClauseParser: ExpressionVisitor
     {
         if (_operators.TryGetValue(node.NodeType, out var op))
         {
+            // This garbage is brought to you by oData
+            if (op == "=" && node is { Left: BinaryExpression binary, Right: ConstantExpression c } &&
+                (c.Type == typeof(bool) || c.Type == typeof(bool?)))
+            {
+                if (true.Equals(c.Value))
+                {
+                    return VisitBinary(binary);
+                }
+            }
+
             var left = new SimpleExpression(_members, node.Left);
             var right = new SimpleExpression(_members, node.Right);
 
