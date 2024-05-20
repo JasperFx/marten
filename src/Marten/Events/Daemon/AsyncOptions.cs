@@ -44,6 +44,8 @@ public class AsyncOptions
     /// </summary>
     public bool EnableDocumentTrackingByIdentity { get; set; }
 
+    public bool TeardownDataOnRebuild { get; set; } = true;
+
     /// <summary>
     ///     Add explicit teardown rule to delete all documents of type T
     ///     when this projection shard is rebuilt
