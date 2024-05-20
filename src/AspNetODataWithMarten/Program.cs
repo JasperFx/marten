@@ -2,14 +2,18 @@ using Marten;
 using Microsoft.AspNetCore.OData;
 using Microsoft.OData.ModelBuilder;
 using System.ComponentModel.DataAnnotations;
+using Marten.Testing.Harness;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.UseKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(4000);
+});
+
 builder.Services.AddMarten((options) =>
 {
-    options.Connection(Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING"));
-    options.RegisterDocumentType<WeatherForecast>();
-    options.DatabaseSchemaName = "public";
+    options.Connection(ConnectionSource.ConnectionString);
 });
 
 builder.Services.AddControllers().AddOData(options =>
@@ -21,7 +25,7 @@ builder.Services.AddControllers().AddOData(options =>
 
     options.EnableQueryFeatures().AddRouteComponents("odata", entityBuilder.GetEdmModel());
 });
- 
+
 var app = builder.Build();
 
 app.MapControllers();

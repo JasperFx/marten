@@ -9,12 +9,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.6" />
       <PackageReference Include="Microsoft.AspNetCore.OData" Version="8.2.5" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Marten\Marten.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Marten.Testing\Harness\ConnectionSource.cs">
+      <Link>ConnectionSource.cs</Link>
+    </Compile>
   </ItemGroup>
 
 </Project>

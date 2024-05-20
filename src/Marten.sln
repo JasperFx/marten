@@ -106,8 +106,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OData", "OData", "{93FC8079
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetODataWithMarten", "AspNetODataWithMarten\AspNetODataWithMarten.csproj", "{93298A4C-2B88-4EF3-9FC8-6B2AEF52F628}"
 EndProject
-Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{0F9F373E-A47A-4028-AAEB-04E2FE4E7F24}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -254,10 +252,6 @@ Global
 		{93298A4C-2B88-4EF3-9FC8-6B2AEF52F628}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{93298A4C-2B88-4EF3-9FC8-6B2AEF52F628}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{93298A4C-2B88-4EF3-9FC8-6B2AEF52F628}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0F9F373E-A47A-4028-AAEB-04E2FE4E7F24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0F9F373E-A47A-4028-AAEB-04E2FE4E7F24}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0F9F373E-A47A-4028-AAEB-04E2FE4E7F24}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0F9F373E-A47A-4028-AAEB-04E2FE4E7F24}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -297,7 +291,6 @@ Global
 		{00DBDB5E-FE7B-4886-A989-181331DDD148} = {79961196-DB50-4AD3-B749-D231799BCF2E}
 		{93FC8079-48C4-4D3B-8C17-3944A903674F} = {79961196-DB50-4AD3-B749-D231799BCF2E}
 		{93298A4C-2B88-4EF3-9FC8-6B2AEF52F628} = {93FC8079-48C4-4D3B-8C17-3944A903674F}
-		{0F9F373E-A47A-4028-AAEB-04E2FE4E7F24} = {93FC8079-48C4-4D3B-8C17-3944A903674F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {52B7158F-0A24-47D9-9CF7-3FA94170041A}
