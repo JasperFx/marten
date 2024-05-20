@@ -121,7 +121,8 @@ public abstract class ProjectionBase : EventFilterable
     ///     Direct Marten to delete data published by this projection as the first
     ///     step to rebuilding the projection data. The default is false.
     /// </summary>
-    public bool TeardownDataOnRebuild { get; set; } = false;
+    [Obsolete("Use AsyncOptions.TeardownDataOnRebuild instead")]
+    public virtual bool TeardownDataOnRebuild { get; set; } = false;
 
 
     internal virtual void AssembleAndAssertValidity()
