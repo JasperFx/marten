@@ -114,10 +114,8 @@ public partial class ProjectionDaemon
         }
 
         // Teardown the current state
-        if(source.Options.TeardownDataOnRebuild)
-        {
-            await teardownExistingProjectionProgress(source, token, agents).ConfigureAwait(false);
-        }
+       await teardownExistingProjectionProgress(source, token, agents).ConfigureAwait(false);
+
 
         if (token.IsCancellationRequested)
         {
@@ -178,7 +176,11 @@ public partial class ProjectionDaemon
         var sessionOptions = SessionOptions.ForDatabase(Database);
         sessionOptions.AllowAnyTenant = true;
         await using var session = _store.LightweightSession(sessionOptions);
-        source.Options.Teardown(session);
+
+        if (source.Options.TeardownDataOnRebuild)
+        {
+            source.Options.Teardown(session);
+        }
 
         foreach (var agent in agents)
         {
