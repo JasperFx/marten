@@ -10,10 +10,12 @@ namespace Marten.Storage;
 public class CompositeDocumentCleaner: IDocumentCleaner
 {
     private readonly ITenancy _tenancy;
+    private readonly StoreOptions _options;
 
-    public CompositeDocumentCleaner(ITenancy tenancy)
+    public CompositeDocumentCleaner(ITenancy tenancy, StoreOptions options)
     {
         _tenancy = tenancy;
+        _options = options;
     }
 
 
@@ -90,6 +92,8 @@ public class CompositeDocumentCleaner: IDocumentCleaner
             await applyToAll(d => d.DeleteSingleEventStreamAsync(streamId, tenantId, ct)).ConfigureAwait(false);
         }
 
+        tenantId = _options.MaybeCorrectTenantId(tenantId);
+
         var tenant = await _tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
         await tenant.Database.DeleteSingleEventStreamAsync(streamId, tenantId, ct).ConfigureAwait(false);
     }
@@ -106,6 +110,8 @@ public class CompositeDocumentCleaner: IDocumentCleaner
         {
             await applyToAll(d => d.DeleteSingleEventStreamAsync(streamId, tenantId, ct)).ConfigureAwait(false);
         }
+
+        tenantId = _options.MaybeCorrectTenantId(tenantId);
 
         var tenant = await _tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
         await tenant.Database.DeleteSingleEventStreamAsync(streamId, tenantId, ct).ConfigureAwait(false);

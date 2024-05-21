@@ -121,7 +121,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
         }
 
         _schemaName = tenancyOptions.SchemaName;
-        Cleaner = new CompositeDocumentCleaner(this);
+        Cleaner = new CompositeDocumentCleaner(this, _options);
 
         _tenantDatabase = new Lazy<TenantLookupDatabase>(() =>
             new TenantLookupDatabase(_options, _dataSource.Value, tenancyOptions.SchemaName));
@@ -158,6 +158,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
             while (await reader.ReadAsync().ConfigureAwait(false))
             {
                 var tenantId = await reader.GetFieldValueAsync<string>(0).ConfigureAwait(false);
+                tenantId = _options.MaybeCorrectTenantId(tenantId);
 
                 // Be idempotent, don't duplicate
                 if (_databases.Contains(tenantId))
@@ -191,6 +192,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
     public Tenant GetTenant(string tenantId)
     {
+        tenantId = _options.MaybeCorrectTenantId(tenantId);
         if (_databases.TryFind(tenantId, out var database))
         {
             return new Tenant(tenantId, database);
@@ -211,6 +213,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
     public async ValueTask<Tenant> GetTenantAsync(string tenantId)
     {
+        tenantId = _options.MaybeCorrectTenantId(tenantId);
         if (_databases.TryFind(tenantId, out var database))
         {
             return new Tenant(tenantId, database);
@@ -229,6 +232,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
     public async ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
     {
+        tenantIdOrDatabaseIdentifier = _options.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
         if (_databases.TryFind(tenantIdOrDatabaseIdentifier, out var database))
         {
             return database;
@@ -245,6 +249,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
     public bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId)
     {
+        tenantId = _options.MaybeCorrectTenantId(tenantId);
         return database.Identifier == tenantId;
     }
 
@@ -252,6 +257,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
     public async Task DeleteDatabaseRecordAsync(string tenantId)
     {
+        tenantId = _options.MaybeCorrectTenantId(tenantId);
         await maybeApplyChanges(_tenantDatabase.Value).ConfigureAwait(false);
 
         await _dataSource.Value
@@ -270,6 +276,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
     public async Task AddDatabaseRecordAsync(string tenantId, string connectionString)
     {
+        tenantId = _options.MaybeCorrectTenantId(tenantId);
         await _dataSource.Value
             .CreateCommand(
                 $"insert into {_schemaName}.{TenantTable.TableName} (tenant_id, connection_string) values (:id, :connection) on conflict (tenant_id) do update set connection_string = :connection")
@@ -318,6 +325,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
     private async Task<MartenDatabase?> tryFindTenantDatabase(string tenantId)
     {
+        tenantId = _options.MaybeCorrectTenantId(tenantId);
         var connectionString = (string)await _dataSource.Value
             .CreateCommand($"select connection_string from {_schemaName}.{TenantTable.TableName} where tenant_id = :id")
             .With("id", tenantId)

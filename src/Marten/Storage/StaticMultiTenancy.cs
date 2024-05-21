@@ -35,7 +35,7 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
     public StaticMultiTenancy(INpgsqlDataSourceFactory dataSourceFactory, StoreOptions options): base(options)
     {
         _dataSourceFactory = dataSourceFactory;
-        Cleaner = new CompositeDocumentCleaner(this);
+        Cleaner = new CompositeDocumentCleaner(this, options);
     }
 
     public void Dispose()
