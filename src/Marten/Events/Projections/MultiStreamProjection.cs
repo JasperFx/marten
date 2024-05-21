@@ -185,7 +185,11 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
 
     protected override IEnumerable<string> validateDocumentIdentity(StoreOptions options, DocumentMapping mapping)
     {
-        yield break;
+        if (mapping.IdType != typeof(TId))
+        {
+            yield return
+                $"Id type mismatch. The projection identity type is {typeof(TId).FullNameInCode()}, but the aggregate document {typeof(TDoc).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
+        }
     }
 
     protected override Type baseTypeForAggregationRuntime()
