@@ -49,7 +49,7 @@ public partial class QuerySession: IMartenSession, IQuerySession
     )
     {
         _store = store;
-        TenantId = tenant?.TenantId ?? sessionOptions.Tenant?.TenantId ?? sessionOptions.TenantId;
+        TenantId = store.Options.MaybeCorrectTenantId(tenant?.TenantId ?? sessionOptions.Tenant?.TenantId ?? sessionOptions.TenantId);
         Database = tenant?.Database ?? sessionOptions.Tenant?.Database ??
             throw new ArgumentNullException(nameof(SessionOptions.Tenant));
 
