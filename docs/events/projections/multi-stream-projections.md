@@ -418,6 +418,27 @@ public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAss
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_slicer.cs#L16-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-slicer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Rollup by Tenant Id <Badge type="tip" text="7.15.0" />
+
+::: info
+This feature was built specifically for a [JasperFx](https://jasperfx.net) client who indeed had this use case in their system
+:::
+
+Let's say that your are using conjoined tenancy within your event storage, but want to create some kind of summarized roll up
+document per tenant id in a projected document -- like maybe the number of open "accounts" or "issues" or "users."
+
+To do that, there's a recipe for the "event slicing" in multi-stream projections with Marten to just group by the event's
+tenant id and make that the identity of the projected document. That usage is shown below:
+
+snippet: sample_rollup_projection_by_tenant_id
+
+Do note that you'll probably also need this flag in your configuration:
+
+```cs
+// opts is a StoreOptions object
+opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
+```
+
 ## Event "Fan Out" Rules
 
 The `ViewProjection` also provides the ability to "fan out" child events from a parent event into the segment of events being used to
