@@ -87,7 +87,7 @@ public sealed class SessionOptions
         OpenTelemetryOptions telemetryOptions)
     {
         Mode = mode;
-        Tenant ??= TenantId != Tenancy.DefaultTenantId ? store.Tenancy.GetTenant(TenantId) : store.Tenancy.Default;
+        Tenant ??= TenantId != Tenancy.DefaultTenantId ? store.Tenancy.GetTenant(store.Options.MaybeCorrectTenantId(TenantId)) : store.Tenancy.Default;
 
         if (!AllowAnyTenant && !store.Options.Advanced.DefaultTenantUsageEnabled &&
             Tenant.TenantId == Tenancy.DefaultTenantId)
@@ -156,7 +156,7 @@ public sealed class SessionOptions
     {
         Mode = mode;
         Tenant ??= TenantId != Tenancy.DefaultTenantId
-            ? await store.Tenancy.GetTenantAsync(TenantId).ConfigureAwait(false)
+            ? await store.Tenancy.GetTenantAsync(store.Options.MaybeCorrectTenantId(TenantId)).ConfigureAwait(false)
             : store.Tenancy.Default;
 
         if (!AllowAnyTenant && !store.Options.Advanced.DefaultTenantUsageEnabled &&

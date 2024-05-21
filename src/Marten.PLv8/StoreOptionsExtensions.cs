@@ -122,7 +122,7 @@ public static class StoreOptionsExtensions
     {
         var s = store.As<DocumentStore>();
 
-        var tenant = await s.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
+        var tenant = await s.Tenancy.GetTenantAsync(store.Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false);
 
         await tenant.Database.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
         using var transforms = new DocumentTransforms(s, tenant);

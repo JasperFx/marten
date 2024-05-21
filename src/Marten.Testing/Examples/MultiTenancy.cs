@@ -7,6 +7,25 @@ namespace Marten.Testing.Examples;
 
 public class MultiTenancy
 {
+    public static void configuring_tenant_id_rules()
+    {
+        #region sample_using_tenant_id_style
+
+        var store = DocumentStore.For(opts =>
+        {
+            // This is the default
+            opts.TenantIdStyle = TenantIdStyle.CaseSensitive;
+
+            // Or opt into this behavior:
+            opts.TenantIdStyle = TenantIdStyle.ForceLowerCase;
+
+            // Or force all tenant ids to be converted to upper case internally
+            opts.TenantIdStyle = TenantIdStyle.ForceUpperCase;
+        });
+
+        #endregion
+    }
+
     [Fact]
     public void use_multiple_tenants()
     {

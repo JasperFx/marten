@@ -88,4 +88,6 @@ public interface IReadOnlyStoreOptions
     /// Get database schema names for configured tables
     /// </summary>
     IDocumentSchemaResolver Schema { get; }
+
+    string MaybeCorrectTenantId(string tenantId);
 }

@@ -155,6 +155,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     public string MaybeCorrectTenantId(string tenantId)
     {
+        if (tenantId == Marten.Storage.Tenancy.DefaultTenantId) return tenantId;
+
         switch (TenantIdStyle)
         {
             case TenantIdStyle.CaseSensitive:

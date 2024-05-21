@@ -96,6 +96,7 @@ public class AdvancedOperations
     /// <param name="floor"></param>
     public async Task ResetHiloSequenceFloor<T>(string tenantId, long floor)
     {
+        tenantId = _store.Options.MaybeCorrectTenantId(tenantId);
         var tenant = await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
         await tenant.Database.ResetHiloSequenceFloor<T>(floor).ConfigureAwait(false);
     }
@@ -115,7 +116,7 @@ public class AdvancedOperations
     {
         var database = tenantId == null
             ? _store.Tenancy.Default.Database
-            : (await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false)).Database;
+            : (await _store.Tenancy.GetTenantAsync(_store.Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false)).Database;
 
         return await database.FetchEventStoreStatistics(token).ConfigureAwait(false);
     }
@@ -134,7 +135,7 @@ public class AdvancedOperations
     {
         var database = tenantId == null
             ? _store.Tenancy.Default.Database
-            : (await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false)).Database;
+            : (await _store.Tenancy.GetTenantAsync(_store.Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false)).Database;
 
         return await database.AllProjectionProgress(token).ConfigureAwait(false);
     }
@@ -153,7 +154,7 @@ public class AdvancedOperations
     {
         var tenant = tenantId == null
             ? _store.Tenancy.Default
-            : await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
+            : await _store.Tenancy.GetTenantAsync(_store.Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false);
         var database = tenant.Database;
 
         return await database.ProjectionProgressFor(name, token).ConfigureAwait(false);
