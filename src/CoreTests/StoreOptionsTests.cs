@@ -424,6 +424,23 @@ public class StoreOptionsTests
         }
     }
 
+    [Fact]
+    public void default_tenant_id_style_is_case_sensitive()
+    {
+        new StoreOptions().TenantIdStyle.ShouldBe(TenantIdStyle.CaseSensitive);
+    }
+
+    [Theory]
+    [InlineData(TenantIdStyle.CaseSensitive, "What", "What")]
+    [InlineData(TenantIdStyle.ForceLowerCase, "What", "what")]
+    [InlineData(TenantIdStyle.ForceUpperCase, "What", "WHAT")]
+    public void maybe_correct_tenant_id(TenantIdStyle style, string tenantId, string corrected)
+    {
+        var options = new StoreOptions { TenantIdStyle = style };
+
+        options.MaybeCorrectTenantId(tenantId).ShouldBe(corrected);
+    }
+
 
     private class DummyNpgsqlDataSourceFactory: INpgsqlDataSourceFactory
     {

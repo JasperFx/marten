@@ -35,6 +35,26 @@ using Weasel.Postgresql.Connections;
 
 namespace Marten;
 
+public enum TenantIdStyle
+{
+    /// <summary>
+    /// Use the tenant id as is wherever it is supplied
+    /// </summary>
+    CaseSensitive,
+
+    /// <summary>
+    /// Quietly convert all supplied tenant identifiers to all upper case to prevent
+    /// any possible issues with case sensitive tenant id mismatches
+    /// </summary>
+    ForceUpperCase,
+
+    /// <summary>
+    /// Quietly convert all supplied tenant identifiers to all lower case to prevent
+    /// any possible issues with case sensitive tenant id mismatches
+    /// </summary>
+    ForceLowerCase
+}
+
 /// <summary>
 ///     StoreOptions supplies all the necessary configuration
 ///     necessary to customize and bootstrap a working
@@ -71,6 +91,11 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///     bootstrapped
     /// </summary>
     internal readonly IList<IInitialData> InitialData = new List<IInitialData>();
+
+    /// <summary>
+    /// Configure tenant id behavior within this Marten DocumentStore
+    /// </summary>
+    public TenantIdStyle TenantIdStyle { get; set; } = TenantIdStyle.CaseSensitive;
 
     /// <summary>
     ///     Add, remove, or reorder global session listeners
@@ -126,6 +151,19 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
             return builder;
         });
+    }
+
+    public string MaybeCorrectTenantId(string tenantId)
+    {
+        switch (TenantIdStyle)
+        {
+            case TenantIdStyle.CaseSensitive:
+                return tenantId;
+            case TenantIdStyle.ForceLowerCase:
+                return tenantId.ToLowerInvariant();
+            default:
+                return tenantId.ToUpperInvariant();
+        }
     }
 
     /// <summary>
