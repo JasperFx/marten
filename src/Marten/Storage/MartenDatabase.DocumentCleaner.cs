@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using Marten.Events;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Schema;
@@ -202,6 +203,8 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
     public async Task DeleteAllEventDataAsync(CancellationToken ct = default)
     {
+        await EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
+
         await using var connection = CreateConnection();
         await connection.OpenAsync(ct).ConfigureAwait(false);
 
@@ -209,6 +212,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
         var deleteEventDataSql = toDeleteEventDataSql();
         await connection.CreateCommand(deleteEventDataSql, tx).ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+
         await tx.CommitAsync(ct).ConfigureAwait(false);
     }
 
@@ -245,8 +249,8 @@ IF EXISTS(SELECT * FROM information_schema.tables
 WHERE table_name = 'mt_streams' AND table_schema = '{Options.Events.DatabaseSchemaName}')
 THEN TRUNCATE TABLE {Options.Events.DatabaseSchemaName}.mt_streams CASCADE; END IF;
 IF EXISTS(SELECT * FROM information_schema.tables
-WHERE table_name = 'mt_mark_event_progression' AND table_schema = '{Options.Events.DatabaseSchemaName}')
-THEN delete from {Options.Events.DatabaseSchemaName}.mt_mark_event_progression; END IF;
+WHERE table_name = 'mt_event_progression' AND table_schema = '{Options.Events.DatabaseSchemaName}')
+THEN delete from {Options.Events.DatabaseSchemaName}.mt_event_progression; END IF;
 END; $$;
 ";
     }

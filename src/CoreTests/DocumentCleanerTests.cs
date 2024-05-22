@@ -4,18 +4,27 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
+using Marten.Events.Daemon;
+using Marten.Events.Daemon.Internals;
+using Marten.Events.Daemon.Progress;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace CoreTests;
 
 public class DocumentCleanerTests: OneOffConfigurationsContext
 {
+    private readonly ITestOutputHelper _output;
     private IDocumentCleaner theCleaner => theStore.Advanced.Clean;
 
+    public DocumentCleanerTests(ITestOutputHelper output)
+    {
+        _output = output;
+    }
 
     [Fact]
     public async Task clean_table()
@@ -135,6 +144,14 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
     [Fact]
     public async Task delete_all_event_data_async()
     {
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        theSession.QueueOperation(new InsertProjectionProgress(theStore.Events,
+            new EventRange(new ShardName("Projection1", "All"), 1000)));
+
+        theSession.QueueOperation(new InsertProjectionProgress(theStore.Events,
+            new EventRange(new ShardName("Projection2", "All"), 1000)));
+
         var streamId = Guid.NewGuid();
         theSession.Events.StartStream<Quest>(streamId, new QuestStarted());
 
@@ -144,6 +161,9 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
 
         theSession.Events.QueryRawEventDataOnly<QuestStarted>().ShouldBeEmpty();
         (await theSession.Events.FetchStreamAsync(streamId)).ShouldBeEmpty();
+
+        var progress = await theStore.Advanced.AllProjectionProgress();
+        progress.Any().ShouldBeFalse();
     }
 
     private static void ShouldBeEmpty<T>(T[] documentTables)
