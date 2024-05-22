@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Daemon.Coordination;
@@ -43,5 +44,24 @@ public static class HostExtensions
         return host.Services.GetRequiredService<IDocumentStore>();
     }
 
+    /// <summary>
+    /// Clean off all Marten data in the default DocumentStore for this host
+    /// </summary>
+    /// <param name="host"></param>
+    public static async Task CleanAllMartenDataAsync(this IHost host)
+    {
+        var store = host.DocumentStore();
+        await store.Advanced.Clean.DeleteAllDocumentsAsync(CancellationToken.None).ConfigureAwait(false);
+        await store.Advanced.Clean.DeleteAllEventDataAsync(CancellationToken.None).ConfigureAwait(false);
+    }
 
+    /// <summary>
+    /// Call DocumentStore.ResetAllData() on the document store in this host
+    /// </summary>
+    /// <param name="host"></param>
+    public static Task ResetAllMartenDataAsync(this IHost host)
+    {
+        var store = host.DocumentStore();
+        return store.Advanced.ResetAllData(CancellationToken.None);
+    }
 }
