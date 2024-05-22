@@ -7,11 +7,38 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
 using Marten.Storage;
+using Microsoft.Extensions.Hosting;
 
 namespace Marten.Events;
 
 public static class TestingExtensions
 {
+    /// <summary>
+    ///     Use with caution! This will try to wait for all projections to "catch up" to the currently
+    ///     known farthest known sequence of the event store
+    /// </summary>
+    /// <param name="timeout"></param>
+    /// <returns></returns>
+    public static Task WaitForNonStaleProjectionDataAsync(this IHost host, TimeSpan timeout)
+    {
+        return host.DocumentStore().WaitForNonStaleProjectionDataAsync(timeout);
+    }
+
+    /// <summary>
+    ///     Wait for any running async daemon for a specific tenant id or database name to catch up to the latest event
+    ///     sequence at the time
+    ///     this method is invoked for all projections. This method is meant to aid in automated testing
+    /// </summary>
+    /// <param name="tenantIdOrDatabaseName">Either a tenant id or the name of a database within the system</param>
+    public static async Task WaitForNonStaleProjectionDataAsync(this IHost host,
+        string tenantIdOrDatabaseName, TimeSpan timeout)
+    {
+        // Assuming there's only one database in this usage
+        var database = await host.DocumentStore().Storage.FindOrCreateDatabase(tenantIdOrDatabaseName).ConfigureAwait(false);
+
+        await database.WaitForNonStaleProjectionDataAsync(timeout).ConfigureAwait(false);
+    }
+
     /// <summary>
     ///     Wait for any running async daemons to catch up to the latest event sequence at the time
     ///     this method is invoked for all projections. This method is meant to aid in automated testing
