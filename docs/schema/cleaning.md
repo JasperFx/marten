@@ -53,3 +53,4 @@ await theStore.Advanced.ResetAllData();
 Use `IHost.ResetAllMartenDataAsync()` to delete all current document, event data and then (re)applies the configured initial data from the `IHost` instance.
 
 <!-- snippet: sample_reset_all_data_ihost -->
+<!-- endSnippet -->
