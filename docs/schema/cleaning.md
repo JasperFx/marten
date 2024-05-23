@@ -49,3 +49,7 @@ await theStore.Advanced.ResetAllData();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/reset_all_data_usage.cs#L45-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_reset_all_data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+Use `IHost.ResetAllMartenDataAsync()` to delete all current document, event data and then (re)applies the configured initial data from the `IHost` instance.
+
+<!-- snippet: sample_reset_all_data_ihost -->
