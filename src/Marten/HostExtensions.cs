@@ -67,6 +67,18 @@ public static class HostExtensions
     }
 
     /// <summary>
+    /// Clean off all Marten data in the specified DocumentStore for this host when working with multiple Marten databases
+    /// </summary>
+    /// <param name="host"></param>
+    /// <typeparam name="T"></typeparam>
+    public static async Task CleanAllMartenDataAsync<T>(this IHost host) where T : IDocumentStore
+    {
+        var store = host.DocumentStore<T>();
+        await store.Advanced.Clean.DeleteAllDocumentsAsync(CancellationToken.None).ConfigureAwait(false);
+        await store.Advanced.Clean.DeleteAllEventDataAsync(CancellationToken.None).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Call DocumentStore.ResetAllData() on the document store in this host
     /// </summary>
     /// <param name="host"></param>
