@@ -45,6 +45,17 @@ public static class HostExtensions
     }
 
     /// <summary>
+    /// Retrieve the Marten document store for this IHost when working with multiple Marten databases
+    /// </summary>
+    /// <param name="host"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static T DocumentStore<T>(this IHost host) where T : IDocumentStore
+    {
+        return host.Services.GetRequiredService<T>();
+    }
+
+    /// <summary>
     /// Clean off all Marten data in the default DocumentStore for this host
     /// </summary>
     /// <param name="host"></param>
