@@ -17,6 +17,9 @@ public class DocumentCleanerExamples
         // Deletes all the documents stored in a Marten database
         store.Advanced.Clean.DeleteAllDocumentsAsync();
 
+        // Deletes all the event data stored in a Marten database
+        store.Advanced.Clean.DeleteAllEventDataAsync();
+
         // Deletes all of the persisted User documents
         store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(User));
 
