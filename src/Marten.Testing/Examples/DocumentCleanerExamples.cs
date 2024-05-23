@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Marten.Testing.Documents;
+using Microsoft.Extensions.Hosting;
 
 namespace Marten.Testing.Examples;
 
@@ -31,5 +32,14 @@ public class DocumentCleanerExamples
         await store.Advanced.Clean.DeleteDocumentsExceptAsync(typeof(Company), typeof(User));
     }
 
+    #endregion
+
+
+    #region sample_clean_out_documents_ihost
+    public async Task clean_out_documents(IHost host)
+    {
+        // Clean off all Marten data in the default DocumentStore for this host
+        await host.CleanAllMartenDataAsync();
+    }
     #endregion
 }

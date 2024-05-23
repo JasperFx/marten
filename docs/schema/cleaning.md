@@ -36,6 +36,11 @@ public void clean_out_documents(IDocumentStore store)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentCleanerExamples.cs#L7-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_clean_out_documents' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+You can also tear down all Data from the `IHost` instance using the `IHost.CleanAllMartenDataAsync()` method.
+
+<!-- snippet: sample_clean_out_documents_ihost -->
+<!-- endSnippet -->
+
 ## Reset all data
 
 Use `IDocumentStore.Advanced.ResetAllData()` to deletes all current document, event data and then (re)applies the configured initial data.
