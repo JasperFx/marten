@@ -1,8 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Schema;
+using Npgsql;
 using Weasel.Core.Migrations;
 
 namespace Marten.Storage;
@@ -23,11 +23,11 @@ public class WildcardConjoinedMultiTenancy: ITenancy
         options.Policies.AllDocumentsAreMultiTenanted();
         _database = new MartenDatabase(
             options,
-            new ConnectionFactory(connectionString),
+            NpgsqlDataSource.Create(connectionString),
             identifier
         );
         _prefix = prefix;
-        Cleaner = new CompositeDocumentCleaner(this);
+        Cleaner = new CompositeDocumentCleaner(this, options);
     }
 
     public ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
@@ -75,5 +75,10 @@ public class WildcardConjoinedMultiTenancy: ITenancy
     {
         var tenant = GetTenant(tenantId);
         return ReferenceEquals(database, tenant.Database);
+    }
+
+    public void Dispose()
+    {
+        _database.Dispose();
     }
 }
