@@ -43,7 +43,7 @@ using (var session = store.LightweightSession("tenant1"))
     session.SaveChanges();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L35-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L54-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As with storing, the load operations respect tenancy of the session.
@@ -61,7 +61,7 @@ using (var query = store.QuerySession("tenant1"))
         .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L55-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L74-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Lastly, unlike reading operations, `IDocumentSession.Store` offers an overload to explicitly pass in a tenant identifier, bypassing any tenancy associated with the session. Similar overload for tenancy exists for `IDocumentStore.BulkInsert`.
@@ -162,7 +162,7 @@ using (var query = store.QuerySession("tenant1"))
         .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L55-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L74-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten will automatically filter the LINQ query for the current tenant _if the current document type is tenanted_. However, if
@@ -212,7 +212,7 @@ storeOptions.Policies.AllDocumentsAreMultiTenanted();
 // Shorthand for
 // storeOptions.Policies.ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L24-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-through-policy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L43-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-through-policy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Tenancy At Document Level & Policy Overrides
