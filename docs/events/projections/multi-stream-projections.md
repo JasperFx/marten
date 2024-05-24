@@ -430,7 +430,31 @@ document per tenant id in a projected document -- like maybe the number of open 
 To do that, there's a recipe for the "event slicing" in multi-stream projections with Marten to just group by the event's
 tenant id and make that the identity of the projected document. That usage is shown below:
 
-snippet: sample_rollup_projection_by_tenant_id
+<!-- snippet: sample_rollup_projection_by_tenant_id -->
+<a id='snippet-sample_rollup_projection_by_tenant_id'></a>
+```cs
+public class RollupProjection: MultiStreamProjection<Rollup, string>
+{
+    public RollupProjection()
+    {
+        // This opts into doing the event slicing by tenant id
+        RollUpByTenant();
+    }
+
+    public void Apply(Rollup state, AEvent e) => state.ACount++;
+    public void Apply(Rollup state, BEvent e) => state.BCount++;
+}
+
+public class Rollup
+{
+    [Identity]
+    public string TenantId { get; set; }
+    public int ACount { get; set; }
+    public int BCount { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/rolling_up_by_tenant.cs#L55-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rollup_projection_by_tenant_id' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Do note that you'll probably also need this flag in your configuration:
 
