@@ -1,11 +1,16 @@
 #nullable enable
-using System.Threading;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Marten.Internal.Sessions;
 
 namespace Marten.Internal;
 
 public interface IUpdateBatch
 {
-    void ApplyChanges(IMartenSession session);
-    Task ApplyChangesAsync(IMartenSession session, CancellationToken token);
+    IReadOnlyList<OperationPage> BuildPages(IMartenSession session);
+
+    IReadOnlyList<Type> DocumentTypes();
+    Task PostUpdateAsync(IMartenSession session);
+    Task PreUpdateAsync(IMartenSession session);
 }

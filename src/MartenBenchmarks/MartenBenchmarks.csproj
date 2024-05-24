@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
         <OutputType>Exe</OutputType>
         <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
         <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
@@ -8,13 +8,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
-        <ProjectReference Include="..\Marten\Marten.csproj" />
+        <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj"/>
+        <ProjectReference Include="..\Marten\Marten.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="BenchmarkDotNet" Version="0.13.5" />
+        <PackageReference Include="BenchmarkDotNet" Version="0.13.10"/>
     </ItemGroup>
     <ItemGroup>
-        <Folder Include="Benchmarks" />
+        <Folder Include="Benchmarks"/>
     </ItemGroup>
 </Project>

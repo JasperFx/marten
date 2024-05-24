@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
@@ -13,26 +14,27 @@ public abstract class AsyncEventProjectionBase: AsyncProjectionBase
     public override async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
         CancellationToken cancellation)
     {
-        foreach (var stream in streams)
+        var events = streams
+            .SelectMany(stream => stream.Events.Select(e => (Stream: stream, Event: e)))
+            .OrderBy(e => e.Event.Sequence);
+
+        foreach (var (stream, @event) in events)
         {
-            foreach (var @event in stream.Events)
+            try
             {
-                try
-                {
-                    await ApplyEvent(operations, stream, @event, cancellation).ConfigureAwait(false);
-                }
-                catch (MartenCommandException)
-                {
-                    throw;
-                }
-                catch (NpgsqlException)
-                {
-                    throw;
-                }
-                catch (Exception e)
-                {
-                    throw new ApplyEventException(@event, e);
-                }
+                await ApplyEvent(operations, stream, @event, cancellation).ConfigureAwait(false);
+            }
+            catch (MartenCommandException)
+            {
+                throw;
+            }
+            catch (NpgsqlException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new ApplyEventException(@event, e);
             }
         }
     }

@@ -6,16 +6,18 @@ using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Model;
 using Marten.Internal.Operations;
-using Marten.Linq.Fields;
-using Marten.Linq.Filters;
+using Marten.Internal.Sessions;
+using Marten.Linq;
+using Marten.Linq.Members;
 using Marten.Linq.SqlGeneration;
+using Marten.Linq.SqlGeneration.Filters;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Schema.BulkLoading;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Npgsql;
-using Remotion.Linq;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -28,12 +30,10 @@ public interface IDocumentStorage: ISelectClause
 
     Type IdType { get; }
 
-    IFieldMapping Fields { get; }
-
     bool UseOptimisticConcurrency { get; }
     IOperationFragment DeleteFragment { get; }
     IOperationFragment HardDeleteFragment { get; }
-    DuplicatedField[] DuplicatedFields { get; }
+    IReadOnlyList<DuplicatedField> DuplicatedFields { get; }
     DbObjectName TableName { get; }
     Type DocumentType { get; }
 
@@ -43,9 +43,18 @@ public interface IDocumentStorage: ISelectClause
     [Obsolete("Use async method instead.")]
     void TruncateDocumentStorage(IMartenDatabase database);
 
-    ISqlFragment FilterDocuments(QueryModel? model, ISqlFragment query);
+    ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession session);
 
     ISqlFragment? DefaultWhereFragment();
+
+    IQueryableMemberCollection QueryMembers { get; }
+
+    /// <summary>
+    /// Necessary (maybe) for usage within the temporary tables when using Includes()
+    /// </summary>
+    ISelectClause SelectClauseWithDuplicatedFields { get; }
+
+    bool UseNumericRevisions { get; }
 }
 
 internal class CreateFromDocumentMapping: Variable
@@ -84,6 +93,7 @@ public interface IDocumentStorage<T>: IDocumentStorage where T : notnull
 
     void Store(IMartenSession session, T document);
     void Store(IMartenSession session, T document, Guid? version);
+    void Store(IMartenSession session, T document, int revision);
 
     void Eject(IMartenSession session, T document);
 
@@ -99,6 +109,7 @@ public interface IDocumentStorage<T>: IDocumentStorage where T : notnull
     void EjectById(IMartenSession session, object id);
     void RemoveDirtyTracker(IMartenSession session, object id);
     IDeletion HardDeleteForDocument(T document, string tenantId);
+
 }
 
 public interface IDocumentStorage<T, TId>: IDocumentStorage<T> where T : notnull where TId : notnull
@@ -129,12 +140,15 @@ public interface IDocumentStorage<T, TId>: IDocumentStorage<T> where T : notnull
 
 internal static class DocumentStoreExtensions
 {
-    public static void AddTenancyFilter(this IDocumentStorage storage, CommandBuilder sql, string tenantId)
+    public static void AddTenancyFilter(this IDocumentStorage storage, ICommandBuilder sql, string tenantId)
     {
         if (storage.TenancyStyle == TenancyStyle.Conjoined)
         {
-            sql.Append($" and {CurrentTenantFilter.Filter}");
-            sql.AddNamedParameter(TenantIdArgument.ArgName, tenantId);
+            sql.Append(" and ");
+            sql.Append("d.");
+            sql.Append(TenantIdColumn.Name);
+            sql.Append(" = ");
+            sql.AppendParameter(tenantId);
         }
     }
 }

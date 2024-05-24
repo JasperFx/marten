@@ -1,10 +1,5 @@
 # Event Store Multi-Tenancy
 
-::: tip
-The V4 version of the async daemon is able to fully support multi-tenanted event store projections
-now.
-:::
-
 The event store feature in Marten supports an opt-in multi-tenancy model that captures
 events by the current tenant. Use this syntax to specify that:
 
@@ -19,5 +14,5 @@ var store = DocumentStore.For(opts =>
     opts.Events.TenancyStyle = TenancyStyle.Conjoined;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L226-L236' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_making_the_events_multi_tenanted' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L237-L247' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_making_the_events_multi_tenanted' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten;
-using Marten.AsyncDaemon.Testing.TestingSupport;
+using DaemonTests.TestingSupport;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
@@ -50,31 +50,31 @@ public class AsyncDaemonBootstrappingSamples
 
                         #region sample_stop_shard_on_exception
 
-                        // Stop only the current exception
-                        opts.Projections.OnException<InvalidOperationException>()
-                            .Stop();
-
-                        // or get more granular
-                        opts.Projections
-                            .OnException<InvalidOperationException>(e => e.Message.Contains("Really bad!"))
-                            .Stop(); // stops just the current projection shard
+                        // // Stop only the current exception
+                        // opts.Projections.OnException<InvalidOperationException>()
+                        //     .Stop();
+                        //
+                        // // or get more granular
+                        // opts.Projections
+                        //     .OnException<InvalidOperationException>(e => e.Message.Contains("Really bad!"))
+                        //     .Stop(); // stops just the current projection shard
 
                         #endregion
 
                         #region sample_poison_pill
 
-                        opts.Projections.OnApplyEventException()
-                            .AndInner<ArithmeticException>()
-                            .SkipEvent();
+                        // opts.Projections.OnApplyEventException()
+                        //     .AndInner<ArithmeticException>()
+                        //     .SkipEvent();
 
                         #endregion
 
                         #region sample_exponential_back-off_strategy
 
-                        opts.Projections.OnException<NpgsqlException>()
-                            .RetryLater(50.Milliseconds(), 250.Milliseconds(), 500.Milliseconds())
-                            .Then
-                            .Pause(1.Minutes());
+                        // opts.Projections.OnException<NpgsqlException>()
+                        //     .RetryLater(50.Milliseconds(), 250.Milliseconds(), 500.Milliseconds())
+                        //     .Then
+                        //     .Pause(1.Minutes());
 
                         #endregion
                     })
@@ -139,27 +139,27 @@ public class AsyncDaemonBootstrappingSamples
         using var daemon = await store.BuildProjectionDaemonAsync();
 
         // Fire up everything!
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
 
         // or instead, rebuild a single projection
-        await daemon.RebuildProjection("a projection name", 5.Minutes(), cancellation);
+        await daemon.RebuildProjectionAsync("a projection name", 5.Minutes(), cancellation);
 
         // or a single projection by its type
-        await daemon.RebuildProjection<TripProjectionWithCustomName>(5.Minutes(), cancellation);
+        await daemon.RebuildProjectionAsync<TripProjectionWithCustomName>(5.Minutes(), cancellation);
 
         // Be careful with this. Wait until the async daemon has completely
         // caught up with the currently known high water mark
         await daemon.WaitForNonStaleData(5.Minutes());
 
         // Start a single projection shard
-        await daemon.StartShard("shard name", cancellation);
+        await daemon.StartAgentAsync("shard name", cancellation);
 
         // Or change your mind and stop the shard you just started
-        await daemon.StopShard("shard name");
+        await daemon.StopAgentAsync("shard name");
 
         // No, shut them all down!
-        await daemon.StopAll();
+        await daemon.StopAllAsync();
     }
 
     #endregion

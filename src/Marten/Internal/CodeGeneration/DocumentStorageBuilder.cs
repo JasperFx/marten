@@ -3,6 +3,7 @@ using System.Linq;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;
@@ -74,7 +75,6 @@ internal class DocumentStorageBuilder
             .Frames.Code($"return new {assembly.Namespace}.{selectorType.TypeName}({{0}}, {{1}});",
                 Use.Type<IMartenSession>(), Use.Type<DocumentMapping>());
 
-        buildLoaderCommands(type);
         writeNotImplementedStubs(type);
 
 
@@ -109,29 +109,9 @@ internal class DocumentStorageBuilder
         }
     }
 
-    private void buildLoaderCommands(GeneratedType type)
-    {
-        var load = type.MethodFor("BuildLoadCommand");
-        var loadByArray = type.MethodFor("BuildLoadManyCommand");
-
-
-        if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
-        {
-            load.Frames.Code(
-                "return new NpgsqlCommand(_loaderSql).With(\"id\", id).With(TenantIdArgument.ArgName, tenant);");
-            loadByArray.Frames.Code(
-                "return new NpgsqlCommand(_loadArraySql).With(\"ids\", ids).With(TenantIdArgument.ArgName, tenant);");
-        }
-        else
-        {
-            load.Frames.Code("return new NpgsqlCommand(_loaderSql).With(\"id\", id);");
-            loadByArray.Frames.Code("return new NpgsqlCommand(_loadArraySql).With(\"ids\", ids);");
-        }
-    }
-
     private void buildStorageOperationMethods(DocumentOperations operations, GeneratedType type)
     {
-        if (_mapping.UseOptimisticConcurrency)
+        if (_mapping.UseOptimisticConcurrency || _mapping.UseNumericRevisions)
         {
             buildConditionalOperationBasedOnConcurrencyChecks(type, operations, "Upsert");
             buildOperationMethod(type, operations, "Insert");
@@ -146,7 +126,7 @@ internal class DocumentStorageBuilder
         }
 
 
-        if (_mapping.UseOptimisticConcurrency)
+        if (_mapping.UseOptimisticConcurrency || _mapping.UseNumericRevisions)
         {
             buildOperationMethod(type, operations, "Overwrite");
         }
@@ -191,6 +171,10 @@ internal class DocumentStorageBuilder
             tenantDeclaration = ", tenant";
         }
 
+        var versionRetriever = _mapping.UseNumericRevisions
+            ? "null"
+            : $"{{1}}.Versions.ForType<{_mapping.DocumentType.FullNameInCode()}, {_mapping.IdType.FullNameInCode()}>()";
+
 
         if (_mapping.IsHierarchy())
         {
@@ -199,7 +183,7 @@ internal class DocumentStorageBuilder
 return new {assembly.Namespace}.{operationType.TypeName}
 (
     {{0}}, Identity({{0}}),
-    {{1}}.Versions.ForType<{_mapping.DocumentType.FullNameInCode()}, {_mapping.IdType.FullNameInCode()}>(),
+    {versionRetriever},
     {{2}}
     {tenantDeclaration}
 );"
@@ -212,7 +196,7 @@ return new {assembly.Namespace}.{operationType.TypeName}
 return new {assembly.Namespace}.{operationType.TypeName}
 (
     {{0}}, Identity({{0}}),
-    {{1}}.Versions.ForType<{_mapping.DocumentType.FullNameInCode()}, {_mapping.IdType.FullNameInCode()}>(),
+    {versionRetriever},
     {{2}}
     {tenantDeclaration}
 );"

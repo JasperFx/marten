@@ -20,15 +20,23 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
     private Dictionary<string, NestedTenantSession>? _byTenant;
 
-    internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IConnectionLifetime connection):
-        base(store, sessionOptions, connection)
+    internal DocumentSessionBase(
+        DocumentStore store,
+        SessionOptions sessionOptions,
+        IConnectionLifetime connection
+    ): base(store, sessionOptions, connection)
     {
         Concurrency = sessionOptions.ConcurrencyChecks;
         _workTracker = new UnitOfWork(this);
     }
 
-    internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IConnectionLifetime connection,
-        ISessionWorkTracker workTracker, Tenant? tenant = default): base(store, sessionOptions, connection, tenant)
+    internal DocumentSessionBase(
+        DocumentStore store,
+        SessionOptions sessionOptions,
+        IConnectionLifetime connection,
+        ISessionWorkTracker workTracker,
+        Tenant? tenant = default
+    ): base(store, sessionOptions, connection, tenant)
     {
         Concurrency = sessionOptions.ConcurrencyChecks;
         _workTracker = workTracker;
@@ -66,11 +74,6 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         store(entities);
     }
 
-    public void Store<T>(T entity, Guid version) where T : notnull
-    {
-        UpdateExpectedVersion(entity, version);
-    }
-
     public void UpdateExpectedVersion<T>(T entity, Guid version) where T : notnull
     {
         assertNotDisposed();
@@ -78,6 +81,35 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         var storage = StorageFor<T>();
         storage.Store(this, entity, version);
         var op = storage.Upsert(entity, this, TenantId);
+        _workTracker.Add(op);
+    }
+
+    public void UpdateRevision<T>(T entity, int revision) where T : notnull
+    {
+        assertNotDisposed();
+
+        var storage = StorageFor<T>();
+        storage.Store(this, entity, revision);
+        var op = storage.Upsert(entity, this, TenantId);
+        if (op is IRevisionedOperation r)
+        {
+            r.Revision = revision;
+        }
+        _workTracker.Add(op);
+    }
+
+    public void TryUpdateRevision<T>(T entity, int revision)
+    {
+        assertNotDisposed();
+
+        var storage = StorageFor<T>();
+        storage.Store(this, entity, revision);
+        var op = storage.Upsert(entity, this, TenantId);
+        if (op is IRevisionedOperation r)
+        {
+            r.Revision = revision;
+            r.IgnoreConcurrencyViolation = true;
+        }
         _workTracker.Add(op);
     }
 
@@ -180,6 +212,11 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
     public void QueueSqlCommand(string sql, params object[] parameterValues)
     {
+        sql = sql.TrimEnd(';');
+        if (sql.Contains(';'))
+            throw new ArgumentOutOfRangeException(nameof(sql),
+                "You must specify one SQL command at a time because of Marten's usage of command batching. ';' cannot be used as a command separator here.");
+
         var operation = new ExecuteSqlStorageOperation(sql, parameterValues);
         QueueOperation(operation);
     }
@@ -300,7 +337,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         {
             var storage = StorageFor<T>();
 
-            if (Concurrency == ConcurrencyChecks.Disabled && storage.UseOptimisticConcurrency)
+            if (Concurrency == ConcurrencyChecks.Disabled && (storage.UseOptimisticConcurrency || storage.UseNumericRevisions))
             {
                 foreach (var entity in entities)
                 {
@@ -335,6 +372,11 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
                 storage.Store(this, entity, versioned.Version);
                 return;
             }
+        }
+        else if (entity is IRevisioned revisioned && revisioned.Version != 0)
+        {
+            storage.Store(this, entity, revisioned.Version);
+            return;
         }
 
         // Put it in the identity map -- if necessary

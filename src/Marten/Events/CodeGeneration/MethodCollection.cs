@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using FastExpressionCompiler;
 using JasperFx.CodeGeneration;
@@ -10,6 +11,7 @@ using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Marten.Events.Aggregation;
 using Marten.Schema;
 
 namespace Marten.Events.CodeGeneration;
@@ -110,7 +112,7 @@ internal abstract class MethodCollection
 
     protected virtual BindingFlags flags()
     {
-        return BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        return BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
     }
 
     internal static Type[] AllEventTypes(params MethodCollection[] methods)
@@ -211,31 +213,24 @@ internal abstract class MethodCollection
     public static EventTypePatternMatchFrame AddEventHandling(Type aggregateType, IDocumentMapping mapping,
         params MethodCollection[] collections)
     {
-        var byType = new Dictionary<Type, EventProcessingFrame>();
-
-        var frames = new List<EventProcessingFrame>();
-
-        foreach (var collection in collections)
-        {
-            foreach (var slot in collection.Methods)
+        var frames = collections
+            .SelectMany(
+                collection => collection.Methods,
+                (collection, slot) => collection.CreateEventTypeHandler(aggregateType, mapping, slot)
+            )
+            .GroupBy(frame => frame.EventType)
+            .Select(eventTypeGroup =>
             {
-                var frame = collection.CreateEventTypeHandler(aggregateType, mapping, slot);
-                if (byType.TryGetValue(frame.EventType, out var container))
+                var container = new EventProcessingFrame(aggregateType, eventTypeGroup.First());
+
+                foreach (var handlingFrame in eventTypeGroup.Skip(1))
                 {
-                    container.Add((Frame)frame);
+                    container.Add((Frame)handlingFrame);
                 }
-                else
-                {
-                    container = new EventProcessingFrame(aggregateType, frame);
 
-                    byType.Add(frame.EventType, container);
-
-                    frames.Add(container);
-                }
-            }
-        }
-
-        frames.Sort(new EventTypeComparer());
+                return container;
+            })
+            .ToList();
 
         return new EventTypePatternMatchFrame(frames);
     }
@@ -243,7 +238,7 @@ internal abstract class MethodCollection
 
     public static MethodSlot[] FindInvalidMethods(Type projectionType, params MethodCollection[] collections)
     {
-        var methodNames = collections.SelectMany(x => x.MethodNames).Distinct().ToArray();
+        var methodNames = collections.SelectMany(x => x.MethodNames).Concat([nameof(IAggregateProjection.ApplyMetadata)]).Distinct().ToArray();
 
         var invalidMethods = projectionType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
             .Where(x => !x.HasAttribute<MartenIgnoreAttribute>())
@@ -295,23 +290,5 @@ internal abstract class MethodCollection
 
             methods.AddLambda(lambda, eventType);
         }
-    }
-}
-
-internal class EventTypeComparer: IComparer<EventProcessingFrame>
-{
-    public int Compare(EventProcessingFrame x, EventProcessingFrame y)
-    {
-        if (x.EventType.CanBeCastTo(y.EventType))
-        {
-            return -1;
-        }
-
-        if (y.EventType.CanBeCastTo(x.EventType))
-        {
-            return 1;
-        }
-
-        return 0;
     }
 }

@@ -20,7 +20,7 @@ internal class ExecuteSqlStorageOperation: IStorageOperation, NoDataReturnedCall
         _parameterValues = parameterValues;
     }
 
-    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         var parameters = builder.AppendWithParameters(_commandText);
         if (parameters.Length != _parameterValues.Length)

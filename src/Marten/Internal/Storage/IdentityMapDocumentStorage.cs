@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal.CodeGeneration;
 using Marten.Linq.Selectors;
@@ -82,6 +83,20 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         else
         {
             session.Versions.ClearVersion<T, TId>(id);
+        }
+    }
+
+    public sealed override void Store(IMartenSession session, T document, int revision)
+    {
+        store(session, document, out var id);
+
+        if (revision != 0)
+        {
+            session.Versions.StoreRevision<T, TId>(id, revision);
+        }
+        else
+        {
+            session.Versions.ClearRevision<T, TId>(id);
         }
     }
 

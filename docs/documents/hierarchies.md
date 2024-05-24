@@ -39,7 +39,7 @@ using (var session = store.QuerySession())
 With the configuration above, you can now query by `User` and get `AdminUser` and `SuperUser` documents as part of the results,
 or query directly for any of the subclasses to limit the query.
 
-The best description of what is possible with hierarchical storage is to read the [acceptance tests for this feature](https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs).
+The best description of what is possible with hierarchical storage is to read the [acceptance tests for this feature](https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs).
 
 There's a couple things to be aware of with type hierarchies:
 
@@ -53,6 +53,11 @@ There's a couple things to be aware of with type hierarchies:
   banging my head on my desk were required to add this feature.
 
 ## Multi Level Hierarchies
+
+::: tip
+Use the `AddSubClassHierarchy()` if you want to be able to query against intermediate levels of a document hierarchy. Calling
+`AddSubClass<T>()` just directly adds a base class to the top level document type. 
+:::
 
 Say you have a document type named `ISmurf` that is implemented by `Smurf`. Now, say the latter has a pair of specialized
 subclasses called `PapaSmurf` and `PapySmurf` and that both implement `IPapaSmurf` and that `PapaSmurf` has the subclass
@@ -89,7 +94,7 @@ public class BrainySmurf: PapaSmurf
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_inheritance.cs#L12-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_smurfs-hierarchy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L12-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_smurfs-hierarchy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you wish to query over one of hierarchy classes and be able to get all of its documents as well as its subclasses,
@@ -98,8 +103,9 @@ first you will need to map the hierarchy like so:
 <!-- snippet: sample_add-subclass-hierarchy -->
 <a id='snippet-sample_add-subclass-hierarchy'></a>
 ```cs
-public query_with_inheritance()
+public query_with_inheritance(ITestOutputHelper output)
 {
+    _output = output;
     StoreOptions(_ =>
     {
         _.Schema.For<ISmurf>()
@@ -119,7 +125,7 @@ public query_with_inheritance()
     });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_inheritance.cs#L86-L110' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L91-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that if you wish to use aliases on certain subclasses, you could pass a `MappedType`, which contains the type to map
@@ -138,7 +144,7 @@ _.Schema.For<ISmurf>()
         typeof(BrainySmurf)
     );
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_inheritance.cs#L50-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy-with-aliases' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L53-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy-with-aliases' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now you can query the "complex" hierarchy in the following ways:
@@ -168,6 +174,8 @@ public void get_all_subclasses_of_a_subclass2()
     theSession.Store(smurf, papa, brainy);
 
     theSession.SaveChanges();
+
+    theSession.Logger = new TestOutputMartenLogger(_output);
 
     theSession.Query<PapaSmurf>().Count().ShouldBe(2);
 }
@@ -232,5 +240,5 @@ public void get_all_subclasses_of_an_interface()
     theSession.Query<IPapaSmurf>().Count().ShouldBe(3);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_inheritance.cs#L144-L234' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L150-L242' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

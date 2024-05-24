@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using FastExpressionCompiler;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
+using JasperFx.Core.Reflection;
 
 namespace Marten.Events.CodeGeneration;
 
@@ -12,7 +14,6 @@ internal class DefaultAggregateConstruction: SyncFrame
 {
     private readonly ConstructorInfo _constructor;
     private readonly Type _returnType;
-    private readonly Setter _setter;
     private Variable _event;
 
     public DefaultAggregateConstruction(Type returnType, GeneratedType generatedType)
@@ -22,13 +23,11 @@ internal class DefaultAggregateConstruction: SyncFrame
         _constructor = returnType.GetConstructor(
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes, null);
 
+
+
         if (_constructor != null && !_constructor.IsPublic)
         {
-            var ctor = Expression.New(_constructor);
-            var lambda = Expression.Lambda(ctor);
-            var func = lambda.Compile();
-            _setter = new Setter(func.GetType(), "AggregateBuilder") { InitialValue = func };
-            generatedType.Setters.Add(_setter);
+
         }
     }
 
@@ -52,9 +51,9 @@ internal class DefaultAggregateConstruction: SyncFrame
                 $"throw new {typeof(InvalidOperationException).FullNameInCode()}($\"There is no default constructor for {_returnType.FullNameInCode()}{AdditionalNoConstructorExceptionDetails}.\");"
             );
         }
-        else if (_setter != null)
+        else if (!_constructor.IsPublic)
         {
-            writer.WriteLine("return AggregateBuilder();");
+            writer.WriteLine($"return ({_returnType.FullNameInCode()}){typeof(Activator).FullNameInCode()}.{nameof(Activator.CreateInstance)}(typeof({_returnType.FullNameInCode()}), true);");
         }
         else
         {

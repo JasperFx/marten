@@ -7,6 +7,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Internal.Operations;
 using Marten.Schema;
 using Marten.Storage;
@@ -77,6 +78,17 @@ internal class DocumentFunctionOperationBuilder
             }
         }
 
+        void applyRevisionToDocument()
+        {
+            if (_mapping.Metadata.Revision.Member != null)
+            {
+                sync.Frames.SetMemberValue(_mapping.Metadata.Revision.Member, "Revision", _mapping.DocumentType,
+                    type);
+                async.Frames.SetMemberValue(_mapping.Metadata.Revision.Member, "Revision", _mapping.DocumentType,
+                    type);
+            }
+        }
+
         if (_mapping.UseOptimisticConcurrency)
         {
             async.AsyncMode = AsyncMode.AsyncTask;
@@ -94,9 +106,27 @@ internal class DocumentFunctionOperationBuilder
             return;
         }
 
+        if (_mapping.UseNumericRevisions)
+        {
+            async.AsyncMode = AsyncMode.AsyncTask;
+            async.Frames.CodeAsync("BLOCK:if (await postprocessRevisionAsync({0}, {1}, {2}))",
+                Use.Type<DbDataReader>(), Use.Type<IList<Exception>>(), Use.Type<CancellationToken>());
+            sync.Frames.Code("BLOCK:if (postprocessRevision({0}, {1}))", Use.Type<DbDataReader>(),
+                Use.Type<IList<Exception>>());
+
+
+            applyRevisionToDocument();
+
+            async.Frames.Code("END");
+            sync.Frames.Code("END");
+
+            return;
+        }
+
         sync.Frames.Code("storeVersion();");
         async.Frames.Code("storeVersion();");
         applyVersionToDocument();
+
 
         if (_role == OperationRole.Update)
         {
@@ -117,6 +147,13 @@ internal class DocumentFunctionOperationBuilder
     private void buildConfigureMethod(GeneratedType type)
     {
         var method = type.MethodFor("ConfigureParameters");
+
+        if (_mapping.UseNumericRevisions && _mapping.Metadata.Revision.Member != null)
+        {
+            method.Frames.Code(
+                $"if (document.{_mapping.Metadata.Revision.Member.Name} > 0 && {nameof(IRevisionedOperation.Revision)} == 1) {nameof(IRevisionedOperation.Revision)} = document.{_mapping.Metadata.Revision.Member.Name};");
+        }
+
         var parameters = method.Arguments[0];
 
         var arguments = _function.OrderedArguments();

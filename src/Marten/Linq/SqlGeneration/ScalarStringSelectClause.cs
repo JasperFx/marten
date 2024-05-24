@@ -3,11 +3,12 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
-using Marten.Linq.Fields;
+using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
@@ -16,27 +17,27 @@ internal class ScalarStringSelectClause: ISelectClause, IScalarSelectClause, ISe
     public ScalarStringSelectClause(string field, string from)
     {
         FromObject = from;
-        FieldName = field;
+        MemberName = field;
     }
 
-    public ScalarStringSelectClause(IField field, string from)
+    public ScalarStringSelectClause(IQueryableMember field, string from)
     {
         FromObject = from;
 
-        FieldName = field.TypedLocator;
+        MemberName = field.TypedLocator;
     }
 
-    public string FieldName { get; private set; }
+    public string MemberName { get; private set; }
 
     public ISelectClause CloneToOtherTable(string tableName)
     {
-        return new ScalarStringSelectClause(FieldName, tableName);
+        return new ScalarStringSelectClause(MemberName, tableName);
     }
 
 
     public void ApplyOperator(string op)
     {
-        FieldName = $"{op}({FieldName})";
+        MemberName = $"{op}({MemberName})";
     }
 
     public ISelectClause CloneToDouble()
@@ -48,18 +49,18 @@ internal class ScalarStringSelectClause: ISelectClause, IScalarSelectClause, ISe
 
     public string FromObject { get; }
 
-    public void WriteSelectClause(CommandBuilder sql)
+    public void Apply(ICommandBuilder sql)
     {
         sql.Append("select ");
-        sql.Append(FieldName);
-        sql.Append(" from ");
+        sql.Append(MemberName);
+        sql.Append(" as data from ");
         sql.Append(FromObject);
         sql.Append(" as d");
     }
 
     public string[] SelectFields()
     {
-        return new[] { FieldName };
+        return new[] { MemberName };
     }
 
     public ISelector BuildSelector(IMartenSession session)
@@ -67,10 +68,10 @@ internal class ScalarStringSelectClause: ISelectClause, IScalarSelectClause, ISe
         return this;
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, Statement statement,
-        Statement currentStatement)
+    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
+        ISqlFragment currentStatement)
     {
-        return LinqHandlerBuilder.BuildHandler<string, TResult>(this, statement);
+        return LinqQueryParser.BuildHandler<string, TResult>(this, statement);
     }
 
     public ISelectClause UseStatistics(QueryStatistics statistics)
@@ -96,5 +97,10 @@ internal class ScalarStringSelectClause: ISelectClause, IScalarSelectClause, ISe
         }
 
         return await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+    }
+
+    public override string ToString()
+    {
+        return $"Select string value from {FromObject}";
     }
 }

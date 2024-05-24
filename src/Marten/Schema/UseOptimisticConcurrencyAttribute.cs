@@ -12,5 +12,6 @@ public class UseOptimisticConcurrencyAttribute: MartenAttribute
     public override void Modify(DocumentMapping mapping)
     {
         mapping.UseOptimisticConcurrency = true;
+        mapping.Metadata.Version.Enabled = true;
     }
 }

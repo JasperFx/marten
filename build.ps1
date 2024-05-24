@@ -1,14 +1,26 @@
 $ErrorActionPreference = "Stop";
-$version = dotnet --version;
-if ($version.StartsWith("6.")) {
+
+$target_framework = ""
+$dotnet_sdks = dotnet --list-sdks
+$pattern = "\d+\.\d+\.\d+"
+$versions = [regex]::Matches($dotnet_sdks, $pattern)
+
+foreach ($item in $versions) {
+  if ($item.Value.StartsWith("6.")) {
     $target_framework = "net6.0"
-} 
-elseif ($version.StartsWith("7.")) {
+  } 
+  elseif ($item.Value.StartsWith("7.")) {
     $target_framework = "net7.0"
+  }
+  elseif ($item.Value.StartsWith("8.")) {
+    $target_framework = "net8.0"
+  }
 }
-else {
-    Write-Output "BUILD FAILURE: .NET 6, .NET 7 SDK required to run build"
+
+if ([string]::IsNullOrEmpty($target_framework)) {
+    Write-Output "BUILD FAILURE: .NET 6, .NET 7 or .NET 8 SDK required to run build"
     exit 1
 }
 
+Write-Output "Using $target_framework"
 dotnet run --project build/build.csproj -f $target_framework -c Release -- $args

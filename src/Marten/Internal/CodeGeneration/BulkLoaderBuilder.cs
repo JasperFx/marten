@@ -3,6 +3,7 @@ using System.Linq;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Storage;
@@ -91,7 +92,10 @@ public class BulkLoaderBuilder
             .Select(x => $"{_tempTable}.\\\"{x.Name}\\\"").Join(", ");
 
         return
-            $"insert into {storageTable} ({columns}, {SchemaConstants.LastModifiedColumn}) (select {selectColumns}, transaction_timestamp() from {_tempTable} left join {storageTable} on {_tempTable}.id = {storageTable}.id where {storageTable}.id is null)";
+            $"insert into {storageTable} ({columns}, {SchemaConstants.LastModifiedColumn}) " +
+            $"(select {selectColumns}, transaction_timestamp() " +
+            $"from {_tempTable} left join {storageTable} on {_tempTable}.id = {storageTable}.id " +
+            $"where {storageTable}.id is null)";
     }
 
     public string OverwriteDuplicatesFromTempTable()

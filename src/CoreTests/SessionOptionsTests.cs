@@ -1,9 +1,13 @@
 using System;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core;
 using Marten;
+using Marten.Internal.OpenTelemetry;
+using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
@@ -34,8 +38,8 @@ public class SessionOptionsTests: OneOffConfigurationsContext
     {
         var options = SessionOptions.ForConnectionString(ConnectionSource.ConnectionString);
 
-        options.Connection.ConnectionString.ShouldBe(ConnectionSource.ConnectionString);
-        options.Connection.State.ShouldBe(ConnectionState.Closed);
+        options.Connection?.ConnectionString.ShouldBe(ConnectionSource.ConnectionString);
+        options.Connection?.State.ShouldBe(ConnectionState.Closed);
 
         options.OwnsConnection.ShouldBeTrue();
         options.OwnsTransactionLifecycle.ShouldBeTrue();
@@ -47,8 +51,8 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         var database = Substitute.For<IMartenDatabase>();
         var options = SessionOptions.ForDatabase(database);
 
-        options.Tenant.Database.ShouldBeTheSameAs(database);
-        options.Tenant.TenantId.ShouldBe(Tenancy.DefaultTenantId);
+        options.Tenant?.Database.ShouldBeTheSameAs(database);
+        options.Tenant?.TenantId.ShouldBe(Tenancy.DefaultTenantId);
         options.OwnsConnection.ShouldBeTrue();
         options.OwnsTransactionLifecycle.ShouldBeTrue();
     }
@@ -71,7 +75,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
 
 
     [Fact]
-    public async System.Threading.Tasks.Task for_transaction()
+    public async Task for_transaction()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync().ConfigureAwait(false);
@@ -90,7 +94,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         var connection = new NpgsqlConnection(ConnectionSource.ConnectionString);
         var options = SessionOptions.ForConnection(connection);
         options.Connection.ShouldBe(connection);
-        options.Timeout.Value.ShouldBe(connection.CommandTimeout);
+        options.Timeout!.Value.ShouldBe(connection.CommandTimeout);
         options.OwnsConnection.ShouldBeTrue(); // if the connection is closed
         options.OwnsTransactionLifecycle.ShouldBeTrue();
     }
@@ -102,13 +106,13 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         await connection.OpenAsync();
         var options = SessionOptions.ForConnection(connection);
         options.Connection.ShouldBe(connection);
-        options.Timeout.Value.ShouldBe(connection.CommandTimeout);
+        options.Timeout!.Value.ShouldBe(connection.CommandTimeout);
         options.OwnsConnection.ShouldBeFalse(); // if the connection is closed
         options.OwnsTransactionLifecycle.ShouldBeTrue();
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task for_transaction_with_ownership()
+    public async Task for_transaction_with_ownership()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync().ConfigureAwait(false);
@@ -130,7 +134,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
             .ShouldBe(ConcurrencyChecks.Enabled);
     }
 
-    [Fact] //doesn't play nicely on Travis
+    [Fact]
     public void can_choke_on_custom_timeout()
     {
         var options = new SessionOptions { Timeout = 1 };
@@ -141,7 +145,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
             session.Query<FryGuy>("select pg_sleep(2)");
         });
 
-        Assert.Contains("Timeout during reading attempt", e.InnerException.InnerException.Message);
+        Assert.Contains("Timeout during reading attempt", e.InnerException?.InnerException?.Message);
     }
 
     [Fact]
@@ -157,11 +161,9 @@ public class SessionOptionsTests: OneOffConfigurationsContext
 
         var options = new SessionOptions();
 
-        using (var query = theStore.QuerySession(options))
-        {
-            var cmd = query.Query<FryGuy>().Explain();
-            Assert.Equal(30, cmd.Command.CommandTimeout);
-        }
+        using var query = theStore.QuerySession(options);
+        var cmd = query.Query<FryGuy>().Explain();
+        Assert.Equal(30, cmd.Command.CommandTimeout);
     }
 
 
@@ -169,19 +171,17 @@ public class SessionOptionsTests: OneOffConfigurationsContext
     public void can_define_custom_timeout()
     {
         // TODO -- do this without the Preview command. Check against the session itself
-        var options = new SessionOptions() { Timeout = 15 };
+        var options = new SessionOptions { Timeout = 15 };
 
-        using (var query = theStore.QuerySession(options))
-        {
-            var cmd = query.Query<FryGuy>().Explain();
-            Assert.Equal(15, cmd.Command.CommandTimeout);
-        }
+        using var query = theStore.QuerySession(options);
+        var cmd = query.Query<FryGuy>().Explain();
+
+        Assert.Equal(15, cmd.Command.CommandTimeout);
     }
 
     [Fact]
     public void can_define_custom_timeout_via_pgcstring()
     {
-        // TODO -- do this without the Preview command. Check against the session itself
         var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
         connectionStringBuilder.CommandTimeout = 1;
@@ -194,7 +194,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         using var query = documentStore.LightweightSession();
         var cmd = query.Query<FryGuy>().Explain();
         Assert.Equal(1, cmd.Command.CommandTimeout);
-        Assert.Equal(1, query.Connection.CommandTimeout);
+        Assert.Equal(1, query.Connection?.CommandTimeout);
     }
 
     [Fact]
@@ -215,7 +215,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         using var query = documentStore.QuerySession(options);
         var cmd = query.Query<FryGuy>().Explain();
         Assert.Equal(60, cmd.Command.CommandTimeout);
-        Assert.Equal(1, query.Connection.CommandTimeout);
+        Assert.Equal(1, query.Connection?.CommandTimeout);
     }
 
     [Fact]
@@ -231,7 +231,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         var connection = new NpgsqlConnection(connectionStringBuilder.ToString());
         connection.Open();
 
-        var options = new SessionOptions() { Connection = connection };
+        var options = new SessionOptions { Connection = connection };
 
         var testObject = new FryGuy();
 
@@ -254,7 +254,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         var connection = new NpgsqlConnection(connectionStringBuilder.ToString());
         connection.Open();
 
-        var options = new SessionOptions() { Connection = connection };
+        var options = new SessionOptions { Connection = connection };
 
         var testObject = new FryGuy();
 
@@ -263,6 +263,66 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         await query.SaveChangesAsync();
         var loadedObject = await query.LoadAsync<FryGuy>(testObject.Id);
         loadedObject.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void build_connection_by_default()
+    {
+        using var store = DocumentStore.For(ConnectionSource.ConnectionString);
+
+        var options = new SessionOptions{Timeout = 7};
+        options.Initialize(store, CommandRunnerMode.Transactional, new OpenTelemetryOptions(){ TrackConnections = TrackLevel.None })
+            .ShouldBeOfType<AutoClosingLifetime>()
+            .CommandTimeout.ShouldBe(7);
+    }
+
+    [Fact]
+    public void build_connection_with_sticky_connections_enabled()
+    {
+        using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.UseStickyConnectionLifetimes = true;
+        });
+
+        var options = new SessionOptions{Timeout = 2};
+        options.Initialize(store, CommandRunnerMode.Transactional, new OpenTelemetryOptions(){ TrackConnections = TrackLevel.None })
+            .ShouldBeOfType<TransactionalConnection>()
+            .CommandTimeout.ShouldBe(2)
+            ;
+    }
+
+    [Fact]
+    public void Session_Should_Not_Track_Open_Telemetry_Events_By_Default()
+    {
+        var commandRunnerMode = CommandRunnerMode.ReadOnly;
+        var options = new SessionOptions();
+        var connectionLifetime = options.Initialize(theStore, commandRunnerMode, new OpenTelemetryOptions(){ TrackConnections = TrackLevel.None });
+        connectionLifetime.ShouldNotBeOfType<EventTracingConnectionLifetime>();
+    }
+
+    [Fact]
+    public void Session_Should_Not_Track_Open_Telemetry_Events_When_Asked_To_Do_So_If_No_Listeners_Are_configured()
+    {
+        var commandRunnerMode = CommandRunnerMode.ReadOnly;
+        var options = new SessionOptions();
+        var connectionLifetime = options.Initialize(theStore, commandRunnerMode, new OpenTelemetryOptions(){ TrackConnections = TrackLevel.Normal });
+        connectionLifetime.ShouldNotBeOfType<EventTracingConnectionLifetime>();
+    }
+
+    [Fact]
+    public void Session_Should_Track_Open_Telemetry_Events_When_Asked_To_Do_So_If_Listeners_Are_configured()
+    {
+        using var listener = new ActivityListener
+        {
+            ShouldListenTo = _ => _.Name == "Marten",
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+        };
+        ActivitySource.AddActivityListener(listener);
+            var commandRunnerMode = CommandRunnerMode.ReadOnly;
+        var options = new SessionOptions();
+        var connectionLifetime = options.Initialize(theStore, commandRunnerMode, new OpenTelemetryOptions(){ TrackConnections = TrackLevel.Normal });
+        connectionLifetime.ShouldBeOfType<EventTracingConnectionLifetime>();
     }
 
     public class FryGuy

@@ -1,4 +1,3 @@
-
 # Opening Sessions
 
 `IDocumentStore` is the root of Marten usage, but most Marten usage in code will
@@ -20,12 +19,12 @@ class DirtyCheckingDocumentSession
 IDocumentStore --> IQuerySession: Builds
 IDocumentStore --> IDocumentSession: Builds
 
-IQuerySession <|.. QuerySession 
-IQuerySession <|.. IDocumentSession 
+IQuerySession <|.. QuerySession
+IQuerySession <|.. IDocumentSession
 
-IDocumentStore <|.. DocumentStore 
+IDocumentStore <|.. DocumentStore
 
-IDocumentSession <|.. IdentityMapDocumentSession 
+IDocumentSession <|.. IdentityMapDocumentSession
 IDocumentSession <|.. LightWeightDocumentSession
 IDocumentSession <|.. DirtyCheckingDocumentSession
 ```
@@ -33,18 +32,18 @@ IDocumentSession <|.. DirtyCheckingDocumentSession
 While there are sections below describing each session in more detail, at a high level the different
 types of sessions are:
 
-|**Creation**|**Read/Write**|**Identity Map**|**Dirty Checking**|
-|------------|--------------|----------------|------------------|
-|`IDocumentStore.QuerySession()`|Read Only|No|No|
-|`IDocumentStore.QuerySessionAsync()`|Read Only|No|No|
-|`IDocumentStore.LightweightSession()`|Read/Write|No|No|
-|`IDocumentStore.LightweightSerializableSessionAsync()`|Read/Write|No|No|
-|`IDocumentStore.IdentitySession()`|Read/Write|Yes|Yes|
-|`IDocumentStore.IdentitySerializableSessionAsync()`|Read/Write|Yes|Yes|
-|`IDocumentStore.DirtyTrackedSession()`|Read/Write|Yes|Yes|
-|`IDocumentStore.DirtyTrackedSerializableSessionAsync()`|Read/Write|Yes|Yes|
-|`IDocumentStore.OpenSession()` |Read/Write|Yes|No|
-|`IDocumentStore.OpenSerializableSessionAsync()` |Read/Write|Yes|No|
+| **Creation**                                            | **Read/Write** | **Identity Map** | **Dirty Checking** |
+| ------------------------------------------------------- | -------------- | ---------------- | ------------------ |
+| `IDocumentStore.QuerySession()`                         | Read Only      | No               | No                 |
+| `IDocumentStore.QuerySessionAsync()`                    | Read Only      | No               | No                 |
+| `IDocumentStore.LightweightSession()`                   | Read/Write     | No               | No                 |
+| `IDocumentStore.LightweightSerializableSessionAsync()`  | Read/Write     | No               | No                 |
+| `IDocumentStore.IdentitySession()`                      | Read/Write     | Yes              | Yes                |
+| `IDocumentStore.IdentitySerializableSessionAsync()`     | Read/Write     | Yes              | Yes                |
+| `IDocumentStore.DirtyTrackedSession()`                  | Read/Write     | Yes              | Yes                |
+| `IDocumentStore.DirtyTrackedSerializableSessionAsync()` | Read/Write     | Yes              | Yes                |
+| `IDocumentStore.OpenSession()`                          | Read/Write     | Yes              | No                 |
+| `IDocumentStore.OpenSerializableSessionAsync()`         | Read/Write     | Yes              | No                 |
 
 ::: tip INFO
 The recommended session type for read/write operations is `LightWeightDocumentSession`, which gives the best performance. It does not do change tracking, which may not be needed for most cases.
@@ -129,7 +128,7 @@ var openIssues = await session.Query<Issue>()
 
 > Ensures that each object gets loaded only once by keeping every loaded object in a map. Looks up objects using the map when referring to them.
 >
->-- <cite>[Martin Fowler](http://martinfowler.com/eaaCatalog/identityMap.html)</cite>
+> -- <cite>[Martin Fowler](http://martinfowler.com/eaaCatalog/identityMap.html)</cite>
 
 Marten's `IDocumentSession` implements the [_Identity Map_](https://en.wikipedia.org/wiki/Identity_map_pattern) pattern that seeks to cache documents loaded by id. This behavior can be very valuable, for example, in handling web requests or service bus messages when many different objects or functions may need to access the same logical document. Using the identity map mechanics allows the application to easily share data and avoid the extra database access hits -- as long as the `IDocumentSession` is scoped to the web request.
 
@@ -211,12 +210,102 @@ theSession.PendingChanges.Operations().Any().ShouldBeFalse();
 
 ## Connection Handling
 
-Marten uses a single connection to the Postgresql database in each `IQuerySession` or `IDocumentSession`.
+::: tip
+This behavior changed in Marten 7. And regardless of the new Marten 7 behavior or opting into the V6 and before "sticky"
+connection handling, you almost certainly want connection pooling enabled (it is by default).
+:::
+
+By default, Marten will only open a database connection within a session immediately before any operation that involves
+a database connection, and closes that connection immediately after the operation is over (really just returning the underlying
+connection to the connection pool managed by Npgsql). With this change, it is now safe to run read-only queries through
+`IQuerySession` (or lightweight `IDocumentSession`) objects in multiple threads. That should make Marten be more effective
+within [Hot Chocolate integrations](https://chillicream.com/docs/hotchocolate/v13).
+
+There are some exceptions to this behavior:
+
+1. When creating a session with an existing connection or transaction
+2. When creating a session with serializable transaction isolation levels, the connection is opened immediately and sticky throughout. I.e., `IDocumentStore.******SerializableSessionAsync()`
+3. When opting to have Marten enroll in ambient transactions (`SessionOptions.ForCurrentTransaction()`)
+4. When choosing to use explicit transaction boundaries (see the next section)
+5. When using the session's underlying connection for user defined querying.
+
+::: info
+This ability to directly access and use the session's connection was originally intended to make Marten easy to integrate
+with [Dapper](https://github.com/DapperLib/Dapper).
+:::
+
+To the last point, using this code will quietly move the session to having a "sticky" connection:
+
+<!-- snippet: sample_using_session_connection_directly -->
+<a id='snippet-sample_using_session_connection_directly'></a>
+```cs
+public static async Task using_session_connection(IQuerySession session)
+{
+    // Accessing the session.Connection object will quietly open
+    // a "sticky" connection for the session
+    var openCount = await session.Connection
+
+        // This is using a helper extension method from Weasel
+        .CreateCommand("select count(*) from tasks where status = 'open'")
+        .ExecuteScalarAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ExplicitTransactions.cs#L11-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_session_connection_directly' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+You can register SQL statements to be executed as part of the `SaveChanges()` / `SaveChangesAsync()` batch and transaction through
+`IDocumentSession.QueueSqlCommand()`, and the Marten team would recommend doing that as much as possible.
+
+### Explicit Transaction Boundaries
+
+::: warning
+If you use this method, you will want to make sure the session is disposed to release the "sticky" connection.
+:::
+
+Sometimes you may want to start the transaction in a Marten session for making explicit commits through the session's
+connection (with Dapper for example) or if you simply need to have consistent reads within the usage of the session
+by querying through an active transaction. In that case, your syntax is:
+
+<!-- snippet: sample_explicit_transactions -->
+<a id='snippet-sample_explicit_transactions'></a>
+```cs
+public static async Task explicit_transactions(IDocumentSession session)
+{
+    // If in synchronous code, but don't mix this in real async code!!!!
+    session.BeginTransaction();
+
+    // Favor this within async code
+    await session.BeginTransactionAsync(CancellationToken.None);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ExplicitTransactions.cs#L27-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_explicit_transactions' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### "Sticky" Connections
+
+To revert Marten back to its V6 and earlier "sticky" connection handling, use this option:
+
+<!-- snippet: sample_use_sticky_connection_lifetimes -->
+<a id='snippet-sample_use_sticky_connection_lifetimes'></a>
+```cs
+using var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // Opt into V6 and earlier "sticky" connection
+    // handling
+    opts.UseStickyConnectionLifetimes = true;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/sticky_connection_mode.cs#L30-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_sticky_connection_lifetimes' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+With this setting, Marten uses a single connection to the Postgresql database in each `IQuerySession` or `IDocumentSession`.
 The connection is only opened on the first call to the database, but after that remains open until the `IQuerySession`/`IDocumentSession` is disposed. A couple things to note:
 
-* It's imperative that any `IQuerySession`/`IDocumentSession` opened is disposed in order to recover and reuse
+- It's imperative that any `IQuerySession`/`IDocumentSession` opened is disposed in order to recover and reuse
   connections to the underlying database
-* Because the connection is "sticky" to the session, you can utilize serializable transactions. In the future, Marten will
+- Because the connection is "sticky" to the session, you can utilize serializable transactions. In the future, Marten will
   also enable you to opt into [locking documents read from the session](https://github.com/JasperFx/marten/issues/356).
 
 There is no place within Marten where it keeps a stateful connection open across sessions.
@@ -238,7 +327,7 @@ public void ConfigureCommandTimeout(IDocumentStore store)
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionOptionsTests.cs#L19-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionOptionsTests.cs#L23-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Unit of Work Mechanics
@@ -265,6 +354,11 @@ TODO -- Need to talk about SaveChanges / SaveChangesAsync here!
 See [Diagnostics and Instrumentation](/diagnostics) for information about using document session listeners.
 
 ## Enlisting in Existing Transactions
+
+::: warning
+Marten is unable to evaluate database migrations within a session that is created by enrolling in an ambient transaction
+(`TransactionScope`). If you need to use ambient transactions, you will need to apply database changes upfront.
+:::
 
 Before Marten 2.4.0, a Marten `IDocumentSession` always controlled the lifecycle of its underlying database
 connection and transaction boundaries. With the 2.4.0+ release, you can pass in an existing transaction or connection, direct
@@ -297,31 +391,51 @@ var session4 = store.LightweightSession(SessionOptions.ForCurrentTransaction());
 The transaction isolation level when opening a new `IDocumentSession` can be configured by
 supplying the optional `isolationLevel` argument. The default level is `ReadCommitted`.
 
-As one of the use cases that spawned this feature, say
-that you are using the [Saga pattern](https://lostechies.com/jimmybogard/2013/03/21/saga-implementation-patterns-variations/) in a service bus architecture. When handling a message with this pattern, you typically want to load some kind of persisted state for the long running saga, do some work, then persist the updated saga state. If you need to worry about serializing the messages
-for a single saga, you might want to use [serializable transactions](https://en.wikipedia.org/wiki/Serializability) like this:
+As one of the use cases that spawned this feature, say that you are using the [Saga pattern](https://lostechies.com/jimmybogard/2013/03/21/saga-implementation-patterns-variations/) in a service bus architecture. When handling a message with this pattern, you typically want to load some kind of persisted state for the long running saga, do some work, then persist the updated saga state.
+
+If you need to worry about serializing the messages for a single saga, you might want to use [serializable transactions](https://en.wikipedia.org/wiki/Serializability) like this:
 
 <!-- snippet: sample_serializable-saga-transaction -->
 <a id='snippet-sample_serializable-saga-transaction'></a>
 ```cs
 public class MySagaState
 {
-    public Guid Id;
+    public Guid Id { get; set; }
 }
 
-public void execute_saga(IDocumentStore store, Guid sagaId)
+public async Task execute_saga_serializable(IDocumentStore store, Guid sagaId, CancellationToken ct)
 {
     // The session below will open its connection and start a
-    // serializable transaction
-    using var session = store.DirtyTrackedSession(IsolationLevel.Serializable);
-    var state = session.Load<MySagaState>(sagaId);
+    // serializable transaction avoiding blocking calls
+    await using var session = await store.LightweightSerializableSessionAsync(ct);
+    var state = await session.LoadAsync<MySagaState>(sagaId, ct);
 
     // do some work against the saga
 
-    session.SaveChanges();
+    await session.SaveChangesAsync(ct);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/SagaStorageExample.cs#L8-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_serializable-saga-transaction' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/SagaStorageExample.cs#L10-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_serializable-saga-transaction' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+You may also specify other [transaction isolation level supported by PostgreSQL](https://www.postgresql.org/docs/current/transaction-iso.html):
+
+<!-- snippet: sample_saga-transaction -->
+<a id='snippet-sample_saga-transaction'></a>
+```cs
+public async Task execute_saga(IDocumentStore store, Guid sagaId, CancellationToken ct)
+{
+    // The session below will open its connection and start a
+    // snapshot transaction
+    await using var session = store.LightweightSession(IsolationLevel.Snapshot);
+    var state = await session.LoadAsync<MySagaState>(sagaId, ct);
+
+    // do some work against the saga
+
+    await session.SaveChangesAsync(ct);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/SagaStorageExample.cs#L31-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_saga-transaction' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Manual Change Tracking

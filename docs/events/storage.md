@@ -17,7 +17,7 @@ var store = DocumentStore.For(_ =>
     _.Events.DatabaseSchemaName = "events";
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L191-L200' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_event_schema' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L202-L211' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_event_schema' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Database Tables
@@ -42,9 +42,8 @@ In addition, there are a couple other metadata tables you'll see in your schema:
 * `mt_streams` - Metadata about each event stream
 * `mt_event_progression` - A durable record about the progress of each async projection through the event store
 
-A couple functions that Marten uses internally:
+A function that Marten uses internally:
 
-* `mt_append_event` - Writes event data to the `mt_events` and `mt_streams` tables
 * `mt_mark_event_progression` - Updates the `mt_event_progression` table
 
 And lastly, there's a document type called `DeadLetterEvent` that Marten adds automatically to record information about

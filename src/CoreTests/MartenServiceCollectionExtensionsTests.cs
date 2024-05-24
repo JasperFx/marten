@@ -7,7 +7,6 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Lamar;
 using Marten;
-using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Sessions;
@@ -15,6 +14,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Npgsql;
 using Shouldly;
 using Weasel.Core.Migrations;
 using Xunit;
@@ -54,7 +54,8 @@ public class MartenServiceCollectionExtensionsTests
     {
         using var container = Container.For(x =>
         {
-            x.AddMarten(provider => {
+            x.AddMarten(provider =>
+            {
                 var options = new StoreOptions();
                 options.Connection(ConnectionSource.ConnectionString);
                 options.Logger(new TestOutputMartenLogger(null));
@@ -112,7 +113,6 @@ public class MartenServiceCollectionExtensionsTests
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.SetApplicationProject(GetType().Assembly);
                 });
-
             }).Build();
 
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
@@ -133,26 +133,11 @@ public class MartenServiceCollectionExtensionsTests
 
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
         store.Options.ApplicationAssembly.ShouldBe(Assembly.GetEntryAssembly());
-        store.Options.GeneratedCodeOutputPath.TrimEnd(Path.DirectorySeparatorChar).ShouldBe(AppContext.BaseDirectory.AppendPath("Internal", "Generated").TrimEnd(Path.DirectorySeparatorChar));
+        store.Options.GeneratedCodeOutputPath.TrimEnd(Path.DirectorySeparatorChar).ShouldBe(AppContext.BaseDirectory
+            .AppendPath("Internal", "Generated").TrimEnd(Path.DirectorySeparatorChar));
 
         var rules = store.Options.CreateGenerationRules();
         rules.ApplicationAssembly.ShouldBe(store.Options.ApplicationAssembly);
-    }
-
-    [Fact]
-    public void eager_initialization_of_the_store()
-    {
-        IDocumentStore store = null;
-
-        using var container = Container.For(x =>
-        {
-            store = x.AddMarten(ConnectionSource.ConnectionString)
-                .InitializeStore();
-        });
-
-        ShouldHaveAllTheExpectedRegistrations(container);
-
-        container.GetInstance<IDocumentStore>().ShouldBeSameAs(store);
     }
 
     [Fact]
@@ -212,7 +197,8 @@ public class MartenServiceCollectionExtensionsTests
         instance.ImplementationType.ShouldBe(typeof(MartenActivator));
         instance.Lifetime.ShouldBe(ServiceLifetime.Singleton);
 
-        await Assert.ThrowsAsync<DatabaseValidationException>(() => container.GetAllInstances<IHostedService>().First().StartAsync(default));
+        await Assert.ThrowsAsync<DatabaseValidationException>(() =>
+            container.GetAllInstances<IHostedService>().First().StartAsync(default));
     }
 
     [Fact]
@@ -298,6 +284,168 @@ public class MartenServiceCollectionExtensionsTests
         store.Options.Events.DatabaseSchemaName.ShouldBe("random");
     }
 
+    [Fact]
+    public async Task use_npgsql_data_source()
+    {
+        var services = new ServiceCollection();
+
+        #region sample_using_UseNpgsqlDataSource
+
+        services.AddNpgsqlDataSource(ConnectionSource.ConnectionString);
+
+        services.AddMarten()
+            .UseLightweightSessions()
+            .UseNpgsqlDataSource();
+
+        #endregion
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        await using var session = serviceProvider.GetService<IDocumentSession>();
+        Func<bool> Call(IDocumentSession s) => () => s.Query<Target>().Any();
+        Call(session).ShouldNotThrow();
+    }
+
+    [Fact]
+    public async Task use_npgsql_multi_host_data_source()
+    {
+        var services = new ServiceCollection();
+
+        #region sample_using_UseNpgsqlDataSourceMultiHost
+
+        services.AddMultiHostNpgsqlDataSource(ConnectionSource.ConnectionString);
+
+        services.AddMarten(x =>
+            {
+                // Will prefer standby nodes for querying.
+                x.Advanced.MultiHostSettings.ReadSessionPreference = TargetSessionAttributes.PreferStandby;
+            })
+            .UseLightweightSessions()
+            .UseNpgsqlDataSource();
+
+        #endregion
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        await using var session = serviceProvider.GetService<IDocumentSession>();
+        Func<bool> Call(IDocumentSession s) => () => s.Query<Target>().Any();
+        Call(session).ShouldNotThrow();
+    }
+
+
+
+#if NET8_0
+    [Fact]
+    public async Task use_npgsql_data_source_with_keyed_registration()
+    {
+        var services = new ServiceCollection();
+
+        #region sample_using_UseNpgsqlDataSource_keyed
+
+        const string dataSourceKey = "marten_data_source";
+
+        services.AddNpgsqlDataSource(ConnectionSource.ConnectionString, serviceKey: dataSourceKey);
+
+        services.AddMarten()
+            .UseLightweightSessions()
+            .UseNpgsqlDataSource(dataSourceKey);
+
+        #endregion
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        await using var session = serviceProvider.GetService<IDocumentSession>();
+        Func<bool> Call(IDocumentSession s) => () => s.Query<Target>().Any();
+        Call(session).ShouldNotThrow();
+    }
+
+    [Fact]
+    public void use_npgsql_data_source_with_keyed_registration_should_fail_if_key_is_not_passed()
+    {
+        var services = new ServiceCollection();
+
+        services.AddNpgsqlDataSource(ConnectionSource.ConnectionString, serviceKey: "marten_data_source");
+
+        services.AddMarten()
+            .UseLightweightSessions()
+            .UseNpgsqlDataSource();
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        Action GetStore(IServiceProvider c) => () =>
+        {
+            using var store = c.GetService<IDocumentStore>();
+        };
+
+        var exc = GetStore(serviceProvider).ShouldThrow<InvalidOperationException>();
+        exc.Message.Contains("NpgsqlDataSource").ShouldBeTrue();
+    }
+
+    [Fact]
+    public void use_npgsql_data_source_with_registration_should_fail_if_key_is_passed()
+    {
+        var services = new ServiceCollection();
+
+        services.AddNpgsqlDataSource(ConnectionSource.ConnectionString);
+
+        services.AddMarten()
+            .UseLightweightSessions()
+            .UseNpgsqlDataSource("marten_data_source");
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        Action GetStore(IServiceProvider c) => () =>
+        {
+            using var store = c.GetService<IDocumentStore>();
+        };
+
+        var exc = GetStore(serviceProvider).ShouldThrow<InvalidOperationException>();
+        exc.Message.Contains("NpgsqlDataSource").ShouldBeTrue();
+    }
+#endif
+
+    [Fact]
+    public void use_npgsql_data_source_should_fail_if_data_source_is_not_registered()
+    {
+        var services = new ServiceCollection();
+
+        services.AddMarten()
+            .UseLightweightSessions()
+            .UseNpgsqlDataSource();
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        Action GetStore(IServiceProvider c) => () =>
+        {
+            using var store = c.GetService<IDocumentStore>();
+        };
+
+        var exc = GetStore(serviceProvider).ShouldThrow<InvalidOperationException>();
+        exc.Message.Contains("NpgsqlDataSource").ShouldBeTrue();
+    }
+
+
+    [Fact]
+    public void AddMarten_with_no_params_should_fail_if_UseNpgsqlDataSource_was_not_called()
+    {
+        var services = new ServiceCollection();
+
+        services.AddNpgsqlDataSource(ConnectionSource.ConnectionString);
+
+        services.AddMarten()
+            .UseLightweightSessions();
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        Action GetStore(IServiceProvider c) => () =>
+        {
+            using var store = c.GetService<IDocumentStore>();
+        };
+
+        var exc = GetStore(serviceProvider).ShouldThrow<InvalidOperationException>();
+        exc.Message.Contains("UseNpgsqlDataSource").ShouldBeTrue();
+    }
+
     public class SpecialBuilder: ISessionFactory
     {
         private readonly IDocumentStore _store;
@@ -324,7 +472,8 @@ public class MartenServiceCollectionExtensionsTests
         public bool BuiltSession { get; set; }
     }
 
-    private static void ShouldHaveAllTheExpectedRegistrations(Container container, ServiceLifetime factoryLifetime = ServiceLifetime.Singleton)
+    private static void ShouldHaveAllTheExpectedRegistrations(Container container,
+        ServiceLifetime factoryLifetime = ServiceLifetime.Singleton)
     {
         container.Model.For<IDocumentStore>().Default.Lifetime.ShouldBe(ServiceLifetime.Singleton);
         container.Model.For<IDocumentSession>().Default.Lifetime.ShouldBe(ServiceLifetime.Scoped);
@@ -339,6 +488,4 @@ public class MartenServiceCollectionExtensionsTests
 
         container.GetInstance<IDatabaseSource>().ShouldBeTheSameAs(store.As<DocumentStore>().Tenancy);
     }
-
-
 }

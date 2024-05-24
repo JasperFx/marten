@@ -4,15 +4,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Services;
 using Marten.Storage;
-using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Aggregation;
 
@@ -21,7 +20,7 @@ public interface ITenantSliceGroup<TId>: IEventGrouping<TId>, IDisposable
 }
 
 /// <summary>
-///     Intermediate grouping of events by tenant within the asynchronous projection support
+///     Intermediate grouping of events by tenant within the asynchronous projection support. Really for aggregations
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
@@ -91,12 +90,19 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
 
     public void AddEvent(TId id, IEvent @event)
     {
-        Slices[id].AddEvent(@event);
+        if (id != null)
+        {
+            Slices[id].AddEvent(@event);
+        }
+
     }
 
     public void AddEvents(TId id, IEnumerable<IEvent> events)
     {
-        Slices[id].AddEvents(events);
+        if (id != null)
+        {
+            Slices[id].AddEvents(events);
+        }
     }
 
     public void Dispose()
@@ -104,13 +110,10 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
         _session.Dispose();
     }
 
-    internal async Task Start(
-        IShardAgent shardAgent,
-        ProjectionUpdateBatch updateBatch,
+    internal async Task Start(ProjectionUpdateBatch updateBatch,
         IAggregationRuntime<TDoc, TId> runtime,
         DocumentStore store,
-        EventRangeGroup parent
-    )
+        EventRangeGroup parent)
     {
         _session = new ProjectionDocumentSession(store, updateBatch,
             new SessionOptions { Tracking = DocumentTracking.None, Tenant = Tenant });
@@ -122,18 +125,12 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
                 return;
             }
 
-            await shardAgent.TryAction(async () =>
-            {
-                await runtime.ApplyChangesAsync(_session, slice, parent.Cancellation, ProjectionLifecycle.Async)
-                    .ConfigureAwait(false);
-            }, parent.Cancellation, group: parent, logException: (l, e) =>
-            {
-                l.LogError(e, "Failure trying to build a storage operation to update {DocumentType} with {Id}",
-                    typeof(TDoc).FullNameInCode(), slice.Id);
-            }, actionMode: GroupActionMode.Child).ConfigureAwait(false);
+            // TODO -- emit exceptions in one place
+            await runtime.ApplyChangesAsync(_session, slice, parent.Cancellation, ProjectionLifecycle.Async)
+                .ConfigureAwait(false);
         }, new ExecutionDataflowBlockOptions { CancellationToken = parent.Cancellation });
 
-        await processEventSlices(shardAgent, runtime, store, parent.Cancellation).ConfigureAwait(false);
+        await processEventSlices(runtime, store, parent.Cancellation).ConfigureAwait(false);
 
         var builder = Volatile.Read(ref _builder);
 
@@ -144,7 +141,7 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
         }
     }
 
-    private async Task processEventSlices(IShardAgent shardAgent, IAggregationRuntime<TDoc, TId> runtime,
+    private async Task processEventSlices(IAggregationRuntime<TDoc, TId> runtime,
         IDocumentStore store, CancellationToken token)
     {
         var beingFetched = new List<EventSlice<TDoc, TId>>();
@@ -159,6 +156,9 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
             if (runtime.IsNew(slice))
             {
                 _builder.Post(slice);
+
+                // Don't use it any farther, it's ready to do its thing
+                Slices.Remove(slice.Id);
             }
             else
             {
@@ -173,16 +173,11 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
 
         var ids = beingFetched.Select(x => x.Id).ToArray();
 
-        IReadOnlyList<TDoc> aggregates = null;
+        var options = new SessionOptions { Tenant = Tenant, AllowAnyTenant = true };
 
-        await shardAgent.TryAction(async () =>
-        {
-            var options = new SessionOptions { Tenant = Tenant, AllowAnyTenant = true };
-
-            await using var session = (IMartenSession)store.LightweightSession(options);
-            aggregates = await runtime.Storage
-                .LoadManyAsync(ids, session, token).ConfigureAwait(false);
-        }, token).ConfigureAwait(false);
+        await using var session = (IMartenSession)store.LightweightSession(options);
+        var aggregates = await runtime.Storage
+            .LoadManyAsync(ids, session, token).ConfigureAwait(false);
 
         if (token.IsCancellationRequested || aggregates == null)
         {

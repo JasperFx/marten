@@ -8,7 +8,29 @@ Marten allows you to add Linq parsing and querying support for your own custom m
 Using the (admittedly contrived) example from Marten's tests, say that you want to reuse a small part of a `Where()` clause across
 different queries for "IsBlue()." First, write the method you want to be recognized by Marten's Linq support:
 
-<<< @/../src/DocumentDbTests/Reading/Linq/using_custom_Linq_parser_plugins_Tests.cs#sample_IsBlue
+<!-- snippet: sample_IsBlue -->
+<a id='snippet-sample_isblue'></a>
+```cs
+public class IsBlue: IMethodCallParser
+{
+    private static readonly PropertyInfo _property = ReflectionHelper.GetProperty<ColorTarget>(x => x.Color);
+
+    public bool Matches(MethodCallExpression expression)
+    {
+        return expression.Method.Name == nameof(CustomExtensions.IsBlue);
+    }
+
+    public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
+        MethodCallExpression expression)
+    {
+        var locator = memberCollection.MemberFor(expression).TypedLocator;
+
+        return new WhereFragment($"{locator} = 'Blue'");
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/custom_linq_extensions.cs#L81-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_isblue' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Note a couple things here:
 
@@ -26,12 +48,12 @@ part of a Postgresql "where" clause. The custom Linq parser for `IsBlue()` is sh
 <!-- snippet: sample_custom-extension-for-linq -->
 <a id='snippet-sample_custom-extension-for-linq'></a>
 ```cs
-public static bool IsBlue(this ColorTarget target)
+public static bool IsBlue(this string value)
 {
-    return target.Color == "Blue";
+    return value == "Blue";
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/using_custom_Linq_parser_plugins_Tests.cs#L74-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-extension-for-linq' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/custom_linq_extensions.cs#L71-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-extension-for-linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Lastly, to plug in our new parser, we can add that to the `StoreOptions` object that we use to bootstrap a new `DocumentStore` as shown below:
@@ -40,43 +62,40 @@ Lastly, to plug in our new parser, we can add that to the `StoreOptions` object 
 <a id='snippet-sample_using_custom_linq_parser'></a>
 ```cs
 [Fact]
-public void query_with_custom_parser()
+public async Task query_with_custom_parser()
 {
-    using (var store = DocumentStore.For(_ =>
-           {
-               _.Connection(ConnectionSource.ConnectionString);
-
-               // IsBlue is a custom parser I used for testing this
-               _.Linq.MethodCallParsers.Add(new IsBlue());
-               _.AutoCreateSchemaObjects = AutoCreate.All;
-
-               // This is just to isolate the test
-               _.DatabaseSchemaName = "isblue";
-           }))
+    using var store = DocumentStore.For(opts =>
     {
-        store.Advanced.Clean.CompletelyRemoveAll();
+        opts.Connection(ConnectionSource.ConnectionString);
 
-        var targets = new List<ColorTarget>();
-        for (var i = 0; i < 25; i++)
-        {
-            targets.Add(new ColorTarget {Color = "Blue"});
-            targets.Add(new ColorTarget {Color = "Green"});
-            targets.Add(new ColorTarget {Color = "Red"});
-        }
+        // IsBlue is a custom parser I used for testing this
+        opts.Linq.MethodCallParsers.Add(new IsBlue());
+        opts.AutoCreateSchemaObjects = AutoCreate.All;
 
-        var count = targets.Where(x => x.IsBlue()).Count();
+        // This is just to isolate the test
+        opts.DatabaseSchemaName = "isblue";
+    });
 
-        targets.Each(x => x.Id = Guid.NewGuid());
+    await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
-        store.BulkInsert(targets.ToArray());
-
-        using (var session = store.QuerySession())
-        {
-            session.Query<ColorTarget>().Count(x => x.IsBlue())
-                .ShouldBe(count);
-        }
+    var targets = new List<ColorTarget>();
+    for (var i = 0; i < 25; i++)
+    {
+        targets.Add(new ColorTarget {Color = "Blue"});
+        targets.Add(new ColorTarget {Color = "Green"});
+        targets.Add(new ColorTarget {Color = "Red"});
     }
+
+    var count = targets.Count(x => x.Color.IsBlue());
+
+    targets.Each(x => x.Id = Guid.NewGuid());
+
+    await store.BulkInsertAsync(targets.ToArray());
+
+    using var session = store.QuerySession();
+    session.Query<ColorTarget>().Count(x => x.Color.IsBlue())
+        .ShouldBe(count);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/using_custom_Linq_parser_plugins_Tests.cs#L21-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_custom_linq_parser' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/custom_linq_extensions.cs#L22-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_custom_linq_parser' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

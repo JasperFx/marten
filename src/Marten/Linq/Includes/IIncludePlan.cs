@@ -1,18 +1,16 @@
 using System;
+using System.Linq.Expressions;
 using Marten.Internal;
-using Marten.Linq.SqlGeneration;
+using Marten.Linq.SqlGeneration.Filters;
 
 namespace Marten.Linq.Includes;
 
-internal interface IIncludePlan
+public interface IIncludePlan
 {
-    string IdAlias { get; }
-    string TempTableSelector { get; }
-    int Index { set; }
-    string ExpressionName { get; }
-
     Type DocumentType { get; }
+    Expression Where { get; set; }
     IIncludeReader BuildReader(IMartenSession session);
-    bool IsIdCollection();
-    Statement BuildStatement(string tempTableName, IPagedStatement paging);
+
+    void AppendStatement(TemporaryTableStatement tempTable, IMartenSession martenSession,
+        ITenantFilter tenantFilter);
 }

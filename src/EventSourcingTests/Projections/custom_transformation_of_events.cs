@@ -15,17 +15,17 @@ public class project_events_from_multiple_streams_into_view: OneOffConfiguration
     private static readonly Guid streamId = Guid.NewGuid();
     private static readonly Guid streamId2 = Guid.NewGuid();
 
-    private QuestStarted started = new QuestStarted { Id = streamId, Name = "Find the Orb" };
-    private QuestStarted started2 = new QuestStarted { Id = streamId2, Name = "Find the Orb 2.0" };
-    private MonsterQuestsAdded monsterQuestsAdded = new MonsterQuestsAdded { QuestIds = new List<Guid> { streamId, streamId2 }, Name = "Dragon" };
-    private MonsterQuestsRemoved monsterQuestsRemoved = new MonsterQuestsRemoved { QuestIds = new List<Guid> { streamId, streamId2 }, Name = "Dragon" };
-    private QuestEnded ended = new QuestEnded { Id = streamId, Name = "Find the Orb" };
-    private MembersJoined joined = new MembersJoined { QuestId = streamId, Day = 2, Location = "Faldor's Farm", Members = new[] { "Garion", "Polgara", "Belgarath" } };
-    private MonsterSlayed slayed1 = new MonsterSlayed { QuestId = streamId, Name = "Troll" };
-    private MonsterSlayed slayed2 = new MonsterSlayed { QuestId = streamId, Name = "Dragon" };
-    private MonsterDestroyed destroyed = new MonsterDestroyed { QuestId = streamId, Name = "Troll" };
-    private MembersDeparted departed = new MembersDeparted { QuestId = streamId, Day = 5, Location = "Sendaria", Members = new[] { "Silk", "Barak" } };
-    private MembersJoined joined2 = new MembersJoined { QuestId = streamId, Day = 5, Location = "Sendaria", Members = new[] { "Silk", "Barak" } };
+    private readonly QuestStarted started = new QuestStarted { Id = streamId, Name = "Find the Orb" };
+    private readonly QuestStarted started2 = new QuestStarted { Id = streamId2, Name = "Find the Orb 2.0" };
+    private readonly MonsterQuestsAdded monsterQuestsAdded = new MonsterQuestsAdded { QuestIds = new List<Guid> { streamId, streamId2 }, Name = "Dragon" };
+    private readonly MonsterQuestsRemoved monsterQuestsRemoved = new MonsterQuestsRemoved { QuestIds = new List<Guid> { streamId, streamId2 }, Name = "Dragon" };
+    private readonly QuestEnded ended = new QuestEnded { Id = streamId, Name = "Find the Orb" };
+    private readonly MembersJoined joined = new MembersJoined { QuestId = streamId, Day = 2, Location = "Faldor's Farm", Members = new[] { "Garion", "Polgara", "Belgarath" } };
+    private readonly MonsterSlayed slayed1 = new MonsterSlayed { QuestId = streamId, Name = "Troll" };
+    private readonly MonsterSlayed slayed2 = new MonsterSlayed { QuestId = streamId, Name = "Dragon" };
+    private readonly MonsterDestroyed destroyed = new MonsterDestroyed { QuestId = streamId, Name = "Troll" };
+    private readonly MembersDeparted departed = new MembersDeparted { QuestId = streamId, Day = 5, Location = "Sendaria", Members = new[] { "Silk", "Barak" } };
+    private readonly MembersJoined joined2 = new MembersJoined { QuestId = streamId, Day = 5, Location = "Sendaria", Members = new[] { "Silk", "Barak" } };
 
 
 

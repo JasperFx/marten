@@ -9,12 +9,23 @@ Alright, let's jump right into an example. Two of the drivers for this feature w
 <!-- snippet: sample_custom_aggregate_events -->
 <a id='snippet-sample_custom_aggregate_events'></a>
 ```cs
-public class Start{}
-public class End{}
-public class Restart{}
-public class Increment{}
+public class Start
+{
+}
+
+public class End
+{
+}
+
+public class Restart
+{
+}
+
+public class Increment
+{
+}
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L395-L402' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L427-L445' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And a simple aggregate document type like this:
@@ -22,15 +33,15 @@ And a simple aggregate document type like this:
 <!-- snippet: sample_StartAndStopAggregate -->
 <a id='snippet-sample_startandstopaggregate'></a>
 ```cs
-public class StartAndStopAggregate : ISoftDeleted
+public class StartAndStopAggregate: ISoftDeleted
 {
-    // These are Marten controlled
-    public bool Deleted { get; set; }
-    public DateTimeOffset? DeletedAt { get; set; }
-
     public int Count { get; set; }
 
     public Guid Id { get; set; }
+
+    // These are Marten controlled
+    public bool Deleted { get; set; }
+    public DateTimeOffset? DeletedAt { get; set; }
 
     public void Increment()
     {
@@ -38,7 +49,7 @@ public class StartAndStopAggregate : ISoftDeleted
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L375-L393' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startandstopaggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L407-L425' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startandstopaggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As you can see, `StartAndStopAggregate` as a `Guid` as its identity and is also [soft-deleted](/documents/deletes.html#soft-deletes) when stored by
@@ -66,10 +77,10 @@ public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Gui
         IncludeType<Increment>();
     }
 
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<StartAndStopAggregate, Guid> slice, CancellationToken cancellation,
+    public override ValueTask ApplyChangesAsync(DocumentSessionBase session,
+        EventSlice<StartAndStopAggregate, Guid> slice, CancellationToken cancellation,
         ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
     {
-
         var aggregate = slice.Aggregate;
 
         foreach (var data in slice.AllData())
@@ -94,7 +105,7 @@ public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Gui
                     session.Delete(aggregate);
                     aggregate.Deleted = true; // Got to help Marten out a little bit here
                     break;
-                case Restart when (aggregate == null || aggregate.Deleted):
+                case Restart when aggregate == null || aggregate.Deleted:
                     // Got to "undo" the soft delete status
                     session
                         .UndoDeleteWhere<StartAndStopAggregate>(x => x.Id == slice.Id);
@@ -113,7 +124,7 @@ public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Gui
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L404-L472' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L447-L515' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Grouping

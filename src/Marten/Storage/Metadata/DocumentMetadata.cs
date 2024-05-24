@@ -16,14 +16,24 @@ public class DocumentMetadata
     public object Id { get; }
 
     /// <summary>
-    ///     Timestamp of the last time this document was modified
+    ///     Timestamp of when this document was created
     /// </summary>
-    public DateTimeOffset LastModified { get; internal set; }
+    public DateTimeOffset CreatedAt { get; internal set; }
 
     /// <summary>
     ///     The current version of this document in the database
     /// </summary>
     public Guid CurrentVersion { get; internal set; }
+
+    /// <summary>
+    ///     The current version of this document in the database if using numeric revisions
+    /// </summary>
+    public int CurrentRevision { get; internal set; }
+
+    /// <summary>
+    ///     Timestamp of the last time this document was modified
+    /// </summary>
+    public DateTimeOffset LastModified { get; internal set; }
 
     /// <summary>
     ///     The full name of the .Net type that was persisted

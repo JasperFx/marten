@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
+using Marten.Linq;
+using Marten.Linq.Parsing;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;
 
@@ -15,12 +17,14 @@ public class NgramIndex: IndexDefinition
     public const string DefaultRegConfig = "english";
     public const string DefaultDataConfig = "data";
     private readonly DbObjectName _table;
+    private readonly string _databaseSchemaName;
 
     private string _dataConfig;
     private readonly string _indexName;
 
     public NgramIndex(DocumentMapping mapping, string dataConfig = null, string indexName = null)
     {
+        _databaseSchemaName = mapping.DatabaseSchemaName;
         _table = mapping.TableName;
         DataConfig = dataConfig;
         _indexName = indexName;
@@ -44,7 +48,7 @@ public class NgramIndex: IndexDefinition
 
     public override string[] Columns
     {
-        get => new[] { $"mt_grams_vector( {_dataConfig})" };
+        get => new[] { $"{_databaseSchemaName}.mt_grams_vector( {_dataConfig})" };
         set
         {
             // nothing
@@ -64,19 +68,22 @@ public class NgramIndex: IndexDefinition
             return SchemaConstants.MartenPrefix + lowerValue.ToLowerInvariant();
         }
 
-        var arrowIndex = _dataConfig.IndexOf("->>", StringComparison.InvariantCultureIgnoreCase);
+        var indexFieldName = _dataConfig.ToLowerInvariant();
+        indexFieldName = indexFieldName.Split(new[] { " as " }, StringSplitOptions.None)[0];
+        indexFieldName = indexFieldName
+            .Replace("cast(", string.Empty)
+            .Replace("data", string.Empty)
+            .Replace(" ", string.Empty)
+            .Replace("'", string.Empty)
+            .Replace("->>", string.Empty)
+            .Replace("->", string.Empty);
 
-        var indexFieldName = arrowIndex != -1
-            ? _dataConfig.Substring(arrowIndex + 3).Trim().Replace("'", string.Empty).ToLowerInvariant()
-            : _dataConfig;
         return $"{_table.Name}_idx_ngram_{indexFieldName}";
     }
 
     private static string GetDataConfig(DocumentMapping mapping, MemberInfo[] members)
     {
-        var dataConfig = members
-            .Select(m => $"{mapping.FieldFor(m).TypedLocator.Replace("d.", "")}")
-            .Join(" || ' ' || ");
+        var dataConfig = $"{mapping.QueryMembers.MemberFor(members).TypedLocator.Replace("d.", "")}";
 
         return $"{dataConfig}";
     }

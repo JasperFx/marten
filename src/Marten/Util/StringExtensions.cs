@@ -1,5 +1,9 @@
 #nullable enable
+using System.Reflection;
+using System.Text.Json.Serialization;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
 namespace Marten.Util;
@@ -13,18 +17,27 @@ internal static class StringExtensionMethods
         return _snakeCaseNamingStrategy.GetPropertyName(s, false);
     }
 
-    public static string FormatCase(this string s, Casing casing)
-    {
-        switch (casing)
+    public static string FormatCase(this string s, Casing casing) =>
+        casing switch
         {
-            case Casing.CamelCase:
-                return s.ToCamelCase();
+            Casing.CamelCase => s.ToCamelCase(),
+            Casing.SnakeCase => s.ToSnakeCase(),
+            _ => s
+        };
 
-            case Casing.SnakeCase:
-                return s.ToSnakeCase();
-
-            default:
-                return s;
+    public static string ToJsonKey(this MemberInfo member, Casing casing)
+    {
+        var memberLocator = member.Name.FormatCase(casing);
+        if (member.TryGetAttribute<JsonPropertyAttribute>(out var newtonsoftAtt) && newtonsoftAtt.PropertyName is not null)
+        {
+            memberLocator = newtonsoftAtt.PropertyName;
         }
+
+        if (member.TryGetAttribute<JsonPropertyNameAttribute>(out var stjAtt))
+        {
+            memberLocator = stjAtt.Name;
+        }
+
+        return memberLocator;
     }
 }

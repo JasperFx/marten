@@ -19,11 +19,11 @@ internal class UpsertFunction: Function
     protected readonly string _andTenantWhereClause;
     private readonly bool _disableConcurrency;
     protected readonly DocumentMapping _mapping;
-    protected readonly string _primaryKeyConstraintName;
     protected readonly DbObjectName _tableName;
     protected readonly string _tenantWhereClause;
 
     public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
+    protected readonly string _primaryKeyFields;
 
     public UpsertFunction(DocumentMapping mapping, DbObjectName identifier = null, bool disableConcurrency = false):
         base(identifier ?? mapping.UpsertFunction)
@@ -38,8 +38,6 @@ internal class UpsertFunction: Function
         _tableName = mapping.TableName;
 
         var table = new DocumentTable(mapping);
-
-        _primaryKeyConstraintName = table.PrimaryKeyName;
 
         var idType = mapping.IdMember.GetMemberType();
         var pgIdType = PostgresqlProvider.Instance.GetDatabaseType(idType, mapping.EnumStorage);
@@ -79,6 +77,10 @@ internal class UpsertFunction: Function
         {
             Arguments.Add(new CurrentVersionArgument());
         }
+        else if (mapping.UseNumericRevisions)
+        {
+            Arguments.Add(new RevisionArgument());
+        }
 
         if (mapping.TenancyStyle == TenancyStyle.Conjoined)
         {
@@ -86,6 +88,8 @@ internal class UpsertFunction: Function
             _tenantWhereClause = $"{_tableName.QualifiedName}.{TenantIdColumn.Name} = {TenantIdArgument.ArgName}";
             _andTenantWhereClause = $" and {_tenantWhereClause}";
         }
+
+        _primaryKeyFields = table.Columns.Where(x => x.IsPrimaryKey).Select(x => x.Name).Join(", ");
     }
 
     public void AddIfActive(MetadataColumn column)
@@ -110,23 +114,28 @@ internal class UpsertFunction: Function
             .Select(x => $"\"{x.Column}\" = {x.Arg}").Concat(systemUpdates).Join(", ");
 
         var insertColumns = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").ToList();
+        var valueListColumns = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.Arg).ToList();
 
         if (_mapping.Metadata.LastModified.Enabled)
         {
             insertColumns.Add(SchemaConstants.LastModifiedColumn);
+            valueListColumns.Add("transaction_timestamp()");
         }
-
-        var inserts = insertColumns.Join(", ");
-
-        var valueListColumns = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.Arg).ToList();
-        if (_mapping.Metadata.LastModified.Enabled)
+        if (_mapping.Metadata.CreatedAt.Enabled)
         {
+            insertColumns.Add(SchemaConstants.CreatedAtColumn);
             valueListColumns.Add("transaction_timestamp()");
         }
 
+        var inserts = insertColumns.Join(", ");
         var valueList = valueListColumns.Join(", ");
 
         var whereClauses = new List<string>();
+
+        if (Arguments.Any(x => x is RevisionArgument) && !_disableConcurrency)
+        {
+            whereClauses.Add($"revision > {_tableName.QualifiedName}.{SchemaConstants.VersionColumn}");
+        }
 
         if (Arguments.Any(x => x is CurrentVersionArgument) && !_disableConcurrency)
         {
@@ -154,7 +163,36 @@ internal class UpsertFunction: Function
         string inserts,
         string valueList, string updates)
     {
-        if (_mapping.Metadata.Version.Enabled)
+        if (_mapping.Metadata.Revision.Enabled)
+        {
+            writer.WriteLine($@"
+CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS INTEGER LANGUAGE plpgsql {
+    securityDeclaration
+} AS $function$
+DECLARE
+  final_version INTEGER;
+  current_version INTEGER;
+BEGIN
+
+if revision = 1 then
+  SELECT mt_version FROM {_tableName.QualifiedName} into current_version WHERE id = docId {_andTenantWhereClause};
+  if current_version is not null then
+    revision = current_version + 1;
+  end if;
+end if;
+
+INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
+  ON CONFLICT ({_primaryKeyFields})
+  DO UPDATE SET {updates};
+
+  SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId {_andTenantWhereClause};
+  RETURN final_version;
+END;
+$function$;
+");
+
+        }
+        else if (_mapping.Metadata.Version.Enabled)
         {
             writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {
@@ -164,7 +202,7 @@ DECLARE
   final_version uuid;
 BEGIN
 INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
-  ON CONFLICT ON CONSTRAINT {_primaryKeyConstraintName}
+  ON CONFLICT ({_primaryKeyFields})
   DO UPDATE SET {updates};
 
   SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId {_andTenantWhereClause};
@@ -183,7 +221,7 @@ DECLARE
   final_version uuid;
 BEGIN
 INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
-  ON CONFLICT ON CONSTRAINT {_primaryKeyConstraintName}
+  ON CONFLICT ({_primaryKeyFields})
   DO UPDATE SET {updates};
 
   RETURN '{Guid.Empty}';

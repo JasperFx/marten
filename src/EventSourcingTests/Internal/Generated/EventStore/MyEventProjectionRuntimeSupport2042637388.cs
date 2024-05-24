@@ -23,8 +23,8 @@ namespace Marten.Generated.EventStore
         {
             switch (e)
             {
-                case Marten.Events.IEvent<EventSourcingTests.Bugs.Bug_2438_generated_code_throwing_nre.MyEvent> event_MyEvent2:
-                    Project1.Invoke(event_MyEvent2.Data, operations);
+                case Marten.Events.IEvent<EventSourcingTests.Bugs.Bug_2438_generated_code_throwing_nre.MyEvent> event_MyEvent11272:
+                    Project1.Invoke(event_MyEvent11272.Data, operations);
                     break;
             }
 

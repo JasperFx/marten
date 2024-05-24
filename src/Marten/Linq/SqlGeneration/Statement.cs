@@ -1,211 +1,82 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using JasperFx.Core;
-using Marten.Exceptions;
+using JasperFx.Core.Reflection;
 using Marten.Internal;
-using Marten.Linq.Fields;
-using Marten.Linq.Parsing;
 using Npgsql;
-using Remotion.Linq.Clauses;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
-public interface IPagedStatement
+public abstract partial class Statement: ISqlFragment
 {
-    int Offset { get; set; }
-    int Limit { get; set; }
-}
-
-public class PagedStatement: IPagedStatement
-{
-    public static readonly PagedStatement Empty = new(0, 0);
-
-    private PagedStatement(int offset, int limit)
-    {
-        Offset = offset;
-        Limit = limit;
-    }
-
-    public PagedStatement(Statement statement)
-    {
-        Offset = statement.Offset;
-        Limit = statement.Limit;
-    }
-
-    public int Offset { get; set; }
-    public int Limit { get; set; }
-}
-
-/// <summary>
-///     Internal model used to generate SQL within Linq queries
-/// </summary>
-public abstract class Statement: IPagedStatement
-{
-    private Statement _next;
-
-    protected Statement(IFieldMapping fields)
-    {
-        Fields = fields;
-    }
-
-    public string FromObject { get; protected set; }
-
-    public Statement Previous { get; private set; }
-
-    public Statement Next
-    {
-        get => _next;
-        private set
-        {
-            _next = value;
-            if (value != null)
-            {
-                value.Previous = this;
-            }
-        }
-    }
+    public Statement Next { get; set; }
+    public Statement Previous { get; set; }
 
     public StatementMode Mode { get; set; } = StatementMode.Select;
 
     /// <summary>
     ///     For CTEs
     /// </summary>
-    public string ExportName { get; protected set; }
-
-
-    public IList<(Ordering Ordering, bool CaseInsensitive)> Orderings { get; protected set; } =
-        new List<(Ordering, bool)>();
-
-    public IFieldMapping Fields { get; }
-
-    public IList<WhereClause> WhereClauses { get; } = new List<WhereClause>();
-
-    protected virtual bool IsSubQuery => false;
-
-    public ISqlFragment Where { get; internal set; }
+    public string ExportName { get; protected internal set; }
 
     public bool SingleValue { get; set; }
     public bool ReturnDefaultWhenEmpty { get; set; }
     public bool CanBeMultiples { get; set; }
 
-    public int Offset { get; set; }
-    public int Limit { get; set; }
-
-    public Statement Top()
+    public void Apply(ICommandBuilder builder)
     {
-        return Previous == null ? this : Previous.Top();
-    }
-
-    public Statement Current()
-    {
-        return Next == null ? this : Next.Current();
-    }
-
-    public void Configure(CommandBuilder sql)
-    {
-        configure(sql);
+        configure(builder);
         if (Next != null)
         {
-            sql.Append(" ");
-            Next.Configure(sql);
-        }
-    }
-
-    protected abstract void configure(CommandBuilder builder);
-
-
-    protected virtual void writeWhereClause(CommandBuilder sql)
-    {
-        if (Where != null)
-        {
-            sql.Append(" where ");
-            Where.Apply(sql);
-        }
-    }
-
-    protected void writeOrderByFragment(CommandBuilder sql, Ordering clause, bool caseInsensitive)
-    {
-        string locator;
-        try
-        {
-            var field = Fields.FieldFor(clause.Expression);
-            locator = field.ToOrderExpression(clause.Expression);
-        }
-        catch (Exception e)
-        {
-            throw new BadLinqExpressionException($"Invalid OrderBy() expression '{clause.Expression}'", e);
-        }
-
-        if (caseInsensitive)
-        {
-            sql.Append("lower(");
-        }
-
-        sql.Append(locator);
-
-        if (caseInsensitive)
-        {
-            sql.Append(")");
-        }
-
-        if (clause.OrderingDirection == OrderingDirection.Desc)
-        {
-            sql.Append(" desc");
-        }
-    }
-
-    protected virtual ISqlFragment buildWhereFragment(IMartenSession session)
-    {
-        if (!WhereClauses.Any())
-        {
-            return null;
-        }
-
-        var parser = new WhereClauseParser(session, this) { InSubQuery = IsSubQuery };
-
-        if (WhereClauses.Count == 1)
-        {
-            return parser.Build(WhereClauses.Single());
-        }
-
-        var wheres = WhereClauses.Select(x => parser.Build(x)).ToArray();
-        return CompoundWhereFragment.And(wheres);
-    }
-
-    protected void writeOrderClause(CommandBuilder sql)
-    {
-        if (Orderings.Any())
-        {
-            sql.Append(" order by ");
-            writeOrderByFragment(sql, Orderings[0].Ordering, Orderings[0].CaseInsensitive);
-            for (var i = 1; i < Orderings.Count; i++)
+            if (Mode == StatementMode.Select)
             {
-                sql.Append(", ");
-                writeOrderByFragment(sql, Orderings[i].Ordering, Orderings[i].CaseInsensitive);
+                builder.StartNewCommand();
             }
+
+            builder.Append(" ");
+            Next.Apply(builder);
         }
     }
 
-    public void CompileStructure(IMartenSession session)
+    public void InsertAfter(Statement descendent)
     {
-        CompileLocal(session);
-        Next?.CompileStructure(session);
+        if (Next != null)
+        {
+            Next.Previous = descendent;
+            descendent.Next = Next;
+        }
+
+        if (object.ReferenceEquals(this, descendent))
+        {
+            throw new InvalidOperationException(
+                "Whoa pardner, you cannot set Next to yourself, that's a stack overflow!");
+        }
+
+        Next = descendent;
+        descendent.Previous = this;
     }
 
-    public virtual void CompileLocal(IMartenSession session)
+    /// <summary>
+    ///     Place the descendent at the very end
+    /// </summary>
+    /// <param name="descendent"></param>
+    public void AddToEnd(Statement descendent)
     {
-        // Where clauses are pre-built in the case of includes
-        Where ??= buildWhereFragment(session);
-    }
+        if (Next != null)
+        {
+            Next.AddToEnd(descendent);
+        }
+        else
+        {
+            if (object.ReferenceEquals(this, descendent))
+            {
+                return;
+            }
 
-
-    public void ConvertToCommonTableExpression(IMartenSession session)
-    {
-        ExportName ??= session.NextTempTableName() + "CTE";
-        Mode = StatementMode.CommonTableExpression;
+            Next = descendent;
+            descendent.Previous = this;
+        }
     }
 
     public void InsertBefore(Statement antecedent)
@@ -213,53 +84,68 @@ public abstract class Statement: IPagedStatement
         if (Previous != null)
         {
             Previous.Next = antecedent;
+            antecedent.Previous = Previous;
         }
 
         antecedent.Next = this;
+        Previous = antecedent;
     }
 
-    public void InsertAfter(Statement descendent)
+    public Statement Top()
     {
-        if (Next != null)
-        {
-            descendent.Next = Next;
-        }
-
-        Next = descendent;
+        return Previous == null ? this : Previous.Top();
     }
 
-    protected void startCommonTableExpression(CommandBuilder sql)
+    public SelectorStatement SelectorStatement()
     {
-        if (Mode == StatementMode.Select)
-        {
-            return;
-        }
-
-        sql.Append(Previous == null ? "WITH " : " , ");
-
-        sql.Append(ExportName);
-        sql.Append(" as (\n");
+        return (Next == null ? this : Next.SelectorStatement()).As<SelectorStatement>();
     }
 
-    protected void endCommonTableExpression(CommandBuilder sql, string suffix = null)
+    public void ConvertToCommonTableExpression(IMartenSession session)
     {
-        if (Mode == StatementMode.Select)
-        {
-            return;
-        }
-
-        if (suffix.IsNotEmpty())
-        {
-            sql.Append(suffix);
-        }
-
-        sql.Append("\n)\n");
+        ExportName ??= session.NextTempTableName() + "CTE";
+        Mode = StatementMode.CommonTableExpression;
     }
 
-    public NpgsqlCommand BuildCommand()
+    protected abstract void configure(ICommandBuilder sql);
+
+    protected void startCommonTableExpression(ICommandBuilder sql)
     {
-        var builder = new CommandBuilder();
-        Configure(builder);
+        if (Mode == StatementMode.CommonTableExpression)
+        {
+            sql.Append(Previous == null ? "WITH " : " , ");
+
+            sql.Append(ExportName);
+            sql.Append(" as (");
+        }
+    }
+
+    protected void endCommonTableExpression(ICommandBuilder sql, string suffix = null)
+    {
+        switch (Mode)
+        {
+            case StatementMode.Select:
+                sql.Append(";");
+
+                return;
+            case StatementMode.Inner:
+                return;
+
+            case StatementMode.CommonTableExpression:
+                if (suffix.IsNotEmpty())
+                {
+                    sql.Append(suffix);
+                }
+
+                sql.Append(')');
+                break;
+        }
+    }
+
+    public NpgsqlCommand BuildCommand(IMartenSession session)
+    {
+        var builder = new CommandBuilder(){TenantId = session.TenantId};
+        Apply(builder);
 
         return builder.Compile();
     }

@@ -18,4 +18,12 @@ internal interface ISessionWorkTracker: IUnitOfWork, IChangeSet
     bool TryFindStream(Guid streamId, out StreamAction stream);
     bool HasOutstandingWork();
     void EjectAll();
+
+    /// <summary>
+    /// Remove all outstanding operations for the designated document
+    /// </summary>
+    /// <param name="id"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TId"></typeparam>
+    void PurgeOperations<T, TId>(TId id) where T : notnull;
 }

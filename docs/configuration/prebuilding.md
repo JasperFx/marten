@@ -1,13 +1,9 @@
 # Pre-Building Generated Types
 
-:::tip
-This feature took a pretty big leap forward with Marten V5 and is much easier to utilize than it was with V4.
-:::
-
-Marten >= V4 extensively uses runtime code generation backed by [Roslyn runtime compilation](https://jeremydmiller.com/2018/06/04/compiling-code-at-runtime-with-lamar-part-1/) for dynamic code.
+Marten uses runtime code generation backed by [Roslyn runtime compilation](https://jeremydmiller.com/2018/06/04/compiling-code-at-runtime-with-lamar-part-1/) for dynamic code.
 This is both much more powerful than [source generators](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/source-generators-overview) in what it allows us to actually do, but can have
 significant memory usage and “[cold start](https://en.wikipedia.org/wiki/Cold_start_(computing))” problems (seems to depend on exact configurations, so it’s not a given that you’ll have these issues).
-Fear not though, Marten v4 introduced a facility to “generate ahead” the code to greatly optimize the "cold start" and memory usage in production scenarios.
+Fear not though, Marten introduced a facility to “generate ahead” the code to greatly optimize the "cold start" and memory usage in production scenarios.
 
 The code generation for document storage, event handling, event projections, and additional document stores can be done
 with one of three modes as shown below:
@@ -25,17 +21,17 @@ using var store = DocumentStore.For(opts =>
 
     // Marten will only use types that are compiled into
     // the application assembly ahead of time. This is the
-    // V4 "pre-built" model
+    // "pre-built" model
     opts.GeneratedCodeMode = TypeLoadMode.Static;
 
-    // New for V5. More explanation in the docs:)
+    // Explained Below :)
     opts.GeneratedCodeMode = TypeLoadMode.Auto;
 });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/CodeGenerationOptions.cs#L16-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_code_generation_modes' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The *Auto* mode is new for Marten V5 to alleviate usability issues for folks who did not find the command line options or pre-registration
+The *Auto* mode was added alleviate usability issues for folks who did not find the command line options or pre-registration
 of document types to be practical. Using the `Marten.Testing.Documents.User` document from the Marten testing suite
 as an example, let's start a new document store with the `Auto` mode:
 
@@ -84,7 +80,7 @@ into the actually deployed binaries for the system in production deployments. Of
 you will need to delete the generated code.
 
 :::tip
-Just like ASP.Net MVC, Marten uses the `IHostEnvironment.ApplicationName` property to determine the main application assembly. If
+Just like ASP.NET Core, Marten uses the `IHostEnvironment.ApplicationName` property to determine the main application assembly. If
 that value is missing, Marten falls back to the `Assembly.GetEntryAssembly()` value.
 :::
 
@@ -157,14 +153,16 @@ public static class Program
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                     opts.DatabaseSchemaName = "cli";
 
-                    opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
-                        .WithTenants("tenant1", "tenant2", "tenant3");
+                    opts.MultiTenantedWithSingleServer(
+                        ConnectionSource.ConnectionString,
+                        t => t.WithTenants("tenant1", "tenant2", "tenant3")
+                    );
 
                     // This is important, setting this option tells Marten to
                     // *try* to use pre-generated code at runtime
                     opts.GeneratedCodeMode = TypeLoadMode.Auto;
 
-                    opts.Schema.For<Activity>().AddSubClass<Marten.AsyncDaemon.Testing.TestingSupport.Trip>();
+                    opts.Schema.For<Activity>().AddSubClass<DaemonTests.TestingSupport.Trip>();
 
                     // You have to register all persisted document types ahead of time
                     // RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()
@@ -196,7 +194,7 @@ public static class Program
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L28-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L28-L95' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Okay, after all that, there should be a new command line option called `codegen` for your project. Assuming

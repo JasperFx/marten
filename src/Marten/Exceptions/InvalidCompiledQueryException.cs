@@ -2,6 +2,7 @@ using System;
 using System.Runtime.Serialization;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 
 namespace Marten.Exceptions;
 

@@ -12,6 +12,7 @@ using Marten.Services.BatchQuerying;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using Npgsql;
+using Weasel.Postgresql.Tables.Indexes;
 
 namespace Marten;
 
@@ -25,7 +26,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <summary>
     ///     The currently open Npgsql connection for this session. Use with caution.
     /// </summary>
-    NpgsqlConnection? Connection { get; }
+    NpgsqlConnection Connection { get; }
 
     /// <summary>
     ///     The session specific logger for this session. Can be set for better integration
@@ -64,6 +65,11 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     unit of work
     /// </summary>
     string? CorrelationId { get; set; }
+
+    /// <summary>
+    /// The tenant id for this session. If not opened with a tenant id, this value will be "*DEFAULT*"
+    /// </summary>
+    string TenantId { get; }
 
     /// <summary>
     ///     Find or load a single document of type T by a string id
@@ -147,7 +153,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
 
     /// <summary>
     ///     Queries the document storage table for the document type T by supplied SQL. See
-    ///     http://jasperfx.github.io/marten/documentation/documents/querying/sql/ for more information on usage.
+    ///     https://martendb.io/documents/querying/sql.html for more information on usage.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="sql"></param>
@@ -170,7 +176,6 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     Stream the results of a user-supplied query directly to a stream as a JSON array
     /// </summary>
     /// <param name="destination"></param>
-    /// <param name="token"></param>
     /// <param name="sql"></param>
     /// <param name="parameters"></param>
     /// <typeparam name="T"></typeparam>
@@ -179,7 +184,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
 
     /// <summary>
     ///     Asynchronously queries the document storage table for the document type T by supplied SQL. See
-    ///     http://jasperfx.github.io/marten/documentation/documents/querying/sql/ for more information on usage.
+    ///     https://martendb.io/documents/querying/sql.html for more information on usage.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="sql"></param>
@@ -190,14 +195,102 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
 
     /// <summary>
     ///     Asynchronously queries the document storage table for the document type T by supplied SQL. See
-    ///     http://jasperfx.github.io/marten/documentation/documents/querying/sql/ for more information on usage.
+    ///     https://martendb.io/documents/querying/sql.html for more information on usage.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="sql"></param>
-    /// <param name="token"></param>
     /// <param name="parameters"></param>
     /// <returns></returns>
     Task<IReadOnlyList<T>> QueryAsync<T>(string sql, params object[] parameters);
+
+
+    /// <summary>
+    ///     Asynchronously queries the document storage with the supplied SQL.
+    ///     The type parameter can be a document class, a scalar or any JSON-serializable class.
+    ///     If the result is a document, the SQL must contain a select with the required fields in the correct order,
+    ///     depending on the session type and the metadata the document might use, at least id and data must be
+    ///     selected.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="sql"></param>
+    /// <param name="parameters"></param>
+    /// <returns></returns>
+    Task<IReadOnlyList<T>> AdvancedSqlQueryAsync<T>(string sql, CancellationToken token, params object[] parameters);
+
+    /// <summary>
+    ///     Asynchronously queries the document storage with the supplied SQL.
+    ///     The type parameters can be any document class, scalar or JSON-serializable class.
+    ///     For each result type parameter, the SQL SELECT statement must contain a ROW.
+    ///     For document types, the row must contain the required fields in the correct order,
+    ///     depending on the session type and the metadata the document might use, at least id and data must be
+    ///     provided.
+    /// </summary>
+    /// <typeparam name="T1"></typeparam>
+    /// <typeparam name="T2"></typeparam>
+    /// <param name="sql"></param>
+    /// <param name="parameters"></param>
+    /// <returns></returns>
+    Task<IReadOnlyList<(T1, T2)>> AdvancedSqlQueryAsync<T1, T2>(string sql, CancellationToken token, params object[] parameters);
+
+    /// <summary>
+    ///     Asynchronously queries the document storage with the supplied SQL.
+    ///     The type parameters can be any document class, scalar or JSON-serializable class.
+    ///     For each result type parameter, the SQL SELECT statement must contain a ROW.
+    ///     For document types, the row must contain the required fields in the correct order,
+    ///     depending on the session type and the metadata the document might use, at least id and data must be
+    ///     provided.
+    /// </summary>
+    /// <typeparam name="T1"></typeparam>
+    /// <typeparam name="T2"></typeparam>
+    /// <typeparam name="T3"></typeparam>
+    /// <param name="sql"></param>
+    /// <param name="parameters"></param>
+    /// <returns></returns>
+    Task<IReadOnlyList<(T1, T2, T3)>> AdvancedSqlQueryAsync<T1, T2,T3>(string sql, CancellationToken token, params object[] parameters);
+
+    /// <summary>
+    ///     Asynchronously queries the document storage with the supplied SQL.
+    ///     The type parameter can be a document class, a scalar or any JSON-serializable class.
+    ///     If the result is a document, the SQL must contain a select with the required fields in the correct order,
+    ///     depending on the session type and the metadata the document might use, at least id and data must be
+    ///     selected.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="sql"></param>
+    /// <param name="parameters"></param>
+    /// <returns></returns>
+    IReadOnlyList<T> AdvancedSqlQuery<T>(string sql, params object[] parameters);
+
+    /// <summary>
+    ///     Asynchronously queries the document storage with the supplied SQL.
+    ///     The type parameters can be any document class, scalar or JSON-serializable class.
+    ///     For each result type parameter, the SQL SELECT statement must contain a ROW.
+    ///     For document types, the row must contain the required fields in the correct order,
+    ///     depending on the session type and the metadata the document might use, at least id and data must be
+    ///     provided.
+    /// </summary>
+    /// <typeparam name="T1"></typeparam>
+    /// <typeparam name="T2"></typeparam>
+    /// <param name="sql"></param>
+    /// <param name="parameters"></param>
+    /// <returns></returns>
+    IReadOnlyList<(T1, T2)> AdvancedSqlQuery<T1, T2>(string sql, params object[] parameters);
+
+    /// <summary>
+    ///     Asynchronously queries the document storage with the supplied SQL.
+    ///     The type parameters can be any document class, scalar or JSON-serializable class.
+    ///     For each result type parameter, the SQL SELECT statement must contain a ROW.
+    ///     For document types, the row must contain the required fields in the correct order,
+    ///     depending on the session type and the metadata the document might use, at least id and data must be
+    ///     provided.
+    /// </summary>
+    /// <typeparam name="T1"></typeparam>
+    /// <typeparam name="T2"></typeparam>
+    /// <typeparam name="T3"></typeparam>
+    /// <param name="sql"></param>
+    /// <param name="parameters"></param>
+    /// <returns></returns>
+    IReadOnlyList<(T1, T2, T3)> AdvancedSqlQuery<T1, T2, T3>(string sql, params object[] parameters);
 
     /// <summary>
     ///     Define a batch of deferred queries and load operations to be conducted in one asynchronous request to the
@@ -457,7 +550,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
-    IReadOnlyList<TDoc> Search<TDoc>(string queryText, string regConfig = FullTextIndex.DefaultRegConfig);
+    IReadOnlyList<TDoc> Search<TDoc>(string queryText, string regConfig = FullTextIndexDefinition.DefaultRegConfig);
 
     /// <summary>
     ///     Performs an asynchronous full text search against <typeparamref name="TDoc" />
@@ -470,7 +563,8 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
-    Task<IReadOnlyList<TDoc>> SearchAsync<TDoc>(string queryText, string regConfig = FullTextIndex.DefaultRegConfig,
+    Task<IReadOnlyList<TDoc>> SearchAsync<TDoc>(string queryText,
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig,
         CancellationToken token = default);
 
     /// <summary>
@@ -484,7 +578,8 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
-    IReadOnlyList<TDoc> PlainTextSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig);
+    IReadOnlyList<TDoc> PlainTextSearch<TDoc>(string searchTerm,
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig);
 
     /// <summary>
     ///     Performs an asynchronous full text search against <typeparamref name="TDoc" /> using the 'plainto_tsquery' function
@@ -498,7 +593,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
     Task<IReadOnlyList<TDoc>> PlainTextSearchAsync<TDoc>(string searchTerm,
-        string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default);
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig, CancellationToken token = default);
 
     /// <summary>
     ///     Performs a full text search against <typeparamref name="TDoc" /> using the 'phraseto_tsquery' search function
@@ -511,7 +606,8 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
-    IReadOnlyList<TDoc> PhraseSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig);
+    IReadOnlyList<TDoc> PhraseSearch<TDoc>(string searchTerm,
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig);
 
     /// <summary>
     ///     Performs an asynchronous full text search against <typeparamref name="TDoc" /> using the 'phraseto_tsquery' search
@@ -526,7 +622,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
     Task<IReadOnlyList<TDoc>> PhraseSearchAsync<TDoc>(string searchTerm,
-        string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default);
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig, CancellationToken token = default);
 
     /// <summary>
     ///     Performs a full text search against <typeparamref name="TDoc" /> using the 'websearch_to_tsquery' search function
@@ -543,7 +639,8 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     Supported from Postgres 11
     ///     See: https://www.postgresql.org/docs/11/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
-    IReadOnlyList<TDoc> WebStyleSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig);
+    IReadOnlyList<TDoc> WebStyleSearch<TDoc>(string searchTerm,
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig);
 
     /// <summary>
     ///     Performs an asynchronous full text search against <typeparamref name="TDoc" /> using the 'websearch_to_tsquery'
@@ -563,7 +660,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     See: https://www.postgresql.org/docs/11/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
     Task<IReadOnlyList<TDoc>> WebStyleSearchAsync<TDoc>(string searchTerm,
-        string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default);
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig, CancellationToken token = default);
 
 
     /// <summary>

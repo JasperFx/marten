@@ -14,8 +14,9 @@ using Marten.Storage;
 using Marten.Storage.Metadata;
 using NpgsqlTypes;
 using Weasel.Core;
+using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
-using FindMembers = Marten.Linq.Parsing.FindMembers;
+using Weasel.Postgresql.Tables.Indexes;
 
 namespace Marten;
 
@@ -283,13 +284,27 @@ public class MartenRegistry
         }
 
         /// <summary>
+        ///     Creates an index on the predefined Created timestamp column
+        /// </summary>
+        /// <param name="configure"></param>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> IndexCreatedAt(Action<DocumentIndex>? configure = null)
+        {
+            _builder.Alter = m => m.AddCreatedAtIndex(configure);
+
+            return this;
+        }
+
+        /// <summary>
         ///     Create a full text index
         /// </summary>
         /// <param name="regConfig"></param>
         /// <param name="configure"></param>
         /// <returns></returns>
-        public DocumentMappingExpression<T> FullTextIndex(string regConfig = Schema.FullTextIndex.DefaultRegConfig,
-            Action<FullTextIndex>? configure = null)
+        public DocumentMappingExpression<T> FullTextIndex(
+            string regConfig = FullTextIndexDefinition.DefaultRegConfig,
+            Action<FullTextIndexDefinition>? configure = null
+        )
         {
             _builder.Alter = m => m.AddFullTextIndex(regConfig, configure);
             return this;
@@ -300,9 +315,9 @@ public class MartenRegistry
         /// </summary>
         /// <param name="configure"></param>
         /// <returns></returns>
-        public DocumentMappingExpression<T> FullTextIndex(Action<FullTextIndex> configure)
+        public DocumentMappingExpression<T> FullTextIndex(Action<FullTextIndexDefinition> configure)
         {
-            _builder.Alter = m => m.AddFullTextIndex(Schema.FullTextIndex.DefaultRegConfig, configure);
+            _builder.Alter = m => m.AddFullTextIndex(FullTextIndexDefinition.DefaultRegConfig, configure);
             return this;
         }
 
@@ -313,7 +328,7 @@ public class MartenRegistry
         /// <returns></returns>
         public DocumentMappingExpression<T> FullTextIndex(params Expression<Func<T, object>>[] expressions)
         {
-            FullTextIndex(Schema.FullTextIndex.DefaultRegConfig, expressions);
+            FullTextIndex(FullTextIndexDefinition.DefaultRegConfig, expressions);
             return this;
         }
 
@@ -334,12 +349,12 @@ public class MartenRegistry
         /// </summary>
         /// <param name="expressions"></param>
         /// <returns></returns>
-        public DocumentMappingExpression<T> FullTextIndex(Action<FullTextIndex> configure,
+        public DocumentMappingExpression<T> FullTextIndex(Action<FullTextIndexDefinition> configure,
             params Expression<Func<T, object>>[] expressions)
         {
             _builder.Alter = m =>
             {
-                var index = m.FullTextIndex(Schema.FullTextIndex.DefaultRegConfig, expressions);
+                var index = m.FullTextIndex(FullTextIndexDefinition.DefaultRegConfig, expressions);
                 configure(index);
                 var temp = index;
             };
@@ -406,7 +421,7 @@ public class MartenRegistry
         {
             _builder.Alter = m =>
             {
-                var visitor = new FindMembers();
+                var visitor = new MemberFinder();
                 visitor.Visit(expression);
 
                 var foreignKeyDefinition = m.AddForeignKey(visitor.Members.ToArray(), typeof(TReference));
@@ -434,14 +449,14 @@ public class MartenRegistry
         {
             _builder.Alter = m =>
             {
-                var members = FindMembers.Determine(expression);
+                var members = MemberFinder.Determine(expression);
 
                 var duplicateField = m.DuplicateField(members);
 
                 var foreignKey =
                     new ForeignKey($"{m.TableName.Name}_{duplicateField.ColumnName}_fkey")
                     {
-                        LinkedTable = new DbObjectName(schemaName ?? m.DatabaseSchemaName, tableName),
+                        LinkedTable = new PostgresqlObjectName(schemaName ?? m.DatabaseSchemaName, tableName),
                         ColumnNames = new[] { duplicateField.ColumnName },
                         LinkedNames = new[] { columnName }
                     };
@@ -494,7 +509,7 @@ public class MartenRegistry
         {
             _builder.Alter = mapping =>
             {
-                var members = FindMembers.Determine(member);
+                var members = MemberFinder.Determine(member);
                 if (members.Length != 1)
                 {
                     throw new InvalidOperationException(
@@ -565,7 +580,7 @@ public class MartenRegistry
         }
 
         /// <summary>
-        ///     Add a sub class type to this document type so that Marten will store that document in the parent
+        ///     Add a sub class type to the top level document type so that Marten will store that document in the parent
         ///     table storage
         /// </summary>
         /// <param name="alias"></param>
@@ -586,9 +601,32 @@ public class MartenRegistry
             _builder.Alter = m =>
             {
                 m.UseOptimisticConcurrency = enabled;
+
                 if (enabled)
                 {
+                    m.UseNumericRevisions = false;
                     m.Metadata.Version.Enabled = true;
+                }
+            };
+            return this;
+        }
+
+        /// <summary>
+        /// Directs Marten to use the numeric revisioning for this specific
+        /// document type
+        /// </summary>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> UseNumericRevisions(bool enabled)
+        {
+            _builder.Alter = m =>
+            {
+                m.UseNumericRevisions = enabled;
+
+                if (enabled)
+                {
+                    m.UseOptimisticConcurrency = false;
+                    m.Metadata.Revision.Enabled = true;
+                    m.Metadata.Version.Enabled = false;
                 }
             };
             return this;
@@ -692,6 +730,11 @@ public class MartenRegistry
                 new(_parent, m => m.LastModified);
 
             /// <summary>
+            ///     Optional metadata for the timestamp of when this document was created
+            /// </summary>
+            public Column<DateTimeOffset> CreatedAt => new(_parent, m => m.CreatedAt);
+
+            /// <summary>
             ///     The stored tenant id of this document
             /// </summary>
             public Column<string> TenantId => new(_parent, m => m.TenantId);
@@ -783,7 +826,7 @@ public class MartenRegistry
                 /// <param name="memberExpression"></param>
                 public void MapTo(Expression<Func<T, TProperty>> memberExpression)
                 {
-                    var member = FindMembers.Determine(memberExpression).Single();
+                    var member = MemberFinder.Determine(memberExpression).Single();
                     _parent._builder.Alter = m =>
                     {
                         var metadataColumn = _source(m.Metadata);

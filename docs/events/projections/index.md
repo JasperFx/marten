@@ -11,7 +11,7 @@ Do note that all the various types of aggregated projections inherit from a comm
 1. [Single Stream Projections](/events/projections/aggregate-projections) combine events from a single stream into a single view.
 2. [Multi Stream Projections](/events/projections/multi-stream-projections) are a specialized form of projection that allows you to aggregate a view against arbitrary groupings of events across streams.
 3. [Event Projections](/events/projections/event-projections) are a recipe for building projections that create or delete one or more documents for a single event
-4. [Custom Projections](/events/projections/custom-aggregates) are a recipe for building aggregate projections that require more logic than
+4. [Custom Aggregations](/events/projections/custom-aggregates) are a recipe for building aggregate projections that require more logic than
    can be accomplished by the other aggregation types. Example usages are soft-deleted aggregate documents that maybe be recreated later or
    if you only apply events to an aggregate if the aggregate document previously existed.
 5. If one of the built in projection recipes doesn't fit what you want to do, you can happily build your own [custom projection](/events/projections/custom)
@@ -64,10 +64,10 @@ public class QuestParty
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/QuestParty.cs#L8-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-New in Marten 1.2 is the ability to use `Event<T>` metadata within your projections, assuming that you're not trying to run the aggregations inline.
+Marten provides the ability to use `IEvent<T>` metadata within your projections, assuming that you're not trying to run the aggregations inline.
 
-The syntax using the built in aggregation technique is to take in `Event<T>` as the argument to your `Apply(event)` methods,
-where `T` is the event type you're interested in:
+The syntax using the built in aggregation technique is to take in `IEvent<T>` as the argument to your `Apply(event)` methods,
+where `T` is the event type you're interested is covered in [Single Stream Projections](/events/projections/aggregate-projections).
 
 <!-- snippet: sample_QuestPartyWithEvents -->
 <a id='snippet-sample_questpartywithevents'></a>

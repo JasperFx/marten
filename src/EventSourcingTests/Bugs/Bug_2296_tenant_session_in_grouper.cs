@@ -11,10 +11,11 @@ using Marten.Schema.Identity;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Xunit;
+using CombGuidIdGeneration = Marten.Schema.Identity.CombGuidIdGeneration;
 
 namespace EventSourcingTests.Bugs;
 
-public class Bug_2296_tenant_session_in_grouper : OneOffConfigurationsContext
+public class Bug_2296_tenant_session_in_grouper: OneOffConfigurationsContext
 {
     [Fact]
     public async Task CanQueryTenantedStreamsInAsyncProjectionGrouper()
@@ -31,16 +32,16 @@ public class Bug_2296_tenant_session_in_grouper : OneOffConfigurationsContext
         await using var tenantedSession = theStore.LightweightSession(tenant);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         var streamKey = CombGuidIdGeneration.NewGuid().ToString();
         tenantedSession.Events.StartStream(streamKey,
-            new CountEvent {Tag = "Foo"},
-            new CountEvent {Tag = "Bar"},
-            new CountEvent {Tag = "Bar"},
-            new CountEvent {Tag = "Baz"},
-            new CountEvent {Tag = "Baz"},
-            new CountEvent {Tag = "Baz"});
+            new CountEvent { Tag = "Foo" },
+            new CountEvent { Tag = "Bar" },
+            new CountEvent { Tag = "Bar" },
+            new CountEvent { Tag = "Baz" },
+            new CountEvent { Tag = "Baz" },
+            new CountEvent { Tag = "Baz" });
         await tenantedSession.SaveChangesAsync();
 
         await daemon.WaitForNonStaleData(5.Seconds());
@@ -74,8 +75,7 @@ public class Bug_2296_tenant_session_in_grouper : OneOffConfigurationsContext
 
     public class CountsByTag
     {
-        [Identity]
-        public string Tag { get; set; }
+        [Identity] public string Tag { get; set; }
         public int Count { get; set; } = 0;
     }
 
@@ -99,7 +99,8 @@ public class Bug_2296_tenant_session_in_grouper : OneOffConfigurationsContext
 
         public class EventGrouper: IAggregateGrouper<string>
         {
-            public async Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<string> grouping)
+            public async Task Group(IQuerySession session, IEnumerable<IEvent> events,
+                ITenantSliceGroup<string> grouping)
             {
                 var resetEvents = events.OfType<IEvent<ResetEvent>>().ToList();
                 if (!resetEvents.Any())
@@ -115,7 +116,8 @@ public class Bug_2296_tenant_session_in_grouper : OneOffConfigurationsContext
                     var streamEvents =
                         await session.Events.FetchStreamAsync(resetEvent.StreamKey!, version: resetEvent.Version);
 
-                    foreach (var tag in streamEvents.OfType<IEvent<CountEvent>>().GroupBy(foo => foo.Data.Tag).Select(g => g.Key))
+                    foreach (var tag in streamEvents.OfType<IEvent<CountEvent>>().GroupBy(foo => foo.Data.Tag)
+                                 .Select(g => g.Key))
                     {
                         grouping.AddEvent(tag, resetEvent);
                     }

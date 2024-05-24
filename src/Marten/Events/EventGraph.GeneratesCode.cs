@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -7,13 +7,13 @@ using JasperFx.CodeGeneration;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
 using Marten.Internal.Storage;
-using Marten.Util;
 
 namespace Marten.Events;
 
+#nullable enable
 public partial class EventGraph: ICodeFileCollection, ICodeFile
 {
-    private Type _storageType;
+    private readonly Type _storageType;
 
     internal DocumentProvider<IEvent> Provider { get; private set; }
 

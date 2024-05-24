@@ -11,11 +11,13 @@ public interface IQueryMember
     Type Type { get; }
 
     MemberInfo Member { get; }
-    IList<int> ParameterIndexes { get; }
     bool CanWrite();
-    void GenerateCode(GeneratedMethod method, StoreOptions storeOptions);
+
     void StoreValue(object query);
-    void TryMatch(List<NpgsqlParameter> parameters, StoreOptions storeOptions);
+
+    bool TryMatch(NpgsqlParameter parameter, StoreOptions options, ICompiledQueryAwareFilter[] filters,
+        out ICompiledQueryAwareFilter filter);
+
     void TryWriteValue(UniqueValueSource valueSource, object query);
     object GetValueAsObject(object query);
 }

@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Internals;
 using Marten.Storage;
 using Weasel.Core;
 
@@ -69,8 +71,16 @@ public abstract partial class EventProjection: GeneratedProjection, IProjectionS
         EventRange range,
         CancellationToken cancellationToken)
     {
-        return new ValueTask<EventRangeGroup>(new TenantedEventRangeGroup(store, daemonDatabase,
-            _generatedProjection.Value, range, cancellationToken));
+        return new ValueTask<EventRangeGroup>(
+            new TenantedEventRangeGroup(
+                store,
+                daemonDatabase,
+                _generatedProjection.Value,
+                Options,
+                range,
+                cancellationToken
+            )
+        );
     }
 
 

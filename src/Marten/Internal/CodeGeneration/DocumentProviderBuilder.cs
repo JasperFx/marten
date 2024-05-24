@@ -3,11 +3,11 @@ using System.Reflection;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Model;
+using JasperFx.Core.Reflection;
 using Marten.Internal.Storage;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Schema.BulkLoading;
-using Marten.Util;
 using Npgsql;
 using CommandExtensions = Weasel.Postgresql.CommandExtensions;
 

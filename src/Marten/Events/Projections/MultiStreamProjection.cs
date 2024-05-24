@@ -1,14 +1,39 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Storage;
 
 namespace Marten.Events.Projections;
+
+public class TenantRollupSlicer<TDoc>: IEventSlicer<TDoc, string>
+{
+    public ValueTask<IReadOnlyList<EventSlice<TDoc, string>>> SliceInlineActions(IQuerySession querySession, IEnumerable<StreamAction> streams)
+    {
+        throw new NotSupportedException("This is not supported in Inline projections");
+    }
+
+    public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, string>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
+    {
+        var sliceGroup = new TenantSliceGroup<TDoc, string>(new Tenant(Tenancy.DefaultTenantId, querySession.Database));
+        var groups = events.GroupBy(x => x.TenantId);
+        foreach (var @group in groups)
+        {
+            sliceGroup.AddEvents(@group.Key, @group);
+        }
+
+        var list = new List<TenantSliceGroup<TDoc, string>>{sliceGroup};
+
+        return ValueTask.FromResult<IReadOnlyList<TenantSliceGroup<TDoc, string>>>(list);
+    }
+}
 
 /// <summary>
 ///     Project a single document view across events that may span across
@@ -24,6 +49,18 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
 
     protected MultiStreamProjection(): base(AggregationScope.MultiStream)
     {
+    }
+
+    /// <summary>
+    /// Group events by the tenant id. Use this option if you need to do roll up summaries by
+    /// tenant id within a conjoined multi-tenanted event store.
+    /// </summary>
+    public void RollUpByTenant()
+    {
+        if (typeof(TId) != typeof(string))
+            throw new InvalidOperationException("Rolling up by Tenant Id requires the identity type to be string");
+
+        _customSlicer = (IEventSlicer<TDoc, TId>)new TenantRollupSlicer<TDoc>();
     }
 
     internal IEventSlicer<TDoc, TId> Slicer => _customSlicer ?? _defaultSlicer;
@@ -107,6 +144,21 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
         _defaultSlicer.FanOut(fanOutFunc, mode);
     }
 
+    /// <summary>
+    ///     Apply "fan out" operations to the given IEvent<TEvent> type that inserts an enumerable of TChild events right behind the
+    ///     parent
+    ///     event in the event stream
+    /// </summary>
+    /// <param name="fanOutFunc"></param>
+    /// <param name="mode">Should the fan out operation happen after grouping, or before? Default is after</param>
+    /// <typeparam name="TEvent"></typeparam>
+    /// <typeparam name="TChild"></typeparam>
+    public void FanOut<TEvent, TChild>(Func<IEvent<TEvent>, IEnumerable<TChild>> fanOutFunc,
+        FanoutMode mode = FanoutMode.AfterGrouping) where TEvent : notnull
+    {
+        _defaultSlicer.FanOut(fanOutFunc, mode);
+    }
+
     protected override object buildEventSlicer(StoreOptions options)
     {
         if (_customSlicer != null)
@@ -133,7 +185,11 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
 
     protected override IEnumerable<string> validateDocumentIdentity(StoreOptions options, DocumentMapping mapping)
     {
-        yield break;
+        if (mapping.IdType != typeof(TId))
+        {
+            yield return
+                $"Id type mismatch. The projection identity type is {typeof(TId).FullNameInCode()}, but the aggregate document {typeof(TDoc).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
+        }
     }
 
     protected override Type baseTypeForAggregationRuntime()
@@ -142,12 +198,3 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
     }
 }
 
-[Obsolete("Please switch to MultiStreamProjection<T> with the exact same syntax")]
-public abstract class MultiStreamAggregation<TDoc, TId>: MultiStreamProjection<TDoc, TId>
-{
-}
-
-[Obsolete("Please switch to MultiStreamProjection<T> with the exact same syntax")]
-public abstract class ViewProjection<TDoc, TId>: MultiStreamProjection<TDoc, TId>
-{
-}

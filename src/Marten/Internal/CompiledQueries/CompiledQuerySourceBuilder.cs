@@ -3,16 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using JasperFx.CodeGeneration;
-using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
-using Marten.Schema.Arguments;
-using Marten.Util;
-using Weasel.Postgresql;
 
 namespace Marten.Internal.CompiledQueries;
 
@@ -44,29 +40,21 @@ internal class CompiledQuerySourceBuilder
 
         var handlerType = determineHandlerType();
 
-        var hardcoded = new HardCodedParameters(_plan);
-        var compiledHandlerType = buildHandlerType(assembly, handlerType, hardcoded);
+        var compiledHandlerType = buildHandlerType(assembly, handlerType);
 
         buildSourceType(assembly, handlerType, compiledHandlerType);
     }
 
     public ICompiledQuerySource Build(Type sourceType)
     {
-        var hardcoded = new HardCodedParameters(_plan);
-
-        return (ICompiledQuerySource)Activator.CreateInstance(sourceType, hardcoded, _plan.HandlerPrototype);
+        return (ICompiledQuerySource)Activator.CreateInstance(sourceType, _plan.HandlerPrototype);
     }
 
     private void buildSourceType(GeneratedAssembly assembly, CompiledSourceType handlerType,
         GeneratedType compiledHandlerType)
     {
-        var rules = _storeOptions.CreateGenerationRules();
-
         var sourceBaseType = typeof(CompiledQuerySource<,>).MakeGenericType(_plan.OutputType, _plan.QueryType);
         var sourceType = assembly.AddType(_typeName, sourceBaseType);
-
-        var hardcoded = new InjectedField(typeof(HardCodedParameters), "hardcoded");
-        sourceType.AllInjectedFields.Add(hardcoded);
 
         var buildHandler = sourceType.MethodFor("BuildHandler");
         switch (handlerType)
@@ -77,7 +65,7 @@ internal class CompiledQuerySourceBuilder
 
                 var statistics = _plan.StatisticsMember == null ? "null" : $"query.{_plan.StatisticsMember.Name}";
                 buildHandler.Frames.Code(
-                    $"return new {assembly.Namespace}.{compiledHandlerType.TypeName}({innerField.Usage}, query, {statistics}, _hardcoded);");
+                    $"return new {assembly.Namespace}.{compiledHandlerType.TypeName}({innerField.Usage}, query, {statistics});");
                 break;
 
             case CompiledSourceType.Stateless:
@@ -85,7 +73,7 @@ internal class CompiledQuerySourceBuilder
                 sourceType.AllInjectedFields.Add(inner);
 
                 buildHandler.Frames.Code(
-                    $"return new {assembly.Namespace}.{compiledHandlerType.TypeName}({inner.Usage}, query, _hardcoded);");
+                    $"return new {assembly.Namespace}.{compiledHandlerType.TypeName}({inner.Usage}, query);");
                 break;
 
             case CompiledSourceType.Complex:
@@ -93,20 +81,20 @@ internal class CompiledQuerySourceBuilder
                 sourceType.AllInjectedFields.Add(innerField2);
 
                 buildHandler.Frames.Code(
-                    $"return new {assembly.Namespace}.{compiledHandlerType.TypeName}({innerField2.Usage}, query, _hardcoded);");
+                    $"return new {assembly.Namespace}.{compiledHandlerType.TypeName}({innerField2.Usage}, query);");
                 break;
         }
     }
 
-    private GeneratedType buildHandlerType(GeneratedAssembly assembly,
-        CompiledSourceType handlerType, HardCodedParameters hardcoded)
+    private GeneratedType buildHandlerType(
+        GeneratedAssembly assembly,
+        CompiledSourceType handlerType)
     {
         var queryTypeName = _documentTracking + _plan.QueryType.ToSuffixedTypeName("CompiledQuery");
         var baseType = determineBaseType(handlerType);
         var type = assembly.AddType(queryTypeName, baseType);
 
-
-        configureCommandMethod(type, hardcoded);
+        configureCommandMethod(type);
 
         if (handlerType == CompiledSourceType.Complex)
         {
@@ -180,27 +168,10 @@ internal class CompiledQuerySourceBuilder
         throw new ArgumentOutOfRangeException();
     }
 
-
-    private void configureCommandMethod(GeneratedType compiledType, HardCodedParameters hardcoded)
+    private void configureCommandMethod(GeneratedType compiledType)
     {
         var method = compiledType.MethodFor(nameof(IQueryHandler.ConfigureCommand));
-        var correctedCommandText = _plan.CorrectedCommandText();
-
-        method.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(@{{1}});",
-            Use.Type<CommandBuilder>(), correctedCommandText);
-
-        foreach (var parameter in _plan.Parameters) parameter.GenerateCode(method, _storeOptions);
-
-        if (hardcoded.HasTenantId)
-        {
-            method.Frames.Code($"{{0}}.{nameof(CommandBuilder.AddNamedParameter)}({{1}}, session.TenantId);",
-                Use.Type<CommandBuilder>(), TenantIdArgument.ArgName);
-        }
-
-        if (hardcoded.HasAny())
-        {
-            method.Frames.Code($"_hardcoded.{nameof(HardCodedParameters.Apply)}(parameters);");
-        }
+        _plan.GenerateCode(method, _storeOptions);
     }
 
     private Type determineBaseType(CompiledSourceType sourceType)

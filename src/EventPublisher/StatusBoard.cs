@@ -9,7 +9,7 @@ namespace EventPublisher;
 public class StatusBoard
 {
     private readonly LightweightCache<string, ProjectionStatus> _counts;
-    private StatusContext _context;
+    private readonly StatusContext _context;
     private readonly ActionBlock<UpdateMessage> _updater;
 
     public StatusBoard(Task completion)

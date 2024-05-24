@@ -23,12 +23,32 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
         {
         }
 
+        public void LogSuccess(NpgsqlBatch batch)
+        {
+
+        }
+
+        public void LogFailure(NpgsqlBatch batch, Exception ex)
+        {
+
+        }
+
+        public void LogFailure(Exception ex, string message)
+        {
+
+        }
+
         public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
         {
             LastCommit = commit.Clone();
         }
 
         public void OnBeforeExecute(NpgsqlCommand command)
+        {
+
+        }
+
+        public void OnBeforeExecute(NpgsqlBatch batch)
         {
 
         }

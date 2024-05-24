@@ -2,7 +2,7 @@ using System;
 
 namespace Marten.Events.Daemon.HighWater;
 
-internal class HighWaterStatistics
+public class HighWaterStatistics
 {
     public long LastMark { get; set; }
     public long HighestSequence { get; set; }
@@ -31,6 +31,18 @@ internal class HighWaterStatistics
         }
 
         return HighWaterStatus.Stale;
+    }
+
+    public bool TryGetStaleAge(out TimeSpan timeSinceUpdate)
+    {
+        if (LastUpdated.HasValue)
+        {
+            timeSinceUpdate = Timestamp.Subtract(LastUpdated.Value);
+            return true;
+        }
+
+        timeSinceUpdate = default;
+        return false;
     }
 }
 

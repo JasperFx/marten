@@ -1,9 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Schema;
+using Npgsql;
+using Weasel.Core;
 using Weasel.Core.Migrations;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Connections;
 using Weasel.Postgresql.Migrations;
 
 namespace Marten.Storage;
@@ -26,7 +31,7 @@ public interface ISingleServerMultiTenancy
 }
 
 internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDatabase>, ITenancy,
-    ISingleServerMultiTenancy
+    ISingleServerMultiTenancy, ITenancyWithMasterDatabase
 {
     private readonly StoreOptions _options;
 
@@ -36,11 +41,52 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
     private string[] _lastTenantIds;
 
     private ImHashMap<string, Tenant> _tenants = ImHashMap<string, Tenant>.Empty;
+    private readonly Lazy<NpgsqlDataSource> _masterDataSource;
 
-    public SingleServerMultiTenancy(string masterConnectionString, StoreOptions options): base(masterConnectionString)
+    public SingleServerMultiTenancy(
+        INpgsqlDataSourceFactory dataSourceFactory,
+        string masterConnectionString,
+        StoreOptions options
+    ): base(dataSourceFactory, masterConnectionString)
     {
         _options = options;
-        Cleaner = new CompositeDocumentCleaner(this);
+        Cleaner = new CompositeDocumentCleaner(this, options);
+
+        _masterDataSource =
+            new Lazy<NpgsqlDataSource>(() => options.NpgsqlDataSourceFactory.Create(masterConnectionString));
+    }
+
+    internal class MasterDatabase: PostgresqlDatabase
+    {
+        public MasterDatabase(NpgsqlDataSource dataSource) : base(new DefaultMigrationLogger(), AutoCreate.None, new PostgresqlMigrator(), "MartenMaster", dataSource)
+        {
+        }
+
+        public override IFeatureSchema[] BuildFeatureSchemas()
+        {
+            return Array.Empty<IFeatureSchema>();
+        }
+    }
+
+    private PostgresqlDatabase _tenantDatabase;
+
+    public PostgresqlDatabase TenantDatabase
+    {
+        get
+        {
+            _tenantDatabase ??= new MasterDatabase(_masterDataSource.Value);
+            return _tenantDatabase;
+        }
+    }
+
+    public void Dispose()
+    {
+        foreach (var entry in _tenants.Enumerate())
+        {
+            entry.Value.Database.Dispose();
+        }
+
+        _default?.Database?.Dispose();
     }
 
     public ISingleServerMultiTenancy WithTenants(params string[] tenantIds)
@@ -106,7 +152,7 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
 
     public new async ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
     {
-        var tenant = await GetTenantAsync(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
+        var tenant = await GetTenantAsync(_options.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier)).ConfigureAwait(false);
         return tenant.Database;
     }
 
@@ -132,8 +178,8 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
         return AllDatabases();
     }
 
-    protected override MartenDatabase buildDatabase(string databaseName, string connectionString)
+    protected override MartenDatabase buildDatabase(string databaseName, NpgsqlDataSource npgsqlDataSource)
     {
-        return new MartenDatabase(_options, new ConnectionFactory(connectionString), databaseName);
+        return new MartenDatabase(_options, npgsqlDataSource, databaseName);
     }
 }

@@ -41,12 +41,32 @@ public class CorrelatedMartenLogger: IMartenSessionLogger
         // Do some kind of logging using the correlation id of the ISession
     }
 
+    public void LogSuccess(NpgsqlBatch batch)
+    {
+        // Do some kind of logging using the correlation id of the ISession
+    }
+
+    public void LogFailure(NpgsqlBatch batch, Exception ex)
+    {
+        // Do some kind of logging using the correlation id of the ISession
+    }
+
     public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
     {
         // Do some kind of logging using the correlation id of the ISession
     }
 
     public void OnBeforeExecute(NpgsqlCommand command)
+    {
+
+    }
+
+    public void LogFailure(Exception ex, string message)
+    {
+
+    }
+
+    public void OnBeforeExecute(NpgsqlBatch batch)
     {
 
     }
@@ -88,7 +108,7 @@ public class ScopedSessionFactory: ISessionFactory
 }
 #endregion
 
-#region sample_AddMartenWithCustomSessionCreationByScope
+
 public class Startup
 {
     public IConfiguration Configuration { get; }
@@ -102,6 +122,7 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
+        #region sample_AddMartenWithCustomSessionCreationByScope
         var connectionString = Configuration.GetConnectionString("postgres");
 
         services.AddMarten(opts =>
@@ -114,8 +135,8 @@ public class Startup
             .OptimizeArtifactWorkflow()
             // Chained helper to replace the CustomSessionFactory
             .BuildSessionsWith<ScopedSessionFactory>(ServiceLifetime.Scoped);
+        #endregion
     }
 
     // And other methods we don't care about here...
 }
-#endregion

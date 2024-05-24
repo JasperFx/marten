@@ -27,28 +27,27 @@ public static class NodaTimeExtensions
 
         if (!shouldConfigureJsonSerializer) return;
 
-        var serializer = storeOptions.Serializer();
-
-        switch (serializer)
+        storeOptions.Advanced.ModifySerializer(serializer =>
         {
-            case JsonNetSerializer jsonNetSerializer:
-                jsonNetSerializer.Customize(s =>
-                {
-                    s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-                });
-                break;
-            case SystemTextJsonSerializer systemTextJsonSerializer:
-                systemTextJsonSerializer.Customize(s =>
-                {
-                    s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-                });
-                break;
-            default:
-                throw new NotSupportedException(
-                    "Current serializer cannot be automatically configured for NodaTime. Set shouldConfigureJsonSerializer to false if you're using your own serializer.");
-        }
-
-        storeOptions.Serializer(serializer);
+            switch (serializer)
+            {
+                case JsonNetSerializer jsonNetSerializer:
+                    jsonNetSerializer.Configure(s =>
+                    {
+                        s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+                    });
+                    break;
+                case SystemTextJsonSerializer systemTextJsonSerializer:
+                    systemTextJsonSerializer.Configure(s =>
+                    {
+                        s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+                    });
+                    break;
+                default:
+                    throw new NotSupportedException(
+                        "Current serializer cannot be automatically configured for NodaTime. Set shouldConfigureJsonSerializer to false if you're using your own serializer.");
+            }
+        });
     }
 
     public static void SetNodaTimeTypeMappings()

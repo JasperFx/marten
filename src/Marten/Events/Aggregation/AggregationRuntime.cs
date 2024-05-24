@@ -4,9 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Exceptions;
+using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Services;
@@ -54,7 +57,6 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         EventSlice<TDoc, TId> slice, CancellationToken cancellation,
         ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
     {
-
         session = session.UseTenancyBasedOnSliceAndStorage(Storage, slice);
 
         if (Projection.MatchesAnyDeleteType(slice))
@@ -93,10 +95,13 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
             }
         }
 
+        var lastEvent = slice.Events().LastOrDefault();
         if (aggregate != null)
         {
             Storage.SetIdentity(aggregate, slice.Id);
-            Versioning.TrySetVersion(aggregate, slice.Events().LastOrDefault());
+            Versioning.TrySetVersion(aggregate, lastEvent);
+
+            Projection.ApplyMetadata(aggregate, lastEvent);
         }
 
         // Delete the aggregate *if* it existed prior to these events
@@ -111,7 +116,14 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
             return;
         }
 
-        session.QueueOperation(Storage.Upsert(aggregate, session, slice.Tenant.TenantId));
+        var storageOperation = Storage.Upsert(aggregate, session, slice.Tenant.TenantId);
+        if (Slicer is ISingleStreamSlicer && lastEvent != null && storageOperation is IRevisionedOperation op)
+        {
+            op.Revision = (int)lastEvent.Version;
+            op.IgnoreConcurrencyViolation = true;
+        }
+
+        session.QueueOperation(storageOperation);
     }
 
     public IAggregateVersioning Versioning { get; set; }
@@ -162,4 +174,16 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
     public abstract ValueTask<TDoc> ApplyEvent(IQuerySession session, EventSlice<TDoc, TId> slice,
         IEvent evt, TDoc? aggregate,
         CancellationToken cancellationToken);
+
+    public TDoc CreateDefault(IEvent @event)
+    {
+        try
+        {
+            return (TDoc)Activator.CreateInstance(typeof(TDoc), true);
+        }
+        catch (Exception e)
+        {
+            throw new System.InvalidOperationException($"There is no default constructor for {typeof(TDoc).FullNameInCode()} or Create method for {@event.DotNetTypeName} event type.Check more about the create method convention in documentation: https://martendb.io/events/projections/event-projections.html#create-method-convention. If you're using Upcasting, check if {@event.DotNetTypeName} is an old event type. If it is, make sure to define transformation for it to new event type. Read more in Upcasting docs: https://martendb.io/events/versioning.html#upcasting-advanced-payload-transformations.");
+        }
+    }
 }

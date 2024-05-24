@@ -1,50 +1,57 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using JasperFx.CodeGeneration;
-using JasperFx.Core;
+using JasperFx.CodeGeneration.Frames;
 using JasperFx.Core.Reflection;
 using Marten.Events.CodeGeneration;
 using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
-using Marten.Schema.Arguments;
-using Marten.Util;
 using Npgsql;
+using NpgsqlTypes;
+using Weasel.Postgresql;
 
 namespace Marten.Internal.CompiledQueries;
 
-public class CompiledQueryPlan
+public class CompiledQueryPlan : ICommandBuilder
 {
+    public Type QueryType { get; }
+    public Type OutputType { get; }
+    public const string ParameterPlaceholder = "^";
+
+    public List<MemberInfo> InvalidMembers { get; } = new();
+    public List<IQueryMember> QueryMembers { get; } = new();
+    public List<MemberInfo> IncludeMembers { get; } = new();
+    internal List<IIncludePlan> IncludePlans { get; } = new();
+
+    private readonly List<CommandPlan> _commands = new();
+    public IQueryHandler HandlerPrototype { get; set; }
+    public MemberInfo? StatisticsMember { get; set; }
+
     public CompiledQueryPlan(Type queryType, Type outputType)
     {
         QueryType = queryType;
         OutputType = outputType;
+
+        sortMembers();
     }
 
-    public Type QueryType { get; }
-    public Type OutputType { get; }
+    #region finding members on query type
 
-    public IList<MemberInfo> InvalidMembers { get; } = new List<MemberInfo>();
-
-    public IList<IQueryMember> Parameters { get; } = new List<IQueryMember>();
-
-
-    public NpgsqlCommand Command { get; set; }
-
-    public IQueryHandler HandlerPrototype { get; set; }
-
-    public MemberInfo StatisticsMember { get; set; }
-
-    public IList<MemberInfo> IncludeMembers { get; } = new List<MemberInfo>();
-
-    internal IList<IIncludePlan> IncludePlans { get; } = new List<IIncludePlan>();
-
-    public void FindMembers()
+    private void sortMembers()
     {
-        foreach (var member in findMembers())
+        var members = findMembers().ToArray();
+        if (!members.Any())
+        {
+            Debug.WriteLine(
+                "No public properties or fields found. Sorry, but Marten cannot use primary constructor values as compiled query parameters at this time, use a class with settable properties instead.");
+        }
+
+        foreach (var member in members)
         {
             var memberType = member.GetRawMemberType();
             if (memberType == typeof(QueryStatistics))
@@ -75,12 +82,12 @@ public class CompiledQueryPlan
             else if (member is PropertyInfo)
             {
                 var queryMember = typeof(PropertyQueryMember<>).CloseAndBuildAs<IQueryMember>(member, memberType);
-                Parameters.Add(queryMember);
+                QueryMembers.Add(queryMember);
             }
             else if (member is FieldInfo)
             {
                 var queryMember = typeof(FieldQueryMember<>).CloseAndBuildAs<IQueryMember>(member, memberType);
-                Parameters.Add(queryMember);
+                QueryMembers.Add(queryMember);
             }
         }
     }
@@ -94,24 +101,137 @@ public class CompiledQueryPlan
                      .Where(x => !x.HasAttribute<MartenIgnoreAttribute>())) yield return property;
     }
 
-    public string CorrectedCommandText()
+    #endregion
+
+    public string TenantId { get; set; }
+
+    #region ICommandBuilder implementation
+
+    private CommandPlan _current;
+
+    string ICommandBuilder.LastParameterName => _current.Parameters.LastOrDefault()?.Parameter.ParameterName;
+
+    private CommandPlan appendCommand()
     {
-        var text = Command.CommandText;
+        var plan = new CommandPlan();
+        _commands.Add(plan);
 
-        for (var i = Command.Parameters.Count - 1; i >= 0; i--)
-        {
-            var parameterName = Command.Parameters[i].ParameterName;
-            if (parameterName == TenantIdArgument.ArgName)
-            {
-                continue;
-            }
-
-            text = text.Replace(":" + parameterName, "?");
-        }
-
-        return text;
+        return plan;
     }
 
+    void ICommandBuilder.Append(string sql)
+    {
+        _current ??= appendCommand();
+
+        _current.CommandText += sql;
+    }
+
+    void ICommandBuilder.Append(char character)
+    {
+        _current ??= appendCommand();
+        _current.CommandText += character;
+    }
+
+    NpgsqlParameter ICommandBuilder.AppendParameter<T>(T value)
+    {
+        _current ??= appendCommand();
+        var name = "p" + _parameterIndex;
+        _parameterIndex++;
+        var usage = new ParameterUsage(_current.Parameters.Count, name, value);
+        _current.Parameters.Add(usage);
+
+        _current.CommandText += ParameterPlaceholder;
+
+        return usage.Parameter;
+    }
+
+    private int _parameterIndex = 0;
+
+    NpgsqlParameter ICommandBuilder.AppendParameter(object value)
+    {
+        _current ??= appendCommand();
+        var name = "p" + _parameterIndex;
+        _parameterIndex++;
+        var usage = new ParameterUsage(_current.Parameters.Count, name, value);
+        _current.Parameters.Add(usage);
+
+        _current.CommandText += ParameterPlaceholder;
+
+        return usage.Parameter;
+    }
+
+    NpgsqlParameter ICommandBuilder.AppendParameter(object value, NpgsqlDbType? dbType)
+    {
+        return appendParameter(value, dbType);
+    }
+
+    private NpgsqlParameter appendParameter(object value, NpgsqlDbType? dbType)
+    {
+        _current ??= appendCommand();
+        var name = "p" + _parameterIndex;
+        _parameterIndex++;
+        var usage = new ParameterUsage(_current.Parameters.Count, name, value, dbType);
+        _current.Parameters.Add(usage);
+
+        _current.CommandText += ParameterPlaceholder;
+
+        return usage.Parameter;
+    }
+
+    void ICommandBuilder.AppendParameters(params object[] parameters)
+    {
+        _current ??= appendCommand();
+        throw new NotSupportedException();
+    }
+
+    NpgsqlParameter[] ICommandBuilder.AppendWithParameters(string text)
+    {
+        _current ??= appendCommand();
+        var split = text.Split('?');
+        var parameters = new NpgsqlParameter[split.Length - 1];
+
+        _current.CommandText += split[0];
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            // Just need a placeholder parameter type and value
+            var parameter = appendParameter(DBNull.Value, NpgsqlDbType.Text);
+            parameters[i] = parameter;
+            _current.CommandText += split[i + 1];
+        }
+
+        return parameters;
+    }
+
+    NpgsqlParameter[] ICommandBuilder.AppendWithParameters(string text, char placeholder)
+    {
+        _current ??= appendCommand();
+        var split = text.Split(placeholder);
+        var parameters = new NpgsqlParameter[split.Length - 1];
+
+        _current.CommandText += split[0];
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            // Just need a placeholder parameter type and value
+            var parameter = appendParameter(DBNull.Value, NpgsqlDbType.Text);
+            parameters[i] = parameter;
+            _current.CommandText += split[i + 1];
+        }
+
+        return parameters;
+    }
+
+    void ICommandBuilder.StartNewCommand()
+    {
+        _current = appendCommand();
+    }
+
+    void ICommandBuilder.AddParameters(object parameters)
+    {
+        throw new NotSupportedException(
+            "No, just no. Marten does not support parameters via anonymous objects in compiled queries");
+    }
+
+    #endregion
 
     public QueryStatistics GetStatisticsIfAny(object query)
     {
@@ -130,9 +250,9 @@ public class CompiledQueryPlan
 
     public ICompiledQuery<TDoc, TOut> CreateQueryTemplate<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query)
     {
-        foreach (var parameter in Parameters) parameter.StoreValue(query);
+        foreach (var parameter in QueryMembers) parameter.StoreValue(query);
 
-        if (!(query is IQueryPlanning) && AreAllMemberValuesUnique(query))
+        if (!(query is IQueryPlanning) && areAllMemberValuesUnique(query))
         {
             return query;
         }
@@ -147,16 +267,9 @@ public class CompiledQueryPlan
         }
     }
 
-    private bool AreAllMemberValuesUnique(object query)
-    {
-        return QueryCompiler.Finders.All(x => x.AreValuesUnique(query, this));
-    }
-
     public object TryCreateUniqueTemplate(Type type)
     {
-        var constructor = type.GetConstructors()
-            .OrderByDescending(x => x.GetParameters().Count())
-            .FirstOrDefault();
+        var constructor = type.GetConstructors().MaxBy(x => x.GetParameters().Count());
 
 
         if (constructor == null)
@@ -172,17 +285,17 @@ public class CompiledQueryPlan
         if (query is IQueryPlanning planning)
         {
             planning.SetUniqueValuesForQueryPlanning();
-            foreach (var member in Parameters) member.StoreValue(query);
+            foreach (var member in QueryMembers) member.StoreValue(query);
         }
 
-        if (AreAllMemberValuesUnique(query))
+        if (areAllMemberValuesUnique(query))
         {
             return query;
         }
 
-        foreach (var queryMember in Parameters) queryMember.TryWriteValue(valueSource, query);
+        foreach (var queryMember in QueryMembers) queryMember.TryWriteValue(valueSource, query);
 
-        if (AreAllMemberValuesUnique(query))
+        if (areAllMemberValuesUnique(query))
         {
             return query;
         }
@@ -191,19 +304,65 @@ public class CompiledQueryPlan
                                                 type.FullNameInCode());
     }
 
-    public void ReadCommand(NpgsqlCommand command, StoreOptions storeOptions)
+    private bool areAllMemberValuesUnique(object query)
     {
-        Command = command;
+        return QueryCompiler.Finders.All(x => x.AreValuesUnique(query, this));
+    }
 
-        var parameters = command.Parameters.ToList();
-        parameters.RemoveAll(x => x.ParameterName == TenantIdArgument.ArgName);
-        foreach (var parameter in Parameters) parameter.TryMatch(parameters, storeOptions);
-
-        var missing = Parameters.Where(x => !x.ParameterIndexes.Any());
-        if (missing.Any())
+    public void MatchParameters(StoreOptions options, ICompiledQueryAwareFilter[] filters)
+    {
+        foreach (var commandPlan in _commands)
         {
-            throw new InvalidCompiledQueryException(
-                $"Unable to match compiled query member(s) {missing.Select(x => x.Member.Name).Join(", ")} with a command parameter");
+            foreach (var usage in commandPlan.Parameters)
+            {
+                if (usage.Parameter.Value.Equals(TenantId))
+                {
+                    usage.IsTenant = true;
+                }
+                else
+                {
+                    foreach (var queryMember in QueryMembers)
+                    {
+                        if (queryMember.TryMatch(usage.Parameter, options, filters, out var filter))
+                        {
+                            usage.Member = queryMember;
+                            usage.Filter = filter;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void GenerateCode(GeneratedMethod method, StoreOptions storeOptions)
+    {
+        int number = 1;
+        foreach (var command in _commands)
+        {
+            if (number != 1)
+            {
+                method.Frames.Code($"{{0}}.{nameof(ICommandBuilder.StartNewCommand)}();", Use.Type<ICommandBuilder>());
+            }
+
+            var parameters = $"parameters{number}";
+
+            if (command.Parameters.Any())
+            {
+                method.Frames.Code($"var {parameters} = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(@{{1}}, '{ParameterPlaceholder}');",
+                    Use.Type<ICommandBuilder>(), command.CommandText);
+
+                foreach (var usage in command.Parameters)
+                {
+                    usage.GenerateCode(method, parameters, storeOptions);
+                }
+            }
+            else
+            {
+                method.Frames.Code($"{{0}}.Append({{1}});", Use.Type<ICommandBuilder>(), command.CommandText);
+            }
+
+            number++;
         }
     }
 }

@@ -307,7 +307,7 @@ public record ShoppingCartOpened(
     Guid ClientId
 );
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L19-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcasters_old_event_type' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L21-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcasters_old_event_type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 We want to enrich it with shopping cart status and client name. To have a more straightforward structure, we'd like to group the client id and name into a nested object.
@@ -334,7 +334,7 @@ public enum ShoppingCartStatus
     Cancelled = 4
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L28-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcasters_new_event_type' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L30-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcasters_new_event_type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten provides extended capabilities around that and enables different styles for handling the upcasting transformations.
@@ -360,7 +360,7 @@ options.Events
             )
     );
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L181-L193' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_event_lambda_with_clr_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L183-L195' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_event_lambda_with_clr_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 It will default take the event type name based on the old CLR type. You can also define it explicitly. It can be helpful if you changed the event schema more than once, and the old CLR class doesn't represent the initial event type name. You can do that with:
@@ -379,7 +379,7 @@ options.Events
             )
     );
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L223-L236' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_event_lambda_with_clr_types_and_explicit_type_name' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L225-L238' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_event_lambda_with_clr_types_and_explicit_type_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 #### Raw JSON transformation with Json .NET:
@@ -387,7 +387,7 @@ options.Events
 <!-- snippet: sample_upcast_event_lambda_with_jsonnet_jobject -->
 <a id='snippet-sample_upcast_event_lambda_with_jsonnet_jobject'></a>
 ```cs
-options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+options.UseNewtonsoftForSerialization();
 
 options.Events
     .Upcast<ShoppingCartOpenedWithStatus>(
@@ -403,7 +403,7 @@ options.Events
         )
     );
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L583-L601' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_event_lambda_with_jsonnet_jobject' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L585-L603' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_event_lambda_with_jsonnet_jobject' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Add also static import of helper classes to get a concise syntax as above:
@@ -413,7 +413,7 @@ Add also static import of helper classes to get a concise syntax as above:
 ```cs
 using static Marten.Services.Json.Transformations.JsonNet.JsonTransformations;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L522-L526' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_json_net_static_using' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L524-L528' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_json_net_static_using' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 #### Raw JSON transformation with System.Text.Json:
@@ -421,7 +421,7 @@ using static Marten.Services.Json.Transformations.JsonNet.JsonTransformations;
 <!-- snippet: sample_upcast_event_lambda_with_systemtextjson_json_document -->
 <a id='snippet-sample_upcast_event_lambda_with_systemtextjson_json_document'></a>
 ```cs
-options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+options.UseSystemTextJsonForSerialization();
 
 options.Events
     .Upcast<ShoppingCartOpenedWithStatus>(
@@ -440,7 +440,7 @@ options.Events
         })
     );
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L382-L403' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_event_lambda_with_systemtextjson_json_document' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L384-L405' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_event_lambda_with_systemtextjson_json_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Add also static import of helper classes to get a concise syntax as above:
@@ -450,7 +450,7 @@ Add also static import of helper classes to get a concise syntax as above:
 ```cs
 using static Marten.Services.Json.Transformations.SystemTextJson.JsonTransformations;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L313-L317' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_system_text_json_static_using' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L315-L319' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_system_text_json_static_using' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Upcasting with classes
@@ -458,6 +458,11 @@ using static Marten.Services.Json.Transformations.SystemTextJson.JsonTransformat
 Some people prefer to use classes instead of pure functions. It may help encapsulation, especially if you're using external dependencies for the transformation logic. It may also help in structuring the schema migrations code. You get the same set of capabilities as with functions registration.
 
 #### Transformation with CLR types will look like this:
+
+::: tip
+Note the base class used below has 2 generic arguments, the `Upcast()` method only exists
+on _this_ base class
+:::
 
 <!-- snippet: sample_upcaster_with_clr_types_and_event_type_name_from_old_type -->
 <a id='snippet-sample_upcaster_with_clr_types_and_event_type_name_from_old_type'></a>
@@ -473,7 +478,7 @@ public class ShoppingCartOpenedUpcaster:
         );
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L74-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcaster_with_clr_types_and_event_type_name_from_old_type' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L76-L89' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcaster_with_clr_types_and_event_type_name_from_old_type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Just like with functions, by default, it takes the event type name based on the old CLR type. You can also define it explicitly. It can be helpful if you changed the event schema more than once, and the old CLR class doesn't represent the initial event type name. You can do that with:
@@ -496,7 +501,7 @@ public class ShoppingCartOpenedUpcaster:
         );
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L122-L139' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcaster_with_clr_types_and_explicit_event_type_name' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L124-L141' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcaster_with_clr_types_and_explicit_event_type_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 #### Raw JSON transformation with Json .NET:
@@ -519,7 +524,7 @@ public class ShoppingCartOpenedUpcaster:
         );
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L528-L545' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcaster_with_clr_types_and_event_type_name_from_old_type_with_jsonnet_jobject' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L530-L547' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcaster_with_clr_types_and_event_type_name_from_old_type_with_jsonnet_jobject' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To use it, add the following using:
@@ -529,7 +534,7 @@ To use it, add the following using:
 ```cs
 using Marten.Services.Json.Transformations.JsonNet;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L516-L520' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_json_net_class_using' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L518-L522' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_json_net_class_using' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 #### Raw JSON transformation with System.Text.Json:
@@ -556,7 +561,7 @@ public class ShoppingCartOpenedUpcaster:
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L319-L340' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcaster_with_clr_types_and_event_type_name_from_old_type_with_systemtextjson_json_document' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L321-L342' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcaster_with_clr_types_and_event_type_name_from_old_type_with_systemtextjson_json_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To use it, add the following using:
@@ -566,7 +571,7 @@ To use it, add the following using:
 ```cs
 using Marten.Services.Json.Transformations.SystemTextJson;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L307-L311' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_system_text_json_class_using' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L309-L313' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_system_text_json_class_using' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 #### Registering upcaster class
@@ -576,7 +581,7 @@ using Marten.Services.Json.Transformations.SystemTextJson;
 ```cs
 options.Events.Upcast<ShoppingCartOpenedUpcaster>();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L268-L272' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_event_class_with_clr_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L270-L274' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_event_class_with_clr_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Async Only Upcasters
@@ -600,7 +605,7 @@ public interface IClientRepository
     Task<string> GetClientName(Guid clientId, CancellationToken ct);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L52-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcaster_dependency' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L54-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcaster_dependency' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can use it in all the ways presented above.
@@ -628,7 +633,7 @@ options.Events
         }
     );
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L198-L218' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_lambda_with_clr_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L200-L220' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_lambda_with_clr_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 #### Function with CLR types and explicit event type name
@@ -655,7 +660,7 @@ options.Events
         }
     );
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L242-L263' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_lambda_with_clr_types_and_explicit_type_name' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L244-L265' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_lambda_with_clr_types_and_explicit_type_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 #### Function with raw JSON transformation with Json .NET:
@@ -663,7 +668,7 @@ options.Events
 <!-- snippet: sample_async_upcast_event_lambda_with_jsonnet_jobject -->
 <a id='snippet-sample_async_upcast_event_lambda_with_jsonnet_jobject'></a>
 ```cs
-options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+options.UseNewtonsoftForSerialization();
 
 options.Events
     .Upcast<ShoppingCartOpenedWithStatus>(
@@ -686,7 +691,7 @@ options.Events
         )
     );
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L606-L631' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_lambda_with_jsonnet_jobject' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L608-L633' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_lambda_with_jsonnet_jobject' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Add also static import of helper classes to get a concise syntax as above:
@@ -696,7 +701,7 @@ Add also static import of helper classes to get a concise syntax as above:
 ```cs
 using static Marten.Services.Json.Transformations.JsonNet.JsonTransformations;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L522-L526' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_json_net_static_using' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L524-L528' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_json_net_static_using' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 #### Function with raw JSON transformation with System.Text.Json:
@@ -704,7 +709,7 @@ using static Marten.Services.Json.Transformations.JsonNet.JsonTransformations;
 <!-- snippet: sample_async_upcast_event_lambda_with_systemtextjson_json_document -->
 <a id='snippet-sample_async_upcast_event_lambda_with_systemtextjson_json_document'></a>
 ```cs
-options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+options.UseSystemTextJsonForSerialization();
 
 options.Events
     .Upcast<ShoppingCartOpenedWithStatus>(
@@ -729,7 +734,7 @@ options.Events
         })
     );
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L408-L435' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_lambda_with_systemtextjson_json_document' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L410-L437' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_lambda_with_systemtextjson_json_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Add also static import of helper classes to get a concise syntax as above:
@@ -739,7 +744,7 @@ Add also static import of helper classes to get a concise syntax as above:
 ```cs
 using static Marten.Services.Json.Transformations.SystemTextJson.JsonTransformations;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L313-L317' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_system_text_json_static_using' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L315-L319' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_system_text_json_static_using' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 #### Class with CLR types
@@ -774,7 +779,7 @@ public class ShoppingCartOpenedAsyncOnlyUpcaster:
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L89-L118' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_only_upcaster_with_clr_types_and_event_type_name_from_old_type' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L91-L120' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_only_upcaster_with_clr_types_and_event_type_name_from_old_type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 #### Class with CLR types and explicit event type name
@@ -813,7 +818,7 @@ public class ShoppingCartOpenedAsyncOnlyUpcaster:
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L141-L174' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_only_upcaster_with_clr_types_and_explicit_event_type_name' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L143-L176' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_only_upcaster_with_clr_types_and_explicit_event_type_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 #### Class with raw JSON transformation with Json .NET:
@@ -851,7 +856,7 @@ public class ShoppingCartOpenedAsyncOnlyUpcaster:
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L547-L577' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcaster_with_jsonnet_jobject' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L549-L579' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcaster_with_jsonnet_jobject' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To use it, add the following using:
@@ -861,7 +866,7 @@ To use it, add the following using:
 ```cs
 using Marten.Services.Json.Transformations.JsonNet;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L516-L520' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_json_net_class_using' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L518-L522' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_json_net_class_using' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 #### Class with raw JSON transformation with System.Text.Json:
@@ -901,7 +906,7 @@ public class ShoppingCartOpenedAsyncOnlyUpcaster:
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L342-L376' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcaster_with_systemtextjson_json_document' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L344-L378' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcaster_with_systemtextjson_json_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To use it, add the following using:
@@ -911,7 +916,7 @@ To use it, add the following using:
 ```cs
 using Marten.Services.Json.Transformations.SystemTextJson;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L307-L311' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_system_text_json_class_using' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L309-L313' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_upcast_system_text_json_class_using' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 #### Registering Upcaster class
@@ -921,7 +926,7 @@ using Marten.Services.Json.Transformations.SystemTextJson;
 ```cs
 options.Events.Upcast(new ShoppingCartOpenedAsyncOnlyUpcaster(clientRepository));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L277-L281' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_class_with_clr_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/Upcasters.cs#L279-L283' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_upcast_event_class_with_clr_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Working with multiple Event type versions

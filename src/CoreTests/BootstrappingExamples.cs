@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
+using CoreTests.Examples;
 using Marten;
+using Marten.Internal;
 using Marten.Testing.Documents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -39,6 +41,9 @@ public static class UserModule2
         // that is configured elsewhere
         services.AddSingleton<IConfigureMarten, UserMartenConfiguration>();
 
+        // If you're using multiple databases per Host, register `IConfigureMarten<T>`, like this:
+        services.AddSingleton<IConfigureMarten<IInvoicingStore>, InvoicingStoreConfiguration>();
+
         // Other service registrations specific to the User submodule
         // within the bigger system
 
@@ -46,6 +51,14 @@ public static class UserModule2
     }
 
     #endregion
+}
+
+public class InvoicingStoreConfiguration: IConfigureMarten<IInvoicingStore>
+{
+    public void Configure(IServiceProvider services, StoreOptions options)
+    {
+        // configure options
+    }
 }
 
 #region sample_UserMartenConfiguration

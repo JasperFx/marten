@@ -13,11 +13,11 @@ namespace EventSourcingTests;
 public class query_against_event_documents_Tests: OneOffConfigurationsContext
 {
     private readonly ITestOutputHelper _output;
-    private MembersJoined joined1 = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-    private MembersDeparted departed1 = new MembersDeparted { Members = new[] { "Thom" } };
+    private readonly MembersJoined joined1 = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
+    private readonly MembersDeparted departed1 = new MembersDeparted { Members = new[] { "Thom" } };
 
-    private MembersJoined joined2 = new MembersJoined { Members = new string[] { "Nynaeve", "Egwene" } };
-    private MembersDeparted departed2 = new MembersDeparted { Members = new[] { "Matt" } };
+    private readonly MembersJoined joined2 = new MembersJoined { Members = new string[] { "Nynaeve", "Egwene" } };
+    private readonly MembersDeparted departed2 = new MembersDeparted { Members = new[] { "Matt" } };
 
     #region sample_query-against-event-data
     [Fact]

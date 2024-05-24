@@ -1,35 +1,86 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using AspNetCoreWithMarten;
+using Marten;
+using Marten.Services.Json;
+using Microsoft.AspNetCore.Mvc;
 using Oakton;
+using Weasel.Core;
 
-namespace AspNetCoreWithMarten;
+var builder = WebApplication.CreateBuilder(args);
 
-#region sample_SampleConsoleApp
-public class Program
+// Add services to the container.
+
+builder.Services.AddControllers();
+builder.Host.ApplyOaktonExtensions();
+
+#region sample_StartupConfigureServices
+// This is the absolute, simplest way to integrate Marten into your
+// .NET application with Marten's default configuration
+builder.Services.AddMarten(options =>
 {
-    // It's actually important to return Task<int>
-    // so that the application commands can communicate
-    // success or failure
-    public static Task<int> Main(string[] args)
+    // Establish the connection string to your Marten database
+    options.Connection(builder.Configuration.GetConnectionString("Marten")!);
+
+    // Specify that we want to use STJ as our serializer
+    options.UseSystemTextJsonForSerialization();
+
+    // If we're running in development mode, let Marten just take care
+    // of all necessary schema building and patching behind the scenes
+    if (builder.Environment.IsDevelopment())
     {
-        return CreateHostBuilder(args)
-
-            // This line replaces Build().Start()
-            // in most dotnet new templates
-            .RunOaktonCommands(args);
+        options.AutoCreateSchemaObjects = AutoCreate.All;
     }
-
-    public static IHostBuilder CreateHostBuilder(string[] args) =>
-        Host.CreateDefaultBuilder(args)
-            .ConfigureWebHostDefaults(webBuilder =>
-            {
-                webBuilder.UseStartup<Startup>();
-            });
-}
+});
 #endregion
+
+var app = builder.Build();
+
+
+app.UseHttpsRedirection();
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+#region sample_UserEndpoints
+// You can inject the IDocumentStore and open sessions yourself
+app.MapPost("/user",
+    async (CreateUserRequest create, [FromServices] IDocumentStore store) =>
+{
+    // Open a session for querying, loading, and updating documents
+    await using var session = store.LightweightSession();
+
+    var user = new User {
+        FirstName = create.FirstName,
+        LastName = create.LastName,
+        Internal = create.Internal
+    };
+    session.Store(user);
+
+    await session.SaveChangesAsync();
+});
+
+app.MapGet("/users",
+    async (bool internalOnly, [FromServices] IDocumentStore store, CancellationToken ct) =>
+{
+    // Open a session for querying documents only
+    await using var session = store.QuerySession();
+
+    return await session.Query<User>()
+        .Where(x=> x.Internal == internalOnly)
+        .ToListAsync(ct);
+});
+
+// OR Inject the session directly to skip the management of the session lifetime
+app.MapGet("/user/{id:guid}",
+    async (Guid id, [FromServices] IQuerySession session, CancellationToken ct) =>
+{
+    return await session.LoadAsync<User>(id, ct);
+});
+#endregion
+
+
+await app.RunOaktonCommands(args);
+
+
+record CreateUserRequest(string FirstName, string LastName, bool Internal);
+

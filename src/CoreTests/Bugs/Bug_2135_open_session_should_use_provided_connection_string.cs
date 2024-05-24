@@ -51,7 +51,7 @@ namespace CoreTests.Bugs
             {
                 x.AutoCreateSchemaObjects = AutoCreate.None;
                 x.Schema.For<TestEntity>();
-                x.Connection(ThrowAlways);
+                x.Connection("Host=wrong;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5");
             });
 
             var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);

@@ -25,10 +25,10 @@ public class CodeGenerationOptions
 
             // Marten will only use types that are compiled into
             // the application assembly ahead of time. This is the
-            // V4 "pre-built" model
+            // "pre-built" model
             opts.GeneratedCodeMode = TypeLoadMode.Static;
 
-            // New for V5. More explanation in the docs:)
+            // Explained Below :)
             opts.GeneratedCodeMode = TypeLoadMode.Auto;
         });
 

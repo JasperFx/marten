@@ -7,21 +7,22 @@ using Marten.Internal;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
 public class AnySelectClause: ISelectClause, IQueryHandler<bool>
 {
-    private Statement _topStatement;
+    private ISqlFragment _topStatement;
 
     public AnySelectClause(string from)
     {
         FromObject = from;
     }
 
-    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
-        _topStatement.Configure(builder);
+        _topStatement.Apply(builder);
     }
 
     public bool Handle(DbDataReader reader, IMartenSession session)
@@ -51,7 +52,7 @@ public class AnySelectClause: ISelectClause, IQueryHandler<bool>
 
     public Type SelectedType => typeof(bool);
 
-    public void WriteSelectClause(CommandBuilder sql)
+    public void Apply(ICommandBuilder sql)
     {
         sql.Append("select TRUE as result");
         sql.Append(" from ");
@@ -69,8 +70,8 @@ public class AnySelectClause: ISelectClause, IQueryHandler<bool>
         throw new NotSupportedException();
     }
 
-    public IQueryHandler<T> BuildHandler<T>(IMartenSession session, Statement topStatement,
-        Statement currentStatement)
+    public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement,
+        ISqlFragment currentStatement)
     {
         _topStatement = topStatement;
         return (IQueryHandler<T>)this;

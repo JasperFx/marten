@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -8,10 +9,10 @@ using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Util;
 using Weasel.Postgresql;
-using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Internal.CodeGeneration;
 
@@ -161,7 +162,7 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
         int index,
         Expression<Func<T, object>> memberExpression)
     {
-        var member = FindMembers.Determine(memberExpression).Single();
+        var member = MemberFinder.Determine(memberExpression).Single();
         var variableName = member.Name.ToCamelCase();
         method.Frames.Code(
             $"var {variableName} = reader.GetFieldValue<{member.GetMemberType().FullNameInCode()}>({index});");
@@ -180,14 +181,41 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
         method.Frames.SetMemberValue(member, variableName, documentType, generatedType);
     }
 
+    public static void AssignMemberFromReader<T>(this GeneratedMethod method, GeneratedType generatedType,
+        int index,
+        Expression<Func<T, Dictionary<string, object>>> memberExpression)
+    {
+        var member = FindMembers.Determine(memberExpression).Single();
+        var variableName = member.Name.ToCamelCase();
+
+        method.Frames.Code(
+            $"var {variableName} = _options.Serializer().FromJson<{member.GetMemberType().FullNameInCode()}>(reader, {index});");
+
+        method.Frames.SetMemberValue(member, variableName, typeof(T), generatedType);
+    }
+
     public static void AssignMemberFromReaderAsync<T>(this GeneratedMethod method, GeneratedType generatedType,
         int index,
         Expression<Func<T, object>> memberExpression)
     {
-        var member = FindMembers.Determine(memberExpression).Single();
+        var member = MemberFinder.Determine(memberExpression).Single();
         var variableName = member.Name.ToCamelCase();
         method.Frames.Code(
             $"var {variableName} = await reader.GetFieldValueAsync<{member.GetMemberType().FullNameInCode()}>({index}, {{0}}).ConfigureAwait(false);",
+            Use.Type<CancellationToken>());
+
+        method.Frames.SetMemberValue(member, variableName, typeof(T), generatedType);
+    }
+
+    public static void AssignMemberFromReaderAsync<T>(this GeneratedMethod method, GeneratedType generatedType,
+        int index,
+        Expression<Func<T, Dictionary<string, object>>> memberExpression)
+    {
+        var member = FindMembers.Determine(memberExpression).Single();
+        var variableName = member.Name.ToCamelCase();
+
+        method.Frames.Code(
+            $"var {variableName} = await _options.Serializer().FromJsonAsync<{member.GetMemberType().FullNameInCode()}>(reader, {index}, {{0}}).ConfigureAwait(false);",
             Use.Type<CancellationToken>());
 
         method.Frames.SetMemberValue(member, variableName, typeof(T), generatedType);
@@ -229,7 +257,7 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
     public static void SetParameterFromMemberNonNullableString<T>(this GeneratedMethod method, int index,
         Expression<Func<T, string>> memberExpression)
     {
-        var member = FindMembers.Determine(memberExpression).Single();
+        var member = MemberFinder.Determine(memberExpression).Single();
 
         method.Frames.Code($"parameters[{index}].Value = {{0}}.{member.Name};", Use.Type<T>());
         method.Frames.Code($"parameters[{index}].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;");
@@ -238,7 +266,7 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
     public static void SetParameterFromMember<T>(this GeneratedMethod method, int index,
         Expression<Func<T, object>> memberExpression)
     {
-        var member = FindMembers.Determine(memberExpression).Single();
+        var member = MemberFinder.Determine(memberExpression).Single();
         var memberType = member.GetMemberType();
         var pgType = PostgresqlProvider.Instance.ToParameterType(memberType);
 

@@ -6,9 +6,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.HighWater;
+using Marten.Events.Projections;
 using Marten.Events.TestSupport;
 using Marten.Schema;
 using Marten.Storage;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Marten;
 
@@ -30,6 +33,22 @@ public class AdvancedOperations
     public IDocumentCleaner Clean => _store.Tenancy.Cleaner;
 
     public ISerializer Serializer => _store.Serializer;
+
+    /// <summary>
+    /// Advance the high water mark to the latest detected sequence. Use with caution!
+    /// This is mostly meant for teams that retrofit asynchronous projections to a
+    /// very large event store that has never before used projections. This will help
+    /// the daemon start and function in its "catch up" mode
+    /// </summary>
+    public async Task AdvanceHighWaterMarkToLatestAsync(CancellationToken token)
+    {
+        var databases = await _store.Tenancy.BuildDatabases().ConfigureAwait(false);
+        foreach (var database in databases.OfType<MartenDatabase>())
+        {
+            var detector = new HighWaterDetector(database, _store.Events, NullLogger.Instance);
+            await detector.AdvanceHighWaterMarkToLatest(token).ConfigureAwait(false);
+        }
+    }
 
     /// <summary>
     ///     Mostly for testing support. Register a new IInitialData object
@@ -77,6 +96,7 @@ public class AdvancedOperations
     /// <param name="floor"></param>
     public async Task ResetHiloSequenceFloor<T>(string tenantId, long floor)
     {
+        tenantId = _store.Options.MaybeCorrectTenantId(tenantId);
         var tenant = await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
         await tenant.Database.ResetHiloSequenceFloor<T>(floor).ConfigureAwait(false);
     }
@@ -96,7 +116,7 @@ public class AdvancedOperations
     {
         var database = tenantId == null
             ? _store.Tenancy.Default.Database
-            : (await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false)).Database;
+            : (await _store.Tenancy.GetTenantAsync(_store.Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false)).Database;
 
         return await database.FetchEventStoreStatistics(token).ConfigureAwait(false);
     }
@@ -115,7 +135,7 @@ public class AdvancedOperations
     {
         var database = tenantId == null
             ? _store.Tenancy.Default.Database
-            : (await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false)).Database;
+            : (await _store.Tenancy.GetTenantAsync(_store.Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false)).Database;
 
         return await database.AllProjectionProgress(token).ConfigureAwait(false);
     }
@@ -134,7 +154,7 @@ public class AdvancedOperations
     {
         var tenant = tenantId == null
             ? _store.Tenancy.Default
-            : await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
+            : await _store.Tenancy.GetTenantAsync(_store.Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false);
         var database = tenant.Database;
 
         return await database.ProjectionProgressFor(name, token).ConfigureAwait(false);
@@ -152,5 +172,21 @@ public class AdvancedOperations
         configuration(scenario);
 
         return scenario.Execute(ct);
+    }
+
+    /// <summary>
+    /// Convenience method to retrieve all valid "ShardName" identities of asynchronous projections
+    /// </summary>
+    /// <returns></returns>
+    public IReadOnlyList<ShardName> AllAsyncProjectionShardNames()
+    {
+        return _store
+            .Options
+            .Projections
+            .All
+            .Where(x => x.Lifecycle == ProjectionLifecycle.Async)
+            .SelectMany(x => x.AsyncProjectionShards(_store))
+            .Select(x => x.Name)
+            .ToList();
     }
 }

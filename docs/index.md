@@ -18,7 +18,7 @@ hero:
       link: /introduction
     - theme: alt
       text: Configuration
-      link: /configuration/
+      link: /configuration/hostbuilder
     - theme: alt
       text: Document DB
       link: /documents/

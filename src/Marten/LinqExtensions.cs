@@ -47,7 +47,6 @@ public static class LinqExtensions
     /// <param name="variable"></param>
     /// <param name="matches"></param>
     /// <returns></returns>
-    /// <exception cref="NotSupportedException">when called for collection</exception>
     public static bool In<T>(this T variable, params T[] matches)
     {
         if (typeof(T).IsArray || typeof(T).IsGenericEnumerable())

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -5,6 +6,7 @@ using JasperFx.Core;
 using Marten.Schema;
 using Npgsql;
 using Weasel.Core.Migrations;
+using Weasel.Postgresql.Connections;
 
 namespace Marten.Storage;
 
@@ -26,12 +28,22 @@ public interface IStaticMultiTenancy
 
 public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
 {
+    private readonly INpgsqlDataSourceFactory _dataSourceFactory;
     private ImHashMap<string, MartenDatabase> _databases = ImHashMap<string, MartenDatabase>.Empty;
     private ImHashMap<string, Tenant> _tenants = ImHashMap<string, Tenant>.Empty;
 
-    public StaticMultiTenancy(StoreOptions options): base(options)
+    public StaticMultiTenancy(INpgsqlDataSourceFactory dataSourceFactory, StoreOptions options): base(options)
     {
-        Cleaner = new CompositeDocumentCleaner(this);
+        _dataSourceFactory = dataSourceFactory;
+        Cleaner = new CompositeDocumentCleaner(this, options);
+    }
+
+    public void Dispose()
+    {
+        foreach (var entry in _tenants.Enumerate())
+        {
+            entry.Value.Database.Dispose();
+        }
     }
 
     public bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId)
@@ -58,7 +70,11 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
         var builder = new NpgsqlConnectionStringBuilder(connectionString);
         var identifier = databaseIdentifier ?? $"{builder.Database}@{builder.Host}";
 
-        var database = new MartenDatabase(Options, new ConnectionFactory(connectionString), identifier);
+        var database = new MartenDatabase(
+            Options,
+            _dataSourceFactory.Create(connectionString),
+            identifier
+        );
         _databases = _databases.AddOrUpdate(identifier, database);
 
         return new DatabaseExpression(this, database);
@@ -66,7 +82,11 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
 
     public void AddSingleTenantDatabase(string connectionString, string tenantId)
     {
-        var database = new MartenDatabase(Options, new ConnectionFactory(connectionString), tenantId);
+        var database = new MartenDatabase(
+            Options,
+            _dataSourceFactory.Create(connectionString),
+            tenantId
+        );
         _databases = _databases.AddOrUpdate(tenantId, database);
 
         var expression = new DatabaseExpression(this, database).ForTenants(tenantId);

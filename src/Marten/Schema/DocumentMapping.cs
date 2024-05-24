@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -7,16 +8,19 @@ using System.Text.RegularExpressions;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
-using Marten.Linq.Fields;
+using Marten.Linq.Members;
+using Marten.Linq.Members.ValueCollections;
+using Marten.Linq.Parsing;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Schema.Indexing.FullText;
 using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
-using Marten.Util;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
+using Weasel.Postgresql.Tables.Indexes;
 
 namespace Marten.Schema;
 
@@ -48,34 +52,40 @@ public interface IDocumentType
     string DdlTemplate { get; }
     IReadOnlyHiloSettings HiloSettings { get; }
     TenancyStyle TenancyStyle { get; }
-    DuplicatedField[] DuplicatedFields { get; }
+    IReadOnlyList<DuplicatedField> DuplicatedFields { get; }
     bool IsHierarchy();
     IEnumerable<DocumentIndex> IndexesFor(string column);
     string AliasFor(Type subclassType);
     Type TypeFor(string alias);
-    IField FieldFor(string memberName);
 }
 
-public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
+public class DocumentMapping: IDocumentMapping, IDocumentType
 {
     private static readonly Regex _aliasSanitizer = new("<|>", RegexOptions.Compiled);
     private static readonly Type[] _validIdTypes = { typeof(int), typeof(Guid), typeof(long), typeof(string) };
+    private readonly List<DuplicatedField> _duplicates = new();
     private readonly Lazy<DocumentSchema> _schema;
 
     private string _alias;
     private string _databaseSchemaName;
 
-
     private HiloSettings _hiloSettings;
     private MemberInfo _idMember;
 
-    public DocumentMapping(Type documentType, StoreOptions storeOptions): base("d.data", documentType, storeOptions)
+    public DocumentMapping(Type documentType, StoreOptions storeOptions)
     {
+        if (documentType.IsSimple())
+        {
+            throw new ArgumentOutOfRangeException(nameof(documentType),
+                "This type cannot be used as a Marten document");
+        }
+
         StoreOptions = storeOptions ?? throw new ArgumentNullException(nameof(storeOptions));
 
         DocumentType = documentType ?? throw new ArgumentNullException(nameof(documentType));
         Alias = defaultDocumentAliasName(documentType);
 
+        QueryMembers = new DocumentQueryableMemberCollection(this, StoreOptions);
         IdMember = FindIdMember(documentType);
 
         Metadata = new DocumentMetadataCollection(this);
@@ -88,6 +98,8 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
 
         _schema = new Lazy<DocumentSchema>(() => new DocumentSchema(this));
     }
+
+    internal DocumentQueryableMemberCollection QueryMembers { get; }
 
     public IList<string> IgnoredIndexes { get; } = new List<string>();
 
@@ -113,6 +125,9 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
         }
     }
 
+    // TODO: This should be smarter, maybe nullable option for Schema or some other base type
+    internal bool SkipSchemaGeneration { get; set; }
+
     public MemberInfo IdMember
     {
         get => _idMember;
@@ -129,10 +144,6 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
 
             if (_idMember != null)
             {
-                removeIdField();
-
-                var idField = new IdField(_idMember);
-                setField(_idMember.Name, idField);
                 IdStrategy = defineIdStrategy(DocumentType, StoreOptions);
             }
         }
@@ -144,12 +155,14 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
 
     public Type DocumentType { get; }
 
-    public virtual DbObjectName TableName => new(DatabaseSchemaName, $"{SchemaConstants.TablePrefix}{_alias}");
+    public virtual DbObjectName TableName =>
+        new PostgresqlObjectName(DatabaseSchemaName, $"{SchemaConstants.TablePrefix}{_alias}");
 
     public DocumentMetadataCollection Metadata { get; }
 
-
     public bool UseOptimisticConcurrency { get; set; }
+
+    public bool UseNumericRevisions { get; set; }
 
     public IList<IndexDefinition> Indexes { get; } = new List<IndexDefinition>();
 
@@ -157,10 +170,17 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
 
     public SubClasses SubClasses { get; }
 
-    public DbObjectName UpsertFunction => new(DatabaseSchemaName, $"{SchemaConstants.UpsertPrefix}{_alias}");
-    public DbObjectName InsertFunction => new(DatabaseSchemaName, $"{SchemaConstants.InsertPrefix}{_alias}");
-    public DbObjectName UpdateFunction => new(DatabaseSchemaName, $"{SchemaConstants.UpdatePrefix}{_alias}");
-    public DbObjectName OverwriteFunction => new(DatabaseSchemaName, $"{SchemaConstants.OverwritePrefix}{_alias}");
+    public DbObjectName UpsertFunction =>
+        new PostgresqlObjectName(DatabaseSchemaName, $"{SchemaConstants.UpsertPrefix}{_alias}");
+
+    public DbObjectName InsertFunction =>
+        new PostgresqlObjectName(DatabaseSchemaName, $"{SchemaConstants.InsertPrefix}{_alias}");
+
+    public DbObjectName UpdateFunction =>
+        new PostgresqlObjectName(DatabaseSchemaName, $"{SchemaConstants.UpdatePrefix}{_alias}");
+
+    public DbObjectName OverwriteFunction =>
+        new PostgresqlObjectName(DatabaseSchemaName, $"{SchemaConstants.OverwritePrefix}{_alias}");
 
     public string DatabaseSchemaName
     {
@@ -186,19 +206,22 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
         }
     }
 
+    public PropertySearching PropertySearching { get; set; } = PropertySearching.JSON_Locator_Only;
+    public DeleteStyle DeleteStyle { get; set; } = DeleteStyle.Remove;
+
     public IIdGeneration IdStrategy { get; set; }
 
     public bool StructuralTyped { get; set; }
 
     public string DdlTemplate { get; set; }
+
     IReadOnlyHiloSettings IDocumentType.HiloSettings { get; }
 
     public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
 
     IDocumentType IDocumentType.Root => this;
 
-    public DuplicatedField[] DuplicatedFields => fields().OfType<DuplicatedField>().ToArray();
-
+    public IReadOnlyList<DuplicatedField> DuplicatedFields => _duplicates;
 
     public bool IsHierarchy()
     {
@@ -209,7 +232,6 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
     {
         return Indexes.OfType<DocumentIndex>().Where(x => x.Columns.Contains(column));
     }
-
 
     public string AliasFor(Type subclassType)
     {
@@ -298,7 +320,9 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
     {
         var storeOptions = new StoreOptions { DatabaseSchemaName = databaseSchemaName };
 
-        return new DocumentMapping<T>(storeOptions);
+        var documentMapping = new DocumentMapping<T>(storeOptions);
+        documentMapping.CompileAndValidate();
+        return documentMapping;
     }
 
     public static MemberInfo FindIdMember(Type documentType)
@@ -330,7 +354,6 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
                 .OrderByDescending(x => x.DeclaringType == type).ToArray();
     }
 
-
     public DocumentIndex AddGinIndexToData()
     {
         var index = AddIndex("data");
@@ -344,6 +367,15 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
     public DocumentIndex AddLastModifiedIndex(Action<DocumentIndex> configure = null)
     {
         var index = new DocumentIndex(this, SchemaConstants.LastModifiedColumn);
+        configure?.Invoke(index);
+        Indexes.Add(index);
+
+        return index;
+    }
+
+    public DocumentIndex AddCreatedAtIndex(Action<DocumentIndex> configure = null)
+    {
+        var index = new DocumentIndex(this, SchemaConstants.CreatedAtColumn);
         configure?.Invoke(index);
         Indexes.Add(index);
 
@@ -425,10 +457,12 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
     /// </remarks>
-    public FullTextIndex AddFullTextIndex(string regConfig = FullTextIndex.DefaultRegConfig,
-        Action<FullTextIndex> configure = null)
+    public FullTextIndexDefinition AddFullTextIndex(
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig,
+        Action<FullTextIndexDefinition> configure = null
+    )
     {
-        var index = new FullTextIndex(this, regConfig);
+        var index = FullTextIndexDefinitionFactory.From(this, regConfig);
         configure?.Invoke(index);
 
         return AddFullTextIndexIfDoesNotExist(index);
@@ -442,17 +476,22 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
     /// </remarks>
-    public FullTextIndex AddFullTextIndex(MemberInfo[][] members, string regConfig = FullTextIndex.DefaultRegConfig,
-        string indexName = null)
+    public FullTextIndexDefinition AddFullTextIndex(
+        MemberInfo[][] members,
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig,
+        string indexName = null
+    )
     {
-        var index = new FullTextIndex(this, regConfig, members) { Name = indexName };
+        var index = FullTextIndexDefinitionFactory.From(this, members, regConfig);
+        if (indexName != null)
+            index.Name = indexName;
 
         return AddFullTextIndexIfDoesNotExist(index);
     }
 
-    private FullTextIndex AddFullTextIndexIfDoesNotExist(FullTextIndex index)
+    private FullTextIndexDefinition AddFullTextIndexIfDoesNotExist(FullTextIndexDefinition index)
     {
-        var existing = Indexes.OfType<FullTextIndex>().FirstOrDefault(x => x.Name == index.Name);
+        var existing = Indexes.OfType<FullTextIndexDefinition>().FirstOrDefault(x => x.Name == index.Name);
         if (existing != null)
         {
             return existing;
@@ -502,8 +541,9 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
 
     public DocumentForeignKey AddForeignKey(string memberName, Type referenceType)
     {
-        var field = FieldFor(memberName);
-        return AddForeignKey(field.Members, referenceType);
+        var member = DocumentType.GetProperty(memberName) ?? (MemberInfo)DocumentType.GetField(memberName);
+
+        return AddForeignKey(new MemberInfo[] { member }, referenceType);
     }
 
     public DocumentForeignKey AddForeignKey(MemberInfo[] members, Type referenceType)
@@ -534,7 +574,7 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
 
         if (idType == typeof(Guid))
         {
-            return new CombGuidIdGeneration();
+            return new Identity.CombGuidIdGeneration();
         }
 
         if (idType == typeof(int) || idType == typeof(long))
@@ -582,17 +622,22 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
 
     public DuplicatedField DuplicateField(string memberName, string pgType = null, bool notNull = false)
     {
-        var field = FieldFor(memberName);
+        var member = (QueryableMember)QueryMembers.MemberFor(memberName);
 
-        var duplicate = new DuplicatedField(StoreOptions.Advanced.DuplicatedFieldEnumStorage, field,
-            StoreOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
+        var enumStorage = StoreOptions.Advanced.DuplicatedFieldEnumStorage;
+        var dateTimeStorage = StoreOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime;
+        var duplicate = member is ValueCollectionMember collectionMember
+            ? new DuplicatedArrayField(enumStorage, collectionMember, dateTimeStorage, notNull)
+            : new DuplicatedField(enumStorage, (QueryableMember)member, dateTimeStorage, notNull);
 
         if (pgType.IsNotEmpty())
         {
             duplicate.PgType = pgType;
         }
 
-        setField(memberName, duplicate);
+        QueryMembers.ReplaceMember(member.Member, duplicate);
+
+        _duplicates.Add(duplicate);
 
         return duplicate;
     }
@@ -600,11 +645,35 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
     public DuplicatedField DuplicateField(MemberInfo[] members, string pgType = null, string columnName = null,
         bool notNull = false)
     {
-        var field = FieldFor(members);
-        var memberName = members.Select(x => x.Name).Join("");
+        var member = QueryMembers.FindMember(members[0]);
+        var parent = (IHasChildrenMembers)QueryMembers;
+        for (var i = 1; i < members.Length; i++)
+        {
+            parent = member.As<IHasChildrenMembers>();
+            member = parent.FindMember(members[i]);
+        }
 
-        var duplicatedField = new DuplicatedField(StoreOptions.Advanced.DuplicatedFieldEnumStorage, field,
-            StoreOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
+        if (member is DuplicatedField d)
+        {
+            if (pgType != null) d.PgType = pgType;
+            if (columnName != null) d.ColumnName = columnName;
+            d.NotNull = notNull;
+            return d;
+        }
+
+        if (member is not QueryableMember)
+        {
+            throw new ArgumentOutOfRangeException(nameof(members),
+                $"{members.Select(x => x.Name).Join(".")} of type {member.MemberType.FullNameInCode()} cannot be used as a Duplicated Field by Marten");
+        }
+
+        var enumStorage = StoreOptions.Advanced.DuplicatedFieldEnumStorage;
+        var dateTimeStorage = StoreOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime;
+        var duplicatedField = member is ValueCollectionMember collectionMember
+            ? new DuplicatedArrayField(enumStorage, collectionMember, dateTimeStorage, notNull)
+            : new DuplicatedField(enumStorage, (QueryableMember)member, dateTimeStorage, notNull);
+
+        parent.ReplaceMember(members.Last(), duplicatedField);
 
         if (pgType.IsNotEmpty())
         {
@@ -616,7 +685,7 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
             duplicatedField.ColumnName = columnName;
         }
 
-        setField(memberName, duplicatedField);
+        _duplicates.Add(duplicatedField);
 
         return duplicatedField;
     }
@@ -648,9 +717,14 @@ public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
                 $"{DocumentType.FullName} must be configured for soft deletion to map soft deleted metadata.");
         }
 
+        if (UseNumericRevisions && UseOptimisticConcurrency)
+        {
+            throw new InvalidDocumentException(
+                $"{DocumentType.FullNameInCode()} cannot be configured with UseNumericRevision and UseOptimisticConcurrency. Choose one or the other");
+        }
 
-        var idField = new IdField(IdMember);
-        setField(IdMember.Name, idField);
+        var idField = new IdMember(IdMember);
+        QueryMembers.ReplaceMember(IdMember, idField);
     }
 
 
@@ -666,16 +740,6 @@ public class DocumentMapping<T>: DocumentMapping
     {
         var configure = typeof(T).GetMethod("ConfigureMarten", BindingFlags.Static | BindingFlags.Public);
         configure?.Invoke(null, new object[] { this });
-    }
-
-    /// <summary>
-    ///     Find a field by lambda expression representing a property or field
-    /// </summary>
-    /// <param name="expression"></param>
-    /// <returns></returns>
-    public IField FieldFor(Expression<Func<T, object>> expression)
-    {
-        return FieldFor(FindMembers.Determine(expression));
     }
 
     /// <summary>
@@ -714,6 +778,18 @@ public class DocumentMapping<T>: DocumentMapping
     /// <param name="configure"></param>
     public void Index(Expression<Func<T, object>> expression, Action<ComputedIndex> configure = null)
     {
+        if (expression.Body is NewExpression newExpression)
+        {
+            var members = newExpression.Arguments
+                .Select(FindMembers.Determine).ToArray();
+
+            var index = new ComputedIndex(this, members);
+            configure?.Invoke(index);
+            Indexes.Add(index);
+            return;
+        }
+
+
         Index(new[] { expression }, configure);
     }
 
@@ -745,7 +821,7 @@ public class DocumentMapping<T>: DocumentMapping
         var members = expressions
             .Select(e =>
             {
-                var visitor = new Marten.Linq.Parsing.FindMembers();
+                var visitor = new Marten.Linq.Parsing.MemberFinder();
                 visitor.Visit(e);
                 return visitor.Members.ToArray();
             })
@@ -773,7 +849,7 @@ public class DocumentMapping<T>: DocumentMapping
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
     /// </remarks>
-    public FullTextIndex FullTextIndex(string regConfig, params Expression<Func<T, object>>[] expressions)
+    public FullTextIndexDefinition FullTextIndex(string regConfig, params Expression<Func<T, object>>[] expressions)
     {
         return AddFullTextIndex(
             expressions

@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,27 +8,31 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
+using Marten.Subscriptions;
 using Marten.Util;
+using Microsoft.Extensions.Logging.Abstractions;
 using NpgsqlTypes;
 using Weasel.Core;
+using Weasel.Postgresql;
 using static Marten.Events.EventMappingExtensions;
 
 namespace Marten.Events;
 
-public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
+public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable
 {
     private readonly Cache<Type, string> _aggregateNameByType =
         new(type => type.Name.ToTableAlias());
 
     private readonly Cache<string, Type> _aggregateTypeByName;
 
-    private readonly Cache<string, EventMapping> _byEventName = new();
+    private readonly Cache<string, EventMapping?> _byEventName = new();
 
     private readonly Cache<Type, EventMapping> _events = new();
 
@@ -34,10 +40,11 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
 
     private readonly Ref<ImHashMap<string, Type>> _nameToType = Ref.Of(ImHashMap<string, Type>.Empty);
 
-    private string _databaseSchemaName;
+    private string? _databaseSchemaName;
 
     private DocumentStore _store;
     private StreamIdentity _streamIdentity = StreamIdentity.AsGuid;
+    private readonly CancellationTokenSource _cancellation = new();
 
     internal EventGraph(StoreOptions options)
     {
@@ -51,7 +58,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
             return mapping;
         };
 
-        _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
+        _byEventName.OnMissing = name => AllEvents().FirstOrDefault(x => x.EventTypeName == name);
 
         _inlineProjections = new Lazy<IProjection[]>(() => options.Projections.BuildInlineProjections(_store));
 
@@ -62,9 +69,15 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
 
     internal StoreOptions Options { get; }
 
-    internal DbObjectName Table => new(DatabaseSchemaName, "mt_events");
+    internal DbObjectName Table => new PostgresqlObjectName(DatabaseSchemaName, "mt_events");
 
     internal EventMetadataCollection Metadata { get; } = new();
+
+    /// <summary>
+    /// TimeProvider used for event timestamping metadata. Replace for controlling the timestamps
+    /// in testing
+    /// </summary>
+    public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
 
     /// <summary>
     ///     Configure whether event streams are identified with Guid or strings
@@ -241,6 +254,16 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
 
     IReadonlyMetadataConfig IReadOnlyEventStoreOptions.MetadataConfig => MetadataConfig;
 
+    void IEventStoreOptions.Subscribe(ISubscription subscription)
+    {
+        Options.Projections.Subscribe(subscription);
+    }
+
+    void IEventStoreOptions.Subscribe(ISubscription subscription, Action<ISubscriptionOptions>? configure)
+    {
+        Options.Projections.Subscribe(subscription, configure);
+    }
+
     private Type findAggregateType(string name)
     {
         foreach (var aggregateType in Options.Projections.AllAggregateTypes())
@@ -270,9 +293,27 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
         return _events;
     }
 
-    internal EventMapping EventMappingFor(string eventType)
+    internal EventMapping? EventMappingFor(string eventType)
     {
         return _byEventName[eventType];
+    }
+
+    // Fetch additional event aliases that map to these types
+    internal IReadOnlySet<string> AliasesForEvents(IReadOnlyCollection<Type> types)
+    {
+        var aliases = new HashSet<string>();
+
+        foreach (var mapping in _byEventName)
+        {
+            if (mapping is null)
+                continue;
+            if (types.Contains(mapping.DocumentType))
+            {
+                aliases.Add(mapping.Alias);
+            }
+        }
+
+        return aliases;
     }
 
     internal bool IsActive(StoreOptions options)
@@ -356,9 +397,47 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions
     internal void Initialize(DocumentStore store)
     {
         _store = store;
+
+        var logger = (_store.Options.Logger() as DefaultMartenLogger)?.Inner ?? NullLogger.Instance;
+
+
+        _tombstones = new RetryBlock<UpdateBatch>(executeTombstoneBlock, logger, _cancellation.Token);
         foreach (var mapping in _events)
         {
             mapping.JsonTransformation(null);
         }
+    }
+
+    private bool _isDisposed;
+
+    public void Dispose()
+    {
+        if (_isDisposed) return;
+        _isDisposed = true;
+
+        _cancellation.Cancel();
+        _cancellation.Dispose();
+        _tombstones?.SafeDispose();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_tombstones != null)
+            {
+                await _tombstones.DrainAsync().ConfigureAwait(false);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // Ignore this
+        }
+        catch (OperationCanceledException)
+        {
+            // Nothing, get out of here
+        }
+
+        Dispose();
     }
 }

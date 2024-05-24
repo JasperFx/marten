@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.PLv8.Testing.Transforms;
 
-public class document_transforms_multi_tenancy : IAsyncLifetime
+public class document_transforms_multi_tenancy: IAsyncLifetime
 {
     private IHost _host;
     private IDocumentStore theStore;
@@ -23,13 +23,13 @@ public class document_transforms_multi_tenancy : IAsyncLifetime
                     opts.UseJavascriptTransformsAndPatching(x => x.LoadFile("default_username.js"));
 
                     opts
-                        .MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
-                        .WithTenants("tenant3", "tenant4"); // own database
-
+                        .MultiTenantedWithSingleServer(
+                            ConnectionSource.ConnectionString,
+                            t => t.WithTenants("tenant3", "tenant4")
+                        ); // own database
 
                     opts.RegisterDocumentType<User>();
                     opts.RegisterDocumentType<Target>();
-
                 }).ApplyAllDatabaseChangesOnStartup();
             }).StartAsync();
 
@@ -46,7 +46,6 @@ public class document_transforms_multi_tenancy : IAsyncLifetime
     [Fact]
     public async Task transform_for_tenants()
     {
-
         var user1 = new MultiTenantUser() { FirstName = "Jeremy", LastName = "Miller" };
         var user2 = new MultiTenantUser { FirstName = "Corey", LastName = "Kaylor" };
         var user3 = new MultiTenantUser { FirstName = "Tim", LastName = "Cools", UserName = "NotTransformed" };
@@ -54,7 +53,7 @@ public class document_transforms_multi_tenancy : IAsyncLifetime
         await theStore.BulkInsertAsync("Purple", new MultiTenantUser[] { user1, user2 });
         await theStore.BulkInsertAsync("Orange", new MultiTenantUser[] { user3 });
 
-        await theStore.TransformAsync("Purple",x => x.All<MultiTenantUser>("default_username"));
+        await theStore.TransformAsync("Purple", x => x.All<MultiTenantUser>("default_username"));
 
         await using (var query = theStore.QuerySession("Purple"))
         {

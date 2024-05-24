@@ -21,7 +21,7 @@ using (var session = theStore.LightweightSession("tenant1"))
     session.SaveChanges();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L68-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L65-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_tenancy-scoping-session-write-1'></a>
 ```cs
 // Write some User documents to tenant "tenant1"
@@ -32,7 +32,7 @@ using (var session = theStore.LightweightSession("tenant1"))
     session.SaveChanges();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L115-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L112-L122' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-1' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_tenancy-scoping-session-write-2'></a>
 ```cs
 // Write some User documents to tenant "tenant1"
@@ -144,6 +144,52 @@ using (var session = store.QuerySession())
 <!-- endSnippet -->
 
 In some cases, You may want to disable using the default tenant for storing documents, set `StoreOptions.DefaultTenantUsageEnabled` to `false`. With this option disabled, Tenant (non-default tenant) should be passed via method argument or `SessionOptions` when creating a session using document store. Marten will throw an exception `DefaultTenantUsageDisabledException` if a session is created using default tenant.
+
+## Querying Multi-Tenanted Documents
+
+Inside the LINQ provider, when you open a session for a specific tenant like so:
+
+<!-- snippet: sample_tenancy-scoping-session-read -->
+<a id='snippet-sample_tenancy-scoping-session-read'></a>
+```cs
+// When you query for data from the "tenant1" tenant,
+// you only get data for that tenant
+using (var query = store.QuerySession("tenant1"))
+{
+    query.Query<User>()
+        .Select(x => x.UserName)
+        .ToList()
+        .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L55-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Marten will automatically filter the LINQ query for the current tenant _if the current document type is tenanted_. However, if
+you want to query across multiple tenants or across documents for any tenant, you're still in luck with the `TenantIsOneOf()` LINQ
+filter:
+
+<!-- snippet: sample_tenant_is_one_of -->
+<a id='snippet-sample_tenant_is_one_of'></a>
+```cs
+// query data for a selected list of tenants
+var actual = await query.Query<Target>().Where(x => x.TenantIsOneOf("Green", "Red") && x.Flag)
+    .OrderBy(x => x.Id).Select(x => x.Id).ToListAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L402-L408' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenant_is_one_of' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Or the `AnyTenant()` filter:
+
+<!-- snippet: sample_any_tenant -->
+<a id='snippet-sample_any_tenant'></a>
+```cs
+// query data across all tenants
+var actual = query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
+    .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L347-L353' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any_tenant' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Configuring Tenancy
 

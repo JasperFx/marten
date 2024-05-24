@@ -10,10 +10,11 @@ using Marten.Schema.Identity;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using CombGuidIdGeneration = Marten.Schema.Identity.CombGuidIdGeneration;
 
 namespace DocumentDbTests.Writing.Identity.Sequences;
 
-public class CombGuidIdGenerationTests : OneOffConfigurationsContext
+public class CombGuidIdGenerationTests: OneOffConfigurationsContext
 {
     [Fact]
     public void generate_lots_of_guids()
@@ -44,6 +45,7 @@ public class CombGuidIdGenerationTests : OneOffConfigurationsContext
         StoreOptions(options =>
         {
             #region sample_configuring-global-sequentialguid
+
             options.Policies.ForAllDocuments(m =>
             {
                 if (m.IdType == typeof(Guid))
@@ -51,6 +53,7 @@ public class CombGuidIdGenerationTests : OneOffConfigurationsContext
                     m.IdStrategy = new CombGuidIdGeneration();
                 }
             });
+
             #endregion
         });
 
@@ -77,12 +80,16 @@ public class CombGuidIdGenerationTests : OneOffConfigurationsContext
         StoreOptions(options =>
         {
             #region sample_configuring-mapping-specific-sequentialguid
+
             options.Schema.For<UserWithGuid>().IdStrategy(new CombGuidIdGeneration());
+
             #endregion
         });
 
-        theStore.StorageFeatures.MappingFor(typeof(UserWithGuid)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
-        theStore.StorageFeatures.MappingFor(typeof(UserWithGuid2)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
+        theStore.StorageFeatures.MappingFor(typeof(UserWithGuid)).As<DocumentMapping>().IdStrategy
+            .ShouldBeOfType<CombGuidIdGeneration>();
+        theStore.StorageFeatures.MappingFor(typeof(UserWithGuid2)).As<DocumentMapping>().IdStrategy
+            .ShouldBeOfType<CombGuidIdGeneration>();
     }
 
     [Fact]
@@ -118,6 +125,4 @@ public class CombGuidIdGenerationTests : OneOffConfigurationsContext
         session.Store(new UserWithGuid { LastName = lastName });
         session.SaveChanges();
     }
-
-
 }

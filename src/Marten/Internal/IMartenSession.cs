@@ -17,7 +17,7 @@ public interface IMartenSession: IDisposable, IAsyncDisposable
 {
     ISerializer Serializer { get; }
     Dictionary<Type, object> ItemMap { get; }
-    string TenantId { get; }
+    public string TenantId { get; }
     IMartenDatabase Database { get; }
 
     VersionTracker Versions { get; }
@@ -65,21 +65,6 @@ public interface IMartenSession: IDisposable, IAsyncDisposable
     IEventStorage EventStorage();
 
     string NextTempTableName();
-
-    /// <summary>
-    ///     Execute a single command against the database with this session's connection
-    /// </summary>
-    /// <param name="cmd"></param>
-    /// <returns></returns>
-    int Execute(NpgsqlCommand cmd);
-
-    /// <summary>
-    ///     Execute a single command against the database with this session's connection
-    /// </summary>
-    /// <param name="command"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new());
 
     /// <summary>
     ///     Execute a single command against the database with this session's connection and return the results

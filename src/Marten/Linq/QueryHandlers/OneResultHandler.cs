@@ -7,10 +7,10 @@ using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Linq.Selectors;
-using Marten.Linq.SqlGeneration;
 using Marten.Util;
 using Npgsql;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.QueryHandlers;
 
@@ -21,9 +21,9 @@ internal class OneResultHandler<T>: IQueryHandler<T>, IMaybeStatefulHandler
     private readonly bool _canBeMultiples;
     private readonly bool _canBeNull;
     private readonly ISelector<T> _selector;
-    private readonly Statement _statement;
+    private readonly ISqlFragment _statement;
 
-    public OneResultHandler(Statement statement, ISelector<T> selector,
+    public OneResultHandler(ISqlFragment statement, ISelector<T> selector,
         bool canBeNull = true, bool canBeMultiples = true)
     {
         _statement = statement;
@@ -45,9 +45,9 @@ internal class OneResultHandler<T>: IQueryHandler<T>, IMaybeStatefulHandler
         return new OneResultHandler<T>(null, selector, _canBeNull, _canBeMultiples);
     }
 
-    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
-        _statement.Configure(builder);
+        _statement.Apply(builder);
     }
 
     public T Handle(DbDataReader reader, IMartenSession session)

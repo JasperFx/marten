@@ -1,9 +1,11 @@
-﻿using System;
+using System;
 using System.Linq;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
-using Marten.Linq.Fields;
+using Marten.Linq;
+using Marten.Linq.Members;
+using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
@@ -29,6 +31,7 @@ public class MartenRegistryTests : OneOffConfigurationsContext
                 })
                 .GinIndexJsonData(x => x.Name = "my_gin_index")
                 .IndexLastModified(x => x.IsConcurrent = true)
+                .IndexCreatedAt(x => x.IsConcurrent = true)
                 .SoftDeletedWithIndex(x => x.Method = IndexMethod.brin);
 
             _.Schema.For<User>().PropertySearching(PropertySearching.JSON_Locator_Only);
@@ -48,14 +51,16 @@ public class MartenRegistryTests : OneOffConfigurationsContext
     public void picks_up_searchable_on_property()
     {
         theStorage.MappingFor(typeof (Organization)).As<DocumentMapping>()
-            .FieldFor(nameof(Organization.Name)).ShouldBeOfType<DuplicatedField>();
+            .QueryMembers
+            .MemberFor(nameof(Organization.Name)).ShouldBeOfType<DuplicatedField>();
     }
 
     [Fact]
     public void picks_up_searchable_on_field()
     {
         theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>()
-            .FieldFor(nameof(Organization.OtherName)).ShouldBeOfType<DuplicatedField>();
+            .QueryMembers
+            .MemberFor(nameof(Organization.OtherName)).ShouldBeOfType<DuplicatedField>();
     }
 
     [Fact]
@@ -104,6 +109,16 @@ public class MartenRegistryTests : OneOffConfigurationsContext
         var mapping = theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>();
 
         var index = mapping.IndexesFor(SchemaConstants.LastModifiedColumn).Single();
+
+        index.IsConcurrent.ShouldBe(true);
+    }
+
+    [Fact]
+    public void mt_created_at_index_is_added()
+    {
+        var mapping = theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>();
+
+        var index = mapping.IndexesFor(SchemaConstants.CreatedAtColumn).Single();
 
         index.IsConcurrent.ShouldBe(true);
     }

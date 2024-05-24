@@ -1,13 +1,35 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
+using Marten.Events.Fetching;
 using Marten.Exceptions;
+using Marten.Subscriptions;
 
 namespace Marten.Events.Projections;
+
+public class ErrorHandlingOptions
+{
+    /// <summary>
+    /// Should the daemon skip any "poison pill" events that fail in user projection code?
+    /// </summary>
+    public bool SkipApplyErrors { get; set; }
+
+    /// <summary>
+    /// Should the daemon skip any unknown event types encountered when trying to
+    /// fetch events?
+    /// </summary>
+    public bool SkipUnknownEvents { get; set; }
+
+    /// <summary>
+    /// Should the daemon skip any events that experience serialization errors?
+    /// </summary>
+    public bool SkipSerializationErrors { get; set; }
+}
 
 /// <summary>
 ///     Used to register projections with Marten
@@ -20,27 +42,55 @@ public class ProjectionOptions: DaemonSettings
     private Lazy<Dictionary<string, AsyncProjectionShard>> _asyncShards;
     private ImHashMap<Type, object> _liveAggregators = ImHashMap<Type, object>.Empty;
 
+    internal readonly IFetchPlanner[] _builtInPlanners = [new InlineFetchPlanner(), new AsyncFetchPlanner(), new LiveFetchPlanner()];
+
+    private readonly List<ISubscriptionSource> _subscriptions = new();
+
     internal ProjectionOptions(StoreOptions options)
     {
         _options = options;
     }
 
+    /// <summary>
+    /// Async daemon error handling policies while running in a rebuild mode. The defaults
+    /// are to *not* skip any errors
+    /// </summary>
+    public ErrorHandlingOptions RebuildErrors { get; } = new();
+
+    /// <summary>
+    /// Async daemon error handling polices while running continuously. The defaults
+    /// are to skip serialization errors, unknown events, and apply errors
+    /// </summary>
+    public ErrorHandlingOptions Errors { get; } = new()
+    {
+        SkipApplyErrors = true,
+        SkipSerializationErrors = true,
+        SkipUnknownEvents = true
+    };
+
+    internal IEnumerable<IFetchPlanner> allPlanners()
+    {
+        foreach (var planner in FetchPlanners)
+        {
+            yield return planner;
+        }
+
+        foreach (var planner in _builtInPlanners)
+        {
+            yield return planner;
+        }
+    }
+
+    /// <summary>
+    /// Any custom or extended IFetchPlanner strategies for customizing FetchForWriting() behavior
+    /// </summary>
+    public List<IFetchPlanner> FetchPlanners { get; } = new();
+
     internal IList<IProjectionSource> All { get; } = new List<IProjectionSource>();
-
-    internal IList<AsyncProjectionShard> BuildAllShards(DocumentStore store)
-    {
-        return All.SelectMany(x => x.AsyncProjectionShards(store)).ToList();
-    }
-
-    internal bool DoesPersistAggregate(Type aggregateType)
-    {
-        return All.OfType<IAggregateProjection>().Any(x =>
-            x.AggregateType == aggregateType && x.Lifecycle != ProjectionLifecycle.Live);
-    }
 
     internal bool HasAnyAsyncProjections()
     {
-        return All.Any(x => x.Lifecycle == ProjectionLifecycle.Async);
+        return All.Any(x => x.Lifecycle == ProjectionLifecycle.Async) || _subscriptions.Any();
     }
 
     internal IEnumerable<Type> AllAggregateTypes()
@@ -48,6 +98,12 @@ public class ProjectionOptions: DaemonSettings
         foreach (var kv in _liveAggregators.Enumerate()) yield return kv.Key;
 
         foreach (var projection in All.OfType<IAggregateProjection>()) yield return projection.AggregateType;
+    }
+
+    public bool TryFindAggregate(Type documentType, out IAggregateProjection projection)
+    {
+        projection = All.OfType<IAggregateProjection>().FirstOrDefault(x => x.AggregateType == documentType);
+        return projection != null;
     }
 
     internal IProjection[] BuildInlineProjections(DocumentStore store)
@@ -142,27 +198,6 @@ public class ProjectionOptions: DaemonSettings
     }
 
 
-    // Note: recent one
-    /// <summary>
-    /// Register Snapshot or Live Stream aggregation for entity of type T.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="lifecycle">Override the aggregate lifecycle. The default is Inline</param>
-    /// <param name="asyncConfiguration">
-    ///     Optional configuration including teardown instructions for the usage of this
-    ///     projection within the async projection daempon
-    /// </param>
-    /// <returns>The extended storage configuration for document T</returns>
-    [Obsolete(
-        "Please switch to Snapshot (in case of inline or async lifecycle) or LiveStreamAggregation method (for online lifecycle).")]
-    public MartenRegistry.DocumentMappingExpression<T> SelfAggregate<T>(
-        ProjectionLifecycle lifecycle,
-        Action<AsyncOptions> asyncConfiguration = null
-    ) =>
-        lifecycle == ProjectionLifecycle.Live
-            ? LiveStreamAggregation<T>(asyncConfiguration)
-            : Snapshot<T>(lifecycle.Map(), asyncConfiguration);
-
     /// <summary>
     /// Register live stream aggregation. It's needed for pre-building generated types
     /// (Read more in https://martendb.io/configuration/prebuilding.html).
@@ -173,8 +208,15 @@ public class ProjectionOptions: DaemonSettings
     /// <returns>The extended storage configuration for entity T</returns>
     public MartenRegistry.DocumentMappingExpression<T> LiveStreamAggregation<T>(
         Action<AsyncOptions> asyncConfiguration = null
-    ) =>
-        singleStreamProjection<T>(ProjectionLifecycle.Live, asyncConfiguration);
+    )
+    {
+        var expression = singleStreamProjection<T>(ProjectionLifecycle.Live, null, asyncConfiguration);
+
+        // Hack to address https://github.com/JasperFx/marten/issues/2610
+        _options.Storage.MappingFor(typeof(T)).SkipSchemaGeneration = true;
+
+        return expression;
+    }
 
     /// <summary>
     /// Perform automated snapshot on each event for selected entity type
@@ -183,17 +225,36 @@ public class ProjectionOptions: DaemonSettings
     /// <param name="lifecycle">Override the snapshot lifecycle. The default is Inline</param>
     /// <param name="asyncConfiguration">
     ///     Optional configuration including teardown instructions for the usage of this
-    ///     projection within the async projection daempon
+    ///     projection within the async projection daemon
     /// </param>
     /// <returns>The extended storage configuration for document T</returns>
     public MartenRegistry.DocumentMappingExpression<T> Snapshot<T>(
         SnapshotLifecycle lifecycle,
         Action<AsyncOptions> asyncConfiguration = null
     ) =>
-        singleStreamProjection<T>(lifecycle.Map(), asyncConfiguration);
+        singleStreamProjection<T>(lifecycle.Map(), null, asyncConfiguration);
+
+    /// <summary>
+    /// Perform automated snapshot on each event for selected entity type
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="lifecycle">Override the snapshot lifecycle. The default is Inline</param>
+    /// <param name="configureProjection">Use it to further customize the projection.</param>
+    /// <param name="asyncConfiguration">
+    ///     Optional configuration including teardown instructions for the usage of this
+    ///     projection within the async projection daemon
+    /// </param>
+    /// <returns>The extended storage configuration for document T</returns>
+    public MartenRegistry.DocumentMappingExpression<T> Snapshot<T>(
+        SnapshotLifecycle lifecycle,
+        Action<SingleStreamProjection<T>> configureProjection,
+        Action<AsyncOptions> asyncConfiguration = null
+    ) =>
+        singleStreamProjection<T>(lifecycle.Map(), configureProjection, asyncConfiguration);
 
     private MartenRegistry.DocumentMappingExpression<T> singleStreamProjection<T>(
         ProjectionLifecycle lifecycle,
+        Action<SingleStreamProjection<T>> configureProjection = null,
         Action<AsyncOptions> asyncConfiguration = null
     )
     {
@@ -201,6 +262,8 @@ public class ProjectionOptions: DaemonSettings
         var expression = _options.Schema.For<T>();
 
         var source = new SingleStreamProjection<T> { Lifecycle = lifecycle };
+
+        configureProjection?.Invoke(source);
 
         asyncConfiguration?.Invoke(source.Options);
 
@@ -251,12 +314,49 @@ public class ProjectionOptions: DaemonSettings
 
         projection.AssembleAndAssertValidity();
 
+        if (lifecycle == ProjectionLifecycle.Live)
+        {
+            // Hack to address https://github.com/JasperFx/marten/issues/3140
+            _options.Storage.MappingFor(typeof(T)).SkipSchemaGeneration = true;
+        }
+
         All.Add(projection);
+    }
+
+    /// <summary>
+    /// Add a new event subscription to this store
+    /// </summary>
+    /// <param name="subscription"></param>
+    public void Subscribe(ISubscriptionSource subscription)
+    {
+        _subscriptions.Add(subscription);
+    }
+
+    /// <summary>
+    /// Add a new event subscription to this store with the option to configure the filtering
+    /// and async daemon behavior
+    /// </summary>
+    /// <param name="subscription"></param>
+    /// <param name="configure"></param>
+    public void Subscribe(ISubscription subscription, Action<ISubscriptionOptions>? configure = null)
+    {
+        var source = subscription as ISubscriptionSource ?? new SubscriptionWrapper(subscription);
+
+        if (source is ISubscriptionOptions options)
+        {
+            configure?.Invoke(options);
+        }
+        else if (configure != null)
+        {
+            throw new InvalidOperationException("Unable to apply subscription options to " + subscription);
+        }
+
+        _subscriptions.Add(source);
     }
 
     internal bool Any()
     {
-        return All.Any();
+        return All.Any() || _subscriptions.Any();
     }
 
     internal ILiveAggregator<T> AggregatorFor<T>() where T : class
@@ -293,15 +393,15 @@ public class ProjectionOptions: DaemonSettings
 
     internal void AssertValidity(DocumentStore store)
     {
-        var duplicateNames = All
-            .GroupBy(x => x.ProjectionName)
+        var duplicateNames = All.Select(x => x.ProjectionName).Concat(_subscriptions.Select(x => x.SubscriptionName))
+            .GroupBy(x => x)
             .Where(x => x.Count() > 1)
-            .Select(group => $"Duplicate projection name '{group.Key}': {group.Select(x => x.ToString()).Join(", ")}")
+            .Select(group => $"Duplicate projection or subscription name '{group.Key}': {group.Select(x => x.ToString()).Join(", ")}")
             .ToArray();
 
         if (duplicateNames.Any())
         {
-            throw new InvalidOperationException(duplicateNames.Join("; "));
+            throw new DuplicateSubscriptionNamesException(duplicateNames.Join("; "));
         }
 
         var messages = All.Concat(_liveAggregateSources.Values)
@@ -315,6 +415,7 @@ public class ProjectionOptions: DaemonSettings
             return All
                 .Where(x => x.Lifecycle == ProjectionLifecycle.Async)
                 .SelectMany(x => x.AsyncProjectionShards(store))
+                .Concat(_subscriptions.SelectMany(x => x.AsyncProjectionShards(store)))
                 .ToDictionary(x => x.Name.Identity);
         });
 
@@ -324,11 +425,11 @@ public class ProjectionOptions: DaemonSettings
         }
     }
 
-    internal IReadOnlyList<AsyncProjectionShard> AllShards()
+    // This has to be public for CritterStackPro
+    public IReadOnlyList<AsyncProjectionShard> AllShards()
     {
         return _asyncShards.Value.Values.ToList();
     }
-
     internal bool TryFindAsyncShard(string projectionOrShardName, out AsyncProjectionShard shard)
     {
         return _asyncShards.Value.TryGetValue(projectionOrShardName, out shard);
@@ -340,14 +441,27 @@ public class ProjectionOptions: DaemonSettings
         return source != null;
     }
 
+    internal bool TryFindSubscription(string projectionName, out ISubscriptionSource source)
+    {
+        source = _subscriptions.FirstOrDefault(x => x.SubscriptionName.EqualsIgnoreCase(projectionName));
+        return source != null;
+    }
+
 
     internal string[] AllProjectionNames()
     {
-        return All.Select(x => $"'{x.ProjectionName}'").ToArray();
+        return All.Select(x => $"'{x.ProjectionName}'").Concat(_subscriptions.Select(x => $"'{x.SubscriptionName}'")).ToArray();
     }
 
     internal IEnumerable<Type> AllPublishedTypes()
     {
-        return All.SelectMany(x => x.PublishedTypes()).Distinct();
+        return All.Where(x => x.Lifecycle != ProjectionLifecycle.Live).SelectMany(x => x.PublishedTypes()).Distinct();
+    }
+}
+
+public class DuplicateSubscriptionNamesException: MartenException
+{
+    public DuplicateSubscriptionNamesException(string message) : base(message)
+    {
     }
 }

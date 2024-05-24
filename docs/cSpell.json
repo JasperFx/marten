@@ -34,7 +34,12 @@
     "upcasting",
     "upcaster",
     "Upcasters",
-    "helpdesk"
+    "helpdesk",
+    "HealthCheck",
+    "HealthChecks",
+    "Replayability",
+    "revisioned",
+    "Revisioned"
   ],
   "ignoreWords": [
     "JSONB",
@@ -83,7 +88,11 @@
     "bigrams",
     "Blazor",
     "CQRS",
-    "stringly"
+    "stringly",
+    "hostbuilder",
+    "Garofolo",
+    "Alexey",
+    "Zimarev"
   ],
   "ignoreRegExpList": [
     "\\((.*)\\)", // Markdown links

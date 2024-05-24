@@ -1,8 +1,10 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
-using Marten.Linq.Fields;
-using Marten.Util;
+using Marten.Linq.Members;
+using Marten.Linq.SqlGeneration.Filters;
+using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing.Methods;
@@ -17,18 +19,39 @@ internal class IsOneOf: IMethodCallParser
                && expression.Method.DeclaringType == typeof(LinqExtensions);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
+    public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
+        MethodCallExpression expression)
     {
-        var members = FindMembers.Determine(expression);
+        var queryableMember = memberCollection.MemberFor(expression.Arguments[0]);
+        var locator = queryableMember.TypedLocator;
+        var values = expression.Arguments[1].ReduceToConstant().Value;
 
-        var locator = mapping.FieldFor(members).TypedLocator;
-        var values = expression.Arguments.Last().Value();
-
-        if (members.Last().GetMemberType().IsEnum)
+        if (queryableMember.MemberType.IsEnum)
         {
             return new EnumIsOneOfWhereFragment(values, options.Serializer().EnumStorage, locator);
         }
 
-        return new WhereFragment($"{locator} = ANY(?)", values);
+        return new IsOneOfFilter(queryableMember, new CommandParameter(values));
     }
+}
+
+internal class IsOneOfFilter: ISqlFragment
+{
+    private readonly ISqlFragment _member;
+    private readonly CommandParameter _parameter;
+
+    public IsOneOfFilter(ISqlFragment member, CommandParameter parameter)
+    {
+        _member = member;
+        _parameter = parameter;
+    }
+
+    public void Apply(ICommandBuilder builder)
+    {
+        _member.Apply(builder);
+        builder.Append(" = ANY(");
+        _parameter.Apply(builder);
+        builder.Append(')');
+    }
+
 }

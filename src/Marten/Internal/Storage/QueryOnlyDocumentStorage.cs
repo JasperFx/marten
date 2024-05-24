@@ -4,14 +4,25 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal.CodeGeneration;
 using Marten.Linq.Selectors;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 
 namespace Marten.Internal.Storage;
 
-public abstract class QueryOnlyDocumentStorage<T, TId>: DocumentStorage<T, TId>
+internal interface IQueryOnlyDocumentStorage: IDocumentStorage
+{
+    ISelectClause SelectClauseForIncludes();
+}
+
+public abstract class QueryOnlyDocumentStorage<T, TId>: DocumentStorage<T, TId>, IQueryOnlyDocumentStorage
 {
     public QueryOnlyDocumentStorage(DocumentMapping document): base(StorageStyle.QueryOnly, document)
     {
+    }
+
+    public ISelectClause SelectClauseForIncludes()
+    {
+        return new DataAndIdSelectClause<T>(this);
     }
 
     public sealed override void Store(IMartenSession session, T document)
@@ -19,6 +30,10 @@ public abstract class QueryOnlyDocumentStorage<T, TId>: DocumentStorage<T, TId>
     }
 
     public sealed override void Store(IMartenSession session, T document, Guid? version)
+    {
+    }
+
+    public sealed override void Store(IMartenSession session, T document, int revision)
     {
     }
 

@@ -8,8 +8,7 @@ using Marten.Linq.QueryHandlers;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Querying;
-// TODO: recheck
-[Obsolete("Use EventDocumentStorage as a generic ISelector<IEvent> and use generic handler instead")]
+
 internal class SingleEventQueryHandler: IQueryHandler<IEvent>
 {
     private readonly Guid _id;
@@ -21,9 +20,9 @@ internal class SingleEventQueryHandler: IQueryHandler<IEvent>
         _selector = selector;
     }
 
-    public void ConfigureCommand(CommandBuilder sql, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder sql, IMartenSession session)
     {
-        _selector.WriteSelectClause(sql);
+        _selector.Apply(sql);
 
         sql.Append(" where id = ");
         sql.AppendParameter(_id);

@@ -1,4 +1,5 @@
 # Marten
+
 ## .NET Transactional Document DB and Event Store on PostgreSQL
 
 [![Discord](https://img.shields.io/discord/1074998995086225460?color=blue&label=Chat%20on%20Discord)](https://discord.gg/WMxrvegf8H)
@@ -12,18 +13,27 @@
     <img src="https://martendb.io/v3/content/images/banner.png" alt="marten logo" width="70%">
 </div>
 
-The Marten library provides .NET developers with the ability to use the proven [PostgreSQL database engine](http://www.postgresql.org/) and its [fantastic JSON support](https://www.compose.io/articles/is-postgresql-your-next-json-database/) as a fully fledged [document database](https://en.wikipedia.org/wiki/Document-oriented_database). The Marten team believes that a document database has far reaching benefits for developer productivity over relational databases with or without an ORM tool.
+The Marten library provides .NET developers with the ability to use the proven [PostgreSQL database engine](http://www.postgresql.org/) and its [fantastic JSON support](https://web.archive.org/web/20230127180328/https://www.compose.com/articles/is-postgresql-your-next-json-database/) as a fully fledged [document database](https://en.wikipedia.org/wiki/Document-oriented_database). The Marten team believes that a document database has far reaching benefits for developer productivity over relational databases with or without an ORM tool.
 
 Marten also provides .NET developers with an ACID-compliant event store with user-defined projections against event streams.
 
 Access docs [here](https://martendb.io/) and v3.x docs [here](https://martendb.io/v3).
 
+## Support Plans
+
+<div align="center">
+    <img src="https://www.jasperfx.net/wp-content/uploads/2023/07/logo-alt-min.png" alt="JasperFx logo" width="70%">
+</div>
+
+While Marten is open source, [JasperFx Software offers paid support and consulting contracts](https://bit.ly/3szhwT2) for Marten.
+
 ## Help us keep working on this project 💚
 
-[Become a Sponsor on GitHub](https://github.com/sponsors/JasperFX)
+[Become a Sponsor on GitHub](https://github.com/sponsors/JasperFX) by sponsoring monthly or one time.
 
-<h4 align="center">Sponsors</h4>
-<p align="center">
+### Past Sponsors
+
+<p align="left">
     <a href="https://aws.amazon.com/dotnet" target="_blank" rel="noopener noreferrer">
     <picture>
       <source srcset="https://martendb.io/dotnet-aws.png" media="(prefers-color-scheme: dark)" height="72px" alt=".NET on AWS" />
@@ -32,23 +42,26 @@ Access docs [here](https://martendb.io/) and v3.x docs [here](https://martendb.i
   </a>
 </p>
 
-
 ## Working with the Code
 
 Before getting started you will need the following in your environment:
 
-**1. .NET Core SDK 6.0+**
+### 1. .NET SDK 8.0+
 
 Available [here](https://dotnet.microsoft.com/download)
 
-**2. PostgreSQL 9.6 or above database with PLV8**
+### 2. PostgreSQL 12 or above database
 
-The fastest possible way to develop with Marten is to run PostgreSQL in a Docker container. Assuming that you have
-Docker running on your local box, type `dotnet run --framework net6.0 -- init-db` at the command line to spin up a Postgresql database with
-PLv8 enabled and configured in the database. The default Marten test configuration tries to find this database if no
+The fastest possible way to develop with Marten is to run PostgreSQL in a Docker container. Assuming that you have Docker running on your local box, type:
+`docker-compose up`
+or
+`dotnet run --framework net6.0 -- init-db`
+at the command line to spin up a Postgresql database withThe default Marten test configuration tries to find this database if no
 PostgreSQL database connection string is explicitly configured following the steps below:
 
-You need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
+### PLV8
+
+If you'd like to use [Patching Api](https://martendb.io/documents/plv8.html#the-patching-api) you need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
 
 Ensure the following:
 
@@ -59,6 +72,20 @@ _Help with PSQL/PLV8_
 
 - On Windows, see [this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html) for pre-built binaries of PLV8
 - On *nix, check [marten-local-db](https://github.com/eouw0o83hf/marten-local-db) for a Docker based PostgreSQL instance including PLV8.
+
+### Test Config Customization
+
+Some of our tests are run against a particular PostgreSQL version. If you'd like to run different database versions, you can do it by setting `POSTGRES_IMAGE` env variables, for instance:
+
+```bash
+POSTGRES_IMAGE=postgres:15.3-alpine docker compose up
+```
+
+Tests explorer should be able to detect database version automatically, but if it's not able to do it, you can enforce it by setting `postgresql_version` to a specific one (e.g.)
+
+```shell
+postgresql_version=15.3
+```
 
 Once you have the codebase and the connection string file, run the [build command](https://github.com/JasperFx/marten#build-commands) or use the dotnet CLI to restore and build the solution.
 
@@ -76,7 +103,7 @@ See more in [Contribution Guidelines](CONTRIBUTING.md).
 ### Build Commands
 
 | Description                         | Windows Commandline      | PowerShell               | Linux Shell             | DotNet CLI                                                |
-| ----------------------------------- | ------------------------ | ------------------------ | ----------------------- | --------------------------------------------------------- |
+|-------------------------------------|--------------------------|--------------------------|-------------------------|-----------------------------------------------------------|
 | Run restore, build and test         | `build.cmd`              | `build.ps1`              | `build.sh`              | `dotnet build src\Marten.sln`                             |
 | Run all tests including mocha tests | `build.cmd test`         | `build.ps1 test`         | `build.sh test`         | `dotnet run --project build/build.csproj -- test`         |
 | Run just mocha tests                | `build.cmd mocha`        | `build.ps1 mocha`        | `build.sh mocha`        | `dotnet run --project build/build.csproj -- mocha`        |
@@ -100,7 +127,6 @@ To aid in integration testing, Marten.Testing has a couple reusable base classes
 to make integration testing through Postgresql be more efficient and allow the xUnit.Net tests
 to run in parallel for better throughput.
 
-
 - `IntegrationContext` -- if most of the tests will use an out of the box configuration
   (i.e., no fluent interface configuration of any document types), use this base type. Warning though,
   this context type will **not** clean out the main `public` database schema between runs,
@@ -109,11 +135,11 @@ to run in parallel for better throughput.
   Postgresql schema objects in the `public` schema between tests. Use this sparingly please.
 - `OneOffConfigurationsContext` -- if a test suite will need to frequently re-configure
   the `DocumentStore`, this context is appropriate. You do *not* need to decorate any of these
-  test classes with the `[Collection]` attribute. This fixture will use an isolated schema using the name of the 
+  test classes with the `[Collection]` attribute. This fixture will use an isolated schema using the name of the
   test fixture type as the schema name
 - `BugIntegrationContext` -- the test harnesses for bugs tend to require custom `DocumentStore`
   configuration, and this context is a specialization of `OneOffConfigurationsContext` for
-  the *bugs* schema. 
+  the *bugs* schema.
 - `StoreFixture` and `StoreContext` are helpful if a series of tests use the same custom
   `DocumentStore` configuration. You'd need to write a subclass of `StoreFixture`, then use
   `StoreContext<YourNewStoreFixture>` as the base class to share the `DocumentStore` between
@@ -129,6 +155,19 @@ in a watched mode with growl turned on.
 ### Storyteller Specs
 
 Refer to build commands section to look up the commands to open the StoryTeller editor or run the StoryTeller specs.
+
+### Current Build Matrix
+
+| CI              | .NET | Postgres  |        plv8        | Serializer | 
+|-----------------|:----:|:---------:|:------------------:|:----------:|
+| GitHub Actions  |  6   |   12.8    | :white_check_mark: |    STJ     | 
+| GitHub Actions  |  6   | 15-alpine |        :x:         | Newtonsoft | 
+| GitHub Actions  |  7   |   12.8    | :white_check_mark: |  JSON.NET  | 
+| GitHub Actions  |  7   |  latest   |        :x:         |    STJ     | 
+| Azure Pipelines |  8   |   12.8    | :white_check_mark: |  JSON.NET  | 
+| Azure Pipelines |  8   |   12.8    | :white_check_mark: |    STJ     | 
+| Azure Pipelines |  8   | 15-alpine |        :x:         |    STJ     | 
+| Azure Pipelines |  8   |  latest   |        :x:         | Newtonsoft | 
 
 ## Documentation
 

@@ -34,7 +34,7 @@ using (var session = store.QuerySession())
         .FirstOrDefault(x => x.UserName == "somebody");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L21-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-a-simple-calculated-index' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L22-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-a-simple-calculated-index' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the configuration shown above, Marten generates a database index in Postgresql:
@@ -55,7 +55,7 @@ var store = DocumentStore.For(_ =>
     _.Schema.For<Target>().Index(x => x.Inner.Color);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L67-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deep-calculated-index' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L68-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deep-calculated-index' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The configuration above creates an index like this:
@@ -87,6 +87,22 @@ The configuration above creates an index like this:
 ```sql
 CREATE INDEX mt_doc_user_idx_first_namelast_name ON public.mt_doc_user USING btree (((data ->> 'FirstName'::text)), ((data ->> 'LastName'::text)))
 ```
+
+## Multi-Column Indexes <Badge type="tip" text="7.0" />
+
+You can specify multi-field computed indexes through anonymous types like so:
+
+<!-- snippet: sample_multi_column_index -->
+<a id='snippet-sample_multi_column_index'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    // This creates a single index against both FirstName and ListName
+    opts.Schema.For<User>().Index(x => new { x.FirstName, x.LastName });
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L153-L161' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multi_column_index' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Customizing a Calculated Index
 
@@ -139,5 +155,5 @@ var store = DocumentStore.For(_ =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L80-L123' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customizing-calculated-index' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L81-L124' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customizing-calculated-index' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

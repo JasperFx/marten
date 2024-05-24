@@ -130,7 +130,7 @@ namespace Marten.Generated.EventStore
         public const string SQL = "insert into public.mt_events (data, type, mt_dotnet_type, seq_id, id, stream_id, version, timestamp, tenant_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 
-        public override void ConfigureCommand(Weasel.Postgresql.CommandBuilder builder, Marten.Internal.IMartenSession session)
+        public override void ConfigureCommand(Weasel.Postgresql.ICommandBuilder builder, Marten.Internal.IMartenSession session)
         {
             var parameters = builder.AppendWithParameters(SQL);
             parameters[0].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
@@ -149,7 +149,7 @@ namespace Marten.Generated.EventStore
             parameters[6].Value = Event.Version;
             parameters[7].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.TimestampTz;
             parameters[7].Value = Event.Timestamp;
-            parameters[8].Value = Event.TenantId != null ? (object)Event.TenantId : System.DBNull.Value;
+            parameters[8].Value = Stream.TenantId != null ? (object)Stream.TenantId : System.DBNull.Value;
             parameters[8].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
         }
 
@@ -172,7 +172,7 @@ namespace Marten.Generated.EventStore
         public const string SQL = "insert into public.mt_streams (id, type, version, tenant_id) values (?, ?, ?, ?)";
 
 
-        public override void ConfigureCommand(Weasel.Postgresql.CommandBuilder builder, Marten.Internal.IMartenSession session)
+        public override void ConfigureCommand(Weasel.Postgresql.ICommandBuilder builder, Marten.Internal.IMartenSession session)
         {
             var parameters = builder.AppendWithParameters(SQL);
             parameters[0].Value = Stream.Id;
@@ -204,7 +204,7 @@ namespace Marten.Generated.EventStore
         public const string SQL = "select id, version, type, timestamp, created as timestamp, is_archived from public.mt_streams where id = ?";
 
 
-        public override void ConfigureCommand(Weasel.Postgresql.CommandBuilder builder, Marten.Internal.IMartenSession session)
+        public override void ConfigureCommand(Weasel.Postgresql.ICommandBuilder builder, Marten.Internal.IMartenSession session)
         {
             var npgsqlParameterArray = builder.AppendWithParameters(SQL);
             npgsqlParameterArray[0].Value = _streamId;
@@ -237,7 +237,7 @@ namespace Marten.Generated.EventStore
             streamState.Id = id;
             var version = await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
             streamState.Version = version;
-            await SetAggregateTypeAsync(streamState, reader, session, token);
+            await SetAggregateTypeAsync(streamState, reader, session, token).ConfigureAwait(false);
             var lastTimestamp = await reader.GetFieldValueAsync<System.DateTimeOffset>(3, token).ConfigureAwait(false);
             streamState.LastTimestamp = lastTimestamp;
             var created = await reader.GetFieldValueAsync<System.DateTimeOffset>(4, token).ConfigureAwait(false);
@@ -266,7 +266,7 @@ namespace Marten.Generated.EventStore
         public const string SQL = "update public.mt_streams set version = ? where id = ? and version = ?";
 
 
-        public override void ConfigureCommand(Weasel.Postgresql.CommandBuilder builder, Marten.Internal.IMartenSession session)
+        public override void ConfigureCommand(Weasel.Postgresql.ICommandBuilder builder, Marten.Internal.IMartenSession session)
         {
             var parameters = builder.AppendWithParameters(SQL);
             parameters[0].Value = Stream.Version;

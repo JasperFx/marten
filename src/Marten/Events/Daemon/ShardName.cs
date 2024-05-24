@@ -7,14 +7,29 @@ public class ShardName
 {
     public const string All = "All";
 
-    public ShardName(string projectionName, string key)
+    public ShardName(string projectionName, string key, uint version)
     {
         ProjectionName = projectionName;
         Key = key;
-        Identity = $"{projectionName}:{key}";
+
+
+        if (version > 1)
+        {
+            Identity = $"{projectionName}:V{version}:{key}";
+        }
+        else
+        {
+            Identity = $"{projectionName}:{key}";
+        }
+
     }
 
-    public ShardName(string projectionName): this(projectionName, All)
+    public ShardName(string projectionName, string key) : this(projectionName, key, 1)
+    {
+
+    }
+
+    public ShardName(string projectionName): this(projectionName, All, 1)
     {
     }
 
@@ -33,6 +48,8 @@ public class ShardName
     ///     {ProjectionName}:{Key}. Single identity string that should be unique within this Marten application
     /// </summary>
     public string Identity { get; }
+
+    public uint Version { get; } = 1;
 
     public override string ToString()
     {

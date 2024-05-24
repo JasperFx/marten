@@ -4,16 +4,22 @@ using EventSourcingTests.Projections;
 using Marten;
 using Marten.Services.Json;
 using Marten.Testing.Harness;
+using Npgsql;
 using Shouldly;
 using Xunit;
 
 namespace EventSourcingTests;
 
-public class flexible_event_metadata : OneOffConfigurationsContext
+public class flexible_event_metadata: OneOffConfigurationsContext
 {
-    private QuestStarted started = new QuestStarted { Name = "Find the Orb" };
-    private MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
-    private MonsterSlayed slayed = new MonsterSlayed { Name = "Troll" };
+    private readonly QuestStarted started = new QuestStarted { Name = "Find the Orb" };
+
+    private readonly MembersJoined joined = new MembersJoined
+    {
+        Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" }
+    };
+
+    private readonly MonsterSlayed slayed = new MonsterSlayed { Name = "Troll" };
 
     [Fact]
     public async Task check_metadata_correlation_id_enabled()
@@ -219,6 +225,36 @@ public class flexible_event_metadata : OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task query_all_raw_events_with_headers_enabled()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.MetadataConfig.EnableAll();
+            opts.Events.MetadataConfig.HeadersEnabled = true;
+        });
+
+        const string correlationId = "test-correlation-id";
+        theSession.CorrelationId = correlationId;
+
+        const string causationId = "test-causation-id";
+        theSession.CausationId = causationId;
+
+        const string userDefinedMetadataName = "my-custom-metadata";
+        const string userDefinedMetadataValue = "my-custom-metadata-value";
+        theSession.SetHeader(userDefinedMetadataName, userDefinedMetadataValue);
+
+        var streamId = theSession.Events
+            .StartStream<QuestParty>(started, joined, slayed).Id;
+        await theSession.SaveChangesAsync();
+
+        var allEvents = await theSession.Events.QueryAllRawEvents().ToListAsync();
+        foreach (var @event in allEvents)
+        {
+            @event.GetHeader("my-custom-metadata").ShouldNotBeNull();
+        }
+    }
+
+    [Fact]
     public async Task check_writing_empty_headers_system_text_json()
     {
         StoreOptions(_ =>
@@ -232,7 +268,7 @@ public class flexible_event_metadata : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
         // Should not throw System.NullReferenceException here
     }
-        
+
     [Fact]
     public async Task check_writing_empty_headers_newtonsoft_json()
     {

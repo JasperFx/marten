@@ -67,10 +67,10 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
         var aTarget = targets.First();
 
         var targetFromQuery = session.Query<Target>().Single(x => x.Id == aTarget.Id);
-        targetFromQuery.ShouldBeEquivalentTo(aTarget);
+        targetFromQuery.Id.ShouldBe(aTarget.Id);
 
         var targetFromLoad = session.Load<Target>(aTarget.Id);
-        targetFromLoad.ShouldBeEquivalentTo(aTarget);
+        targetFromLoad.Id.ShouldBe(aTarget.Id);
 
         scope.Complete();
     }
@@ -84,10 +84,10 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
         var aTarget = targets.First();
 
         var targetFromQuery = await session.Query<Target>().SingleAsync(x => x.Id == aTarget.Id);
-        targetFromQuery.ShouldBeEquivalentTo(aTarget);
+        targetFromQuery.Id.ShouldBe(aTarget.Id);
 
         var targetFromLoad = await session.LoadAsync<Target>(aTarget.Id);
-        targetFromLoad.ShouldBeEquivalentTo(aTarget);
+        targetFromLoad.Id.ShouldBe(aTarget.Id);
 
         scope.Complete();
     }

@@ -13,7 +13,7 @@ namespace Marten;
 
 public partial class StoreOptions: ICodeFileCollection
 {
-    private GenerationRules _rules;
+    private readonly GenerationRules _rules;
 
     /// <summary>
     ///     The main application assembly. By default this is the entry assembly for the application,
@@ -24,7 +24,7 @@ public partial class StoreOptions: ICodeFileCollection
     public bool SourceCodeWritingEnabled { get; set; } = true;
 
     // This would only be set for "additional" document stores
-    internal string StoreName { get; set; } = "Marten";
+    public string StoreName { get; set; } = "Marten";
 
     /// <summary>
     ///     Root folder where generated code should be placed. By default, this is the IHostEnvironment.ContentRootPath

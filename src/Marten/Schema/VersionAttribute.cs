@@ -21,6 +21,11 @@ public class VersionAttribute: MartenAttribute
         {
             if (memberType == typeof(int) || memberType == typeof(long))
             {
+                mapping.UseNumericRevisions = true;
+                mapping.Metadata.Revision.Enabled = true;
+                mapping.Metadata.Revision.Member = member;
+
+                mapping.Metadata.Version.Enabled = false;
                 return;
             }
 

@@ -69,7 +69,7 @@ public class QuestPatchTestProjection: IProjection
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L883-L916' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpatchtestprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L857-L890' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpatchtestprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the custom projection can be registered in your Marten `DocumentStore` like this:
@@ -81,9 +81,6 @@ var store = DocumentStore.For(opts =>
 {
     opts.Connection("some connection string");
 
-    // Marten.PLv8 is necessary for patching
-    opts.UseJavascriptTransformsAndPatching();
-
     // Use inline lifecycle
     opts.Projections.Add(new QuestPatchTestProjection(), ProjectionLifecycle.Inline);
 
@@ -91,5 +88,5 @@ var store = DocumentStore.For(opts =>
     opts.Projections.Add(new QuestPatchTestProjection(), ProjectionLifecycle.Async);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L830-L846' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_custom_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L809-L822' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_custom_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

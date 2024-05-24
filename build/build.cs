@@ -91,13 +91,31 @@ internal class MartenBuild
 
         Target("test-event-sourcing", DependsOn("compile-event-sourcing-tests"), () =>
             RunTests("EventSourcingTests"));
+        
+        Target("compile-linq-tests", DependsOn("clean"), () =>
+            Run("dotnet", $"build src/LinqTests/LinqTests.csproj --framework {_framework} --configuration {configuration}"));
+
+        Target("test-linq", DependsOn("compile-linq-tests"), () =>
+            RunTests("LinqTests"));
+        
+        Target("compile-multi-tenancy-tests", DependsOn("clean"), () =>
+            Run("dotnet", $"build src/MultiTenancyTests/MultiTenancyTests.csproj --framework {_framework} --configuration {configuration}"));
+
+        Target("test-multi-tenancy", DependsOn("compile-multi-tenancy-tests"), () =>
+            RunTests("MultiTenancyTests"));
+
+	    Target("compile-patching-tests", DependsOn("clean"), () =>
+            Run("dotnet", $"build src/PatchingTests/PatchingTests.csproj --framework {_framework} --configuration {configuration}"));
+
+        Target("test-patching", DependsOn("compile-patching-tests"), () =>
+            RunTests("PatchingTests"));
 
         Target("test-codegen", () =>
         {
             var projectPath = "src/CommandLineRunner";
-            Run("dotnet", $"run -- codegen delete", projectPath);
-            Run("dotnet", $"run -- codegen write", projectPath);
-            Run("dotnet", $"run -- test", projectPath);
+            Run("dotnet", $"run --framework net8.0 -- codegen delete", projectPath);
+            Run("dotnet", $"run --framework net8.0 -- codegen write", projectPath);
+            Run("dotnet", $"run --framework net8.0 -- test", projectPath);
         });
 
         Target("rebuild-database", () =>
@@ -112,9 +130,11 @@ internal class MartenBuild
         Target("test-plv8", DependsOn("compile", "compile-plv8"), () =>
             RunTests("Marten.PLv8.Testing"));
 
-        Target("test", DependsOn("test-base-lib", "test-core", "test-document-db", "test-event-sourcing", "test-cli", "test-codegen"));
+        Target("test", DependsOn("test-base-lib", "test-core", "test-document-db", "test-event-sourcing", "test-cli", "test-linq", "test-codegen", "test-patching"));
 
-        Target("test-extension-libs", DependsOn("test-noda-time", "test-plv8", "test-aspnetcore"));
+        Target("test-extension-libs-without-plv8", DependsOn("test-noda-time", "test-aspnetcore"));
+
+        Target("test-extension-libs", DependsOn("test-extension-libs-without-plv8", "test-plv8"));
 
         Target("install-mdsnippets", IgnoreIfFailed(() =>
             Run("dotnet", $"tool install -g MarkdownSnippets.Tool")

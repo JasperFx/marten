@@ -8,12 +8,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
-using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Util;
-using Remotion.Linq.Clauses;
 
 namespace Marten.Linq;
 
@@ -21,14 +19,15 @@ internal class MartenLinqQueryProvider: IQueryProvider
 {
     private readonly QuerySession _session;
 
-    public MartenLinqQueryProvider(QuerySession session)
+    public MartenLinqQueryProvider(QuerySession session, Type type)
     {
         _session = session;
+        SourceType = type;
     }
 
-    internal QueryStatistics Statistics { get; set; }
+    public Type SourceType { get; }
 
-    internal IList<IIncludePlan> AllIncludes { get; } = new List<IIncludePlan>();
+    internal QueryStatistics Statistics { get; set; }
 
     public IQueryable CreateQuery(Expression expression)
     {
@@ -47,55 +46,41 @@ internal class MartenLinqQueryProvider: IQueryProvider
 
     public TResult Execute<TResult>(Expression expression)
     {
-        var builder = new LinqHandlerBuilder(this, _session, expression);
-        var handler = builder.BuildHandler<TResult>();
+        var parser = new LinqQueryParser(this, _session, expression);
+        var handler = parser.BuildHandler<TResult>();
 
-        ensureStorageExists(builder);
+        ensureStorageExists(parser);
 
         return ExecuteHandler(handler);
     }
 
-    private void ensureStorageExists(LinqHandlerBuilder builder)
+    private void ensureStorageExists(LinqQueryParser parser)
     {
-        foreach (var documentType in builder.DocumentTypes()) _session.Database.EnsureStorageExists(documentType);
+        foreach (var documentType in parser.DocumentTypes())
+        {
+            _session.Database.EnsureStorageExists(documentType);
+        }
     }
 
-    private async ValueTask ensureStorageExistsAsync(LinqHandlerBuilder builder,
+    internal async ValueTask EnsureStorageExistsAsync(LinqQueryParser parser,
         CancellationToken cancellationToken)
     {
-        foreach (var documentType in builder.DocumentTypes())
+        foreach (var documentType in parser.DocumentTypes())
+        {
             await _session.Database.EnsureStorageExistsAsync(documentType, cancellationToken).ConfigureAwait(false);
+        }
     }
 
-    public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken token)
-    {
-        var builder = new LinqHandlerBuilder(this, _session, expression);
-        var handler = builder.BuildHandler<TResult>();
-
-        await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
-
-        return await ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
-    }
-
-    public TResult Execute<TResult>(Expression expression, ResultOperatorBase op)
-    {
-        var builder = new LinqHandlerBuilder(this, _session, expression, op);
-        var handler = builder.BuildHandler<TResult>();
-
-        ensureStorageExists(builder);
-
-        return ExecuteHandler(handler);
-    }
 
     public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken token,
-        ResultOperatorBase op)
+        SingleValueMode valueMode)
     {
         try
         {
-            var builder = new LinqHandlerBuilder(this, _session, expression, op);
-            var handler = builder.BuildHandler<TResult>();
+            var parser = new LinqQueryParser(this, _session, expression, valueMode);
+            var handler = parser.BuildHandler<TResult>();
 
-            await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
+            await EnsureStorageExistsAsync(parser, token).ConfigureAwait(false);
 
             return await ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
         }
@@ -108,17 +93,17 @@ internal class MartenLinqQueryProvider: IQueryProvider
     }
 
     public async Task<int> StreamJson<TResult>(Stream stream, Expression expression, CancellationToken token,
-        ResultOperatorBase op)
+        SingleValueMode mode)
     {
         try
         {
-            var builder = new LinqHandlerBuilder(this, _session, expression, op);
-            var handler = builder.BuildHandler<TResult>();
+            var parser = new LinqQueryParser(this, _session, expression, mode);
 
-            await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
+            var handler = parser.BuildHandler<TResult>();
+
+            await EnsureStorageExistsAsync(parser, token).ConfigureAwait(false);
 
             var cmd = _session.BuildCommand(handler);
-            _session.TrySetTenantId(cmd);
 
             await using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
             return await handler.StreamJson(stream, reader, token).ConfigureAwait(false);
@@ -135,9 +120,9 @@ internal class MartenLinqQueryProvider: IQueryProvider
     {
         try
         {
-            var cmd = _session.BuildCommand(handler);
+            var batch = _session.BuildCommand(handler);
 
-            await using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            await using var reader = await _session.ExecuteReaderAsync(batch, token).ConfigureAwait(false);
             return await handler.HandleAsync(reader, _session, token).ConfigureAwait(false);
         }
         catch (Exception e)
@@ -167,62 +152,53 @@ internal class MartenLinqQueryProvider: IQueryProvider
 
 
     public async IAsyncEnumerable<T> ExecuteAsyncEnumerable<T>(Expression expression,
-        [EnumeratorCancellation] CancellationToken token)
+        MartenLinqQueryProvider martenProvider, [EnumeratorCancellation] CancellationToken token)
     {
-        var builder = new LinqHandlerBuilder(this, _session, expression);
-        builder.BuildDatabaseStatement();
+        var parser = new LinqQueryParser(this, _session, expression);
+        var statements = parser.BuildStatements();
 
-        await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
+        await EnsureStorageExistsAsync(parser, token).ConfigureAwait(false);
 
-        var selector = (ISelector<T>)builder.CurrentStatement.SelectClause.BuildSelector(_session);
-        var statement = builder.TopStatement;
+        var selector = (ISelector<T>)statements.MainSelector.SelectClause.BuildSelector(_session);
+        var statement = statements.Top;
 
         var cmd = _session.BuildCommand(statement);
-        _session.TrySetTenantId(cmd);
 
         await using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+        var totalRowsColumnIndex = martenProvider.Statistics != null ? reader.GetOrdinal("total_rows") : -1;
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
+            if (martenProvider.Statistics != null)
+            {
+                martenProvider.Statistics.TotalResults = await reader.GetFieldValueAsync<int>(totalRowsColumnIndex, token).ConfigureAwait(false);
+            }
             yield return await selector.ResolveAsync(reader, token).ConfigureAwait(false);
         }
     }
 
     public async Task<int> StreamMany(Expression expression, Stream destination, CancellationToken token)
     {
-        var builder = BuildLinqHandler(expression);
+        var parser = new LinqQueryParser(this, _session, expression);
 
-        await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
+        await EnsureStorageExistsAsync(parser, token).ConfigureAwait(false);
 
-        var command = builder.TopStatement.BuildCommand();
-        _session.TrySetTenantId(command);
+        var statements = parser.BuildStatements();
+
+        var command = statements.Top.BuildCommand(_session);
 
         return await _session.StreamMany(command, destination, token).ConfigureAwait(false);
     }
 
-    /// <summary>
-    ///     Builds out a LinqHandlerBuilder for this MartenQueryable<T>
-    /// </summary>
-    /// <param name="expression"></param>
-    /// <returns></returns>
-    internal LinqHandlerBuilder BuildLinqHandler(Expression expression)
-    {
-        var builder = new LinqHandlerBuilder(this, _session, expression);
-        builder.BuildDatabaseStatement();
-        return builder;
-    }
-
     public async Task<bool> StreamOne(Expression expression, Stream destination, CancellationToken token)
     {
-        var builder = new LinqHandlerBuilder(this, _session, expression);
-        builder.BuildDatabaseStatement();
+        var parser = new LinqQueryParser(this, _session, expression);
+        var statements = parser.BuildStatements();
 
-        await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
+        await EnsureStorageExistsAsync(parser, token).ConfigureAwait(false);
 
-        var statement = builder.TopStatement;
-        statement.Current().Limit = 1;
-        var command = statement.BuildCommand();
-
-        _session.TrySetTenantId(command);
+        var statement = statements.Top;
+        statements.MainSelector.Limit = 1;
+        var command = statement.BuildCommand(_session);
 
         return await _session.StreamOne(command, destination, token).ConfigureAwait(false);
     }

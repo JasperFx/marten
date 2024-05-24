@@ -1,47 +1,15 @@
 # Command Line Tooling
 
 ::: warning
-As of v4.0, the usage of Marten.CommandLine shown in this document is only valid for applications bootstrapped with the .Net Core / .Net 5.0
-[generic host builder](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-3.1) with Marten registered in the application's IoC container.
+The usage of Marten.CommandLine shown in this document is only valid for applications bootstrapped with the
+[generic host builder](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host) with Marten registered in the application's IoC container.
 :::
 
 There is a separate NuGet package called _Marten.CommandLine_ that can be used to quickly add command-line tooling directly to
 your .Net Core application that uses Marten. _Marten.CommandLine_ is an extension library to [Oakton](https://jasperfx.github.io/oakton) that
 is the actual command line parser in this case.
 
-To use the expanded command line options to a .Net Core application bootstrapped by `IHostBuilder`, add a reference to the _Marten.CommandLine_ Nuget and ever so slightly change your `Program.Main()` entry point as shown below:
-
-<!-- snippet: sample_SampleConsoleApp -->
-<a id='snippet-sample_sampleconsoleapp'></a>
-```cs
-public class Program
-{
-    // It's actually important to return Task<int>
-    // so that the application commands can communicate
-    // success or failure
-    public static Task<int> Main(string[] args)
-    {
-        return CreateHostBuilder(args)
-
-            // This line replaces Build().Start()
-            // in most dotnet new templates
-            .RunOaktonCommands(args);
-    }
-
-    public static IHostBuilder CreateHostBuilder(string[] args) =>
-        Host.CreateDefaultBuilder(args)
-            .ConfigureWebHostDefaults(webBuilder =>
-            {
-                webBuilder.UseStartup<Startup>();
-            });
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L13-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sampleconsoleapp' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-Or if you're on >= .Net 6, you can still use the Marten CLI options with the `WebApplication` style
-of bootstrapping with a few changes. First, to completely enable the Weasel/Marten command line diagnostics,
-you'll need to add this line of code:
+To use the expanded command line options to a .NET application, add a reference to the _Marten.CommandLine_ Nuget and add this line of code to your `Program.cs`:
 
 <!-- snippet: sample_using_WebApplication_1 -->
 <a id='snippet-sample_using_webapplication_1'></a>
@@ -55,16 +23,17 @@ builder.Host.ApplyOaktonExtensions();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/MinimalAPI/Program.cs#L9-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_webapplication_1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-And finally, use Oakton as the command line parser and executor with this last line of code in your
+And finally, use Oakton as the command line parser and executor by replacing `App.Run()` as the last line of code in your
 `Program.cs` file:
 
 <!-- snippet: sample_using_WebApplication_2 -->
 <a id='snippet-sample_using_webapplication_2'></a>
 ```cs
-// This should be the last line of your Program.cs file
+// Instead of App.Run(), use the app.RunOaktonCommands(args)
+// as the last line of your Program.cs file
 return await app.RunOaktonCommands(args);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/MinimalAPI/Program.cs#L51-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_webapplication_2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/MinimalAPI/Program.cs#L51-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_webapplication_2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Once the _Marten.CommandLine_ Nuget is installed and Oakton is handling your command line parsing, you should be able to see the Marten commands by typing `dotnet run -- help` in the command line terminal of your choice at the root of your project:

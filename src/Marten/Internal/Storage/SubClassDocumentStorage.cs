@@ -4,26 +4,28 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Internal.Operations;
+using Marten.Internal.Sessions;
 using Marten.Linq;
-using Marten.Linq.Fields;
-using Marten.Linq.Filters;
+using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Marten.Linq.SqlGeneration.Filters;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Npgsql;
-using Remotion.Linq;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Internal.Storage;
 
-internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>
+internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>, IHaveMetadataColumns
     where T : TRoot
 {
     private readonly ISqlFragment _defaultWhere;
@@ -41,6 +43,10 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>
         _defaultWhere = determineWhereFragment();
         _fields = _parent.SelectFields();
     }
+
+    public IQueryableMemberCollection QueryMembers => _mapping.QueryMembers;
+    public ISelectClause SelectClauseWithDuplicatedFields => _parent.SelectClauseWithDuplicatedFields;
+    public bool UseNumericRevisions { get; } = false;
 
     public void TruncateDocumentStorage(IMartenDatabase database)
     {
@@ -65,9 +71,9 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>
     public string FromObject { get; }
     public Type SelectedType => typeof(T);
 
-    public void WriteSelectClause(CommandBuilder sql)
+    public void Apply(ICommandBuilder sql)
     {
-        _parent.WriteSelectClause(sql);
+        _parent.Apply(sql);
     }
 
     public string[] SelectFields()
@@ -81,12 +87,12 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>
         return new CastingSelector<T, TRoot>((ISelector<TRoot>)inner);
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, Statement statement,
-        Statement currentStatement)
+    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
+        ISqlFragment currentStatement)
     {
         var selector = (ISelector<T>)BuildSelector(session);
 
-        return LinqHandlerBuilder.BuildHandler<T, TResult>(selector, statement);
+        return LinqQueryParser.BuildHandler<T, TResult>(selector, statement);
     }
 
     public ISelectClause UseStatistics(QueryStatistics statistics)
@@ -95,11 +101,10 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>
     }
 
     public Type SourceType => typeof(TRoot);
-    public IFieldMapping Fields => _mapping.Parent;
 
-    public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
+    public ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession session)
     {
-        var extras = extraFilters(query).ToArray();
+        var extras = extraFilters(query, session).ToArray();
 
         return query.CombineAnd(extras);
     }
@@ -113,7 +118,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>
     public bool UseOptimisticConcurrency => _parent.UseOptimisticConcurrency;
     public IOperationFragment DeleteFragment => _parent.DeleteFragment;
     public IOperationFragment HardDeleteFragment { get; }
-    public DuplicatedField[] DuplicatedFields => _parent.DuplicatedFields;
+    public IReadOnlyList<DuplicatedField> DuplicatedFields => _parent.DuplicatedFields;
     public DbObjectName TableName => _parent.TableName;
     public Type DocumentType => typeof(T);
 
@@ -132,6 +137,11 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>
     public void Store(IMartenSession session, T document, Guid? version)
     {
         _parent.Store(session, document, version);
+    }
+
+    public void Store(IMartenSession session, T document, int revision)
+    {
+        _parent.Store(session, document, revision);
     }
 
     public void Eject(IMartenSession session, T document)
@@ -253,18 +263,18 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>
         return _parent.HardDeleteForDocument(document, tenantId);
     }
 
-    private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)
+    private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query, IMartenSession session)
     {
         yield return toBasicWhere();
 
-        if (_mapping.DeleteStyle == DeleteStyle.SoftDelete && !query.Contains(SchemaConstants.DeletedColumn))
+        if (_mapping.DeleteStyle == DeleteStyle.SoftDelete && !query.ContainsAny<ISoftDeletedFilter>())
         {
             yield return ExcludeSoftDeletedFilter.Instance;
         }
 
         if (_mapping.Parent.TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant())
         {
-            yield return CurrentTenantFilter.Instance;
+            yield return new SpecificTenantFilter(session.TenantId);
         }
     }
 
@@ -301,5 +311,10 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>
 
         var sql = _mapping.Alias.Length > 1 ? $"({aliasValues})" : aliasValues;
         return new WhereFragment(sql);
+    }
+
+    public MetadataColumn[] MetadataColumns()
+    {
+        return _parent.As<IHaveMetadataColumns>().MetadataColumns();
     }
 }

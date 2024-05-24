@@ -8,11 +8,13 @@ using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
 
+public interface ISingleStreamSlicer{}
+
 /// <summary>
 ///     Slicer strategy by stream id (Guid identified streams)
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
-public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>
+public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer
 {
     public ValueTask<IReadOnlyList<EventSlice<TDoc, Guid>>> SliceInlineActions(IQuerySession querySession,
         IEnumerable<StreamAction> streams)
@@ -25,7 +27,7 @@ public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>
     }
 
 
-    public async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, Guid>>> SliceAsyncEvents(IQuerySession querySession,
+    public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, Guid>>> SliceAsyncEvents(IQuerySession querySession,
         List<IEvent> events)
     {
         var list = new List<TenantSliceGroup<TDoc, Guid>>();
@@ -44,6 +46,6 @@ public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>
             list.Add(group);
         }
 
-        return list;
+        return new ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, Guid>>>(list);
     }
 }

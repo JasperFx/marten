@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Linq.Selectors;
 using Marten.Schema;
 
@@ -92,8 +93,17 @@ public class SelectorBuilder
                     .MakeGenericType(_mapping.DocumentType, _mapping.IdType);
 
             case StorageStyle.Lightweight:
-                return typeof(DocumentSelectorWithVersions<,>)
-                    .MakeGenericType(_mapping.DocumentType, _mapping.IdType);
+                if (_mapping.UseNumericRevisions)
+                {
+                    return typeof(DocumentSelectorWithOnlySerializer);
+                }
+                else
+                {
+                    return typeof(DocumentSelectorWithVersions<,>)
+                        .MakeGenericType(_mapping.DocumentType, _mapping.IdType);
+                }
+
+
 
             case StorageStyle.DirtyTracking:
                 return typeof(DocumentSelectorWithDirtyChecking<,>)

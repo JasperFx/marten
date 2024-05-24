@@ -6,13 +6,14 @@ using Marten.Events;
 using Marten.Services;
 using Marten.Storage;
 using Npgsql;
+using Polly;
 
 namespace Marten.Internal.Sessions;
 
 public partial class QuerySession: IMartenSession, IQuerySession
 {
-    protected readonly IRetryPolicy _retryPolicy;
     private readonly DocumentStore _store;
+    private readonly ResiliencePipeline _resilience;
 
     internal virtual DocumentTracking TrackingMode => DocumentTracking.QueryOnly;
 
@@ -40,13 +41,15 @@ public partial class QuerySession: IMartenSession, IQuerySession
     public string TenantId { get; protected set; }
 #nullable enable
 
-    internal QuerySession(DocumentStore store,
+    internal QuerySession(
+        DocumentStore store,
         SessionOptions sessionOptions,
         IConnectionLifetime connection,
-        Tenant? tenant = default)
+        Tenant? tenant = default
+    )
     {
         _store = store;
-        TenantId = tenant?.TenantId ?? sessionOptions.Tenant?.TenantId ?? sessionOptions.TenantId;
+        TenantId = store.Options.MaybeCorrectTenantId(tenant?.TenantId ?? sessionOptions.Tenant?.TenantId ?? sessionOptions.TenantId);
         Database = tenant?.Database ?? sessionOptions.Tenant?.Database ??
             throw new ArgumentNullException(nameof(SessionOptions.Tenant));
 
@@ -68,28 +71,41 @@ public partial class QuerySession: IMartenSession, IQuerySession
         Serializer = store.Serializer;
         Options = store.Options;
 
-        _retryPolicy = Options.RetryPolicy();
-
         Events = CreateEventStore(store, tenant ?? sessionOptions.Tenant);
 
         Logger = store.Options.Logger().StartSession(this);
+
+        _resilience = Options.ResiliencePipeline;
     }
 
     public ConcurrencyChecks Concurrency { get; protected set; } = ConcurrencyChecks.Enabled;
 
-    public NpgsqlConnection? Connection
+    public NpgsqlConnection Connection
     {
         get
         {
-            _connection.EnsureConnected();
-            return _connection.Connection;
+            if (_connection is IAlwaysConnectedLifetime lifetime)
+            {
+                return lifetime.Connection;
+            }
+            else if (_connection is ITransactionStarter starter)
+            {
+                var l = starter.Start();
+                _connection = l;
+                return l.Connection;
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"The current lifetime {_connection} is neither a {nameof(IAlwaysConnectedLifetime)} nor a {nameof(ITransactionStarter)}");
+            }
         }
     }
 
     public IMartenSessionLogger Logger
     {
-        get;
-        set;
+        get => _connection.Logger;
+        set => _connection.Logger = value;
     }
 
     public int RequestCount { get; set; }

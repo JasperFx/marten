@@ -1,16 +1,26 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Schema;
 using Weasel.Core.Migrations;
+using Weasel.Postgresql;
 
 namespace Marten.Storage;
+
+/// <summary>
+/// Marks a tenancy model as having a master database
+/// </summary>
+public interface ITenancyWithMasterDatabase
+{
+    PostgresqlDatabase TenantDatabase { get; }
+}
 
 #region sample_ITenancy
 
 /// <summary>
 ///     Pluggable interface for Marten multi-tenancy by database
 /// </summary>
-public interface ITenancy: IDatabaseSource
+public interface ITenancy: IDatabaseSource, IDisposable
 {
     /// <summary>
     ///     The default tenant. This can be null.

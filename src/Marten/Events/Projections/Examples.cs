@@ -51,7 +51,7 @@ public class DocumentAttribute: Attribute
     public Type DocumentType { get; }
 }
 
-// All the signatures could take in IQuerySession, or Event<T>
+// All the signatures could take in IQuerySession, or IEvent<T>
 public class SomeDocument1Projector
 {
     public SomeDocument1 Create(SomeEvent1 event1)

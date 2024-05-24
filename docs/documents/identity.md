@@ -10,7 +10,7 @@ Besides being serializable, Marten's only other requirement for a .Net type to b
 1. `CombGuid` is a [sequential Guid algorithm](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/CombGuidIdGeneration.cs). It can improve performance over the default Guid as it reduces fragmentation of the PK index.
 1. `Int` or `Long`. As of right now, Marten uses a [HiLo generator](http://stackoverflow.com/questions/282099/whats-the-hi-lo-algorithm) approach to assigning numeric identifiers by document type.
    Marten may support Postgresql sequences or star-based algorithms as later alternatives.
-1. When the ID member of a document is not settable or not-public a `NoOpIdGeneration` strategy is used. This ensures that Marten does not set the ID itself, so the ID should be generated manually.
+1. When the ID member of a document is not settable or not public a `NoOpIdGeneration` strategy is used. This ensures that Marten does not set the ID itself, so the ID should be generated manually.
 1. A `Custom` ID generator strategy is used to implement the ID generation strategy yourself.
 
 Marten by default uses the identity value set on documents and only assigns one in case it has no value (`Guid.Empty`, `0`, `string.Empty` etc).
@@ -48,7 +48,7 @@ public class Invoice
 
 ## Overriding the Choice of Id Property/Field
 
-If you really want to or you're migrating existing document types from another document database, Marten provides
+If you really want to, or you're migrating existing document types from another document database, Marten provides
 the `[Identity]` attribute to force Marten to use a property or field as the identifier that doesn't match
 the "id" or "Id" or "ID" convention:
 
@@ -81,7 +81,7 @@ As of Marten 1.0, the default Guid mechanism is a sequential or "Comb" Guid. Whi
 generate, this makes inserts into the underlying document tables more efficient.
 :::
 
-To use _CombGuid_ generation you should enabled it when configuring the document store. This defines that the _CombGuid_ generation strategy will be used for all the documents types.
+To use _CombGuid_ generation you should enable it when configuring the document store. This defines that the _CombGuid_ generation strategy will be used for all the documents types.
 
 <!-- snippet: sample_configuring-global-sequentialguid -->
 <a id='snippet-sample_configuring-global-sequentialguid'></a>
@@ -94,7 +94,7 @@ options.Policies.ForAllDocuments(m =>
     }
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CombGuidIdGenerationTests.cs#L46-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-global-sequentialguid' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CombGuidIdGenerationTests.cs#L47-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-global-sequentialguid' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 It is also possible use the SequentialGuid id generation algorithm for a specific document type.
@@ -104,12 +104,12 @@ It is also possible use the SequentialGuid id generation algorithm for a specifi
 ```cs
 options.Schema.For<UserWithGuid>().IdStrategy(new CombGuidIdGeneration());
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CombGuidIdGenerationTests.cs#L79-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-sequentialguid' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CombGuidIdGenerationTests.cs#L82-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-sequentialguid' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Sequential Identifiers with Hilo
 
-The _Hilo_ sequence generation can be customized with either global defaults or document type specific overrides. By default, the Hilo sequence generation in Marten increments by 1 and uses a "maximum lo" number of 1000.
+The _Hilo_ sequence generation can be customized with either global defaults or document type-specific overrides. By default, the Hilo sequence generation in Marten increments by 1 and uses a "maximum lo" number of 1000.
 
 To set different global defaults, use the `StoreOptions.HiloSequenceDefaults` property like this sample:
 
@@ -197,7 +197,7 @@ await store.Tenancy.Default.Database.ResetHiloSequenceFloor<IntDoc>(2500);
 <!-- endSnippet -->
 
 This functionality was added specifically to aid in importing data from an existing data source. Do note that this functionality simply guarantees
-that all new id's assigned for the document type will be higher than the new floor. It is perfectly possible and even likely that there will be some
+that all new IDs assigned for the document type will be higher than the new floor. It is perfectly possible, and even likely, that there will be some
 gaps in the id sequence.
 
 ## String Identity
@@ -272,7 +272,7 @@ The `Build()` method should return the actual `IdGenerator<T>` for the document 
 
 For more advances examples you can have a look at existing ID generator: [HiloIdGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/Sequences/HiloIdGeneration.cs), [CombGuidGenerator](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/CombGuidIdGeneration.cs) and the [IdentityKeyGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/Sequences/IdentityKeyGeneration.cs),
 
-To use custom id generation you should enabled it when configuring the document store. This defines that the strategy will be used for all the documents types.
+To use custom id generation you should enable it when configuring the document store. This defines that the strategy will be used for all the documents types.
 
 <!-- snippet: sample_configuring-global-custom -->
 <a id='snippet-sample_configuring-global-custom'></a>

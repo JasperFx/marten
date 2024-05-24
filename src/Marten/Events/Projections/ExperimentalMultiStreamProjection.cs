@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Events.Aggregation;
 using Marten.Schema;
 using Marten.Storage;
@@ -95,7 +97,4 @@ public abstract class ExperimentalMultiStreamProjection<TDoc, TId>: GeneratedAgg
     }
 }
 
-[Obsolete("Please switch to ExperimentalMultiStreamProjection<TDoc, TId> with the exact same syntax")]
-public abstract class ExperimentalMultiStreamAggregation<TDoc, TId>: ExperimentalMultiStreamProjection<TDoc, TId>
-{
-}
+

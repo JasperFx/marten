@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -154,10 +155,10 @@ public class appending_events_workflow_specs
         await @case.Store.EnsureStorageExistsAsync(typeof(IEvent));
 
         var operation = new EstablishTombstoneStream(@case.Store.Events, Tenancy.DefaultTenantId);
-        await using var session = @case.Store.LightweightSession();
+        await using var session = (DocumentSessionBase)@case.Store.LightweightSession();
 
         var batch = new UpdateBatch(new []{operation});
-        await batch.ApplyChangesAsync((IMartenSession) session, CancellationToken.None);
+        await session.ExecuteBatchAsync(batch, CancellationToken.None);
 
         if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
@@ -178,11 +179,12 @@ public class appending_events_workflow_specs
         await @case.Store.EnsureStorageExistsAsync(typeof(IEvent));
 
         var operation = new EstablishTombstoneStream(@case.Store.Events, Tenancy.DefaultTenantId);
-        await using var session = @case.Store.LightweightSession();
+        await using var session = (DocumentSessionBase)@case.Store.LightweightSession();
 
         var batch = new UpdateBatch(new []{operation});
-        await batch.ApplyChangesAsync((IMartenSession) session, CancellationToken.None);
-        await batch.ApplyChangesAsync((IMartenSession) session, CancellationToken.None);
+
+        await session.ExecuteBatchAsync(batch, CancellationToken.None);
+        await session.ExecuteBatchAsync(batch, CancellationToken.None);
 
         if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
@@ -245,58 +247,6 @@ public class appending_events_workflow_specs
         }
     }
 
-    [Theory]
-    [MemberData(nameof(Data))]
-    public void exercise_tombstone_workflow_sync(TestCase @case)
-    {
-        @case.Store.Advanced.Clean.CompletelyRemoveAll();
-
-        using var session = @case.Store.LightweightSession();
-
-        if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
-        {
-            session.Events.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent());
-        }
-        else
-        {
-            session.Events.Append(Guid.NewGuid().ToString(), new AEvent(), new BEvent(), new CEvent());
-        }
-
-
-        session.QueueOperation(new FailingOperation());
-
-        Should.Throw<DivideByZeroException>(() =>
-        {
-            session.SaveChanges();
-        });
-
-        using var session2 = @case.Store.LightweightSession();
-
-        if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
-        {
-            session2.Events.FetchStreamState(EstablishTombstoneStream.StreamId).ShouldNotBeNull();
-
-            var events = session2.Events.FetchStream(EstablishTombstoneStream.StreamId);
-            events.Any().ShouldBeTrue();
-            foreach (var @event in events)
-            {
-                @event.Data.ShouldBeOfType<Tombstone>();
-            }
-        }
-        else
-        {
-            session2.Events.FetchStreamState(EstablishTombstoneStream.StreamKey).ShouldNotBeNull();
-
-            var events = session2.Events.FetchStream(EstablishTombstoneStream.StreamKey);
-            events.Any().ShouldBeTrue();
-            foreach (var @event in events)
-            {
-                @event.Data.ShouldBeOfType<Tombstone>();
-            }
-        }
-    }
-
-
 
     public static IEnumerable<object[]> Data()
     {
@@ -324,7 +274,7 @@ public class appending_events_workflow_specs
     public class TestCase : IDisposable
     {
         private readonly string _description;
-        private Lazy<DocumentStore> _store;
+        private readonly Lazy<DocumentStore> _store;
 
         public TestCase(string description, Action<EventGraph> config)
         {
@@ -438,7 +388,7 @@ public class appending_events_workflow_specs
 
     public class FailingOperation: IStorageOperation
     {
-        public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+        public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
         {
             builder.Append("select 1");
         }

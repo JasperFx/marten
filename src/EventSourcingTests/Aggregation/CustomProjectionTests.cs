@@ -1,23 +1,14 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
-using Marten;
-using Marten.Events;
 using Marten.Events.Aggregation;
-using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
-using Marten.Linq.SoftDeletes;
 using Marten.Metadata;
-using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Microsoft.CodeAnalysis;
 using Shouldly;
 using Xunit;
 
@@ -56,7 +47,7 @@ public class CustomProjectionTests
     public void assert_invalid_with_incomplete_slicing_rules()
     {
         var projection = new MyCustomAggregateWithNoSlicer();
-        projection.AggregateEvents(x => {});
+        projection.AggregateEvents(x => { });
 
         Exception<InvalidProjectionException>.ShouldBeThrownBy(() =>
         {
@@ -101,12 +92,12 @@ public class CustomProjectionTests
 
         withGuid.Slicer.ShouldBeOfType<ByStreamKey<StringDoc>>();
     }
-
 }
 
 public class EmptyCustomProjection<TDoc, TId>: CustomProjection<TDoc, TId>
 {
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<TDoc, TId> slice, CancellationToken cancellation,
+    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<TDoc, TId> slice,
+        CancellationToken cancellation,
         ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
     {
         throw new NotImplementedException();
@@ -144,14 +135,34 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
 
         var agg1 = await theSession.LoadAsync<CustomAggregate>(1);
         agg1
-            .ShouldBe(new CustomAggregate{Id = 1, ACount = 4, BCount = 1, CCount = 1, DCount = 1});
+            .ShouldBe(new CustomAggregate
+            {
+                Id = 1,
+                ACount = 4,
+                BCount = 1,
+                CCount = 1,
+                DCount = 1
+            });
 
         (await theSession.LoadAsync<CustomAggregate>(2))
-            .ShouldBe(new CustomAggregate{Id = 2, ACount = 2, BCount = 0, CCount = 0, DCount = 0});
+            .ShouldBe(new CustomAggregate
+            {
+                Id = 2,
+                ACount = 2,
+                BCount = 0,
+                CCount = 0,
+                DCount = 0
+            });
 
         (await theSession.LoadAsync<CustomAggregate>(3))
-            .ShouldBe(new CustomAggregate{Id = 3, ACount = 0, BCount = 1, CCount = 0, DCount = 1});
-
+            .ShouldBe(new CustomAggregate
+            {
+                Id = 3,
+                ACount = 0,
+                BCount = 1,
+                CCount = 0,
+                DCount = 1
+            });
     }
 
     [Fact]
@@ -177,19 +188,38 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
         theSession.SaveChanges();
 
         theSession.Load<CustomAggregate>(1)
-            .ShouldBe(new CustomAggregate{Id = 1, ACount = 4, BCount = 1, CCount = 1, DCount = 1});
+            .ShouldBe(new CustomAggregate
+            {
+                Id = 1,
+                ACount = 4,
+                BCount = 1,
+                CCount = 1,
+                DCount = 1
+            });
 
         theSession.Load<CustomAggregate>(2)
-            .ShouldBe(new CustomAggregate{Id = 2, ACount = 2, BCount = 0, CCount = 0, DCount = 0});
+            .ShouldBe(new CustomAggregate
+            {
+                Id = 2,
+                ACount = 2,
+                BCount = 0,
+                CCount = 0,
+                DCount = 0
+            });
 
         theSession.Load<CustomAggregate>(3)
-            .ShouldBe(new CustomAggregate{Id = 3, ACount = 0, BCount = 1, CCount = 0, DCount = 1});
-
+            .ShouldBe(new CustomAggregate
+            {
+                Id = 3,
+                ACount = 0,
+                BCount = 1,
+                CCount = 0,
+                DCount = 1
+            });
     }
-
 }
 
-public class CustomEvent : INumbered
+public class CustomEvent: INumbered
 {
     public CustomEvent(int number, char letter)
     {
@@ -197,8 +227,9 @@ public class CustomEvent : INumbered
         Letter = letter;
     }
 
-    public int Number { get; set; }
     public char Letter { get; set; }
+
+    public int Number { get; set; }
 }
 
 public interface INumbered
@@ -208,15 +239,13 @@ public interface INumbered
 
 public class MyCustomAggregateWithNoSlicer: CustomProjection<CustomAggregate, int>
 {
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CustomAggregate, int> slice, CancellationToken cancellation,
+    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CustomAggregate, int> slice,
+        CancellationToken cancellation,
         ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
     {
         throw new NotImplementedException();
     }
-
-
 }
-
 
 public class MyCustomProjection: CustomProjection<CustomAggregate, int>
 {
@@ -228,7 +257,8 @@ public class MyCustomProjection: CustomProjection<CustomAggregate, int>
         });
     }
 
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CustomAggregate, int> slice, CancellationToken cancellation,
+    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CustomAggregate, int> slice,
+        CancellationToken cancellation,
         ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
     {
         var aggregate = slice.Aggregate ?? new CustomAggregate { Id = slice.Id };
@@ -261,7 +291,6 @@ public class MyCustomProjection: CustomProjection<CustomAggregate, int>
         session.Store(aggregate);
         return new ValueTask();
     }
-
 }
 
 public class CustomAggregate
@@ -275,7 +304,8 @@ public class CustomAggregate
 
     protected bool Equals(CustomAggregate other)
     {
-        return Id == other.Id && ACount == other.ACount && BCount == other.BCount && CCount == other.CCount && DCount == other.DCount;
+        return Id == other.Id && ACount == other.ACount && BCount == other.BCount && CCount == other.CCount &&
+               DCount == other.DCount;
     }
 
     public override bool Equals(object obj)
@@ -290,7 +320,7 @@ public class CustomAggregate
             return true;
         }
 
-        if (obj.GetType() != this.GetType())
+        if (obj.GetType() != GetType())
         {
             return false;
         }
@@ -305,11 +335,13 @@ public class CustomAggregate
 
     public override string ToString()
     {
-        return $"{nameof(Id)}: {Id}, {nameof(ACount)}: {ACount}, {nameof(BCount)}: {BCount}, {nameof(CCount)}: {CCount}, {nameof(DCount)}: {DCount}";
+        return
+            $"{nameof(Id)}: {Id}, {nameof(ACount)}: {ACount}, {nameof(BCount)}: {BCount}, {nameof(CCount)}: {CCount}, {nameof(DCount)}: {DCount}";
     }
 }
 
-public class using_custom_aggregate_with_soft_deletes_and_update_only_events : OneOffConfigurationsContext, IAsyncLifetime
+public class using_custom_aggregate_with_soft_deletes_and_update_only_events: OneOffConfigurationsContext,
+    IAsyncLifetime
 {
     public using_custom_aggregate_with_soft_deletes_and_update_only_events()
     {
@@ -374,15 +406,15 @@ public class using_custom_aggregate_with_soft_deletes_and_update_only_events : O
 
 #region sample_StartAndStopAggregate
 
-public class StartAndStopAggregate : ISoftDeleted
+public class StartAndStopAggregate: ISoftDeleted
 {
-    // These are Marten controlled
-    public bool Deleted { get; set; }
-    public DateTimeOffset? DeletedAt { get; set; }
-
     public int Count { get; set; }
 
     public Guid Id { get; set; }
+
+    // These are Marten controlled
+    public bool Deleted { get; set; }
+    public DateTimeOffset? DeletedAt { get; set; }
 
     public void Increment()
     {
@@ -394,10 +426,21 @@ public class StartAndStopAggregate : ISoftDeleted
 
 #region sample_custom_aggregate_events
 
-public class Start{}
-public class End{}
-public class Restart{}
-public class Increment{}
+public class Start
+{
+}
+
+public class End
+{
+}
+
+public class Restart
+{
+}
+
+public class Increment
+{
+}
 
 #endregion
 
@@ -420,10 +463,10 @@ public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Gui
         IncludeType<Increment>();
     }
 
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<StartAndStopAggregate, Guid> slice, CancellationToken cancellation,
+    public override ValueTask ApplyChangesAsync(DocumentSessionBase session,
+        EventSlice<StartAndStopAggregate, Guid> slice, CancellationToken cancellation,
         ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
     {
-
         var aggregate = slice.Aggregate;
 
 
@@ -449,7 +492,7 @@ public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Gui
                     session.Delete(aggregate);
                     aggregate.Deleted = true; // Got to help Marten out a little bit here
                     break;
-                case Restart when (aggregate == null || aggregate.Deleted):
+                case Restart when aggregate == null || aggregate.Deleted:
                     // Got to "undo" the soft delete status
                     session
                         .UndoDeleteWhere<StartAndStopAggregate>(x => x.Id == slice.Id);

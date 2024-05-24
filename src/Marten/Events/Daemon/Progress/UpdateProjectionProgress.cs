@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Daemon.Internals;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
@@ -23,7 +24,7 @@ internal class UpdateProjectionProgress: IStorageOperation
 
     public EventRange Range { get; }
 
-    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         var parameters =
             builder.AppendWithParameters(

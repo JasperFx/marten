@@ -24,7 +24,7 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L114-L127' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configureeventmetadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The actual metadata is accessible from the `IEvent` interface or `Event<T>` event wrappers as shown below:
+The actual metadata is accessible from the `IEvent` interface event wrappers as shown below (which are implemented by internal `Event<T>`):
 
 <!-- snippet: sample_IEvent -->
 <a id='snippet-sample_ievent'></a>

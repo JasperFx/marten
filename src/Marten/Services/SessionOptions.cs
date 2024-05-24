@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using Marten.Exceptions;
+using Marten.Internal.OpenTelemetry;
 using Marten.Internal.Sessions;
 using Marten.Storage;
 using Npgsql;
@@ -25,18 +26,11 @@ public sealed class SessionOptions
 
     // Note: recent one
     /// <summary>
-    /// Define the type of session you'd like to open.
-    /// We recommend using lightweight session by default.<br/>
+    /// Define the type of session document tracking you'd like to open.
+    /// We recommend using lightweight session, and this is the default.<br/>
     /// Read more in documentation: https://martendb.io/documents/sessions.html.
     /// </summary>
-    [Obsolete(
-        """
-        Opening a session without explicitly providing desired type may be dropped in next Marten version.
-        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
-        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
-        """
-    )]
-    public DocumentTracking Tracking { get; set; } = DocumentTracking.IdentityOnly;
+    public DocumentTracking Tracking { get; set; } = DocumentTracking.None;
 
     /// <summary>
     ///     If not specified, sessions default to Npgsql command timeout (30 seconds)
@@ -61,7 +55,6 @@ public sealed class SessionOptions
     /// <summary>
     ///     Optional mechanism to open a session with an existing connection
     /// </summary>
-    // TODO -- try to make the setter private again
     public NpgsqlConnection? Connection { get; internal set; }
 
     /// <summary>
@@ -90,10 +83,11 @@ public sealed class SessionOptions
     /// </summary>
     public bool AllowAnyTenant { get; set; }
 
-    internal IConnectionLifetime Initialize(DocumentStore store, CommandRunnerMode mode)
+    internal IConnectionLifetime Initialize(DocumentStore store, CommandRunnerMode mode,
+        OpenTelemetryOptions telemetryOptions)
     {
         Mode = mode;
-        Tenant ??= TenantId != Tenancy.DefaultTenantId ? store.Tenancy.GetTenant(TenantId) : store.Tenancy.Default;
+        Tenant ??= TenantId != Tenancy.DefaultTenantId ? store.Tenancy.GetTenant(store.Options.MaybeCorrectTenantId(TenantId)) : store.Tenancy.Default;
 
         if (!AllowAnyTenant && !store.Options.Advanced.DefaultTenantUsageEnabled &&
             Tenant.TenantId == Tenancy.DefaultTenantId)
@@ -101,6 +95,15 @@ public sealed class SessionOptions
             throw new DefaultTenantUsageDisabledException();
         }
 
+        var innerConnectionLifetime = buildConnectionLifetime(store, mode);
+
+        return telemetryOptions.TrackConnections == TrackLevel.None || !MartenTracing.ActivitySource.HasListeners()
+            ? innerConnectionLifetime
+            : new EventTracingConnectionLifetime(innerConnectionLifetime, Tenant.TenantId, telemetryOptions);
+    }
+
+    private IConnectionLifetime buildConnectionLifetime(DocumentStore store, CommandRunnerMode mode)
+    {
         if (!OwnsTransactionLifecycle && mode != CommandRunnerMode.ReadOnly)
         {
             Mode = CommandRunnerMode.External;
@@ -108,33 +111,40 @@ public sealed class SessionOptions
 
         if (OwnsConnection && OwnsTransactionLifecycle)
         {
-            var transaction = mode == CommandRunnerMode.ReadOnly
-                ? new ReadOnlyMartenControlledConnectionTransaction(this)
-                : new MartenControlledConnectionTransaction(this);
-
             if (IsolationLevel == IsolationLevel.Serializable)
             {
+                var transaction = mode == CommandRunnerMode.ReadOnly
+                    ? new ReadOnlyTransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout }
+                    : new TransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout };
                 transaction.BeginTransaction();
+
+                return transaction;
+            }
+            else if (store.Options.UseStickyConnectionLifetimes)
+            {
+                return new TransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout };
             }
 
-            return transaction;
+            {
+                return new AutoClosingLifetime(this, store.Options);
+            }
         }
 
 
         if (Transaction != null)
         {
-            return new ExternalTransaction(this);
+            return new ExternalTransaction(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout };
         }
 
 
         if (DotNetTransaction != null)
         {
-            return new AmbientTransactionLifetime(this);
+            return new AmbientTransactionLifetime(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout };
         }
 
         if (Connection != null)
         {
-            return new MartenControlledConnectionTransaction(this);
+            return new TransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout };
         }
 
 
@@ -146,7 +156,7 @@ public sealed class SessionOptions
     {
         Mode = mode;
         Tenant ??= TenantId != Tenancy.DefaultTenantId
-            ? await store.Tenancy.GetTenantAsync(TenantId).ConfigureAwait(false)
+            ? await store.Tenancy.GetTenantAsync(store.Options.MaybeCorrectTenantId(TenantId)).ConfigureAwait(false)
             : store.Tenancy.Default;
 
         if (!AllowAnyTenant && !store.Options.Advanced.DefaultTenantUsageEnabled &&
@@ -163,8 +173,8 @@ public sealed class SessionOptions
         if (OwnsConnection && OwnsTransactionLifecycle)
         {
             var transaction = mode == CommandRunnerMode.ReadOnly
-                ? new ReadOnlyMartenControlledConnectionTransaction(this)
-                : new MartenControlledConnectionTransaction(this);
+                ? new ReadOnlyTransactionalConnection(this)
+                : new TransactionalConnection(this);
 
             if (IsolationLevel == IsolationLevel.Serializable)
             {
@@ -208,11 +218,20 @@ public sealed class SessionOptions
     /// </summary>
     /// <param name="database"></param>
     /// <returns></returns>
-    public static SessionOptions ForDatabase(IMartenDatabase database)
+    public static SessionOptions ForDatabase(IMartenDatabase database) =>
+        ForDatabase(Tenancy.DefaultTenantId, database);
+
+    /// <summary>
+    ///     Create a session for tenant within the supplied database
+    /// </summary>
+    /// <param name="tenantId"></param>
+    /// <param name="database"></param>
+    /// <returns></returns>
+    public static SessionOptions ForDatabase(string tenantId, IMartenDatabase database)
     {
         return new SessionOptions
         {
-            Tenant = new Tenant(Tenancy.DefaultTenantId, database),
+            Tenant = new Tenant(tenantId, database),
             AllowAnyTenant = true,
             OwnsConnection = true,
             OwnsTransactionLifecycle = true,
@@ -267,7 +286,8 @@ public sealed class SessionOptions
 
     /// <summary>
     ///     Create a new session options object using the current, ambient
-    ///     transaction scope
+    ///     transaction scope. NOTE THAT MARTEN'S AUTOMATIC DATABASE MIGRATIONS
+    ///     DO NOT WORK USING THIS OPTION
     /// </summary>
     /// <returns></returns>
     public static SessionOptions ForCurrentTransaction()

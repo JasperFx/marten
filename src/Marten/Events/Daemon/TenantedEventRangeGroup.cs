@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Storage;
 
@@ -16,15 +17,21 @@ internal class TenantedEventRangeGroup: EventRangeGroup
 {
     private readonly IMartenDatabase _daemonDatabase;
     private readonly IProjection _projection;
+    private readonly AsyncOptions _asyncOptions;
     private readonly DocumentStore _store;
 
-    public TenantedEventRangeGroup(IDocumentStore store, IMartenDatabase daemonDatabase, IProjection projection,
+    public TenantedEventRangeGroup(
+        IDocumentStore store,
+        IMartenDatabase daemonDatabase,
+        IProjection projection,
+        AsyncOptions asyncOptions,
         EventRange range,
         CancellationToken shardCancellation): base(range, shardCancellation)
     {
         _store = (DocumentStore)store;
         _daemonDatabase = daemonDatabase;
         _projection = projection ?? throw new ArgumentNullException(nameof(projection));
+        _asyncOptions = asyncOptions;
 
         buildGroups();
     }
@@ -76,10 +83,10 @@ internal class TenantedEventRangeGroup: EventRangeGroup
         return $"Tenant Group Range for: {Range}";
     }
 
-    public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch)
+    public override Task ConfigureUpdateBatch(ProjectionUpdateBatch batch)
     {
         return Parallel.ForEachAsync(Groups, Cancellation,
             async (tenantGroup, token) =>
-                await tenantGroup.ApplyEvents(batch, _projection, _store, token).ConfigureAwait(false));
+                await tenantGroup.ApplyEvents(batch, _projection, _asyncOptions, _store, token).ConfigureAwait(false));
     }
 }

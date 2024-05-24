@@ -3,68 +3,42 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Internal;
 using Marten.Linq.QueryHandlers;
-using Marten.Linq.SqlGeneration;
-using Marten.Schema.Arguments;
 using Npgsql;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Util;
 
 internal static class CommandExtensions
 {
-    public static NpgsqlCommand BuildCommand(this IMartenSession session, Statement statement)
+    public static NpgsqlBatch BuildCommand(this IMartenSession session, ISqlFragment statement)
     {
-        var command = new NpgsqlCommand();
-        var builder = new CommandBuilder(command);
+        var builder = new BatchBuilder(){TenantId = session.TenantId};
 
-        statement.Configure(builder);
+        statement.Apply(builder);
 
-        command.CommandText = builder.ToString();
-
-        session.TrySetTenantId(command);
-
-        return command;
+        return builder.Compile();
     }
 
-    public static void TrySetTenantId(this IMartenSession session, NpgsqlCommand command)
+    public static NpgsqlBatch BuildCommand(this IMartenSession session, IQueryHandler handler)
     {
-        var tenantParameter = command.Parameters.FirstOrDefault(x => x.ParameterName == TenantIdArgument.ArgName);
-
-        if (tenantParameter != null)
-        {
-            tenantParameter.Value = session.TenantId;
-        }
-    }
-
-    public static NpgsqlCommand BuildCommand(this IMartenSession session, IQueryHandler handler)
-    {
-        var command = new NpgsqlCommand();
-        var builder = new CommandBuilder(command);
+        var builder = new BatchBuilder(){TenantId = session.TenantId};
 
         handler.ConfigureCommand(builder, session);
 
-        command.CommandText = builder.ToString();
-
-        session.TrySetTenantId(command);
-
-        return command;
+        return builder.Compile();
     }
 
-    public static NpgsqlCommand BuildCommand(this IMartenSession session, IEnumerable<IQueryHandler> handlers)
+    public static NpgsqlBatch BuildCommand(this IMartenSession session, IEnumerable<IQueryHandler> handlers)
     {
-        var command = new NpgsqlCommand();
-        var builder = new CommandBuilder(command);
+        var builder = new BatchBuilder(){TenantId = session.TenantId};
 
         foreach (var handler in handlers)
         {
+            builder.StartNewCommand();
             handler.ConfigureCommand(builder, session);
-            builder.Append(";");
         }
 
-        command.CommandText = builder.ToString();
-
-        session.TrySetTenantId(command);
-
-        return command;
+        return builder.Compile();
     }
 }

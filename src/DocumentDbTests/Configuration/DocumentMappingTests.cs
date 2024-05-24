@@ -2,18 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
-using JasperFx.Core;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Exceptions;
-using Marten.Linq.Fields;
+using Marten.Linq;
+using Marten.Linq.Members;
+using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Storage;
 using Marten.Storage.Metadata;
-using Marten.Testing;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using NpgsqlTypes;
@@ -26,129 +26,6 @@ namespace DocumentDbTests.Configuration;
 
 public class DocumentMappingTests
 {
-    public class FieldId
-    {
-        public string id;
-    }
-
-    public abstract class AbstractDoc
-    {
-        public int id;
-    }
-
-    public interface IDoc
-    {
-        string id { get; set; }
-    }
-
-    [UseOptimisticConcurrency]
-    public class VersionedDoc
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-    }
-
-    public class IntId
-    {
-        public int Id;
-    }
-
-    public class LongId
-    {
-        public long Id;
-    }
-
-    public class StringId
-    {
-        public string Id;
-    }
-
-    public class UpperCaseProperty
-    {
-        public Guid Id { get; set; }
-    }
-
-    public class LowerCaseProperty
-    {
-        public Guid id { get; set; }
-    }
-
-    public class UpperCaseField
-    {
-        public int Id;
-    }
-
-    public class LowerCaseField
-    {
-        public int id;
-    }
-
-    public class MySpecialDocument
-    {
-        public Guid Id { get; set; }
-    }
-
-    [GinIndexed]
-    public class BaseDocumentWithAttribute
-    {
-        public int Id;
-    }
-
-    public class BaseDocumentSubClass : BaseDocumentWithAttribute
-    {
-    }
-
-    [PropertySearching(PropertySearching.JSON_Locator_Only)]
-    public class Organization
-    {
-        [DuplicateField] public string OtherName;
-
-        public string OtherProp;
-        public Guid Id { get; set; }
-
-        [DuplicateField]
-        public string Name { get; set; }
-
-        public string OtherField { get; set; }
-    }
-
-    public class CustomIdGeneration: IIdGeneration
-    {
-        public IEnumerable<Type> KeyTypes { get; }
-
-        public bool RequiresSequences { get; } = false;
-        public void GenerateCode(GeneratedMethod assign, DocumentMapping mapping)
-        {
-            throw new NotSupportedException();
-        }
-    }
-
-    #region sample_ConfigureMarten-generic
-    public class ConfiguresItself
-    {
-        public Guid Id;
-
-        public static void ConfigureMarten(DocumentMapping mapping)
-        {
-            mapping.Alias = "different";
-        }
-    }
-
-    #endregion
-
-    #region sample_ConfigureMarten-specifically
-    public class ConfiguresItselfSpecifically
-    {
-        public Guid Id;
-        public string Name;
-
-        public static void ConfigureMarten(DocumentMapping<ConfiguresItselfSpecifically> mapping)
-        {
-            mapping.Duplicate(x => x.Name);
-        }
-    }
-
-    #endregion
-
     [Fact]
     public void can_replace_hilo_def_settings()
     {
@@ -215,7 +92,7 @@ public class DocumentMappingTests
     }
 
     [Fact]
-    public void default_table_name_with_different_shema()
+    public void default_table_name_with_different_schema()
     {
         var mapping = DocumentMapping.For<User>("other");
         mapping.TableName.QualifiedName.ShouldBe("other.mt_doc_user");
@@ -255,7 +132,7 @@ public class DocumentMappingTests
     public void enum_storage_should_be_taken_from_store_options(EnumStorage enumStorage)
     {
         var storeOptions = new StoreOptions();
-        storeOptions.UseDefaultSerialization(enumStorage);
+        storeOptions.UseNewtonsoftForSerialization(enumStorage);
 
         var mapping = new DocumentMapping<User>(storeOptions);
         mapping.EnumStorage.ShouldBe(enumStorage);
@@ -275,17 +152,18 @@ public class DocumentMappingTests
 
         mapping.DuplicateField(nameof(User.FirstName));
 
-        mapping.FieldFor(nameof(User.FirstName)).ShouldBeOfType<DuplicatedField>();
+        mapping.QueryMembers.MemberFor(nameof(User.FirstName)).ShouldBeOfType<DuplicatedField>();
 
         // other fields are still the same
 
-        SpecificationExtensions.ShouldNotBeOfType<DuplicatedField>(mapping.FieldFor(nameof(User.LastName)));
+        mapping.QueryMembers.MemberFor(nameof(User.LastName)).ShouldNotBeOfType<DuplicatedField>();
     }
 
     [Theory]
     [InlineData(EnumStorage.AsInteger, NpgsqlDbType.Integer)]
     [InlineData(EnumStorage.AsString, NpgsqlDbType.Varchar)]
-    public void duplicated_field_enum_storage_should_be_taken_from_store_options_enum_storage_by_default(EnumStorage enumStorage, NpgsqlDbType expectedNpgsqlDbType)
+    public void duplicated_field_enum_storage_should_be_taken_from_store_options_enum_storage_by_default(
+        EnumStorage enumStorage, NpgsqlDbType expectedNpgsqlDbType)
     {
         var storeOptions = new StoreOptions();
         storeOptions.UseDefaultSerialization(enumStorage);
@@ -299,7 +177,9 @@ public class DocumentMappingTests
     [Theory]
     [InlineData(EnumStorage.AsInteger, NpgsqlDbType.Integer)]
     [InlineData(EnumStorage.AsString, NpgsqlDbType.Varchar)]
-    public void duplicated_field_enum_storage_should_be_taken_from_store_options_duplicated_field_enum_storage_when_it_was_changed(EnumStorage enumStorage, NpgsqlDbType expectedNpgsqlDbType)
+    public void
+        duplicated_field_enum_storage_should_be_taken_from_store_options_duplicated_field_enum_storage_when_it_was_changed(
+            EnumStorage enumStorage, NpgsqlDbType expectedNpgsqlDbType)
     {
         var storeOptions = new StoreOptions();
         storeOptions.Advanced.DuplicatedFieldEnumStorage = enumStorage;
@@ -313,10 +193,13 @@ public class DocumentMappingTests
     [Theory]
     [InlineData(true, NpgsqlDbType.Timestamp)]
     [InlineData(false, NpgsqlDbType.TimestampTz)]
-    public void duplicated_field_date_time_db_type_should_be_taken_from_store_options_useTimestampWithoutTimeZoneForDateTime(bool useTimestampWithoutTimeZoneForDateTime, NpgsqlDbType expectedNpgsqlDbType)
+    public void
+        duplicated_field_date_time_db_type_should_be_taken_from_store_options_useTimestampWithoutTimeZoneForDateTime(
+            bool useTimestampWithoutTimeZoneForDateTime, NpgsqlDbType expectedNpgsqlDbType)
     {
         var storeOptions = new StoreOptions();
-        storeOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;
+        storeOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime =
+            useTimestampWithoutTimeZoneForDateTime;
 
         var mapping = new DocumentMapping<Target>(storeOptions);
 
@@ -328,8 +211,8 @@ public class DocumentMappingTests
     public void find_field_for_immediate_field_that_is_not_duplicated()
     {
         var mapping = DocumentMapping.For<UpperCaseField>();
-        var field = mapping.FieldFor("Id");
-        field.Members.Single().ShouldBeAssignableTo<FieldInfo>()
+        var field = mapping.QueryMembers.MemberFor("Id");
+        field.As<IdMember>().Member.ShouldBeAssignableTo<FieldInfo>()
             .Name.ShouldBe("Id");
     }
 
@@ -337,18 +220,18 @@ public class DocumentMappingTests
     public void find_field_for_immediate_property_that_is_not_duplicated()
     {
         var mapping = DocumentMapping.For<UpperCaseProperty>();
-        var field = mapping.FieldFor("Id");
-        field.Members.Single().ShouldBeAssignableTo<PropertyInfo>()
+        var field = mapping.QueryMembers.MemberFor("Id");
+        field.As<IdMember>().Member.ShouldBeAssignableTo<PropertyInfo>()
             .Name.ShouldBe("Id");
     }
 
     [Fact]
     public void get_the_sql_locator_for_the_Id_member()
     {
-        DocumentMapping.For<User>().FieldFor("Id")
+        DocumentMapping.For<User>().QueryMembers.MemberFor("Id")
             .TypedLocator.ShouldBe("d.id");
 
-        DocumentMapping.For<FieldId>().FieldFor("id")
+        DocumentMapping.For<FieldId>().QueryMembers.MemberFor("id")
             .TypedLocator.ShouldBe("d.id");
     }
 
@@ -508,8 +391,8 @@ public class DocumentMappingTests
     {
         var mapping = DocumentMapping.For<Organization>();
 
-        mapping.FieldFor("OtherName").ShouldBeOfType<DuplicatedField>();
-        SpecificationExtensions.ShouldNotBeOfType<DuplicatedField>(mapping.FieldFor(nameof(Organization.OtherField)));
+        mapping.QueryMembers.MemberFor("OtherName").ShouldBeOfType<DuplicatedField>();
+        mapping.QueryMembers.MemberFor(nameof(Organization.OtherField)).ShouldNotBeOfType<DuplicatedField>();
     }
 
     [Fact]
@@ -517,8 +400,8 @@ public class DocumentMappingTests
     {
         var mapping = DocumentMapping.For<Organization>();
 
-        mapping.FieldFor(nameof(Organization.Name)).ShouldBeOfType<DuplicatedField>();
-        mapping.FieldFor(nameof(Organization.OtherProp)).ShouldNotBeOfType<DuplicatedField>();
+        mapping.QueryMembers.MemberFor(nameof(Organization.Name)).ShouldBeOfType<DuplicatedField>();
+        mapping.QueryMembers.MemberFor(nameof(Organization.OtherProp)).ShouldNotBeOfType<DuplicatedField>();
     }
 
     [Fact]
@@ -786,7 +669,6 @@ public class DocumentMappingTests
                 _.Schema.For<BadDoc>();
             });
         });
-
     }
 
     [Fact]
@@ -799,7 +681,6 @@ public class DocumentMappingTests
                 options.Schema.For<BadDoc>();
             });
         });
-
     }
 
     [Fact]
@@ -808,17 +689,155 @@ public class DocumentMappingTests
         DocumentMapping.For<Customer>().DatabaseSchemaName.ShouldBe("organization");
     }
 
+    [Fact]
+    public void validate_should_fail_if_using_both_optimistic_concurrency_and_revisioning()
+    {
+        var mapping = DocumentMapping.For<Target>();
+        mapping.UseNumericRevisions = true;
+        mapping.UseOptimisticConcurrency = true;
+
+        var ex = Should.Throw<InvalidDocumentException>(() => mapping.CompileAndValidate());
+        ex.Message.ShouldContain("cannot be configured with UseNumericRevision and UseOptimisticConcurrency. Choose one or the other", Case.Insensitive);
+    }
+
+
+
+    public class FieldId
+    {
+        public string id;
+    }
+
+    public abstract class AbstractDoc
+    {
+        public int id;
+    }
+
+    public interface IDoc
+    {
+        string id { get; set; }
+    }
+
+    [UseOptimisticConcurrency]
+    public class VersionedDoc
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+    }
+
+    public class IntId
+    {
+        public int Id;
+    }
+
+    public class LongId
+    {
+        public long Id;
+    }
+
+    public class StringId
+    {
+        public string Id;
+    }
+
+    public class UpperCaseProperty
+    {
+        public Guid Id { get; set; }
+    }
+
+    public class LowerCaseProperty
+    {
+        public Guid id { get; set; }
+    }
+
+    public class UpperCaseField
+    {
+        public int Id;
+    }
+
+    public class LowerCaseField
+    {
+        public int id;
+    }
+
+    public class MySpecialDocument
+    {
+        public Guid Id { get; set; }
+    }
+
+    [GinIndexed]
+    public class BaseDocumentWithAttribute
+    {
+        public int Id;
+    }
+
+    public class BaseDocumentSubClass: BaseDocumentWithAttribute
+    {
+    }
+
+    [PropertySearching(PropertySearching.JSON_Locator_Only)]
+    public class Organization
+    {
+        [DuplicateField] public string OtherName;
+
+        public string OtherProp;
+        public Guid Id { get; set; }
+
+        [DuplicateField] public string Name { get; set; }
+
+        public string OtherField { get; set; }
+    }
+
+    public class CustomIdGeneration: IIdGeneration
+    {
+        public IEnumerable<Type> KeyTypes { get; }
+
+        public bool RequiresSequences { get; } = false;
+
+        public void GenerateCode(GeneratedMethod assign, DocumentMapping mapping)
+        {
+            throw new NotSupportedException();
+        }
+    }
+
+    #region sample_ConfigureMarten-generic
+
+    public class ConfiguresItself
+    {
+        public Guid Id;
+
+        public static void ConfigureMarten(DocumentMapping mapping)
+        {
+            mapping.Alias = "different";
+        }
+    }
+
+    #endregion
+
+    #region sample_ConfigureMarten-specifically
+
+    public class ConfiguresItselfSpecifically
+    {
+        public Guid Id;
+        public string Name;
+
+        public static void ConfigureMarten(DocumentMapping<ConfiguresItselfSpecifically> mapping)
+        {
+            mapping.Duplicate(x => x.Name);
+        }
+    }
+
+    #endregion
+
     #region sample_using_DatabaseSchemaName_attribute
 
     [DatabaseSchemaName("organization")]
     public class Customer
     {
-        [Identity]
-        public string Name { get; set; }
+        [Identity] public string Name { get; set; }
     }
 
     #endregion
 }
+
 public class BadDoc
 {
     public string Name { get; set; }

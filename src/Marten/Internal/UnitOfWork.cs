@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Internal.Operations;
 using Marten.Services;
+using Marten.Storage;
 
 namespace Marten.Internal;
 
@@ -78,10 +80,13 @@ internal class UnitOfWork: ISessionWorkTracker
 
     IEnumerable<object> IUnitOfWork.Updates()
     {
+        var fromTrackers = _parent.ChangeTrackers
+            .Where(x => x.DetectChanges(_parent, out var _)).Select(x => x.Document);
+
         return _operations
             .OfType<IDocumentStorageOperation>()
             .Where(x => x.Role() == OperationRole.Update || x.Role() == OperationRole.Upsert)
-            .Select(x => x.Document);
+            .Select(x => x.Document).Union(fromTrackers);
     }
 
     IEnumerable<object> IUnitOfWork.Inserts()
@@ -210,6 +215,11 @@ internal class UnitOfWork: ISessionWorkTracker
         Streams.Clear();
     }
 
+    public void PurgeOperations<T, TId>(TId id) where T : notnull
+    {
+        _operations.RemoveAll(op => op is StorageOperation<T, TId> storage && storage.Id.Equals(id));
+    }
+
     public bool TryFindStream(string streamKey, out StreamAction stream)
     {
         stream = Streams
@@ -234,15 +244,20 @@ internal class UnitOfWork: ISessionWorkTracker
             return false;
         }
 
-        if (_operations.Select(x => x.DocumentType).Distinct().Count() == 1)
-        {
-            return false;
-        }
-
-        var types = _operations
+        var rawTypes = _operations
+            .Where(x => x.Role() != OperationRole.Other)
             .Select(x => x.DocumentType)
             .Where(x => x != null)
-            .Distinct()
+            .Where(x => x != typeof(StorageFeatures))
+            .Distinct().ToArray();
+
+        if (rawTypes.Length <= 1) return false;
+
+        var hasRelationship = rawTypes.Any(x => options.Storage.GetTypeDependencies(x).Intersect(rawTypes).Any());
+
+        if (!hasRelationship) return false;
+
+        var types = rawTypes
             .TopologicalSort(type => options.Storage.GetTypeDependencies(type)).ToArray();
 
         if (_operations.OfType<IDeletion>().Any())

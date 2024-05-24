@@ -3,24 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using JasperFx.CodeGeneration;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
-using Marten.Util;
 using Npgsql;
-using NpgsqlTypes;
 using Weasel.Core;
-using Weasel.Postgresql;
 
 namespace Marten.Internal.CompiledQueries;
 
-public interface IQueryMember<T>: IQueryMember
+internal interface IQueryMember<T>: IQueryMember
 {
     T Value { get; }
     T GetValue(object query);
     void SetValue(object query, T value);
 }
 
-public abstract class QueryMember<T>: IQueryMember<T>
+internal abstract class QueryMember<T>: IQueryMember<T>
 {
     protected QueryMember(MemberInfo member)
     {
@@ -45,34 +41,19 @@ public abstract class QueryMember<T>: IQueryMember<T>
         Value = GetValue(query);
     }
 
-    public void TryMatch(List<NpgsqlParameter> parameters, StoreOptions storeOptions)
+    public bool TryMatch(NpgsqlParameter parameter, StoreOptions options, ICompiledQueryAwareFilter[] filters,
+        out ICompiledQueryAwareFilter filter)
     {
         if (Type.IsEnum)
         {
-            var parameterValue = storeOptions.Serializer().EnumStorage == EnumStorage.AsInteger
+            var parameterValue = options.Serializer().EnumStorage == EnumStorage.AsInteger
                 ? Value.As<int>()
                 : (object)Value.ToString();
 
-            tryToFind(parameters, parameterValue);
+            return tryToFind(parameter, filters, parameterValue, out filter);
         }
 
-        // These methods are on the ClonedCompiledQuery base class, and are
-        // used to set the right parameters
-        if (!tryToFind(parameters, Value) && Type == typeof(string))
-        {
-            if (tryToFind(parameters, $"%{Value}"))
-            {
-                Mask = "StartsWith({0})";
-            }
-            else if (tryToFind(parameters, $"%{Value}%"))
-            {
-                Mask = "ContainsString({0})";
-            }
-            else if (tryToFind(parameters, $"{Value}%"))
-            {
-                Mask = "EndsWith({0})";
-            }
-        }
+        return tryToFind(parameter, filters, Value, out filter);
     }
 
     public void TryWriteValue(UniqueValueSource valueSource, object query)
@@ -91,78 +72,25 @@ public abstract class QueryMember<T>: IQueryMember<T>
 
     public MemberInfo Member { get; }
 
-    public IList<int> ParameterIndexes { get; } = new List<int>();
-
-    public void GenerateCode(GeneratedMethod method, StoreOptions storeOptions)
+    private bool tryToFind(NpgsqlParameter parameter, ICompiledQueryAwareFilter[] filters,
+        object value, out ICompiledQueryAwareFilter? filterUsed)
     {
-        if (Type.IsEnum)
+        if (filters.All(x => x.ParameterName != parameter.ParameterName) && value.Equals(parameter.Value))
         {
-            generateEnumSetter(method, storeOptions);
-        }
-        else if (Mask == null)
-        {
-            generateBasicSetter(method);
-        }
-        else
-        {
-            generateMaskedStringCode(method);
-        }
-    }
-
-    private bool tryToFind(List<NpgsqlParameter> parameters, object value)
-    {
-        var matching = parameters.Where(x => value.Equals(x.Value));
-        foreach (var parameter in matching)
-        {
-            var index = parameters.IndexOf(parameter);
-            ParameterIndexes.Add(index);
+            filterUsed = null;
+            return true;
         }
 
-        return ParameterIndexes.Any();
-    }
-
-    private void generateEnumSetter(GeneratedMethod method, StoreOptions storeOptions)
-    {
-        foreach (var index in ParameterIndexes)
+        foreach (var filter in filters)
         {
-            if (storeOptions.Serializer().EnumStorage == EnumStorage.AsInteger)
+            if (filter.TryMatchValue(value, Member) && filter.ParameterName == parameter.ParameterName)
             {
-                method.Frames.Code($@"
-parameters[{index}].NpgsqlDbType = {{0}};
-parameters[{index}].Value = (int)_query.{Member.Name};
-", NpgsqlDbType.Integer);
-            }
-            else
-            {
-                method.Frames.Code($@"
-parameters[{index}].NpgsqlDbType = {{0}};
-parameters[{index}].Value = _query.{Member.Name}.ToString();
-", NpgsqlDbType.Varchar);
+                filterUsed = filter;
+                return true;
             }
         }
-    }
 
-    private void generateMaskedStringCode(GeneratedMethod method)
-    {
-        var maskedValue = Mask.ToFormat($"_query.{Member.Name}");
-
-        foreach (var index in ParameterIndexes)
-        {
-            method.Frames.Code($@"
-parameters[{index}].NpgsqlDbType = {{0}};
-parameters[{index}].Value = {maskedValue};
-", PostgresqlProvider.Instance.ToParameterType(Member.GetMemberType()));
-        }
-    }
-
-    private void generateBasicSetter(GeneratedMethod method)
-    {
-        foreach (var index in ParameterIndexes)
-        {
-            method.Frames.Code($@"
-parameters[{index}].NpgsqlDbType = {{0}};
-parameters[{index}].Value = _query.{Member.Name};
-", PostgresqlProvider.Instance.ToParameterType(Member.GetMemberType()));
-        }
+        filterUsed = default;
+        return false;
     }
 }

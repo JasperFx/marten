@@ -14,11 +14,19 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace DocumentDbTests.Indexes;
 
 public class duplicated_field: OneOffConfigurationsContext
 {
+    private readonly ITestOutputHelper _testOutputHelper;
+
+    public duplicated_field(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
+
     [Fact]
     public void can_insert_document_with_duplicated_field_with_DuplicatedFieldEnumStorage_set_to_string()
     {
@@ -194,7 +202,8 @@ public class duplicated_field: OneOffConfigurationsContext
             _.Schema.For<Organization>().Duplicate(x => x.Time2, pgType: "timestamp");
         });
 
-        theStore.StorageFeatures.MappingFor(typeof(Organization)).As<DocumentMapping>().DuplicatedFields.Single(x => x.MemberName == "Time2")
+        var documentMapping = theStore.StorageFeatures.MappingFor(typeof(Organization)).As<DocumentMapping>();
+        documentMapping.DuplicatedFields.Single(x => x.MemberName == "Time2")
             .PgType.ShouldBe("timestamp");
     }
 
@@ -255,7 +264,9 @@ public class duplicated_field: OneOffConfigurationsContext
         results
             .Any(x => x.Id == thirdTarget.Id).ShouldBeTrue();
 
-        queryable.ToCommand(FetchType.FetchMany).CommandText.ShouldContain("inner_date = :p0", Case.Insensitive);
+        var text = queryable.ToCommand(FetchType.FetchMany).CommandText;
+        _testOutputHelper.WriteLine(text);
+        text.ShouldContain("inner_date = :p0", Case.Insensitive);
     }
 
     [Fact]
@@ -305,24 +316,26 @@ public class duplicated_field: OneOffConfigurationsContext
     [Fact]
     public async Task Bug_1931_duplicated_deep_enum_field_with_int_storage()
     {
-        StoreOptions(config =>
+        StoreOptions(opts =>
         {
-            config.Schema.For<Application>()
+            opts.Schema.For<Application>()
                 .AddSubClassHierarchy(
                     typeof(ApplicationSubclass)
                 );
 
-            config.Schema.For<Application>().GinIndexJsonData();
+            opts.Schema.For<Application>().GinIndexJsonData();
 
-            config.Schema.For<Application>()
+            opts.Schema.For<Application>()
                 .Duplicate(a => a.ApplicationNumber)
                 .Duplicate(a => a.Status.StatusType);
 
 
-            config.Schema.For<Application>().Identity(a => a.Id).HiloSettings(new HiloSettings {MaxLo = 100});
+            opts.Schema.For<Application>().Identity(a => a.Id).HiloSettings(new HiloSettings {MaxLo = 100});
 
-            config.Advanced.DuplicatedFieldEnumStorage = EnumStorage.AsInteger;
-            config.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime = false;
+            opts.Advanced.DuplicatedFieldEnumStorage = EnumStorage.AsInteger;
+            opts.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime = false;
+
+            opts.AutoCreateSchemaObjects = AutoCreate.All;
         });
 
         await theStore.Advanced.Clean.CompletelyRemoveAllAsync();

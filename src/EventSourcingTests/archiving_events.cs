@@ -42,6 +42,8 @@ public class archiving_events: IntegrationContext
         theSession.Events.StartStream(stream, new AEvent(), new BEvent(), new CEvent());
         await theSession.SaveChangesAsync();
 
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
         var stream1 = await theSession.Events.FetchStreamStateAsync(stream);
         stream1.IsArchived.ShouldBeFalse();
 
@@ -158,6 +160,8 @@ public class archiving_events: IntegrationContext
 
         theSession.Events.ArchiveStream(stream2);
         await theSession.SaveChangesAsync();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
 
         #region sample_querying_for_archived_events
 

@@ -93,7 +93,7 @@ that way. Your other option is to use either the `Create()` or `Project()` metho
 
 The `Create()` method can accept these arguments:
 
-* The actual event type or `Event<T>` where `T` is the event type. One of these is required
+* The actual event type or `IEvent<T>` where `T` is the event type. One of these is required
 * `IEvent` to get access to the event metadata
 * Optionally take in `IDocumentOperations` if you need to access other data. This interface supports all the functionality of `IQuerySession`
 
@@ -106,7 +106,7 @@ The `Create()` method needs to return either:
 
 The `Project()` methods can accept these arguments:
 
-* The actual event type or `Event<T>` where `T` is the event type. One of these is required.
+* The actual event type or `IEvent<T>` where `T` is the event type. One of these is required.
 * `IEvent` to get access to the event metadata
 * `IDocumentOperations` is mandatory, and this is what you'd use to register any document operations
 

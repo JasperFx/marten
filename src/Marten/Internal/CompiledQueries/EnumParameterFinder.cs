@@ -13,7 +13,7 @@ internal class EnumParameterFinder: IParameterFinder
 
     public bool AreValuesUnique(object query, CompiledQueryPlan plan)
     {
-        var groups = plan.Parameters.Where(x => x.Type.IsEnum)
+        var groups = plan.QueryMembers.Where(x => x.Type.IsEnum)
             .GroupBy(x => x.Type).Where(x => x.Count() > 1).ToArray();
 
         if (!groups.Any())

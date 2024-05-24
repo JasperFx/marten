@@ -36,7 +36,7 @@ public async Task load_event_stream_async(IDocumentSession session, Guid streamI
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L117-L145' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-fetch-stream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The data returned is a list of `IEvent` objects, where each is a strongly-typed `Event<T>` object shown below:
+The data returned is a list of `IEvent` objects, where each is a (internal) strongly-typed `Event<T>` object shown below:
 
 <!-- snippet: sample_IEvent -->
 <a id='snippet-sample_ievent'></a>
@@ -177,6 +177,7 @@ public class fetching_stream_state: IntegrationContext
     {
         var state = theSession.Events.FetchStreamState(theStreamId);
 
+        state.ShouldNotBeNull();
         state.Id.ShouldBe(theStreamId);
         state.Version.ShouldBe(2);
         state.AggregateType.ShouldBe(typeof(Quest));
@@ -189,6 +190,7 @@ public class fetching_stream_state: IntegrationContext
     {
         var state = await theSession.Events.FetchStreamStateAsync(theStreamId);
 
+        state.ShouldNotBeNull();
         state.Id.ShouldBe(theStreamId);
         state.Version.ShouldBe(2);
         state.AggregateType.ShouldBe(typeof(Quest));
@@ -228,7 +230,7 @@ public class fetching_stream_state: IntegrationContext
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/fetching_stream_state.cs#L84-L159' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetching_stream_state' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/fetching_stream_state.cs#L86-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetching_stream_state' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Furthermore, `StreamState` contains metadata for when the stream was created, `StreamState.Created`, and when the stream was last updated, `StreamState.LastTimestamp`.

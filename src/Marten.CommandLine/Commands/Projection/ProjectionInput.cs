@@ -34,9 +34,15 @@ public class ProjectionInput: MartenInput
     [Description("If specified, only execute against the named Marten database within the specified store(s). Does not apply with only one store")]
     public string DatabaseFlag { get; set; }
 
+    [Description("If specified, only executes against the whole database containing this tenant")]
+    public string TenantFlag { get; set; }
+
     [Description("If specified, use this shard timeout value for daemon")]
-    [FlagAlias("shard-timeout", 't')]
+    [FlagAlias("shard-timeout", longAliasOnly: true)]
     public string ShardTimeoutFlag { get; set; }
+
+    [Description("If specified, advances the projection high water mark to the latest event sequence")]
+    public bool AdvanceFlag { get; set; }
 
     internal IList<AsyncProjectionShard> BuildShards(DocumentStore store)
     {

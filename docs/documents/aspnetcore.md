@@ -4,7 +4,7 @@
 For a little more context, see the blog post [Efficient Web Services with Marten V4](https://jeremydmiller.com/2021/09/28/efficient-web-services-with-marten-v4/).
 :::
 
-In Marten V4, there is a small new addon that adds helpers for ASP.Net Core development, expressly
+Marten has a small addon that adds helpers for ASP.Net Core development, expressly
 the ability to very efficiently _stream_ the raw JSON of persisted documents straight to an HTTP response
 without every having to waste time with deserialization/serialization or even reading the data into a JSON
 string in memory.
@@ -39,7 +39,7 @@ public Task Get(Guid issueId, [FromServices] IQuerySession session, [FromQuery] 
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L39-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_write_single_document_by_id_to_httpresponse' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L37-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_write_single_document_by_id_to_httpresponse' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 That syntax will write the HTTP `content-type` and `content-length` response headers
@@ -62,7 +62,7 @@ public Task Get2(Guid issueId, [FromServices] IQuerySession session, [FromQuery]
             .WriteSingle(HttpContext, onFoundStatus: int.Parse(sc));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L57-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_linq_to_write_single_document_to_httpcontext' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L55-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_linq_to_write_single_document_to_httpcontext' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Multiple Documents
@@ -86,7 +86,7 @@ public Task OpenIssues([FromServices] IQuerySession session, [FromQuery] string?
             .WriteArray(HttpContext, onFoundStatus: int.Parse(sc));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L86-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_writing_multiple_documents_to_httpcontext' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L84-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_writing_multiple_documents_to_httpcontext' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Compiled Query Support
@@ -107,7 +107,7 @@ public class OpenIssues: ICompiledListQuery<Issue>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L116-L126' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_openissues' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L114-L124' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_openissues' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And use that in an MVC Controller method like this:
@@ -123,7 +123,7 @@ public Task OpenIssues2([FromServices] IQuerySession session, [FromQuery] string
         : session.WriteArray(new OpenIssues(), HttpContext, onFoundStatus: int.Parse(sc));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L103-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_compiled_query_with_json_streaming' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L101-L111' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_compiled_query_with_json_streaming' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Likewise, you _could_ use a compiled query to write a single document. As a contrived
@@ -143,7 +143,7 @@ public class IssueById: ICompiledQuery<Issue, Issue>
     public Guid Id { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L128-L140' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_issuebyid' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L126-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_issuebyid' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the usage of that to write JSON directly to the `HttpContext` in a controller method:
@@ -161,5 +161,5 @@ public Task Get3(Guid issueId, [FromServices] IQuerySession session, [FromQuery]
             .WriteSingle(HttpContext, onFoundStatus: int.Parse(sc));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L71-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_write_single_document_to_httpcontext_with_compiled_query' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L69-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_write_single_document_to_httpcontext_with_compiled_query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

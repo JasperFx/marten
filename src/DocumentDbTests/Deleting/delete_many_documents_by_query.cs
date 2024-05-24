@@ -1,4 +1,7 @@
 ﻿using System.Linq;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
+using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -34,6 +37,26 @@ public class delete_many_documents_by_query : IntegrationContext
 
         theSession.Query<Target>().Count(x => x.Double == 578)
             .ShouldBe(0);
+
+    }
+
+    [Fact]
+    public async Task delete_where_with_sub_collection_querying()
+    {
+        StoreOptions(opts => opts.Logger(new TestOutputMartenLogger(_output)));
+
+        var targets = Target.GenerateRandomData(50).ToArray();
+
+        await theStore.BulkInsertAsync(targets);
+
+        var initialCount = targets.Count(x => x.Inner.Children != null && x.Inner.Children.Any(t => t.Color == Colors.Blue));
+        targets.Length.ShouldNotBe(initialCount);
+
+        theSession.DeleteWhere<Target>(x => x.Inner.Children.Any(t => t.Color == Colors.Blue));
+        await theSession.SaveChangesAsync();
+
+        var count = await theSession.Query<Target>().CountAsync();
+        count.ShouldBe(50 - initialCount);
 
     }
 

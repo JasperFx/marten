@@ -12,6 +12,7 @@ using Npgsql;
 using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
+using Weasel.Postgresql.Tables.Indexes;
 using Xunit;
 
 namespace DocumentDbTests.Indexes;
@@ -440,14 +441,14 @@ public class full_text_index: OneOffConfigurationsContext
         var italianResults = session.Search<User>(searchFilter, italianRegConfig);
 
         italianResults.Count.ShouldBe(1);
-        SpecificationExtensions.ShouldContain(italianResults, u => u.FirstName == searchFilter);
+        italianResults.ShouldContain(u => u.FirstName == searchFilter);
         italianResults.ShouldNotContain(u => u.LastName == searchFilter);
 
         var frenchResults = session.Search<User>(searchFilter, frenchRegConfig);
 
         frenchResults.Count.ShouldBe(1);
         frenchResults.ShouldNotContain(u => u.FirstName == searchFilter);
-        SpecificationExtensions.ShouldContain(frenchResults, u => u.LastName == searchFilter);
+        frenchResults.ShouldContain(u => u.LastName == searchFilter);
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -479,7 +480,7 @@ public class full_text_index: OneOffConfigurationsContext
             var results = session.Search<User>(searchFilter);
 
             results.Count.ShouldBe(1);
-            SpecificationExtensions.ShouldContain(results, u => u.FirstName == searchFilter);
+            results.ShouldContain(u => u.FirstName == searchFilter);
             results.ShouldNotContain(u => u.LastName == searchFilter);
         }
     }
@@ -502,8 +503,8 @@ public class full_text_index: OneOffConfigurationsContext
         var results = session.Search<User>(searchFilter);
 
         results.Count.ShouldBe(2);
-        SpecificationExtensions.ShouldContain(results, u => u.FirstName == searchFilter);
-        SpecificationExtensions.ShouldContain(results, u => u.LastName == searchFilter);
+        results.ShouldContain(u => u.FirstName == searchFilter);
+        results.ShouldContain(u => u.LastName == searchFilter);
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -531,12 +532,12 @@ public class full_text_index: OneOffConfigurationsContext
     public void
         creating_a_full_text_index_with_custom_data_configuration_should_create_the_index_without_regConfig_in_indexname_custom_data_configuration()
     {
-        const string DataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
+        const string dataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
 
         StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(
             index =>
             {
-                index.DataConfig = DataConfig;
+                index.DocumentConfig = dataConfig;
             }));
 
         var data = Target.GenerateRandomData(100).ToArray();
@@ -545,7 +546,7 @@ public class full_text_index: OneOffConfigurationsContext
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<Target>(
                 indexName: $"mt_doc_target_idx_fts",
-                dataConfig: DataConfig
+                dataConfig: dataConfig
             );
     }
 
@@ -553,14 +554,14 @@ public class full_text_index: OneOffConfigurationsContext
     public void
         creating_a_full_text_index_with_custom_data_configuration_and_custom_regConfig_should_create_the_index_with_custom_regConfig_in_indexname_custom_data_configuration()
     {
-        const string DataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
-        const string RegConfig = "french";
+        const string dataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
+        const string regConfig = "french";
 
         StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(
             index =>
             {
-                index.RegConfig = RegConfig;
-                index.DataConfig = DataConfig;
+                index.RegConfig = regConfig;
+                index.DocumentConfig = dataConfig;
             }));
 
         var data = Target.GenerateRandomData(100).ToArray();
@@ -568,9 +569,9 @@ public class full_text_index: OneOffConfigurationsContext
 
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<Target>(
-                indexName: $"mt_doc_target_{RegConfig}_idx_fts",
-                regConfig: RegConfig,
-                dataConfig: DataConfig
+                indexName: $"mt_doc_target_{regConfig}_idx_fts",
+                regConfig: regConfig,
+                dataConfig: dataConfig
             );
     }
 
@@ -578,16 +579,16 @@ public class full_text_index: OneOffConfigurationsContext
     public void
         creating_a_full_text_index_with_custom_data_configuration_and_custom_regConfig_custom_indexName_should_create_the_index_with_custom_indexname_custom_data_configuration()
     {
-        const string DataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
-        const string RegConfig = "french";
-        const string IndexName = "custom_index_name";
+        const string dataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
+        const string regConfig = "french";
+        const string indexName = "custom_index_name";
 
         StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(
             index =>
             {
-                index.DataConfig = DataConfig;
-                index.RegConfig = RegConfig;
-                index.Name = IndexName;
+                index.DocumentConfig = dataConfig;
+                index.RegConfig = regConfig;
+                index.Name = indexName;
             }));
 
         var data = Target.GenerateRandomData(100).ToArray();
@@ -595,9 +596,9 @@ public class full_text_index: OneOffConfigurationsContext
 
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<Target>(
-                indexName: IndexName,
-                regConfig: RegConfig,
-                dataConfig: DataConfig
+                indexName: indexName,
+                regConfig: regConfig,
+                dataConfig: dataConfig
             );
     }
 
@@ -638,14 +639,14 @@ public class full_text_index: OneOffConfigurationsContext
     public void
         creating_a_full_text_index_with_multiple_members_and_custom_configuration_should_create_the_index_with_custom_configuration_and_members_selectors()
     {
-        const string IndexName = "custom_index_name";
-        const string RegConfig = "french";
+        const string indexName = "custom_index_name";
+        const string regConfig = "french";
 
         StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(
             index =>
             {
-                index.Name = IndexName;
-                index.RegConfig = RegConfig;
+                index.Name = indexName;
+                index.RegConfig = regConfig;
             },
             d => d.AnotherString));
 
@@ -654,8 +655,8 @@ public class full_text_index: OneOffConfigurationsContext
 
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<Target>(
-                indexName: IndexName,
-                regConfig: RegConfig,
+                indexName: indexName,
+                regConfig: regConfig,
                 dataConfig: $"((data ->> '{nameof(Target.AnotherString)}'))"
             );
     }
@@ -703,7 +704,7 @@ public class full_text_index: OneOffConfigurationsContext
             .ShouldContainIndexDefinitionFor<Book>(
                 tableName: "full_text_index.mt_doc_book",
                 indexName: $"mt_doc_book_idx_fts",
-                regConfig: FullTextIndex.DefaultRegConfig,
+                regConfig: FullTextIndexDefinition.DefaultRegConfig,
                 dataConfig: $"data"
             );
     }
@@ -719,7 +720,7 @@ public class full_text_index: OneOffConfigurationsContext
             .ShouldContainIndexDefinitionFor<UserProfile>(
                 tableName: "full_text_index.mt_doc_userprofile",
                 indexName: $"mt_doc_userprofile_idx_fts",
-                regConfig: FullTextIndex.DefaultRegConfig,
+                regConfig: FullTextIndexDefinition.DefaultRegConfig,
                 dataConfig: $"((data ->> '{nameof(UserProfile.Information)}'))"
             );
     }
@@ -751,7 +752,7 @@ public class full_text_index: OneOffConfigurationsContext
             .ShouldContainIndexDefinitionFor<Article>(
                 tableName: "full_text_index.mt_doc_article",
                 indexName: $"mt_doc_article_idx_fts",
-                regConfig: FullTextIndex.DefaultRegConfig,
+                regConfig: FullTextIndexDefinition.DefaultRegConfig,
                 dataConfig: $"((data ->> '{nameof(Article.Heading)}') || ' ' || (data ->> '{nameof(Article.Text)}'))"
             );
     }
@@ -780,7 +781,7 @@ public class full_text_index: OneOffConfigurationsContext
             .ShouldContainIndexDefinitionFor<BlogPost>(
                 tableName: "full_text_index.mt_doc_blogpost",
                 indexName: $"mt_doc_blogpost_idx_fts",
-                regConfig: FullTextIndex.DefaultRegConfig,
+                regConfig: FullTextIndexDefinition.DefaultRegConfig,
                 dataConfig: $"((data ->> '{nameof(BlogPost.EnglishText)}'))"
             );
 
@@ -815,7 +816,10 @@ public class full_text_index: OneOffConfigurationsContext
         // Look at updates after that
         var patch = await theStore.Storage.Database.CreateMigrationAsync();
 
-        Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patch.UpdateSql());
+        var patchSql = patch.UpdateSql();
+
+        Assert.DoesNotContain("drop index if exists full_text_index.mt_doc_user_idx_fts", patchSql);
+        Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patchSql);
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -833,7 +837,10 @@ public class full_text_index: OneOffConfigurationsContext
         // Look at updates after that
         var patch = await theStore.Storage.Database.CreateMigrationAsync();
 
-        Assert.DoesNotContain("drop index full_text_index.mt_doc_company_idx_fts", patch.UpdateSql());
+        var patchSql = patch.UpdateSql();
+
+        Assert.DoesNotContain("drop index if exists full_text_index.mt_doc_user_idx_fts", patchSql);
+        Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patchSql);
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -851,7 +858,10 @@ public class full_text_index: OneOffConfigurationsContext
         // Look at updates after that
         var patch = await theStore.Storage.Database.CreateMigrationAsync();
 
-        Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patch.UpdateSql());
+        var patchSql = patch.UpdateSql();
+
+        Assert.DoesNotContain("drop index if exists full_text_index.mt_doc_user_idx_fts", patchSql);
+        Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patchSql);
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -867,17 +877,14 @@ public class full_text_index: OneOffConfigurationsContext
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         // Change indexed fields
-        var store = DocumentStore.For(_ =>
+        StoreOptions(_ =>
         {
-            _.Connection(ConnectionSource.ConnectionString);
-            _.DatabaseSchemaName = "fulltext";
-
             _.Schema.For<User>()
                 .FullTextIndex(x => x.FirstName, x => x.LastName);
-        });
+        }, false);
 
         // Look at updates after that
-        var patch = await store.Storage.Database.CreateMigrationAsync();
+        var patch = await theStore.Storage.Database.CreateMigrationAsync();
 
         Assert.Contains("drop index if exists full_text_index.mt_doc_user_idx_fts", patch.UpdateSql());
     }

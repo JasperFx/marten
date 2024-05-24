@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Examples;
@@ -22,7 +23,7 @@ public sealed class Policies
             // Apply custom policy
             storeOptions.Policies.OnDocuments<TenancyPolicy>();
             #endregion
-            storeOptions.Connection("");
+            storeOptions.Connection(ConnectionSource.ConnectionString);
         });
 
         Assert.Equal(TenancyStyle.Conjoined, store.StorageFeatures.MappingFor(typeof(MultiTenantType)).TenancyStyle);

@@ -32,7 +32,7 @@ var store = DocumentStore.For(opts =>
     opts.AutoCreateSchemaObjects = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L39-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L47-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To prevent unnecessary loss of data, even in development, on the first usage of a document type, Marten will:
@@ -53,6 +53,7 @@ All/None/CreateOnly/CreateOrUpdate rules as the table storage.**
 ## Overriding Schema Name
 
 By default marten will use the default `public` database scheme to create the document tables and function. You may, however, choose to set a different document store database schema name, like so:
+::: warning If you run code before schema changes and using `opts.GeneratedCodeMode = TypeLoadMode.Auto;` (by yourself or by `OptimizeArtifactWorkflow()` in dev env) schema won't change. You need to delete `Internal` folder manually to force regenerating code and schema changes.  :::
 
 ```cs
 StoreOptions.DatabaseSchemaName = "other";
@@ -80,7 +81,12 @@ StoreOptions.Events.DatabaseSchemaName = "event_store";
 
 This will ensure that all EventStore tables (mt_stream, mt_events, ...) and functions (mt_apply_transform, mt_apply_aggregation, ...) are created in the `event_store` schema.
 
-## Create database
+## Create Database
+
+::: warning
+You will probably need to use the `AddMarten().ApplyAllDatabaseChangesOnStartup()` option to force Marten to check and build additional databases on start up times by registering
+an `IHostedService` into your system that will run on startup.
+:::
 
 Marten can be configured to create (or drop & create) databases in case they do not exist. This is done via store options, through `StoreOptions.CreateDatabasesForTenants`.
 
@@ -94,6 +100,7 @@ storeOptions.CreateDatabasesForTenants(c =>
     c.MaintenanceDatabase(cstring);
     c.ForTenant()
         .CheckAgainstPgDatabase()
+
         .WithOwner("postgres")
         .WithEncoding("UTF-8")
         .ConnectionLimit(-1)
@@ -103,7 +110,7 @@ storeOptions.CreateDatabasesForTenants(c =>
         });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/create_database_Tests.cs#L41-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_create_database' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/create_database_Tests.cs#L41-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_create_database' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Databases are checked for existence upon store initialization. By default, connection attempts are made against the databases specified for tenants. If a connection attempt results in an invalid catalog error (3D000), database creation is triggered. `ITenantDatabaseCreationExpressions.CheckAgainstPgDatabase` can be used to alter this behavior to check for database existence from `pg_database`.

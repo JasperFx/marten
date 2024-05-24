@@ -23,6 +23,7 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
 
         var aggregate = await theSession.Events.AggregateStreamAsync<MyAggregate>(stream.Id);
         aggregate.Version.ShouldBe(3);
+        aggregate.ACount.ShouldBe(1);
     }
 
     [Fact]
@@ -46,7 +47,7 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
-        await daemon.StartAllShards();
+        await daemon.StartAllAsync();
 
         await daemon.WaitForNonStaleData(5.Seconds());
 
@@ -80,7 +81,7 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
             };
         }
 
-        public void Apply(AEvent @event, MyAggregate aggregate)
+        public static void Apply(AEvent @event, MyAggregate aggregate)
         {
             aggregate.ACount++;
         }

@@ -26,7 +26,8 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
     {
         _sql = sql.TrimStart();
         _parameters = parameters;
-        SqlContainsCustomSelect = _sql.StartsWith("select", StringComparison.OrdinalIgnoreCase);
+        SqlContainsCustomSelect = _sql.StartsWith("select", StringComparison.OrdinalIgnoreCase)
+                                  || IsWithFollowedBySelect(_sql);
 
         _selectClause = GetSelectClause(session);
         _selector = (ISelector<T>)_selectClause.BuildSelector(session);
@@ -34,13 +35,14 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
 
     public bool SqlContainsCustomSelect { get; }
 
-    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         if (!SqlContainsCustomSelect)
         {
-            _selectClause.WriteSelectClause(builder);
+            _selectClause.Apply(builder);
 
-            if (_sql.StartsWith("where", StringComparison.OrdinalIgnoreCase) || _sql.StartsWith("order", StringComparison.OrdinalIgnoreCase))
+            if (_sql.StartsWith("where", StringComparison.OrdinalIgnoreCase) ||
+                _sql.StartsWith("order", StringComparison.OrdinalIgnoreCase))
             {
                 builder.Append(" ");
             }
@@ -119,19 +121,55 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
     {
         if (typeof(T) == typeof(string))
         {
-            return new ScalarStringSelectClause("", "");
+            return new ScalarStringSelectClause(string.Empty, string.Empty);
         }
 
-        if (typeof(T).IsSimple())
+        if (PostgresqlProvider.Instance.HasTypeMapping(typeof(T)))
         {
-            return typeof(ScalarSelectClause<>).CloseAndBuildAs<ISelectClause>("", "", typeof(T));
+            return typeof(ScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(string.Empty, string.Empty, typeof(T));
         }
+
 
         if (SqlContainsCustomSelect)
         {
-            return new DataSelectClause<T>("", "");
+            return new DataSelectClause<T>(string.Empty, string.Empty);
         }
 
         return session.StorageFor(typeof(T));
+    }
+
+    private static bool IsWithFollowedBySelect(string sql)
+    {
+        var parenthesesLevel = 0;
+        var isWithBlockDetected = false;
+
+         for (var i = 0; i < sql.Length; i++)
+         {
+             var c = sql[i];
+
+            // Check for parentheses to handle nested structures
+            if (c == '(')
+            {
+                parenthesesLevel++;
+            }
+            else if (c == ')')
+            {
+                parenthesesLevel--;
+            }
+
+            // Detect the beginning of the WITH block
+            if (!isWithBlockDetected && i < sql.Length - 4 && sql.Substring(i, 4).Equals("with", StringComparison.OrdinalIgnoreCase))
+            {
+                isWithBlockDetected = true;
+            }
+
+            // Detect the beginning of the SELECT block only if WITH block is detected and at top-level
+            if (isWithBlockDetected && i < sql.Length - 6 && sql.Substring(i, 6).Equals("select", StringComparison.OrdinalIgnoreCase) && parenthesesLevel == 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

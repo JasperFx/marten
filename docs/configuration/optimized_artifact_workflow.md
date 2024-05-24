@@ -1,10 +1,4 @@
-# Development versus Production Usage
-
-:::tip
-Marten V5.0 introduces the new `AddMarten().OptimizeArtifactWorkflow()` option
-that helps users utilize Marten "best practices" for database and code generation
-artifact creation.
-:::
+# Optimized Development Workflow
 
 The original point of Marten was to have a persistence option that mostly got out of your way and
 let developers just get things done without having to spend a lot of time fiddling with database

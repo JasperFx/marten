@@ -9,13 +9,14 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
+using Marten.Internal.Sessions;
+using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Util;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
-using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Storage.Metadata;
 
@@ -35,6 +36,8 @@ public abstract class MetadataColumn: TableColumn
     /// </summary>
     public bool Enabled { get; set; } = true;
 
+    public bool ShouldUpdatePartials { get; protected set; }
+
     internal abstract Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
         DbDataReader reader, CancellationToken token);
 
@@ -47,7 +50,6 @@ public abstract class MetadataColumn: TableColumn
         {
             return;
         }
-
 
         mapping.DuplicateField(new[] { Member }, columnName: Name)
             .OnlyForSearching = true;
@@ -89,6 +91,11 @@ public abstract class MetadataColumn: TableColumn
             async.AssignMemberFromReaderAsync(generatedType, index, mapping.DocumentType, Member.Name);
         });
     }
+
+    public virtual void WriteMetadataInUpdateStatement(ICommandBuilder builder, DocumentSessionBase session)
+    {
+        throw new NotSupportedException();
+    }
 }
 
 internal abstract class MetadataColumn<T>: MetadataColumn
@@ -100,7 +107,7 @@ internal abstract class MetadataColumn<T>: MetadataColumn
     protected MetadataColumn(string name, Expression<Func<DocumentMetadata, T>> property): base(name,
         PostgresqlProvider.Instance.GetDatabaseType(typeof(T), EnumStorage.AsInteger), typeof(T))
     {
-        var member = FindMembers.Determine(property).Last();
+        var member = MemberFinder.Determine(property).Last();
         _memberName = member.Name;
         _setter = LambdaBuilder.Setter<DocumentMetadata, T>(member);
     }

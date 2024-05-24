@@ -17,6 +17,18 @@ public class LastModifiedMetadataAttribute: MartenAttribute
 }
 
 /// <summary>
+///     Direct Marten to copy the created timestamp metadata to this member
+/// </summary>
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public class CreatedAtMetadataAttribute: MartenAttribute
+{
+    public override void Modify(DocumentMapping mapping, MemberInfo member)
+    {
+        mapping.Metadata.CreatedAt.Member = member;
+    }
+}
+
+/// <summary>
 ///     Direct Marten to copy the tenant id metadata to this member
 /// </summary>
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]

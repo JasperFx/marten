@@ -3,11 +3,17 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Internals;
 using Marten.Storage;
 using Weasel.Core;
 
 namespace Marten.Events.Projections;
 
+/// <summary>
+/// Interface for sources of projections
+/// Sources of projections are used to define the behavior how a projection is built for a given projection type
+/// Optimized for async usage
+/// </summary>
 public interface IProjectionSource: IReadOnlyProjectionData
 {
     AsyncOptions Options { get; }
@@ -26,6 +32,12 @@ public interface IProjectionSource: IReadOnlyProjectionData
         CancellationToken cancellationToken);
 
     IProjection Build(DocumentStore store);
+
+    /// <summary>
+    /// Specify that this projection is a non 1 version of the original projection definition to opt
+    /// into Marten's parallel blue/green deployment of this projection.
+    /// </summary>
+    public uint ProjectionVersion { get; set; }
 }
 
 /// <summary>

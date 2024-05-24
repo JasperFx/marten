@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
@@ -10,8 +11,10 @@ namespace Marten.Testing.Harness
 {
     public class TestOutputMartenLogger : IMartenLogger, IMartenSessionLogger, ILogger
     {
-        private ITestOutputHelper _output;
-        private static ITestOutputHelper _noopTestOutputHelper = new NoopTestOutputHelper();
+        private readonly ITestOutputHelper _output;
+        private static readonly ITestOutputHelper _noopTestOutputHelper = new NoopTestOutputHelper();
+
+        private readonly StringWriter _writer = new StringWriter();
 
         public TestOutputMartenLogger(ITestOutputHelper output)
         {
@@ -21,6 +24,11 @@ namespace Marten.Testing.Harness
         public IMartenSessionLogger StartSession(IQuerySession session)
         {
             return this;
+        }
+
+        public string ExecutedSql()
+        {
+            return _writer.ToString();
         }
 
         public void SchemaChange(string sql)
@@ -47,6 +55,32 @@ namespace Marten.Testing.Harness
             {
                 Debug.WriteLine($"  {p.ParameterName}: {p.Value}");
             }
+
+            _writer.WriteLine(command.CommandText);
+        }
+
+        public void LogSuccess(NpgsqlBatch batch)
+        {
+            foreach (var command in batch.BatchCommands)
+            {
+                _output.WriteLine(command.CommandText);
+                int position = 0;
+                foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
+                {
+                    position++;
+                    _output.WriteLine($"  ${position}: {p.Value}");
+                }
+
+                Debug.WriteLine(command.CommandText);
+                position = 0;
+                foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
+                {
+                    position++;
+                    Debug.WriteLine($"  ${position}: {p.Value}");
+                }
+
+                _writer.WriteLine(command.CommandText);
+            }
         }
 
         public void LogFailure(NpgsqlCommand command, Exception ex)
@@ -57,6 +91,30 @@ namespace Marten.Testing.Harness
             {
                 _output.WriteLine($"  {p.ParameterName}: {p.Value}");
             }
+            _output.WriteLine(ex.ToString());
+        }
+
+        public void LogFailure(NpgsqlBatch batch, Exception ex)
+        {
+            _output.WriteLine("Postgresql command failed!");
+
+            foreach (var command in batch.BatchCommands)
+            {
+                _output.WriteLine(command.CommandText);
+                int position = 0;
+                foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
+                {
+                    position++;
+                    _output.WriteLine($"  ${position}: {p.Value}");
+                }
+            }
+
+            _output.WriteLine(ex.ToString());
+        }
+
+        public void LogFailure(Exception ex, string message)
+        {
+            _output.WriteLine("Failure: " + message);
             _output.WriteLine(ex.ToString());
         }
 
@@ -71,6 +129,12 @@ namespace Marten.Testing.Harness
         {
 
         }
+
+        public void OnBeforeExecute(NpgsqlBatch batch)
+        {
+
+        }
+
 
         private class NoopTestOutputHelper : ITestOutputHelper
         {

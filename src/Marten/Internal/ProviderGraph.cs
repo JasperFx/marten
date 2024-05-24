@@ -14,6 +14,7 @@ namespace Marten.Internal;
 public class ProviderGraph: IProviderGraph
 {
     private readonly StoreOptions _options;
+    private readonly object _storageLock = new();
     private ImHashMap<Type, object> _storage = ImHashMap<Type, object>.Empty;
 
     public ProviderGraph(StoreOptions options)
@@ -23,7 +24,10 @@ public class ProviderGraph: IProviderGraph
 
     public void Append<T>(DocumentProvider<T> provider) where T : notnull
     {
-        _storage = _storage.AddOrUpdate(typeof(T), provider);
+        lock (_storageLock)
+        {
+            _storage = _storage.AddOrUpdate(typeof(T), provider);
+        }
     }
 
     public DocumentProvider<T> StorageFor<T>() where T : notnull
@@ -34,6 +38,21 @@ public class ProviderGraph: IProviderGraph
         {
             return stored.As<DocumentProvider<T>>();
         }
+
+        lock (_storageLock)
+        {
+            if (_storage.TryFind(documentType, out stored))
+            {
+                return stored.As<DocumentProvider<T>>();
+            }
+
+            return CreateDocumentProvider<T>();
+        }
+    }
+
+    internal DocumentProvider<T> CreateDocumentProvider<T>() where T : notnull
+    {
+        var documentType = typeof(T);
 
         if (documentType == typeof(IEvent))
         {

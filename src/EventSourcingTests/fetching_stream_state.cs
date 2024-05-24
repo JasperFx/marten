@@ -2,6 +2,8 @@ using System;
 using System.Threading.Tasks;
 using EventSourcingTests.Projections;
 using Marten;
+using Marten.Events;
+using Marten.Schema.Identity;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -13,7 +15,7 @@ public class fetching_stream_state_before_aggregator_is_registered: IntegrationC
     [Fact]
     public async Task bug_705_order_of_operation()
     {
-        var streamId = Guid.NewGuid();
+        var streamId = CombGuidIdGeneration.NewGuid();
 
         await using (var session = theStore.LightweightSession())
         {
@@ -105,6 +107,7 @@ public class fetching_stream_state: IntegrationContext
     {
         var state = theSession.Events.FetchStreamState(theStreamId);
 
+        state.ShouldNotBeNull();
         state.Id.ShouldBe(theStreamId);
         state.Version.ShouldBe(2);
         state.AggregateType.ShouldBe(typeof(Quest));
@@ -117,6 +120,7 @@ public class fetching_stream_state: IntegrationContext
     {
         var state = await theSession.Events.FetchStreamStateAsync(theStreamId);
 
+        state.ShouldNotBeNull();
         state.Id.ShouldBe(theStreamId);
         state.Version.ShouldBe(2);
         state.AggregateType.ShouldBe(typeof(Quest));
@@ -157,3 +161,82 @@ public class fetching_stream_state: IntegrationContext
 }
 
 #endregion
+
+public class fetching_stream_state_string_id: IntegrationContext
+{
+    private string theStreamKey;
+
+    public fetching_stream_state_string_id(DefaultStoreFixture fixture) : base(fixture)
+    {
+    }
+
+    protected override Task fixtureSetup()
+    {
+        UseStreamIdentity(StreamIdentity.AsString);
+
+        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+        theStreamKey = Guid.NewGuid().ToString();
+        theSession.Events.StartStream<Quest>(theStreamKey, joined, departed);
+        return theSession.SaveChangesAsync();
+    }
+
+    [Fact]
+    public void can_fetch_the_stream_version_and_aggregate_type()
+    {
+        var state = theSession.Events.FetchStreamState(theStreamKey);
+
+        state.ShouldNotBeNull();
+        state.Key.ShouldBe(theStreamKey);
+        state.Version.ShouldBe(2);
+        state.AggregateType.ShouldBe(typeof(Quest));
+        state.LastTimestamp.ShouldNotBe(DateTimeOffset.MinValue);
+        state.Created.ShouldNotBe(DateTimeOffset.MinValue);
+    }
+
+    [Fact]
+    public async Task can_fetch_the_stream_version_and_aggregate_type_async()
+    {
+        var state = await theSession.Events.FetchStreamStateAsync(theStreamKey);
+
+        state.ShouldNotBeNull();
+        state.Key.ShouldBe(theStreamKey);
+        state.Version.ShouldBe(2);
+        state.AggregateType.ShouldBe(typeof(Quest));
+        state.LastTimestamp.ShouldNotBe(DateTimeOffset.MinValue);
+        state.Created.ShouldNotBe(DateTimeOffset.MinValue);
+    }
+
+    [Fact]
+    public async Task can_fetch_the_stream_version_through_batch_query()
+    {
+        var batch = theSession.CreateBatchQuery();
+
+        var stateTask = batch.Events.FetchStreamState(theStreamKey);
+
+        await batch.Execute();
+
+        var state = await stateTask;
+
+        state.Key.ShouldBe(theStreamKey);
+        state.Version.ShouldBe(2);
+        state.AggregateType.ShouldBe(typeof(Quest));
+        state.LastTimestamp.ShouldNotBe(DateTimeOffset.MinValue);
+    }
+
+    [Fact]
+    public async Task can_fetch_the_stream_events_through_batch_query()
+    {
+        var batch = theSession.CreateBatchQuery();
+
+        var eventsTask = batch.Events.FetchStream(theStreamKey);
+
+        await batch.Execute();
+
+        var events = await eventsTask;
+
+        events.Count.ShouldBe(2);
+    }
+}
+

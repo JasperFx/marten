@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
-using Marten.Linq.Fields;
+using Marten.Linq;
+using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -19,7 +20,8 @@ internal class MaybeArchivedMethodCallParser: IMethodCallParser
         return expression.Method == _method;
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
+    public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
+        MethodCallExpression expression)
     {
         return _whereFragment;
     }

@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Linq;
+using System.Text.Json;
 using JasperFx.CodeGeneration;
 using Marten;
 using Marten.Services;
@@ -9,12 +10,19 @@ using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
 using Weasel.Core;
+using Weasel.Postgresql.Connections;
 using Xunit;
 
 namespace CoreTests;
 
 public class StoreOptionsTests
 {
+    [Fact]
+    public void sticky_connections_are_off_by_default()
+    {
+        new StoreOptions()
+            .UseStickyConnectionLifetimes.ShouldBeFalse();
+    }
 
     [Fact]
     public void DefaultAutoCreateShouldBeCreateOrUpdate()
@@ -27,7 +35,7 @@ public class StoreOptionsTests
     [Fact]
     public void DefaultAutoCreateShouldBeCreateOrUpdateWhenProvidingNoConfig()
     {
-        var store = DocumentStore.For("");
+        var store = DocumentStore.For(ConnectionSource.ConnectionString);
 
         Assert.Equal(AutoCreate.CreateOrUpdate, store.Options.AutoCreateSchemaObjects);
     }
@@ -37,6 +45,7 @@ public class StoreOptionsTests
     public void using_auto_create_field()
     {
         #region sample_AutoCreateSchemaObjects
+
         var store = DocumentStore.For(opts =>
         {
             // Marten will create any new objects that are missing,
@@ -60,6 +69,7 @@ public class StoreOptionsTests
             // not reflecting the Marten configuration
             opts.AutoCreateSchemaObjects = AutoCreate.None;
         });
+
         #endregion
     }
 
@@ -69,7 +79,7 @@ public class StoreOptionsTests
     {
         var e = Assert.Throws<InvalidOperationException>(() => DocumentStore.For(_ => { }));
 
-        Assert.Contains("Tenancy not specified", e.Message);
+        Assert.Contains("No tenancy is configured", e.Message);
     }
 
     [Fact]
@@ -80,7 +90,7 @@ public class StoreOptionsTests
             options.Connection(ConnectionSource.ConnectionString);
             options.RegisterDocumentType<User>();
             options.RegisterDocumentType(typeof(Company));
-            options.RegisterDocumentTypes(new[] {typeof(Target), typeof(Issue)});
+            options.RegisterDocumentTypes(new[] { typeof(Target), typeof(Issue) });
         });
 
         store.Options.Storage.AllDocumentMappings.OrderBy(x => x.DocumentType.Name)
@@ -118,6 +128,11 @@ public class StoreOptionsTests
 
         public int OnBeforeExecuted { get; set; }
 
+        public void LogFailure(Exception ex, string message)
+        {
+
+        }
+
         public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
         {
         }
@@ -125,6 +140,11 @@ public class StoreOptionsTests
         public void OnBeforeExecute(NpgsqlCommand command)
         {
             OnBeforeExecuted++;
+        }
+
+        public void OnBeforeExecute(NpgsqlBatch batch)
+        {
+
         }
 
         public void LogSuccess(NpgsqlCommand command)
@@ -136,6 +156,16 @@ public class StoreOptionsTests
         {
             LastCommand = command;
             LastException = ex;
+        }
+
+        public void LogSuccess(NpgsqlBatch batch)
+        {
+
+        }
+
+        public void LogFailure(NpgsqlBatch batch, Exception ex)
+        {
+
         }
     }
 
@@ -291,5 +321,130 @@ public class StoreOptionsTests
         });
 
         #endregion
+    }
+
+    [Fact]
+    public void SettingConnectionString_ShouldSetupDefaultNpgsqlDataSourceFactory()
+    {
+        // Given
+        // When
+        using var store = DocumentStore.For(ConnectionSource.ConnectionString);
+
+        // Then
+        store.Options.NpgsqlDataSourceFactory.ShouldBeOfType<DefaultNpgsqlDataSourceFactory>();
+    }
+
+    [Fact]
+    public void SettingConnectionDataSource_ShouldRespectCurrentTenancySettings()
+    {
+        // Given
+        var options = new StoreOptions();
+        options.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString);
+
+        // When
+        options.Connection(new NpgsqlDataSourceBuilder(ConnectionSource.ConnectionString).Build());
+
+        // Then
+        options.NpgsqlDataSourceFactory.ShouldBeOfType<SingleNpgsqlDataSourceFactory>();
+        options.Tenancy.ShouldBeOfType<SingleServerMultiTenancy>();
+    }
+
+    [Fact]
+    public void SettingCustomDataSourceFactory_ShouldRespectDefaultTenancySettings()
+    {
+        // Given
+        var options = new StoreOptions();
+        options.Connection(ConnectionSource.ConnectionString);
+
+        // When
+        options.DataSourceFactory(new DummyNpgsqlDataSourceFactory());
+
+        // Then
+        options.NpgsqlDataSourceFactory.ShouldBeOfType<DummyNpgsqlDataSourceFactory>();
+        options.Tenancy.ShouldBeOfType<DefaultTenancy>();
+    }
+
+    [Fact]
+    public void SettingCustomDataSourceFactory_ShouldRespectCurrentTenancySettings()
+    {
+        // Given
+        var options = new StoreOptions();
+        options.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString);
+
+        // When
+        options.DataSourceFactory(new DummyNpgsqlDataSourceFactory());
+
+        // Then
+        options.NpgsqlDataSourceFactory.ShouldBeOfType<DummyNpgsqlDataSourceFactory>();
+        options.Tenancy.ShouldBeOfType<SingleServerMultiTenancy>();
+    }
+
+    [Fact]
+    public void SettingCustomDataSourceFactory_ShouldSetTenancyIfItsNotDefinedYet()
+    {
+        // Given
+        var options = new StoreOptions();
+
+        // When
+        options.DataSourceFactory(new DummyNpgsqlDataSourceFactory(), ConnectionSource.ConnectionString);
+
+        // Then
+        options.NpgsqlDataSourceFactory.ShouldBeOfType<DummyNpgsqlDataSourceFactory>();
+        options.Tenancy.ShouldBeOfType<DefaultTenancy>();
+    }
+
+    [InlineData(true)]
+    [InlineData(false)]
+    [Theory]
+    public void use_base_system_text_json_serialization_options(bool indented)
+    {
+        // Given
+        var options = new StoreOptions();
+
+        // When
+        options.UseSystemTextJsonForSerialization(new JsonSerializerOptions
+        {
+            WriteIndented = indented,
+        });
+
+        // Then
+        var json = options.Serializer().ToJson(new
+        {
+            Field1 = 10,
+            Field2 = 20,
+        });
+
+        if (indented)
+        {
+            json.ShouldContain('\n');
+        }
+        else
+        {
+            json.ShouldNotContain('\n');
+        }
+    }
+
+    [Fact]
+    public void default_tenant_id_style_is_case_sensitive()
+    {
+        new StoreOptions().TenantIdStyle.ShouldBe(TenantIdStyle.CaseSensitive);
+    }
+
+    [Theory]
+    [InlineData(TenantIdStyle.CaseSensitive, "What", "What")]
+    [InlineData(TenantIdStyle.ForceLowerCase, "What", "what")]
+    [InlineData(TenantIdStyle.ForceUpperCase, "What", "WHAT")]
+    public void maybe_correct_tenant_id(TenantIdStyle style, string tenantId, string corrected)
+    {
+        var options = new StoreOptions { TenantIdStyle = style };
+
+        options.MaybeCorrectTenantId(tenantId).ShouldBe(corrected);
+    }
+
+
+    private class DummyNpgsqlDataSourceFactory: INpgsqlDataSourceFactory
+    {
+        public NpgsqlDataSource Create(string connectionString) =>
+            new NpgsqlDataSourceBuilder(connectionString).Build();
     }
 }

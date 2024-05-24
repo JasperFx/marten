@@ -18,7 +18,7 @@ internal class DocumentTransformOperationFragment : IOperationFragment
         _function = function;
     }
 
-    public void Apply(CommandBuilder sql)
+    public void Apply(ICommandBuilder sql)
     {
         var version = CombGuidIdGeneration.NewGuid();
 
@@ -33,11 +33,6 @@ internal class DocumentTransformOperationFragment : IOperationFragment
         sql.Append(" = '");
         sql.Append(version.ToString());
         sql.Append("'");
-    }
-
-    public bool Contains(string sqlText)
-    {
-        return false;
     }
 
     public OperationRole Role()

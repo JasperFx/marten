@@ -5,10 +5,16 @@ using Marten.Internal;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
-internal class StatsSelectClause<T>: ISelectClause
+internal interface IStatsSelectClause
+{
+    ISelectClause Inner { get; }
+}
+
+internal class StatsSelectClause<T>: ISelectClause, IModifyableFromObject, IStatsSelectClause
 {
     private QueryStatistics _statistics;
 
@@ -16,22 +22,23 @@ internal class StatsSelectClause<T>: ISelectClause
     {
         Inner = inner;
         _statistics = statistics;
+        FromObject = Inner.FromObject;
     }
 
     public ISelectClause Inner { get; }
 
     public Type SelectedType => Inner.SelectedType;
 
-    public string FromObject => Inner.FromObject;
+    public string FromObject { get; set; }
 
-    public void WriteSelectClause(CommandBuilder sql)
+    public void Apply(ICommandBuilder sql)
     {
         sql.Append("select ");
         sql.Append(Inner.SelectFields().Join(", "));
         sql.Append(", ");
         sql.Append(LinqConstants.StatsColumn);
         sql.Append(" from ");
-        sql.Append(Inner.FromObject);
+        sql.Append(FromObject);
         sql.Append(" as d");
     }
 
@@ -45,8 +52,8 @@ internal class StatsSelectClause<T>: ISelectClause
         return Inner.BuildSelector(session);
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, Statement topStatement,
-        Statement currentStatement)
+    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment topStatement,
+        ISqlFragment currentStatement)
     {
         var selector = (ISelector<T>)Inner.BuildSelector(session);
 

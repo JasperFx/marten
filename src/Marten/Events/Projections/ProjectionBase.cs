@@ -1,27 +1,43 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Marten.Events.Daemon;
-using Weasel.Postgresql.SqlGeneration;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Events.Projections;
 
-public abstract class ProjectionBase
+public interface IEventFilterable
 {
-    private readonly IList<ISqlFragment> _filters = new List<ISqlFragment>();
-
-    private readonly List<Type> _publishedTypes = new();
+    /// <summary>
+    ///     Short hand syntax to tell Marten that this projection takes in the event type T
+    ///     This is not mandatory, but can be used to optimize the asynchronous projections
+    ///     to create an "allow list" in the IncludedEventTypes collection
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    void IncludeType<T>();
 
     /// <summary>
-    ///     Descriptive name for this projection in the async daemon. The default is the type name of the projection
+    ///     Short hand syntax to tell Marten that this projection takes in the event type T
+    ///     This is not mandatory, but can be used to optimize the asynchronous projections
+    ///     to create an "allow list" in the IncludedEventTypes collection
     /// </summary>
-    public string ProjectionName { get; set; }
+    void IncludeType(Type type);
 
     /// <summary>
-    ///     The projection lifecycle that governs when this projection is executed
+    ///     Limit the events processed by this projection to only streams
+    ///     marked with the given streamType.
+    ///     ONLY APPLIED TO ASYNCHRONOUS PROJECTIONS OR SUBSCRIPTIONS
     /// </summary>
-    public ProjectionLifecycle Lifecycle { get; internal set; } = ProjectionLifecycle.Async;
+    /// <param name="streamType"></param>
+    public void FilterIncomingEventsOnStreamType(Type streamType);
 
+    /// <summary>
+    /// Should archived events be considered for this filtered set? Default is false.
+    /// </summary>
+    public bool IncludeArchivedEvents { get; set; }
+}
+
+public abstract class EventFilterable: IEventFilterable
+{
     /// <summary>
     ///     Optimize this projection within the Async Daemon by
     ///     limiting the event types processed through this projection
@@ -30,41 +46,14 @@ public abstract class ProjectionBase
     ///     type of event at runtime
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public IList<Type> IncludedEventTypes { get; } = new List<Type>();
+    public List<Type> IncludedEventTypes { get; } = new();
 
     /// <summary>
     ///     Limit the events processed by this projection to only streams
     ///     marked with this stream type
     /// </summary>
-    internal Type StreamType { get; set; }
-
-
-    /// <summary>
-    ///     Direct Marten to delete data published by this projection as the first
-    ///     step to rebuilding the projection data. The default is false.
-    /// </summary>
-    public bool TeardownDataOnRebuild { get; set; } = false;
-
-
-    internal ISqlFragment[] BuildFilters(DocumentStore store)
-    {
-        return buildFilters(store).ToArray();
-    }
-
-    private IEnumerable<ISqlFragment> buildFilters(DocumentStore store)
-    {
-        if (IncludedEventTypes.Any() && !IncludedEventTypes.Any(x => x.IsAbstract || x.IsInterface))
-        {
-            yield return new EventTypeFilter(store.Options.EventGraph, IncludedEventTypes.ToArray());
-        }
-
-        if (StreamType != null)
-        {
-            yield return new AggregateTypeFilter(StreamType, store.Options.EventGraph);
-        }
-
-        foreach (var filter in _filters) yield return filter;
-    }
+    [DisallowNull]
+    internal Type? StreamType { get; set; }
 
     /// <summary>
     ///     Short hand syntax to tell Marten that this projection takes in the event type T
@@ -78,15 +67,63 @@ public abstract class ProjectionBase
     }
 
     /// <summary>
+    ///     Short hand syntax to tell Marten that this projection takes in the event type T
+    ///     This is not mandatory, but can be used to optimize the asynchronous projections
+    ///     to create an "allow list" in the IncludedEventTypes collection
+    /// </summary>
+    public void IncludeType(Type type)
+    {
+        IncludedEventTypes.Add(type);
+    }
+
+    /// <summary>
     ///     Limit the events processed by this projection to only streams
     ///     marked with the given streamType.
-    ///     ONLY APPLIED TO ASYNCHRONOUS PROJECTIONS
+    ///     ONLY APPLIED TO ASYNCHRONOUS PROJECTIONS OR SUBSCRIPTIONS
     /// </summary>
     /// <param name="streamType"></param>
     public void FilterIncomingEventsOnStreamType(Type streamType)
     {
         StreamType = streamType;
     }
+
+    /// <summary>
+    /// Should archived events be considered for this filtered set? Default is false.
+    /// </summary>
+    public bool IncludeArchivedEvents { get; set; }
+
+
+}
+
+public abstract class ProjectionBase : EventFilterable
+{
+    private readonly List<Type> _publishedTypes = new();
+
+    /// <summary>
+    ///     Descriptive name for this projection in the async daemon. The default is the type name of the projection
+    /// </summary>
+    [DisallowNull]
+    public string? ProjectionName { get; set; }
+
+    /// <summary>
+    /// Specify that this projection is a non 1 version of the original projection definition to opt
+    /// into Marten's parallel blue/green deployment of this projection.
+    /// </summary>
+    public uint ProjectionVersion { get; set; } = 1;
+
+    /// <summary>
+    ///     The projection lifecycle that governs when this projection is executed
+    /// </summary>
+    public ProjectionLifecycle Lifecycle { get; internal set; } = ProjectionLifecycle.Async;
+
+
+    /// <summary>
+    ///     Direct Marten to delete data published by this projection as the first
+    ///     step to rebuilding the projection data. The default is false.
+    /// </summary>
+    [Obsolete("Use AsyncOptions.TeardownDataOnRebuild instead")]
+    public virtual bool TeardownDataOnRebuild { get; set; } = false;
+
 
     internal virtual void AssembleAndAssertValidity()
     {

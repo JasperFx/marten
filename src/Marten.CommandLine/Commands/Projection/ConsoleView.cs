@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using JasperFx.Core;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Spectre.Console;
 
 namespace Marten.CommandLine.Commands.Projection;
@@ -15,7 +16,7 @@ internal class ConsoleView: IConsoleView
 
     public void ListShards(IProjectionStore store)
     {
-        var projections = store.Shards.Select(x => x.Source).Distinct();
+        var projections = store.Shards.Select(x => x.Source).Distinct().ToArray();
 
         if (projections.IsEmpty())
         {
@@ -33,7 +34,8 @@ internal class ConsoleView: IConsoleView
         foreach (var projection in projections)
         {
             var shards = store.Shards.Where(x => x.Source == projection).Select(x => x.Name.Identity).Join(", ");
-            table.AddRow(projection.ProjectionName, projection.GetType().FullNameInCode(), shards, projection.Lifecycle.ToString());
+            table.AddRow(projection.ProjectionName, projection.GetType().FullNameInCode(), shards,
+                projection.Lifecycle.ToString());
         }
 
         AnsiConsole.Render(table);
@@ -42,7 +44,7 @@ internal class ConsoleView: IConsoleView
 
     public void DisplayEmptyEventsMessage(IProjectionStore store)
     {
-        AnsiConsole.Markup("[bold]The event storage is empty, aborting.[/]");
+        AnsiConsole.MarkupLine("[bold]The event storage is empty, aborting.[/]");
     }
 
     public void DisplayRebuildIsComplete()
@@ -81,7 +83,7 @@ internal class ConsoleView: IConsoleView
     public void WriteHeader(IProjectionStore store)
     {
         AnsiConsole.WriteLine();
-        AnsiConsole.Write(new Rule($"[bold blue]{store.Name}[/]"){Alignment = Justify.Left});
+        AnsiConsole.Write(new Rule($"[bold blue]{store.Name}[/]") { Justification = Justify.Left });
         AnsiConsole.WriteLine();
     }
 
@@ -99,7 +101,7 @@ internal class ConsoleView: IConsoleView
 
     public void WriteHeader(IProjectionDatabase database)
     {
-        AnsiConsole.Write(new Rule($"Database: {database.Identifier}"){Alignment = Justify.Left});
+        AnsiConsole.Write(new Rule($"Database: {database.Identifier}") { Justification = Justify.Left });
     }
 
     public string[] SelectDatabases(string[] databaseNames)

@@ -272,7 +272,7 @@ public class StreamAction
     /// <exception cref="EventStreamUnexpectedMaxEventIdException"></exception>
     internal void PrepareEvents(long currentVersion, EventGraph graph, Queue<long> sequences, IMartenSession session)
     {
-        var timestamp = DateTimeOffset.UtcNow;
+        var timestamp = graph.TimeProvider.GetUtcNow();
 
         if (AggregateType != null)
         {
@@ -310,6 +310,15 @@ public class StreamAction
             }
 
             ExpectedVersionOnServer = currentVersion;
+        }
+        else if (ExpectedVersionOnServer.HasValue)
+        {
+            // This is from trying to call Append() with an expected version on a non-existent stream
+            if (ExpectedVersionOnServer.Value != 0)
+            {
+                throw new EventStreamUnexpectedMaxEventIdException((object?)Key ?? Id, AggregateType,
+                    ExpectedVersionOnServer.Value, currentVersion);
+            }
         }
 
         Version = Events.Last().Version;

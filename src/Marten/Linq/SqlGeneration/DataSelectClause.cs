@@ -5,10 +5,11 @@ using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
-internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause
+internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifyableFromObject
 {
     public DataSelectClause(string from)
     {
@@ -18,36 +19,36 @@ internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause
     public DataSelectClause(string from, string field)
     {
         FromObject = from;
-        FieldName = field;
+        MemberName = field;
     }
 
-    public string FieldName { get; set; } = "d.data";
+    public string MemberName { get; set; } = "d.data";
 
     public ISelectClause CloneToOtherTable(string tableName)
     {
-        return new DataSelectClause<T>(tableName, FieldName);
+        return new DataSelectClause<T>(tableName, MemberName);
     }
 
     public void ApplyOperator(string op)
     {
-        FieldName = $"{op}({FieldName})";
+        MemberName = $"{op}({MemberName})";
     }
 
     public ISelectClause CloneToDouble()
     {
-        return new DataSelectClause<double>(FromObject, FieldName);
+        return new DataSelectClause<double>(FromObject, MemberName);
     }
 
     public Type SelectedType => typeof(T);
 
-    public string FromObject { get; }
+    public string FromObject { get; set; }
 
-    public void WriteSelectClause(CommandBuilder sql)
+    public void Apply(ICommandBuilder sql)
     {
-        if (FieldName.IsNotEmpty())
+        if (MemberName.IsNotEmpty())
         {
             sql.Append("select ");
-            sql.Append(FieldName);
+            sql.Append(MemberName);
             sql.Append(" as data from ");
         }
 
@@ -57,7 +58,7 @@ internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause
 
     public string[] SelectFields()
     {
-        return new[] { FieldName };
+        return new[] { MemberName };
     }
 
     public ISelector BuildSelector(IMartenSession session)
@@ -65,16 +66,21 @@ internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause
         return new SerializationSelector<T>(session.Serializer);
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, Statement statement,
-        Statement currentStatement)
+    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
+        ISqlFragment currentStatement)
     {
         var selector = new SerializationSelector<T>(session.Serializer);
 
-        return LinqHandlerBuilder.BuildHandler<T, TResult>(selector, statement);
+        return LinqQueryParser.BuildHandler<T, TResult>(selector, statement);
     }
 
     public ISelectClause UseStatistics(QueryStatistics statistics)
     {
         return new StatsSelectClause<T>(this, statistics);
+    }
+
+    public override string ToString()
+    {
+        return $"Data from {FromObject}";
     }
 }

@@ -5,6 +5,7 @@ using System.Reflection;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using Marten.Linq.Parsing;
+using Marten.Util;
 using Weasel.Postgresql.Tables;
 
 namespace Marten.Events.Projections.Flattened;
@@ -18,10 +19,10 @@ internal class MemberMap<TEvent, TMember>: IColumnMap
     public MemberMap(Expression<Func<TEvent, TMember>> members, string? tableColumn,
         ColumnMapType columnMapType)
     {
-        _members = FindMembers.Determine(members);
+        _members = MemberFinder.Determine(members);
         _mapType = columnMapType;
 
-        ColumnName = tableColumn ?? _members.Select(x => x.Name.ToKebabCase()).Join("_");
+        ColumnName = tableColumn ?? _members.Select(x => x.Name.ToSnakeCase()).Join("_");
     }
 
     public string ColumnName { get; }

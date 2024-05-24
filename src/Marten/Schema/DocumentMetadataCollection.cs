@@ -11,7 +11,9 @@ public class DocumentMetadataCollection
     }
 
     public MetadataColumn Version { get; } = new VersionColumn();
+    public MetadataColumn Revision { get; } = new RevisionColumn();
     public MetadataColumn LastModified { get; } = new LastModifiedColumn();
+    public MetadataColumn CreatedAt { get; } = new CreatedAtColumn();
     public MetadataColumn TenantId { get; } = new TenantIdColumn();
     public MetadataColumn IsSoftDeleted { get; } = new SoftDeletedColumn();
     public MetadataColumn SoftDeletedAt { get; } = new DeletedAtColumn();

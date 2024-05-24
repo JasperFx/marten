@@ -68,7 +68,8 @@ public static class TransformExtensions
     private static async Task StreamOneTransformed(this IMartenLinqQueryable martenQueryable, string transformName,
         Stream destination, CancellationToken token)
     {
-        var builder = martenQueryable.BuildLinqHandler();
+        var parser = martenQueryable.BuildLinqParser();
+        var statements = parser.BuildStatements();
 
         var session = martenQueryable.Session;
 
@@ -76,12 +77,12 @@ public static class TransformExtensions
 
         var transform = session.Options.TransformFor(transformName);
 
-        builder.CurrentStatement.SelectClause =
-            new TransformSelectClause<string>(transform, builder.CurrentStatement.SelectClause);
+        statements.MainSelector.SelectClause =
+            new TransformSelectClause<string>(transform, statements.MainSelector.SelectClause);
 
-        var statement = builder.TopStatement;
-        statement.Current().Limit = 1;
-        var command = statement.BuildCommand();
+        var statement = statements.Top;
+        statements.MainSelector.Limit = 1;
+        var command = statement.BuildCommand(session);
 
         await session.StreamOne(command, destination, token).ConfigureAwait(false);
     }
@@ -104,7 +105,8 @@ public static class TransformExtensions
     private static async Task StreamManyTransformed(this IMartenLinqQueryable martenQueryable, string transformName,
         Stream destination, CancellationToken token)
     {
-        var builder = martenQueryable.BuildLinqHandler();
+        var parser = martenQueryable.BuildLinqParser();
+        var statements = parser.BuildStatements();
 
         var session = martenQueryable.Session;
 
@@ -112,11 +114,11 @@ public static class TransformExtensions
 
         var transform = session.Options.TransformFor(transformName);
 
-        builder.CurrentStatement.SelectClause =
-            new TransformSelectClause<string>(transform, builder.CurrentStatement.SelectClause);
+        statements.MainSelector.SelectClause =
+            new TransformSelectClause<string>(transform, statements.MainSelector.SelectClause);
 
-        var statement = builder.TopStatement;
-        var command = statement.BuildCommand();
+        var statement = statements.Top;
+        var command = statement.BuildCommand(session);
 
         await session.StreamMany(command, destination, token).ConfigureAwait(false);
     }

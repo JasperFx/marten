@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using Weasel.Postgresql.Tables.Indexes;
 
 namespace Marten.Schema;
 
@@ -10,7 +11,7 @@ public class FullTextIndexAttribute: MartenAttribute
     /// <summary>
     ///     Specify Index type
     /// </summary>
-    public string RegConfig = FullTextIndex.DefaultRegConfig;
+    public string RegConfig = FullTextIndexDefinition.DefaultRegConfig;
 
     /// <summary>
     ///     Specify the name of the index explicity

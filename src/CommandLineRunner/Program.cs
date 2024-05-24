@@ -2,8 +2,8 @@ using System;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using Marten;
-using Marten.AsyncDaemon.Testing;
-using Marten.AsyncDaemon.Testing.TestingSupport;
+using DaemonTests;
+using DaemonTests.TestingSupport;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
@@ -51,14 +51,16 @@ public static class Program
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                     opts.DatabaseSchemaName = "cli";
 
-                    opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
-                        .WithTenants("tenant1", "tenant2", "tenant3");
+                    opts.MultiTenantedWithSingleServer(
+                        ConnectionSource.ConnectionString,
+                        t => t.WithTenants("tenant1", "tenant2", "tenant3")
+                    );
 
                     // This is important, setting this option tells Marten to
                     // *try* to use pre-generated code at runtime
                     opts.GeneratedCodeMode = TypeLoadMode.Auto;
 
-                    opts.Schema.For<Activity>().AddSubClass<Marten.AsyncDaemon.Testing.TestingSupport.Trip>();
+                    opts.Schema.For<Activity>().AddSubClass<DaemonTests.TestingSupport.Trip>();
 
                     // You have to register all persisted document types ahead of time
                     // RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()

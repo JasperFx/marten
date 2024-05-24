@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Marten.Exceptions;
 using Npgsql;
 
@@ -12,26 +13,27 @@ public abstract class SyncEventProjectionBase: SyncProjectionBase
 {
     public override void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
     {
-        foreach (var stream in streams)
+        var events = streams
+            .SelectMany(stream => stream.Events.Select(e => (Stream: stream, Event: e)))
+            .OrderBy(e => e.Event.Sequence);
+
+        foreach (var (stream, @event) in events)
         {
-            foreach (var @event in stream.Events)
+            try
             {
-                try
-                {
-                    ApplyEvent(operations, stream, @event);
-                }
-                catch (NpgsqlException)
-                {
-                    throw;
-                }
-                catch (MartenCommandException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    throw new ApplyEventException(@event, ex);
-                }
+                ApplyEvent(operations, stream, @event);
+            }
+            catch (NpgsqlException)
+            {
+                throw;
+            }
+            catch (MartenCommandException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new ApplyEventException(@event, ex);
             }
         }
     }

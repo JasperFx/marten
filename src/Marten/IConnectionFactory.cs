@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using Npgsql;
 
 namespace Marten;
@@ -7,6 +8,7 @@ namespace Marten;
 ///     Factory interface to customize the construction of an NpgsqlConnection
 ///     to the Postgresql database
 /// </summary>
+[Obsolete("This will be removed in Marten 8, please prefer NpgsqlDataSource usage")]
 public interface IConnectionFactory
 {
     /// <summary>

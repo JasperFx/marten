@@ -4,10 +4,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Linq;
+using Marten.Linq.Includes;
 using Marten.Services.BatchQuerying;
 using Npgsql;
 
@@ -25,7 +27,7 @@ public static class QueryableExtensions
     public static QueryPlan Explain<T>(this IQueryable<T> queryable,
         Action<IConfigureExplainExpressions>? configureExplain = null)
     {
-        return queryable.As<IMartenQueryable<T>>().Explain(configureExplain: configureExplain);
+        return queryable.As<MartenLinqQueryable<T>>().Explain(configureExplain: configureExplain);
     }
 
     #region ToList
@@ -40,7 +42,7 @@ public static class QueryableExtensions
     public static Task<IReadOnlyList<T>> ToListAsync<T>(this IQueryable<T> queryable,
         CancellationToken token = default)
     {
-        return queryable.As<IMartenQueryable>().ToListAsync<T>(token);
+        return queryable.As<MartenLinqQueryable<T>>().ToListAsync<T>(token);
     }
 
     #endregion ToList
@@ -117,6 +119,104 @@ public static class QueryableExtensions
     }
 
     /// <summary>
+    ///     Also fetch related documents, and call the callback lambda for each
+    ///     related document. Follow this with <c>.On(idSource)</c> to specify how to
+    ///     map to this document.
+    /// </summary>
+    /// <param name="callback"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TInclude"></typeparam>
+    /// <returns></returns>
+    public static IMartenQueryableIncludeBuilder<T, TInclude> Include<T, TInclude>(
+        this IQueryable<T> queryable,
+        Action<TInclude> callback)
+        where TInclude : notnull
+    {
+        return queryable.As<MartenLinqQueryable<T>>().Include(callback);
+    }
+
+    /// <summary>
+    ///     Also fetch related documents, and add the related documents to
+    ///     the supplied list. Follow this with <c>.On(idSource)</c> to specify how to
+    ///     map to this document.
+    /// </summary>
+    /// <param name="idSource"></param>
+    /// <param name="list"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TInclude"></typeparam>
+    /// <returns></returns>
+    public static IMartenQueryableIncludeBuilder<T, TInclude> Include<T, TInclude>(
+        this IQueryable<T> queryable,
+        IList<TInclude> list)
+        where TInclude : notnull
+    {
+        return queryable.As<MartenLinqQueryable<T>>().Include(list);
+    }
+
+    /// <summary>
+    ///     Also fetch related documents, and add the related documents to
+    ///     the supplied dictionary organized by the property mapped to the related
+    ///     document. Follow this with <c>.On(idSource)</c> to specify how to map to
+    ///     this document.
+    /// </summary>
+    /// <param name="idSource"></param>
+    /// <param name="dictionary"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TInclude"></typeparam>
+    /// <typeparam name="TKey"></typeparam>
+    /// <returns></returns>
+    public static IMartenQueryableIncludeBuilder<T, TKey, TInclude> Include<T, TKey, TInclude>(
+        this IQueryable<T> queryable,
+        IDictionary<TKey, TInclude> dictionary)
+        where TInclude : notnull
+        where TKey : notnull
+    {
+        return queryable.As<MartenLinqQueryable<T>>().Include(dictionary);
+    }
+
+    /// <summary>
+    ///     Also fetch related documents, and add the related documents to
+    ///     the supplied dictionary of lists organized by the property mapped to the
+    ///     related document. Follow this with <c>.On(idSource)</c> to specify how
+    ///     to map to this document.
+    /// </summary>
+    /// <param name="idSource"></param>
+    /// <param name="dictionary"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TInclude"></typeparam>
+    /// <typeparam name="TKey"></typeparam>
+    /// <returns></returns>
+    public static IMartenQueryableIncludeBuilder<T, TKey, TInclude> Include<T, TKey, TInclude>(
+        this IQueryable<T> queryable,
+        IDictionary<TKey, IList<TInclude>> dictionary)
+        where TInclude : notnull
+        where TKey : notnull
+    {
+        return queryable.As<MartenLinqQueryable<T>>().Include(dictionary);
+    }
+
+    /// <summary>
+    ///     Also fetch related documents, and add the related documents to
+    ///     the supplied dictionary of lists organized by the property mapped to the
+    ///     related document. Follow this with <c>.On(idSource)</c> to specify how
+    ///     to map to this document.
+    /// </summary>
+    /// <param name="idSource"></param>
+    /// <param name="dictionary"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TInclude"></typeparam>
+    /// <typeparam name="TKey"></typeparam>
+    /// <returns></returns>
+    public static IMartenQueryableIncludeBuilder<T, TKey, TInclude> Include<T, TKey, TInclude>(
+        this IQueryable<T> queryable,
+        IDictionary<TKey, List<TInclude>> dictionary)
+        where TInclude : notnull
+        where TKey : notnull
+    {
+        return queryable.As<MartenLinqQueryable<T>>().Include(dictionary);
+    }
+
+    /// <summary>
     ///     Execute this query to an IAsyncEnumerable. This is valuable for reading
     ///     and processing large result sets without having to keep the entire
     ///     result set in memory
@@ -126,7 +226,7 @@ public static class QueryableExtensions
     public static IAsyncEnumerable<T> ToAsyncEnumerable<T>(this IQueryable<T> queryable,
         CancellationToken token = default)
     {
-        return queryable.As<IMartenQueryable<T>>().ToAsyncEnumerable(token);
+        return queryable.As<MartenLinqQueryable<T>>().ToAsyncEnumerable(token);
     }
 
 
@@ -204,7 +304,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.As<IMartenQueryable>().AnyAsync(token);
+        return source.As<MartenLinqQueryable<TSource>>().AnyAsync(token);
     }
 
     public static Task<bool> AnyAsync<TSource>(
@@ -238,7 +338,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.Select(expression).As<IMartenQueryable>().SumAsync<TResult>(token);
+        return source.Select(expression).As<MartenLinqQueryable<TResult>>().SumAsync<TResult>(token);
     }
 
     public static Task<TResult> MaxAsync<TSource, TResult>(
@@ -250,7 +350,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.Select(expression).As<IMartenQueryable>().MaxAsync<TResult>(token);
+        return source.Select(expression).As<MartenLinqQueryable<TResult>>().MaxAsync<TResult>(token);
     }
 
     public static Task<TResult> MinAsync<TSource, TResult>(
@@ -262,7 +362,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.Select(expression).As<IMartenQueryable>().MinAsync<TResult>(token);
+        return source.Select(expression).As<MartenLinqQueryable<TResult>>().MinAsync<TResult>(token);
     }
 
     public static Task<double> AverageAsync<TSource, TMember>(
@@ -274,7 +374,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.Select(expression).As<IMartenQueryable>().AverageAsync(token);
+        return source.Select(expression).As<MartenLinqQueryable<TMember>>().AverageAsync(token);
     }
 
     #endregion Aggregate Functions
@@ -290,7 +390,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.As<IMartenQueryable>().CountAsync(token);
+        return source.As<MartenLinqQueryable<TSource>>().CountAsync(token);
     }
 
     public static Task<int> CountAsync<TSource>(
@@ -320,7 +420,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.As<IMartenQueryable>().CountLongAsync(token);
+        return source.As<MartenLinqQueryable<TSource>>().CountLongAsync(token);
     }
 
     public static Task<long> LongCountAsync<TSource>(
@@ -354,7 +454,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.As<IMartenQueryable>().FirstAsync<TSource>(token);
+        return source.As<MartenLinqQueryable<TSource>>().FirstAsync<TSource>(token);
     }
 
     public static Task<TSource> FirstAsync<TSource>(
@@ -384,7 +484,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.As<IMartenQueryable>().FirstOrDefaultAsync<TSource>(token);
+        return source.As<MartenLinqQueryable<TSource>>().FirstOrDefaultAsync<TSource>(token);
     }
 
     public static Task<TSource?> FirstOrDefaultAsync<TSource>(
@@ -418,7 +518,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.As<IMartenQueryable>().SingleAsync<TSource>(token);
+        return source.As<MartenLinqQueryable<TSource>>().SingleAsync<TSource>(token);
     }
 
     public static Task<TSource> SingleAsync<TSource>(
@@ -448,7 +548,7 @@ public static class QueryableExtensions
             throw new ArgumentNullException(nameof(source));
         }
 
-        return source.As<IMartenQueryable>().SingleOrDefaultAsync<TSource>(token);
+        return source.As<MartenLinqQueryable<TSource>>().SingleOrDefaultAsync<TSource>(token);
     }
 
     public static Task<TSource?> SingleOrDefaultAsync<TSource>(
@@ -537,7 +637,7 @@ public static class QueryableExtensions
             : ApplyOrder(queryable, property, "OrderBy");
     }
 
-    private static void GetSortProperty(ref string property, out string sortOrder)
+    internal static void GetSortProperty(ref string property, out string sortOrder)
     {
         var propParts = property.Split(' ').Take(2).ToArray();
 
@@ -551,6 +651,31 @@ public static class QueryableExtensions
             property = propParts[0];
             sortOrder = "asc";
         }
+    }
+
+    internal static readonly MethodInfo OrderByFieldNameAndComparerMethod = typeof(QueryableExtensions)
+        .GetMethods(BindingFlags.Public | BindingFlags.Static).Where(x => x.Name == nameof(OrderBy)).Single(x =>
+        {
+            var parameters = x.GetParameters();
+            return parameters.Length == 3 && parameters[1].ParameterType == typeof(string) &&
+                   parameters[2].ParameterType == typeof(StringComparer);
+        });
+
+
+    /// <summary>
+    /// Order by a single property name or [property name] [asc/desc] and a StringComparer value
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <param name="property"></param>
+    /// <param name="comparer"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static IOrderedQueryable<T> OrderBy<T>(this IQueryable<T> queryable, string property, StringComparer comparer)
+    {
+        var call = Expression.Call(null, OrderByFieldNameAndComparerMethod.MakeGenericMethod(typeof(T)), queryable.Expression,
+            Expression.Constant(property), Expression.Constant(comparer));
+
+        return (IOrderedQueryable<T>)queryable.Provider.CreateQuery<T>(call);
     }
 
     /// <summary>
@@ -673,7 +798,7 @@ public static class QueryableExtensions
         return (IBatchedOrderedQueryable<T>)result;
     }
 
-    private static LambdaExpression CompileOrderBy<T>(string property, out Type targetType)
+    internal static LambdaExpression CompileOrderBy<T>(string property, out Type targetType)
     {
         var props = property.Split('.');
         targetType = typeof(T);
@@ -699,4 +824,78 @@ public static class QueryableExtensions
     }
 
     #endregion
+
+    private static MethodInfo _orderBySqlMethod = typeof(QueryableExtensions).GetMethod(nameof(OrderBySql),
+        BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic);
+
+    private static MethodInfo _thenBySqlMethod = typeof(QueryableExtensions).GetMethod(nameof(ThenBySql),
+        BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic);
+
+    /// <summary>
+    /// Supply literal SQL fragments to be placed in the generated SQL for this LINQ query.
+    /// You can supply the "desc" suffix here
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static IQueryable<T> OrderBySql<T>(this IQueryable<T> queryable, string sql)
+    {
+        return queryable.Provider.CreateQuery<T>(Expression.Call(null, _orderBySqlMethod.MakeGenericMethod(typeof(T)), queryable.Expression,
+            Expression.Constant(sql)));
+    }
+
+    /// <summary>
+    /// Supply literal SQL fragments to be placed in the generated SQL for this LINQ query
+    /// You can supply the "desc" suffix here
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static IQueryable<T> ThenBySql<T>(this IQueryable<T> queryable, string sql)
+    {
+        return queryable.Provider.CreateQuery<T>(Expression.Call(null, _thenBySqlMethod.MakeGenericMethod(typeof(T)), queryable.Expression,
+            Expression.Constant(sql)));
+    }
+
+    /// <summary>
+    ///     Retrieve the total number of persisted rows in the database that match this
+    ///     query. Useful for server side paging.
+    /// </summary>
+    /// <param name="stats"></param>
+    /// <returns></returns>
+    public static IMartenQueryable<T> Stats<T>(this IQueryable<T> queryable, out QueryStatistics stats)
+    {
+        // TODO -- make this be an expression here!
+        var martenQueryable = queryable.As<MartenLinqQueryable<T>>();
+        martenQueryable.Statistics = new QueryStatistics();
+        stats = martenQueryable.Statistics;
+
+        return martenQueryable;
+    }
+
+    internal static readonly MethodInfo IncludePlanMethod =
+        typeof(QueryableExtensions).GetMethod(nameof(IncludePlan), BindingFlags.Static | BindingFlags.NonPublic);
+
+    internal static IMartenQueryable<T> IncludePlan<T>(this IQueryable<T> queryable, IIncludePlan include)
+    {
+        var method = IncludePlanMethod.MakeGenericMethod(typeof(T));
+        var methodCallExpression = Expression.Call(null, method, queryable.Expression, Expression.Constant(include));
+
+        return (IMartenQueryable<T>)queryable.Provider.CreateQuery<T>(methodCallExpression);
+    }
+
+
+
+    /// <summary>
+    /// For usage in LINQ Select() transforms by Marten to use user-supplied SQL for
+    /// transformations
+    /// </summary>
+    /// <param name="target"></param>
+    /// <param name="sql"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static T ExplicitSql<T>(this object target, string sql)
+    {
+        return default;
+    }
 }

@@ -27,6 +27,7 @@ public class last_modified_queries: IntegrationContext
     [IndexedLastModified]
     public class Customer
     {
+        public Guid Id { get; set; }
     }
     #endregion
 
@@ -60,7 +61,10 @@ public class last_modified_queries: IntegrationContext
         session.Store(user1, user2, user3, user4);
         session.SaveChanges();
 
-        var epoch = session.MetadataFor(user4).LastModified;
+        var metadata = session.MetadataFor(user4);
+        metadata.ShouldNotBeNull();
+
+        var epoch = metadata.LastModified;
         session.Store(user3, user4);
         session.SaveChanges();
 
@@ -92,7 +96,10 @@ public class last_modified_queries: IntegrationContext
         session.Store(user3, user4);
         session.SaveChanges();
 
-        var epoch = session.MetadataFor(user4).LastModified;
+        var metadata = session.MetadataFor(user4);
+        metadata.ShouldNotBeNull();
+
+        var epoch = metadata.LastModified;
 
         // no where clause
         session.Query<User>().Where(x => x.ModifiedBefore(epoch)).OrderBy(x => x.UserName).Select(x => x.UserName)

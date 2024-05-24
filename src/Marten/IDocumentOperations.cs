@@ -83,17 +83,29 @@ public interface IDocumentOperations: IQuerySession
     /// <typeparam name="T"></typeparam>
     /// <param name="entity"></param>
     /// <param name="version"></param>
-    [Obsolete("Prefer UpdateExpectedVersion(). This will be removed in Marten 7")]
-    void Store<T>(T entity, Guid version) where T : notnull;
+    void UpdateExpectedVersion<T>(T entity, Guid version) where T : notnull;
 
     /// <summary>
-    ///     Explicitly marks a document as needing to be updated and supplies the
-    ///     current known version for the purpose of optimistic versioning checks
+    /// Explicitly marks a document as needing to be updated and supplies the
+    /// *new* revision for the purpose of optimistic versioning checks. This operation
+    /// will be rejected and cause a ConcurrencyException on SaveChanges() if the revision in the database is greater or equal to the given
+    /// revision
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="entity"></param>
-    /// <param name="version"></param>
-    void UpdateExpectedVersion<T>(T entity, Guid version) where T : notnull;
+    /// <param name="revision"></param>
+    void UpdateRevision<T>(T entity, int revision);
+
+    /// <summary>
+    /// Explicitly marks a document as needing to be updated and supplies the
+    /// *new* revision for the purpose of optimistic versioning checks. This operation
+    /// will do nothing  if the revision in the database is greater or equal to the given
+    /// revision
+    /// </summary>
+    /// <param name="entity"></param>
+    /// <param name="revision"></param>
+    /// <typeparam name="T"></typeparam>
+    void TryUpdateRevision<T>(T entity, int revision);
 
     /// <summary>
     ///     Store an enumerable of potentially mixed documents

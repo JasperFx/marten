@@ -1,9 +1,10 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
-using Marten.Util;
+using JasperFx.Core.Reflection;
 
 namespace Marten.Internal.CompiledQueries;
 
@@ -31,6 +32,7 @@ internal class CompiledQueryCodeFile: ICodeFile
     {
         _builder = new CompiledQuerySourceBuilder(_plan, _store.Options, _documentTracking);
         _builder.AssembleTypes(assembly);
+
     }
 
     public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services,

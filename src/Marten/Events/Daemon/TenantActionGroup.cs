@@ -1,9 +1,12 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Services;
 using Marten.Storage;
+
+#nullable enable
 
 namespace Marten.Events.Daemon;
 
@@ -19,14 +22,16 @@ internal class TenantActionGroup
         foreach (var action in _actions) action.TenantId = _tenant.TenantId;
     }
 
-    public async Task ApplyEvents(ProjectionUpdateBatch batch, IProjection projection, DocumentStore store,
+    public async Task ApplyEvents(
+        ProjectionUpdateBatch batch,
+        IProjection projection,
+        AsyncOptions asyncOptions,
+        DocumentStore store,
         CancellationToken cancellationToken)
     {
-        var tracking =
-            projection is IProjectionSource projectionSource
-            && projectionSource.Options.EnableDocumentTrackingByIdentity
-                ? DocumentTracking.IdentityOnly
-                : DocumentTracking.None;
+        var tracking = asyncOptions.EnableDocumentTrackingByIdentity
+            ? DocumentTracking.IdentityOnly
+            : DocumentTracking.None;
 
         await using var operations = new ProjectionDocumentSession(store, batch,
             new SessionOptions { Tracking = tracking, Tenant = _tenant });

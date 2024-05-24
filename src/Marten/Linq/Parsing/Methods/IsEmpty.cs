@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using Marten.Linq.Fields;
+using Marten.Linq.Members;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing.Methods;
@@ -12,10 +12,10 @@ internal class IsEmpty: IMethodCallParser
                && expression.Method.DeclaringType == typeof(LinqExtensions);
     }
 
-    public ISqlFragment Parse(IFieldMapping mapping, IReadOnlyStoreOptions options, MethodCallExpression expression)
+    public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
+        MethodCallExpression expression)
     {
-        var field = mapping.FieldFor(expression);
-
-        return new WhereFragment($"({field.RawLocator} is null or jsonb_array_length({field.RawLocator}) = 0)");
+        var member = (ICollectionMember)memberCollection.MemberFor(expression);
+        return member.IsEmpty;
     }
 }

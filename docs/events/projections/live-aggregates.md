@@ -4,6 +4,12 @@
 For information on how to create aggregated projection or snapshots see [Aggregate Projections](/events/projections/aggregate-projections).
 :::
 
+::: tip
+As of Marten 7, the strong recommendation is to use the [FetchForWriting](/scenarios/command_handler_workflow#fetchforwriting) API for retrieving "write model" aggregations
+of a single stream within CQRS command operations as a way of "softening" your application for later changes to 
+projection lifecycles.
+:::
+
 In Event Sourcing, the entity state is stored as the series of events that happened for this specific object, e.g. `InvoiceInitiated`, `InvoiceIssued`, `InvoiceSent`. All of those events shares the stream id, and have incremented stream version. In other words, they're correlated by the stream id ordered by stream position.
 
 Streams can be thought of as the entities' representation. Traditionally (e.g. in relational or document approach), each entity is stored as a separate record.
@@ -314,7 +320,7 @@ For the daily operations, you don't need to know its whole history. It's enough 
 ```cs
 public class CashRegisterRepository
 {
-    private IDocumentSession session;
+    private readonly IDocumentSession session;
 
     public CashRegisterRepository(IDocumentSession session)
     {
@@ -420,7 +426,7 @@ var questParty = await theSession.Events
 
     .AggregateToAsync<QuestParty>();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/aggregateto_linq_operator_tests.cs#L38-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregateto_async_usage_with_linq' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/aggregateto_linq_operator_tests.cs#L41-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregateto_async_usage_with_linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 These methods are extension methods in the `Marten.Events` namespace.

@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Alba;
-using IssueService;
 using IssueService.Controllers;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
@@ -10,34 +9,12 @@ using Xunit;
 
 namespace Marten.AspNetCore.Testing;
 
-public class AppFixture : IDisposable, IAsyncLifetime
-{
-    private IAlbaHost _host;
-
-    public void Dispose()
-    {
-        _host.Dispose();
-    }
-
-    public IAlbaHost Host => _host;
-
-    public async Task InitializeAsync()
-    {
-        _host = await Program.CreateHostBuilder(Array.Empty<string>())
-            .StartAlbaAsync();
-    }
-
-    public async Task DisposeAsync()
-    {
-        await _host.DisposeAsync();
-    }
-}
-
-public class web_service_streaming_tests : IClassFixture<AppFixture>
+[Collection("integration")]
+public class web_service_streaming_tests: IntegrationContext
 {
     private readonly IAlbaHost theHost;
 
-    public web_service_streaming_tests(AppFixture fixture)
+    public web_service_streaming_tests(AppFixture fixture) : base(fixture)
     {
         theHost = fixture.Host;
     }
@@ -139,7 +116,7 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
         var issues = new Issue[100];
         for (int i = 0; i < issues.Length; i++)
         {
-            issues[i] = Issue.Random();
+            issues[i] = Issue.RandomIssue();
         }
 
         await store.BulkInsertDocumentsAsync(issues);
@@ -216,7 +193,7 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
         var issues = new Issue[100];
         for (int i = 0; i < issues.Length; i++)
         {
-            issues[i] = Issue.Random();
+            issues[i] = Issue.RandomIssue();
         }
 
         await store.BulkInsertDocumentsAsync(issues);
@@ -238,5 +215,22 @@ public class web_service_streaming_tests : IClassFixture<AppFixture>
         read.Length.ShouldBe(issues.Count(x => x.Open));
     }
 
+    [Theory]
+    [InlineData("value1", "value2")]
+    public async Task stream_a_json_with_raw_sql(string value1, string value2)
+    {
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/json/sql/{value1}/{value2}");
+            s.ContentTypeShouldBe("application/json");
+        });
 
+        var read = result.ReadAsJson<SimpleProperty[]>();
+
+        read.Length.ShouldBe(2);
+        read[0].Property.ShouldBe(value1);
+        read[1].Property.ShouldBe(value2);
+    }
+
+    internal record SimpleProperty(string Property);
 }

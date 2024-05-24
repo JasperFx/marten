@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
-using Marten.Linq.Filters;
+using Marten.Linq.SqlGeneration.Filters;
 using Marten.PLv8.Patching;
 using Marten.PLv8.Transforms;
 using Marten.Schema;
@@ -640,7 +640,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
         using (var query = theStore.QuerySession())
         {
             var model1 = query.Load<TestModel7>(model.Id);
-            Assert.Equal(id, model1!.NullableObjectId);
+            model1!.NullableObjectId.ShouldBe(id);
 
             var model2 = query.Load<TestModel7>(nullModel.Id);
             Assert.Null(model2!.NullableObjectId);

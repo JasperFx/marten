@@ -3,9 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using Marten.Events.Daemon;
 using Marten.Internal;
+using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
@@ -17,21 +22,26 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
 {
     private readonly StorageFeatures _features;
 
-
-    private readonly StoreOptions _options;
-
     private Lazy<SequenceFactory> _sequences;
 
-    public MartenDatabase(StoreOptions options, IConnectionFactory factory, string identifier)
-        : base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, identifier, factory.Create)
+    public MartenDatabase(
+        StoreOptions options,
+        NpgsqlDataSource npgsqlDataSource,
+        string identifier
+    ): base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, identifier, npgsqlDataSource)
     {
         _features = options.Storage;
-        _options = options;
+        Options = options;
 
         resetSequences();
 
         Providers = options.Providers;
+
+        Tracker = new ShardStateTracker(options.LogFactory?.CreateLogger<MartenDatabase>() ?? options.DotNetLogger ??
+            NullLogger<MartenDatabase>.Instance);
     }
+
+    public StoreOptions Options { get; }
 
     public ISequences Sequences => _sequences.Value;
 
@@ -79,7 +89,7 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
 
     public override IFeatureSchema[] BuildFeatureSchemas()
     {
-        return _options.Storage.AllActiveFeatures(this).ToArray();
+        return Options.Storage.AllActiveFeatures(this).ToArray();
     }
 
     public override void ResetSchemaExistenceChecks()
@@ -97,11 +107,17 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
     {
         _sequences = new Lazy<SequenceFactory>(() =>
         {
-            var sequences = new SequenceFactory(_options, this);
+            var sequences = new SequenceFactory(Options, this);
 
             generateOrUpdateFeature(typeof(SequenceFactory), sequences, default).AsTask().GetAwaiter().GetResult();
 
             return sequences;
         });
+    }
+
+    public void Dispose()
+    {
+        DataSource?.Dispose();
+        ((IDisposable)Tracker)?.Dispose();
     }
 }

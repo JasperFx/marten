@@ -1,7 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
@@ -19,9 +21,15 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
 {
     public ILiveAggregator<T> Build(StoreOptions options)
     {
-        if (_liveType == null)
+        if (!_hasGenerated)
         {
-            Compile(options);
+            lock (_assembleLocker)
+            {
+                if (!_hasGenerated)
+                {
+                    Compile(options);
+                }
+            }
         }
 
         return BuildLiveAggregator();
@@ -53,9 +61,15 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         this.As<ICodeFile>().InitializeSynchronously(rules, options.EventGraph, null);
 
         // You have to do this for the sake of the Setters
-        if (_liveGeneratedType == null)
+        if (!_hasGenerated)
         {
-            assembleTypes(new GeneratedAssembly(rules), options);
+            lock (_assembleLocker)
+            {
+                if (!_hasGenerated)
+                {
+                    assembleTypes(new GeneratedAssembly(rules), options);
+                }
+            }
         }
     }
 
@@ -64,40 +78,65 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         _inlineType = assembly.GetExportedTypes().FirstOrDefault(x => x.Name == _inlineAggregationHandlerType);
         _liveType = assembly.GetExportedTypes().FirstOrDefault(x => x.Name == _liveAggregationTypeName);
 
+        if (_liveGeneratedType != null)
+        {
+            Debug.WriteLine(_liveGeneratedType.SourceCode);
+        }
+
+        if (_inlineGeneratedType != null)
+        {
+            Debug.WriteLine(_inlineGeneratedType.SourceCode);
+        }
+
         return _inlineType != null && _liveType != null;
     }
 
     protected override void assembleTypes(GeneratedAssembly assembly, StoreOptions options)
     {
+        referenceAssembliesAndTypes(assembly);
+        addUsingNamespaces(assembly);
+        checkAndSetAsyncFlag();
+        validateAndSetAggregateMapping(options);
+        buildAggregationTypes(assembly);
+    }
+
+    private void referenceAssembliesAndTypes(GeneratedAssembly assembly)
+    {
         assembly.Rules.ReferenceTypes(GetType());
         assembly.ReferenceAssembly(GetType().Assembly);
         assembly.ReferenceAssembly(typeof(T).Assembly);
-
-
         assembly.Rules.ReferenceTypes(_applyMethods.ReferencedTypes().ToArray());
         assembly.Rules.ReferenceTypes(_createMethods.ReferencedTypes().ToArray());
-        assembly.Rules.ReferenceTypes(_createDefaultMethod.ReferencedTypes().ToArray());
         assembly.Rules.ReferenceTypes(_shouldDeleteMethods.ReferencedTypes().ToArray());
 
         // Walk the assembly dependencies for the projection and aggregate types,
         // and this will catch generic type argument dependencies as well. For GH-2061
         assembly.Rules.ReferenceTypes(GetType(), typeof(T));
+    }
 
+    private static void addUsingNamespaces(GeneratedAssembly assembly)
+    {
         assembly.UsingNamespaces.Add("System");
         assembly.UsingNamespaces.Add("System.Linq");
+    }
 
+    private void checkAndSetAsyncFlag()
+    {
         _isAsync = _createMethods.IsAsync || _applyMethods.IsAsync;
+    }
 
+    private void validateAndSetAggregateMapping(StoreOptions options)
+    {
         _aggregateMapping = options.Storage.FindMapping(typeof(T));
-
-
         if (_aggregateMapping.IdMember == null)
         {
             throw new InvalidDocumentException(
                 $"No identity property or field can be determined for the aggregate '{typeof(T).FullNameInCode()}', but one is required to be used as an aggregate in projections");
         }
+    }
 
-
+    private void buildAggregationTypes(GeneratedAssembly assembly)
+    {
         buildLiveAggregationType(assembly);
         buildInlineAggregationType(assembly);
     }
@@ -109,11 +148,25 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
 
     internal ILiveAggregator<T> BuildLiveAggregator()
     {
+        if (_liveType == null)
+        {
+            throw new ArgumentNullException(nameof(_liveType), $"Expected {nameof(_liveType)} to have value");
+        }
+
+        if (_liveGeneratedType == null)
+        {
+            throw new ArgumentNullException(nameof(_liveGeneratedType), $"Expected {nameof(_liveGeneratedType)} to have value");
+        }
+
         var aggregator = (ILiveAggregator<T>)Activator.CreateInstance(_liveType, this);
 
         foreach (var setter in _liveGeneratedType.Setters)
         {
             var prop = _liveType.GetProperty(setter.PropName);
+            if (prop == null)
+            {
+                throw new ArgumentNullException(nameof(prop), $"Expected {nameof(prop)} to have value");
+            }
             prop.SetValue(aggregator, setter.InitialValue);
         }
 
@@ -132,12 +185,20 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         }
         else if (_inlineGeneratedType == null)
         {
-            var rules = store.Options.CreateGenerationRules();
-            assembleTypes(new GeneratedAssembly(rules), store.Options);
+            lock (_assembleLocker)
+            {
+                var rules = store.Options.CreateGenerationRules();
+                assembleTypes(new GeneratedAssembly(rules), store.Options);
+            }
         }
 
         var storage = store.Options.Providers.StorageFor<T>().Lightweight;
         var slicer = buildEventSlicer(store.Options);
+
+        if (_inlineType == null)
+        {
+            throw new ArgumentNullException(nameof(_inlineType), $"Expected {nameof(_inlineType)} to have value");
+        }
 
         var inline = (IAggregationRuntime)Activator.CreateInstance(_inlineType, store, this, slicer,
             storage, this);
@@ -145,6 +206,10 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         foreach (var setter in _inlineGeneratedType.Setters)
         {
             var prop = _inlineType.GetProperty(setter.PropName);
+            if (prop == null)
+            {
+                throw new ArgumentNullException(nameof(prop), $"Expected {nameof(prop)} to have value");
+            }
             prop.SetValue(inline, setter.InitialValue);
         }
 
@@ -165,7 +230,6 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         _inlineGeneratedType = assembly.AddType(_inlineAggregationHandlerType, inlineBaseType);
 
         _createMethods.BuildCreateMethod(_inlineGeneratedType, _aggregateMapping);
-        _createDefaultMethod.BuildCreateDefaultMethod(_inlineGeneratedType, _aggregateMapping);
 
         _inlineGeneratedType.AllInjectedFields.Add(new InjectedField(GetType()));
 
@@ -173,7 +237,6 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
 
         _inlineGeneratedType.Setters.AddRange(_applyMethods.Setters());
         _inlineGeneratedType.Setters.AddRange(_createMethods.Setters());
-        _inlineGeneratedType.Setters.AddRange(_createDefaultMethod.Setters());
         _inlineGeneratedType.Setters.AddRange(_shouldDeleteMethods.Setters());
     }
 
@@ -209,18 +272,11 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
                 : new CreateAggregateFrame(slot);
         }
 
-        foreach (var slot in _createDefaultMethod.Methods)
-        {
-            eventHandlers[slot.EventType].CreationFrame = slot.Method is ConstructorInfo
-                ? new AggregateConstructorFrame(slot)
-                : new CreateAggregateFrame(slot);
-        }
-
         foreach (var slot in _shouldDeleteMethods.Methods)
             eventHandlers[slot.EventType].Deletion = new ShouldDeleteFrame(slot);
 
         var frames = eventHandlers.OfType<EventProcessingFrame>().ToList();
-        frames.Sort(new EventTypeComparer());
+
         var patternMatching = new EventTypePatternMatchFrame(frames);
         method.Frames.Add(patternMatching);
 
@@ -246,14 +302,11 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
 
         buildMethod.DerivedVariables.Add(Variable.For<IQuerySession>("(IQuerySession)session"));
 
-        buildMethod.Frames.Code("if (!events.Any()) return null;");
-
-        buildMethod.Frames.Add(new DeclareAggregateFrame(typeof(T)));
-
-        var callCreateAggregateFrame = new CallCreateAggregateFrame(_createMethods);
-
         // This is the existing snapshot passed into the LiveAggregator
         var snapshot = buildMethod.Arguments.Single(x => x.VariableType == typeof(T));
+        buildMethod.Frames.Code($"if (!events.Any()) return {snapshot.Usage};");
+
+        var callCreateAggregateFrame = new CallCreateAggregateFrame(_createMethods);
         callCreateAggregateFrame.CoalesceAssignTo(snapshot);
 
         buildMethod.Frames.Add(callCreateAggregateFrame);
@@ -264,12 +317,10 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         _liveGeneratedType.AllInjectedFields.Add(new InjectedField(GetType()));
 
         _createMethods.BuildCreateMethod(_liveGeneratedType, _aggregateMapping);
-        _createDefaultMethod.BuildCreateDefaultMethod(_liveGeneratedType, _aggregateMapping);
         _applyMethods.BuildApplyMethod(_liveGeneratedType, _aggregateMapping);
 
         _liveGeneratedType.Setters.AddRange(_applyMethods.Setters());
         _liveGeneratedType.Setters.AddRange(_createMethods.Setters());
-        _liveGeneratedType.Setters.AddRange(_createDefaultMethod.Setters());
         _liveGeneratedType.Setters.AddRange(_shouldDeleteMethods.Setters());
     }
 }

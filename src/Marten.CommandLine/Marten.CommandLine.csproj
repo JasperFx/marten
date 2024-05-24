@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <Description>Command line tooling for Marten</Description>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
         <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
         <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
         <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
@@ -26,15 +26,17 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     </PropertyGroup>
+
     <PropertyGroup>
         <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
         <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
     </PropertyGroup>
+
     <ItemGroup>
-        <PackageReference Include="JasperFx.CodeGeneration.Commands" Version="2.3.0"/>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
-        <PackageReference Include="Oakton" Version="6.0.0"/>
-        <PackageReference Include="Weasel.CommandLine" Version="6.0.0-rc.1"/>
+        <PackageReference Include="JasperFx.CodeGeneration.Commands" Version="3.5.3" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+        <PackageReference Include="Oakton" Version="6.1.0"/>
+        <PackageReference Include="Weasel.CommandLine" Version="7.4.1"/>
     </ItemGroup>
     <Import Project="../../Analysis.Build.props"/>
 </Project>

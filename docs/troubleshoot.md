@@ -13,21 +13,6 @@
 
 Marten needs to translate LINQ queries to SQL in order to execute them against the database. This translation requires explicit support for all the query operators that are used. If your query operation is not covered, Marten will throw a `NotSupportedException`. In such a case, consider [filing a feature request](https://github.com/JasperFx/marten/issues/new). Lastly, as a mitigation, consider [hand-crafting the required query](/documents/querying/linq/#use-matchessql-sql-to-search-using-raw-sql).
 
-## Serialize to camel case?
-
-While it's possible to accommodate any serialization schemes by implementing a custom `ISerializer`, Marten's built-in serializer (Json.Net) can be set to serialize to Camel case through `StoreOptions.UseDefaultSerialization`:
-
-<!-- snippet: sample_sample-serialize-to-camelcase -->
-<a id='snippet-sample_sample-serialize-to-camelcase'></a>
-```cs
-var store = DocumentStore.For(storeOptions =>
-{
-    // Change default casing to CamelCase
-    storeOptions.UseDefaultSerialization(casing: Casing.CamelCase);
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/CamelCasing.cs#L11-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-serialize-to-camelcase' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
 ## More diagnostics data outside of Marten
 
 If you cannot obtain the desired diagnostic data through Marten's [diagnostics](/diagnostics), consider using the [Npgsql logging facilities](https://www.npgsql.org/doc/logging.html), by hooking into `NpgsqlLogManager.Provider`, or by using the [performance counters exposed by Npgsql](https://www.npgsql.org/doc/performance.html).

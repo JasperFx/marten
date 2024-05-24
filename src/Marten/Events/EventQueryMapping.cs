@@ -1,10 +1,12 @@
 using System;
-using System.Linq;
 using System.Linq.Expressions;
-using Marten.Linq.Fields;
+using System.Reflection;
+using JasperFx.Core.Reflection;
 using Marten.Linq.Parsing;
+using Marten.Linq.SqlGeneration.Filters;
 using Marten.Schema;
 using Weasel.Core;
+using Weasel.Postgresql;
 
 namespace Marten.Events;
 
@@ -16,44 +18,48 @@ public class EventQueryMapping: DocumentMapping
 
         TenancyStyle = storeOptions.Events.TenancyStyle;
 
-        TableName = new DbObjectName(DatabaseSchemaName, "mt_events");
+        TableName = new PostgresqlObjectName(DatabaseSchemaName, "mt_events");
 
-        duplicateField(x => x.Sequence, "seq_id");
+        registerQueryableMember(x => x.Id, "id");
+        registerQueryableMember(x => x.Sequence, "seq_id");
         if (storeOptions.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
-            duplicateField(x => x.StreamId, "stream_id");
+            registerQueryableMember(x => x.StreamId, "stream_id");
         }
         else
         {
-            duplicateField(x => x.StreamKey, "stream_id");
+            registerQueryableMember(x => x.StreamKey, "stream_id");
         }
 
-        duplicateField(x => x.Version, "version");
-        duplicateField(x => x.Timestamp, "timestamp");
-        duplicateField(x => x.IsArchived, "is_archived");
+        registerQueryableMember(x => x.Version, "version");
+        registerQueryableMember(x => x.Timestamp, "timestamp");
 
-        duplicateField(x => x.EventTypeName, "type");
-        duplicateField(x => x.DotNetTypeName, SchemaConstants.DotNetTypeColumn);
+        // Is archived needs to be a little different
+        var member = ReflectionHelper.GetProperty<IEvent>(x => x.IsArchived);
+        QueryMembers.ReplaceMember(member, new IsArchivedMember());
+
+        registerQueryableMember(x => x.EventTypeName, "type");
+        registerQueryableMember(x => x.DotNetTypeName, SchemaConstants.DotNetTypeColumn);
 
 
         if (storeOptions.EventGraph.Metadata.CorrelationId.Enabled)
         {
-            duplicateField(x => x.CorrelationId, storeOptions.EventGraph.Metadata.CorrelationId.Name);
+            registerQueryableMember(x => x.CorrelationId, storeOptions.EventGraph.Metadata.CorrelationId.Name);
         }
 
         if (storeOptions.EventGraph.Metadata.CausationId.Enabled)
         {
-            duplicateField(x => x.CausationId, storeOptions.EventGraph.Metadata.CausationId.Name);
+            registerQueryableMember(x => x.CausationId, storeOptions.EventGraph.Metadata.CausationId.Name);
         }
     }
 
     public override DbObjectName TableName { get; }
 
-    private DuplicatedField duplicateField(Expression<Func<IEvent, object>> property, string columnName)
+    private void registerQueryableMember(Expression<Func<IEvent, object>> property, string columnName)
     {
-        var finder = new FindMembers();
-        finder.Visit(property);
+        var member = ReflectionHelper.GetProperty(property);
 
-        return DuplicateField(finder.Members.ToArray(), columnName: columnName);
+        var field = DuplicateField(new MemberInfo[] { member }, columnName: columnName);
+        QueryMembers.ReplaceMember(member, field);
     }
 }

@@ -15,7 +15,7 @@ namespace EventSourcingTests.Projections;
 public class when_registering_a_custom_projection_type: IDisposable
 {
     private readonly DocumentStore _store;
-    private IProjectionSource theProjection;
+    private readonly IProjectionSource theProjection;
 
     public when_registering_a_custom_projection_type()
     {

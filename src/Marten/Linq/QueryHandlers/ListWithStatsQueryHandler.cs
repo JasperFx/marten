@@ -7,11 +7,11 @@ using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Linq.Selectors;
-using Marten.Linq.SqlGeneration;
 using Marten.Services;
 using Marten.Util;
 using Npgsql;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.QueryHandlers;
 
@@ -20,10 +20,10 @@ internal class ListWithStatsQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>, IQ
 {
     private readonly int _countIndex;
     private readonly ISelector<T> _selector;
-    private readonly Statement _statement;
+    private readonly ISqlFragment _statement;
     private readonly QueryStatistics _statistics;
 
-    public ListWithStatsQueryHandler(int countIndex, Statement statement, ISelector<T> selector,
+    public ListWithStatsQueryHandler(int countIndex, ISqlFragment statement, ISelector<T> selector,
         QueryStatistics statistics)
     {
         _countIndex = countIndex;
@@ -58,9 +58,9 @@ internal class ListWithStatsQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>, IQ
         return Handle(reader, session);
     }
 
-    public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
-        _statement.Configure(builder);
+        _statement.Apply(builder);
     }
 
     public IReadOnlyList<T> Handle(DbDataReader reader, IMartenSession session)

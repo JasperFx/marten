@@ -4,24 +4,27 @@ using System.Linq;
 using JasperFx.Core;
 using Marten.Events.Archiving;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Internals;
+using Marten.Linq;
 using Marten.Linq.SqlGeneration;
 using Marten.Storage;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events;
 
-internal class EventStatement: Statement
+internal class EventStatement: SelectorStatement
 {
     private const string ALL_TENANTS = "~ALL~";
     private readonly IEventStorage _storage;
 
-    public EventStatement(IEventStorage storage): base(storage.Fields)
+    public EventStatement(IEventStorage storage)
     {
         _storage = storage;
     }
 
-    public ISqlFragment[] Filters { get; set; } = new ISqlFragment[0];
+    public ISqlFragment[] Filters { get; set; } = Array.Empty<ISqlFragment>();
 
     public EventRange Range { get; set; }
 
@@ -37,9 +40,9 @@ internal class EventStatement: Statement
 
     public long FromVersion { get; set; }
 
-    protected override void configure(CommandBuilder builder)
+    protected override void configure(ICommandBuilder builder)
     {
-        _storage.WriteSelectClause(builder);
+        _storage.Apply(builder);
 
         var wheres = filters().ToArray();
         switch (wheres.Length)
@@ -108,3 +111,6 @@ internal class EventStatement: Statement
         foreach (var filter in Filters) yield return filter;
     }
 }
+
+
+

@@ -13,7 +13,6 @@ using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
-using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Events.Schema;
 
@@ -21,19 +20,19 @@ internal class StreamsTable: Table
 {
     public const string TableName = "mt_streams";
 
-    public StreamsTable(EventGraph events): base(new DbObjectName(events.DatabaseSchemaName, TableName))
+    public StreamsTable(EventGraph events): base(new PostgresqlObjectName(events.DatabaseSchemaName, TableName))
     {
-        var idColumn = events.StreamIdentity == StreamIdentity.AsGuid
-            ? new StreamTableColumn("id", x => x.Id)
-            : new StreamTableColumn("id", x => x.Key);
-
-        AddColumn(idColumn).AsPrimaryKey();
-
+        // Per https://github.com/JasperFx/marten/issues/2430, this needs to be first in the PK
         if (events.TenancyStyle == TenancyStyle.Conjoined)
         {
             AddColumn<TenantIdColumn>().AsPrimaryKey();
         }
 
+        var idColumn = events.StreamIdentity == StreamIdentity.AsGuid
+            ? new StreamTableColumn("id", x => x.Id)
+            : new StreamTableColumn("id", x => x.Key);
+
+        AddColumn(idColumn).AsPrimaryKey();
         AddColumn(new StreamTableColumn("type", x => x.AggregateTypeName)).AllowNulls();
 
         AddColumn(new StreamTableColumn("version", x => x.Version)).AllowNulls();
@@ -82,7 +81,7 @@ internal class StreamTableColumn: TableColumn, IStreamTableColumn
         "varchar")
     {
         _memberExpression = memberExpression;
-        _member = FindMembers.Determine(memberExpression).Single();
+        _member = MemberFinder.Determine(memberExpression).Single();
         var memberType = _member.GetMemberType();
         Type = PostgresqlProvider.Instance.GetDatabaseType(memberType, EnumStorage.AsInteger);
         NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(memberType);

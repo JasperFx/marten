@@ -77,7 +77,7 @@ public partial class ProjectionScenario: IEventOperations
         if (_store.Options.Projections.HasAnyAsyncProjections())
         {
             Daemon = await _store.BuildProjectionDaemonAsync(TenantId).ConfigureAwait(false);
-            await Daemon.StartAllShards().ConfigureAwait(false);
+            await Daemon.StartAllAsync().ConfigureAwait(false);
         }
 
         Session = TenantId.IsNotEmpty() ? _store.LightweightSession(TenantId) : _store.LightweightSession();
@@ -115,7 +115,7 @@ public partial class ProjectionScenario: IEventOperations
         {
             if (Daemon != null)
             {
-                await Daemon.StopAll().ConfigureAwait(false);
+                await Daemon.StopAllAsync().ConfigureAwait(false);
                 Daemon.SafeDispose();
             }
 

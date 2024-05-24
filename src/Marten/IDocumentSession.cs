@@ -14,6 +14,20 @@ namespace Marten;
 public interface IDocumentSession: IDocumentOperations
 {
     /// <summary>
+    /// Force this session to start a connection and transaction. This will make the session do consistent reads through the transaction. Is
+    /// idempotent.
+    /// </summary>
+    void BeginTransaction();
+
+    /// <summary>
+    /// Force this session to start a connection and transaction. This will make the session do consistent reads through the transaction. Is
+    /// idempotent.
+    /// </summary>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    ValueTask BeginTransactionAsync(CancellationToken token);
+
+    /// <summary>
     ///     List of all the pending changes to this IDocumentSession
     /// </summary>
     IUnitOfWork PendingChanges { get; }

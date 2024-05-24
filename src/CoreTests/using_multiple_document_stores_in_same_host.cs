@@ -8,6 +8,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Coordination;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Internal;
 using Marten.Services;
@@ -45,12 +46,25 @@ public class using_multiple_document_stores_in_same_host : IDisposable
                 opts.GeneratedCodeMode = TypeLoadMode.Auto;
             });
 
-            services.AddMartenStore<ISecondStore>(opts =>
+            // Just to prove that this doesn't blow up, see GH-2892
+            services.AddKeyedSingleton<IMartenSessionLogger>("blue", new StoreOptionsTests.RecordingLogger());
+
+            services.AddMartenStore<ISecondStore>(services =>
             {
+                var opts = new StoreOptions();
                 opts.Connection(ConnectionSource.ConnectionString);
                 opts.DatabaseSchemaName = "second_store";
+
+                return opts;
             });
         });
+    }
+
+    [Fact]
+    public void get_all_document_stores()
+    {
+        var allDocumentStores = theContainer.AllDocumentStores();
+        allDocumentStores.Count.ShouldBe(3);
     }
 
     [Fact]
@@ -163,16 +177,22 @@ public class additional_document_store_registration_and_optimized_artifact_workf
         using var host = new HostBuilder()
             .ConfigureServices(services =>
             {
-                services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow();
+                services.AddMarten(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.SetApplicationProject(GetType().Assembly);
+                }).OptimizeArtifactWorkflow();
 
                 services.AddMartenStore<IFirstStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "first_store";
+                    opts.SetApplicationProject(GetType().Assembly);
                 }).OptimizeArtifactWorkflow();
+
+
             })
             .UseEnvironment("Development")
-            .UseApplicationProject(GetType().Assembly)
             .Start();
 
 
@@ -200,10 +220,10 @@ public class additional_document_store_registration_and_optimized_artifact_workf
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "first_store";
+                    opts.SetApplicationProject(GetType().Assembly);
                 }).OptimizeArtifactWorkflow();
             })
             .UseEnvironment("Production")
-            .UseApplicationProject(GetType().Assembly)
             .Start();
 
 
@@ -265,9 +285,9 @@ public class additional_document_store_registration_and_optimized_artifact_workf
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "first_store";
+                    opts.SetApplicationProject(typeof(IFirstStore).Assembly);
                 }).OptimizeArtifactWorkflow(TypeLoadMode.Static);
 
-                services.SetApplicationProject(typeof(IFirstStore).Assembly);
             })
             .Start();
 
@@ -335,7 +355,7 @@ public class additional_document_store_registration_and_optimized_artifact_workf
         store.Options.Projections.AsyncMode.ShouldBe(DaemonMode.HotCold);
 
         var hostedService = host.Services.GetServices<IHostedService>()
-            .OfType<AsyncProjectionHostedService<IFirstStore>>().Single();
+            .OfType<ProjectionCoordinator<IFirstStore>>().Single();
 
         (hostedService.Store is IFirstStore).ShouldBeTrue();
 

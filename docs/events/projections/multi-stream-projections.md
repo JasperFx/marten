@@ -1,7 +1,7 @@
 # Multi-Stream Projections
 
 ::: tip
-This may change again in V6 (sigh), but we have replaced the earlier nomenclature of "ViewProjection" and renamed this concept as
+We have replaced the earlier nomenclature of "ViewProjection" and renamed this concept as
 `MultiStreamProjection` to hopefully be more intention revealing.
 :::
 
@@ -227,6 +227,33 @@ public class UserGroupsAssignmentProjection2: MultiStreamProjection<UserGroupsAs
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/simple_multi_stream_projection.cs#L31-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+As of Marten V7, you can also use `IEvent` metadata as part of creating the identity rules as shown in this example:
+
+<!-- snippet: sample_using_ievent_for_document_identity_in_projections -->
+<a id='snippet-sample_using_ievent_for_document_identity_in_projections'></a>
+```cs
+public class CustomerInsightsProjection : MultiStreamProjection<CustomerInsightsResponse, string>
+{
+
+    public CustomerInsightsProjection()
+    {
+        Identity<IEvent<CustomerCreated>>(x => DateOnly.FromDateTime(x.Timestamp.Date).ToString(CultureInfo.InvariantCulture));
+        Identity<IEvent<CustomerDeleted>>(x => DateOnly.FromDateTime(x.Timestamp.Date).ToString(CultureInfo.InvariantCulture));
+    }
+
+    public CustomerInsightsResponse Create(IEvent<CustomerCreated> @event)
+        => new(@event.Timestamp.Date.ToString(CultureInfo.InvariantCulture), DateOnly.FromDateTime(@event.Timestamp.DateTime), 1);
+
+    public CustomerInsightsResponse Apply(IEvent<CustomerCreated> @event, CustomerInsightsResponse current)
+        => current with { NewCustomers = current.NewCustomers + 1 };
+
+    public CustomerInsightsResponse Apply(IEvent<CustomerDeleted> @event, CustomerInsightsResponse current)
+        => current with { NewCustomers = current.NewCustomers - 1 };
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Bugs/Bug_2883_ievent_not_working_as_identity_source_in_multistream_projections.cs#L78-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_ievent_for_document_identity_in_projections' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ## Simple Example of Events Updating Multiple Views
 
 In the following projection, we apply the `MultipleUsersAssignedToGroup` event to multiple
@@ -276,30 +303,30 @@ public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>
 {
     public async Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<Guid> grouping)
     {
-        var licenceFeatureTogglesEvents = events
+        var licenseFeatureTogglesEvents = events
             .OfType<IEvent<LicenseFeatureToggled>>()
             .ToList();
 
-        if (!licenceFeatureTogglesEvents.Any())
+        if (!licenseFeatureTogglesEvents.Any())
         {
             return;
         }
 
         // TODO -- let's build more samples first, but see if there's a useful
         // pattern for the next 3/4 operations later
-        var licenceIds = licenceFeatureTogglesEvents
+        var licenseIds = licenseFeatureTogglesEvents
             .Select(e => e.Data.LicenseId)
             .ToList();
 
         var result = await session.Query<UserFeatureToggles>()
-            .Where(x => licenceIds.Contains(x.LicenseId))
+            .Where(x => licenseIds.Contains(x.LicenseId))
             .Select(x => new {x.Id, x.LicenseId})
             .ToListAsync();
 
         var streamIds = (IDictionary<Guid, List<Guid>>)result.GroupBy(ks => ks.LicenseId, vs => vs.Id)
             .ToDictionary(ks => ks.Key, vs => vs.ToList());
 
-        grouping.AddEvents<LicenseFeatureToggled>(e => streamIds[e.LicenseId], licenceFeatureTogglesEvents);
+        grouping.AddEvents<LicenseFeatureToggled>(e => streamIds[e.LicenseId], licenseFeatureTogglesEvents);
     }
 }
 
@@ -391,6 +418,27 @@ public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAss
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_slicer.cs#L16-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-slicer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Rollup by Tenant Id <Badge type="tip" text="7.15.0" />
+
+::: info
+This feature was built specifically for a [JasperFx](https://jasperfx.net) client who indeed had this use case in their system
+:::
+
+Let's say that your are using conjoined tenancy within your event storage, but want to create some kind of summarized roll up
+document per tenant id in a projected document -- like maybe the number of open "accounts" or "issues" or "users."
+
+To do that, there's a recipe for the "event slicing" in multi-stream projections with Marten to just group by the event's
+tenant id and make that the identity of the projected document. That usage is shown below:
+
+snippet: sample_rollup_projection_by_tenant_id
+
+Do note that you'll probably also need this flag in your configuration:
+
+```cs
+// opts is a StoreOptions object
+opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
+```
+
 ## Event "Fan Out" Rules
 
 The `ViewProjection` also provides the ability to "fan out" child events from a parent event into the segment of events being used to
@@ -400,8 +448,9 @@ create an aggregated view. As an example, a `Travel` event we use in Marten test
 <a id='snippet-sample_travel_movements'></a>
 ```cs
 public IList<Movement> Movements { get; set; } = new List<Movement>();
+public List<Stop> Stops { get; set; } = new();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/Travel.cs#L28-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_travel_movements' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/Travel.cs#L40-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_travel_movements' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In a sample `ViewProjection`, we do a "fan out" of the `Travel.Movements` members into separate events being processed through the projection:
@@ -421,6 +470,9 @@ public class DayProjection: MultiStreamProjection<Day, int>
         // on each Movement child of the Travel event
         // as if it were its own event
         FanOut<Travel, Movement>(x => x.Movements);
+
+        // You can also access Event data
+        FanOut<Travel, Stop>(x => x.Data.Stops);
 
         ProjectionName = "Day";
     }
@@ -449,7 +501,131 @@ public class DayProjection: MultiStreamProjection<Day, int>
                 throw new ArgumentOutOfRangeException();
         }
     }
+
+    public void Apply(Day day, Stop e) => day.Stops++;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/ViewProjectionTests.cs#L124-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/ViewProjectionTests.cs#L132-L181' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Using Custom Grouper with Fan Out Feature for Event Projections
+
+In Marten, the `MultiStreamProjection` feature allows for complex transformations and aggregations of events. However, there might be scenarios where a single event in your domain carries information that is more suitable to be distributed across multiple instances of your projected read model. This is where the combination of a Custom Grouper and the Fan Out feature comes into play.
+
+### The Scenario
+
+Imagine you have a system where `EmployeeAllocated` events contain a list of allocations for specific days. The goal is to project this information into a monthly summary.
+
+### Custom Projection with Custom Grouper
+
+The `MonthlyAllocationProjection` class uses a custom grouper for this transformation. Here, `TransformsEvent<EmployeeAllocated>()` indicates that events of type `EmployeeAllocated` will be used even if there are no direct handlers for this event type in the projection.
+
+<!-- snippet: sample_view-custom-grouper-with-transformation-projection -->
+<a id='snippet-sample_view-custom-grouper-with-transformation-projection'></a>
+```cs
+public class MonthlyAllocationProjection: MultiStreamProjection<MonthlyAllocation, string>
+{
+    public MonthlyAllocationProjection()
+    {
+        CustomGrouping(new MonthlyAllocationGrouper());
+        TransformsEvent<EmployeeAllocated>();
+    }
+
+    public void Apply(MonthlyAllocation allocation, EmployeeAllocatedInMonth @event)
+    {
+        allocation.EmployeeId = @event.EmployeeId;
+        allocation.Month = @event.Month;
+
+        var hours = @event
+            .Allocations
+            .Sum(x => x.Hours);
+
+        allocation.Hours += hours;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_grouper_with_events_transformation.cs#L40-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-custom-grouper-with-transformation-projection' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Fan Out Using Custom Grouper
+
+The custom grouper, `MonthlyAllocationGrouper`, is responsible for the logic of how events are grouped and fan-out.
+
+<!-- snippet: sample_view-custom-grouper-with-transformation-grouper -->
+<a id='snippet-sample_view-custom-grouper-with-transformation-grouper'></a>
+```cs
+public class MonthlyAllocationGrouper: IAggregateGrouper<string>
+{
+    public Task Group(
+        IQuerySession session,
+        IEnumerable<IEvent> events,
+        ITenantSliceGroup<string> grouping
+    )
+    {
+        var allocations = events
+            .OfType<IEvent<EmployeeAllocated>>();
+
+        var monthlyAllocations = allocations
+            .SelectMany(@event =>
+                @event.Data.Allocations.Select(
+                    allocation => new
+                    {
+                        @event.Data.EmployeeId,
+                        Allocation = allocation,
+                        Month = allocation.Day.ToStartOfMonth(),
+                        Source = @event
+                    }
+                )
+            )
+            .GroupBy(allocation =>
+                new { allocation.EmployeeId, allocation.Month, allocation.Source }
+            )
+            .Select(monthlyAllocation =>
+                new
+                {
+
+                    Key = $"{monthlyAllocation.Key.EmployeeId}|{monthlyAllocation.Key.Month:yyyy-MM-dd}",
+                    Event = monthlyAllocation.Key.Source.WithData(
+                        new EmployeeAllocatedInMonth(
+                            monthlyAllocation.Key.EmployeeId,
+                            monthlyAllocation.Key.Month,
+                            monthlyAllocation.Select(a => a.Allocation).ToList())
+                    )
+
+                }
+            );
+
+        foreach (var monthlyAllocation in monthlyAllocations)
+        {
+            grouping.AddEvents(
+                monthlyAllocation.Key,
+                new[] { monthlyAllocation.Event }
+            );
+        }
+
+        return Task.CompletedTask;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_grouper_with_events_transformation.cs#L65-L122' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-custom-grouper-with-transformation-grouper' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Utilizing the `WithData()` Extension Method
+
+Inside the `Group()` method, `WithData()` is employed to create a new type of event (`EmployeeAllocatedInMonth`) that still carries some attributes from the original event. This is essential for creating more specialized projections.
+
+<!-- snippet: sample_view-custom-grouper-with-transformation-grouper-with-data -->
+<a id='snippet-sample_view-custom-grouper-with-transformation-grouper-with-data'></a>
+```cs
+Key = $"{monthlyAllocation.Key.EmployeeId}|{monthlyAllocation.Key.Month:yyyy-MM-dd}",
+Event = monthlyAllocation.Key.Source.WithData(
+    new EmployeeAllocatedInMonth(
+        monthlyAllocation.Key.EmployeeId,
+        monthlyAllocation.Key.Month,
+        monthlyAllocation.Select(a => a.Allocation).ToList())
+)
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_grouper_with_events_transformation.cs#L96-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-custom-grouper-with-transformation-grouper-with-data' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Read also more in the [Event transformations, a tool to keep our processes loosely coupled](https://event-driven.io/en/event_transformations_and_loosely_coupling/?utm_source=marten_docs).

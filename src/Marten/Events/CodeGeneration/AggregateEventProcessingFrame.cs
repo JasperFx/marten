@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
+using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 
 namespace Marten.Events.CodeGeneration;
@@ -67,34 +68,31 @@ internal class AggregateEventProcessingFrame: EventProcessingFrame
             writer.Write("return null;");
         }
 
-        CreationFrame?.GenerateCode(method, writer);
-
-        if (Apply != null)
+        if (Apply == null)
         {
-            if (CreationFrame == null)
+            if (CreationFrame != null)
             {
-                var defaultConstructor = AggregateType.GetConstructor(
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes,
-                    null);
-
-                if (defaultConstructor?.IsPublic == true)
-                {
-                    writer.Write($"{Aggregate.Usage} ??= new {AggregateType.FullNameInCode()}();");
-                }
-                else if (defaultConstructor?.IsPublic == false)
-                {
-                    writer.Write($"{Aggregate.Usage} ??= AggregateBuilder();");
-                }
-                else
-                {
-                    var errorMessage =
-                        $"Projection for {AggregateType.FullName} should either have the Create Method or Constructor for event of type {SpecificEvent.VariableType.FullNameInCode()}, or {AggregateType.FullName} should have a Default Constructor.";
-
-                    writer.Write(
-                        $"if({Aggregate.Usage} == default) throw new {typeof(InvalidProjectionException).FullNameInCode()}(\"{errorMessage}\");");
-                }
+                CreationFrame.GenerateCode(method, writer);
             }
+            else
+            {
+                writer.Write($"{Aggregate.Usage} ??= CreateDefault(evt);");
+            }
+        }
+        else if (CreationFrame != null)
+        {
+            writer.Write($"BLOCK:if ({Aggregate.Usage} == null)");
 
+            CreationFrame.GenerateCode(method, writer);
+
+            writer.FinishBlock();
+            writer.WriteElse();
+            Apply.GenerateCode(method, writer);
+            writer.FinishBlock();
+        }
+        else // Have an Apply() method and no Create()
+        {
+            writer.Write($"{Aggregate.Usage} ??= CreateDefault(evt);");
             Apply.GenerateCode(method, writer);
         }
 

@@ -18,7 +18,7 @@ namespace Marten.Storage;
 /// <summary>
 ///     Governs the database structure and migration path for a single Marten database
 /// </summary>
-public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>, IDocumentCleaner
+public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>, IDocumentCleaner, IDisposable
 {
     /// <summary>
     ///     Used to create new Hilo sequences
@@ -33,7 +33,7 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     ///     is the ShardStateTracker for the running daemon. This is useful in testing
     ///     scenarios
     /// </summary>
-    ShardStateTracker? Tracker { get; }
+    ShardStateTracker Tracker { get; }
 
     /// <summary>
     ///     Ensures that the IDocumentStorage object for a document type is ready
@@ -108,4 +108,21 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     /// <returns></returns>
     Task<long> ProjectionProgressFor(ShardName name,
         CancellationToken token = default);
+
+    NpgsqlConnection CreateConnection(ConnectionUsage connectionUsage = ConnectionUsage.ReadWrite);
+
+    /// <summary>
+    /// Find the position of the event store sequence just below the supplied timestamp. Will
+    /// return null if there are no events below that time threshold
+    /// </summary>
+    /// <param name="timestamp"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<long?> FindEventStoreFloorAtTimeAsync(DateTimeOffset timestamp, CancellationToken token);
+}
+
+public enum ConnectionUsage
+{
+    Read,
+    ReadWrite
 }

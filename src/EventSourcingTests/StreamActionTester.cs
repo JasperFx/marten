@@ -13,9 +13,9 @@ namespace EventSourcingTests;
 
 public class StreamActionTester
 {
-    private IMartenSession theSession;
-    private Tenant theTenant;
-    private EventGraph theEvents;
+    private readonly IMartenSession theSession;
+    private readonly Tenant theTenant;
+    private readonly EventGraph theEvents;
 
     public StreamActionTester()
     {

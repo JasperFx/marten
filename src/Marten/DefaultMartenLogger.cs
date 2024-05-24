@@ -10,13 +10,14 @@ namespace Marten;
 
 internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
 {
-    private readonly ILogger _logger;
     private Stopwatch _stopwatch;
 
-    public DefaultMartenLogger(ILogger logger)
+    public DefaultMartenLogger(ILogger inner)
     {
-        _logger = logger;
+        Inner = inner;
     }
+
+    public ILogger Inner { get; }
 
     public IMartenSessionLogger StartSession(IQuerySession session)
     {
@@ -25,9 +26,9 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
 
     public void SchemaChange(string sql)
     {
-        if (_logger.IsEnabled(LogLevel.Information))
+        if (Inner.IsEnabled(LogLevel.Information))
         {
-            _logger.LogInformation("Executed schema update SQL:\n{SQL}", sql);
+            Inner.LogInformation("Executed schema update SQL:\n{SQL}", sql);
         }
     }
 
@@ -35,13 +36,28 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
     {
         _stopwatch?.Stop();
 
-        if (_logger.IsEnabled(LogLevel.Debug))
+        if (Inner.IsEnabled(LogLevel.Debug))
         {
             var message = "Marten executed in {milliseconds} ms, SQL: {SQL}\n{PARAMS}";
             var parameters = command.Parameters.OfType<NpgsqlParameter>()
                 .Select(p => $"  {p.ParameterName}: {p.Value}")
                 .Join(Environment.NewLine);
-            _logger.LogDebug(message, _stopwatch?.ElapsedMilliseconds ?? 0, command.CommandText, parameters);
+            Inner.LogDebug(message, _stopwatch?.ElapsedMilliseconds ?? 0, command.CommandText, parameters);
+        }
+    }
+
+    public void LogSuccess(NpgsqlBatch batch)
+    {
+        if (Inner.IsEnabled(LogLevel.Debug))
+        {
+            foreach (var command in batch.BatchCommands)
+            {
+                var message = "Marten executed, SQL: {SQL}\n{PARAMS}";
+                var parameters = command.Parameters.OfType<NpgsqlParameter>()
+                    .Select(p => $"  {p.ParameterName}: {p.Value}")
+                    .Join(Environment.NewLine);
+                Inner.LogDebug(message, _stopwatch?.ElapsedMilliseconds ?? 0, command.CommandText, parameters);
+            }
         }
     }
 
@@ -53,7 +69,22 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
         var parameters = command.Parameters.OfType<NpgsqlParameter>()
             .Select(p => $"  {p.ParameterName}: {p.Value}")
             .Join(Environment.NewLine);
-        _logger.LogError(ex, message, command.CommandText, parameters);
+        Inner.LogError(ex, message, command.CommandText, parameters);
+    }
+
+    public void LogFailure(NpgsqlBatch batch, Exception ex)
+    {
+        _stopwatch?.Stop();
+
+        var message = "Marten encountered an exception executing \n{SQL}\n{PARAMS}";
+
+        foreach (var command in batch.BatchCommands)
+        {
+            var parameters = command.Parameters.OfType<NpgsqlParameter>()
+                .Select(p => $"  {p.ParameterName}: {p.Value}")
+                .Join(Environment.NewLine);
+            Inner.LogError(ex, message, command.CommandText, parameters);
+        }
     }
 
     public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
@@ -61,9 +92,9 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
         _stopwatch?.Stop();
 
         var lastCommit = commit;
-        if (_logger.IsEnabled(LogLevel.Debug))
+        if (Inner.IsEnabled(LogLevel.Debug))
         {
-            _logger.LogDebug(
+            Inner.LogDebug(
                 "Persisted {UpdateCount} updates in {ElapsedMilliseconds} ms, {InsertedCount} inserts, and {DeletedCount} deletions",
                 lastCommit.Updated.Count(), _stopwatch?.ElapsedMilliseconds ?? 0, lastCommit.Inserted.Count(),
                 lastCommit.Deleted.Count());
@@ -72,7 +103,21 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
 
     public void OnBeforeExecute(NpgsqlCommand command)
     {
-        if (_logger.IsEnabled(LogLevel.Debug))
+        if (Inner.IsEnabled(LogLevel.Debug))
+        {
+            _stopwatch = new Stopwatch();
+            _stopwatch.Start();
+        }
+    }
+
+    public void LogFailure(Exception ex, string message)
+    {
+        Inner.LogError(ex, message);
+    }
+
+    public void OnBeforeExecute(NpgsqlBatch batch)
+    {
+        if (Inner.IsEnabled(LogLevel.Debug))
         {
             _stopwatch = new Stopwatch();
             _stopwatch.Start();

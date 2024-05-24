@@ -20,20 +20,29 @@ namespace Marten.Services;
 /// </summary>
 public class SystemTextJsonSerializer: ISerializer
 {
-    private readonly JsonSerializerOptions _clean = new();
+    private readonly JsonSerializerOptions _clean;
+    private readonly JsonSerializerOptions _options;
+    private readonly JsonSerializerOptions _optionsDeserialize;
+    private readonly JsonSerializerOptions _withTypes;
 
-    private readonly JsonSerializerOptions _options = new();
-
-    private readonly JsonSerializerOptions _optionsDeserialize = new();
-
-    private readonly JsonSerializerOptions _withTypes = new();
     private Casing _casing = Casing.Default;
     private EnumStorage _enumStorage = EnumStorage.AsInteger;
 
     private JsonDocumentOptions _optionsJsonDocumentDeserialize;
 
     public SystemTextJsonSerializer()
+        : this(null)
     {
+    }
+
+    public SystemTextJsonSerializer(JsonSerializerOptions? options)
+    {
+        options ??= new();
+        _clean = new(options);
+        _options = new(options);
+        _optionsDeserialize = new(options);
+        _withTypes = new(options);
+
         _optionsDeserialize.Converters.Add(new SystemObjectNewtonsoftCompatibleConverter());
 
         _optionsDeserialize.PropertyNamingPolicy =
@@ -81,7 +90,7 @@ public class SystemTextJsonSerializer: ISerializer
     public async ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index,
         CancellationToken cancellationToken = default)
     {
-        await using var stream = await reader.As<NpgsqlDataReader>().GetStreamAsync(index, cancellationToken)
+        await using var stream = await reader.GetFieldValueAsync<Stream>(index, cancellationToken)
             .ConfigureAwait(false);
         return await FromJsonAsync<T>(stream, cancellationToken).ConfigureAwait(false);
     }
@@ -94,7 +103,7 @@ public class SystemTextJsonSerializer: ISerializer
 
     public object FromJson(Type type, DbDataReader reader, int index)
     {
-        return FromJson(type, reader.As<NpgsqlDataReader>().GetStream(index));
+        return FromJson(type, reader.GetFieldValue<Stream>(index));
     }
 
     public async ValueTask<object> FromJsonAsync(Type type, Stream stream,
@@ -108,7 +117,7 @@ public class SystemTextJsonSerializer: ISerializer
     public async ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index,
         CancellationToken cancellationToken = default)
     {
-        await using var stream = await reader.As<NpgsqlDataReader>().GetStreamAsync(index, cancellationToken)
+        await using var stream = await reader.GetFieldValueAsync<Stream>(index, cancellationToken)
             .ConfigureAwait(false);
         return await FromJsonAsync(type, stream, cancellationToken).ConfigureAwait(false);
     }
@@ -136,7 +145,7 @@ public class SystemTextJsonSerializer: ISerializer
             var jsonNamingPolicy = _casing switch
             {
                 Casing.CamelCase => JsonNamingPolicy.CamelCase,
-                Casing.SnakeCase => new JsonSnakeCaseNamingPolicy(),
+                Casing.SnakeCase => JsonNamingPolicy.SnakeCaseLower,
                 _ => null
             };
 
@@ -183,7 +192,17 @@ public class SystemTextJsonSerializer: ISerializer
     ///     Customize the inner System.Text.Json formatter.
     /// </summary>
     /// <param name="configure"></param>
+    [Obsolete("Use Configure(Action<JsonSerializerOptions> configure) instead.")]
     public void Customize(Action<JsonSerializerOptions> configure)
+    {
+        Configure(configure);
+    }
+
+    /// <summary>
+    ///  Configure the <see cref="JsonSerializerOptions"/> of the System.Text.Json serializer.
+    /// </summary>
+    /// <param name="configure"></param>
+    public void Configure(Action<JsonSerializerOptions> configure)
     {
         configure(_clean);
         configure(_options);
@@ -211,6 +230,6 @@ public class SystemTextJsonSerializer: ISerializer
 
     public JsonDocument JsonDocumentFromJson(DbDataReader reader, int index)
     {
-        return JsonDocumentFromJson(reader.As<NpgsqlDataReader>().GetStream(index));
+        return JsonDocumentFromJson(reader.GetFieldValue<Stream>(index));
     }
 }

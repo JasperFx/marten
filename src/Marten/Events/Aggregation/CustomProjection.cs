@@ -1,19 +1,28 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Services;
+using Marten.Sessions;
 using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
 
+/// <summary>
+/// Helpful as a base class for more custom aggregation projections that are not supported
+/// by the Single/MultipleStreamProjections
+/// </summary>
+/// <typeparam name="TDoc"></typeparam>
+/// <typeparam name="TId"></typeparam>
 public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationRuntime<TDoc, TId>, IProjectionSource
 {
     private IDocumentStorage<TDoc, TId> _storage;
@@ -21,6 +30,15 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
     protected CustomProjection()
     {
         ProjectionName = GetType().NameInCode();
+
+        if (typeof(TId) == typeof(Guid))
+        {
+            Slicer = (IEventSlicer<TDoc, TId>)new ByStreamId<TDoc>();
+        }
+        else if (typeof(TId) == typeof(string))
+        {
+            Slicer = (IEventSlicer<TDoc, TId>)new ByStreamKey<TDoc>();
+        }
     }
 
     public IEventSlicer<TDoc, TId> Slicer { get; protected internal set; }
@@ -44,8 +62,10 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
         var storage = (IDocumentStorage<TDoc, TId>)martenSession.StorageFor<TDoc>();
         foreach (var slice in slices)
         {
-            slice.Aggregate = await storage.LoadAsync(slice.Id, martenSession, cancellation).ConfigureAwait(false);
-            await ApplyChangesAsync(martenSession, slice, cancellation).ConfigureAwait(false);
+            var tenantedSession = martenSession.UseTenancyBasedOnSliceAndStorage(storage, slice);
+
+            slice.Aggregate = await storage.LoadAsync(slice.Id, tenantedSession, cancellation).ConfigureAwait(false);
+            await ApplyChangesAsync(tenantedSession, slice, cancellation).ConfigureAwait(false);
         }
     }
 
@@ -117,9 +137,12 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
     {
         readDocumentStorage(store);
 
-        var filters = BuildFilters(store);
-
-        return new List<AsyncProjectionShard> { new(this, filters) };
+        return new List<AsyncProjectionShard> { new(this)
+        {
+            IncludeArchivedEvents = false,
+            EventTypes = IncludedEventTypes,
+            StreamType = StreamType
+        } };
     }
 
     async ValueTask<EventRangeGroup> IProjectionSource.GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase,
@@ -202,7 +225,3 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
     }
 }
 
-[Obsolete("Please switch to CustomProjection<TDoc, TId> with the exact same syntax")]
-public abstract class CustomAggregation<TDoc, TId>: CustomProjection<TDoc, TId>
-{
-}

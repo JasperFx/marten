@@ -19,11 +19,11 @@ internal class BatchedQueryable<T>: IBatchedQueryable<T> where T : class
         Inner = inner;
     }
 
-    protected IMartenQueryable<T> Inner { get; set; }
+    internal IMartenQueryable<T> Inner { get; set; }
 
     public IBatchedQueryable<T> Stats(out QueryStatistics stats)
     {
-        Inner = Inner.Stats(out stats);
+        Inner = Inner.As<IMartenQueryable<T>>().Stats(out stats).As<IMartenQueryable<T>>();
         return this;
     }
 
@@ -60,6 +60,12 @@ internal class BatchedQueryable<T>: IBatchedQueryable<T> where T : class
         return new TransformedBatchQueryable<TValue>(_parent, Inner.Select(selection).As<IMartenQueryable<TValue>>());
     }
 
+    public IBatchedQueryable<T> OrderBy(string property, StringComparer comparer)
+    {
+        Inner = Inner.OrderBy(property, comparer).As<IMartenQueryable<T>>();
+        return this;
+    }
+
     public IBatchedQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback)
         where TInclude : class
     {
@@ -79,6 +85,31 @@ internal class BatchedQueryable<T>: IBatchedQueryable<T> where T : class
     {
         Inner = Inner.Include(idSource, dictionary);
         return this;
+    }
+
+    public IBatchedQueryableIncludeBuilder<T, TInclude> Include<TInclude>(Action<TInclude> callback) where TInclude : notnull
+    {
+        return new BatchQueryableIncludeBuilder<T, TInclude>(this, callback);
+    }
+
+    public IBatchedQueryableIncludeBuilder<T, TInclude> Include<TInclude>(IList<TInclude> list) where TInclude : notnull
+    {
+        return new BatchQueryableIncludeBuilder<T, TInclude>(this, list.Add);
+    }
+
+    public IBatchedQueryableIncludeBuilder<T, TKey, TInclude> Include<TKey, TInclude>(IDictionary<TKey, TInclude> dictionary) where TKey : notnull where TInclude : notnull
+    {
+        return new BatchedQueryableIncludeDictionaryBuilder<T, TKey, TInclude>(this, dictionary);
+    }
+
+    public IBatchedQueryableIncludeBuilder<T, TKey, TInclude> Include<TKey, TInclude>(IDictionary<TKey, IList<TInclude>> dictionary) where TKey : notnull where TInclude : notnull
+    {
+        return new BatchedQueryableIncludeDictionaryIListBuilder<T, TKey, TInclude>(this, dictionary);
+    }
+
+    public IBatchedQueryableIncludeBuilder<T, TKey, TInclude> Include<TKey, TInclude>(IDictionary<TKey, List<TInclude>> dictionary) where TKey : notnull where TInclude : notnull
+    {
+        return new BatchedQueryableIncludeDictionaryListBuilder<T, TKey, TInclude>(this, dictionary);
     }
 
     public Task<long> Count()

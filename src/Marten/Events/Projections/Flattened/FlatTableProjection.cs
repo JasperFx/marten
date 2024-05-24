@@ -13,7 +13,8 @@ using Marten.Storage;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;
 using JasperFx.Core.Reflection;
-using FindMembers = Marten.Linq.Parsing.FindMembers;
+using Marten.Events.Daemon.Internals;
+using Weasel.Postgresql;
 
 namespace Marten.Events.Projections.Flattened;
 
@@ -26,7 +27,7 @@ public partial class FlatTableProjection: GeneratedProjection, IProjectionSchema
     private readonly string _inlineTypeName;
 
     public FlatTableProjection(string tableName, SchemaNameSource schemaNameSource): this(
-        new DbObjectName("public", tableName), schemaNameSource)
+        new PostgresqlObjectName("public", tableName), schemaNameSource)
     {
     }
 
@@ -88,7 +89,7 @@ public partial class FlatTableProjection: GeneratedProjection, IProjectionSchema
 
         var members = tablePrimaryKeySource == null
             ? Array.Empty<MemberInfo>()
-            : FindMembers.Determine(tablePrimaryKeySource);
+            : MemberFinder.Determine(tablePrimaryKeySource);
 
         var map = new StatementMap<T>(this, members);
 
@@ -127,7 +128,7 @@ public partial class FlatTableProjection: GeneratedProjection, IProjectionSchema
 
         var members = tablePrimaryKeySource == null
             ? Array.Empty<MemberInfo>()
-            : FindMembers.Determine(tablePrimaryKeySource);
+            : MemberFinder.Determine(tablePrimaryKeySource);
 
         _handlers.Add(new EventDeleter(typeof(T), members));
     }
@@ -136,8 +137,16 @@ public partial class FlatTableProjection: GeneratedProjection, IProjectionSchema
         EventRange range,
         CancellationToken cancellationToken)
     {
-        return new ValueTask<EventRangeGroup>(new TenantedEventRangeGroup(store, daemonDatabase,
-            _generatedProjection.Value, range, cancellationToken));
+        return new ValueTask<EventRangeGroup>(
+            new TenantedEventRangeGroup(
+                store,
+                daemonDatabase,
+                _generatedProjection.Value,
+                Options,
+                range,
+                cancellationToken
+            )
+        );
     }
 
     private void readSchema(EventGraph events)

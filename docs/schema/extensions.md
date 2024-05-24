@@ -1,31 +1,31 @@
 # Schema Feature Extensions
 
-New in Marten 5.4.0 is the ability to add additional features with custom database schema objects that simply plug into Marten's [schema management facilities)[/schema/migrations). The key abstraction is the `IFeatureSchema` interface from the [Weasel.Core](https://www.nuget.org/packages/Weasel.Core/) library.
+New in Marten 5.4.0 is the ability to add additional features with custom database schema objects that simply plug into Marten's [schema management facilities](/schema/migrations). The key abstraction is the `IFeatureSchema` interface from the [Weasel.Core](https://www.nuget.org/packages/Weasel.Core/) library.
 
 Not to worry though, Marten comes with a base class that makes it a bit simpler to build out new features. Here's a very simple example that defines a custom table with one column:
 
 <!-- snippet: sample_creating-a-fake-schema-feature -->
 <a id='snippet-sample_creating-a-fake-schema-feature'></a>
 ```cs
-public class FakeStorage : FeatureSchemaBase
+public class FakeStorage: FeatureSchemaBase
 {
     private readonly StoreOptions _options;
 
-    public FakeStorage(StoreOptions options) : base("fake", options.Advanced.Migrator)
+    public FakeStorage(StoreOptions options): base("fake", options.Advanced.Migrator)
     {
         _options = options;
     }
 
     protected override IEnumerable<ISchemaObject> schemaObjects()
     {
-        var table = new Table(new DbObjectName(_options.DatabaseSchemaName, "mt_fake_table"));
+        var table = new Table(new PostgresqlObjectName(_options.DatabaseSchemaName, "mt_fake_table"));
         table.AddColumn("name", "varchar");
 
         yield return table;
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/ability_to_add_custom_storage_features.cs#L48-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_creating-a-fake-schema-feature' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/ability_to_add_custom_storage_features.cs#L49-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_creating-a-fake-schema-feature' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, to actually apply this feature to your Marten applications, use this syntax:
@@ -44,12 +44,24 @@ var store = DocumentStore.For(_ =>
     _.Storage.Add(new FakeStorage(_));
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/ability_to_add_custom_storage_features.cs#L33-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_adding-schema-feature' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/ability_to_add_custom_storage_features.cs#L32-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_adding-schema-feature' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that when you use the `Add<T>()` syntax, Marten will pass along the current `StoreOptions` to the constructor function if there is a constructor with that signature. Otherwise, it uses the no-arg constructor.
 
-While you *can* directly implement the `ISchemaObject` interface for something Marten doesn't already support. Marten provides an even easier extensibility mechanism to add custom database objects such as Postgres tables, functions and sequences using `StorageFeatures.ExtendedSchemaObjects` using [Weasel](https://github.com/JasperFx/weasel).
+While you
+*can* directly implement the `ISchemaObject` interface for something Marten doesn't already support. Marten provides an even easier extensibility mechanism to add custom database objects such as Postgres tables, functions and sequences using `StorageFeatures.ExtendedSchemaObjects` using [Weasel](https://github.com/JasperFx/weasel).
+
+::: warning
+Marten will apply **Schema Feature Extensions
+** automatically when you call `ApplyAllConfiguredChangesToDatabaseAsync` for:
+
+* single schema configuration,
+* [multi-tenancy per database](/configuration/multitenancy) with tenants known upfront.
+
+But it **won't apply them** for multi-tenancy per database with **unknown
+** tenants. If you cannot predict them, read the guidance on [dynamically applying changes to tenants databases](/configuration/multitenancy#dynamically-applying-changes-to-tenants-databases).
+:::
 
 ## Table
 
@@ -70,7 +82,7 @@ StoreOptions(opts =>
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L47-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschematable' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L49-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschematable' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Function
@@ -85,7 +97,7 @@ StoreOptions(opts =>
     opts.RegisterDocumentType<Target>();
 
     // Create a user defined function to act as a ternary operator similar to SQL Server
-    var function = new Function(new DbObjectName("public", "iif"), @"
+    var function = new Function(new PostgresqlObjectName("public", "iif"), @"
 create or replace function iif(
 condition boolean,       -- if condition
 true_result anyelement,  -- then
@@ -100,7 +112,7 @@ $f$  language sql immutable;
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L97-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemafunction' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L195-L217' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemafunction' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Sequence
@@ -122,7 +134,7 @@ StoreOptions(opts =>
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L131-L143' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemasequence' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L231-L245' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemasequence' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Extension
@@ -145,5 +157,5 @@ StoreOptions(opts =>
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L72-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemaextension' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L76-L91' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemaextension' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
