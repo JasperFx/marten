@@ -87,12 +87,7 @@ If you want to add code examples to the documentation, you have to add a C# file
 #endregion
 ```
 
-Then you can refer to the code example in the Markdown file by using the following syntax:
-
-```markdown
-<!-- snippet: sample_my_unique_name -->
-<!-- endsnippet -->
-```
+Then you can refer to the code example in the Markdown file by using `snippet/endSnippet` syntax.
 
 After adding the code example, you can run the following command to update the documentation:
 
