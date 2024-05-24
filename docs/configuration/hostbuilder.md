@@ -134,16 +134,18 @@ services.AddMarten()
 
 If you're on .NET 8 (and above), you can also use a dedicated [keyed registration](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-8#keyed-di-services). This can be useful for scenarios where you need more than one data source registered:
 
-<!-- snippet: sample_using_UseNpgsqlDataSource -->
-<a id='snippet-sample_using_usenpgsqldatasource'></a>
+<!-- snippet: sample_using_UseNpgsqlDataSource_keyed -->
+<a id='snippet-sample_using_usenpgsqldatasource_keyed'></a>
 ```cs
-services.AddNpgsqlDataSource(ConnectionSource.ConnectionString);
+const string dataSourceKey = "marten_data_source";
+
+services.AddNpgsqlDataSource(ConnectionSource.ConnectionString, serviceKey: dataSourceKey);
 
 services.AddMarten()
     .UseLightweightSessions()
-    .UseNpgsqlDataSource();
+    .UseNpgsqlDataSource(dataSourceKey);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L292-L300' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L343-L353' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource_keyed' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Using a Multi-Host Data Source <Badge type="tip" text="7.11" />
