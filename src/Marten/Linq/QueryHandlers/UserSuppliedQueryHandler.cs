@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -70,7 +71,7 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
 
             for (var i = 0; i < cmdParameters.Length; i++)
             {
-                if (_parameters[i] == null)
+                if (_parameters[i] == null!)
                 {
                     cmdParameters[i].Value = DBNull.Value;
                 }

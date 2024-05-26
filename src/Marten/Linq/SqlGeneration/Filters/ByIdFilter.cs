@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using NpgsqlTypes;
 using Weasel.Postgresql;
@@ -5,7 +6,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration.Filters;
 
-public class ByIdFilter<T>: ISqlFragment
+public class ByIdFilter<T>: ISqlFragment where T: notnull
 {
     private readonly CommandParameter _parameter;
 

@@ -1,3 +1,4 @@
+#nullable enable
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using Npgsql;
@@ -14,19 +15,19 @@ public class QueryPlan
     /// </summary>
     [JsonPropertyName("Node Type")]
     [JsonProperty(PropertyName = "Node Type")]
-    public string NodeType { get; set; }
+    public string NodeType { get; set; } = null!;
 
     /// <summary>
     ///     The table name from which the 'select' was queried.
     /// </summary>
     [JsonPropertyName("Relation Name")]
     [JsonProperty(PropertyName = "Relation Name")]
-    public string RelationName { get; set; }
+    public string RelationName { get; set; } = null!;
 
     /// <summary>
     ///     The table alias that was used (if none was used, <see cref="RelationName" /> is returned).
     /// </summary>
-    public string Alias { get; set; }
+    public string Alias { get; set; } = null!;
 
     /// <summary>
     ///     The cost of initialising the query.
@@ -80,15 +81,15 @@ public class QueryPlan
 
     [JsonPropertyName("Output")]
     [JsonProperty(PropertyName = "Output")]
-    public string[] Output { get; set; }
+    public string[] Output { get; set; } = null!;
 
     [JsonPropertyName("Sort Key")]
     [JsonProperty(PropertyName = "Sort Key")]
-    public string[] SortKey { get; set; }
+    public string[] SortKey { get; set; } = null!;
 
     [JsonPropertyName("Sort Method")]
     [JsonProperty(PropertyName = "Sort Method")]
-    public string SortMethod { get; set; }
+    public string SortMethod { get; set; } = null!;
 
     [JsonPropertyName("Sort Space Used")]
     [JsonProperty(PropertyName = "Sort Space Used")]
@@ -96,11 +97,11 @@ public class QueryPlan
 
     [JsonPropertyName("Sort Space Type")]
     [JsonProperty(PropertyName = "Sort Space Type")]
-    public string SortSpaceType { get; set; }
+    public string SortSpaceType { get; set; } = null!;
 
     [JsonPropertyName("Plans")]
     [JsonProperty(PropertyName = "Plans")]
-    public QueryPlan[] Plans { get; set; }
+    public QueryPlan[] Plans { get; set; } = null!;
 
     // Lifted these from QueryPlanContainer so as not to change the returned type alltogether :|
     public decimal PlanningTime { get; set; }
@@ -110,12 +111,12 @@ public class QueryPlan
     /// <summary>
     ///     The command executed by Marten
     /// </summary>
-    public NpgsqlCommand Command { get; set; }
+    public NpgsqlCommand Command { get; set; } = null!;
 }
 
 internal class QueryPlanContainer
 {
-    public QueryPlan Plan { get; set; }
+    public QueryPlan Plan { get; set; } = null!;
 
     [JsonPropertyName("Planning Time")]
     [JsonProperty(PropertyName = "Planning Time")]

@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Linq;
 using System.Linq.Expressions;
@@ -13,7 +14,7 @@ namespace Marten.Linq.CreatedAt;
 public class CreatedSinceParser: IMethodCallParser
 {
     private static readonly MethodInfo _method =
-        typeof(CreatedAtExtensions).GetMethod(nameof(CreatedAtExtensions.CreatedSince));
+        typeof(CreatedAtExtensions).GetMethod(nameof(CreatedAtExtensions.CreatedSince))!;
 
     public bool Matches(MethodCallExpression expression)
     {

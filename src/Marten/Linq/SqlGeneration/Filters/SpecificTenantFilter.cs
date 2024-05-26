@@ -1,3 +1,4 @@
+#nullable enable
 using Marten.Schema.Arguments;
 using Marten.Storage.Metadata;
 using Weasel.Postgresql;

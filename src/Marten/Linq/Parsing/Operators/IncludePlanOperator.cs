@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq;
 using System.Linq.Expressions;
 using Marten.Linq.Includes;
@@ -17,6 +18,6 @@ internal class IncludePlanOperator: LinqOperator
 
         var usage = query.CollectionUsageFor(elementType);
 
-        usage.Includes.Add((IIncludePlan)expression.Arguments.Last().ReduceToConstant().Value);
+        usage.Includes.Add((IIncludePlan)expression.Arguments.Last().ReduceToConstant().Value!);
     }
 }

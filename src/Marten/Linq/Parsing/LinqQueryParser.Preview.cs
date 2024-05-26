@@ -1,3 +1,4 @@
+#nullable enable
 using Weasel.Postgresql;
 
 namespace Marten.Linq.Parsing;

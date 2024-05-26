@@ -67,7 +67,7 @@ public interface IBatchedQuery
     /// <typeparam name="T"></typeparam>
     /// <param name="id"></param>
     /// <returns></returns>
-    Task<T> Load<T>(string id) where T : class;
+    Task<T?> Load<T>(string id) where T : class;
 
     /// <summary>
     ///     Load a single document of Type "T" by id
@@ -75,7 +75,7 @@ public interface IBatchedQuery
     /// <typeparam name="T"></typeparam>
     /// <param name="id"></param>
     /// <returns></returns>
-    Task<T> Load<T>(int id) where T : class;
+    Task<T?> Load<T>(int id) where T : class;
 
     /// <summary>
     ///     Load a single document of Type "T" by id
@@ -83,7 +83,7 @@ public interface IBatchedQuery
     /// <typeparam name="T"></typeparam>
     /// <param name="id"></param>
     /// <returns></returns>
-    Task<T> Load<T>(long id) where T : class;
+    Task<T?> Load<T>(long id) where T : class;
 
     /// <summary>
     ///     Load a single document of Type "T" by id
@@ -91,7 +91,7 @@ public interface IBatchedQuery
     /// <typeparam name="T"></typeparam>
     /// <param name="id"></param>
     /// <returns></returns>
-    Task<T> Load<T>(Guid id) where T : class;
+    Task<T?> Load<T>(Guid id) where T : class;
 
     /// <summary>
     ///     Load a one or more documents of Type "T" by id's
@@ -130,7 +130,7 @@ public interface IBatchedQuery
     /// <typeparam name="TResult"></typeparam>
     /// <param name="query"></param>
     /// <returns></returns>
-    Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query);
+    Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query) where TDoc : class;
 
     /// <summary>
     ///     Force the batched query to execute synchronously

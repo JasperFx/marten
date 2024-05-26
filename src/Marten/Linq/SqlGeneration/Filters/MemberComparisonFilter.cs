@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
@@ -49,7 +50,7 @@ internal class MemberComparisonFilter: ComparisonFilter, ICollectionAware
 
     public void BuildJsonPathFilter(ICommandBuilder builder, Dictionary<string, object> parameters)
     {
-        var rawValue = Right.As<CommandParameter>().Value;
+        var rawValue = Right.As<CommandParameter>().Value!;
         var parameter = parameters.AddJsonPathParameter(rawValue);
 
         builder.Append("@.");

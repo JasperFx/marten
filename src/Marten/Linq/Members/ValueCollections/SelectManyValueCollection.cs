@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,7 +13,6 @@ namespace Marten.Linq.Members.ValueCollections;
 internal class SelectManyValueCollection: IValueCollectionMember
 {
     private readonly StoreOptions _options;
-    private readonly IQueryableMember _parentMember;
     private readonly RootMember _root;
     public Type ElementType { get; }
 
@@ -40,8 +40,6 @@ internal class SelectManyValueCollection: IValueCollectionMember
         var elementMember = new ElementMember(typeof(ICollection<>).MakeGenericType(elementType), elementType);
         var element = (QueryableMember)options.CreateQueryableMember(elementMember, parentMember, elementType);
         element.RawLocator = element.TypedLocator = "data";
-
-        _parentMember = parentMember;
 
         Element = element;
     }

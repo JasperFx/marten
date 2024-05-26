@@ -6,12 +6,9 @@ namespace Marten.Linq.Includes;
 
 internal class PassthroughSelectStatement: SelectorStatement
 {
-    private readonly ISelectClause _innerSelectClause;
-
     public PassthroughSelectStatement(string tableName, ISelectClause innerSelectClause)
     {
-        _innerSelectClause = innerSelectClause;
-        SelectClause = _innerSelectClause;
+        SelectClause = innerSelectClause;
         TableName = tableName;
     }
 

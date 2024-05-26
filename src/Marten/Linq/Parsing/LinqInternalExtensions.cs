@@ -1,6 +1,8 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -64,7 +66,7 @@ internal static class LinqInternalExtensions
         string memberName)
     {
         var member = collection.ElementType.GetProperty(memberName) ??
-                     (MemberInfo)collection.ElementType.GetField(memberName);
+                     (MemberInfo)collection.ElementType.GetField(memberName)!;
 
         return collection.FindMember(member);
     }
@@ -197,7 +199,7 @@ internal static class LinqInternalExtensions
                node.Expression.ToString().StartsWith("value(");
     }
 
-    public static bool TryToParseConstant(this Expression expression, out ConstantExpression constant)
+    public static bool TryToParseConstant(this Expression? expression, [NotNullWhen(true)]out ConstantExpression? constant)
     {
         if (expression == null)
         {
@@ -286,13 +288,13 @@ internal static class LinqInternalExtensions
     {
         if (expression is ConstantExpression c)
         {
-            return c.Value;
+            return c.Value!;
         }
 
-        return ReduceToConstant(expression).Value;
+        return ReduceToConstant(expression).Value!;
     }
 
-    public static bool IsValueExpression(this Expression expression)
+    public static bool IsValueExpression([NotNullWhen(true)]this Expression? expression)
     {
         if (expression == null)
         {

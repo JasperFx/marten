@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -27,7 +28,7 @@ public class IsSoftDeletedMember : IQueryableMember, IComparableMember, IBoolean
 
     public ISqlFragment CreateComparison(string op, ConstantExpression constant)
     {
-        var value = constant.Value.Equals(true);
+        var value = constant.Value!.Equals(true);
 
         return value ? IsDeletedFilter.Instance : IsNotDeletedFilter.Instance;
     }

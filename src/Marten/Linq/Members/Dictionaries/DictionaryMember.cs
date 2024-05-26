@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,7 +14,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members.Dictionaries;
 
-internal class DictionaryMember<TKey, TValue>: QueryableMember, IComparableMember, IDictionaryMember, ICollectionMember
+internal class DictionaryMember<TKey, TValue>: QueryableMember, IComparableMember, IDictionaryMember, ICollectionMember where TKey : notnull where TValue : notnull
 {
     private readonly StoreOptions _options;
     private readonly DictionaryKeysMember _keys;

@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -43,7 +44,7 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
 
     private readonly WholeDataMember _wholeDataMember;
     private readonly ArrayLengthMember _count;
-    private string _innerPgType;
+    private readonly string _innerPgType;
 
 
     public ISqlFragment IsEmpty { get; }

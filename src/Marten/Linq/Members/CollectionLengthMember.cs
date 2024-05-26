@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq.Expressions;
 using Weasel.Postgresql.SqlGeneration;
 

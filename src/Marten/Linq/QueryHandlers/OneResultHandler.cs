@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Data.Common;
 using System.IO;
@@ -14,16 +15,16 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.QueryHandlers;
 
-internal class OneResultHandler<T>: IQueryHandler<T>, IMaybeStatefulHandler
+internal class OneResultHandler<T>: IQueryHandler<T>, IMaybeStatefulHandler where T : notnull
 {
     private const string NoElementsMessage = "Sequence contains no elements";
     private const string MoreThanOneElementMessage = "Sequence contains more than one element";
     private readonly bool _canBeMultiples;
     private readonly bool _canBeNull;
     private readonly ISelector<T> _selector;
-    private readonly ISqlFragment _statement;
+    private readonly ISqlFragment? _statement;
 
-    public OneResultHandler(ISqlFragment statement, ISelector<T> selector,
+    public OneResultHandler(ISqlFragment? statement, ISelector<T> selector,
         bool canBeNull = true, bool canBeMultiples = true)
     {
         _statement = statement;
@@ -47,7 +48,7 @@ internal class OneResultHandler<T>: IQueryHandler<T>, IMaybeStatefulHandler
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
-        _statement.Apply(builder);
+        _statement?.Apply(builder);
     }
 
     public T Handle(DbDataReader reader, IMartenSession session)

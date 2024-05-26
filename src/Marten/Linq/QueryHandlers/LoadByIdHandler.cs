@@ -1,3 +1,4 @@
+#nullable enable
 using System.Data.Common;
 using System.IO;
 using System.Threading;
@@ -12,7 +13,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Linq.QueryHandlers;
 
-internal class LoadByIdHandler<T, TId>: IQueryHandler<T>
+internal class LoadByIdHandler<T, TId>: IQueryHandler<T> where T : notnull where TId : notnull
 {
     private readonly TId _id;
     private readonly IDocumentStorage<T> storage;

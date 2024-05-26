@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -12,23 +13,20 @@ namespace Marten.Linq.Members.Dictionaries;
 
 internal class DictionaryContainsKeyFilter: ISqlFragment, ICompiledQueryAwareFilter
 {
-    private readonly object _value;
     private readonly string _keyText;
     private readonly IDictionaryMember _member;
 
     public DictionaryContainsKeyFilter(IDictionaryMember member, ISerializer serializer, ConstantExpression constant)
     {
-        _value = constant.Value;
-        _keyText = (_value is not null && _value is Enum) ? _value.ToString() : serializer.ToCleanJson(_value);
+        var value = constant.Value;
+        _keyText = (value is Enum) ? value.ToString()! : serializer.ToCleanJson(value);
 
         _member = member;
     }
 
     public DictionaryContainsKeyFilter(IDictionaryMember member, ISerializer serializer, object value)
     {
-        _value = value;
-        _keyText = serializer.ToCleanJson(_value);
-
+        _keyText = serializer.ToCleanJson(value);
         _member = member;
     }
 

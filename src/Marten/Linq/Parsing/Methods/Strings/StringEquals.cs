@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
@@ -10,10 +11,10 @@ namespace Marten.Linq.Parsing.Methods.Strings;
 internal class StringEquals: StringComparisonParser
 {
     public StringEquals(): base(
-        ReflectionHelper.GetMethod<string>(s => s.Equals(string.Empty)),
-        ReflectionHelper.GetMethod<string>(s => s.Equals(string.Empty, StringComparison.CurrentCulture)),
-        ReflectionHelper.GetMethod(() => string.Equals(string.Empty, string.Empty)),
-        ReflectionHelper.GetMethod(() => string.Equals(string.Empty, string.Empty, StringComparison.CurrentCulture)))
+        ReflectionHelper.GetMethod<string>(s => s.Equals(string.Empty))!,
+        ReflectionHelper.GetMethod<string>(s => s.Equals(string.Empty, StringComparison.CurrentCulture))!,
+        ReflectionHelper.GetMethod(() => string.Equals(string.Empty, string.Empty))!,
+        ReflectionHelper.GetMethod(() => string.Equals(string.Empty, string.Empty, StringComparison.CurrentCulture))!)
     {
     }
 

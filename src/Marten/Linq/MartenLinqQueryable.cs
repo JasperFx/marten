@@ -87,7 +87,7 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
     {
         return Include(callback).On(idSource, filter);
     }
-    
+
     public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
         IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey : notnull
     {
@@ -238,7 +238,7 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
     {
         return MartenProvider.StreamMany(Expression, destination, token);
     }
-    
+
     public NpgsqlCommand ToPreviewCommand(FetchType fetchType)
     {
         var parser = new LinqQueryParser(MartenProvider, Session, Expression);

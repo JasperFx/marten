@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -192,7 +193,7 @@ internal class AdvancedSqlQueryHandlerBase
         return default;
     }
 
-    protected ISelectClause GetSelectClause<T>(IMartenSession session)
+    protected ISelectClause GetSelectClause<T>(IMartenSession session) where T : notnull
     {
         if (typeof(T) == typeof(string))
         {

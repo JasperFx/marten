@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Reflection;
 using JasperFx.CodeGeneration;
@@ -18,8 +19,8 @@ internal class StringEndsWith: StringComparisonParser
     };
 
     public StringEndsWith(): base(
-        ReflectionHelper.GetMethod<string>(s => s.EndsWith(null)),
-        ReflectionHelper.GetMethod<string>(s => s.EndsWith(null, StringComparison.CurrentCulture))
+        ReflectionHelper.GetMethod<string>(s => s.EndsWith(null))!,
+        ReflectionHelper.GetMethod<string>(s => s.EndsWith(null, StringComparison.CurrentCulture))!
     )
     {
     }

@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
@@ -15,11 +16,11 @@ using Weasel.Postgresql.SqlGeneration;
 namespace Marten.Linq.QueryHandlers;
 
 internal class ListQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>, IQueryHandler<IEnumerable<T>>,
-    IMaybeStatefulHandler
+    IMaybeStatefulHandler where T : notnull
 {
-    private readonly ISqlFragment _statement;
+    private readonly ISqlFragment? _statement;
 
-    public ListQueryHandler(ISqlFragment statement, ISelector<T> selector)
+    public ListQueryHandler(ISqlFragment? statement, ISelector<T> selector)
     {
         _statement = statement;
         Selector = selector;
@@ -55,7 +56,7 @@ internal class ListQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>, IQueryHandl
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
-        _statement.Apply(builder);
+        _statement?.Apply(builder);
     }
 
     public IReadOnlyList<T> Handle(DbDataReader reader, IMartenSession session)

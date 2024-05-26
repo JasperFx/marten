@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq.Expressions;
 using Marten.Exceptions;
 using Marten.Linq.Parsing;
@@ -7,7 +8,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members.Dictionaries;
 
-internal class DictionaryItemMember<TKey, TValue>: QueryableMember, IComparableMember
+internal class DictionaryItemMember<TKey, TValue>: QueryableMember, IComparableMember where TKey: notnull where TValue: notnull
 {
     public DictionaryItemMember(DictionaryMember<TKey, TValue> parent, TKey key)
         : base(parent, key.ToString(), typeof(TValue))

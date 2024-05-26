@@ -1,3 +1,4 @@
+#nullable enable
 using JasperFx.Core;
 using Weasel.Core;
 using Weasel.Postgresql;

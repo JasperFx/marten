@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Linq.Expressions;
 
@@ -20,7 +21,7 @@ public class OrderingOperator: LinqOperator
         var ordering = new Ordering(memberArgument, Direction);
         if (expression.Arguments[1].Type == typeof(string))
         {
-            var property = (string)expression.Arguments[1].ReduceToConstant().Value;
+            var property = (string)expression.Arguments[1].ReduceToConstant().Value!;
             QueryableExtensions.GetSortProperty(ref property, out var sortOrder);
             ordering.Direction = sortOrder == "asc" ? OrderingDirection.Asc : OrderingDirection.Desc;
             ordering.MemberName = property;

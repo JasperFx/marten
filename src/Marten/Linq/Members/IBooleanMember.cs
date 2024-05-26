@@ -1,3 +1,4 @@
+#nullable enable
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;

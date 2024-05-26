@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Reflection;
 using JasperFx.CodeGeneration;
@@ -13,8 +14,8 @@ namespace Marten.Linq.Parsing.Methods.Strings;
 internal class StringStartsWith: StringComparisonParser
 {
     public StringStartsWith(): base(
-        ReflectionHelper.GetMethod<string>(s => s.StartsWith(null)),
-        ReflectionHelper.GetMethod<string>(s => s.StartsWith(null, StringComparison.CurrentCulture))
+        ReflectionHelper.GetMethod<string>(s => s.StartsWith(null!))!,
+        ReflectionHelper.GetMethod<string>(s => s.StartsWith(null!, StringComparison.CurrentCulture))!
     )
     {
     }
@@ -47,7 +48,7 @@ internal class StringStartsWithFilter: ISqlFragment, ICompiledQueryAwareFilter
         builder.Append(_operator);
         builder.AppendParameter($"{StringComparisonParser.EscapeValue(_rawValue)}%");
 
-        ParameterName = builder.LastParameterName;
+        ParameterName = builder.LastParameterName!;
     }
 
     public string ParameterName { get; private set; }

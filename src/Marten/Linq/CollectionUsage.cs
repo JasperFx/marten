@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -25,8 +26,8 @@ public partial class CollectionUsage
     public SingleValueMode? SingleValueMode { get; set; }
     public bool IsAny { get; set; }
     public bool IsDistinct { get; set; }
-    public CollectionUsage Inner { get; internal set; }
-    public Expression SelectMany { get; set; }
+    public CollectionUsage Inner { get; internal set; } = null!;
+    public Expression SelectMany { get; set; } = null!;
 
 
     public void WriteLimit(int limit)

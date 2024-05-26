@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -30,7 +31,7 @@ internal class ValueCollectionMember: QueryableMember, ICollectionMember, IValue
             MemberType = element.ReflectedType!;
         }
 
-        ElementType = MemberType.DetermineElementType();
+        ElementType = MemberType.DetermineElementType()!;
         var rawLocator = RawLocator;
         var innerPgType = PostgresqlProvider.Instance.GetDatabaseType(ElementType, EnumStorage.AsInteger);
         var pgType = PostgresqlProvider.Instance.HasTypeMapping(ElementType) ? innerPgType + "[]" : "jsonb";
