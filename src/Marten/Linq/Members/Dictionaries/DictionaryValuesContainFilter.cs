@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using Marten.Exceptions;
 using Marten.Linq.SqlGeneration.Filters;
@@ -12,23 +13,20 @@ namespace Marten.Linq.Members.Dictionaries;
 internal class DictionaryValuesContainFilter: ISqlFragment, ICollectionAware, ICollectionAwareFilter
 {
     private readonly IDictionaryMember _member;
-    private readonly ISerializer _serializer;
     private readonly string _text;
 
     public DictionaryValuesContainFilter(IDictionaryMember member, ISerializer serializer, ConstantExpression constant)
     {
         _member = member;
-        _serializer = serializer;
 
-        _text = constant.Value is string ? (string)constant.Value : _serializer.ToCleanJson(constant.Value);
+        _text = constant.Value as string ?? serializer.ToCleanJson(constant.Value);
     }
 
     public DictionaryValuesContainFilter(IDictionaryMember member, ISerializer serializer, object value)
     {
         _member = member;
-        _serializer = serializer;
 
-        _text = value is string s ? s : _serializer.ToCleanJson(value);
+        _text = value is string s ? s : serializer.ToCleanJson(value);
     }
 
     public void Apply(ICommandBuilder builder)

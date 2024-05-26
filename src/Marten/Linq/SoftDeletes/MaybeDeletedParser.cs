@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Linq.Members;
@@ -12,7 +13,7 @@ namespace Marten.Linq.SoftDeletes;
 internal class MaybeDeletedParser: IMethodCallParser, ISoftDeletedFilter
 {
     private static readonly MethodInfo _method =
-        typeof(SoftDeletedExtensions).GetMethod(nameof(SoftDeletedExtensions.MaybeDeleted));
+        typeof(SoftDeletedExtensions).GetMethod(nameof(SoftDeletedExtensions.MaybeDeleted))!;
 
 
     private static readonly string _sql = $"d.{SchemaConstants.DeletedColumn} is not null";

@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Reflection;
 
@@ -7,7 +8,7 @@ internal class ElementMember: MemberInfo
 {
     public ElementMember(MemberInfo parent, Type elementType)
     {
-        DeclaringType = parent.ReflectedType;
+        DeclaringType = parent.ReflectedType!;
         ReflectedType = elementType;
     }
 

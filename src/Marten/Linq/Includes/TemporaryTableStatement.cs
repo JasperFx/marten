@@ -1,3 +1,4 @@
+#nullable enable
 using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;

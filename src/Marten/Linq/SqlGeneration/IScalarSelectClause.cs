@@ -1,3 +1,4 @@
+#nullable enable
 namespace Marten.Linq.SqlGeneration;
 
 internal interface IScalarSelectClause

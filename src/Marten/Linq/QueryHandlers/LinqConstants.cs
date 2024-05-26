@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Reflection;
 using Marten.Linq.Selectors;
@@ -16,5 +17,5 @@ internal class LinqConstants
     internal static readonly string CONTAINS = nameof(string.Contains);
     internal static readonly string ANY = "Any";
     internal static readonly string ALL = "All";
-    internal static readonly PropertyInfo ArrayLength = typeof(Array).GetProperty(nameof(Array.Length));
+    internal static readonly PropertyInfo ArrayLength = typeof(Array).GetProperty(nameof(Array.Length))!;
 }

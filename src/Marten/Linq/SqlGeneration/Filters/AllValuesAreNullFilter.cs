@@ -1,3 +1,4 @@
+#nullable enable
 using Marten.Internal;
 using Marten.Linq.Members;
 using Weasel.Postgresql;
@@ -10,7 +11,7 @@ internal class AllValuesAreNullFilter: ISubQueryFilter
 {
     private static readonly ISqlFragment _filter = new WhereFragment("true = ALL (select unnest(data) is null)");
 
-    private string _exportName;
+    private string? _exportName;
 
     public AllValuesAreNullFilter(ICollectionMember member)
     {
@@ -27,7 +28,7 @@ internal class AllValuesAreNullFilter: ISubQueryFilter
         }
 
         builder.Append("d.ctid in (select ctid from ");
-        builder.Append(_exportName);
+        builder.Append(_exportName!);
         builder.Append(")");
 
         if (Not)
@@ -47,7 +48,7 @@ internal class AllValuesAreNullFilter: ISubQueryFilter
         return this;
     }
 
-    public void PlaceUnnestAbove(IMartenSession session, SelectorStatement statement, ISqlFragment topLevelWhere = null)
+    public void PlaceUnnestAbove(IMartenSession session, SelectorStatement statement, ISqlFragment? topLevelWhere = null)
     {
         // First need to unnest the collection into its own recordset
         var unnest = new ExplodeCollectionStatement(session, statement, Member.ArrayLocator) { Where = topLevelWhere };

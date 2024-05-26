@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Linq;
 using System.Linq.Expressions;
@@ -16,7 +17,7 @@ namespace Marten.Linq.SoftDeletes;
 internal class DeletedSinceParser: IMethodCallParser
 {
     private static readonly MethodInfo _method =
-        typeof(SoftDeletedExtensions).GetMethod(nameof(SoftDeletedExtensions.DeletedSince));
+        typeof(SoftDeletedExtensions).GetMethod(nameof(SoftDeletedExtensions.DeletedSince))!;
 
     public bool Matches(MethodCallExpression expression)
     {

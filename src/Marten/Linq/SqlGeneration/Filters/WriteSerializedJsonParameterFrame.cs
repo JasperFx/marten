@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -131,7 +132,7 @@ internal class DictionaryDeclaration : IDictionaryPart
                     var usage = usages.FirstOrDefault(x => x.Value.Equals(array[0]));
                     if (usage != null)
                     {
-                        var arrayValue = new ArrayScalarValue(pair.Key, usage.QueryMember);
+                        var arrayValue = new ArrayScalarValue(pair.Key, usage.QueryMember!);
                         Parts.Add(arrayValue);
                     }
                 }
@@ -149,7 +150,7 @@ internal class DictionaryDeclaration : IDictionaryPart
                 var usage = usages.FirstOrDefault(x => x.Value.Equals(pair.Value));
                 if (usage != null)
                 {
-                    var value = new DictionaryValue(pair.Key, usage.QueryMember);
+                    var value = new DictionaryValue(pair.Key, usage.QueryMember!);
                     Parts.Add(value);
                 }
                 else

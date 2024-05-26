@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq.Expressions;
 using Marten.Linq.Parsing;
 using Weasel.Postgresql;
@@ -9,8 +10,8 @@ internal class ModuloOperator: IComparableMember, ISqlFragment
 {
     private readonly ISqlFragment _left;
     private readonly ISqlFragment _right;
-    private string _op;
-    private CommandParameter _value;
+    private string _op = null!;
+    private CommandParameter _value = null!;
 
     public ModuloOperator(BinaryExpression expression, IQueryableMemberCollection members)
     {

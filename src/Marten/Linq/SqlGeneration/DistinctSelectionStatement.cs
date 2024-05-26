@@ -1,3 +1,4 @@
+#nullable enable
 using Marten.Internal;
 using Weasel.Postgresql;
 

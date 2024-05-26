@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -27,7 +28,7 @@ internal class ChildDocument: QueryableMember, IQueryableMemberCollection, IComp
 
         NullTestLocator = $"{parent.RawLocator} ->> '{MemberName}'";
 
-        ElementType = member.GetMemberType();
+        ElementType = member.GetMemberType()!;
     }
 
     public override ISqlFragment CreateComparison(string op, ConstantExpression constant)

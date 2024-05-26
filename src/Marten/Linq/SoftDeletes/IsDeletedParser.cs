@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Linq.Members;
@@ -12,7 +13,7 @@ namespace Marten.Linq.SoftDeletes;
 internal class IsDeletedParser: IMethodCallParser
 {
     private static readonly MethodInfo _method =
-        typeof(SoftDeletedExtensions).GetMethod(nameof(SoftDeletedExtensions.IsDeleted));
+        typeof(SoftDeletedExtensions).GetMethod(nameof(SoftDeletedExtensions.IsDeleted))!;
 
     public bool Matches(MethodCallExpression expression)
     {

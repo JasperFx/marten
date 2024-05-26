@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +16,7 @@ internal partial class LinqQueryParser
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IQueryHandler<TResult> BuildHandler<TDocument, TResult>(ISelector<TDocument> selector,
-        ISqlFragment statement)
+        ISqlFragment statement) where TResult : notnull where TDocument : notnull
     {
         if (typeof(TResult).CanBeCastTo<IEnumerable<TDocument>>())
         {
@@ -26,7 +27,7 @@ internal partial class LinqQueryParser
                                         typeof(TResult).FullNameInCode());
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>()
+    public IQueryHandler<TResult> BuildHandler<TResult>() where TResult : notnull
     {
         if (!_collectionUsages.Any())
         {
@@ -49,7 +50,7 @@ internal partial class LinqQueryParser
         return handler;
     }
 
-    private IQueryHandler<TResult> buildHandlerForCurrentStatement<TResult>(Statement top, SelectorStatement selector)
+    private IQueryHandler<TResult> buildHandlerForCurrentStatement<TResult>(Statement top, SelectorStatement selector) where TResult : notnull
     {
         if (selector.SingleValue)
         {

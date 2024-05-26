@@ -1,3 +1,4 @@
+#nullable enable
 using Marten.Linq.Members;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -7,10 +8,10 @@ namespace Marten.Linq.Includes;
 internal class IdInIncludedDocumentIdentifierFilter: ISqlFragment
 {
     private readonly IQueryableMember _connectingMember;
-    private readonly IQueryableMember _identifyingMember;
+    private readonly IQueryableMember? _identifyingMember;
     private readonly string _fromObject;
 
-    public IdInIncludedDocumentIdentifierFilter(string fromObject, IQueryableMember connectingMember, IQueryableMember identifyingMember)
+    public IdInIncludedDocumentIdentifierFilter(string fromObject, IQueryableMember connectingMember, IQueryableMember? identifyingMember)
     {
         _fromObject = fromObject;
         _connectingMember = connectingMember;

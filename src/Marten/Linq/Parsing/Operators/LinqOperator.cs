@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq.Expressions;
 
 namespace Marten.Linq.Parsing.Operators;

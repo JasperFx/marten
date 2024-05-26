@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -18,7 +19,7 @@ namespace Marten.Linq.Members;
 public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
 {
     private HasValueMember? _hasValue;
-    private string _nullTestLocator;
+    private string? _nullTestLocator;
 
     /// <summary>
     /// </summary>
@@ -29,7 +30,7 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
         if (parent == null) throw new ArgumentNullException(nameof(parent));
 
         Member = member;
-        MemberType = member is ElementMember m ? m.ReflectedType : member.GetMemberType();
+        MemberType = member is ElementMember m ? m.ReflectedType : member.GetMemberType()!;
 
         JsonPathSegment = MemberName = member.ToJsonKey(casing);
         RawLocator = TypedLocator = $"{parent.RawLocator} ->> '{MemberName}'";

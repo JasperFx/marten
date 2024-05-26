@@ -1,3 +1,4 @@
+#nullable enable
 using Marten.Internal;
 using Marten.Linq.Members;
 using Weasel.Postgresql;
@@ -8,12 +9,12 @@ namespace Marten.Linq.SqlGeneration.Filters;
 internal interface ISubQueryFilter : IReversibleWhereFragment
 {
     void PlaceUnnestAbove(IMartenSession session, SelectorStatement statement,
-        ISqlFragment topLevelWhere = null);
+        ISqlFragment? topLevelWhere = null);
 }
 
 internal class SubQueryFilter: ISubQueryFilter
 {
-    private string _exportName;
+    private string? _exportName;
 
     public SubQueryFilter(ICollectionMember member, ISqlFragment inner)
     {
@@ -43,7 +44,7 @@ internal class SubQueryFilter: ISubQueryFilter
         }
 
         builder.Append("d.ctid in (select ctid from ");
-        builder.Append(_exportName);
+        builder.Append(_exportName!);
         builder.Append(")");
 
         if (Not)

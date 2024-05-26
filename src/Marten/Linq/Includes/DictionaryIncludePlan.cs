@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using Marten.Internal.Storage;
@@ -5,7 +6,7 @@ using Marten.Linq.Members;
 
 namespace Marten.Linq.Includes;
 
-internal class DictionaryIncludePlan<T, TId>: IncludePlan<T>
+internal class DictionaryIncludePlan<T, TId>: IncludePlan<T> where T : notnull
 {
     public DictionaryIncludePlan(IDocumentStorage<T> storage, IQueryableMember connectingMember,
         IDictionary<TId, T> dictionary): base(storage, connectingMember, BuildAction(storage, dictionary))

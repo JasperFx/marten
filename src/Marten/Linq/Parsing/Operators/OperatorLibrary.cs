@@ -1,4 +1,6 @@
+#nullable enable
 using System;
+using System.Diagnostics.CodeAnalysis;
 using JasperFx.Core;
 
 namespace Marten.Linq.Parsing.Operators;
@@ -52,7 +54,7 @@ internal class OperatorLibrary
         _operators = _operators.AddOrUpdate(methodName, new OrderingOperator(methodName, direction));
     }
 
-    public bool TryFind(string methodName, out LinqOperator? op)
+    public bool TryFind(string methodName, [NotNullWhen(true)]out LinqOperator? op)
     {
         return _operators.TryFind(methodName, out op);
     }

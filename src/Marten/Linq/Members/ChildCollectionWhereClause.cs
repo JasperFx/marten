@@ -1,4 +1,5 @@
-using System;
+#nullable enable
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using JasperFx.Core;
 using Marten.Linq.SqlGeneration.Filters;
@@ -18,7 +19,7 @@ internal class ChildCollectionWhereClause: IWhereFragmentHolder
     public ISqlFragment Fragment => _fragment;
 
     public static bool TryBuildInlineFragment(ISqlFragment fragment, ICollectionMember collectionMember,
-        ISerializer serializer, out ICollectionAwareFilter filter)
+        ISerializer serializer, [NotNullWhen(true)]out ICollectionAwareFilter? filter)
     {
         if (fragment is ICollectionAware collectionAware && collectionAware.CanReduceInChildCollection())
         {

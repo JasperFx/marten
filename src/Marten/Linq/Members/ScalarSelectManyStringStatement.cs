@@ -1,3 +1,4 @@
+#nullable enable
 using Marten.Linq.SqlGeneration;
 
 namespace Marten.Linq.Members;
