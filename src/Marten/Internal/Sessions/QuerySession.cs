@@ -110,4 +110,6 @@ public partial class QuerySession: IMartenSession, IQuerySession
 
     public int RequestCount { get; set; }
     public IDocumentStore DocumentStore => _store;
+
+    public IAdvancedSql AdvancedSql => this;
 }

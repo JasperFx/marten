@@ -716,4 +716,10 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <param name="token"></param>
     /// <returns></returns>
     Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default);
+
+    /// <summary>
+    ///     Advanced sql query methods, to allow you to query the database
+    ///     beyond what you can do with LINQ.
+    /// </summary>
+    IAdvancedSql AdvancedSql { get; }
 }
