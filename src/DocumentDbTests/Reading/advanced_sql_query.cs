@@ -24,7 +24,7 @@ public class advanced_sql_query: IntegrationContext
         await session.SaveChangesAsync();
         #region sample_advanced_sql_query_single_scalar
         var schema = session.DocumentStore.Options.Schema;
-        var name = (await session.AdvancedSqlQueryAsync<string>(
+        var name = (await session.AdvancedSql.QueryAsync<string>(
             $"select data ->> 'Name' from {schema.For<DocWithMeta>()} limit 1",
             CancellationToken.None)).First();
         #endregion
@@ -36,7 +36,7 @@ public class advanced_sql_query: IntegrationContext
     {
         await using var session = theStore.LightweightSession();
         #region sample_advanced_sql_query_multiple_scalars
-        var (number,text, boolean) = (await session.AdvancedSqlQueryAsync<int, string, bool>(
+        var (number,text, boolean) = (await session.AdvancedSql.QueryAsync<int, string, bool>(
             "select row(5), row('foo'), row(true) from (values(1)) as dummy",
             CancellationToken.None)).First();
         #endregion
@@ -50,7 +50,7 @@ public class advanced_sql_query: IntegrationContext
     {
         await using var session = theStore.LightweightSession();
         #region sample_advanced_sql_query_json_object
-        var result = (await session.AdvancedSqlQueryAsync<Foo, Bar>(
+        var result = (await session.AdvancedSql.QueryAsync<Foo, Bar>(
             "select row(json_build_object('Name', 'foo')), row(json_build_object('Name', 'bar')) from (values(1)) as dummy",
             CancellationToken.None)).First();
         #endregion
@@ -67,7 +67,7 @@ public class advanced_sql_query: IntegrationContext
         await session.SaveChangesAsync();
         #region sample_advanced_sql_query_documents
         var schema = session.DocumentStore.Options.Schema;
-        var docs = await session.AdvancedSqlQueryAsync<DocWithoutMeta>(
+        var docs = await session.AdvancedSql.QueryAsync<DocWithoutMeta>(
             $"select id, data from {schema.For<DocWithoutMeta>()} order by data ->> 'Name'",
             CancellationToken.None);
         #endregion
@@ -84,7 +84,7 @@ public class advanced_sql_query: IntegrationContext
         await session.SaveChangesAsync();
         #region sample_advanced_sql_query_documents_with_metadata
         var schema = session.DocumentStore.Options.Schema;
-        var doc = (await session.AdvancedSqlQueryAsync<DocWithMeta>(
+        var doc = (await session.AdvancedSql.QueryAsync<DocWithMeta>(
             $"select id, data, mt_version from {schema.For<DocWithMeta>()} where data ->> 'Name' = 'Max'",
             CancellationToken.None)).First();
         #endregion
@@ -110,7 +110,7 @@ public class advanced_sql_query: IntegrationContext
 
         var schema = session.DocumentStore.Options.Schema;
         IReadOnlyList<(DocWithMeta doc, DocDetailsWithMeta detail, long totalResults)> results =
-            await session.AdvancedSqlQueryAsync<DocWithMeta, DocDetailsWithMeta, long>(
+            await session.AdvancedSql.QueryAsync<DocWithMeta, DocDetailsWithMeta, long>(
                 $"""
                 select
                   row(a.id, a.data, a.mt_version),
@@ -194,10 +194,10 @@ public class advanced_sql_query: IntegrationContext
     {
         using var session = theStore.LightweightSession();
 
-        var singleResult  = session.AdvancedSqlQuery<int>("select 5 from (values(1)) as dummy").First();
-        var tuple2Result = session.AdvancedSqlQuery<int, string>(
+        var singleResult  = session.AdvancedSql.Query<int>("select 5 from (values(1)) as dummy").First();
+        var tuple2Result = session.AdvancedSql.Query<int, string>(
             "select row(5), row('foo')from (values(1)) as dummy").First();
-        var tuple3Result = session.AdvancedSqlQuery<int, string, bool>(
+        var tuple3Result = session.AdvancedSql.Query<int, string, bool>(
             "select row(5), row('foo'), row(true) from (values(1)) as dummy").First();
 
         singleResult.ShouldBe(5);

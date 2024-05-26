@@ -57,95 +57,26 @@ public partial class QuerySession
         return QueryAsync<T>(sql, CancellationToken.None, parameters);
     }
 
-    public async Task<IReadOnlyList<T>> AdvancedSqlQueryAsync<T>(string sql, CancellationToken token, params object[] parameters)
-    {
-        assertNotDisposed();
+    // TODO -- Obsolete, remove in 8.0, replaced by AdvancedSql.Query*
+    #region Obsolete AdvancedSqlQuery*
+    public Task<IReadOnlyList<T>> AdvancedSqlQueryAsync<T>(string sql, CancellationToken token,
+        params object[] parameters) => ((IAdvancedSql)this).QueryAsync<T>(sql, token, parameters);
 
-        var handler = new AdvancedSqlQueryHandler<T>(this, sql, parameters);
+    public Task<IReadOnlyList<(T1, T2)>> AdvancedSqlQueryAsync<T1, T2>(string sql, CancellationToken token,
+        params object[] parameters) => ((IAdvancedSql)this).QueryAsync<T1, T2>(sql, token, parameters);
 
-        foreach (var documentType in handler.DocumentTypes)
-        {
-            await Database.EnsureStorageExistsAsync(documentType, token).ConfigureAwait(false);
-        }
+    public Task<IReadOnlyList<(T1, T2, T3)>> AdvancedSqlQueryAsync<T1, T2, T3>(string sql, CancellationToken token,
+        params object[] parameters) => ((IAdvancedSql)this).QueryAsync<T1, T2, T3>(sql, token, parameters);
 
-        var provider = new MartenLinqQueryProvider(this, typeof(T));
-        return await provider.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
-    }
+    public IReadOnlyList<T> AdvancedSqlQuery<T>(string sql, params object[] parameters) =>
+        ((IAdvancedSql)this).Query<T>(sql, parameters);
 
-    public async Task<IReadOnlyList<(T1, T2)>> AdvancedSqlQueryAsync<T1, T2>(string sql, CancellationToken token, params object[] parameters)
-    {
-        assertNotDisposed();
+    public IReadOnlyList<(T1, T2)> AdvancedSqlQuery<T1, T2>(string sql, params object[] parameters) =>
+        ((IAdvancedSql)this).Query<T1, T2>(sql, parameters);
 
-        var handler = new AdvancedSqlQueryHandler<T1, T2>(this, sql, parameters);
-
-        foreach (var documentType in handler.DocumentTypes)
-        {
-            await Database.EnsureStorageExistsAsync(documentType, token).ConfigureAwait(false);
-        }
-
-        var provider = new MartenLinqQueryProvider(this, typeof((T1, T2)));
-        return await provider.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
-    }
-
-    public async Task<IReadOnlyList<(T1, T2, T3)>> AdvancedSqlQueryAsync<T1, T2, T3>(string sql, CancellationToken token, params object[] parameters)
-    {
-        assertNotDisposed();
-
-        var handler = new AdvancedSqlQueryHandler<T1, T2, T3>(this, sql, parameters);
-
-        foreach (var documentType in handler.DocumentTypes)
-        {
-            await Database.EnsureStorageExistsAsync(documentType, token).ConfigureAwait(false);
-        }
-
-        var provider = new MartenLinqQueryProvider(this, typeof((T1, T2, T3)));
-        return await provider.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
-    }
-
-    public IReadOnlyList<T> AdvancedSqlQuery<T>(string sql, params object[] parameters)
-    {
-        assertNotDisposed();
-
-        var handler = new AdvancedSqlQueryHandler<T>(this, sql, parameters);
-
-        foreach (var documentType in handler.DocumentTypes)
-        {
-            Database.EnsureStorageExists(documentType);
-        }
-
-        var provider = new MartenLinqQueryProvider(this, typeof(T));
-        return provider.ExecuteHandler(handler);
-    }
-
-    public IReadOnlyList<(T1, T2)> AdvancedSqlQuery<T1, T2>(string sql, params object[] parameters)
-    {
-        assertNotDisposed();
-
-        var handler = new AdvancedSqlQueryHandler<T1, T2>(this, sql, parameters);
-
-        foreach (var documentType in handler.DocumentTypes)
-        {
-            Database.EnsureStorageExists(documentType);
-        }
-
-        var provider = new MartenLinqQueryProvider(this, typeof((T1, T2)));
-        return provider.ExecuteHandler(handler);
-    }
-
-    public IReadOnlyList<(T1, T2, T3)> AdvancedSqlQuery<T1, T2, T3>(string sql, params object[] parameters)
-    {
-        assertNotDisposed();
-
-        var handler = new AdvancedSqlQueryHandler<T1, T2, T3>(this, sql, parameters);
-
-        foreach (var documentType in handler.DocumentTypes)
-        {
-            Database.EnsureStorageExists(documentType);
-        }
-
-        var provider = new MartenLinqQueryProvider(this, typeof((T1, T2, T3)));
-        return provider.ExecuteHandler(handler);
-    }
+    public IReadOnlyList<(T1, T2, T3)> AdvancedSqlQuery<T1, T2, T3>(string sql, params object[] parameters) =>
+        ((IAdvancedSql)this).Query<T1, T2, T3>(sql, parameters);
+    #endregion
 
     public IBatchedQuery CreateBatchQuery()
     {
