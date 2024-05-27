@@ -100,6 +100,8 @@ public class ProjectionCoordinator : IProjectionCoordinator
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        _cancellation?.SafeDispose();
+
         _cancellation = new();
         _runner = Task.Run(() => executeAsync(_cancellation.Token), _cancellation.Token);
 
@@ -114,7 +116,6 @@ public class ProjectionCoordinator : IProjectionCoordinator
 #else
         _cancellation.Cancel();
 #endif
-        _cancellation.SafeDispose();
 
         try
         {
