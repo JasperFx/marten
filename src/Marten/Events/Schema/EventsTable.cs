@@ -64,6 +64,14 @@ internal class EventsTable: Table
             });
         }
 
+        if (events.EnableUniqueIndexOnEventId)
+        {
+            Indexes.Add(new IndexDefinition("idx_mt_events_event_id")
+            {
+                IsUnique = true, Columns = ["id"]
+            });
+        }
+
         AddColumn<IsArchivedColumn>();
     }
 

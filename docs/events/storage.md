@@ -111,3 +111,12 @@ public Dictionary<string, object>? Headers { get; set; }
 <!-- endSnippet -->
 
 The full event data is available on `EventStream` and `IEvent` objects immediately after committing a transaction that involves event capture. See [diagnostics and instrumentation](/diagnostics) for more information on capturing event data in the instrumentation hooks.
+
+## Optional Indexes
+
+As of Marten 7.0, Marten is omitting indexes that aren't universally necessary, but
+you have the option to add some extra, pre-canned indexes. Right now the only option
+is to add a unique index back on the `id` column that would be useful for references to
+external systems like so:
+
+snippet: sample_using_optional_event_store_indexes

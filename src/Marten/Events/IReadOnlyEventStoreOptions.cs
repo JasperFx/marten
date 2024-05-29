@@ -35,6 +35,13 @@ public interface IReadOnlyEventStoreOptions
     IReadonlyMetadataConfig MetadataConfig { get; }
 
     /// <summary>
+    /// Opt into having Marten create a unique index on Event.Id. The default is false. This may
+    /// be helpful if you need to create an external reference id to another system, or need to
+    /// load events by their Id
+    /// </summary>
+    bool EnableUniqueIndexOnEventId { get; set; }
+
+    /// <summary>
     ///     Configuration for all event store projections
     /// </summary>
     IReadOnlyList<IReadOnlyProjectionData> Projections();
