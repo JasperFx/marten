@@ -8,6 +8,7 @@ using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Daemon.HighWater;
@@ -17,23 +18,17 @@ internal class HighWaterDetector: IHighWaterDetector
     private readonly GapDetector _gapDetector;
     private readonly HighWaterStatisticsDetector _highWaterStatisticsDetector;
     private readonly ILogger _logger;
-    private readonly NpgsqlParameter _newSeq;
     private readonly ISingleQueryRunner _runner;
-    private readonly NpgsqlCommand _updateStatus;
+    private readonly EventGraph _graph;
     private readonly ProjectionOptions _settings;
 
     public HighWaterDetector(MartenDatabase runner, EventGraph graph, ILogger logger)
     {
         _runner = runner;
+        _graph = graph;
         _logger = logger;
         _gapDetector = new GapDetector(graph);
         _highWaterStatisticsDetector = new HighWaterStatisticsDetector(graph);
-
-        _updateStatus =
-            new NpgsqlCommand(
-                $"select {graph.DatabaseSchemaName}.mt_mark_event_progression('{ShardState.HighWaterMark}', :seq);");
-        _newSeq = _updateStatus.AddNamedParameter("seq", 0L);
-
         _settings = graph.Options.Projections;
 
         DatabaseName = runner.Identifier;
@@ -128,8 +123,12 @@ internal class HighWaterDetector: IHighWaterDetector
 
     private async Task markHighWaterMarkInDatabaseAsync(CancellationToken token, long currentMark)
     {
-        _newSeq.Value = currentMark;
-        await _runner.SingleCommit(_updateStatus, token).ConfigureAwait(false);
+        await using var cmd =
+            new NpgsqlCommand(
+                $"select {_graph.DatabaseSchemaName}.mt_mark_event_progression('{ShardState.HighWaterMark}', :seq);")
+                .With("seq", currentMark);
+
+        await _runner.SingleCommit(cmd, token).ConfigureAwait(false);
     }
 
     private async Task<HighWaterStatistics> loadCurrentStatistics(CancellationToken token)
