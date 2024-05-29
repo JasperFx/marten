@@ -36,14 +36,14 @@ public abstract partial class DocumentSessionBase
             throw;
         }
 
-        foreach (var listener in Listeners) listener.BeforeSaveChanges(this);
-
         _workTracker.Sort(Options);
 
         if (Options.AutoCreateSchemaObjects != AutoCreate.None)
         {
             foreach (var operationType in operationDocumentTypes()) Database.EnsureStorageExists(operationType);
         }
+
+        foreach (var listener in Listeners) listener.BeforeSaveChanges(this);
 
         var batch = new UpdateBatch(_workTracker.AllOperations);
 
@@ -85,12 +85,6 @@ public abstract partial class DocumentSessionBase
 
             throw;
         }
-
-        foreach (var listener in Listeners)
-        {
-            await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
-        }
-
         _workTracker.Sort(Options);
 
         if (Options.AutoCreateSchemaObjects != AutoCreate.None)
@@ -99,6 +93,11 @@ public abstract partial class DocumentSessionBase
             {
                 await Database.EnsureStorageExistsAsync(operationType, token).ConfigureAwait(false);
             }
+        }
+
+        foreach (var listener in Listeners)
+        {
+            await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
         }
 
         var batch = new UpdateBatch(_workTracker.AllOperations);
