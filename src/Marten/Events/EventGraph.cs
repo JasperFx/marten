@@ -80,6 +80,13 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
 
     /// <summary>
+    /// Opt into having Marten create a unique index on Event.Id. The default is false. This may
+    /// be helpful if you need to create an external reference id to another system, or need to
+    /// load events by their Id
+    /// </summary>
+    public bool EnableUniqueIndexOnEventId { get; set; } = false;
+
+    /// <summary>
     ///     Configure whether event streams are identified with Guid or strings
     /// </summary>
     public StreamIdentity StreamIdentity

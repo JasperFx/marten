@@ -27,6 +27,12 @@ public class EventGraphTests
     }
 
     [Fact]
+    public void enable_unique_index_on_event_id_is_false_by_default()
+    {
+        theGraph.EnableUniqueIndexOnEventId.ShouldBeFalse();
+    }
+
+    [Fact]
     public void stream_identity_is_guid_by_default()
     {
         theGraph.StreamIdentity.ShouldBe(StreamIdentity.AsGuid);

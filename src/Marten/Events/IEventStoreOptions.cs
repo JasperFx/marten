@@ -45,6 +45,13 @@ namespace Marten.Events
         TimeProvider TimeProvider { get; set; }
 
         /// <summary>
+        /// Opt into having Marten create a unique index on Event.Id. The default is false. This may
+        /// be helpful if you need to create an external reference id to another system, or need to
+        /// load events by their Id
+        /// </summary>
+        public bool EnableUniqueIndexOnEventId { get; set; }
+
+        /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
         ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
         ///     the event type. It can also be used for the event namespace migration.
