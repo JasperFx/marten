@@ -85,6 +85,7 @@ public abstract partial class DocumentSessionBase
 
             throw;
         }
+
         _workTracker.Sort(Options);
 
         if (Options.AutoCreateSchemaObjects != AutoCreate.None)
@@ -133,14 +134,11 @@ public abstract partial class DocumentSessionBase
         {
             try
             {
-                Options.ResiliencePipeline.Execute(
-                    static (x, t) => x.Connection.ExecuteBatchPages(x.Pages, x.Exceptions), execution,
-                    CancellationToken.None);
+                Options.ResiliencePipeline.Execute(static (x, t) => x.Connection.ExecuteBatchPages(x.Pages, x.Exceptions), execution, CancellationToken.None);
             }
             catch (Exception e)
             {
-                pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>()
-                    .Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
+                pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
             }
 
             if (execution.Exceptions.Count == 1)
@@ -198,15 +196,13 @@ public abstract partial class DocumentSessionBase
                 await executeBeforeCommitListeners(batch).ConfigureAwait(false);
 
                 await Options.ResiliencePipeline.ExecuteAsync(
-                    static (e, t) => new ValueTask(e.Connection.ExecuteBatchPagesAsync(e.Pages, e.Exceptions, t)),
-                    execution, token).ConfigureAwait(false);
+                    static (e, t) => new ValueTask(e.Connection.ExecuteBatchPagesAsync(e.Pages, e.Exceptions, t)), execution, token).ConfigureAwait(false);
 
                 await executeAfterCommitListeners(batch).ConfigureAwait(false);
             }
             catch (Exception e)
             {
-                pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>()
-                    .Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
+                pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
             }
 
             if (execution.Exceptions.Count == 1)
