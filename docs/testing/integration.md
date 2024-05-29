@@ -118,6 +118,82 @@ public abstract class IntegrationContext : IAsyncLifetime
 
 Other than simply connecting real test fixtures to the ASP.Net Core system under test (the IAlbaHost), this `IntegrationContext` utilizes another bit of Marten functionality to completely reset the database state and then (re) applying the configured initial data so that we always have known data in the database before tests execute.
 
+You can simplify the access to the `IDocumentStore` even more by calling the `DocumentStore` extension method on the `IHost`:
+
+<!-- snippet: sample_simplified_integration_context -->
+<a id='snippet-sample_simplified_integration_context'></a>
+```cs
+public abstract class SimplifiedIntegrationContext : IAsyncLifetime
+{
+    protected SimplifiedIntegrationContext(AppFixture fixture)
+    {
+        Host = fixture.Host;
+        Store = Host.DocumentStore();
+    }
+
+    public IAlbaHost Host { get; }
+    public IDocumentStore Store { get; }
+
+    public async Task InitializeAsync()
+    {
+        // Using Marten, wipe out all data and reset the state
+        await Store.Advanced.ResetAllData();
+    }
+
+    // This is required because of the IAsyncLifetime
+    // interface. Note that I do *not* tear down database
+    // state after the test. That's purposeful
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/Examples/SimplifiedIntegrationContext.cs#L7-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplified_integration_context' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+If you're working with [multiple Marten databases](/configuration/hostbuilder/#working-with-multiple-marten-databases), you can use the `IDocumentStore` extension method to get the store by its interface type:
+
+<!-- snippet: sample_multiple_databases_integration_context -->
+<a id='snippet-sample_multiple_databases_integration_context'></a>
+```cs
+public interface IInvoicingStore: IDocumentStore
+{
+}
+
+public abstract class MultipleMartenDatabasesIntegrationContext: IAsyncLifetime
+{
+    protected MultipleMartenDatabasesIntegrationContext(
+        AppFixture fixture
+    )
+    {
+        Host = fixture.Host;
+        Store = Host.DocumentStore();
+        InvoicingStore = Host.DocumentStore<IInvoicingStore>();
+    }
+
+    public IAlbaHost Host { get; }
+    public IDocumentStore Store { get; }
+    public IInvoicingStore InvoicingStore { get; }
+
+    public async Task InitializeAsync()
+    {
+        // Using Marten, wipe out all data and reset the state
+        await Store.Advanced.ResetAllData();
+    }
+
+    // This is required because of the IAsyncLifetime
+    // interface. Note that I do *not* tear down database
+    // state after the test. That's purposeful
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/Examples/MultipleMartenDatabasesIntegrationContext.cs#L7-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multiple_databases_integration_context' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ## Integration test example
 
 Finally, in your xUnit test file, the actual example using the `IntegrationContext` and `AppFixture` we setup before:
