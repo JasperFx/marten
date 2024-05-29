@@ -152,7 +152,7 @@ public abstract class SimplifiedIntegrationContext : IAsyncLifetime
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/Examples/SimplifiedIntegrationContext.cs#L7-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplified_integration_context' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-If you're working with [multiple Marten databases](/configuration/hostbuilder/#working-with-multiple-marten-databases), you can use the `IDocumentStore` extension method to get the store by its interface type:
+If you're working with [multiple Marten databases](/configuration/hostbuilder#working-with-multiple-marten-databases), you can use the `IDocumentStore` extension method to get the store by its interface type:
 
 <!-- snippet: sample_multiple_databases_integration_context -->
 <a id='snippet-sample_multiple_databases_integration_context'></a>
