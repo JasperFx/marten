@@ -4,6 +4,10 @@ using Microsoft.Extensions.Hosting;
 
 namespace Marten.Testing.Examples;
 
+public interface IInvoicingStore : IDocumentStore
+{
+}
+
 public class DocumentCleanerExamples
 {
     #region sample_clean_out_documents
@@ -40,6 +44,14 @@ public class DocumentCleanerExamples
     {
         // Clean off all Marten data in the default DocumentStore for this host
         await host.CleanAllMartenDataAsync();
+    }
+    #endregion
+
+    #region sample_clean_out_documents_ihost_specific_database
+    public async Task clean_out_database_documents(IHost host)
+    {
+        // Clean off all Marten data in the IInvoicing DocumentStore for this host
+        await host.CleanAllMartenDataAsync<IInvoicingStore>();
     }
     #endregion
 }
