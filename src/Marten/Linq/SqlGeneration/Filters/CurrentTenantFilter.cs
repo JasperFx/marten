@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using Marten.Storage.Metadata;
 using Weasel.Postgresql;

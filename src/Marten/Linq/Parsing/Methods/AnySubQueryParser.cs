@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -34,10 +35,10 @@ internal class AnySubQueryParser: IMethodCallParser
     public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
         MethodCallExpression expression)
     {
-        Expression memberExpression = null;
-        Expression body = null;
+        Expression? memberExpression = null;
+        Expression? body = null;
 
-        ICollectionMember member = null;
+        ICollectionMember? member = null;
 
         if (expression.Arguments.Count == 1)
         {

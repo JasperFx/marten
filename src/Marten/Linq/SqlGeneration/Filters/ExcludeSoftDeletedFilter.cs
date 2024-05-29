@@ -1,3 +1,4 @@
+#nullable enable
 using Marten.Schema;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;

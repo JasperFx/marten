@@ -1,3 +1,4 @@
+#nullable enable
 using System.Reflection;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql.SqlGeneration;

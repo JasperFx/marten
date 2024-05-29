@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq.Expressions;
 using JasperFx.Core;
 using Marten.Linq.Members;
@@ -6,8 +7,8 @@ namespace Marten.Linq.Parsing.Operators;
 
 public class Ordering
 {
-    public string MemberName { get; set; }
-    private readonly string _literal;
+    public string? MemberName { get; set; }
+    private readonly string? _literal;
 
     public Ordering(Expression expression, OrderingDirection direction)
     {
@@ -26,7 +27,7 @@ public class Ordering
         Direction = direction;
     }
 
-    public string Literal => _literal;
+    public string? Literal => _literal;
 
     public Expression Expression { get; }
 

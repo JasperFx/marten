@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -31,7 +32,7 @@ public class EnumAsStringMember: QueryableMember, IComparableMember
             };
         }
 
-        var stringValue = Enum.GetName(MemberType, constant.Value);
+        var stringValue = Enum.GetName(MemberType, constant.Value)!;
         return new MemberComparisonFilter(this, new CommandParameter(stringValue, NpgsqlDbType.Varchar), op);
     }
 

@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,18 +9,17 @@ namespace Marten.Linq.Members.Dictionaries;
 
 internal class KeyValuePairMemberCollection<TKey, TValue> : IQueryableMemberCollection
 {
-    private readonly Type _pairType;
     private readonly IQueryableMember _key;
     private readonly IQueryableMember _value;
 
     public KeyValuePairMemberCollection(StoreOptions options)
     {
-        _pairType = typeof(KeyValuePair<TKey, TValue>);
+        var pairType = typeof(KeyValuePair<TKey, TValue>);
         var root = new RootMember(typeof(IDictionary<TKey, TValue>));
-        _key = options.CreateQueryableMember(_pairType.GetProperty("Key"), root, typeof(TKey));
-        _value = options.CreateQueryableMember(_pairType.GetProperty("Value"), root, typeof(TValue));
+        _key = options.CreateQueryableMember(pairType.GetProperty("Key")!, root, typeof(TKey));
+        _value = options.CreateQueryableMember(pairType.GetProperty("Value")!, root, typeof(TValue));
 
-        ElementType = _pairType;
+        ElementType = pairType;
     }
 
     public IQueryableMember FindMember(MemberInfo member)

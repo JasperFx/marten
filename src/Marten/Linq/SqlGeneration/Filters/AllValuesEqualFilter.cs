@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq.Expressions;
 using Marten.Linq.Members;
 using Weasel.Postgresql;
@@ -18,7 +19,7 @@ internal class AllValuesEqualFilter: ISqlFragment
 
     public void Apply(ICommandBuilder builder)
     {
-        builder.AppendParameter(_constant.Value);
+        builder.AppendParameter(_constant.Value!);
         builder.Append(" = ALL(");
         builder.Append(_member.ArrayLocator);
         builder.Append(")");

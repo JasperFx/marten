@@ -1,3 +1,4 @@
+#nullable enable
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Schema;

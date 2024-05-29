@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq;
 using System.Linq.Expressions;
 
@@ -13,7 +14,7 @@ internal class OrderBySqlOperator : LinqOperator
     {
         var sql = expression.Arguments.Last().ReduceToConstant();
         var usage = query.CollectionUsageFor(expression);
-        var ordering = new Ordering((string)sql.Value);
+        var ordering = new Ordering((string)sql.Value!);
 
         usage.OrderingExpressions.Insert(0, ordering);
     }
@@ -29,7 +30,7 @@ internal class ThenBySqlOperator : LinqOperator
     {
         var sql = expression.Arguments.Last().ReduceToConstant();
         var usage = query.CollectionUsageFor(expression);
-        var ordering = new Ordering((string)sql.Value);
+        var ordering = new Ordering((string)sql.Value!);
 
         usage.OrderingExpressions.Insert(0, ordering);
     }

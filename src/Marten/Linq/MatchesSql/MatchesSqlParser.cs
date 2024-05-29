@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -13,18 +14,18 @@ public class MatchesSqlParser: IMethodCallParser
 {
     private static readonly MethodInfo _sqlMethod =
         typeof(MatchesSqlExtensions).GetMethod(nameof(MatchesSqlExtensions.MatchesSql),
-            new[] { typeof(object), typeof(string), typeof(object[]) });
+            new[] { typeof(object), typeof(string), typeof(object[]) })!;
 
     private static readonly MethodInfo _fragmentMethod =
         typeof(MatchesSqlExtensions).GetMethod(nameof(MatchesSqlExtensions.MatchesSql),
-            new[] { typeof(object), typeof(ISqlFragment) });
+            new[] { typeof(object), typeof(ISqlFragment) })!;
 
     public bool Matches(MethodCallExpression expression)
     {
         return Equals(expression.Method, _sqlMethod) || Equals(expression.Method, _fragmentMethod);
     }
 
-    public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
+    public ISqlFragment? Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
         MethodCallExpression expression)
     {
         if (expression.Method.Equals(_sqlMethod))
@@ -46,7 +47,7 @@ public class MatchesJsonPathParser: IMethodCallParser
 {
     private static readonly MethodInfo _sqlMethod =
         typeof(MatchesSqlExtensions).GetMethod(nameof(MatchesSqlExtensions.MatchesJsonPath),
-            new[] { typeof(object), typeof(string), typeof(object[]) });
+            new[] { typeof(object), typeof(string), typeof(object[]) })!;
 
     public bool Matches(MethodCallExpression expression)
     {
@@ -58,7 +59,7 @@ public class MatchesJsonPathParser: IMethodCallParser
     {
         var arguments = expression.Arguments[2].Value().As<object[]>().Select(x => new CommandParameter(x)).ToArray();
 
-        return new  LiteralSqlWithJsonPath(expression.Arguments[1].Value().As<string>(), arguments);
+        return new LiteralSqlWithJsonPath(expression.Arguments[1].Value().As<string>(), arguments);
     }
 }
 

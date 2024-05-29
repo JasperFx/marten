@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Includes;
 
-internal class IncludePlan<T>: IIncludePlan
+internal class IncludePlan<T>: IIncludePlan where T : notnull
 {
     private readonly Action<T> _callback;
     private readonly IQueryableMember _connectingMember;

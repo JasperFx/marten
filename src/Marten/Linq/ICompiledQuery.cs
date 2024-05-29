@@ -23,7 +23,7 @@ public interface IQueryPlanning
 
 #region sample_ICompiledQuery
 
-public interface ICompiledQuery<TDoc, TOut>
+public interface ICompiledQuery<TDoc, TOut> where TDoc: notnull
 {
     Expression<Func<IMartenQueryable<TDoc>, TOut>> QueryIs();
 }

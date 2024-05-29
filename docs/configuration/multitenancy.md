@@ -24,7 +24,23 @@ That's unfortunately happened to Marten users with the `tenantId` values passed 
 again. To guard against that, you can force Marten to convert all supplied tenant ids from the outside world to either
 upper or lower case to try to stop these kinds of case sensitivity bugs in their tracks like so:
 
-snippet: sample_using_tenant_id_style
+<!-- snippet: sample_using_tenant_id_style -->
+<a id='snippet-sample_using_tenant_id_style'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    // This is the default
+    opts.TenantIdStyle = TenantIdStyle.CaseSensitive;
+
+    // Or opt into this behavior:
+    opts.TenantIdStyle = TenantIdStyle.ForceLowerCase;
+
+    // Or force all tenant ids to be converted to upper case internally
+    opts.TenantIdStyle = TenantIdStyle.ForceUpperCase;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L12-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_tenant_id_style' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Static Database to Tenant Mapping
 

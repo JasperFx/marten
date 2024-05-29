@@ -1,3 +1,5 @@
+#nullable enable
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Marten.Events.Archiving;
 using Marten.Linq.SqlGeneration.Filters;
@@ -28,7 +30,7 @@ internal static class WhereFragmentExtensions
         return false;
     }
 
-    public static bool TryFindTenantAwareFilter(this ISqlFragment fragment, out ITenantFilter tenantFilter)
+    public static bool TryFindTenantAwareFilter(this ISqlFragment fragment, [NotNullWhen(true)]out ITenantFilter? tenantFilter)
     {
         if (fragment is SelectorStatement statement)
         {

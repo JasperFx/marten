@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using JasperFx.Core;
 using Marten.Internal;

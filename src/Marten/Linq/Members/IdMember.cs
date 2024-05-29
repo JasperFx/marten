@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -16,7 +17,7 @@ internal class IdMember: IQueryableMember, IComparableMember
 
     public IdMember(MemberInfo member)
     {
-        MemberType = member.GetMemberType();
+        MemberType = member.GetMemberType()!;
 
         JSONBLocator = $"CAST({RawLocator} as jsonb)";
         Ancestors = Array.Empty<IQueryableMember>();

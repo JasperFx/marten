@@ -1,3 +1,4 @@
+#nullable enable
 namespace Marten.Linq.Parsing.Methods.FullText;
 
 internal class WebStyleSearch: FullTextSearchMethodCallParser

@@ -51,6 +51,16 @@ Once you have the codebase and the connection string file, run the [build comman
 
 You are now ready to contribute to Marten.
 
+**Node.js**
+
+If you want to update or add new documentation, you need to have Node.js installed on your machine. The recommended version is the latest LTS version. You can download it from the [official website](https://nodejs.org/) or using a version manager like [nvm](https://github.com/nvm-sh/nvm).
+
+After installing Node.js, you can install the required packages by running the following command in the root directory of this repository:
+
+```bash
+npm install
+```
+
 ## Working with the Git
 
 1. Fork the repository.
@@ -61,7 +71,33 @@ You are now ready to contribute to Marten.
 
 ## Code style
 
-Coding rules are set up in the [.editorconfig file](.editorconfig). This file is supported by all popular IDE (eg. Microsoft Visual Studio, Rider, Visual Studio Code) so if you didn't disabled it manually they should be automatically applied after opening the solution. We also recommend turning automatic formatting on saving to have all the rules applied.
+Coding rules are set up in the [.editorconfig file](.editorconfig). This file is supported by all popular IDE (eg. Microsoft Visual Studio, Rider, Visual Studio Code) so if you didn't disable it manually they should be automatically applied after opening the solution. We also recommend turning automatic formatting on saving to have all the rules applied.
+
+## Documentation
+
+If you want to update or add new documentation, you can find the documentation in the `docs` directory.
+
+We're using [MarkdownSnippets](https://github.com/SimonCropp/MarkdownSnippets) to include the C# code examples in the documentation.
+
+If you want to add code examples to the documentation, you have to add a C# file which includes the code example or annotate existing files with a unique C# #region/#endregion pair:
+
+```csharp
+#region sample_my_unique_name
+// Your code example here
+#endregion
+```
+
+Then you can refer to the code example in the Markdown file by using the following syntax:
+
+![Referring the code example](assets/mdsnippet-sample.png)
+
+After adding the code example, you can run the following command to update the documentation:
+
+```bash
+npm run mdsnippets
+```
+
+You can find examples if you search this repository for "sample_" or "snippet:".
 
 ## Licensing and legal rights
 

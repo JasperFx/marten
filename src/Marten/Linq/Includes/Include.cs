@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using Marten.Exceptions;
@@ -17,7 +18,7 @@ public static class Include
     ///     Used internally to process Include() operations
     ///     in the Linq support
     /// </summary>
-    public static IIncludeReader ReaderToAction<T>(IMartenSession session, Action<T> action)
+    public static IIncludeReader ReaderToAction<T>(IMartenSession session, Action<T> action) where T : notnull
     {
         var storage = session.StorageFor<T>();
 
@@ -29,7 +30,7 @@ public static class Include
     ///     Used internally to process Include() operations
     ///     in the Linq support
     /// </summary>
-    public static IIncludeReader ReaderToList<T>(IMartenSession session, IList<T> list)
+    public static IIncludeReader ReaderToList<T>(IMartenSession session, IList<T> list) where T : notnull
     {
         return ReaderToAction<T>(session, list.Add);
     }
@@ -38,7 +39,7 @@ public static class Include
     ///     Used internally to process Include() operations
     ///     in the Linq support
     /// </summary>
-    public static IIncludeReader ReaderToDictionary<T, TId>(IMartenSession session, IDictionary<TId, T> dictionary)
+    public static IIncludeReader ReaderToDictionary<T, TId>(IMartenSession session, IDictionary<TId, T> dictionary) where T : notnull where TId : notnull
     {
         var storage = session.StorageFor<T>();
         if (storage is IDocumentStorage<T, TId> s)

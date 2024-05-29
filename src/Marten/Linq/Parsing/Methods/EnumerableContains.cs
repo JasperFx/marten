@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -83,7 +84,7 @@ internal class HashSetEnumerableContains: IMethodCallParser
             // This is the value.Contains() pattern
             var collectionMember = memberCollection.MemberFor(expression.Arguments.Last());
 
-            return new WhereFragment($"{collectionMember.TypedLocator} = ANY(?)", correctToArray(constant.Value));
+            return new WhereFragment($"{collectionMember.TypedLocator} = ANY(?)", correctToArray(constant.Value!));
         }
 
         var collection = memberCollection as ICollectionMember ??

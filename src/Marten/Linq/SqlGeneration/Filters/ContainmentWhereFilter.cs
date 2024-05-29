@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -159,7 +160,7 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
 
     public void PlaceMemberValue(IQueryableMember member, ConstantExpression constant)
     {
-        _usages.Add(new DictionaryValueUsage(constant.Value));
+        _usages.Add(new DictionaryValueUsage(constant.Value!));
 
         var dict = _data;
         for (var i = 1; i < member.Ancestors.Length; i++)

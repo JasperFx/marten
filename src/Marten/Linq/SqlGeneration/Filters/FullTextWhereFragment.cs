@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq;
 using Marten.Linq.Parsing.Methods.FullText;
 using Marten.Schema;
@@ -33,7 +34,7 @@ internal class FullTextWhereFragment: ISqlFragment
         builder.AppendWithParameters(Sql)[0].Value = _searchTerm;
     }
 
-    private static string GetDataConfig(DocumentMapping mapping, string regConfig)
+    private static string GetDataConfig(DocumentMapping? mapping, string regConfig)
     {
         if (mapping == null)
         {

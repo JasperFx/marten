@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Linq;
 using JasperFx.Core;
@@ -121,7 +122,7 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
                 {
                     var others = compound.Children.Where(x => !subQueries.Contains(x)).ToArray();
 
-                    ISqlFragment topLevel = null;
+                    ISqlFragment? topLevel = null;
                     switch (others.Length)
                     {
                         case 0:

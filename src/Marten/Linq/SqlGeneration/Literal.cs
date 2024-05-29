@@ -1,3 +1,4 @@
+#nullable enable
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 

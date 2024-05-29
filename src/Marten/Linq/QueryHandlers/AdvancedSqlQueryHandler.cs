@@ -1,8 +1,10 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
@@ -14,7 +16,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Linq.QueryHandlers;
 
-internal class AdvancedSqlQueryHandler<T>: AdvancedSqlQueryHandlerBase, IQueryHandler<IReadOnlyList<T>>
+internal class AdvancedSqlQueryHandler<T>: AdvancedSqlQueryHandlerBase<T>, IQueryHandler<IReadOnlyList<T>>
 {
     public AdvancedSqlQueryHandler(IMartenSession session, string sql, object[] parameters):base(sql, parameters)
     {
@@ -32,20 +34,17 @@ internal class AdvancedSqlQueryHandler<T>: AdvancedSqlQueryHandlerBase, IQueryHa
         return list;
     }
 
-    public async Task<IReadOnlyList<T>> HandleAsync(DbDataReader reader, IMartenSession session,
-        CancellationToken token)
+    public override async IAsyncEnumerable<T> EnumerateResults(DbDataReader reader,
+        [EnumeratorCancellation] CancellationToken token)
     {
-        var list = new List<T>();
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
-            var item = await ((ISelector<T>)Selectors[0]).ResolveAsync(reader, token).ConfigureAwait(false);
-            list.Add(item);
+            yield return await ((ISelector<T>)Selectors[0]).ResolveAsync(reader, token).ConfigureAwait(false);
         }
-        return list;
     }
 }
 
-internal class AdvancedSqlQueryHandler<T1, T2>: AdvancedSqlQueryHandlerBase, IQueryHandler<IReadOnlyList<(T1, T2)>>
+internal class AdvancedSqlQueryHandler<T1, T2>: AdvancedSqlQueryHandlerBase<(T1, T2)>, IQueryHandler<IReadOnlyList<(T1, T2)>>
 {
     public AdvancedSqlQueryHandler(IMartenSession session, string sql, object[] parameters) : base(sql, parameters)
     {
@@ -65,20 +64,18 @@ internal class AdvancedSqlQueryHandler<T1, T2>: AdvancedSqlQueryHandlerBase, IQu
         return list;
     }
 
-    public async Task<IReadOnlyList<(T1, T2)>> HandleAsync(DbDataReader reader, IMartenSession session,
-        CancellationToken token)
+    public override async IAsyncEnumerable<(T1, T2)> EnumerateResults(DbDataReader reader,
+        [EnumeratorCancellation] CancellationToken token)
     {
-        var list = new List<(T1, T2)>();
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
             var item1 = await ReadNestedRowAsync<T1>(reader, 0, token).ConfigureAwait(false);
             var item2 = await ReadNestedRowAsync<T2>(reader, 1, token).ConfigureAwait(false);
-            list.Add((item1, item2));
+            yield return (item1, item2);
         }
-        return list;
     }
 }
-internal class AdvancedSqlQueryHandler<T1, T2, T3>: AdvancedSqlQueryHandlerBase, IQueryHandler<IReadOnlyList<(T1, T2, T3)>>
+internal class AdvancedSqlQueryHandler<T1, T2, T3>: AdvancedSqlQueryHandlerBase<(T1, T2, T3)>, IQueryHandler<IReadOnlyList<(T1, T2, T3)>>
 {
     public AdvancedSqlQueryHandler(IMartenSession session, string sql, object[] parameters) : base(sql, parameters)
     {
@@ -100,22 +97,20 @@ internal class AdvancedSqlQueryHandler<T1, T2, T3>: AdvancedSqlQueryHandlerBase,
         return list;
     }
 
-    public async Task<IReadOnlyList<(T1, T2, T3)>> HandleAsync(DbDataReader reader, IMartenSession session,
-        CancellationToken token)
+    public override async IAsyncEnumerable<(T1, T2, T3)> EnumerateResults(DbDataReader reader,
+        [EnumeratorCancellation] CancellationToken token)
     {
-        var list = new List<(T1, T2, T3)>();
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
             var item1 = await ReadNestedRowAsync<T1>(reader, 0, token).ConfigureAwait(false);
             var item2 = await ReadNestedRowAsync<T2>(reader, 1, token).ConfigureAwait(false);
             var item3 = await ReadNestedRowAsync<T3>(reader, 2, token).ConfigureAwait(false);
-            list.Add((item1, item2, item3));
+            yield return (item1, item2, item3);
         }
-        return list;
     }
 }
 
-internal class AdvancedSqlQueryHandlerBase
+internal abstract class AdvancedSqlQueryHandlerBase<TResult>
 {
     protected readonly object[] Parameters;
     protected readonly string Sql;
@@ -192,7 +187,7 @@ internal class AdvancedSqlQueryHandlerBase
         return default;
     }
 
-    protected ISelectClause GetSelectClause<T>(IMartenSession session)
+    protected ISelectClause GetSelectClause<T>(IMartenSession session) where T : notnull
     {
         if (typeof(T) == typeof(string))
         {
@@ -225,4 +220,18 @@ internal class AdvancedSqlQueryHandlerBase
     {
         throw new NotImplementedException();
     }
+
+    public async Task<IReadOnlyList<TResult>> HandleAsync(DbDataReader reader, IMartenSession session,
+        CancellationToken token)
+    {
+        var list = new List<TResult>();
+        await foreach (var result in EnumerateResults(reader, token).ConfigureAwait(false))
+        {
+            list.Add(result);
+        }
+
+        return list;
+    }
+
+    public abstract IAsyncEnumerable<TResult> EnumerateResults(DbDataReader reader, CancellationToken token);
 }

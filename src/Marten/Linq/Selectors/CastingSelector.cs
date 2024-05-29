@@ -1,10 +1,11 @@
+#nullable enable
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Marten.Linq.Selectors;
 
-internal class CastingSelector<T, TRoot>: ISelector<T> where T : TRoot
+internal class CastingSelector<T, TRoot>: ISelector<T> where T : TRoot where TRoot : notnull
 {
     private readonly ISelector<TRoot> _inner;
 

@@ -203,7 +203,6 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <returns></returns>
     Task<IReadOnlyList<T>> QueryAsync<T>(string sql, params object[] parameters);
 
-
     /// <summary>
     ///     Asynchronously queries the document storage with the supplied SQL.
     ///     The type parameter can be a document class, a scalar or any JSON-serializable class.
@@ -215,6 +214,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <param name="sql"></param>
     /// <param name="parameters"></param>
     /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Use AdvancedSql.QueryAsync<T>(...) instead.")]
     Task<IReadOnlyList<T>> AdvancedSqlQueryAsync<T>(string sql, CancellationToken token, params object[] parameters);
 
     /// <summary>
@@ -230,6 +230,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <param name="sql"></param>
     /// <param name="parameters"></param>
     /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Use AdvancedSql.QueryAsync<T1, T2>(...) instead.")]
     Task<IReadOnlyList<(T1, T2)>> AdvancedSqlQueryAsync<T1, T2>(string sql, CancellationToken token, params object[] parameters);
 
     /// <summary>
@@ -246,6 +247,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <param name="sql"></param>
     /// <param name="parameters"></param>
     /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Use AdvancedSql.QueryAsync<T1, T2, T3>(...) instead.")]
     Task<IReadOnlyList<(T1, T2, T3)>> AdvancedSqlQueryAsync<T1, T2,T3>(string sql, CancellationToken token, params object[] parameters);
 
     /// <summary>
@@ -259,6 +261,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <param name="sql"></param>
     /// <param name="parameters"></param>
     /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Use AdvancedSql.QueryAsync<T>(...) instead.")]
     IReadOnlyList<T> AdvancedSqlQuery<T>(string sql, params object[] parameters);
 
     /// <summary>
@@ -274,6 +277,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <param name="sql"></param>
     /// <param name="parameters"></param>
     /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Use AdvancedSql.QueryAsync<T1, T2>(...) instead.")]
     IReadOnlyList<(T1, T2)> AdvancedSqlQuery<T1, T2>(string sql, params object[] parameters);
 
     /// <summary>
@@ -290,6 +294,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <param name="sql"></param>
     /// <param name="parameters"></param>
     /// <returns></returns>
+    [Obsolete("Will be removed in 8.0. Use AdvancedSql.QueryAsync<T1, T2, T3>(...) instead.")]
     IReadOnlyList<(T1, T2, T3)> AdvancedSqlQuery<T1, T2, T3>(string sql, params object[] parameters);
 
     /// <summary>
@@ -716,4 +721,10 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <param name="token"></param>
     /// <returns></returns>
     Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default);
+
+    /// <summary>
+    ///     Advanced sql query methods, to allow you to query the database
+    ///     beyond what you can do with LINQ.
+    /// </summary>
+    IAdvancedSql AdvancedSql { get; }
 }

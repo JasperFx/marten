@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq.Expressions;
 using Marten.Linq.Members;
 using Weasel.Postgresql.SqlGeneration;
@@ -32,7 +33,7 @@ public interface IMethodCallParser
     /// <param name="expression"></param>
     /// <param name="serializer"></param>
     /// <returns></returns>
-    ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
+    ISqlFragment? Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
         MethodCallExpression expression);
 }
 

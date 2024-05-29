@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Linq;
 using System.Linq.Expressions;
@@ -13,7 +14,7 @@ namespace Marten.Linq.LastModified;
 public class ModifiedBeforeParser: IMethodCallParser
 {
     private static readonly MethodInfo _method =
-        typeof(LastModifiedExtensions).GetMethod(nameof(LastModifiedExtensions.ModifiedBefore));
+        typeof(LastModifiedExtensions).GetMethod(nameof(LastModifiedExtensions.ModifiedBefore))!;
 
     public bool Matches(MethodCallExpression expression)
     {

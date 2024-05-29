@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,7 +37,7 @@ public partial class CollectionUsage
                 var storage = session.StorageFor(includedType);
 
                 var type = typeof(ListIncludePlan<>).MakeGenericType(includedType);
-                var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver);
+                var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver)!;
 
                 if (expression.Arguments.Count == 3)
                 {
@@ -51,7 +52,7 @@ public partial class CollectionUsage
                 var storage = session.StorageFor(includedType);
 
                 var type = typeof(IncludePlan<>).MakeGenericType(includedType);
-                var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver);
+                var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver)!;
 
                 if (expression.Arguments.Count == 3)
                 {
@@ -67,7 +68,7 @@ public partial class CollectionUsage
                 var storage = session.StorageFor(includedType);
 
                 var type = typeof(DictionaryIncludePlan<,>).MakeGenericType(includedType, idType);
-                var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver);
+                var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver)!;
 
                 if (expression.Arguments.Count == 3)
                 {

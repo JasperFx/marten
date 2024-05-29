@@ -1,3 +1,5 @@
+// visitor usage is impossible to annotate
+#nullable disable
 using System;
 using System.Linq;
 using System.Linq.Expressions;

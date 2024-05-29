@@ -30,22 +30,22 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
 
     public IBatchEvents Events => this;
 
-    public Task<T> Load<T>(string id) where T : class
+    public Task<T?> Load<T>(string id) where T : class
     {
         return load<T, string>(id);
     }
 
-    public Task<T> Load<T>(int id) where T : class
+    public Task<T?> Load<T>(int id) where T : class
     {
         return load<T, int>(id);
     }
 
-    public Task<T> Load<T>(long id) where T : class
+    public Task<T?> Load<T>(long id) where T : class
     {
         return load<T, long>(id);
     }
 
-    public Task<T> Load<T>(Guid id) where T : class
+    public Task<T?> Load<T>(Guid id) where T : class
     {
         return load<T, Guid>(id);
     }
@@ -131,7 +131,7 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
         }
     }
 
-    public Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query)
+    public Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query) where TDoc : class
     {
         _documentTypes.Add(typeof(TDoc));
         // Smelly downcast, but we'll allow it
@@ -212,14 +212,14 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
         return item.Result;
     }
 
-    private Task<T> load<T, TId>(TId id) where T : class where TId : notnull
+    private Task<T?> load<T, TId>(TId id) where T : class where TId : notnull
     {
         _documentTypes.Add(typeof(T));
         var storage = _parent.StorageFor<T>();
         if (storage is IDocumentStorage<T, TId> s)
         {
             var handler = new LoadByIdHandler<T, TId>(s, id);
-            return AddItem(handler);
+            return AddItem(handler)!;
         }
 
         throw new DocumentIdTypeMismatchException(storage, typeof(TId));

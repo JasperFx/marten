@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq;
 using Marten.Linq.SqlGeneration;
 

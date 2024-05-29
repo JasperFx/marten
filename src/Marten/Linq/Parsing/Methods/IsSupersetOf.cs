@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -36,7 +37,7 @@ internal class IsSupersetOf: IMethodCallParser
     private static bool isISetMethod(MethodInfo method)
     {
         return method.Name == "IsSupersetOf" &&
-               method.DeclaringType
+               method.DeclaringType!
                    .GetInterfaces()
                    .Where(i => i.IsGenericType)
                    .Any(i => i.GetGenericTypeDefinition() == typeof(ISet<>));
