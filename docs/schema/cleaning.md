@@ -116,7 +116,7 @@ using var host = await Host.CreateDefaultBuilder()
     .ConfigureServices(
         services =>
         {
-            services.AddMarten(
+            services.AddMartenStore<IInvoicingStore>(
                     opts =>
                     {
                         opts.Connection(ConnectionSource.ConnectionString);
