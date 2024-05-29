@@ -30,7 +30,7 @@ public class when_inline_event_enriched: OneOffConfigurationsContext
 
     public class DocumentEnricher: DocumentSessionListenerBase
     {
-        public override void BeforeSaveChanges(IDocumentSession session)
+        public override void BeforeProcessChanges(IDocumentSession session)
         {
             var streams = session.PendingChanges.Streams();
             foreach (var stream in streams)
@@ -45,9 +45,9 @@ public class when_inline_event_enriched: OneOffConfigurationsContext
             }
         }
 
-        public override Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
+        public override Task BeforeProcessChangesAsync(IDocumentSession session, CancellationToken token)
         {
-            return Task.Factory.StartNew(() => BeforeSaveChanges(session));
+            return Task.Factory.StartNew(() => BeforeProcessChanges(session));
         }
     }
 

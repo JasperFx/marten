@@ -24,7 +24,7 @@ public abstract partial class DocumentSessionBase
             return;
         }
 
-        foreach (var listener in Listeners) listener.BeforeSaveChanges(this);
+        foreach (var listener in Listeners) listener.BeforeProcessChanges(this);
 
         try
         {
@@ -35,6 +35,8 @@ public abstract partial class DocumentSessionBase
             tryApplyTombstoneBatch();
             throw;
         }
+
+        foreach (var listener in Listeners) listener.BeforeSaveChanges(this);
 
         _workTracker.Sort(Options);
 
@@ -70,7 +72,7 @@ public abstract partial class DocumentSessionBase
 
         foreach (var listener in Listeners)
         {
-            await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
+            await listener.BeforeProcessChangesAsync(this, token).ConfigureAwait(false);
         }
 
         try
@@ -82,6 +84,11 @@ public abstract partial class DocumentSessionBase
             await tryApplyTombstoneEventsAsync(token).ConfigureAwait(false);
 
             throw;
+        }
+
+        foreach (var listener in Listeners)
+        {
+            await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
         }
 
         _workTracker.Sort(Options);
@@ -127,11 +134,14 @@ public abstract partial class DocumentSessionBase
         {
             try
             {
-                Options.ResiliencePipeline.Execute(static (x, t) => x.Connection.ExecuteBatchPages(x.Pages, x.Exceptions), execution, CancellationToken.None);
+                Options.ResiliencePipeline.Execute(
+                    static (x, t) => x.Connection.ExecuteBatchPages(x.Pages, x.Exceptions), execution,
+                    CancellationToken.None);
             }
             catch (Exception e)
             {
-                pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
+                pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>()
+                    .Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
             }
 
             if (execution.Exceptions.Count == 1)
@@ -186,17 +196,18 @@ public abstract partial class DocumentSessionBase
         {
             try
             {
-
                 await executeBeforeCommitListeners(batch).ConfigureAwait(false);
 
                 await Options.ResiliencePipeline.ExecuteAsync(
-                    static (e, t) => new ValueTask(e.Connection.ExecuteBatchPagesAsync(e.Pages, e.Exceptions, t)), execution, token).ConfigureAwait(false);
+                    static (e, t) => new ValueTask(e.Connection.ExecuteBatchPagesAsync(e.Pages, e.Exceptions, t)),
+                    execution, token).ConfigureAwait(false);
 
                 await executeAfterCommitListeners(batch).ConfigureAwait(false);
             }
             catch (Exception e)
             {
-                pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
+                pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>()
+                    .Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
             }
 
             if (execution.Exceptions.Count == 1)
