@@ -103,7 +103,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
             // _.Schema.For<ISmurf>().AddSubClassHierarchy();
             // this, however, will use the assembly
             // of type ISmurf to get all its' subclasses/implementations.
-            // In projects with many types, this approach will be undvisable.
+            // In projects with many types, this approach will be unadvisable.
 
 
             _.Connection(ConnectionSource.ConnectionString);
