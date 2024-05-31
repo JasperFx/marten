@@ -35,7 +35,7 @@ public abstract class SessionFactoryBase: ISessionFactory
 
     public abstract SessionOptions BuildOptions();
 
-    public IQuerySession QuerySession() =>
+    public virtual IQuerySession QuerySession() =>
         _store.QuerySession();
 
     public IDocumentSession OpenSession() =>
