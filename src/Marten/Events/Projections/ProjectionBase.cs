@@ -114,7 +114,7 @@ public abstract class ProjectionBase : EventFilterable
     /// <summary>
     ///     The projection lifecycle that governs when this projection is executed
     /// </summary>
-    public ProjectionLifecycle Lifecycle { get; internal set; } = ProjectionLifecycle.Async;
+    public ProjectionLifecycle Lifecycle { get; set; } = ProjectionLifecycle.Async;
 
 
     /// <summary>
