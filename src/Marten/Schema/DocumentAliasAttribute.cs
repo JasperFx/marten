@@ -9,7 +9,7 @@ namespace Marten.Schema;
 ///     types
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
-public class DocumentAliasAttribute: MartenAttribute
+public class DocumentAliasAttribute : MartenAttribute
 {
     public DocumentAliasAttribute(string alias)
     {

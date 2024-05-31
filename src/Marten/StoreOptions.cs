@@ -12,10 +12,8 @@ using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
-using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
-using Marten.Linq;
 using Marten.Metadata;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
@@ -205,8 +203,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// Default is false
     /// </summary>
     public bool UseStickyConnectionLifetimes { get; set; } = false;
-
-    internal IList<Type> CompiledQueryTypes => _compiledQueryTypes;
 
     /// <summary>
     /// Polly policies for retries within Marten command execution
@@ -655,54 +651,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         _logger = logger;
     }
 
-    /// <summary>
-    ///     Force Marten to create document mappings for type T
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public void RegisterDocumentType<T>()
-    {
-        RegisterDocumentType(typeof(T));
-    }
 
-    /// <summary>
-    ///     Force Marten to create a document mapping for the document type
-    /// </summary>
-    /// <param name="documentType"></param>
-    public void RegisterDocumentType(Type documentType)
-    {
-        Storage.RegisterDocumentType(documentType);
-    }
-
-    /// <summary>
-    ///     Force Marten to create document mappings for all the given document types
-    /// </summary>
-    /// <param name="documentTypes"></param>
-    public void RegisterDocumentTypes(IEnumerable<Type> documentTypes)
-    {
-        documentTypes.Each(RegisterDocumentType);
-    }
-
-    /// <summary>
-    ///     Register a compiled query type for the "generate ahead" code generation strategy
-    /// </summary>
-    /// <param name="queryType"></param>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
-    public void RegisterCompiledQueryType(Type queryType)
-    {
-        if (!queryType.Closes(typeof(ICompiledQuery<,>)))
-        {
-            throw new ArgumentOutOfRangeException(nameof(queryType),
-                $"{queryType.FullNameInCode()} is not a valid Marten compiled query type");
-        }
-
-        if (!queryType.HasDefaultConstructor())
-        {
-            throw new ArgumentOutOfRangeException(nameof(queryType),
-                "Sorry, but Marten requires a no-arg constructor on compiled query types in order to opt into the 'code ahead' generation model.");
-        }
-
-        CompiledQueryTypes.Fill(queryType);
-    }
 
     internal void ApplyConfiguration()
     {

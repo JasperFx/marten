@@ -25,6 +25,15 @@ public abstract class MartenAttribute: Attribute
     /// <param name="mapping"></param>
     /// <param name="member"></param>
     public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }
+
+    /// <summary>
+    /// When used with the automatic type discovery (assembly scanning), this will be called
+    /// to make registrations to the Marten configuration with the type that this attribute
+    /// decorates
+    /// </summary>
+    /// <param name="discoveredType"></param>
+    /// <param name="options"></param>
+    public virtual void Register(Type discoveredType, StoreOptions options){}
 }
 
 #endregion
