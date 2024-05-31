@@ -16,6 +16,12 @@ public interface IQueryPlanning
 }
 
 /// <summary>
+/// Strictly a marker class to help Marten discover compiled query types
+/// in assemblies
+/// </summary>
+public interface ICompiledQueryMarker{}
+
+/// <summary>
 ///     Used to express a query expression that when used will be cached by class type implementing this interface
 /// </summary>
 /// <typeparam name="TDoc">The document</typeparam>
@@ -23,7 +29,7 @@ public interface IQueryPlanning
 
 #region sample_ICompiledQuery
 
-public interface ICompiledQuery<TDoc, TOut> where TDoc: notnull
+public interface ICompiledQuery<TDoc, TOut> : ICompiledQueryMarker where TDoc: notnull
 {
     Expression<Func<IMartenQueryable<TDoc>, TOut>> QueryIs();
 }
