@@ -784,7 +784,7 @@ public static class MartenServiceCollectionExtensions
                             ProjectionType = typeof(T)
                         };
 
-                        opts.Projections.Add(projection, lifecycle);
+                        opts.Projections.Register(projection, lifecycle);
                     });
                     break;
             }
@@ -827,7 +827,7 @@ public static class MartenServiceCollectionExtensions
                             ProjectionName = projectionName
                         };
 
-                        opts.Projections.Add(projection, lifecycle, projectionName);
+                        opts.Projections.Register(projection, lifecycle);
                     });
                     break;
             }

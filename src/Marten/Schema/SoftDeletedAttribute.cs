@@ -7,7 +7,7 @@ namespace Marten.Schema;
 ///     Marks a document type as "soft deleted"
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
-public class SoftDeletedAttribute: MartenAttribute
+public class SoftDeletedAttribute: MartenDocumentAttribute
 {
     /// <summary>
     ///     Creates an index on deleted documents

@@ -134,7 +134,7 @@ public class ProjectionOptions: DaemonSettings
     /// <param name="lifecycle"></param>
     /// <param name="projectionName">
     ///     Overwrite the named identity of this projection. This is valuable if using the projection
-    ///     asynchonously
+    ///     asynchronously
     /// </param>
     /// <param name="asyncConfiguration">
     ///     Optional configuration including teardown instructions for the usage of this
@@ -175,6 +175,41 @@ public class ProjectionOptions: DaemonSettings
             asyncConfiguration?.Invoke(wrapper.Options);
             All.Add(wrapper);
         }
+    }
+
+    /// <summary>
+    /// Register a projection to the Marten configuration
+    /// </summary>
+    /// <param name="projection">Value values are Inline/Async, The default is Inline</param>
+    /// <param name="lifecycle"></param>
+    /// <param name="projectionName">
+    ///     Overwrite the named identity of this projection. This is valuable if using the projection
+    ///     asynchronously
+    /// </param>
+    /// <param name="asyncConfiguration">
+    ///     Optional configuration including teardown instructions for the usage of this
+    ///     projection within the async projection daempon
+    /// </param>
+    public void Register(
+        IProjectionSource source,
+        ProjectionLifecycle lifecycle,
+        Action<AsyncOptions> asyncConfiguration = null
+    )
+    {
+        if (source is ProjectionBase p)
+        {
+            p.AssembleAndAssertValidity();
+            p.Lifecycle = lifecycle;
+        }
+
+        if (lifecycle == ProjectionLifecycle.Live && source is IAggregateProjection aggregateProjection)
+        {
+            // Hack to address https://github.com/JasperFx/marten/issues/2610
+            _options.Storage.MappingFor(aggregateProjection.AggregateType).SkipSchemaGeneration = true;
+        }
+
+        asyncConfiguration?.Invoke(source.Options);
+        All.Add(source);
     }
 
     /// <summary>
@@ -296,7 +331,7 @@ public class ProjectionOptions: DaemonSettings
     }
 
     /// <summary>
-    /// Register an aggregate projection that should be evaluated inline
+    /// Register an aggregate projection
     /// </summary>
     /// <param name="projection"></param>
     /// <typeparam name="T"></typeparam>

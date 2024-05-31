@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using Marten.Events.Daemon;
 using Marten.Events.Projections;
 
 namespace Marten.Events.Aggregation;
@@ -16,11 +17,13 @@ public interface IAggregateProjection // THIS NEEDS TO REMAIN PUBLIC
 
     Type[] AllEventTypes { get; }
 
-    ProjectionLifecycle Lifecycle { get; }
+    ProjectionLifecycle Lifecycle { get; set; }
 
     bool MatchesAnyDeleteType(StreamAction action);
     bool MatchesAnyDeleteType(IEventSlice slice);
     bool AppliesTo(IEnumerable<Type> eventTypes);
+
+    AsyncOptions Options { get; }
 
 
     /// <summary>
