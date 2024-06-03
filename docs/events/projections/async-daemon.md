@@ -237,6 +237,37 @@ The basic idea in your tests is to:
 There is also another overload to wait for just one tenant database in the case of using a database per tenant. The default
 overload **will wait for the daemon of all known databases to catch up to the latest sequence.**
 
+### Accessing the daemon from IHost:
+
+If you're integration testing with the `IHost` (e.g. using Alba) object, you can access the daemon and wait for non stale data like this:
+
+<!-- snippet: sample_accessing_daemon_from_ihost -->
+<a id='snippet-sample_accessing_daemon_from_ihost'></a>
+```cs
+[Fact]
+public async Task run_simultaneously()
+{
+    var host = await StartDaemonInHotColdMode();
+
+    StoreOptions(x => x.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
+
+    NumberOfStreams = 10;
+
+    var agent = await StartDaemon();
+
+    // This method publishes a random number of events
+    await PublishSingleThreaded();
+
+    // Wait for all projections to reach the highest event sequence point
+    // as of the time this method is called
+    await host.WaitForNonStaleProjectionDataAsync(15.Seconds());
+
+    await CheckExpectedResults();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/event_projections_end_to_end_ihost.cs#L22-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_accessing_daemon_from_ihost' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ## Diagnostics
 
 The following code shows the diagnostics support for the async daemon as it is today:
