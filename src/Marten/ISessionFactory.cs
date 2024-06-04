@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Marten.Services;
 
 namespace Marten;
@@ -38,6 +39,23 @@ public abstract class SessionFactoryBase: ISessionFactory
     public virtual IQuerySession QuerySession() =>
         _store.QuerySession();
 
-    public IDocumentSession OpenSession() =>
-        _store.OpenSession(BuildOptions());
+    public IDocumentSession OpenSession()
+    {
+        var documentSession = _store.OpenSession(BuildOptions());
+
+        documentSession.CorrelationId = Activity.Current?.RootId;
+        documentSession.CausationId = Activity.Current?.ParentId;
+
+        ApplyMetadata(documentSession);
+        return documentSession;
+    }
+
+    /// <summary>
+    /// A hook to apply tracking metadata to the Document Session
+    /// </summary>
+    /// <param name="documentSession"></param>
+    public virtual void ApplyMetadata(IDocumentSession documentSession)
+    {
+
+    }
 }
