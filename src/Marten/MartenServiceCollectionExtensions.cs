@@ -532,6 +532,132 @@ public static class MartenServiceCollectionExtensions
             Services.AddSingleton<IConfigureMarten<T>, AddInitialData<T, TData>>();
             return this;
         }
+
+        /// <summary>
+        /// Add a projection to this application that requires IoC services. The projection itself will
+        /// be created with the application's IoC container
+        /// </summary>
+        /// <param name="lifecycle">The projection lifecycle for Marten</param>
+        /// <param name="lifetime">The IoC lifecycle for the projection instance. Note that the Transient lifetime will still be treated as Scoped</param>
+        /// /// <typeparam name="TProjection">The type of projection to add</typeparam>
+        /// <returns></returns>
+        public MartenStoreExpression<T> AddProjectionWithServices<TProjection>(ProjectionLifecycle lifecycle, ServiceLifetime lifetime) where TProjection : class, IProjection
+        {
+            switch (lifetime)
+            {
+                case ServiceLifetime.Singleton:
+                    Services.AddSingleton<TProjection>();
+                    Services.ConfigureMarten<T>((s, opts) =>
+                    {
+                        var projection = s.GetRequiredService<TProjection>();
+                        opts.Projections.Add(projection, lifecycle);
+                    });
+                    break;
+
+                case ServiceLifetime.Transient:
+                case ServiceLifetime.Scoped:
+                    Services.AddScoped<TProjection>();
+                    Services.ConfigureMarten<T>((s, opts) =>
+                    {
+                        var projection = new ScopedProjectionWrapper<TProjection>(s)
+                        {
+                            Lifecycle = lifecycle,
+                            ProjectionType = typeof(TProjection)
+                        };
+
+                        opts.Projections.Add(projection, lifecycle);
+                    });
+                    break;
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// Add a projection to this application that requires IoC services. The projection itself will
+        /// be created with the application's IoC container
+        /// </summary>
+        /// <param name="lifecycle">The projection lifecycle for Marten</param>
+        /// <param name="lifetime">The IoC lifecycle for the projection instance. Note that the Transient lifetime will still be treated as Scoped</param>
+        /// <typeparam name="TProjection">The type of projection to add</typeparam>
+        /// <returns></returns>
+        public MartenStoreExpression<T> AddProjectionWithServices<TProjection>(ProjectionLifecycle lifecycle, ServiceLifetime lifetime, string projectionName) where TProjection : class, IProjection
+        {
+            switch (lifetime)
+            {
+                case ServiceLifetime.Singleton:
+                    Services.AddSingleton<TProjection>();
+                    Services.ConfigureMarten<T>((s, opts) =>
+                    {
+                        var projection = s.GetRequiredService<TProjection>();
+                        opts.Projections.Add(projection, lifecycle, projectionName);
+                    });
+                    break;
+
+                case ServiceLifetime.Transient:
+                case ServiceLifetime.Scoped:
+                    Services.AddScoped<TProjection>();
+                    Services.ConfigureMarten<T>((s, opts) =>
+                    {
+                        var projection = new ScopedProjectionWrapper<TProjection>(s)
+                        {
+                            Lifecycle = lifecycle,
+                            ProjectionType = typeof(TProjection),
+                            ProjectionName = projectionName
+                        };
+
+                        opts.Projections.Add(projection, lifecycle, projectionName);
+                    });
+                    break;
+            }
+
+
+            return this;
+        }
+
+
+        /// <summary>
+        /// Add a subscription to this Marten store that will require resolution
+        /// from the application's IoC container in order to function correctly
+        /// </summary>
+        /// <param name="lifetime">IoC service lifetime</param>
+        /// <param name="configure">Optional configuration of the subscription within Marten</param>
+        /// <typeparam name="T">The type of projection to add</typeparam>
+        /// <returns></returns>
+        public MartenStoreExpression<T> AddSubscriptionWithServices<TSubscription>(ServiceLifetime lifetime, Action<ISubscriptionOptions>? configure = null) where TSubscription : class, ISubscription
+        {
+            switch (lifetime)
+            {
+                case ServiceLifetime.Singleton:
+                    Services.AddSingleton<TSubscription>();
+                    Services.ConfigureMarten<T>((s, opts) =>
+                    {
+                        var subscription = s.GetRequiredService<TSubscription>();
+                        if (subscription is SubscriptionBase subscriptionBase)
+                        {
+                            configure?.Invoke(subscriptionBase);
+                            opts.Projections.Subscribe(subscriptionBase);
+                        }
+                        else
+                        {
+                            opts.Projections.Subscribe(subscription, configure);
+                        }
+                    });
+                    break;
+
+                case ServiceLifetime.Transient:
+                case ServiceLifetime.Scoped:
+                    Services.AddScoped<TSubscription>();
+                    Services.ConfigureMarten<T>((s, opts) =>
+                    {
+                        var subscription = new ScopedSubscriptionServiceWrapper<TSubscription>(s);
+                        opts.Projections.Subscribe(subscription, configure);
+                    });
+                    break;
+            }
+
+            return this;
+        }
     }
 
     public class MartenConfigurationExpression
