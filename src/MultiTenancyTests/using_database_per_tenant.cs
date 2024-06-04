@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Marten;
+using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit.Abstractions;
@@ -27,9 +28,9 @@ public class using_database_per_tenant: IAsyncLifetime
     }
 
     [Fact]
-    public async Task should_not_meaning_ful_exception_when_tenant_id_is_missing()
+    public void should_not_meaning_ful_exception_when_tenant_id_is_missing()
     {
-        Should.Throw<ArgumentNullException>(() => _theStore.LightweightSession());
+        Should.Throw<DefaultTenantUsageDisabledException>(() => _theStore.LightweightSession());
     }
 
 

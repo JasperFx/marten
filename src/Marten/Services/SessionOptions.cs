@@ -90,7 +90,7 @@ public sealed class SessionOptions
         Tenant ??= TenantId != Tenancy.DefaultTenantId ? store.Tenancy.GetTenant(store.Options.MaybeCorrectTenantId(TenantId)) : store.Tenancy.Default;
 
         if (!AllowAnyTenant && !store.Options.Advanced.DefaultTenantUsageEnabled &&
-            Tenant.TenantId == Tenancy.DefaultTenantId)
+            (Tenant == null || Tenant.TenantId == Tenancy.DefaultTenantId))
         {
             throw new DefaultTenantUsageDisabledException();
         }
