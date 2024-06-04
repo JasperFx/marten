@@ -186,6 +186,176 @@ public class projections_with_IoC_services
 
 
     }
+
+    [Fact]
+    public async Task can_apply_database_changes_at_runtime_with_projection_with_services_on_martenStore()
+    {
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            await conn.DropSchemaAsync("ioc");
+            await conn.CloseAsync();
+        }
+
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<IPriceLookup, PriceLookup>();
+
+                var mse = services.AddMartenStore<ICustomStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "ioc";
+                });
+
+                mse.AddProjectionWithServices<ProductProjection>(
+                    ProjectionLifecycle.Inline,
+                    ServiceLifetime.Scoped
+                );
+
+                mse.ApplyAllDatabaseChangesOnStartup();
+            })
+            .StartAsync();
+
+        var store = host.Services.GetRequiredService<ICustomStore>();
+        var tables = store.Storage.AllObjects().OfType<DocumentTable>();
+
+        tables.Any(x => x.DocumentType == typeof(Product)).ShouldBeTrue();
+
+        var existing = await store.Storage.Database.ExistingTableFor(typeof(Product));
+        existing.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task use_projection_as_singleton_and_inline_on_martenStore()
+    {
+        #region sample_registering_projection_built_by_services
+
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<IPriceLookup, PriceLookup>();
+
+                services.AddMartenStore<ICustomStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.DatabaseSchemaName = "ioc";
+                    })
+                    // Note that this is chained after the call to AddMartenStore()
+                    .AddProjectionWithServices<ProductProjection>(
+                        ProjectionLifecycle.Inline,
+                        ServiceLifetime.Singleton
+                    ).ApplyAllDatabaseChangesOnStartup();
+            })
+            .StartAsync();
+
+        #endregion
+
+        var store = host.Services.GetRequiredService<ICustomStore>();
+
+        await using var session = store.LightweightSession();
+        var streamId = session.Events.StartStream<Product>(
+            new ProductRegistered("Ankle Socks", "Socks")
+        ).Id;
+        await session.SaveChangesAsync();
+
+        var product = await session.LoadAsync<Product>(streamId);
+        product.Price.ShouldBeGreaterThan(0);
+        product.Name.ShouldBe("Ankle Socks");
+    }
+
+    [Fact]
+    public async Task use_projection_as_singleton_and_async_on_martenStore()
+    {
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<IPriceLookup, PriceLookup>();
+
+                services.AddMartenStore<ICustomStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.DatabaseSchemaName = "ioc";
+                        opts.Projections.DaemonLockId = 99123;
+                    })
+                    .AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Async, ServiceLifetime.Singleton)
+                    .ApplyAllDatabaseChangesOnStartup();
+            }).StartAsync();
+
+        var store = host.Services.GetRequiredService<ICustomStore>();
+        await store.Advanced.Clean.CompletelyRemoveAllAsync();
+
+        await using var session = store.LightweightSession();
+        var streamId = session.Events.StartStream<Product>(new ProductRegistered("Ankle Socks", "Socks")).Id;
+        await session.SaveChangesAsync();
+
+        using var daemon = await store.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+
+        await daemon.Tracker.WaitForShardState("Product:All", 1);
+
+        var product = await session.LoadAsync<Product>(streamId);
+        product.ShouldNotBeNull();
+        product.Price.ShouldBeGreaterThan(0);
+        product.Name.ShouldBe("Ankle Socks");
+    }
+
+    [Fact]
+    public async Task use_projection_as_scoped_and_inline_on_martenStore()
+    {
+        using var host = await Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<IPriceLookup, PriceLookup>();
+
+                services.AddMartenStore<ICustomStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "ioc";
+                }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped, "MyProjection")
+                .ApplyAllDatabaseChangesOnStartup();
+            }).StartAsync();
+
+        var store = host.Services.GetRequiredService<ICustomStore>();
+
+        store.Options.As<StoreOptions>().Projections.All.Single()
+            .ShouldBeOfType<ScopedProjectionWrapper<ProductProjection>>().ProjectionName.ShouldBe("MyProjection");
+
+        await using var session = store.LightweightSession();
+        var streamId = session.Events.StartStream<Product>(new ProductRegistered("Ankle Socks", "Socks")).Id;
+        await session.SaveChangesAsync();
+
+        var product = await session.LoadAsync<Product>(streamId);
+        product.Price.ShouldBeGreaterThan(0);
+        product.Name.ShouldBe("Ankle Socks");
+    }
+
+    [Fact]
+    public async Task get_async_shards_with_custom_name_on_martenStore()
+    {
+        using var host = await Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<IPriceLookup, PriceLookup>();
+
+                services.AddMartenStore<ICustomStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "ioc";
+                }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Async, ServiceLifetime.Scoped, "MyProjection")
+                    .ApplyAllDatabaseChangesOnStartup();
+            }).StartAsync();
+
+        var store = host.Services.GetRequiredService<ICustomStore>();
+
+        var projectionSource = store.Options.As<StoreOptions>().Projections.All.Single();
+        projectionSource
+            .ShouldBeOfType<ScopedProjectionWrapper<ProductProjection>>().ProjectionName.ShouldBe("MyProjection");
+
+        projectionSource.AsyncProjectionShards((DocumentStore)store).Single().Name.Identity.ShouldBe("MyProjection:All");
+
+
+    }
 }
 
 public interface IPriceLookup
@@ -255,3 +425,7 @@ public class ProductProjection: CustomProjection<Product, Guid>
 }
 
 #endregion
+
+public interface ICustomStore: IDocumentStore
+{
+}
