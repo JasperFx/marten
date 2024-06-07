@@ -9,13 +9,16 @@ namespace Marten.Schema.Identity;
 
 public class StrongTypedIdGeneration : IIdGeneration
 {
-    private StrongTypedIdGeneration(Type idType, ConstructorInfo ctor)
-    {
+    public Type IdentityType { get; }
 
+    private StrongTypedIdGeneration(Type identityType, ConstructorInfo ctor)
+    {
+        IdentityType = identityType;
     }
 
     private StrongTypedIdGeneration(Type identityType, MethodInfo builder)
     {
+        IdentityType = identityType;
     }
 
     public static bool IsCandidate(Type idType, out IIdGeneration? idGeneration)

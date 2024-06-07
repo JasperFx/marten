@@ -13,7 +13,7 @@ internal class IdColumn: TableColumn, ISelectableColumn
     private const string IdentityMapCode = "if (_identityMap.TryGetValue(id, out var existing)) return existing;";
 
     public IdColumn(DocumentMapping mapping): base("id",
-        PostgresqlProvider.Instance.GetDatabaseType(mapping.IdMember.GetMemberType(), mapping.EnumStorage))
+        PostgresqlProvider.Instance.GetDatabaseType(mapping.InnerIdType(), mapping.EnumStorage))
     {
     }
 

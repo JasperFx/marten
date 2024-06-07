@@ -700,6 +700,14 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     {
         return $"Storage for {DocumentType}, Table: {TableName}";
     }
+
+    internal Type InnerIdType()
+    {
+        if (IdStrategy is StrongTypedIdGeneration sti) return sti.IdentityType;
+
+        var memberType = _idMember.GetMemberType();
+        return memberType.IsNullable() ? memberType.GetGenericArguments()[0] : memberType;
+    }
 }
 
 public class DocumentMapping<T>: DocumentMapping
