@@ -144,7 +144,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
             if (_idMember != null)
             {
-                IdStrategy = defineIdStrategy(DocumentType, StoreOptions);
+                IdStrategy = StoreOptions.DetermineIdStrategy(DocumentType, IdMember);
             }
         }
     }
@@ -557,50 +557,6 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         ForeignKeys.Add(foreignKey);
 
         return foreignKey;
-    }
-
-    private IIdGeneration defineIdStrategy(Type documentType, StoreOptions options)
-    {
-        if (!idMemberIsSettable())
-        {
-            return new NoOpIdGeneration();
-        }
-
-        var idType = IdMember.GetMemberType();
-        if (idType == typeof(string))
-        {
-            return new StringIdGeneration();
-        }
-
-        if (idType == typeof(Guid))
-        {
-            return new Identity.CombGuidIdGeneration();
-        }
-
-        if (idType == typeof(int) || idType == typeof(long))
-        {
-            return new HiloIdGeneration(documentType, options.Advanced.HiloSequenceDefaults);
-        }
-
-        throw new ArgumentOutOfRangeException(nameof(documentType),
-            $"Marten cannot use the type {idType.FullName} as the Id for a persisted document. Use int, long, Guid, or string");
-    }
-
-    private bool idMemberIsSettable()
-    {
-        var field = IdMember as FieldInfo;
-        if (field != null)
-        {
-            return field.IsPublic;
-        }
-
-        var property = IdMember as PropertyInfo;
-        if (property != null)
-        {
-            return property.CanWrite && property.SetMethod != null;
-        }
-
-        return false;
     }
 
     private static string defaultDocumentAliasName(Type documentType)
