@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -61,8 +60,21 @@ public interface IDocumentType
 
 public class DocumentMapping: IDocumentMapping, IDocumentType
 {
+    internal static bool IsValidIdentityType(Type identityType)
+    {
+        if (identityType == null) return false;
+
+        if (identityType.IsNullable())
+        {
+            identityType = identityType.GetGenericArguments()[0];
+        }
+
+        return identityType.IsOneOf(ValidIdTypes) ||
+               StrongTypedIdGeneration.IsCandidate(identityType, out var generation);
+    }
+
     private static readonly Regex _aliasSanitizer = new("<|>", RegexOptions.Compiled);
-    private static readonly Type[] _validIdTypes = { typeof(int), typeof(Guid), typeof(long), typeof(string) };
+    internal static readonly Type[] ValidIdTypes = { typeof(int), typeof(Guid), typeof(long), typeof(string) };
     private readonly List<DuplicatedField> _duplicates = new();
     private readonly Lazy<DocumentSchema> _schema;
 
@@ -133,11 +145,10 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         get => _idMember;
         set
         {
-            if (value != null && !value.GetMemberType()
-                    .IsOneOf(_validIdTypes))
+            if (value != null && !IsValidIdentityType(value.GetMemberType()))
             {
-                throw new ArgumentOutOfRangeException(nameof(IdMember),
-                    "Id members must be an int, long, Guid, or string");
+                throw new InvalidDocumentException(
+                    $"Id members must be an int, long, Guid, string or a valid strong typed id, but found {value.GetMemberType().FullNameInCode()}");
             }
 
             _idMember = value;
@@ -333,15 +344,16 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         // 3) Id Property
         // 4) Id field
         var propertiesWithTypeValidForId = GetProperties(documentType)
-            .Where(p => p.PropertyType.IsOneOf(_validIdTypes));
+            .Where(p => IsValidIdentityType(p.PropertyType));
         var fieldsWithTypeValidForId = documentType.GetFields()
-            .Where(f => f.FieldType.IsOneOf(_validIdTypes));
+            .Where(f => IsValidIdentityType(f.FieldType));
         return propertiesWithTypeValidForId.FirstOrDefault(x => x.HasAttribute<IdentityAttribute>())
                ?? fieldsWithTypeValidForId.FirstOrDefault(x => x.HasAttribute<IdentityAttribute>())
                ?? (MemberInfo)propertiesWithTypeValidForId
                    .FirstOrDefault(x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase))
                ?? fieldsWithTypeValidForId
                    .FirstOrDefault(x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
+
     }
 
     private static PropertyInfo[] GetProperties(Type type)

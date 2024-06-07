@@ -13,7 +13,7 @@ public class NoOpIdGeneration: IIdGeneration
 {
     public IEnumerable<Type> KeyTypes { get; } = new[] { typeof(int), typeof(long), typeof(string), typeof(Guid) };
 
-    public bool RequiresSequences { get; } = false;
+    public bool RequiresSequences => false;
 
     public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
     {

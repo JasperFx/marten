@@ -7,20 +7,8 @@ using JasperFx.Core.Reflection;
 
 namespace Marten.Schema.Identity;
 
-internal class RequiredUserSuppliedIdGeneration : IIdGeneration
-{
-    public IEnumerable<Type> KeyTypes { get; set; } = Type.EmptyTypes;
-    public bool RequiresSequences { get; set; }
-    public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
-    {
-        throw new NotImplementedException();
-    }
-}
-
 public class StrongTypedIdGeneration : IIdGeneration
 {
-    private static Type[] _legalRawTypes = [typeof(string), typeof(int), typeof(long), typeof(Guid)];
-
     private StrongTypedIdGeneration(Type idType, ConstructorInfo ctor)
     {
 
@@ -30,7 +18,7 @@ public class StrongTypedIdGeneration : IIdGeneration
     {
     }
 
-    public static bool IsCandidate(Type idType, out StrongTypedIdGeneration? idGeneration)
+    public static bool IsCandidate(Type idType, out IIdGeneration? idGeneration)
     {
         if (idType.IsNullable())
         {
@@ -41,10 +29,17 @@ public class StrongTypedIdGeneration : IIdGeneration
 
         if (!idType.IsPublic && !idType.IsNestedPublic) return false;
 
-        var properties = idType.GetProperties().Where(x => _legalRawTypes.Contains(x.PropertyType)).ToArray();
+        var properties = idType.GetProperties().Where(x => DocumentMapping.ValidIdTypes.Contains(x.PropertyType)).ToArray();
         if (properties.Length == 1)
         {
             var identityType = properties[0].PropertyType;
+            if (identityType == typeof(string))
+            {
+                // TODO -- somehow support the aliased name generation that uses HiLo?
+                // Custom generation of the inner values???
+                idGeneration = new NoOpIdGeneration();
+                return true;
+            }
 
             var ctor = idType.GetConstructors().FirstOrDefault(x => x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == identityType);
 
@@ -69,8 +64,8 @@ public class StrongTypedIdGeneration : IIdGeneration
         return false;
     }
 
-    public IEnumerable<Type> KeyTypes { get; set; } = Type.EmptyTypes;
-    public bool RequiresSequences { get; set; }
+    public IEnumerable<Type> KeyTypes => Type.EmptyTypes;
+    public bool RequiresSequences => false;
     public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
     {
         throw new NotImplementedException();
