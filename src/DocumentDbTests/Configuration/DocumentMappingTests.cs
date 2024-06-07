@@ -661,12 +661,12 @@ public class DocumentMappingTests
     [Fact]
     public void cannot_use_a_doc_type_with_no_id()
     {
-        Exception<InvalidDocumentException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidDocumentException>(() =>
         {
-            var store = DocumentStore.For(_ =>
+            var store = DocumentStore.For(opts =>
             {
-                _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<BadDoc>();
+                opts.Connection(ConnectionSource.ConnectionString);
+                opts.Schema.For<BadDoc>();
             });
         });
     }
@@ -674,7 +674,7 @@ public class DocumentMappingTests
     [Fact]
     public void cannot_use_a_doc_type_with_no_id_with_store()
     {
-        Exception<InvalidDocumentException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidDocumentException>(() =>
         {
             DocumentStore.For(options =>
             {

@@ -32,6 +32,11 @@ public partial class StoreOptions
             return new HiloIdGeneration(documentType, Advanced.HiloSequenceDefaults);
         }
 
+        if (StrongTypedIdGeneration.IsCandidate(idType, out var generation))
+        {
+            return generation;
+        }
+
         throw new ArgumentOutOfRangeException(nameof(documentType),
             $"Marten cannot use the type {idType.FullName} as the Id for a persisted document. Use int, long, Guid, or string");
     }

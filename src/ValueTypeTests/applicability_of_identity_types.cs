@@ -1,4 +1,6 @@
 using System;
+using Marten;
+using Marten.Schema;
 using Marten.Schema.Identity;
 using Shouldly;
 
@@ -28,10 +30,33 @@ public class applicability_of_identity_types
     {
         var value = StrongTypedIdGeneration.IsCandidate(candidate, out var idGeneration);
         value.ShouldBe(isCandidate);
-        if (value)
-        {
-            idGeneration.ShouldBeOfType<StrongTypedIdGeneration>();
-        }
+
 
     }
+
+    [Theory]
+    [InlineData(typeof(GuidId), typeof(GuidId), typeof(StrongTypedIdGeneration))]
+    [InlineData(typeof(IntId), typeof(IntId), typeof(StrongTypedIdGeneration))]
+    [InlineData(typeof(LongId), typeof(LongId), typeof(StrongTypedIdGeneration))]
+    [InlineData(typeof(StringId), typeof(StringId), typeof(NoOpIdGeneration))]
+    [InlineData(typeof(GuidId?), typeof(GuidId), typeof(StrongTypedIdGeneration))]
+    [InlineData(typeof(IntId?), typeof(IntId), typeof(StrongTypedIdGeneration))]
+    [InlineData(typeof(LongId?), typeof(LongId), typeof(StrongTypedIdGeneration))]
+    [InlineData(typeof(StringId?), typeof(StringId), typeof(NoOpIdGeneration))]
+    [InlineData(typeof(NewGuidId), typeof(NewGuidId), typeof(StrongTypedIdGeneration))]
+    [InlineData(typeof(NewIntId), typeof(NewIntId), typeof(StrongTypedIdGeneration))]
+    [InlineData(typeof(NewLongId), typeof(NewLongId), typeof(StrongTypedIdGeneration))]
+    [InlineData(typeof(NewStringId), typeof(NewStringId), typeof(NoOpIdGeneration))]
+    public void find_and_apply_id_type(Type idType, Type expectedIdType, Type expectedGenerationType)
+    {
+        var documentType = typeof(Document<>).MakeGenericType(idType);
+        var mapping = new DocumentMapping(documentType, new StoreOptions());
+        mapping.IdType.ShouldBe(expectedIdType);
+        mapping.IdStrategy.ShouldBeOfType(expectedGenerationType);
+    }
+}
+
+public class Document<T>
+{
+    public T Id { get; set; }
 }
