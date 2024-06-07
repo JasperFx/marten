@@ -1,7 +1,9 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 
 namespace Marten.Schema.Identity;
 
