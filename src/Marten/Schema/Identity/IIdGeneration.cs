@@ -13,6 +13,7 @@ public interface IIdGeneration
     /// <summary>
     ///     What types are supported by this strategy? Example: string, or int/long, or Guid
     /// </summary>
+    [Obsolete("Will be removed in Marten 8.0")]
     IEnumerable<Type> KeyTypes { get; }
 
     /// <summary>

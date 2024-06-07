@@ -25,3 +25,6 @@ public record NewStringId(string Value);
 public record NewLongId(long Value);
 
 public record NewDateId(DateOnly Value);
+
+
+
