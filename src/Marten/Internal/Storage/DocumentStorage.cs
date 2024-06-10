@@ -168,7 +168,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     public ISqlFragment ByIdFilter(TId id)
     {
-        return new ByIdFilter<TId>(id, _idType);
+        return new ByIdFilter(RawIdentityValue(id), _idType);
     }
 
     public IDeletion HardDeleteForId(TId id, string tenant)
@@ -343,7 +343,10 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         return new StatsSelectClause<T>(this, statistics);
     }
 
-    public virtual NpgsqlParameter ParameterForId(TId id) => new() {Value = id};
+    public virtual object RawIdentityValue(TId id) => id;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public NpgsqlParameter ParameterForId(TId id) => new() {Value = RawIdentityValue(id)};
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public NpgsqlCommand BuildLoadCommand(TId id, string tenant)

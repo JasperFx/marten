@@ -66,7 +66,46 @@ public abstract partial class DocumentSessionBase
 
     public void Delete<T>(object id) where T : notnull
     {
-        throw new NotImplementedException();
+        var deleter = typeof(ByIdDeleter<>).CloseAndBuildAs<IByIdDeleter>(this, id.GetType());
+        deleter.Delete<T>(id);
+    }
+
+    private interface IByIdDeleter
+    {
+        void Delete<T>(object id) where T : notnull;
+    }
+
+    private class ByIdDeleter<TId>: IByIdDeleter
+    {
+        private readonly DocumentSessionBase _parent;
+
+        public ByIdDeleter(DocumentSessionBase parent)
+        {
+            _parent = parent;
+        }
+
+        public void Delete<T>(object id) where T : notnull
+        {
+            var typed = (TId)id;
+
+            _parent.assertNotDisposed();
+            var documentStorage = _parent.StorageFor<T, TId>();
+            var deletion = documentStorage.DeleteForId(typed, _parent.TenantId);
+            _parent._workTracker.PurgeOperations<T, TId>(typed);
+            _parent._workTracker.Add(deletion);
+
+            switch (_parent.TrackingMode)
+            {
+                case DocumentTracking.IdentityOnly:
+                    documentStorage.EjectById(_parent, typed);
+                    break;
+
+                case DocumentTracking.DirtyTracking:
+                    documentStorage.EjectById(_parent, typed);
+                    documentStorage.RemoveDirtyTracker(_parent, id);
+                    break;
+            }
+        }
     }
 
     public void Delete<T>(Guid id) where T : notnull
