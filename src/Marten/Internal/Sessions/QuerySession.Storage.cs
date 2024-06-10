@@ -50,7 +50,6 @@ public partial class QuerySession
             return s;
         }
 
-
         throw new DocumentIdTypeMismatchException(storage, typeof(TId));
     }
 

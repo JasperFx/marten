@@ -34,7 +34,25 @@ public partial class QuerySession
 
     public async Task<T?> LoadAsync<T>(object id, CancellationToken token = default) where T : notnull
     {
-        throw new NotImplementedException();
+        assertNotDisposed();
+        await Database.EnsureStorageExistsAsync(typeof(T), token).ConfigureAwait(false);
+        var loader = typeof(Loader<>).CloseAndBuildAs<ILoader>(id.GetType());
+        return await loader.LoadAsync<T>(id, this, token).ConfigureAwait(false);
+    }
+
+    private interface ILoader
+    {
+        Task<T?> LoadAsync<T>(object id, QuerySession session, CancellationToken token = default) where T : notnull;
+    }
+
+    private class Loader<TId>: ILoader
+    {
+        public async Task<T?> LoadAsync<T>(object id, QuerySession session, CancellationToken token = default) where T : notnull
+        {
+            var document = await session.StorageFor<T, TId>().LoadAsync((TId)id, session, token).ConfigureAwait(false);
+
+            return document;
+        }
     }
 
     public T? Load<T>(int id) where T : notnull
