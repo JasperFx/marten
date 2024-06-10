@@ -44,7 +44,7 @@ internal class UpsertFunction: Function
 
         Arguments.Add(new UpsertArgument
         {
-            Arg = "docId", PostgresType = pgIdType, Column = "id", Members = new[] { mapping.IdMember }
+            Arg = "docId", PostgresType = pgIdType, Column = "id", Members = new[] { mapping.IdMember }, ParameterValue = mapping.CodeGen.ParameterValue
         });
 
         Arguments.Add(new DocJsonBodyArgument());

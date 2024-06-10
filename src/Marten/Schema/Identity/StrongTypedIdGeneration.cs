@@ -109,6 +109,13 @@ public class StrongTypedIdGeneration : IIdGeneration
 
     public string ParameterValue(DocumentMapping mapping)
     {
-        return $"{mapping.IdMember.Name}.{_innerProperty.Name}";
+        if (mapping.IdMember.GetRawMemberType().IsNullable())
+        {
+            return $"{mapping.IdMember.Name}.Value.{_innerProperty.Name}";
+        }
+        else
+        {
+            return $"{mapping.IdMember.Name}.{_innerProperty.Name}";
+        }
     }
 }
