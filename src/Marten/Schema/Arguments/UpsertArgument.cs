@@ -74,9 +74,13 @@ public class UpsertArgument
                         DotNetType = rawType;
                     }
                 }
+
+                ParameterValue = _members.Select(x => x.Name).Join("?.");
             }
         }
     }
+
+    public string ParameterValue { get; set; }
 
     public Type DotNetType { get; private set; }
 
@@ -119,7 +123,7 @@ public class UpsertArgument
             {
                 method.Frames.Code($@"
 BLOCK:if (document.{memberPath} != null)
-{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = document.{memberPath};
+{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = document.{ParameterValue};
 END
 BLOCK:else
 {parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = {typeof(DBNull).FullNameInCode()}.{nameof(DBNull.Value)};
@@ -128,7 +132,7 @@ END
             }
             else
             {
-                method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = document.{memberPath};");
+                method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = document.{ParameterValue};");
             }
         }
     }
@@ -194,7 +198,7 @@ END
                 if (isNullable || isDeep)
                 {
                     accessor =
-                        $"{nameof(BulkLoader<string, int>.GetEnumIntValue)}<{enumType.FullNameInCode()}>(document.{memberPath})";
+                        $"{nameof(BulkLoader<string, int>.GetEnumIntValue)}<{enumType.FullNameInCode()}>(document.{ParameterValue})";
                 }
 
                 load.Frames.Code($"writer.Write({accessor}, {{0}});", NpgsqlDbType.Integer);
@@ -219,7 +223,7 @@ END
         }
         else
         {
-            load.Frames.Code($"writer.Write(document.{memberPath}, {dbTypeString});");
+            load.Frames.Code($"writer.Write(document.{ParameterValue}, {dbTypeString});");
         }
     }
 
@@ -282,7 +286,7 @@ END
         }
         else
         {
-            load.Frames.CodeAsync($"await writer.WriteAsync(document.{memberPath}, {dbTypeString}, {{0}});",
+            load.Frames.CodeAsync($"await writer.WriteAsync(document.{ParameterValue}, {dbTypeString}, {{0}});",
                 Use.Type<CancellationToken>());
         }
     }

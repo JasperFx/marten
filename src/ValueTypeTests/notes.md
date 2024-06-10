@@ -12,4 +12,4 @@
 * LINQ OrderBy()
 * Include() with any
 * Verify the JSON
-* 
+* Bulk inserts, both with and without id assignments already there 
