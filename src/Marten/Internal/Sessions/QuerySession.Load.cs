@@ -32,6 +32,11 @@ public partial class QuerySession
         return document;
     }
 
+    public async Task<T?> LoadAsync<T>(object id, CancellationToken token = default) where T : notnull
+    {
+        throw new NotImplementedException();
+    }
+
     public T? Load<T>(int id) where T : notnull
     {
         assertNotDisposed();

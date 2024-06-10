@@ -111,6 +111,8 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         _schema = new Lazy<DocumentSchema>(() => new DocumentSchema(this));
     }
 
+    public DocumentCodeGen? CodeGen { get; private set; }
+
     internal DocumentQueryableMemberCollection QueryMembers { get; }
 
     public IList<string> IgnoredIndexes { get; } = new List<string>();
@@ -156,7 +158,10 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
             if (_idMember != null)
             {
                 IdStrategy = StoreOptions.DetermineIdStrategy(DocumentType, IdMember);
+                CodeGen = new DocumentCodeGen(this);
             }
+
+
         }
     }
 
@@ -695,7 +700,6 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         QueryMembers.ReplaceMember(IdMember, idField);
     }
 
-
     public override string ToString()
     {
         return $"Storage for {DocumentType}, Table: {TableName}";
@@ -703,7 +707,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
     internal Type InnerIdType()
     {
-        if (IdStrategy is StrongTypedIdGeneration sti) return sti.IdentityType;
+        if (IdStrategy is StrongTypedIdGeneration sti) return sti.SimpleType;
 
         var memberType = _idMember.GetMemberType();
         return memberType.IsNullable() ? memberType.GetGenericArguments()[0] : memberType;
@@ -856,4 +860,23 @@ public class DocumentMapping<T>: DocumentMapping
         configure(index);
         return index;
     }
+}
+
+public class DocumentCodeGen
+{
+    public DocumentCodeGen(DocumentMapping mapping)
+    {
+        AccessId = mapping.IdMember.GetRawMemberType().IsNullable()
+            ? $"{mapping.IdMember.Name}.Value"
+            : mapping.IdMember.Name;
+
+        ParameterValue = mapping.IdMember.Name;
+        if (mapping.IdStrategy is StrongTypedIdGeneration st)
+        {
+            ParameterValue = st.ParameterValue(mapping);
+        }
+    }
+
+    public string AccessId { get; }
+    public string ParameterValue { get; }
 }

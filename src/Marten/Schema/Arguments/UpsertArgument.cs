@@ -55,8 +55,8 @@ public class UpsertArgument
             _members = value;
             if (value != null)
             {
-                DbType = PostgresqlProvider.Instance.ToParameterType(value.Last().GetMemberType());
-
+                var memberType = value.Last().GetMemberType();
+                DbType = PostgresqlProvider.Instance.ToParameterType(memberType);
 
                 if (_members.Length == 1)
                 {
@@ -214,7 +214,7 @@ END
         {
             var valueType = DotNetType.GetGenericArguments()[0];
             var accessor = $"GetNullable<{valueType}>(document.{memberPath})";
-            var npgsqlType = NpgsqlTypeMapper.Mappings.First(t => t.ClrTypes.Contains(valueType)).NpgsqlDbType;
+            var npgsqlType = DbType;
             load.Frames.Code($"writer.Write({accessor}, {{0}});", npgsqlType);
         }
         else
@@ -276,7 +276,7 @@ END
         {
             var valueType = DotNetType.GetGenericArguments()[0];
             var accessor = $"GetNullable<{valueType}>(document.{memberPath})";
-            var npgsqlType = NpgsqlTypeMapper.Mappings.First(t => t.ClrTypes.Contains(valueType)).NpgsqlDbType;
+            var npgsqlType = DbType;
             load.Frames.CodeAsync($"await writer.WriteAsync({accessor}, {{0}}, {{1}});", npgsqlType,
                 Use.Type<CancellationToken>());
         }

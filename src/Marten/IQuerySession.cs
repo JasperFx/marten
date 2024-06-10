@@ -89,6 +89,15 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     Task<T?> LoadAsync<T>(string id, CancellationToken token = default) where T : notnull;
 
     /// <summary>
+    /// Asynchronously find or load a single document of type T by a user supplied id
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="id"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<T?> LoadAsync<T>(object id, CancellationToken token = default) where T : notnull;
+
+    /// <summary>
     ///     Load or find a single document of type T with either a numeric or Guid id
     /// </summary>
     /// <typeparam name="T"></typeparam>

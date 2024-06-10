@@ -83,7 +83,6 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         UseOptimisticConcurrency = document.UseOptimisticConcurrency;
         UseNumericRevisions = document.UseNumericRevisions;
 
-
         _setter = LambdaBuilder.Setter<T, TId>(document.IdMember)!;
 
         DeleteFragment = _mapping.DeleteStyle == DeleteStyle.Remove
