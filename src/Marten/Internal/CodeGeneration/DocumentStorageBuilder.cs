@@ -7,8 +7,10 @@ using JasperFx.Core.Reflection;
 using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;
+using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Storage;
+using Npgsql;
 
 namespace Marten.Internal.CodeGeneration;
 
@@ -75,10 +77,39 @@ internal class DocumentStorageBuilder
             .Frames.Code($"return new {assembly.Namespace}.{selectorType.TypeName}({{0}}, {{1}});",
                 Use.Type<IMartenSession>(), Use.Type<DocumentMapping>());
 
+        writeParameterForId(type);
         writeNotImplementedStubs(type);
 
-
         return type;
+    }
+
+    private void writeParameterForId(GeneratedType type)
+    {
+        var method = type.MethodFor(nameof(DocumentStorage<string, string>.ParameterForId));
+        if (_mapping.IdStrategy is StrongTypedIdGeneration st)
+        {
+            method.Frames.Add(new NewNpgsqlParameterFrame($"id.{st.InnerProperty.Name}"));
+        }
+        else
+        {
+            method.Frames.Add(new NewNpgsqlParameterFrame("id"));
+        }
+    }
+
+    internal class NewNpgsqlParameterFrame: SyncFrame
+    {
+        private readonly string _valueLocator;
+
+        public NewNpgsqlParameterFrame(string valueLocator)
+        {
+            _valueLocator = valueLocator;
+        }
+
+        public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
+        {
+            writer.Write($"return new {typeof(NpgsqlParameter).FullNameInCode()}{{Value = {_valueLocator}}};");
+            Next?.GenerateCode(method, writer);
+        }
     }
 
     private void writeIdentityMethod(GeneratedType type)

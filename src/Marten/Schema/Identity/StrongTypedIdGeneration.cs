@@ -15,14 +15,13 @@ namespace Marten.Schema.Identity;
 public class StrongTypedIdGeneration : IIdGeneration
 {
     private readonly MethodInfo _builder;
-    private readonly PropertyInfo _innerProperty;
     private readonly ConstructorInfo _ctor;
     public Type IdType { get; }
     public Type SimpleType { get; }
 
     private StrongTypedIdGeneration(Type idType, PropertyInfo innerProperty, Type simpleType, ConstructorInfo ctor)
     {
-        _innerProperty = innerProperty;
+        InnerProperty = innerProperty;
         _ctor = ctor;
         IdType = idType;
         SimpleType = simpleType;
@@ -31,10 +30,12 @@ public class StrongTypedIdGeneration : IIdGeneration
     private StrongTypedIdGeneration(Type idType, PropertyInfo innerProperty, Type simpleType, MethodInfo builder)
     {
         IdType = idType;
-        _innerProperty = innerProperty;
+        InnerProperty = innerProperty;
         _builder = builder;
         SimpleType = simpleType;
     }
+
+    public PropertyInfo InnerProperty { get; }
 
     public static bool IsCandidate(Type idType, out IIdGeneration? idGeneration)
     {
@@ -111,11 +112,27 @@ public class StrongTypedIdGeneration : IIdGeneration
     {
         if (mapping.IdMember.GetRawMemberType().IsNullable())
         {
-            return $"{mapping.IdMember.Name}.Value.{_innerProperty.Name}";
+            return $"{mapping.IdMember.Name}.Value.{InnerProperty.Name}";
         }
         else
         {
-            return $"{mapping.IdMember.Name}.{_innerProperty.Name}";
+            return $"{mapping.IdMember.Name}.{InnerProperty.Name}";
+        }
+    }
+
+    public void GenerateCodeForFetchingId(int index, GeneratedMethod sync, GeneratedMethod async, DocumentMapping mapping)
+    {
+        if (_builder != null)
+        {
+            sync.Frames.Code($"var id = {IdType.FullNameInCode()}.{_builder.Name}(reader.GetFieldValue<{SimpleType.FullNameInCode()}>({index}));");
+            async.Frames.CodeAsync(
+                $"var id = {IdType.FullNameInCode()}.{_builder.Name}(await reader.GetFieldValueAsync<{SimpleType.FullNameInCode()}>({index}, token));");
+        }
+        else
+        {
+            sync.Frames.Code($"var id = new {IdType.FullNameInCode()}(reader.GetFieldValue<{SimpleType.FullNameInCode()}>({index}));");
+            async.Frames.CodeAsync(
+                $"var id = new {IdType.FullNameInCode()}(await reader.GetFieldValueAsync<{SimpleType.FullNameInCode()}>({index}, token));");
         }
     }
 }
