@@ -6,6 +6,8 @@ using JasperFx.Core;
 using Marten;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
+using Npgsql.Internal;
+using Npgsql.Internal.Postgres;
 using Shouldly;
 using Vogen;
 
