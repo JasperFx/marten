@@ -164,7 +164,7 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
         await theSession.SaveChangesAsync();
 
         (await theSession.LoadAsync<Invoice>(invoice.Id))
-            .Name.ShouldBe(invoice.Name);
+            .ShouldBeNull();
     }
 
     [Fact]
@@ -179,7 +179,7 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
         await theSession.SaveChangesAsync();
 
         (await theSession.LoadAsync<Invoice>(invoice.Id))
-            .Name.ShouldBe(invoice.Name);
+            .ShouldBeNull();
     }
 
 

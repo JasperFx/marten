@@ -85,30 +85,14 @@ internal class DocumentStorageBuilder
 
     private void writeParameterForId(GeneratedType type)
     {
-        var method = type.MethodFor(nameof(DocumentStorage<string, string>.ParameterForId));
+        var method = type.MethodFor(nameof(DocumentStorage<string, string>.RawIdentityValue));
         if (_mapping.IdStrategy is StrongTypedIdGeneration st)
         {
-            method.Frames.Add(new NewNpgsqlParameterFrame($"id.{st.InnerProperty.Name}"));
+            method.Frames.Code($"return id.{st.InnerProperty.Name};");
         }
         else
         {
-            method.Frames.Add(new NewNpgsqlParameterFrame("id"));
-        }
-    }
-
-    internal class NewNpgsqlParameterFrame: SyncFrame
-    {
-        private readonly string _valueLocator;
-
-        public NewNpgsqlParameterFrame(string valueLocator)
-        {
-            _valueLocator = valueLocator;
-        }
-
-        public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
-        {
-            writer.Write($"return new {typeof(NpgsqlParameter).FullNameInCode()}{{Value = {_valueLocator}}};");
-            Next?.GenerateCode(method, writer);
+            method.Frames.Code($"return id;");
         }
     }
 
