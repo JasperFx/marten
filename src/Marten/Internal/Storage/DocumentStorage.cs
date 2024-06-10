@@ -343,13 +343,15 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         return new StatsSelectClause<T>(this, statistics);
     }
 
+    public virtual NpgsqlParameter ParameterForId(TId id) => new() {Value = id};
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public NpgsqlCommand BuildLoadCommand(TId id, string tenant)
     {
         return _mapping.TenancyStyle == TenancyStyle.Conjoined
             ? new NpgsqlCommand(_loaderSql) {
                 Parameters = {
-                    new() { Value = id },
+                    ParameterForId(id),
                 new() { Value = tenant }
                 }
             }
@@ -357,7 +359,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
             {
                 Parameters =
                 {
-                    new() { Value = id }
+                    ParameterForId(id)
                 }
             };
     }

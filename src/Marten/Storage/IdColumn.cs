@@ -2,6 +2,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
+using Marten.Schema.Identity;
 using Marten.Util;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
@@ -27,9 +28,17 @@ internal class IdColumn: TableColumn, ISelectableColumn
             return;
         }
 
-        sync.Frames.Code($"var id = reader.GetFieldValue<{mapping.IdType.FullNameInCode()}>({index});");
-        async.Frames.CodeAsync(
-            $"var id = await reader.GetFieldValueAsync<{mapping.IdType.FullNameInCode()}>({index}, token);");
+        if (mapping.IdStrategy is StrongTypedIdGeneration st)
+        {
+            st.GenerateCodeForFetchingId(index, sync, async, mapping);
+        }
+        else
+        {
+            sync.Frames.Code($"var id = reader.GetFieldValue<{mapping.IdType.FullNameInCode()}>({index});");
+            async.Frames.CodeAsync(
+                $"var id = await reader.GetFieldValueAsync<{mapping.IdType.FullNameInCode()}>({index}, token);");
+        }
+
 
         if (storageStyle != StorageStyle.Lightweight)
         {
