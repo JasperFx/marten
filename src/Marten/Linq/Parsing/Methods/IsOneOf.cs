@@ -31,6 +31,10 @@ internal class IsOneOf: IMethodCallParser
         {
             return new EnumIsOneOfWhereFragment(values, options.Serializer().EnumStorage, locator);
         }
+        else if (queryableMember is IValueTypeMember valueTypeMember)
+        {
+            return new IsOneOfFilter(queryableMember, new CommandParameter(valueTypeMember.ConvertFromWrapperArray(values)));
+        }
 
         return new IsOneOfFilter(queryableMember, new CommandParameter(values));
     }

@@ -47,6 +47,10 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
     public IQueryableMemberCollection QueryMembers => _mapping.QueryMembers;
     public ISelectClause SelectClauseWithDuplicatedFields => _parent.SelectClauseWithDuplicatedFields;
     public bool UseNumericRevisions { get; } = false;
+    public object RawIdentityValue(object id)
+    {
+        return _parent.RawIdentityValue(id);
+    }
 
     public void TruncateDocumentStorage(IMartenDatabase database)
     {
@@ -246,6 +250,11 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
     public NpgsqlCommand BuildLoadManyCommand(TId[] ids, string tenant)
     {
         return _parent.BuildLoadManyCommand(ids, tenant);
+    }
+
+    public object RawIdentityValue(TId id)
+    {
+        return _parent.RawIdentityValue(id);
     }
 
     public void EjectById(IMartenSession session, object id)

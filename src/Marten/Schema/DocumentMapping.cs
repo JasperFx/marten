@@ -696,7 +696,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
                 $"{DocumentType.FullNameInCode()} cannot be configured with UseNumericRevision and UseOptimisticConcurrency. Choose one or the other");
         }
 
-        var idField = new IdMember(IdMember);
+        var idField = IdStrategy is StrongTypedIdGeneration st ? typeof(StrongTypedIdMember<,>).CloseAndBuildAs<IQueryableMember>(IdMember, st,st.IdType, st.SimpleType) : new IdMember(IdMember);
         QueryMembers.ReplaceMember(IdMember, idField);
     }
 

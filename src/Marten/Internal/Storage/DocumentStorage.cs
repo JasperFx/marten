@@ -92,6 +92,11 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         HardDeleteFragment = new HardDelete(this);
     }
 
+    object IDocumentStorage.RawIdentityValue(object id)
+    {
+        return RawIdentityValue((TId)id);
+    }
+
     public bool UseNumericRevisions { get;  }
 
     // TODO -- convert to a method in V8

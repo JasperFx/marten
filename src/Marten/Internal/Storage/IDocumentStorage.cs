@@ -55,6 +55,8 @@ public interface IDocumentStorage: ISelectClause
     ISelectClause SelectClauseWithDuplicatedFields { get; }
 
     bool UseNumericRevisions { get; }
+
+    object RawIdentityValue(object id);
 }
 
 internal class CreateFromDocumentMapping: Variable
@@ -136,6 +138,7 @@ public interface IDocumentStorage<T, TId>: IDocumentStorage<T> where T : notnull
     IDeletion HardDeleteForId(TId id, string tenantId);
     NpgsqlCommand BuildLoadCommand(TId id, string tenantId);
     NpgsqlCommand BuildLoadManyCommand(TId[] ids, string tenantId);
+    object RawIdentityValue(TId id);
 }
 
 internal static class DocumentStoreExtensions
