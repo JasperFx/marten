@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
+using FastExpressionCompiler;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.Core.Reflection;
@@ -134,5 +136,17 @@ public class StrongTypedIdGeneration : IIdGeneration
             async.Frames.CodeAsync(
                 $"var id = new {IdType.FullNameInCode()}(await reader.GetFieldValueAsync<{SimpleType.FullNameInCode()}>({index}, token));");
         }
+    }
+
+    public Func<object,T> BuildInnerValueSource<T>()
+    {
+        var target = Expression.Parameter(typeof(object), "target");
+        var method = InnerProperty.GetMethod;
+
+        var callGetMethod = Expression.Call(Expression.Convert(target, IdType), method);
+
+        var lambda = Expression.Lambda<Func<object, T>>(callGetMethod, target);
+
+        return lambda.CompileFast();
     }
 }

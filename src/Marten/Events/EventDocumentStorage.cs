@@ -69,6 +69,10 @@ public abstract class EventDocumentStorage: IEventStorage
     public IQueryableMemberCollection QueryMembers => _mapping.QueryMembers;
     public ISelectClause SelectClauseWithDuplicatedFields => this;
     public bool UseNumericRevisions { get; } = false;
+    public object RawIdentityValue(object id)
+    {
+        return id;
+    }
 
     public EventGraph Events { get; }
 

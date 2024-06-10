@@ -11,6 +11,11 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;
 
+internal interface IValueTypeMember: IQueryableMember
+{
+    object ConvertFromWrapperArray(object values);
+}
+
 internal class IdMember: IQueryableMember, IComparableMember
 {
     private const string _orderDescending = "d.id desc";
@@ -28,7 +33,7 @@ internal class IdMember: IQueryableMember, IComparableMember
 
     public MemberInfo Member { get; }
 
-    public ISqlFragment CreateComparison(string op, ConstantExpression constant)
+    public virtual ISqlFragment CreateComparison(string op, ConstantExpression constant)
     {
         if (constant.Value == null)
         {
