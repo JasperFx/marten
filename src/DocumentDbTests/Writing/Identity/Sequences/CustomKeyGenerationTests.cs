@@ -23,7 +23,7 @@ public class CustomIdGeneration : IIdGeneration
     {
         var document = new Use(mapping.DocumentType);
         assign.Frames.Code($"_setter({{0}}, \"newId\");", document);
-        assign.Frames.Code($"return {{0}}.{mapping.IdMember.Name};", document);
+        assign.Frames.Code($"return {{0}}.{mapping.CodeGen.AccessId};", document);
     }
 
 }

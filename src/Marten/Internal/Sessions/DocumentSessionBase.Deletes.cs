@@ -64,6 +64,11 @@ public abstract partial class DocumentSessionBase
         ejectById<T>(id);
     }
 
+    public void Delete<T>(object id) where T : notnull
+    {
+        throw new NotImplementedException();
+    }
+
     public void Delete<T>(Guid id) where T : notnull
     {
         assertNotDisposed();

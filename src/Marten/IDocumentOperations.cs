@@ -40,6 +40,13 @@ public interface IDocumentOperations: IQuerySession
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="id"></param>
+    void Delete<T>(object id) where T : notnull;
+
+    /// <summary>
+    ///     Mark an entity of type T with either a numeric or Guid id for deletion upon the next call to SaveChanges()
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="id"></param>
     void Delete<T>(Guid id) where T : notnull;
 
     /// <summary>

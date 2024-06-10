@@ -84,7 +84,7 @@ internal class DocumentStorageBuilder
     private void writeIdentityMethod(GeneratedType type)
     {
         var identity = type.MethodFor("Identity");
-        identity.Frames.Code($"return {{0}}.{_mapping.IdMember.Name};", identity.Arguments[0]);
+        identity.Frames.Code($"return {{0}}.{_mapping.CodeGen.AccessId};", identity.Arguments[0]);
 
         var assign = type.MethodFor("AssignIdentity");
 
