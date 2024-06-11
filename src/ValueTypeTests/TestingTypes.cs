@@ -19,12 +19,12 @@ public partial struct StringId;
 [ValueObject<DateOnly>]
 public partial struct DateId;
 
-public record NewGuidId(Guid Value);
-public record NewIntId(int Value);
-public record NewStringId(string Value);
-public record NewLongId(long Value);
+public record struct NewGuidId(Guid Value);
+public record struct NewIntId(int Value);
+public record struct NewStringId(string Value);
+public record struct NewLongId(long Value);
 
-public record NewDateId(DateOnly Value);
+public record struct NewDateId(DateOnly Value);
 
 
 
