@@ -105,7 +105,9 @@ public class SelectorVisitor: ExpressionVisitor
         else
         {
             _statement.SelectClause =
-                typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(_statement.FromObject,
+                member is IValueTypeMember valueTypeMember
+                ? valueTypeMember.BuildSelectClause(_statement.FromObject)
+                : typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(_statement.FromObject,
                     member.RawLocator,
                     member.MemberType);
         }

@@ -55,6 +55,8 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
         var invoice = new Invoice();
         theSession.Store(invoice);
 
+        // Marten sees that there is no existing identity,
+        // so it assigns a new identity
         invoice.Id.ShouldNotBeNull();
         invoice.Id.Value.Value.ShouldNotBe(Guid.Empty);
     }
@@ -148,7 +150,11 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
 
         await theSession.SaveChangesAsync();
 
-        var results = await theSession.Query<Invoice>().Where(x => x.Id.IsOneOf(invoice1.Id, invoice2.Id, invoice3.Id)).ToListAsync();
+        var results = await theSession
+            .Query<Invoice>()
+            .Where(x => x.Id.IsOneOf(invoice1.Id, invoice2.Id, invoice3.Id))
+            .ToListAsync();
+
         results.Count.ShouldBe(3);
     }
 
@@ -251,6 +257,8 @@ public partial struct WrongId;
 
 public class Invoice
 {
+    // Marten will use this for the identifier
+    // of the Invoice document
     public InvoiceId? Id { get; set; }
     public string Name { get; set; }
 }
