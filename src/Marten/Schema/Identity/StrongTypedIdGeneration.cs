@@ -71,12 +71,33 @@ public class StrongTypedIdGeneration: IIdGeneration
         {
             generateIntWrapper(method, mapping, document);
         }
+        else if (SimpleType == typeof(long))
+        {
+            generateLongWrapper(method, mapping, document);
+        }
         else
         {
             throw new NotImplementedException();
         }
 
         method.Frames.Code($"return {{0}}.{mapping.CodeGen.AccessId};", document);
+    }
+
+    private void generateLongWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
+    {
+        var database = Use.Type<IMartenDatabase>();
+        if (_ctor != null)
+        {
+            method.Frames.Code(
+                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, new {IdType.FullNameInCode()}({{1}}.Sequences.SequenceFor({{2}}).NextLong()));",
+                document, database, mapping.DocumentType);
+        }
+        else
+        {
+            method.Frames.Code(
+                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, {IdType.FullNameInCode()}.{_builder.Name}({{1}}.Sequences.SequenceFor({{2}}).NextLong()));",
+                document, database, mapping.DocumentType);
+        }
     }
 
     private void generateIntWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
