@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Numerics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,11 +13,10 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Marten.Linq;
-using Marten.Linq.Members;
-using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Marten.Storage;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -26,13 +24,11 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Schema.Identity;
 
-public class StrongTypedIdGeneration : IIdGeneration
+public class StrongTypedIdGeneration: IIdGeneration
 {
     private readonly MethodInfo _builder;
     private readonly ConstructorInfo _ctor;
     private readonly IScalarSelectClause _selector;
-    public Type IdType { get; }
-    public Type SimpleType { get; }
 
     private StrongTypedIdGeneration(Type idType, PropertyInfo innerProperty, Type simpleType, ConstructorInfo ctor)
     {
@@ -54,9 +50,68 @@ public class StrongTypedIdGeneration : IIdGeneration
         _selector = typeof(StrongTypedIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, IdType, SimpleType);
     }
 
-    public ISelectClause BuildSelectClause(string tableName) => _selector.CloneToOtherTable(tableName);
+    public Type IdType { get; }
+    public Type SimpleType { get; }
 
     public PropertyInfo InnerProperty { get; }
+
+    public IEnumerable<Type> KeyTypes => Type.EmptyTypes;
+    public bool RequiresSequences => false;
+
+    public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
+    {
+        var document = new Use(mapping.DocumentType);
+
+
+        if (SimpleType == typeof(Guid))
+        {
+            generateGuidWrapper(method, mapping, document);
+        }
+        else if (SimpleType == typeof(int))
+        {
+            generateIntWrapper(method, mapping, document);
+        }
+        else
+        {
+            throw new NotImplementedException();
+        }
+
+        method.Frames.Code($"return {{0}}.{mapping.CodeGen.AccessId};", document);
+    }
+
+    private void generateIntWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
+    {
+        var database = Use.Type<IMartenDatabase>();
+        if (_ctor != null)
+        {
+            method.Frames.Code(
+                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, new {IdType.FullNameInCode()}({{1}}.Sequences.SequenceFor({{2}}).NextInt()));",
+                document, database, mapping.DocumentType);
+        }
+        else
+        {
+            method.Frames.Code(
+                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, {IdType.FullNameInCode()}.{_builder.Name}({{1}}.Sequences.SequenceFor({{2}}).NextInt()));",
+                document, database, mapping.DocumentType);
+        }
+    }
+
+    private void generateGuidWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
+    {
+        var newGuid = $"{typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid()";
+        var create = _ctor == null
+            ? $"{IdType.FullNameInCode()}.{_builder.Name}({newGuid})"
+            : $"new {IdType.FullNameInCode()}({newGuid})";
+
+        method.Frames.Code(
+            $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, {create});",
+            document);
+    }
+
+    public ISelectClause BuildSelectClause(string tableName)
+    {
+        return _selector.CloneToOtherTable(tableName);
+    }
 
     public static bool IsCandidate(Type idType, out IIdGeneration? idGeneration)
     {
@@ -66,13 +121,23 @@ public class StrongTypedIdGeneration : IIdGeneration
         }
 
         idGeneration = default;
-        if (idType.IsClass) return false;
+        if (idType.IsClass)
+        {
+            return false;
+        }
 
-        if (!idType.Name.EndsWith("Id")) return false;
+        if (!idType.Name.EndsWith("Id"))
+        {
+            return false;
+        }
 
-        if (!idType.IsPublic && !idType.IsNestedPublic) return false;
+        if (!idType.IsPublic && !idType.IsNestedPublic)
+        {
+            return false;
+        }
 
-        var properties = idType.GetProperties().Where(x => DocumentMapping.ValidIdTypes.Contains(x.PropertyType)).ToArray();
+        var properties = idType.GetProperties().Where(x => DocumentMapping.ValidIdTypes.Contains(x.PropertyType))
+            .ToArray();
         if (properties.Length == 1)
         {
             var innerProperty = properties[0];
@@ -87,7 +152,8 @@ public class StrongTypedIdGeneration : IIdGeneration
                 return true;
             }
 
-            var ctor = idType.GetConstructors().FirstOrDefault(x => x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == identityType);
+            var ctor = idType.GetConstructors().FirstOrDefault(x =>
+                x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == identityType);
 
             var dbType = PostgresqlProvider.Instance.GetDatabaseType(identityType, EnumStorage.AsInteger);
             var parameterType = PostgresqlProvider.Instance.TryGetDbType(identityType);
@@ -101,7 +167,9 @@ public class StrongTypedIdGeneration : IIdGeneration
 
             var builder = idType
                 .GetMethods(BindingFlags.Public | BindingFlags.Static)
-                .FirstOrDefault(x => x.ReturnType == idType && x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == identityType);
+                .FirstOrDefault(x =>
+                    x.ReturnType == idType && x.GetParameters().Length == 1 &&
+                    x.GetParameters()[0].ParameterType == identityType);
 
             if (builder != null)
             {
@@ -115,50 +183,36 @@ public class StrongTypedIdGeneration : IIdGeneration
         return false;
     }
 
-    public IEnumerable<Type> KeyTypes => Type.EmptyTypes;
-    public bool RequiresSequences => false;
-    public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
-    {
-        var document = new Use(mapping.DocumentType);
-
-        var newGuid = $"{typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid()";
-        var create = _ctor == null ? $"{IdType.FullNameInCode()}.{_builder.Name}({newGuid})" : $"new {IdType.FullNameInCode()}({newGuid})";
-
-        method.Frames.Code(
-            $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, {create});",
-            document);
-        method.Frames.Code($"return {{0}}.{mapping.CodeGen.AccessId};", document);
-    }
-
     public string ParameterValue(DocumentMapping mapping)
     {
         if (mapping.IdMember.GetRawMemberType().IsNullable())
         {
             return $"{mapping.IdMember.Name}.Value.{InnerProperty.Name}";
         }
-        else
-        {
-            return $"{mapping.IdMember.Name}.{InnerProperty.Name}";
-        }
+
+        return $"{mapping.IdMember.Name}.{InnerProperty.Name}";
     }
 
-    public void GenerateCodeForFetchingId(int index, GeneratedMethod sync, GeneratedMethod async, DocumentMapping mapping)
+    public void GenerateCodeForFetchingId(int index, GeneratedMethod sync, GeneratedMethod async,
+        DocumentMapping mapping)
     {
         if (_builder != null)
         {
-            sync.Frames.Code($"var id = {IdType.FullNameInCode()}.{_builder.Name}(reader.GetFieldValue<{SimpleType.FullNameInCode()}>({index}));");
+            sync.Frames.Code(
+                $"var id = {IdType.FullNameInCode()}.{_builder.Name}(reader.GetFieldValue<{SimpleType.FullNameInCode()}>({index}));");
             async.Frames.CodeAsync(
                 $"var id = {IdType.FullNameInCode()}.{_builder.Name}(await reader.GetFieldValueAsync<{SimpleType.FullNameInCode()}>({index}, token));");
         }
         else
         {
-            sync.Frames.Code($"var id = new {IdType.FullNameInCode()}(reader.GetFieldValue<{SimpleType.FullNameInCode()}>({index}));");
+            sync.Frames.Code(
+                $"var id = new {IdType.FullNameInCode()}(reader.GetFieldValue<{SimpleType.FullNameInCode()}>({index}));");
             async.Frames.CodeAsync(
                 $"var id = new {IdType.FullNameInCode()}(await reader.GetFieldValueAsync<{SimpleType.FullNameInCode()}>({index}, token));");
         }
     }
 
-    public Func<object,T> BuildInnerValueSource<T>()
+    public Func<object, T> BuildInnerValueSource<T>()
     {
         var target = Expression.Parameter(typeof(object), "target");
         var method = InnerProperty.GetMethod;
@@ -171,7 +225,7 @@ public class StrongTypedIdGeneration : IIdGeneration
     }
 
 
-    public Func<TInner,TOuter> CreateConverter<TOuter, TInner>()
+    public Func<TInner, TOuter> CreateConverter<TOuter, TInner>()
     {
         var inner = Expression.Parameter(typeof(TInner), "inner");
         Expression builder;
@@ -195,7 +249,8 @@ public class StrongTypedIdGeneration : IIdGeneration
     }
 }
 
-internal class StrongTypedIdSelectClause<TOuter, TInner>: ISelectClause, IScalarSelectClause, IModifyableFromObject, ISelector<TOuter?> where TOuter : struct
+internal class StrongTypedIdSelectClause<TOuter, TInner>: ISelectClause, IScalarSelectClause, IModifyableFromObject,
+    ISelector<TOuter?> where TOuter : struct
 {
     public StrongTypedIdSelectClause(StrongTypedIdGeneration idGeneration)
     {
@@ -216,8 +271,7 @@ internal class StrongTypedIdSelectClause<TOuter, TInner>: ISelectClause, IScalar
     {
         return new StrongTypedIdSelectClause<TOuter, TInner>(Converter)
         {
-            FromObject = tableName,
-            MemberName = MemberName
+            FromObject = tableName, MemberName = MemberName
         };
     }
 
@@ -269,11 +323,6 @@ internal class StrongTypedIdSelectClause<TOuter, TInner>: ISelectClause, IScalar
         return new StatsSelectClause<TOuter?>(this, statistics);
     }
 
-    public override string ToString()
-    {
-        return $"Data from {FromObject}";
-    }
-
     public TOuter? Resolve(DbDataReader reader)
     {
         var inner = reader.GetFieldValue<TInner>(0);
@@ -285,5 +334,9 @@ internal class StrongTypedIdSelectClause<TOuter, TInner>: ISelectClause, IScalar
         var inner = await reader.GetFieldValueAsync<TInner>(0, token).ConfigureAwait(false);
         return Converter(inner);
     }
-}
 
+    public override string ToString()
+    {
+        return $"Data from {FromObject}";
+    }
+}
