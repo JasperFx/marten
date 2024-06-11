@@ -59,6 +59,34 @@ public class int_based_document_operations : IAsyncLifetime
     }
 
     [Fact]
+    public async Task bulk_writing_async()
+    {
+        Order[] invoices = [
+            new Order{Name = Guid.NewGuid().ToString()},
+            new Order{Name = Guid.NewGuid().ToString()},
+            new Order{Name = Guid.NewGuid().ToString()},
+            new Order{Name = Guid.NewGuid().ToString()},
+            new Order{Name = Guid.NewGuid().ToString()}
+        ];
+
+        await theStore.BulkInsertDocumentsAsync(invoices);
+    }
+
+    [Fact]
+    public void bulk_writing_sync()
+    {
+        Order[] invoices = [
+            new Order{Name = Guid.NewGuid().ToString()},
+            new Order{Name = Guid.NewGuid().ToString()},
+            new Order{Name = Guid.NewGuid().ToString()},
+            new Order{Name = Guid.NewGuid().ToString()},
+            new Order{Name = Guid.NewGuid().ToString()}
+        ];
+
+        theStore.BulkInsertDocuments(invoices);
+    }
+
+    [Fact]
     public async Task insert_a_document_smoke_test()
     {
         var order = new Order();

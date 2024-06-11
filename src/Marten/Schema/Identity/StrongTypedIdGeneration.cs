@@ -62,7 +62,6 @@ public class StrongTypedIdGeneration: IIdGeneration
     {
         var document = new Use(mapping.DocumentType);
 
-
         if (SimpleType == typeof(Guid))
         {
             generateGuidWrapper(method, mapping, document);
@@ -75,12 +74,21 @@ public class StrongTypedIdGeneration: IIdGeneration
         {
             generateLongWrapper(method, mapping, document);
         }
+        else if (SimpleType == typeof(string))
+        {
+            generateStringWrapper(method, mapping, document);
+        }
         else
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         method.Frames.Code($"return {{0}}.{mapping.CodeGen.AccessId};", document);
+    }
+
+    private void generateStringWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
+    {
+        method.Frames.Code($"return {{0}}.{mapping.IdMember.Name}.Value;", document);
     }
 
     private void generateLongWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
@@ -163,15 +171,6 @@ public class StrongTypedIdGeneration: IIdGeneration
         {
             var innerProperty = properties[0];
             var identityType = innerProperty.PropertyType;
-            if (identityType == typeof(string))
-            {
-                PostgresqlProvider.Instance.RegisterMapping(idType, "text", NpgsqlDbType.Varchar);
-
-                // TODO -- somehow support the aliased name generation that uses HiLo?
-                // Custom generation of the inner values???
-                idGeneration = new NoOpIdGeneration();
-                return true;
-            }
 
             var ctor = idType.GetConstructors().FirstOrDefault(x =>
                 x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == identityType);
@@ -267,6 +266,18 @@ public class StrongTypedIdGeneration: IIdGeneration
         var lambda = Expression.Lambda<Func<TInner, TOuter>>(builder, inner);
 
         return lambda.CompileFast();
+    }
+
+    public void WriteBulkWriterCode(GeneratedMethod load, DocumentMapping mapping)
+    {
+        var dbType = PostgresqlProvider.Instance.ToParameterType(SimpleType);
+        load.Frames.Code($"writer.Write(document.{mapping.IdMember.Name}.Value.{InnerProperty.Name}, {{0}});", dbType);
+    }
+
+    public void WriteBulkWriterCodeAsync(GeneratedMethod load, DocumentMapping mapping)
+    {
+        var dbType = PostgresqlProvider.Instance.ToParameterType(SimpleType);
+        load.Frames.Code($"await writer.WriteAsync(document.{mapping.IdMember.Name}.Value.{InnerProperty.Name}, {{0}}, {{1}});", dbType, Use.Type<CancellationToken>());
     }
 }
 

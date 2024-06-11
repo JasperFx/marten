@@ -193,6 +193,34 @@ public class long_based_document_operations : IAsyncLifetime
     }
 
     [Fact]
+    public async Task bulk_writing_async()
+    {
+        Issue[] invoices = [
+            new Issue{Name = Guid.NewGuid().ToString()},
+            new Issue{Name = Guid.NewGuid().ToString()},
+            new Issue{Name = Guid.NewGuid().ToString()},
+            new Issue{Name = Guid.NewGuid().ToString()},
+            new Issue{Name = Guid.NewGuid().ToString()}
+        ];
+
+        await theStore.BulkInsertDocumentsAsync(invoices);
+    }
+
+    [Fact]
+    public void bulk_writing_sync()
+    {
+        Issue[] invoices = [
+            new Issue{Name = Guid.NewGuid().ToString()},
+            new Issue{Name = Guid.NewGuid().ToString()},
+            new Issue{Name = Guid.NewGuid().ToString()},
+            new Issue{Name = Guid.NewGuid().ToString()},
+            new Issue{Name = Guid.NewGuid().ToString()}
+        ];
+
+        theStore.BulkInsertDocuments(invoices);
+    }
+
+    [Fact]
     public async Task use_in_LINQ_where_clause()
     {
         var issue = new Issue{Name = Guid.NewGuid().ToString()};

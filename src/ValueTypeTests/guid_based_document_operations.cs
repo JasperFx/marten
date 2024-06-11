@@ -247,6 +247,34 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
 
     }
 
+    [Fact]
+    public async Task bulk_writing_async()
+    {
+        Invoice[] invoices = [
+            new Invoice{Name = Guid.NewGuid().ToString()},
+            new Invoice{Name = Guid.NewGuid().ToString()},
+            new Invoice{Name = Guid.NewGuid().ToString()},
+            new Invoice{Name = Guid.NewGuid().ToString()},
+            new Invoice{Name = Guid.NewGuid().ToString()}
+        ];
+
+        await theStore.BulkInsertDocumentsAsync(invoices);
+    }
+
+    [Fact]
+    public void bulk_writing_sync()
+    {
+        Invoice[] invoices = [
+            new Invoice{Name = Guid.NewGuid().ToString()},
+            new Invoice{Name = Guid.NewGuid().ToString()},
+            new Invoice{Name = Guid.NewGuid().ToString()},
+            new Invoice{Name = Guid.NewGuid().ToString()},
+            new Invoice{Name = Guid.NewGuid().ToString()}
+        ];
+
+        theStore.BulkInsertDocuments(invoices);
+    }
+
 }
 
 [ValueObject<Guid>]
