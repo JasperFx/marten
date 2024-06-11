@@ -38,15 +38,15 @@ public class applicability_of_identity_types
     [InlineData(typeof(GuidId), typeof(GuidId), typeof(StrongTypedIdGeneration))]
     [InlineData(typeof(IntId), typeof(IntId), typeof(StrongTypedIdGeneration))]
     [InlineData(typeof(LongId), typeof(LongId), typeof(StrongTypedIdGeneration))]
-    [InlineData(typeof(StringId), typeof(StringId), typeof(NoOpIdGeneration))]
+    [InlineData(typeof(StringId), typeof(StringId), typeof(StrongTypedIdGeneration))]
     [InlineData(typeof(GuidId?), typeof(GuidId), typeof(StrongTypedIdGeneration))]
     [InlineData(typeof(IntId?), typeof(IntId), typeof(StrongTypedIdGeneration))]
     [InlineData(typeof(LongId?), typeof(LongId), typeof(StrongTypedIdGeneration))]
-    [InlineData(typeof(StringId?), typeof(StringId), typeof(NoOpIdGeneration))]
+    [InlineData(typeof(StringId?), typeof(StringId), typeof(StrongTypedIdGeneration))]
     [InlineData(typeof(NewGuidId), typeof(NewGuidId), typeof(StrongTypedIdGeneration))]
     [InlineData(typeof(NewIntId), typeof(NewIntId), typeof(StrongTypedIdGeneration))]
     [InlineData(typeof(NewLongId), typeof(NewLongId), typeof(StrongTypedIdGeneration))]
-    [InlineData(typeof(NewStringId), typeof(NewStringId), typeof(NoOpIdGeneration))]
+    [InlineData(typeof(NewStringId), typeof(NewStringId), typeof(StrongTypedIdGeneration))]
     public void find_and_apply_id_type(Type idType, Type expectedIdType, Type expectedGenerationType)
     {
         var documentType = typeof(Document<>).MakeGenericType(idType);

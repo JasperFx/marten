@@ -8,6 +8,7 @@ using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal.CodeGeneration;
+using Marten.Schema.Identity;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
@@ -214,6 +215,10 @@ END
                 load.Frames.Code($"writer.Write({accessor}, {{0}});", NpgsqlDbType.Varchar);
             }
         }
+        else if (mapping.IdStrategy is StrongTypedIdGeneration st)
+        {
+            st.WriteBulkWriterCode(load, mapping);
+        }
         else if (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsValueType)
         {
             var valueType = DotNetType.GetGenericArguments()[0];
@@ -240,7 +245,11 @@ END
 
         var memberPath = _members.Select(x => x.Name).Join("?.");
 
-        if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
+        if (mapping.IdStrategy is StrongTypedIdGeneration st)
+        {
+            st.WriteBulkWriterCodeAsync(load, mapping);
+        }
+        else if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
         {
             var isDeep = _members.Length > 0;
             var memberType = _members.Last().GetMemberType();
