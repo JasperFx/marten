@@ -44,7 +44,7 @@ public class int_based_document_operations : IAsyncLifetime
         theSession.Store(order);
 
         order.Id.ShouldNotBeNull();
-        order.Id.Value.ShouldNotBe(0);
+        order.Id.Value.Value.ShouldNotBe(0);
     }
 
     [Fact]
@@ -152,7 +152,7 @@ public class int_based_document_operations : IAsyncLifetime
         await theSession.SaveChangesAsync();
 
         (await theSession.LoadAsync<Order>(order.Id))
-            .Name.ShouldBe(order.Name);
+            .ShouldBeNull();
     }
 
     [Fact]
@@ -167,7 +167,7 @@ public class int_based_document_operations : IAsyncLifetime
         await theSession.SaveChangesAsync();
 
         (await theSession.LoadAsync<Order>(order.Id))
-            .Name.ShouldBe(order.Name);
+            .ShouldBeNull();
     }
 
 
@@ -235,7 +235,7 @@ public partial struct OrderId;
 
 public class Order
 {
-    public OrderId Id { get; set; }
+    public OrderId? Id { get; set; }
     public string Name { get; set; }
 }
 
