@@ -66,6 +66,7 @@ public class StrongTypedIdGeneration : IIdGeneration
         }
 
         idGeneration = default;
+        if (idType.IsClass) return false;
 
         if (!idType.Name.EndsWith("Id")) return false;
 
