@@ -21,6 +21,7 @@
         </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+        <PackageReference Include="StronglyTypedId" Version="1.0.0-beta08" PrivateAssets="all" ExcludeAssets="runtime" />
     </ItemGroup>
 
     <ItemGroup>
@@ -30,9 +31,4 @@
     <ItemGroup>
         <Using Include="Xunit"/>
     </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-      <PackageReference Include="StrongTypedId" Version="1.7.0" />
-    </ItemGroup>
-
 </Project>
