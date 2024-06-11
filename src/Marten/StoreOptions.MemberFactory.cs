@@ -71,7 +71,7 @@ public partial class StoreOptions
         if (isEnumerable(memberType))
         {
             var elementType = memberType.DetermineElementType();
-
+// START HERE. CHECK IF THE ELEMENT TYPE IS AN ID FOR ANY KNOWN DOCUMENT
             if (elementType.IsValueTypeForQuerying())
             {
                 return new ValueCollectionMember(this, parent, casing, member);
