@@ -7,7 +7,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Vogen;
 
-namespace ValueTypeTests;
+namespace ValueTypeTests.Vogen;
 
 public class int_based_document_operations : IAsyncLifetime
 {
@@ -44,7 +44,7 @@ public class int_based_document_operations : IAsyncLifetime
         theSession.Store(order);
 
         order.Id.ShouldNotBeNull();
-        order.Id.Value.Value.ShouldNotBe(0);
+        ShouldBeTestExtensions.ShouldNotBe(order.Id.Value.Value, 0);
     }
 
     [Fact]

@@ -6,12 +6,10 @@ using JasperFx.Core;
 using Marten;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
-using Npgsql.Internal;
-using Npgsql.Internal.Postgres;
 using Shouldly;
 using Vogen;
 
-namespace ValueTypeTests;
+namespace ValueTypeTests.Vogen;
 
 public class guid_id_document_operations : IDisposable, IAsyncDisposable
 {
@@ -58,7 +56,7 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
         // Marten sees that there is no existing identity,
         // so it assigns a new identity
         invoice.Id.ShouldNotBeNull();
-        invoice.Id.Value.Value.ShouldNotBe(Guid.Empty);
+        ShouldBeTestExtensions.ShouldNotBe(invoice.Id.Value.Value, Guid.Empty);
     }
 
     [Fact]

@@ -9,7 +9,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Vogen;
 
-namespace ValueTypeTests;
+namespace ValueTypeTests.Vogen;
 
 public class string_id_document_operations : IDisposable, IAsyncDisposable
 {
