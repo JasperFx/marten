@@ -128,14 +128,14 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     // TODO: This should be smarter, maybe nullable option for Schema or some other base type
     internal bool SkipSchemaGeneration { get; set; }
 
-    public Type IdMemberType { get; private set; }
+    private Type _idMemberType { get; set; }
 
     public MemberInfo IdMember
     {
         get => _idMember;
         private set
         {
-            if (value != null && !value.GetMemberType()
+            if (value != null && !_idMemberType
                     .IsOneOf(_validIdTypes))
             {
                 throw new ArgumentOutOfRangeException(nameof(IdMember),
@@ -153,11 +153,11 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
     public void SetIdMember(MemberInfo id, Type idType)
     {
+        _idMemberType = idType;
         IdMember = id;
-        IdMemberType = idType;
     }
 
-    public Type IdType => IdMemberType;
+    public Type IdType => _idMemberType;
 
 
 
