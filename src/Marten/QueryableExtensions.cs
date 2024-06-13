@@ -65,6 +65,30 @@ public static class QueryableExtensions
         throw new InvalidOperationException($"{nameof(ToCommand)} is only valid on Marten IQueryable objects");
     }
 
+    public static IMartenQueryable<T1> Where<T1, T2>(
+        this IMartenQueryable<T1> queryable,
+        Expression<Func<T1, object>> propertySelector,
+        Expression<Func<T2, bool>> predicate)
+    {
+        // 1. Extract Property Name
+        var memberExpression = (MemberExpression)propertySelector.Body;
+        if (memberExpression == null)
+        {
+            throw new ArgumentException("Property selector must be a member expression.");
+        }
+        var propertyName = memberExpression.Member.Name;
+
+        // 2. Construct Dynamic Lambda
+        var parameter = Expression.Parameter(typeof(T1), "x");
+        var propertyAccess = Expression.Property(parameter, propertyName);
+        var convertedProperty = Expression.Convert(propertyAccess, typeof(T2));
+        var body = Expression.Invoke(predicate, convertedProperty);
+        var dynamicLambda = Expression.Lambda<Func<T1, bool>>(body, parameter);
+
+        // 3. Apply Where
+        return queryable.Where(dynamicLambda).As<IMartenQueryable<T1>>();
+    }
+
     /// <summary>
     ///     Fetch a related document of type TInclude when executing the Linq query and
     ///     call the supplied callback for each result
