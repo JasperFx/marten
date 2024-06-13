@@ -505,7 +505,7 @@ public class MartenRegistry
         /// <param name="member"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public DocumentMappingExpression<T> Identity(Expression<Func<T, object>> member)
+        public DocumentMappingExpression<T> Identity(Expression<Func<T, object>> member, Type? idMemberType = null)
         {
             _builder.Alter = mapping =>
             {
@@ -516,10 +516,24 @@ public class MartenRegistry
                         $"The expression {member} is not valid as an id column in Marten");
                 }
 
-                mapping.IdMember = members.Single();
+                var idMember = members.Single();
+                var idType = idMemberType ?? idMember.GetMemberType();
+
+                mapping.SetIdMember(idMember, idType);
             };
 
             return this;
+        }
+
+        /// <summary>
+        ///     Explicitly choose the identity member for this document type and indicate that the serialization type is different than the CLR type.
+        /// </summary>
+        /// <param name="member"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public DocumentMappingExpression<T> Identity<TId>(Expression<Func<T, object>> member)
+        {
+            return Identity(member, typeof(TId));
         }
 
         /// <summary>
