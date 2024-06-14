@@ -23,7 +23,7 @@
         <PackageReference Include="Microsoft.FeatureManagement" Version="3.2.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
         <PackageReference Include="Npgsql.DependencyInjection" Version="8.0.1" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.5.4">
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>

@@ -7,28 +7,30 @@ view called `QuestParty` that creates an aggregated view of `MembersJoined`, `Me
 <!-- snippet: sample_QuestParty -->
 <a id='snippet-sample_questparty'></a>
 ```cs
-public class QuestParty
+public sealed record QuestParty(Guid Id, List<string> Members)
 {
-    public List<string> Members { get; set; } = new();
-    public IList<string> Slayed { get; } = new List<string>();
-    public string Key { get; set; }
-    public string Name { get; set; }
-
-    // In this particular case, this is also the stream id for the quest events
-    public Guid Id { get; set; }
-
     // These methods take in events and update the QuestParty
-    public void Apply(MembersJoined joined) => Members.Fill(joined.Members);
-    public void Apply(MembersDeparted departed) => Members.RemoveAll(x => departed.Members.Contains(x));
-    public void Apply(QuestStarted started) => Name = started.Name;
+    public static QuestParty Create(QuestStarted started) => new(started.QuestId, []);
+    public static QuestParty Apply(MembersJoined joined, QuestParty party) =>
+        party with
+        {
+            Members = party.Members.Union(joined.Members).ToList()
+        };
 
-    public override string ToString()
-    {
-        return $"Quest party '{Name}' is {Members.Join(", ")}";
-    }
+    public static QuestParty Apply(MembersDeparted departed, QuestParty party) =>
+        party with
+        {
+            Members = party.Members.Where(x => !departed.Members.Contains(x)).ToList()
+        };
+
+    public static QuestParty Apply(MembersEscaped escaped, QuestParty party) =>
+        party with
+        {
+            Members = party.Members.Where(x => !escaped.Members.Contains(x)).ToList()
+        };
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/QuestParty.cs#L8-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L26-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Once again, here's the class diagram of the key projection types inside of Marten, but please note the `SingleStreamProjection<T>`:

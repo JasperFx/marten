@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
+using Marten.Events.Aggregation;
 
 namespace EventSourcingTests.Projections;
 
-#region sample_QuestParty
+
 public class QuestParty
 {
     public List<string> Members { get; set; } = new();
@@ -27,7 +28,7 @@ public class QuestParty
         return $"Quest party '{Name}' is {Members.Join(", ")}";
     }
 }
-#endregion
+
 
 public class QuestFinishingParty: QuestParty
 {

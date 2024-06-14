@@ -9,19 +9,6 @@ public class Quest
     public Guid Id { get; set; }
 }
 
-#region sample_sample-events
-public class ArrivedAtLocation
-{
-    public int Day { get; set; }
-
-    public string Location { get; set; }
-
-    public override string ToString()
-    {
-        return $"Arrived at {Location} on Day {Day}";
-    }
-}
-
 public class MembersJoined
 {
     public MembersJoined()
@@ -140,8 +127,6 @@ public class MembersEscaped
         return $"Members {Members.Join(", ")} escaped from {Location}";
     }
 }
-
-#endregion
 
 public class Issue
 {

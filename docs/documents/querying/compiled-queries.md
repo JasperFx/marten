@@ -25,12 +25,12 @@ All compiled queries are classes that implement the `ICompiledQuery<TDoc, TResul
 <!-- snippet: sample_ICompiledQuery -->
 <a id='snippet-sample_icompiledquery'></a>
 ```cs
-public interface ICompiledQuery<TDoc, TOut>
+public interface ICompiledQuery<TDoc, TOut> : ICompiledQueryMarker where TDoc: notnull
 {
     Expression<Func<IMartenQueryable<TDoc>, TOut>> QueryIs();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L24-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_icompiledquery' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L30-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_icompiledquery' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In its simplest usage, let's say that we want to find the first user document with a certain first name. That class would look like this:
@@ -175,7 +175,7 @@ public interface ICompiledListQuery<TDoc>: ICompiledListQuery<TDoc, TDoc>
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L39-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_icompiledlistquery-with-no-select' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L45-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_icompiledlistquery-with-no-select' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A sample usage of this type of query is shown below:
@@ -206,7 +206,7 @@ public interface ICompiledListQuery<TDoc, TOut>: ICompiledQuery<TDoc, IEnumerabl
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L53-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_icompiledlistquery-with-select' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L59-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_icompiledlistquery-with-select' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A sample usage of this type of query is shown below:
@@ -428,7 +428,7 @@ public interface ICompiledQuery<TDoc>: ICompiledQuery<TDoc, TDoc>
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L66-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_icompiledquery-for-single-doc' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L72-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_icompiledquery-for-single-doc' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And an example:
