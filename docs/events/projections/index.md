@@ -66,61 +66,6 @@ public sealed record QuestParty(Guid Id, List<string> Members)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L26-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Marten provides the ability to use `IEvent<T>` metadata within your projections, assuming that you're not trying to run the aggregations inline.
-
-The syntax using the built in aggregation technique is to take in `IEvent<T>` as the argument to your `Apply(event)` methods,
-where `T` is the event type you're interested is covered in [Single Stream Projections](/events/projections/aggregate-projections).
-
-<!-- snippet: sample_QuestPartyWithEvents -->
-<a id='snippet-sample_questpartywithevents'></a>
-```cs
-public class QuestPartyWithEvents
-{
-    private readonly IList<string> _members = new List<string>();
-
-    public string[] Members
-    {
-        get
-        {
-            return _members.ToArray();
-        }
-        set
-        {
-            _members.Clear();
-            _members.AddRange(value);
-        }
-    }
-
-    public IList<string> Slayed { get; } = new List<string>();
-
-    public void Apply(MembersJoined joined)
-    {
-        _members.Fill(joined.Members);
-    }
-
-    public void Apply(MembersDeparted departed)
-    {
-        _members.RemoveAll(x => departed.Members.Contains(x));
-    }
-
-    public void Apply(QuestStarted started)
-    {
-        Name = started.Name;
-    }
-
-    public string Name { get; set; }
-
-    public Guid Id { get; set; }
-
-    public override string ToString()
-    {
-        return $"Quest party '{Name}' is {Members.Join(", ")}";
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/QuestPartyWithEvents.cs#L8-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpartywithevents' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
 ## Live Aggregation via .Net
 
 You can always fetch a stream of events and build an aggregate completely live from the current event data by using this syntax:
