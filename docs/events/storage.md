@@ -119,4 +119,17 @@ you have the option to add some extra, pre-canned indexes. Right now the only op
 is to add a unique index back on the `id` column that would be useful for references to
 external systems like so:
 
-snippet: sample_using_optional_event_store_indexes
+<!-- snippet: sample_using_optional_event_store_indexes -->
+<a id='snippet-sample_using_optional_event_store_indexes'></a>
+```cs
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection("some connection string");
+
+    // Add the unique index to the id field
+    opts.Events.EnableUniqueIndexOnEventId = true;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/opting_into_index_on_event_id.cs#L19-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optional_event_store_indexes' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->

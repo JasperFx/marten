@@ -229,8 +229,6 @@ public class projections_with_IoC_services
     [Fact]
     public async Task use_projection_as_singleton_and_inline_on_martenStore()
     {
-        #region sample_registering_projection_built_by_services
-
         using var host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
@@ -248,8 +246,6 @@ public class projections_with_IoC_services
                     ).ApplyAllDatabaseChangesOnStartup();
             })
             .StartAsync();
-
-        #endregion
 
         var store = host.Services.GetRequiredService<ICustomStore>();
 

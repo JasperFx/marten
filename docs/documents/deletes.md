@@ -285,7 +285,7 @@ public void query_is_soft_deleted_docs()
         .Single().ShouldBe("bar");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L338-L366' title='Snippet source file'>snippet source</a> | <a href='#snippet-_query_is_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L338-L366' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Fetching Documents Deleted Before or After a Specific Time
@@ -391,7 +391,23 @@ The easiest way to expose the metadata about whether or not a document is delete
 and when it was deleted is to implement the `ISoftDeleted` interface as shown
 in this sample document:
 
-snippet: sample_implementing_ISoftDeleted
+<!-- snippet: sample_implementing_ISoftDeleted -->
+<a id='snippet-sample_implementing_isoftdeleted'></a>
+```cs
+public class MySoftDeletedDoc: ISoftDeleted
+{
+    // Always have to have an identity of some sort
+    public Guid Id { get; set; }
+
+    // Is the document deleted? From ISoftDeleted
+    public bool Deleted { get; set; }
+
+    // When was the document deleted? From ISoftDeleted
+    public DateTimeOffset? DeletedAt { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L131-L145' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_implementing_isoftdeleted' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Implementing `ISoftDeleted` on your document means that:
 

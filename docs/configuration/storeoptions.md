@@ -156,9 +156,18 @@ public abstract class MartenAttribute: Attribute
     /// <param name="mapping"></param>
     /// <param name="member"></param>
     public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }
+
+    /// <summary>
+    /// When used with the automatic type discovery (assembly scanning), this will be called
+    /// to make registrations to the Marten configuration with the type that this attribute
+    /// decorates
+    /// </summary>
+    /// <param name="discoveredType"></param>
+    /// <param name="options"></param>
+    public virtual void Register(Type discoveredType, StoreOptions options){}
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/MartenAttribute.cs#L12-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_martenattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/MartenAttribute.cs#L12-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_martenattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And decorate either classes or individual field or properties on a document type, your custom attribute will be

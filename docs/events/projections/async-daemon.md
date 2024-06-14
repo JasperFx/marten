@@ -404,7 +404,7 @@ public static async Task UseAsyncDaemon(IDocumentStore store, CancellationToken 
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L135-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_async_daemon_alone' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Open Telemetry and Metrics <Badge type="tip" text="7.10" />~~~~
+## Open Telemetry and Metrics <Badge type="tip" text="7.10" />
 
 ::: info
 All of these facilities are used automatically by Marten. 
