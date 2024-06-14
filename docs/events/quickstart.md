@@ -103,7 +103,7 @@ var party_yesterday = await session2.Events
 
 Simple, right? The above code will load the events from the database and run them through the `Create` & `Apply` handlers of the `QuestParty` projection, returning the current state of our party.
 
-What about the quest itself? On top of seeing our in-progress quest, we also want the ability to query our entire history of past quests. For this, we'll create an _inline_ projection that persists our Quest state to the database as the events are being written:
+What about the quest itself? On top of seeing our in-progress quest, we also want the ability to query our entire history of past quests. For this, we'll create an _inline_ `SingleStreamProjection` that persists our Quest state to the database as the events are being written:
 
 <!-- snippet: sample_Quest -->
 <a id='snippet-sample_quest'></a>
@@ -138,6 +138,10 @@ public sealed class QuestProjection: SingleStreamProjection<Quest>
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L53-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_quest' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+::: tip INFO
+Marten is highly flexible in the way you wish to describe projections (classes, records, static/non-static handlers, single/multi stream projections etc), see [Projections](/events/projections/) for more information. 
+:::
 
 Our projection should be registered to the document store like so:
 
