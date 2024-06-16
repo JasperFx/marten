@@ -23,36 +23,69 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Schema.Identity;
 
-public class StrongTypedIdGeneration: IIdGeneration
+public class ValueType
 {
-    private readonly MethodInfo _builder;
-    private readonly ConstructorInfo _ctor;
+    public Type OuterType { get; }
+    public Type SimpleType { get; }
+    public PropertyInfo ValueProperty { get; }
+    public MethodInfo Builder { get; }
+    public ConstructorInfo Ctor { get; }
+
+    public ValueType(Type outerType, Type simpleType, PropertyInfo valueProperty, ConstructorInfo ctor)
+    {
+        OuterType = outerType;
+        SimpleType = simpleType;
+        ValueProperty = valueProperty;
+        Ctor = ctor;
+    }
+
+    public ValueType(Type outerType, Type simpleType, PropertyInfo valueProperty, MethodInfo builder)
+    {
+        OuterType = outerType;
+        SimpleType = simpleType;
+        ValueProperty = valueProperty;
+        Builder = builder;
+    }
+
+    public Func<TInner, TOuter> CreateConverter<TOuter, TInner>()
+    {
+        var inner = Expression.Parameter(typeof(TInner), "inner");
+        Expression builder;
+        if (Builder != null)
+        {
+            builder = Expression.Call(null, Builder, inner);
+        }
+        else if (Ctor != null)
+        {
+            builder = Expression.New(Ctor, inner);
+        }
+        else
+        {
+            throw new NotSupportedException("Marten cannot build a type converter for strong typed id type " +
+                                            OuterType.FullNameInCode());
+        }
+
+        var lambda = Expression.Lambda<Func<TInner, TOuter>>(builder, inner);
+
+        return lambda.CompileFast();
+    }
+}
+
+public class StrongTypedIdGeneration: ValueType, IIdGeneration
+{
     private readonly IScalarSelectClause _selector;
 
-    private StrongTypedIdGeneration(Type idType, PropertyInfo innerProperty, Type simpleType, ConstructorInfo ctor)
+    private StrongTypedIdGeneration(Type outerType, PropertyInfo valueProperty, Type simpleType, ConstructorInfo ctor)
+        : base(outerType, simpleType, valueProperty, ctor)
     {
-        InnerProperty = innerProperty;
-        _ctor = ctor;
-        IdType = idType;
-        SimpleType = simpleType;
-
-        _selector = typeof(StrongTypedIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, IdType, SimpleType);
+        _selector = typeof(StrongTypedIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType, SimpleType);
     }
 
-    private StrongTypedIdGeneration(Type idType, PropertyInfo innerProperty, Type simpleType, MethodInfo builder)
+    private StrongTypedIdGeneration(Type outerType, PropertyInfo valueProperty, Type simpleType, MethodInfo builder)
+        : base(outerType, simpleType, valueProperty, builder)
     {
-        IdType = idType;
-        InnerProperty = innerProperty;
-        _builder = builder;
-        SimpleType = simpleType;
-
-        _selector = typeof(StrongTypedIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, IdType, SimpleType);
+        _selector = typeof(StrongTypedIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType, SimpleType);
     }
-
-    public Type IdType { get; }
-    public Type SimpleType { get; }
-
-    public PropertyInfo InnerProperty { get; }
 
     public IEnumerable<Type> KeyTypes => Type.EmptyTypes;
     public bool RequiresSequences => false;
@@ -93,16 +126,16 @@ public class StrongTypedIdGeneration: IIdGeneration
     private void generateLongWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
     {
         var database = Use.Type<IMartenDatabase>();
-        if (_ctor != null)
+        if (Ctor != null)
         {
             method.Frames.Code(
-                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, new {IdType.FullNameInCode()}({{1}}.Sequences.SequenceFor({{2}}).NextLong()));",
+                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, new {OuterType.FullNameInCode()}({{1}}.Sequences.SequenceFor({{2}}).NextLong()));",
                 document, database, mapping.DocumentType);
         }
         else
         {
             method.Frames.Code(
-                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, {IdType.FullNameInCode()}.{_builder.Name}({{1}}.Sequences.SequenceFor({{2}}).NextLong()));",
+                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, {OuterType.FullNameInCode()}.{Builder.Name}({{1}}.Sequences.SequenceFor({{2}}).NextLong()));",
                 document, database, mapping.DocumentType);
         }
     }
@@ -110,16 +143,16 @@ public class StrongTypedIdGeneration: IIdGeneration
     private void generateIntWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
     {
         var database = Use.Type<IMartenDatabase>();
-        if (_ctor != null)
+        if (Ctor != null)
         {
             method.Frames.Code(
-                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, new {IdType.FullNameInCode()}({{1}}.Sequences.SequenceFor({{2}}).NextInt()));",
+                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, new {OuterType.FullNameInCode()}({{1}}.Sequences.SequenceFor({{2}}).NextInt()));",
                 document, database, mapping.DocumentType);
         }
         else
         {
             method.Frames.Code(
-                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, {IdType.FullNameInCode()}.{_builder.Name}({{1}}.Sequences.SequenceFor({{2}}).NextInt()));",
+                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, {OuterType.FullNameInCode()}.{Builder.Name}({{1}}.Sequences.SequenceFor({{2}}).NextInt()));",
                 document, database, mapping.DocumentType);
         }
     }
@@ -127,9 +160,9 @@ public class StrongTypedIdGeneration: IIdGeneration
     private void generateGuidWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
     {
         var newGuid = $"{typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid()";
-        var create = _ctor == null
-            ? $"{IdType.FullNameInCode()}.{_builder.Name}({newGuid})"
-            : $"new {IdType.FullNameInCode()}({newGuid})";
+        var create = Ctor == null
+            ? $"{OuterType.FullNameInCode()}.{Builder.Name}({newGuid})"
+            : $"new {OuterType.FullNameInCode()}({newGuid})";
 
         method.Frames.Code(
             $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, {create});",
@@ -206,63 +239,39 @@ public class StrongTypedIdGeneration: IIdGeneration
     {
         if (mapping.IdMember.GetRawMemberType().IsNullable())
         {
-            return $"{mapping.IdMember.Name}.Value.{InnerProperty.Name}";
+            return $"{mapping.IdMember.Name}.Value.{ValueProperty.Name}";
         }
 
-        return $"{mapping.IdMember.Name}.{InnerProperty.Name}";
+        return $"{mapping.IdMember.Name}.{ValueProperty.Name}";
     }
 
     public void GenerateCodeForFetchingId(int index, GeneratedMethod sync, GeneratedMethod async,
         DocumentMapping mapping)
     {
-        if (_builder != null)
+        if (Builder != null)
         {
             sync.Frames.Code(
-                $"var id = {IdType.FullNameInCode()}.{_builder.Name}(reader.GetFieldValue<{SimpleType.FullNameInCode()}>({index}));");
+                $"var id = {OuterType.FullNameInCode()}.{Builder.Name}(reader.GetFieldValue<{SimpleType.FullNameInCode()}>({index}));");
             async.Frames.CodeAsync(
-                $"var id = {IdType.FullNameInCode()}.{_builder.Name}(await reader.GetFieldValueAsync<{SimpleType.FullNameInCode()}>({index}, token));");
+                $"var id = {OuterType.FullNameInCode()}.{Builder.Name}(await reader.GetFieldValueAsync<{SimpleType.FullNameInCode()}>({index}, token));");
         }
         else
         {
             sync.Frames.Code(
-                $"var id = new {IdType.FullNameInCode()}(reader.GetFieldValue<{SimpleType.FullNameInCode()}>({index}));");
+                $"var id = new {OuterType.FullNameInCode()}(reader.GetFieldValue<{SimpleType.FullNameInCode()}>({index}));");
             async.Frames.CodeAsync(
-                $"var id = new {IdType.FullNameInCode()}(await reader.GetFieldValueAsync<{SimpleType.FullNameInCode()}>({index}, token));");
+                $"var id = new {OuterType.FullNameInCode()}(await reader.GetFieldValueAsync<{SimpleType.FullNameInCode()}>({index}, token));");
         }
     }
 
     public Func<object, T> BuildInnerValueSource<T>()
     {
         var target = Expression.Parameter(typeof(object), "target");
-        var method = InnerProperty.GetMethod;
+        var method = ValueProperty.GetMethod;
 
-        var callGetMethod = Expression.Call(Expression.Convert(target, IdType), method);
+        var callGetMethod = Expression.Call(Expression.Convert(target, OuterType), method);
 
         var lambda = Expression.Lambda<Func<object, T>>(callGetMethod, target);
-
-        return lambda.CompileFast();
-    }
-
-
-    public Func<TInner, TOuter> CreateConverter<TOuter, TInner>()
-    {
-        var inner = Expression.Parameter(typeof(TInner), "inner");
-        Expression builder;
-        if (_builder != null)
-        {
-            builder = Expression.Call(null, _builder, inner);
-        }
-        else if (_ctor != null)
-        {
-            builder = Expression.New(_ctor, inner);
-        }
-        else
-        {
-            throw new NotSupportedException("Marten cannot build a type converter for strong typed id type " +
-                                            IdType.FullNameInCode());
-        }
-
-        var lambda = Expression.Lambda<Func<TInner, TOuter>>(builder, inner);
 
         return lambda.CompileFast();
     }
@@ -270,13 +279,13 @@ public class StrongTypedIdGeneration: IIdGeneration
     public void WriteBulkWriterCode(GeneratedMethod load, DocumentMapping mapping)
     {
         var dbType = PostgresqlProvider.Instance.ToParameterType(SimpleType);
-        load.Frames.Code($"writer.Write(document.{mapping.IdMember.Name}.Value.{InnerProperty.Name}, {{0}});", dbType);
+        load.Frames.Code($"writer.Write(document.{mapping.IdMember.Name}.Value.{ValueProperty.Name}, {{0}});", dbType);
     }
 
     public void WriteBulkWriterCodeAsync(GeneratedMethod load, DocumentMapping mapping)
     {
         var dbType = PostgresqlProvider.Instance.ToParameterType(SimpleType);
-        load.Frames.Code($"await writer.WriteAsync(document.{mapping.IdMember.Name}.Value.{InnerProperty.Name}, {{0}}, {{1}});", dbType, Use.Type<CancellationToken>());
+        load.Frames.Code($"await writer.WriteAsync(document.{mapping.IdMember.Name}.Value.{ValueProperty.Name}, {{0}}, {{1}});", dbType, Use.Type<CancellationToken>());
     }
 }
 

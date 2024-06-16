@@ -88,7 +88,7 @@ internal class DocumentStorageBuilder
         var method = type.MethodFor(nameof(DocumentStorage<string, string>.RawIdentityValue));
         if (_mapping.IdStrategy is StrongTypedIdGeneration st)
         {
-            method.Frames.Code($"return id.{st.InnerProperty.Name};");
+            method.Frames.Code($"return id.{st.ValueProperty.Name};");
         }
         else
         {

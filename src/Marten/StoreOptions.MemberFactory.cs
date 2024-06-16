@@ -37,6 +37,14 @@ public partial class StoreOptions
         var serializer = Serializer();
         var casing = serializer.Casing;
 
+        foreach (var source in _linq.allMemberSources())
+        {
+            if (source.TryResolve(parent, this, member, memberType, out var queryable))
+            {
+                return queryable;
+            }
+        }
+
         if (memberType == typeof(string)) return new StringMember(parent, casing, member);
 
         // Thank you Newtonsoft. This has to be tested before the IDictionary<,> test
