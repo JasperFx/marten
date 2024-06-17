@@ -423,6 +423,10 @@ public class Order2
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/StrongTypedId/int_based_document_operations.cs#L262-L273' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_order2_with_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: warning
+Sorry folks, only the asynchronous APIs for loading documents are supported for strong typed identifiers
+:::
+
 As of now, Marten supports:
 
 * Loading a single document by its identifier
@@ -497,6 +501,75 @@ public async Task include_a_single_reference()
 * Within LINQ `OrderBy()` clauses
 * Identity map resolution
 * Automatic dirty checks
+
+### LINQ Support
+
+There's a possible timing issue with the strong typed identifiers. Every time that Marten evaluates the identity strategy
+for a document that uses a strong typed identifier, Marten "remembers" that that type is a custom value type and will always
+treat any usage of that value type as being the actual wrapped value when constructing any SQL. You *might* need to 
+help out Marten a little bit by telling Marten ahead of time about value types before it tries to evaluate any LINQ 
+expressions that use members that are value types like so:
+
+<!-- snippet: sample_limited_doc -->
+<a id='snippet-sample_limited_doc'></a>
+```cs
+[ValueObject<int>]
+public partial struct UpperLimit;
+
+[ValueObject<int>]
+public partial struct LowerLimit;
+
+public class LimitedDoc
+{
+    public Guid Id { get; set; }
+    public UpperLimit Upper { get; set; }
+    public LowerLimit Lower { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L73-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_limited_doc' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+And the `UpperLimit` and `LowerLimit` value types can be registered with Marten like so:
+
+<!-- snippet: sample_registering_value_types -->
+<a id='snippet-sample_registering_value_types'></a>
+```cs
+// opts is a StoreOptions just like you'd have in
+// AddMarten() calls
+opts.RegisterValueType(typeof(UpperLimit));
+opts.RegisterValueType(typeof(LowerLimit));
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L16-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_value_types' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+And that will enable you to seamlessly use the value types in LINQ expressions like so:
+
+<!-- snippet: sample_using_value_type_in_linq -->
+<a id='snippet-sample_using_value_type_in_linq'></a>
+```cs
+[Fact]
+public async Task store_several_and_order_by()
+{
+    var doc1 = new LimitedDoc { Lower = LowerLimit.From(1), Upper = UpperLimit.From(20) };
+    var doc2 = new LimitedDoc { Lower = LowerLimit.From(5), Upper = UpperLimit.From(25) };
+    var doc3 = new LimitedDoc { Lower = LowerLimit.From(4), Upper = UpperLimit.From(15) };
+    var doc4 = new LimitedDoc { Lower = LowerLimit.From(3), Upper = UpperLimit.From(10) };
+
+    theSession.Store(doc1, doc2, doc3, doc4);
+    await theSession.SaveChangesAsync();
+
+    var ordered = await theSession
+        .Query<LimitedDoc>()
+        .OrderBy(x => x.Lower)
+        .Select(x => x.Id)
+        .ToListAsync();
+
+    ordered.ShouldHaveTheSameElementsAs(doc1.Id, doc4.Id, doc3.Id, doc2.Id);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L27-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_value_type_in_linq' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 
 
 
