@@ -23,55 +23,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Schema.Identity;
 
-public class ValueType
-{
-    public Type OuterType { get; }
-    public Type SimpleType { get; }
-    public PropertyInfo ValueProperty { get; }
-    public MethodInfo Builder { get; }
-    public ConstructorInfo Ctor { get; }
-
-    public ValueType(Type outerType, Type simpleType, PropertyInfo valueProperty, ConstructorInfo ctor)
-    {
-        OuterType = outerType;
-        SimpleType = simpleType;
-        ValueProperty = valueProperty;
-        Ctor = ctor;
-    }
-
-    public ValueType(Type outerType, Type simpleType, PropertyInfo valueProperty, MethodInfo builder)
-    {
-        OuterType = outerType;
-        SimpleType = simpleType;
-        ValueProperty = valueProperty;
-        Builder = builder;
-    }
-
-    public Func<TInner, TOuter> CreateConverter<TOuter, TInner>()
-    {
-        var inner = Expression.Parameter(typeof(TInner), "inner");
-        Expression builder;
-        if (Builder != null)
-        {
-            builder = Expression.Call(null, Builder, inner);
-        }
-        else if (Ctor != null)
-        {
-            builder = Expression.New(Ctor, inner);
-        }
-        else
-        {
-            throw new NotSupportedException("Marten cannot build a type converter for strong typed id type " +
-                                            OuterType.FullNameInCode());
-        }
-
-        var lambda = Expression.Lambda<Func<TInner, TOuter>>(builder, inner);
-
-        return lambda.CompileFast();
-    }
-}
-
-public class StrongTypedIdGeneration: ValueType, IIdGeneration
+public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
 {
     private readonly IScalarSelectClause _selector;
 
@@ -174,7 +126,7 @@ public class StrongTypedIdGeneration: ValueType, IIdGeneration
         return _selector.CloneToOtherTable(tableName);
     }
 
-    public static bool IsCandidate(Type idType, out IIdGeneration? idGeneration)
+    public static bool IsCandidate(Type idType, out StrongTypedIdGeneration? idGeneration)
     {
         if (idType.IsNullable())
         {
