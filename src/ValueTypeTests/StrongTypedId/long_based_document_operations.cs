@@ -127,6 +127,8 @@ public class long_based_document_operations : IAsyncLifetime
             .Name.ShouldBe(issue.Name);
     }
 
+    #region sample_strong_typed_identifier_and_is_one_of
+
     [Fact]
     public async Task load_many()
     {
@@ -137,9 +139,14 @@ public class long_based_document_operations : IAsyncLifetime
 
         await theSession.SaveChangesAsync();
 
-        var results = await theSession.Query<Issue2>().Where(x => x.Id.IsOneOf(issue1.Id, issue2.Id, issue3.Id)).ToListAsync();
+        var results = await theSession.Query<Issue2>()
+            .Where(x => x.Id.IsOneOf(issue1.Id, issue2.Id, issue3.Id))
+            .ToListAsync();
+
         results.Count.ShouldBe(3);
     }
+
+    #endregion
 
     [Fact]
     public async Task delete_by_id()
