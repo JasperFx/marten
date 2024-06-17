@@ -30,6 +30,14 @@ internal class SimpleExpression: ExpressionVisitor
 
         _expression = expression;
         _queryableMembers = queryableMembers;
+
+        if (expression.TryToParseConstant(out var constant))
+        {
+            Constant = constant;
+            HasConstant = true;
+            return;
+        }
+
         switch (expression)
         {
             case ConstantExpression c:

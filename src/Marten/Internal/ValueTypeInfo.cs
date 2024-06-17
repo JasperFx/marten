@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using FastExpressionCompiler;
 using JasperFx.Core.Reflection;
+using Marten.Linq.Members.ValueCollections;
 
 namespace Marten.Internal;
 
@@ -63,5 +64,12 @@ public class ValueTypeInfo
         var getter = ValueProperty.GetMethod;
         var lambda = Expression.Lambda<Func<TOuter, TInner>>(Expression.Call(outer, getter), outer);
         return lambda.CompileFast();
+    }
+}
+
+internal class ValueTypeElementMember: ElementMember
+{
+    public ValueTypeElementMember(Type declaringType, Type reflectedType) : base(declaringType, reflectedType)
+    {
     }
 }

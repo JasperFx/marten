@@ -86,6 +86,8 @@ public class include_usage : IAsyncDisposable
         grade.Teachers.Add(teacher2.Id.Value);
         grade.Teachers.Add(teacher3.Id.Value);
 
+        theSession.Store(grade);
+
         await theSession.SaveChangesAsync();
 
         var list = new List<Teacher>();

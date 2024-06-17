@@ -87,6 +87,12 @@ public partial class StoreOptions
                 return new ValueCollectionMember(this, parent, casing, member);
             }
 
+            var valueType = ValueTypes.FirstOrDefault(x => x.OuterType == elementType);
+            if (valueType != null)
+            {
+                return new ValueCollectionMember(this, parent, casing, member);
+            }
+
             return new ChildCollectionMember(this, parent, casing, member, memberType);
         }
 
