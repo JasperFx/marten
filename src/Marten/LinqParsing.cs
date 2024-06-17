@@ -117,7 +117,7 @@ public class LinqParsing: IReadOnlyLinqParsing
 
     IReadOnlyList<IMemberSource> IReadOnlyLinqParsing.FieldSources => MemberSources.ToList();
 
-    private readonly List<IMemberSource> _defaultSources = [];
+    private readonly List<IMemberSource> _defaultSources = [new ValueTypeMemberSource()];
 
     internal IEnumerable<IMemberSource> allMemberSources()
     {

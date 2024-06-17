@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
-using Marten.Linq;
+using Marten.Exceptions;
+using Marten.Internal;
 using Marten.Linq.Members;
 using Marten.Linq.Members.Dictionaries;
 using Marten.Linq.Members.ValueCollections;
@@ -111,5 +113,66 @@ public partial class StoreOptions
     private static bool isEnumerable(Type fieldType)
     {
         return fieldType.IsArray || fieldType.Closes(typeof(IEnumerable<>));
+    }
+
+    /// <summary>
+    /// Register a custom value type with Marten. Doing this enables Marten
+    /// to use this type correctly within LINQ expressions. The "value type"
+    /// should wrap a single, primitive value with a single public get-able
+    /// property
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public ValueTypeInfo RegisterValueType(Type type)
+    {
+        var valueProperty = type.GetProperties().SingleOrDefaultIfMany();
+        if (valueProperty == null || !valueProperty.CanRead) throw new InvalidValueTypeException(type, "Must be only a single public, 'gettable' property");
+
+        var ctor = type.GetConstructors()
+            .FirstOrDefault(x => x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == valueProperty.PropertyType);
+
+        if (ctor != null)
+        {
+            var valueType = new Internal.ValueTypeInfo(type, valueProperty.PropertyType, valueProperty, ctor);
+            ValueTypes.Add(valueType);
+            return valueType;
+        }
+
+        var builder = type.GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(x =>
+            x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == valueProperty.PropertyType);
+
+        if (builder != null)
+        {
+            var valueType = new ValueTypeInfo(type, valueProperty.PropertyType, valueProperty, builder);
+            ValueTypes.Add(valueType);
+            return valueType;
+        }
+
+        throw new InvalidValueTypeException(type,
+            "Unable to determine either a builder static method or a constructor to use");
+    }
+
+    internal List<Internal.ValueTypeInfo> ValueTypes { get; } = new();
+}
+
+internal class ValueTypeMemberSource: IMemberSource
+{
+    public bool TryResolve(IQueryableMember parent, StoreOptions options, MemberInfo memberInfo, Type memberType,
+        out IQueryableMember? member)
+    {
+        var valueType = options.ValueTypes.FirstOrDefault(x => x.OuterType == memberType);
+        if (valueType == null)
+        {
+            member = default;
+            return false;
+        }
+
+        var baseType = valueType.SimpleType == typeof(string)
+            ? typeof(StringValueTypeMember<>).MakeGenericType(memberType)
+            : typeof(ValueTypeMember<,>).MakeGenericType(memberType, valueType.SimpleType);
+
+        member = (IQueryableMember)Activator.CreateInstance(baseType, parent, options.Serializer().Casing, memberInfo, valueType);
+
+        return true;
     }
 }

@@ -1,9 +1,11 @@
 using System;
 using System.Reflection;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using CombGuidIdGeneration = Marten.Schema.Identity.CombGuidIdGeneration;
 
 namespace Marten;
 
@@ -34,6 +36,7 @@ public partial class StoreOptions
 
         if (StrongTypedIdGeneration.IsCandidate(idType, out var generation))
         {
+            ValueTypes.Fill(generation);
             return generation;
         }
 
