@@ -10,6 +10,7 @@ Besides being serializable, Marten's only other requirement for a .Net type to b
 1. `CombGuid` is a [sequential Guid algorithm](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/CombGuidIdGeneration.cs). It can improve performance over the default Guid as it reduces fragmentation of the PK index.
 1. `Int` or `Long`. As of right now, Marten uses a [HiLo generator](http://stackoverflow.com/questions/282099/whats-the-hi-lo-algorithm) approach to assigning numeric identifiers by document type.
    Marten may support Postgresql sequences or star-based algorithms as later alternatives.
+1. _Strong Typed Identifiers_ where a type like the C# `public record struct NewGuidId(Guid Value);` wraps an inner `int`, `long`, `Guid`, or `string` value
 1. When the ID member of a document is not settable or not public a `NoOpIdGeneration` strategy is used. This ensures that Marten does not set the ID itself, so the ID should be generated manually.
 1. A `Custom` ID generator strategy is used to implement the ID generation strategy yourself.
 
@@ -260,7 +261,7 @@ public class CustomIdGeneration : IIdGeneration
     {
         var document = new Use(mapping.DocumentType);
         assign.Frames.Code($"_setter({{0}}, \"newId\");", document);
-        assign.Frames.Code($"return {{0}}.{mapping.IdMember.Name};", document);
+        assign.Frames.Code($"return {{0}}.{mapping.CodeGen.AccessId};", document);
     }
 
 }
@@ -297,3 +298,209 @@ options.Schema.For<UserWithString>().IdStrategy(new CustomIdGeneration());
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L70-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-custom' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Strong Typed Identifiers <Badge type="tip" text="7.20" />
+
+::: warning
+There are lots of rules in Marten about what can and what can't be used as a strong typed identifier, and this
+documentation is trying hard to explain them, but you're best off copying the examples and using something like either
+Vogen or StronglyTypedID for now. 
+:::
+
+::: info
+There is not yet any direct support for strong typed identifiers for the event store
+:::
+
+Marten can now support [strong typed identifiers](https://en.wikipedia.org/wiki/Strongly_typed_identifie) using a couple different strategies.
+As of this moment, Marten can automatically use types that conform to one of two patterns:
+
+<!-- snippet: sample_valid_strong_typed_identifiers -->
+<a id='snippet-sample_valid_strong_typed_identifiers'></a>
+```cs
+// Use a constructor for the inner value,
+// and expose the inner value in a *public*
+// property getter
+public record struct TaskId(Guid Value);
+
+/// <summary>
+/// Pair a public property getter for the inner value
+/// with a public static method that takes in the
+/// inner value
+/// </summary>
+public struct Task2Id
+{
+    private Task2Id(Guid value) => Value = value;
+
+    public Guid Value { get; }
+
+    public static Task2Id From(Guid value) => new Task2Id(value);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/TestingTypes.cs#L29-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_valid_strong_typed_identifiers' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+In _all_ cases, the type name will have to be suffixed with "Id" (and it's case sensitive) to be considered by Marten to be
+a strong typed identity type. The identity types will also need to be immutable `struct` types
+
+The property names or static "builder" methods do not have any requirements for the names, but `Value` and `From` are common.
+So far, Marten's strong typed identifier support has been tested with:
+
+1. Hand rolled types, but there's some advantage to using the next two options for JSON serialization, comparisons, and plenty of other goodness
+2. [Vogen](https://github.com/SteveDunn/Vogen/tree/main)
+3. [StronglyTypedId](https://github.com/andrewlock/StronglyTypedId)
+
+Jumping right into an example, let's say that we want to use this identifier with Vogen for a `Guid`-wrapped
+identifier:
+
+<!-- snippet: sample_invoice_with_vogen_id -->
+<a id='snippet-sample_invoice_with_vogen_id'></a>
+```cs
+[ValueObject<Guid>]
+public partial struct InvoiceId;
+
+public class Invoice
+{
+    // Marten will use this for the identifier
+    // of the Invoice document
+    public InvoiceId? Id { get; set; }
+    public string Name { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/guid_based_document_operations.cs#L287-L300' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoice_with_vogen_id' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The usage of our `Invoice` document is essentially the same as a document type with the primitive identifier types:
+
+<!-- snippet: sample_insert_the_load_by_strong_typed_identifier -->
+<a id='snippet-sample_insert_the_load_by_strong_typed_identifier'></a>
+```cs
+[Fact]
+public async Task update_a_document_smoke_test()
+{
+    var invoice = new Invoice();
+
+    // Just like you're used to with other identity
+    // strategies, Marten is able to assign an identity
+    // if none is provided
+    theSession.Insert(invoice);
+    await theSession.SaveChangesAsync();
+
+    invoice.Name = "updated";
+    await theSession.SaveChangesAsync();
+
+    // This is a new overload
+    var loaded = await theSession.LoadAsync<Invoice>(invoice.Id);
+    loaded.Name.ShouldBeNull("updated");
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/guid_based_document_operations.cs#L84-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_insert_the_load_by_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+As you might infer -- or not -- there's a couple rules and internal behavior:
+
+* The identity selection is done just the same as the primitive types, Marten is either looking for an `id`/`Id` member, or a member decorated with
+  `[Identity]`
+* If Marten is going to assign the identity, you will need to use `Nullable<T>` for the identity member of the document
+* There is a new `IQuerySession.LoadAsync<T>(object id)` overload that was specifically built for strong typed identifiers
+* For `Guid`-wrapped values, Marten is assigning missing identity values based on its sequential `Guid` support
+* For `int` or `long`-wrapped values, Marten is using its HiLo support to define the wrapped values
+* For `string`-wrapped values, Marten is going to require you to assign the identity to documents yourself
+
+For another example, here's a usage of an `int` wrapped identifier:
+
+<!-- snippet: sample_order2_with_STRONG_TYPED_identifier -->
+<a id='snippet-sample_order2_with_strong_typed_identifier'></a>
+```cs
+[StronglyTypedId(Template.Int)]
+public partial struct Order2Id;
+
+public class Order2
+{
+    public Order2Id? Id { get; set; }
+    public string Name { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/StrongTypedId/int_based_document_operations.cs#L262-L273' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_order2_with_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+As of now, Marten supports:
+
+* Loading a single document by its identifier
+* Loading multiple documents using `IsOneOf()` as shown below:
+
+<!-- snippet: sample_strong_typed_identifier_and_is_one_of -->
+<a id='snippet-sample_strong_typed_identifier_and_is_one_of'></a>
+```cs
+[Fact]
+public async Task load_many()
+{
+    var issue1 = new Issue2{Name = Guid.NewGuid().ToString()};
+    var issue2 = new Issue2{Name = Guid.NewGuid().ToString()};
+    var issue3 = new Issue2{Name = Guid.NewGuid().ToString()};
+    theSession.Store(issue1, issue2, issue3);
+
+    await theSession.SaveChangesAsync();
+
+    var results = await theSession.Query<Issue2>()
+        .Where(x => x.Id.IsOneOf(issue1.Id, issue2.Id, issue3.Id))
+        .ToListAsync();
+
+    results.Count.ShouldBe(3);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/StrongTypedId/long_based_document_operations.cs#L130-L149' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_strong_typed_identifier_and_is_one_of' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+::: warning
+LoadManyAsync()_ is not supported for strong typed identifiers
+:::
+
+* Deleting a document by identity
+* Deleting a document by the document itself
+* Within `Include()` queries:
+
+<!-- snippet: sample_include_a_single_reference_with_strong_identifier -->
+<a id='snippet-sample_include_a_single_reference_with_strong_identifier'></a>
+```cs
+[Fact]
+public async Task include_a_single_reference()
+{
+    var teacher = new Teacher();
+    var c = new Class();
+
+    theSession.Store(teacher);
+
+    c.TeacherId = teacher.Id;
+    theSession.Store(c);
+
+    await theSession.SaveChangesAsync();
+
+    theSession.Logger = new TestOutputMartenLogger(_output);
+
+    var list = new List<Teacher>();
+
+    var loaded = await theSession
+        .Query<Class>()
+        .Include<Teacher>(c => c.TeacherId, list)
+        .Where(x => x.Id == c.Id)
+        .FirstOrDefaultAsync();
+
+    loaded.Id.ShouldBe(c.Id);
+    list.Single().Id.ShouldBe(teacher.Id);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/include_usage.cs#L47-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_a_single_reference_with_strong_identifier' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+* Within LINQ `Where()` clauses
+* Within LINQ `Select()` clauses
+* Within LINQ `OrderBy()` clauses
+* Identity map resolution
+* Automatic dirty checks
+
+
+
+
+
+
+

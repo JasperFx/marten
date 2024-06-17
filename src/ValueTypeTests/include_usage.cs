@@ -44,6 +44,8 @@ public class include_usage : IAsyncDisposable
         }
     }
 
+    #region sample_include_a_single_reference_with_strong_identifier
+
     [Fact]
     public async Task include_a_single_reference()
     {
@@ -70,6 +72,8 @@ public class include_usage : IAsyncDisposable
         loaded.Id.ShouldBe(c.Id);
         list.Single().Id.ShouldBe(teacher.Id);
     }
+
+    #endregion
 
     [Fact]
     public async Task include_multiple_references()

@@ -56,7 +56,7 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
         // Marten sees that there is no existing identity,
         // so it assigns a new identity
         invoice.Id.ShouldNotBeNull();
-        ShouldBeTestExtensions.ShouldNotBe(invoice.Id.Value.Value, Guid.Empty);
+        invoice.Id.Value.Value.ShouldNotBe(Guid.Empty);
     }
 
     [Fact]
@@ -81,19 +81,28 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
         (await theSession.Query<Invoice>().AnyAsync()).ShouldBeTrue();
     }
 
+    #region sample_insert_the_load_by_strong_typed_identifier
+
     [Fact]
     public async Task update_a_document_smoke_test()
     {
         var invoice = new Invoice();
+
+        // Just like you're used to with other identity
+        // strategies, Marten is able to assign an identity
+        // if none is provided
         theSession.Insert(invoice);
         await theSession.SaveChangesAsync();
 
         invoice.Name = "updated";
         await theSession.SaveChangesAsync();
 
+        // This is a new overload
         var loaded = await theSession.LoadAsync<Invoice>(invoice.Id);
         loaded.Name.ShouldBeNull("updated");
     }
+
+    #endregion
 
     [Fact]
     public async Task use_within_identity_map()
@@ -275,11 +284,10 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
 
 }
 
-[ValueObject<Guid>]
-public partial struct InvoiceId;
+#region sample_invoice_with_vogen_id
 
 [ValueObject<Guid>]
-public partial struct WrongId;
+public partial struct InvoiceId;
 
 public class Invoice
 {
@@ -288,3 +296,11 @@ public class Invoice
     public InvoiceId? Id { get; set; }
     public string Name { get; set; }
 }
+
+    #endregion
+
+
+
+
+[ValueObject<Guid>]
+public partial struct WrongId;
