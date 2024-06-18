@@ -82,10 +82,21 @@ public static class HostExtensions
     /// Call DocumentStore.ResetAllData() on the document store in this host
     /// </summary>
     /// <param name="host"></param>
-    public static Task ResetAllMartenDataAsync(this IHost host)
+    public static async Task ResetAllMartenDataAsync(this IHost host)
     {
+        var coordinator = host.Services.GetService<IProjectionCoordinator>();
+        if (coordinator != null)
+        {
+            await coordinator.PauseAsync().ConfigureAwait(false);
+        }
+
         var store = host.DocumentStore();
-        return store.Advanced.ResetAllData(CancellationToken.None);
+        await store.Advanced.ResetAllData(CancellationToken.None).ConfigureAwait(false);
+
+        if (coordinator != null)
+        {
+            await coordinator.ResumeAsync().ConfigureAwait(false);
+        }
     }
 
     /// <summary>
@@ -93,9 +104,20 @@ public static class HostExtensions
     /// </summary>
     /// <param name="host"></param>
     /// <typeparam name="T"></typeparam>
-    public static Task ResetAllMartenDataAsync<T>(this IHost host) where T : IDocumentStore
+    public static async Task ResetAllMartenDataAsync<T>(this IHost host) where T : IDocumentStore
     {
+        var coordinator = host.Services.GetService<IProjectionCoordinator<T>>();
+        if (coordinator != null)
+        {
+            await coordinator.PauseAsync().ConfigureAwait(false);
+        }
+
         var store = host.DocumentStore<T>();
-        return store.Advanced.ResetAllData(CancellationToken.None);
+        await store.Advanced.ResetAllData(CancellationToken.None).ConfigureAwait(false);
+
+        if (coordinator != null)
+        {
+            await coordinator.ResumeAsync().ConfigureAwait(false);
+        }
     }
 }
