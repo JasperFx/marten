@@ -65,17 +65,32 @@ public class numeric_revisioning: OneOffConfigurationsContext
     [Fact]
     public void use_mapped_property_for_numeric_versioning()
     {
-        using (var store = SeparateStore(_ =>
-               {
-                   _.Schema.For<UnconventionallyVersionedDoc>().Metadata(m =>
-                   {
-                       m.Revision.MapTo(x => x.UnconventionalVersion);
-                   });
-               }))
+        using var store = SeparateStore(_ =>
         {
-            store.StorageFeatures.MappingFor(typeof(UnconventionallyVersionedDoc))
-                .Metadata.Revision.Member.Name.ShouldBe(nameof(UnconventionallyVersionedDoc.UnconventionalVersion));
-        }
+            _.Schema.For<UnconventionallyVersionedDoc>().UseNumericRevisions(true).Metadata(m =>
+            {
+                m.Revision.MapTo(x => x.UnconventionalVersion);
+            });
+        });
+        store.StorageFeatures.MappingFor(typeof(UnconventionallyVersionedDoc))
+            .Metadata.Revision.Member.Name.ShouldBe(nameof(UnconventionallyVersionedDoc.UnconventionalVersion));
+
+        var session = store.LightweightSession();
+        var doc = new UnconventionallyVersionedDoc{Id = Guid.NewGuid(), Name = "Initial Name"};
+
+        session.Insert(doc);
+        session.SaveChanges();
+
+        var loaded = session.Load<UnconventionallyVersionedDoc>(doc.Id);
+        loaded.UnconventionalVersion.ShouldBe(1);
+
+        doc.Name = "New Name";
+
+        session.Store(doc);
+        session.SaveChanges();
+
+        loaded = session.Load<UnconventionallyVersionedDoc>(doc.Id);
+        loaded.UnconventionalVersion.ShouldBe(2);
     }
 
     [Fact]
@@ -578,6 +593,8 @@ public class OtherRevisionedDoc
 public class UnconventionallyVersionedDoc
 {
     public Guid Id { get; set; }
+
+    public string Name { get; set; }
 
     public int UnconventionalVersion { get; set; }
 }
