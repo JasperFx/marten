@@ -63,6 +63,22 @@ public class numeric_revisioning: OneOffConfigurationsContext
     }
 
     [Fact]
+    public void use_mapped_property_for_numeric_versioning()
+    {
+        using (var store = SeparateStore(_ =>
+               {
+                   _.Schema.For<UnconventionallyVersionedDoc>().Metadata(m =>
+                   {
+                       m.Revision.MapTo(x => x.UnconventionalVersion);
+                   });
+               }))
+        {
+            store.StorageFeatures.MappingFor(typeof(UnconventionallyVersionedDoc))
+                .Metadata.Revision.Member.Name.ShouldBe(nameof(UnconventionallyVersionedDoc.UnconventionalVersion));
+        }
+    }
+
+    [Fact]
     public async Task happy_path_insert()
     {
         var doc = new RevisionedDoc { Name = "Tim" };
@@ -559,3 +575,9 @@ public class OtherRevisionedDoc
     public int Version { get; set; }
 }
 
+public class UnconventionallyVersionedDoc
+{
+    public Guid Id { get; set; }
+
+    public int UnconventionalVersion { get; set; }
+}
