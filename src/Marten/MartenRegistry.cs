@@ -709,6 +709,7 @@ public class MartenRegistry
             return this;
         }
 
+
         public class MetadataConfig
         {
             private readonly DocumentMappingExpression<T> _parent;
@@ -722,6 +723,11 @@ public class MartenRegistry
             ///     The current version of this document in the database
             /// </summary>
             public Column<Guid> Version => new(_parent, m => m.Version);
+
+            /// <summary>
+            ///     The current numeric version of this document in the database
+            /// </summary>
+            public Column<int> Revision => new(_parent, m => m.Revision);
 
             /// <summary>
             ///     Timestamp of the last time this document was modified
