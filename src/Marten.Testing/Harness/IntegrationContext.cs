@@ -99,6 +99,8 @@ namespace Marten.Testing.Harness
             options.NameDataLength = 100;
             options.DatabaseSchemaName = GetType().Name.Sanitize();
 
+            options.DisableNpgsqlLogging = true;
+
             configure(options);
 
             _store = new DocumentStore(options);

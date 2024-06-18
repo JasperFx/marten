@@ -43,6 +43,7 @@ namespace Marten.Testing.Harness
             var options = new StoreOptions { DatabaseSchemaName = SchemaName };
 
             options.Connection(ConnectionSource.ConnectionString);
+            options.DisableNpgsqlLogging = true;
 
             configure?.Invoke(options);
 
