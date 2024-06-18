@@ -506,7 +506,7 @@ public async Task include_a_single_reference()
 
 There's a possible timing issue with the strong typed identifiers. Every time that Marten evaluates the identity strategy
 for a document that uses a strong typed identifier, Marten "remembers" that that type is a custom value type and will always
-treat any usage of that value type as being the actual wrapped value when constructing any SQL. You *might* need to 
+treat any usage of that value type as being the actual wrapped value when constructing any SQL. You _might_ need to 
 help out Marten a little bit by telling Marten ahead of time about value types before it tries to evaluate any LINQ 
 expressions that use members that are value types like so:
 
@@ -569,11 +569,3 @@ public async Task store_several_and_order_by()
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L27-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_value_type_in_linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
-
-
-
-
-
-
-
