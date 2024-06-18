@@ -605,7 +605,6 @@ public class MartenRegistry
                 if (enabled)
                 {
                     m.UseNumericRevisions = false;
-                    m.Metadata.Revision.Enabled = false;
                     m.Metadata.Version.Enabled = true;
                 }
             };
