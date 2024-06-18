@@ -605,6 +605,7 @@ public class MartenRegistry
                 if (enabled)
                 {
                     m.UseNumericRevisions = false;
+                    m.Metadata.Revision.Enabled = false;
                     m.Metadata.Version.Enabled = true;
                 }
             };
@@ -799,6 +800,7 @@ public class MartenRegistry
             {
                 LastModified.Enabled = false;
                 DotNetType.Enabled = false;
+                Revision.Enabled = false;
                 Version.Enabled = false;
             }
 
