@@ -108,6 +108,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetODataWithMarten", "As
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocSamples", "samples\DocSamples\DocSamples.csproj", "{364A165E-965E-4AFD-92AC-8447FB114C60}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ValueTypeTests", "ValueTypeTests\ValueTypeTests.csproj", "{7F2B0CE1-1365-4AE2-9823-B6DBB1A42C5F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -258,6 +260,10 @@ Global
 		{364A165E-965E-4AFD-92AC-8447FB114C60}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{364A165E-965E-4AFD-92AC-8447FB114C60}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{364A165E-965E-4AFD-92AC-8447FB114C60}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F2B0CE1-1365-4AE2-9823-B6DBB1A42C5F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F2B0CE1-1365-4AE2-9823-B6DBB1A42C5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F2B0CE1-1365-4AE2-9823-B6DBB1A42C5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F2B0CE1-1365-4AE2-9823-B6DBB1A42C5F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -298,6 +304,7 @@ Global
 		{93FC8079-48C4-4D3B-8C17-3944A903674F} = {79961196-DB50-4AD3-B749-D231799BCF2E}
 		{93298A4C-2B88-4EF3-9FC8-6B2AEF52F628} = {93FC8079-48C4-4D3B-8C17-3944A903674F}
 		{364A165E-965E-4AFD-92AC-8447FB114C60} = {79961196-DB50-4AD3-B749-D231799BCF2E}
+		{7F2B0CE1-1365-4AE2-9823-B6DBB1A42C5F} = {91D87D73-EC07-4067-8A64-26A2E4F6BC83}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {52B7158F-0A24-47D9-9CF7-3FA94170041A}
