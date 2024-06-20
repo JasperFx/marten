@@ -26,6 +26,7 @@ public class applicability_of_identity_types
     [InlineData(typeof(NewLongId), true)]
     [InlineData(typeof(NewStringId), true)]
     [InlineData(typeof(NewDateId), false)]
+    [InlineData(typeof(OrderId), true)]
     public void StrongTypedIdGeneration_IsCandidate(Type candidate, bool isCandidate)
     {
         var value = StrongTypedIdGeneration.IsCandidate(candidate, out var idGeneration);
@@ -47,6 +48,7 @@ public class applicability_of_identity_types
     [InlineData(typeof(NewIntId), typeof(NewIntId), typeof(StrongTypedIdGeneration))]
     [InlineData(typeof(NewLongId), typeof(NewLongId), typeof(StrongTypedIdGeneration))]
     [InlineData(typeof(NewStringId), typeof(NewStringId), typeof(StrongTypedIdGeneration))]
+    [InlineData(typeof(OrderId), typeof(OrderId), typeof(StrongTypedIdGeneration))]
     public void find_and_apply_id_type(Type idType, Type expectedIdType, Type expectedGenerationType)
     {
         var documentType = typeof(Document<>).MakeGenericType(idType);

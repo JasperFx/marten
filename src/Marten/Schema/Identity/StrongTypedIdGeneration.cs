@@ -134,7 +134,7 @@ public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
         }
 
         idGeneration = default;
-        if (idType.IsClass)
+        if (idType.IsClass && !idType.IsAbstract)
         {
             return false;
         }
@@ -149,8 +149,29 @@ public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
             return false;
         }
 
-        var properties = idType.GetProperties().Where(x => DocumentMapping.ValidIdTypes.Contains(x.PropertyType))
-            .ToArray();
+
+        PropertyInfo[] properties;
+
+        //If the id type is an F# discriminated union
+        if (idType.IsClass && idType.IsAbstract)
+        {
+            var idProperty = idType.GetNestedTypes()
+                .Where(x => x.IsSealed)
+                .SingleOrDefaultIfMany()
+                ?.GetProperties().SingleOrDefaultIfMany();
+
+            if (idProperty == null || DocumentMapping.ValidIdTypes.Contains(idProperty.PropertyType) == false)
+                return false;
+
+            properties = [idProperty];
+
+        }
+        else
+        {
+            properties = idType.GetProperties().Where(x => DocumentMapping.ValidIdTypes.Contains(x.PropertyType))
+                .ToArray();
+        }
+
         if (properties.Length == 1)
         {
             var innerProperty = properties[0];
@@ -242,7 +263,7 @@ public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
 }
 
 internal class StrongTypedIdSelectClause<TOuter, TInner>: ISelectClause, IScalarSelectClause, IModifyableFromObject,
-    ISelector<TOuter?> where TOuter : struct
+    ISelector<TOuter>
 {
     public StrongTypedIdSelectClause(StrongTypedIdGeneration idGeneration)
     {
@@ -307,7 +328,16 @@ internal class StrongTypedIdSelectClause<TOuter, TInner>: ISelectClause, IScalar
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
         ISqlFragment currentStatement)
     {
-        return (IQueryHandler<TResult>)new ListQueryHandler<TOuter?>(statement, this);
+        if (typeof(TOuter).IsValueType)
+        {
+            var genericType = typeof(NullableListQueryHandler<>).MakeGenericType([typeof(TOuter)]);
+            var nullableListQueryHandler = Activator.CreateInstance(genericType, [statement, this]);
+            return (IQueryHandler<TResult>)nullableListQueryHandler;
+        }
+        else
+        {
+            return (IQueryHandler<TResult>)new ListQueryHandler<TOuter>(statement, this);
+        }
     }
 
     public ISelectClause UseStatistics(QueryStatistics statistics)

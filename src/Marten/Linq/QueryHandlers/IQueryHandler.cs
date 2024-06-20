@@ -22,6 +22,11 @@ public interface IQueryHandler<T>: IQueryHandler
     Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token);
 }
 
+public interface INullableQueryHandler<T> where T : struct
+{
+
+}
+
 public interface IMaybeStatefulHandler: IQueryHandler
 {
     bool DependsOnDocumentSelector();
