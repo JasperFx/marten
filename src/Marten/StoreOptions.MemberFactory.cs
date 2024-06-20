@@ -131,7 +131,25 @@ public partial class StoreOptions
     /// <returns></returns>
     public ValueTypeInfo RegisterValueType(Type type)
     {
-        var valueProperty = type.GetProperties().SingleOrDefaultIfMany();
+        PropertyInfo? valueProperty;
+        if (type.IsAbstract)
+        {
+            var discriminatedUnionCaseType =
+                type.GetNestedTypes()
+                    .Where(x => x.IsSealed)
+                    .SingleOrDefaultIfMany();
+
+            if (discriminatedUnionCaseType == null)
+                throw new InvalidValueTypeException(discriminatedUnionCaseType,
+                    "Only abstract classes having a single sealed nested class are supported (which a represents an F# discriminated union having a single case).");
+
+            valueProperty =  discriminatedUnionCaseType.GetProperties().SingleOrDefaultIfMany();
+        }
+        else
+        {
+            valueProperty = type.GetProperties().SingleOrDefaultIfMany();
+        }
+
         if (valueProperty == null || !valueProperty.CanRead) throw new InvalidValueTypeException(type, "Must be only a single public, 'gettable' property");
 
         var ctor = type.GetConstructors()

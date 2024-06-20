@@ -1,7 +1,9 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
@@ -81,6 +83,38 @@ internal class ListQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>, IQueryHandl
         CancellationToken token)
     {
         var list = new List<T>();
+
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            var item = await Selector.ResolveAsync(reader, token).ConfigureAwait(false);
+            list.Add(item);
+        }
+
+        return list;
+    }
+}
+
+internal class NullableListQueryHandler<T>(ISqlFragment? statement, ISelector<T> selector)
+    : ListQueryHandler<T>(statement, selector), IQueryHandler<IReadOnlyList<Nullable<T>>>
+    where T : struct
+{
+    public IReadOnlyList<T?> Handle(DbDataReader reader, IMartenSession session)
+    {
+        var list = new List<T?>();
+
+        while (reader.Read())
+        {
+            var item = Selector.Resolve(reader);
+            list.Add(item);
+        }
+
+        return list;
+
+    }
+
+    public async Task<IReadOnlyList<T?>> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+    {
+        var list = new List<T?>();
 
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {

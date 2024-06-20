@@ -49,6 +49,33 @@ public struct Task2Id
 
 #endregion
 
+#region F# discriminated union
+
+public abstract class OrderId
+{
+    // Nested class for the 'Id' case
+    public sealed class Id : OrderId
+    {
+        public Guid Value { get; } // Property to hold the Guid
+
+        public Id(Guid value) // Constructor
+        {
+            Value = value;
+        }
+
+        // Overridden equality and GetHashCode for proper comparison
+        public override bool Equals(object obj) => obj is Id other && Value.Equals(other.Value);
+        public override int GetHashCode() => Value.GetHashCode();
+    }
+
+    // Private constructor to prevent direct instantiation of OrderId
+    private OrderId() { }
+
+    // Static factory methods for creating instances
+    public static OrderId NewId(Guid value) => new Id(value);
+}
+
+#endregion
 
 
 
