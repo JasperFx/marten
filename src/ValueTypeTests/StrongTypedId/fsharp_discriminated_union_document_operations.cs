@@ -258,8 +258,6 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public void bulk_writing_sync()
     {
-        var order = new Order();
-        var t = ((ValueTypeTests.OrderId.Id)order.Id).Value;
         Order[] orders = [
             new Order{CustomerName = Guid.NewGuid().ToString()},
             new Order{CustomerName = Guid.NewGuid().ToString()},
