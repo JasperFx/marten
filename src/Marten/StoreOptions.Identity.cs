@@ -15,8 +15,7 @@ public partial class StoreOptions
     {
         var idType = idMember.GetMemberType();
 
-        //F# objects are immutable so we cannot generate ids for them (which is fine as F# users expect immutability)
-        if (!idMemberIsSettable(idMember) || StrongTypedIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(idType))
+        if (!idMemberIsSettable(idMember) && !StrongTypedIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(idType))
         {
             return new NoOpIdGeneration();
         }

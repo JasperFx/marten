@@ -10,6 +10,7 @@ using Marten.Linq.Members;
 using Marten.Linq.Members.Dictionaries;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
+using Marten.Schema.Identity;
 using Newtonsoft.Json.Linq;
 using Weasel.Postgresql;
 
@@ -132,18 +133,9 @@ public partial class StoreOptions
     public ValueTypeInfo RegisterValueType(Type type)
     {
         PropertyInfo? valueProperty;
-        if (type.IsAbstract)
+        if (StrongTypedIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(type))
         {
-            var discriminatedUnionCaseType =
-                type.GetNestedTypes()
-                    .Where(x => x.IsSealed)
-                    .SingleOrDefaultIfMany();
-
-            if (discriminatedUnionCaseType == null)
-                throw new InvalidValueTypeException(discriminatedUnionCaseType,
-                    "Only abstract classes having a single sealed nested class are supported (which a represents an F# discriminated union having a single case).");
-
-            valueProperty =  discriminatedUnionCaseType.GetProperties().SingleOrDefaultIfMany();
+            valueProperty = type.GetProperties().Where(x => x.Name != "Tag").SingleOrDefaultIfMany();
         }
         else
         {
