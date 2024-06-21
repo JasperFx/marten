@@ -49,7 +49,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
       [Fact]
     public void store_document_will_assign_the_identity()
     {
-        var order = new Order();
+        var order = Order.New();
         theSession.Store(order);
 
         // Marten sees that there is no existing identity,
@@ -60,7 +60,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task store_a_document_smoke_test()
     {
-        var order = new Order();
+        var order = Order.New();
         theSession.Store(order);
 
         await theSession.SaveChangesAsync();
@@ -71,7 +71,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task insert_a_document_smoke_test()
     {
-        var order = new Order();
+        var order = Order.New();
         theSession.Insert(order);
 
         await theSession.SaveChangesAsync();
@@ -82,7 +82,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task update_a_document_smoke_test()
     {
-        var order = new Order();
+        var order = Order.New();
         theSession.Insert(order);
         await theSession.SaveChangesAsync();
 
@@ -96,7 +96,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task use_within_identity_map()
     {
-        var order = new Order();
+        var order = Order.New();
         theSession.Insert(order);
         await theSession.SaveChangesAsync();
 
@@ -110,7 +110,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task usage_within_dirty_checking()
     {
-        var order = new Order();
+        var order = Order.New();
         theSession.Insert(order);
         await theSession.SaveChangesAsync();
 
@@ -127,7 +127,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task load_document()
     {
-        var order = new Order{CustomerName = Guid.NewGuid().ToString()};
+        var order = Order.New();
         theSession.Store(order);
 
         await theSession.SaveChangesAsync();
@@ -139,9 +139,9 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task load_many()
     {
-        var order1 = new Order{CustomerName = Guid.NewGuid().ToString()};
-        var order2 = new Order{CustomerName = Guid.NewGuid().ToString()};
-        var order3 = new Order{CustomerName = Guid.NewGuid().ToString()};
+        var order1 = Order.New();
+        var order2 = Order.New();
+        var order3 = Order.New();
         theSession.Store(order1, order2, order3);
 
         await theSession.SaveChangesAsync();
@@ -157,7 +157,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task delete_by_id()
     {
-        var order = new Order{CustomerName = Guid.NewGuid().ToString()};
+        var order = Order.New();
         theSession.Store(order);
 
         await theSession.SaveChangesAsync();
@@ -171,7 +171,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task delete_by_document()
     {
-        var order = new Order{CustomerName = Guid.NewGuid().ToString()};
+        var order = Order.New();
         theSession.Store(order);
 
         await theSession.SaveChangesAsync();
@@ -207,7 +207,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task use_in_LINQ_where_clause()
     {
-        var order = new Order{CustomerName = Guid.NewGuid().ToString()};
+        var order = Order.New();
         theSession.Store(order);
 
         await theSession.SaveChangesAsync();
@@ -221,7 +221,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task use_in_LINQ_order_clause()
     {
-        var order = new Order{CustomerName = Guid.NewGuid().ToString()};
+        var order = Order.New();
         theSession.Store(order);
 
         await theSession.SaveChangesAsync();
@@ -232,7 +232,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task use_in_LINQ_select_clause()
     {
-        var order = new Order{CustomerName = Guid.NewGuid().ToString()};
+        var order = Order.New();
         theSession.Store(order);
 
         await theSession.SaveChangesAsync();
@@ -245,11 +245,11 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     public async Task bulk_writing_async()
     {
         Order[] orders = [
-            new Order{CustomerName = Guid.NewGuid().ToString()},
-            new Order{CustomerName = Guid.NewGuid().ToString()},
-            new Order{CustomerName = Guid.NewGuid().ToString()},
-            new Order{CustomerName = Guid.NewGuid().ToString()},
-            new Order{CustomerName = Guid.NewGuid().ToString()}
+            Order.New(),
+            Order.New(),
+            Order.New(),
+            Order.New(),
+            Order.New()
         ];
 
         await theStore.BulkInsertDocumentsAsync(orders);
@@ -259,11 +259,11 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     public void bulk_writing_sync()
     {
         Order[] orders = [
-            new Order{CustomerName = Guid.NewGuid().ToString()},
-            new Order{CustomerName = Guid.NewGuid().ToString()},
-            new Order{CustomerName = Guid.NewGuid().ToString()},
-            new Order{CustomerName = Guid.NewGuid().ToString()},
-            new Order{CustomerName = Guid.NewGuid().ToString()}
+            Order.New(),
+            Order.New(),
+            Order.New(),
+            Order.New(),
+            Order.New()
         ];
 
         theStore.BulkInsertDocuments(orders);
@@ -272,6 +272,14 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
 
 public class Order
 {
+    public Order(OrderId id, string customerName)
+    {
+        Id = id;
+        CustomerName = customerName;
+    }
+
     public OrderId Id { get; }
-    public string CustomerName { get; set; }
+    public string CustomerName { get; set; } //There is normally no setter but to simplify testing (no functional impact)
+
+    public static Order New() => new Order(null, Guid.NewGuid().ToString());
 }
