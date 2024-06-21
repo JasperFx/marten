@@ -13,12 +13,14 @@ public partial class StoreOptions
 {
     internal IIdGeneration DetermineIdStrategy(Type documentType, MemberInfo idMember)
     {
-        if (!idMemberIsSettable(idMember))
+        var idType = idMember.GetMemberType();
+
+        //F# objects are immutable so we cannot generate ids for them (which is fine as F# users expect immutability)
+        if (!idMemberIsSettable(idMember) || StrongTypedIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(idType))
         {
             return new NoOpIdGeneration();
         }
 
-        var idType = idMember.GetMemberType();
         if (idType == typeof(string))
         {
             return new StringIdGeneration();

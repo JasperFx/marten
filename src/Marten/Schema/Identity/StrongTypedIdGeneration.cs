@@ -126,9 +126,22 @@ public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
         return _selector.CloneToOtherTable(tableName);
     }
 
+
+    public static Type GetNestedIdTypeForFSharpDiscriminatedUnion(Type wrapperType)
+    {
+        return wrapperType.GetNestedTypes()
+            .Where(x => x.IsSealed)
+            .SingleOrDefaultIfMany();
+    }
+
+    public static bool IsFSharpSingleCaseDiscriminatedUnion(Type type)
+    {
+        return type.IsClass && type.IsAbstract && GetNestedIdTypeForFSharpDiscriminatedUnion(type) != null;
+    }
+
     public static bool IsCandidate(Type idType, out StrongTypedIdGeneration? idGeneration)
     {
-        if (idType.IsNullable())
+        if (idType.IsGenericType && idType.IsNullable())
         {
             idType = idType.GetGenericArguments().Single();
         }
@@ -149,15 +162,13 @@ public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
             return false;
         }
 
-
         PropertyInfo[] properties;
 
         //If the id type is an F# discriminated union
-        if (idType.IsClass && idType.IsAbstract)
+        if (IsFSharpSingleCaseDiscriminatedUnion(idType))
         {
-            var idProperty = idType.GetNestedTypes()
-                .Where(x => x.IsSealed)
-                .SingleOrDefaultIfMany()
+            var idProperty =
+                GetNestedIdTypeForFSharpDiscriminatedUnion(idType)
                 ?.GetProperties().SingleOrDefaultIfMany();
 
             if (idProperty == null || DocumentMapping.ValidIdTypes.Contains(idProperty.PropertyType) == false)
@@ -218,6 +229,12 @@ public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
         return $"{mapping.IdMember.Name}.{ValueProperty.Name}";
     }
 
+    private string GenerateCodeForCastingToInnerDUCase()
+    {
+        //Sample Output: ((FullyQualified.MyInnerCase)).
+        return $"(({GetNestedIdTypeForFSharpDiscriminatedUnion(OuterType).FullNameInCode()}))";
+    }
+
     public void GenerateCodeForFetchingId(int index, GeneratedMethod sync, GeneratedMethod async,
         DocumentMapping mapping)
     {
@@ -242,7 +259,11 @@ public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
         var target = Expression.Parameter(typeof(object), "target");
         var method = ValueProperty.GetMethod;
 
-        var callGetMethod = Expression.Call(Expression.Convert(target, OuterType), method);
+        var applicableType = IsFSharpSingleCaseDiscriminatedUnion(OuterType)
+            ? GetNestedIdTypeForFSharpDiscriminatedUnion(OuterType)
+            : OuterType;
+
+        var callGetMethod = Expression.Call(Expression.Convert(target, applicableType), method);
 
         var lambda = Expression.Lambda<Func<object, T>>(callGetMethod, target);
 
@@ -252,13 +273,34 @@ public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
     public void WriteBulkWriterCode(GeneratedMethod load, DocumentMapping mapping)
     {
         var dbType = PostgresqlProvider.Instance.ToParameterType(SimpleType);
-        load.Frames.Code($"writer.Write(document.{mapping.IdMember.Name}.Value.{ValueProperty.Name}, {{0}});", dbType);
+        if (IsFSharpSingleCaseDiscriminatedUnion(OuterType))
+        {
+            var innerType = GetNestedIdTypeForFSharpDiscriminatedUnion(OuterType);
+            load.Frames.Code($"writer.Write((({innerType.FullNameInCode()})document.{mapping.IdMember.Name}).{ValueProperty.Name}, {{0}});", dbType);
+        }
+        else
+        {
+            load.Frames.Code($"writer.Write(document.{mapping.IdMember.Name}.Value.{ValueProperty.Name}, {{0}});", dbType);
+        }
+
     }
 
     public void WriteBulkWriterCodeAsync(GeneratedMethod load, DocumentMapping mapping)
     {
         var dbType = PostgresqlProvider.Instance.ToParameterType(SimpleType);
-        load.Frames.Code($"await writer.WriteAsync(document.{mapping.IdMember.Name}.Value.{ValueProperty.Name}, {{0}}, {{1}});", dbType, Use.Type<CancellationToken>());
+        if (IsFSharpSingleCaseDiscriminatedUnion(OuterType))
+        {
+            var innerType = GetNestedIdTypeForFSharpDiscriminatedUnion(OuterType);
+            load.Frames.Code(
+                $"await writer.WriteAsync((({innerType.FullNameInCode()})document.{mapping.IdMember.Name}).{ValueProperty.Name}, {{0}}, {{1}});",
+                dbType, Use.Type<CancellationToken>());
+        }
+        else
+        {
+            load.Frames.Code(
+                $"await writer.WriteAsync(document.{mapping.IdMember.Name}.Value.{ValueProperty.Name}, {{0}}, {{1}});",
+                dbType, Use.Type<CancellationToken>());
+        }
     }
 }
 
