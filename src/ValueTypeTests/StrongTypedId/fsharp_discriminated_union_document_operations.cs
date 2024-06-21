@@ -27,7 +27,6 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
             opts.GeneratedCodeOutputPath =
                 AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory().AppendPath("Internal", "Generated");
 
-            opts.RegisterValueType(typeof(OrderId));
         });
 
         theSession = theStore.LightweightSession();
@@ -61,49 +60,49 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task store_a_document_smoke_test()
     {
-        var invoice = new Invoice2();
-        theSession.Store(invoice);
+        var order = new Order();
+        theSession.Store(order);
 
         await theSession.SaveChangesAsync();
 
-        (await theSession.Query<Invoice2>().AnyAsync()).ShouldBeTrue();
+        (await theSession.Query<Order>().AnyAsync()).ShouldBeTrue();
     }
 
     [Fact]
     public async Task insert_a_document_smoke_test()
     {
-        var invoice = new Invoice2();
-        theSession.Insert(invoice);
+        var order = new Order();
+        theSession.Insert(order);
 
         await theSession.SaveChangesAsync();
 
-        (await theSession.Query<Invoice2>().AnyAsync()).ShouldBeTrue();
+        (await theSession.Query<Order>().AnyAsync()).ShouldBeTrue();
     }
 
     [Fact]
     public async Task update_a_document_smoke_test()
     {
-        var invoice = new Invoice2();
-        theSession.Insert(invoice);
+        var order = new Order();
+        theSession.Insert(order);
         await theSession.SaveChangesAsync();
 
-        invoice.Name = "updated";
+        order.CustomerName = "updated";
         await theSession.SaveChangesAsync();
 
-        var loaded = await theSession.LoadAsync<Invoice2>(invoice.Id);
-        loaded.Name.ShouldBeNull("updated");
+        var loaded = await theSession.LoadAsync<Order>(order.Id);
+        loaded.CustomerName.ShouldBeNull("updated");
     }
 
     [Fact]
     public async Task use_within_identity_map()
     {
-        var invoice = new Invoice2();
-        theSession.Insert(invoice);
+        var order = new Order();
+        theSession.Insert(order);
         await theSession.SaveChangesAsync();
 
         await using var session = theStore.IdentitySession();
-        var loaded1 = await session.LoadAsync<Invoice2>(invoice.Id);
-        var loaded2 = await session.LoadAsync<Invoice2>(invoice.Id);
+        var loaded1 = await session.LoadAsync<Order>(order.Id);
+        var loaded2 = await session.LoadAsync<Order>(order.Id);
 
         loaded1.ShouldBeSameAs(loaded2);
     }
@@ -111,45 +110,45 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task usage_within_dirty_checking()
     {
-        var invoice = new Invoice2();
-        theSession.Insert(invoice);
+        var order = new Order();
+        theSession.Insert(order);
         await theSession.SaveChangesAsync();
 
         await using var session = theStore.DirtyTrackedSession();
-        var loaded1 = await session.LoadAsync<Invoice2>(invoice.Id);
-        loaded1.Name = "something else";
+        var loaded1 = await session.LoadAsync<Order>(order.Id);
+        loaded1.CustomerName = "something else";
 
         await session.SaveChangesAsync();
 
-        var loaded2 = await theSession.LoadAsync<Invoice2>(invoice.Id);
-        loaded2.Name.ShouldBe(loaded1.Name);
+        var loaded2 = await theSession.LoadAsync<Order>(order.Id);
+        loaded2.CustomerName.ShouldBe(loaded1.CustomerName);
     }
 
     [Fact]
     public async Task load_document()
     {
-        var invoice = new Invoice2{Name = Guid.NewGuid().ToString()};
-        theSession.Store(invoice);
+        var order = new Order{CustomerName = Guid.NewGuid().ToString()};
+        theSession.Store(order);
 
         await theSession.SaveChangesAsync();
 
-        (await theSession.LoadAsync<Invoice2>(invoice.Id))
-            .Name.ShouldBe(invoice.Name);
+        (await theSession.LoadAsync<Order>(order.Id))
+            .CustomerName.ShouldBe(order.CustomerName);
     }
 
     [Fact]
     public async Task load_many()
     {
-        var invoice1 = new Invoice2{Name = Guid.NewGuid().ToString()};
-        var invoice2 = new Invoice2{Name = Guid.NewGuid().ToString()};
-        var invoice3 = new Invoice2{Name = Guid.NewGuid().ToString()};
-        theSession.Store(invoice1, invoice2, invoice3);
+        var order1 = new Order{CustomerName = Guid.NewGuid().ToString()};
+        var order2 = new Order{CustomerName = Guid.NewGuid().ToString()};
+        var order3 = new Order{CustomerName = Guid.NewGuid().ToString()};
+        theSession.Store(order1, order2, order3);
 
         await theSession.SaveChangesAsync();
 
         var results = await theSession
-            .Query<Invoice2>()
-            .Where(x => x.Id.IsOneOf(invoice1.Id, invoice2.Id, invoice3.Id))
+            .Query<Order>()
+            .Where(x => x.Id.IsOneOf(order1.Id, order2.Id, order3.Id))
             .ToListAsync();
 
         results.Count.ShouldBe(3);
@@ -158,29 +157,29 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task delete_by_id()
     {
-        var invoice = new Invoice2{Name = Guid.NewGuid().ToString()};
-        theSession.Store(invoice);
+        var order = new Order{CustomerName = Guid.NewGuid().ToString()};
+        theSession.Store(order);
 
         await theSession.SaveChangesAsync();
 
-        theSession.Delete<Invoice2>(invoice.Id);
+        theSession.Delete<Order>(order.Id);
         await theSession.SaveChangesAsync();
 
-        SpecificationExtensions.ShouldBeNull((await theSession.LoadAsync<Invoice2>(invoice.Id)));
+        SpecificationExtensions.ShouldBeNull((await theSession.LoadAsync<Order>(order.Id)));
     }
 
     [Fact]
     public async Task delete_by_document()
     {
-        var invoice = new Invoice2{Name = Guid.NewGuid().ToString()};
-        theSession.Store(invoice);
+        var order = new Order{CustomerName = Guid.NewGuid().ToString()};
+        theSession.Store(order);
 
         await theSession.SaveChangesAsync();
 
-        theSession.Delete(invoice);
+        theSession.Delete(order);
         await theSession.SaveChangesAsync();
 
-        SpecificationExtensions.ShouldBeNull((await theSession.LoadAsync<Invoice2>(invoice.Id)));
+        SpecificationExtensions.ShouldBeNull((await theSession.LoadAsync<Order>(order.Id)));
     }
 
 
@@ -190,84 +189,86 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [InlineData("something")]
     public async Task throw_id_mismatch_when_wrong(object id)
     {
-        await Should.ThrowAsync<DocumentIdTypeMismatchException>(async () => await theSession.LoadAsync<Invoice2>(id));
+        await Should.ThrowAsync<DocumentIdTypeMismatchException>(async () => await theSession.LoadAsync<Order>(id));
     }
 
     [Fact]
     public async Task can_not_use_just_guid_as_id()
     {
-        await Should.ThrowAsync<DocumentIdTypeMismatchException>(async () => await theSession.LoadAsync<Invoice2>(Guid.NewGuid()));
+        await Should.ThrowAsync<DocumentIdTypeMismatchException>(async () => await theSession.LoadAsync<Order>(Guid.NewGuid()));
     }
 
     [Fact]
     public async Task can_not_use_another_guid_based_strong_typed_id_as_id()
     {
-        await Should.ThrowAsync<DocumentIdTypeMismatchException>(async () => await theSession.LoadAsync<Invoice2>(new WrongId(Guid.NewGuid())));
+        await Should.ThrowAsync<DocumentIdTypeMismatchException>(async () => await theSession.LoadAsync<Order>(new WrongId(Guid.NewGuid())));
     }
 
     [Fact]
     public async Task use_in_LINQ_where_clause()
     {
-        var invoice = new Invoice2{Name = Guid.NewGuid().ToString()};
-        theSession.Store(invoice);
+        var order = new Order{CustomerName = Guid.NewGuid().ToString()};
+        theSession.Store(order);
 
         await theSession.SaveChangesAsync();
 
-        var loaded = await theSession.Query<Invoice2>().FirstOrDefaultAsync(x => x.Id == invoice.Id);
+        var loaded = await theSession.Query<Order>().FirstOrDefaultAsync(x => x.Id == order.Id);
 
         loaded
-            .Name.ShouldBe(invoice.Name);
+            .CustomerName.ShouldBe(order.CustomerName);
     }
 
     [Fact]
     public async Task use_in_LINQ_order_clause()
     {
-        var invoice = new Invoice2{Name = Guid.NewGuid().ToString()};
-        theSession.Store(invoice);
+        var order = new Order{CustomerName = Guid.NewGuid().ToString()};
+        theSession.Store(order);
 
         await theSession.SaveChangesAsync();
 
-        var loaded = await theSession.Query<Invoice2>().OrderBy(x => x.Id).Take(3).ToListAsync();
+        var loaded = await theSession.Query<Order>().OrderBy(x => x.Id).Take(3).ToListAsync();
     }
 
     [Fact]
     public async Task use_in_LINQ_select_clause()
     {
-        var invoice = new Invoice2{Name = Guid.NewGuid().ToString()};
-        theSession.Store(invoice);
+        var order = new Order{CustomerName = Guid.NewGuid().ToString()};
+        theSession.Store(order);
 
         await theSession.SaveChangesAsync();
 
-        var loaded = await theSession.Query<Invoice2>().Select(x => x.Id).Take(3).ToListAsync();
+        var loaded = await theSession.Query<Order>().Select(x => x.Id).Take(3).ToListAsync();
 
     }
 
     [Fact]
     public async Task bulk_writing_async()
     {
-        Invoice2[] invoices = [
-            new Invoice2{Name = Guid.NewGuid().ToString()},
-            new Invoice2{Name = Guid.NewGuid().ToString()},
-            new Invoice2{Name = Guid.NewGuid().ToString()},
-            new Invoice2{Name = Guid.NewGuid().ToString()},
-            new Invoice2{Name = Guid.NewGuid().ToString()}
+        Order[] orders = [
+            new Order{CustomerName = Guid.NewGuid().ToString()},
+            new Order{CustomerName = Guid.NewGuid().ToString()},
+            new Order{CustomerName = Guid.NewGuid().ToString()},
+            new Order{CustomerName = Guid.NewGuid().ToString()},
+            new Order{CustomerName = Guid.NewGuid().ToString()}
         ];
 
-        await theStore.BulkInsertDocumentsAsync(invoices);
+        await theStore.BulkInsertDocumentsAsync(orders);
     }
 
     [Fact]
     public void bulk_writing_sync()
     {
-        Invoice2[] invoices = [
-            new Invoice2{Name = Guid.NewGuid().ToString()},
-            new Invoice2{Name = Guid.NewGuid().ToString()},
-            new Invoice2{Name = Guid.NewGuid().ToString()},
-            new Invoice2{Name = Guid.NewGuid().ToString()},
-            new Invoice2{Name = Guid.NewGuid().ToString()}
+        var order = new Order();
+        var t = ((ValueTypeTests.OrderId.Id)order.Id).Value;
+        Order[] orders = [
+            new Order{CustomerName = Guid.NewGuid().ToString()},
+            new Order{CustomerName = Guid.NewGuid().ToString()},
+            new Order{CustomerName = Guid.NewGuid().ToString()},
+            new Order{CustomerName = Guid.NewGuid().ToString()},
+            new Order{CustomerName = Guid.NewGuid().ToString()}
         ];
 
-        theStore.BulkInsertDocuments(invoices);
+        theStore.BulkInsertDocuments(orders);
     }
 }
 

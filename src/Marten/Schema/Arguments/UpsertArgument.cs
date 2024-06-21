@@ -112,7 +112,11 @@ public class UpsertArgument
         else
         {
             var rawMemberType = _members.Last().GetRawMemberType();
-
+            var requiredCastType =
+                _members[0].Name.ToLowerInvariant().EndsWith("id") &&
+                StrongTypedIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(rawMemberType)
+                    ? StrongTypedIdGeneration.GetNestedIdTypeForFSharpDiscriminatedUnion(rawMemberType)
+                    : null;
 
             var dbTypeString = rawMemberType.IsArray
                 ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
@@ -120,11 +124,21 @@ public class UpsertArgument
 
             method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {dbTypeString};");
 
+            var parameterValueAccessString = $"document.{ParameterValue}";
+
+            if (requiredCastType != null)
+            {
+                //We know that the id property has 2 caracters at most, but we do not know the case used
+                var innerValueAccessor = ParameterValue.Substring(3);
+                parameterValueAccessString =
+                    $"(({requiredCastType.FullNameInCode()})document.{memberPath}).{innerValueAccessor}";
+            }
+
             if (rawMemberType.IsClass || rawMemberType.IsNullable() || _members.Length > 1)
             {
                 method.Frames.Code($@"
 BLOCK:if (document.{memberPath} != null)
-{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = document.{ParameterValue};
+{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = {parameterValueAccessString};
 END
 BLOCK:else
 {parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = {typeof(DBNull).FullNameInCode()}.{nameof(DBNull.Value)};
@@ -133,7 +147,7 @@ END
             }
             else
             {
-                method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = document.{ParameterValue};");
+                method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = {parameterValueAccessString};");
             }
         }
     }

@@ -88,7 +88,15 @@ internal class DocumentStorageBuilder
         var method = type.MethodFor(nameof(DocumentStorage<string, string>.RawIdentityValue));
         if (_mapping.IdStrategy is StrongTypedIdGeneration st)
         {
-            method.Frames.Code($"return id.{st.ValueProperty.Name};");
+            if (StrongTypedIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(st.OuterType))
+            {
+                var nestedType = StrongTypedIdGeneration.GetNestedIdTypeForFSharpDiscriminatedUnion(st.OuterType);
+                method.Frames.Code($"return (({nestedType.FullNameInCode()})id).{st.ValueProperty.Name};");
+            }
+            else
+            {
+                method.Frames.Code($"return id.{st.ValueProperty.Name};");
+            }
         }
         else
         {

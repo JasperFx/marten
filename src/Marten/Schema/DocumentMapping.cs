@@ -64,7 +64,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     {
         if (identityType == null) return false;
 
-        if (identityType.IsNullable())
+        if (identityType.IsGenericType && identityType.IsNullable())
         {
             identityType = identityType.GetGenericArguments()[0];
         }
@@ -166,6 +166,8 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     }
 
     public Type IdType => IdMember?.GetMemberType();
+
+    public bool HasAbstractIdType => IdType != null && StrongTypedIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(IdType);
 
     IDocumentMapping IDocumentMapping.Root => this;
 
