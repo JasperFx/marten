@@ -70,7 +70,9 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         }
 
         return identityType.IsOneOf(ValidIdTypes) ||
-               StrongTypedIdGeneration.IsCandidate(identityType, out var generation);
+               ValueTypeIdGeneration.IsCandidate(identityType, out var generation) ||
+               FSharpDiscriminatedUnionIdGeneration.IsCandidate(identityType,
+                   out var fSharpDiscriminatedUnionIdGeneration);
     }
 
     private static readonly Regex _aliasSanitizer = new("<|>", RegexOptions.Compiled);
@@ -166,8 +168,6 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     }
 
     public Type IdType => IdMember?.GetMemberType();
-
-    public bool HasAbstractIdType => IdType != null && StrongTypedIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(IdType);
 
     IDocumentMapping IDocumentMapping.Root => this;
 
@@ -698,7 +698,21 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
                 $"{DocumentType.FullNameInCode()} cannot be configured with UseNumericRevision and UseOptimisticConcurrency. Choose one or the other");
         }
 
-        var idField = IdStrategy is StrongTypedIdGeneration st ? typeof(StrongTypedIdMember<,>).CloseAndBuildAs<IQueryableMember>(IdMember, st,st.OuterType, st.SimpleType) : new IdMember(IdMember);
+        IQueryableMember idField;
+        if (IdStrategy is ValueTypeIdGeneration st)
+        {
+            idField = typeof(StrongTypedIdMember<,>).CloseAndBuildAs<IQueryableMember>(IdMember, st, st.OuterType,
+                st.SimpleType);
+        }
+        else if (IdStrategy is FSharpDiscriminatedUnionIdGeneration fst)
+        {
+            idField = typeof(StrongTypedIdMember<,>).CloseAndBuildAs<IQueryableMember>(IdMember, fst, fst.OuterType,
+                fst.SimpleType);
+        }
+        else
+        {
+            idField = new IdMember(IdMember);
+        }
         QueryMembers.ReplaceMember(IdMember, idField);
     }
 
@@ -709,7 +723,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
     internal Type InnerIdType()
     {
-        if (IdStrategy is StrongTypedIdGeneration sti) return sti.SimpleType;
+        if (IdStrategy is ValueTypeIdGeneration sti) return sti.SimpleType;
 
         var memberType = _idMember.GetMemberType();
         return memberType.IsNullable() ? memberType.GetGenericArguments()[0] : memberType;
@@ -873,9 +887,14 @@ public class DocumentCodeGen
             : mapping.IdMember.Name;
 
         ParameterValue = mapping.IdMember.Name;
-        if (mapping.IdStrategy is StrongTypedIdGeneration st)
+        if (mapping.IdStrategy is ValueTypeIdGeneration st)
         {
             ParameterValue = st.ParameterValue(mapping);
+        }
+
+        if (mapping.IdStrategy is FSharpDiscriminatedUnionIdGeneration fst)
+        {
+            ParameterValue = fst.ParameterValue(mapping);
         }
     }
 

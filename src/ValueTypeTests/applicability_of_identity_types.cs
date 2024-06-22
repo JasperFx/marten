@@ -26,29 +26,37 @@ public class applicability_of_identity_types
     [InlineData(typeof(NewLongId), true)]
     [InlineData(typeof(NewStringId), true)]
     [InlineData(typeof(NewDateId), false)]
-    [InlineData(typeof(OrderId), true)]
-    public void StrongTypedIdGeneration_IsCandidate(Type candidate, bool isCandidate)
+    public void ValueTypeIdGeneration_IsCandidate(Type candidate, bool isCandidate)
     {
-        var value = StrongTypedIdGeneration.IsCandidate(candidate, out var idGeneration);
+        var value = ValueTypeIdGeneration.IsCandidate(candidate, out var idGeneration);
         value.ShouldBe(isCandidate);
-
-
     }
 
     [Theory]
-    [InlineData(typeof(GuidId), typeof(GuidId), typeof(StrongTypedIdGeneration))]
-    [InlineData(typeof(IntId), typeof(IntId), typeof(StrongTypedIdGeneration))]
-    [InlineData(typeof(LongId), typeof(LongId), typeof(StrongTypedIdGeneration))]
-    [InlineData(typeof(StringId), typeof(StringId), typeof(StrongTypedIdGeneration))]
-    [InlineData(typeof(GuidId?), typeof(GuidId), typeof(StrongTypedIdGeneration))]
-    [InlineData(typeof(IntId?), typeof(IntId), typeof(StrongTypedIdGeneration))]
-    [InlineData(typeof(LongId?), typeof(LongId), typeof(StrongTypedIdGeneration))]
-    [InlineData(typeof(StringId?), typeof(StringId), typeof(StrongTypedIdGeneration))]
-    [InlineData(typeof(NewGuidId), typeof(NewGuidId), typeof(StrongTypedIdGeneration))]
-    [InlineData(typeof(NewIntId), typeof(NewIntId), typeof(StrongTypedIdGeneration))]
-    [InlineData(typeof(NewLongId), typeof(NewLongId), typeof(StrongTypedIdGeneration))]
-    [InlineData(typeof(NewStringId), typeof(NewStringId), typeof(StrongTypedIdGeneration))]
-    [InlineData(typeof(OrderId), typeof(OrderId), typeof(StrongTypedIdGeneration))]
+    [InlineData(typeof(FSharpTypes.OrderId), true)]
+    [InlineData(typeof(FSharpTypes.OrderIdDUWithMultipleCases), false)]
+    [InlineData(typeof(FSharpTypes.RecordTypeOrderId), false)]
+    [InlineData(typeof(FSharpTypes.ArbitraryClass), false)]
+    public void FSharpIdGeneration_IsCandidate(Type candidate, bool isCandidate)
+    {
+        var value = FSharpDiscriminatedUnionIdGeneration.IsCandidate(candidate, out var idGeneration);
+        value.ShouldBe(isCandidate);
+    }
+
+    [Theory]
+    [InlineData(typeof(GuidId), typeof(GuidId), typeof(ValueTypeIdGeneration))]
+    [InlineData(typeof(IntId), typeof(IntId), typeof(ValueTypeIdGeneration))]
+    [InlineData(typeof(LongId), typeof(LongId), typeof(ValueTypeIdGeneration))]
+    [InlineData(typeof(StringId), typeof(StringId), typeof(ValueTypeIdGeneration))]
+    [InlineData(typeof(GuidId?), typeof(GuidId), typeof(ValueTypeIdGeneration))]
+    [InlineData(typeof(IntId?), typeof(IntId), typeof(ValueTypeIdGeneration))]
+    [InlineData(typeof(LongId?), typeof(LongId), typeof(ValueTypeIdGeneration))]
+    [InlineData(typeof(StringId?), typeof(StringId), typeof(ValueTypeIdGeneration))]
+    [InlineData(typeof(NewGuidId), typeof(NewGuidId), typeof(ValueTypeIdGeneration))]
+    [InlineData(typeof(NewIntId), typeof(NewIntId), typeof(ValueTypeIdGeneration))]
+    [InlineData(typeof(NewLongId), typeof(NewLongId), typeof(ValueTypeIdGeneration))]
+    [InlineData(typeof(NewStringId), typeof(NewStringId), typeof(ValueTypeIdGeneration))]
+    [InlineData(typeof(FSharpTypes.OrderId), typeof(FSharpTypes.OrderId), typeof(FSharpDiscriminatedUnionIdGeneration))]
     public void find_and_apply_id_type(Type idType, Type expectedIdType, Type expectedGenerationType)
     {
         var documentType = typeof(Document<>).MakeGenericType(idType);

@@ -86,9 +86,13 @@ internal class DocumentStorageBuilder
     private void writeParameterForId(GeneratedType type)
     {
         var method = type.MethodFor(nameof(DocumentStorage<string, string>.RawIdentityValue));
-        if (_mapping.IdStrategy is StrongTypedIdGeneration st)
+        if (_mapping.IdStrategy is ValueTypeIdGeneration st)
         {
                 method.Frames.Code($"return id.{st.ValueProperty.Name};");
+        }
+        else if (_mapping.IdStrategy is FSharpDiscriminatedUnionIdGeneration fst)
+        {
+            method.Frames.Code($"return id.{fst.ValueProperty.Name};");
         }
         else
         {
