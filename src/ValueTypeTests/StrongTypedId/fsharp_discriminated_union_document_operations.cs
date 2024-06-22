@@ -28,6 +28,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
             opts.GeneratedCodeOutputPath =
                 AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory().AppendPath("Internal", "Generated");
 
+            //For docs on these options see: https://github.com/Tarmil/FSharp.SystemTextJson/blob/master/docs/Customizing.md
             var jsonFSharpOptions =
                 JsonFSharpOptions
                     .Default()
