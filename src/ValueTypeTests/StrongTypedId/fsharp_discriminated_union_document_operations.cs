@@ -127,8 +127,6 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     [Fact]
     public async Task usage_within_dirty_checking()
     {
-        //F# types are immutable so this pattern is never used
-
         var order = new ReferenceTypeOrder( FSharpTypes.OrderId.NewId(Guid.NewGuid()));
         theSession.Insert(order);
         await theSession.SaveChangesAsync();
