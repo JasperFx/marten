@@ -14,9 +14,9 @@ internal class StringValueTypeMember<T>: StringMember
 {
     private readonly Func<T, string> _valueSource;
 
-    public StringValueTypeMember(IQueryableMember parent, Casing casing, MemberInfo member, ValueTypeInfo valueTypeInfo) : base(parent, casing, member)
+    public StringValueTypeMember(IQueryableMember parent, Casing casing, MemberInfo member, StrongTypedIdInfo strongTypedIdInfo) : base(parent, casing, member)
     {
-        _valueSource = valueTypeInfo.CreateConverter<string, T>();
+        _valueSource = strongTypedIdInfo.CreateConverter<string, T>();
     }
 
     public override void PlaceValueInDictionaryForContainment(Dictionary<string, object> dict, ConstantExpression constant)

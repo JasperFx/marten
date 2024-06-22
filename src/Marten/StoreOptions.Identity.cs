@@ -15,7 +15,7 @@ public partial class StoreOptions
     {
         var idType = idMember.GetMemberType();
 
-        if (!idMemberIsSettable(idMember) && !StrongTypedIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(idType))
+        if (!idMemberIsSettable(idMember) && !FSharpDiscriminatedUnionIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(idType))
         {
             return new NoOpIdGeneration();
         }
@@ -35,10 +35,16 @@ public partial class StoreOptions
             return new HiloIdGeneration(documentType, Advanced.HiloSequenceDefaults);
         }
 
-        if (StrongTypedIdGeneration.IsCandidate(idType, out var generation))
+        if (ValueTypeIdGeneration.IsCandidate(idType, out var valueTypeIdGeneration))
         {
-            ValueTypes.Fill(generation);
-            return generation;
+            ValueTypes.Fill(valueTypeIdGeneration);
+            return valueTypeIdGeneration;
+        }
+
+        if (FSharpDiscriminatedUnionIdGeneration.IsCandidate(idType, out var fSharpDiscriminatedUnionIdGeneration))
+        {
+            ValueTypes.Fill(fSharpDiscriminatedUnionIdGeneration);
+            return fSharpDiscriminatedUnionIdGeneration;
         }
 
         throw new ArgumentOutOfRangeException(nameof(documentType),

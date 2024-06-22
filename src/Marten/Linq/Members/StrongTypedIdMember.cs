@@ -13,16 +13,23 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;
 
+internal interface IStrongTypedIdGeneration
+{
+    Func<object, T> BuildInnerValueSource<T>();
+    ISelectClause BuildSelectClause(string fromObject);
+}
+
 internal class StrongTypedIdMember<TOuter, TInner>: IdMember, IValueTypeMember
 {
-    private readonly StrongTypedIdGeneration _idGeneration;
+    private readonly IStrongTypedIdGeneration _idGeneration;
     private readonly Func<object, TInner> _innerValue;
 
-    public StrongTypedIdMember(MemberInfo member, StrongTypedIdGeneration idGeneration): base(member)
+    public StrongTypedIdMember(MemberInfo member, IStrongTypedIdGeneration idGeneration): base(member)
     {
         _idGeneration = idGeneration;
         _innerValue = idGeneration.BuildInnerValueSource<TInner>();
     }
+
 
     public object ConvertFromWrapperArray(object values)
     {

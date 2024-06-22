@@ -214,7 +214,7 @@ END
                 load.Frames.Code($"writer.Write({accessor}, {{0}});", NpgsqlDbType.Varchar);
             }
         }
-        else if (mapping.IdStrategy is StrongTypedIdGeneration st)
+        else if (mapping.IdStrategy is ValueTypeIdGeneration st)
         {
             st.WriteBulkWriterCode(load, mapping);
         }
@@ -244,7 +244,7 @@ END
 
         var memberPath = _members.Select(x => x.Name).Join("?.");
 
-        if (mapping.IdStrategy is StrongTypedIdGeneration st)
+        if (mapping.IdStrategy is ValueTypeIdGeneration st)
         {
             st.WriteBulkWriterCodeAsync(load, mapping);
         }

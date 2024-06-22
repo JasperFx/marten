@@ -130,10 +130,10 @@ public partial class StoreOptions
     /// </summary>
     /// <param name="type"></param>
     /// <returns></returns>
-    public ValueTypeInfo RegisterValueType(Type type)
+    public StrongTypedIdInfo RegisterValueType(Type type)
     {
         PropertyInfo? valueProperty;
-        if (StrongTypedIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(type))
+        if (FSharpDiscriminatedUnionIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(type))
         {
             valueProperty = type.GetProperties().Where(x => x.Name != "Tag").SingleOrDefaultIfMany();
         }
@@ -149,7 +149,7 @@ public partial class StoreOptions
 
         if (ctor != null)
         {
-            var valueType = new Internal.ValueTypeInfo(type, valueProperty.PropertyType, valueProperty, ctor);
+            var valueType = new Internal.StrongTypedIdInfo(type, valueProperty.PropertyType, valueProperty, ctor);
             ValueTypes.Add(valueType);
             return valueType;
         }
@@ -159,7 +159,7 @@ public partial class StoreOptions
 
         if (builder != null)
         {
-            var valueType = new ValueTypeInfo(type, valueProperty.PropertyType, valueProperty, builder);
+            var valueType = new StrongTypedIdInfo(type, valueProperty.PropertyType, valueProperty, builder);
             ValueTypes.Add(valueType);
             return valueType;
         }
@@ -168,7 +168,7 @@ public partial class StoreOptions
             "Unable to determine either a builder static method or a constructor to use");
     }
 
-    internal List<Internal.ValueTypeInfo> ValueTypes { get; } = new();
+    internal List<Internal.StrongTypedIdInfo> ValueTypes { get; } = new();
 }
 
 internal class ValueTypeMemberSource: IMemberSource

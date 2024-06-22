@@ -13,6 +13,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Marten.Linq;
+using Marten.Linq.Members;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
@@ -23,20 +24,20 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Schema.Identity;
 
-public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
+public class ValueTypeIdGeneration: StrongTypedIdInfo, IIdGeneration, IStrongTypedIdGeneration
 {
     private readonly IScalarSelectClause _selector;
 
-    private StrongTypedIdGeneration(Type outerType, PropertyInfo valueProperty, Type simpleType, ConstructorInfo ctor)
+    private ValueTypeIdGeneration(Type outerType, PropertyInfo valueProperty, Type simpleType, ConstructorInfo ctor)
         : base(outerType, simpleType, valueProperty, ctor)
     {
-        _selector = typeof(StrongTypedIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType, SimpleType);
+        _selector = typeof(ValueTypeIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType, SimpleType);
     }
 
-    private StrongTypedIdGeneration(Type outerType, PropertyInfo valueProperty, Type simpleType, MethodInfo builder)
+    private ValueTypeIdGeneration(Type outerType, PropertyInfo valueProperty, Type simpleType, MethodInfo builder)
         : base(outerType, simpleType, valueProperty, builder)
     {
-        _selector = typeof(StrongTypedIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType, SimpleType);
+        _selector = typeof(ValueTypeIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType, SimpleType);
     }
 
     public IEnumerable<Type> KeyTypes => Type.EmptyTypes;
@@ -127,12 +128,7 @@ public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
     }
 
 
-    public static bool IsFSharpSingleCaseDiscriminatedUnion(Type type)
-    {
-        return type.IsClass && type.IsSealed && type.GetProperties().Any(x => x.Name == "Tag");
-    }
-
-    public static bool IsCandidate(Type idType, out StrongTypedIdGeneration? idGeneration)
+    public static bool IsCandidate(Type idType, out ValueTypeIdGeneration? idGeneration)
     {
         if (idType.IsGenericType && idType.IsNullable())
         {
@@ -140,7 +136,7 @@ public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
         }
 
         idGeneration = default;
-        if (idType.IsClass && !IsFSharpSingleCaseDiscriminatedUnion(idType))
+        if (idType.IsClass)
         {
             return false;
         }
@@ -156,7 +152,6 @@ public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
         }
 
         var properties = idType.GetProperties()
-            .Where(x => x.Name != "Tag")
             .Where(x => DocumentMapping.ValidIdTypes.Contains(x.PropertyType))
             .ToArray();
 
@@ -174,7 +169,7 @@ public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
             if (ctor != null)
             {
                 PostgresqlProvider.Instance.RegisterMapping(idType, dbType, parameterType);
-                idGeneration = new StrongTypedIdGeneration(idType, innerProperty, identityType, ctor);
+                idGeneration = new ValueTypeIdGeneration(idType, innerProperty, identityType, ctor);
                 return true;
             }
 
@@ -187,7 +182,7 @@ public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
             if (builder != null)
             {
                 PostgresqlProvider.Instance.RegisterMapping(idType, dbType, parameterType);
-                idGeneration = new StrongTypedIdGeneration(idType, innerProperty, identityType, builder);
+                idGeneration = new ValueTypeIdGeneration(idType, innerProperty, identityType, builder);
                 return true;
             }
         }
@@ -241,34 +236,28 @@ public class StrongTypedIdGeneration: ValueTypeInfo, IIdGeneration
     public void WriteBulkWriterCode(GeneratedMethod load, DocumentMapping mapping)
     {
         var dbType = PostgresqlProvider.Instance.ToParameterType(SimpleType);
-        var memberPath = IsFSharpSingleCaseDiscriminatedUnion(OuterType)
-            ? $"{mapping.IdMember.Name}.{ValueProperty.Name}"
-            : $"{mapping.IdMember.Name}.Value.{ValueProperty.Name}";
-        load.Frames.Code($"writer.Write(document.{memberPath}, {{0}});", dbType);
+        load.Frames.Code($"writer.Write(document.{mapping.IdMember.Name}.Value.{ValueProperty.Name}, {{0}});", dbType);
     }
 
     public void WriteBulkWriterCodeAsync(GeneratedMethod load, DocumentMapping mapping)
     {
         var dbType = PostgresqlProvider.Instance.ToParameterType(SimpleType);
-        var memberPath = IsFSharpSingleCaseDiscriminatedUnion(OuterType)
-            ? $"{mapping.IdMember.Name}.{ValueProperty.Name}"
-            : $"{mapping.IdMember.Name}.Value.{ValueProperty.Name}";
         load.Frames.Code(
-            $"await writer.WriteAsync(document.{memberPath}, {{0}}, {{1}});",
+            $"await writer.WriteAsync(document.{mapping.IdMember.Name}.Value.{ValueProperty.Name}, {{0}}, {{1}});",
             dbType, Use.Type<CancellationToken>());
     }
 }
 
-internal class StrongTypedIdSelectClause<TOuter, TInner>: ISelectClause, IScalarSelectClause, IModifyableFromObject,
-    ISelector<TOuter>
+internal class ValueTypeIdSelectClause<TOuter, TInner>: ISelectClause, IScalarSelectClause, IModifyableFromObject,
+    ISelector<TOuter?> where TOuter : struct
 {
-    public StrongTypedIdSelectClause(StrongTypedIdGeneration idGeneration)
+    public ValueTypeIdSelectClause(ValueTypeIdGeneration idGeneration)
     {
         Converter = idGeneration.CreateConverter<TOuter, TInner>();
         MemberName = "d.id";
     }
 
-    public StrongTypedIdSelectClause(Func<TInner, TOuter> converter)
+    public ValueTypeIdSelectClause(Func<TInner, TOuter> converter)
     {
         Converter = converter;
     }
@@ -279,7 +268,7 @@ internal class StrongTypedIdSelectClause<TOuter, TInner>: ISelectClause, IScalar
 
     public ISelectClause CloneToOtherTable(string tableName)
     {
-        return new StrongTypedIdSelectClause<TOuter, TInner>(Converter)
+        return new ValueTypeIdSelectClause<TOuter, TInner>(Converter)
         {
             FromObject = tableName, MemberName = MemberName
         };
@@ -325,16 +314,7 @@ internal class StrongTypedIdSelectClause<TOuter, TInner>: ISelectClause, IScalar
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
         ISqlFragment currentStatement)
     {
-        if (typeof(TOuter).IsValueType)
-        {
-            var genericType = typeof(NullableListQueryHandler<>).MakeGenericType([typeof(TOuter)]);
-            var nullableListQueryHandler = Activator.CreateInstance(genericType, [statement, this]);
-            return (IQueryHandler<TResult>)nullableListQueryHandler;
-        }
-        else
-        {
-            return (IQueryHandler<TResult>)new ListQueryHandler<TOuter>(statement, this);
-        }
+        return (IQueryHandler<TResult>)new ListQueryHandler<TOuter?>(statement, this);
     }
 
     public ISelectClause UseStatistics(QueryStatistics statistics)

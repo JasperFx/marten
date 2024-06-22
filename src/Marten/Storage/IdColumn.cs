@@ -28,9 +28,13 @@ internal class IdColumn: TableColumn, ISelectableColumn
             return;
         }
 
-        if (mapping.IdStrategy is StrongTypedIdGeneration st)
+        if (mapping.IdStrategy is ValueTypeIdGeneration st)
         {
             st.GenerateCodeForFetchingId(index, sync, async, mapping);
+        }
+        else if (mapping.IdStrategy is FSharpDiscriminatedUnionIdGeneration fst)
+        {
+            fst.GenerateCodeForFetchingId(index, sync, async, mapping);
         }
         else
         {
