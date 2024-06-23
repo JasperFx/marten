@@ -11,6 +11,7 @@ Besides being serializable, Marten's only other requirement for a .Net type to b
 1. `Int` or `Long`. As of right now, Marten uses a [HiLo generator](http://stackoverflow.com/questions/282099/whats-the-hi-lo-algorithm) approach to assigning numeric identifiers by document type.
    Marten may support Postgresql sequences or star-based algorithms as later alternatives.
 1. _Strong Typed Identifiers_ where a type like the C# `public record struct NewGuidId(Guid Value);` wraps an inner `int`, `long`, `Guid`, or `string` value
+1. A single-case F# discriminated union can be used as the identifier. In this case, only `Guid` and `string` can be used as inner types, and you must set the ID yourself before saving the document (the ID cannot be automatically set by Marten since F# records are immutable and do not have setters - this would require deep copying arbitrary document types dynamically which is a relatively complex feature not supported at this time)
 1. When the ID member of a document is not settable or not public a `NoOpIdGeneration` strategy is used. This ensures that Marten does not set the ID itself, so the ID should be generated manually.
 1. A `Custom` ID generator strategy is used to implement the ID generation strategy yourself.
 
