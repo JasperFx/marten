@@ -26,6 +26,7 @@ public class applicability_of_identity_types
     [InlineData(typeof(NewLongId), true)]
     [InlineData(typeof(NewStringId), true)]
     [InlineData(typeof(NewDateId), false)]
+    [InlineData(typeof(FSharpTypes.OrderId), false)]
     public void ValueTypeIdGeneration_IsCandidate(Type candidate, bool isCandidate)
     {
         var value = ValueTypeIdGeneration.IsCandidate(candidate, out var idGeneration);
