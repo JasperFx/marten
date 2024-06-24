@@ -1,11 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.Core.Exceptions;
-using JasperFx.Core.Reflection;
-using Marten.Exceptions;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 
@@ -21,9 +17,34 @@ public class UpdateBatch: IUpdateBatch
         _operations = operations;
     }
 
+    public string? TenantId { get; set; }
+
+    public IReadOnlyList<Type> DocumentTypes()
+    {
+        return _operations.Select(x => x.DocumentType).Where(x => x != null).Distinct().ToList();
+    }
+
+    public Task PostUpdateAsync(IMartenSession session)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task PreUpdateAsync(IMartenSession session)
+    {
+        return Task.CompletedTask;
+    }
+
+    public IReadOnlyList<OperationPage> BuildPages(IMartenSession session)
+    {
+        return buildPages(session).ToList();
+    }
+
     private IEnumerable<OperationPage> buildPages(IMartenSession session)
     {
-        if (!_operations.Any()) yield break;
+        if (!_operations.Any())
+        {
+            yield break;
+        }
 
         if (_operations.Count < session.Options.UpdateBatchSize)
         {
@@ -47,26 +68,4 @@ public class UpdateBatch: IUpdateBatch
             }
         }
     }
-
-    public IReadOnlyList<Type> DocumentTypes()
-    {
-        return _operations.Select(x => x.DocumentType).Where(x => x != null).Distinct().ToList();
-    }
-
-    public Task PostUpdateAsync(IMartenSession session)
-    {
-        return Task.CompletedTask;
-    }
-
-    public Task PreUpdateAsync(IMartenSession session)
-    {
-        return Task.CompletedTask;
-    }
-
-    public IReadOnlyList<OperationPage> BuildPages(IMartenSession session)
-    {
-        return buildPages(session).ToList();
-    }
-
-
 }
