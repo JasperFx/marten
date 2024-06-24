@@ -20,7 +20,7 @@ public partial class EventGraph
 
     private async Task executeTombstoneBlock(UpdateBatch batch, CancellationToken cancellationToken)
     {
-        await using var session = (DocumentSessionBase)_store.LightweightSession();
+        await using var session = (DocumentSessionBase)(batch.TenantId.IsEmpty() ? _store.LightweightSession() : _store.LightweightSession(batch.TenantId!));
         await session.ExecuteBatchAsync(batch, cancellationToken).ConfigureAwait(false);
     }
 
@@ -174,7 +174,10 @@ public partial class EventGraph
 
             operations.AddRange(tombstones);
 
-            batch = new UpdateBatch(operations);
+            batch = new UpdateBatch(operations)
+            {
+                TenantId = session.TenantId
+            };
 
             return true;
         }
@@ -187,7 +190,7 @@ public partial class EventGraph
     {
         try
         {
-            using var session = (DocumentSessionBase)_store.LightweightSession();
+            using var session = (DocumentSessionBase)_store.LightweightSession(tombstoneBatch.TenantId);
             session.ExecuteBatch(tombstoneBatch);
         }
         catch (Exception)
