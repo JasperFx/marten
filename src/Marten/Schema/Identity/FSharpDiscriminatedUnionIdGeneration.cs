@@ -24,7 +24,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Schema.Identity;
 
-public class FSharpDiscriminatedUnionIdGeneration: StrongTypedIdInfo, IIdGeneration, IStrongTypedIdGeneration
+public class FSharpDiscriminatedUnionIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedIdGeneration
 {
     private readonly IScalarSelectClause _selector;
 
