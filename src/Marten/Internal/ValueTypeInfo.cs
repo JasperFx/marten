@@ -11,7 +11,7 @@ namespace Marten.Internal;
 /// Internal model of a custom "wrapped" value type Marten uses
 /// for LINQ generation
 /// </summary>
-public class StrongTypedIdInfo
+public class ValueTypeInfo
 {
     public Type OuterType { get; }
     public Type SimpleType { get; }
@@ -19,7 +19,7 @@ public class StrongTypedIdInfo
     public MethodInfo Builder { get; }
     public ConstructorInfo Ctor { get; }
 
-    public StrongTypedIdInfo(Type outerType, Type simpleType, PropertyInfo valueProperty, ConstructorInfo ctor)
+    public ValueTypeInfo(Type outerType, Type simpleType, PropertyInfo valueProperty, ConstructorInfo ctor)
     {
         OuterType = outerType;
         SimpleType = simpleType;
@@ -27,7 +27,7 @@ public class StrongTypedIdInfo
         Ctor = ctor;
     }
 
-    public StrongTypedIdInfo(Type outerType, Type simpleType, PropertyInfo valueProperty, MethodInfo builder)
+    public ValueTypeInfo(Type outerType, Type simpleType, PropertyInfo valueProperty, MethodInfo builder)
     {
         OuterType = outerType;
         SimpleType = simpleType;

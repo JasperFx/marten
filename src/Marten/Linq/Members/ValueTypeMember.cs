@@ -16,9 +16,9 @@ internal class ValueTypeMember<TOuter, TInner>: SimpleCastMember
 {
     private readonly Func<TOuter, TInner> _valueSource;
 
-    public ValueTypeMember(IQueryableMember parent, Casing casing, MemberInfo member, StrongTypedIdInfo strongTypedIdInfo) : base(parent, casing, member, PostgresqlProvider.Instance.GetDatabaseType(strongTypedIdInfo.SimpleType, EnumStorage.AsInteger))
+    public ValueTypeMember(IQueryableMember parent, Casing casing, MemberInfo member, ValueTypeInfo valueTypeInfo) : base(parent, casing, member, PostgresqlProvider.Instance.GetDatabaseType(valueTypeInfo.SimpleType, EnumStorage.AsInteger))
     {
-        _valueSource = strongTypedIdInfo.ValueAccessor<TOuter, TInner>();
+        _valueSource = valueTypeInfo.ValueAccessor<TOuter, TInner>();
     }
 
     public override void PlaceValueInDictionaryForContainment(Dictionary<string, object> dict, ConstantExpression constant)
