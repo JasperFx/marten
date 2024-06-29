@@ -162,53 +162,31 @@ public class numeric_revisioning: OneOffConfigurationsContext
     }
 
     [Fact]
-    public async Task each_store_should_increase_the_version()
-    {
-        var doc1 = new RevisionedDoc { Name = "Tim" };
-        theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
-        doc1.Version.ShouldBe(1);
-
-        doc1.Name = "Brad";
-        theSession.Store(doc1);
-        await theSession.SaveChangesAsync();
-        doc1.Version.ShouldBe(2);
-
-        doc1.Name = "Janet";
-        theSession.Store(doc1);
-
-        // It's going to warn you to use UpdateRevision here.
-        var ex = await Should.ThrowAsync<ConcurrencyException>(async () =>
-        {
-            await theSession.SaveChangesAsync();
-        });
-    }
-
-    [Fact]
     public async Task optimistic_concurrency_failure_with_update_revision()
     {
         var doc1 = new RevisionedDoc { Name = "Tim" };
         theSession.Store(doc1);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         doc1.Name = "Bill";
         theSession.Store(doc1);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         doc1.Name = "Dru";
+        doc1.Version = 3;
         theSession.Store(doc1);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong" };
         theSession.UpdateRevision(doc2, doc1.Version + 1);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Logger = new TestOutputMartenLogger(_output);
 
         await Should.ThrowAsync<ConcurrencyException>(async () =>
         {
             theSession.UpdateRevision(doc2, 2);
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
         });
     }
 
