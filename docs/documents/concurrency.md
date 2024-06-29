@@ -186,6 +186,11 @@ If using the `IRevisioned` interface, or by mapping another property to the vers
 version number from the document itself such that `IDocumentSession.Store()` is essentially `IDocumentSession.UpdateVersion(entity, entity.Version)`
 :::
 
+::: warning
+Marten will not perfectly keep incrementing the IRevisioned.Revision number if the same document is repeatedly stored by the 
+same session. Prefer using `UpdateRevision()` if you try to continuously update the same document from the same session!
+:::
+
 or finally by adding the `[Version]` attribute to a public member on the document type to opt into the 
 `UseNumericRevisions` behavior on the parent type with the decorated member being tracked as the version number as
 shown in this sample:
