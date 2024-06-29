@@ -496,6 +496,6 @@ internal class DuplicatedFieldSelectClause: ISelectClause, IModifyableFromObject
 
     public ISelectClause UseStatistics(QueryStatistics statistics)
     {
-        throw new NotSupportedException();
+        return typeof(StatsSelectClause<>).CloseAndBuildAs<ISelectClause>(this, statistics, SelectedType);
     }
 }
