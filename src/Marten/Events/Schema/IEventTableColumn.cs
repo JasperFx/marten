@@ -2,6 +2,12 @@ using JasperFx.CodeGeneration;
 
 namespace Marten.Events.Schema;
 
+public enum AppendMode
+{
+    Full,
+    QuickWithVersion
+}
+
 /// <summary>
 ///     This interface is used by the event store code generation to build the IEventStorage
 /// </summary>
@@ -35,5 +41,8 @@ internal interface IEventTableColumn
     /// <param name="method"></param>
     /// <param name="graph"></param>
     /// <param name="index"></param>
-    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index);
+    /// <param name="full"></param>
+    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full);
+
+    string ValueSql(EventGraph graph, AppendMode mode);
 }

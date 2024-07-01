@@ -56,8 +56,10 @@ public partial class EventGraph: IFeatureSchema
         yield return new EventProgressionTable(DatabaseSchemaName);
 
         yield return new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint");
-        yield return Function.ForRemoval(new PostgresqlObjectName(DatabaseSchemaName, "mt_append_event"));
         yield return new ArchiveStreamFunction(this);
+
+        yield return new QuickAppendEventFunction(this);
+
 
         foreach (var schemaSource in Options.Projections.All.OfType<IProjectionSchemaSource>())
         {

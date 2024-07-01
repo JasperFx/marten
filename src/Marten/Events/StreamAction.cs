@@ -290,7 +290,11 @@ public class StreamAction
                 @event.Id = CombGuidIdGeneration.NewGuid();
             }
 
-            @event.Sequence = sequences.Dequeue();
+            if (sequences.TryDequeue(out var sequence))
+            {
+                @event.Sequence = sequence;
+            }
+
             @event.TenantId = session.TenantId;
             @event.Timestamp = timestamp;
 

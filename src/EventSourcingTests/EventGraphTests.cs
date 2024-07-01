@@ -82,6 +82,30 @@ public class EventGraphTests
         theGraph.IsActive(null).ShouldBeTrue();
     }
 
+    [Fact]
+    public void default_append_mode_is_rich()
+    {
+        theGraph.AppendMode.ShouldBe(EventAppendMode.Rich);
+        theGraph.EventAppender.ShouldBeOfType<RichEventAppender>();
+    }
+
+    [Fact]
+    public void switch_to_quick()
+    {
+        theGraph.AppendMode = EventAppendMode.Quick;
+        theGraph.EventAppender.ShouldBeOfType<QuickEventAppender>();
+        theGraph.AppendMode.ShouldBe(EventAppendMode.Quick);
+    }
+
+    [Fact]
+    public void switch_to_quick_and_back_to_rich()
+    {
+        theGraph.AppendMode = EventAppendMode.Quick;
+        theGraph.AppendMode = EventAppendMode.Rich;
+        theGraph.AppendMode.ShouldBe(EventAppendMode.Rich);
+        theGraph.EventAppender.ShouldBeOfType<RichEventAppender>();
+    }
+
     public class HouseRemodeling
     {
         public Guid Id { get; set; }

@@ -45,3 +45,4 @@ public abstract class AppendEventOperationBase: IStorageOperation
         return $"Insert Event to Stream {Stream.Key ?? Stream.Id.ToString()}, Version {Event.Version}";
     }
 }
+

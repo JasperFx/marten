@@ -51,6 +51,8 @@ namespace Marten.Events
         /// </summary>
         public bool EnableUniqueIndexOnEventId { get; set; }
 
+        public EventAppendMode AppendMode { get; set; }
+
         /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
         ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered

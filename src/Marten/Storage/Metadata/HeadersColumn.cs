@@ -43,7 +43,7 @@ internal class HeadersColumn: MetadataColumn<Dictionary<string, object>>, IEvent
         });
     }
 
-    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index)
+    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
         method.Frames.Code($"parameters[{index}].NpgsqlDbType = {{0}};", NpgsqlDbType.Jsonb);
         method.Frames.Code($"parameters[{index}].Value = {{0}}.Serializer.ToJson({{1}}.{nameof(IEvent.Headers)});",
@@ -82,6 +82,11 @@ internal class HeadersColumn: MetadataColumn<Dictionary<string, object>>, IEvent
     internal override UpsertArgument ToArgument()
     {
         return new HeadersArgument();
+    }
+
+    public string ValueSql(EventGraph graph, AppendMode mode)
+    {
+        return "?";
     }
 }
 

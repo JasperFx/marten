@@ -3,7 +3,6 @@ using System.Linq;
 using Marten.Events.Archiving;
 using Marten.Storage;
 using Marten.Storage.Metadata;
-using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 
@@ -15,11 +14,11 @@ internal class EventsTable: Table
 {
     public EventsTable(EventGraph events): base(new PostgresqlObjectName(events.DatabaseSchemaName, "mt_events"))
     {
-        AddColumn(new EventTableColumn("seq_id", x => x.Sequence)).AsPrimaryKey();
+        AddColumn(new SequenceColumn()).AsPrimaryKey();
         AddColumn(new EventTableColumn("id", x => x.Id)).NotNull();
         AddColumn(new StreamIdColumn(events));
 
-        AddColumn(new EventTableColumn("version", x => x.Version)).NotNull();
+        AddColumn(new VersionColumn());
         AddColumn<EventJsonDataColumn>();
         AddColumn<EventTypeColumn>();
         AddColumn(new EventTableColumn("timestamp", x => x.Timestamp))
@@ -32,7 +31,6 @@ internal class EventsTable: Table
         AddIfActive(events.Metadata.CorrelationId);
         AddIfActive(events.Metadata.CausationId);
         AddIfActive(events.Metadata.Headers);
-
 
         if (events.TenancyStyle == TenancyStyle.Conjoined)
         {

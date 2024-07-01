@@ -41,7 +41,10 @@ public abstract partial class DocumentSessionBase
             foreach (var operationType in operationDocumentTypes()) Database.EnsureStorageExists(operationType);
         }
 
-        foreach (var listener in Listeners) listener.BeforeSaveChanges(this);
+        foreach (var listener in Listeners)
+        {
+            listener.BeforeSaveChanges(this);
+        }
 
         var batch = new UpdateBatch(_workTracker.AllOperations);
 
@@ -52,7 +55,10 @@ public abstract partial class DocumentSessionBase
         EjectPatchedTypes(_workTracker);
         Logger.RecordSavedChanges(this, _workTracker);
 
-        foreach (var listener in Listeners) listener.AfterCommit(this, _workTracker);
+        foreach (var listener in Listeners)
+        {
+            listener.AfterCommit(this, _workTracker);
+        }
 
         // Need to clear the unit of work here
         _workTracker.Reset();
