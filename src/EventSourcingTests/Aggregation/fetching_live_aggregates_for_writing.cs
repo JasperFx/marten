@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Exceptions;
@@ -374,6 +375,10 @@ public class SimpleAggregate
     // This will be the aggregate version
     public long Version { get; set; }
 
+    public SimpleAggregate()
+    {
+        Debug.WriteLine("Here");
+    }
 
     public Guid Id { get; set; }
 

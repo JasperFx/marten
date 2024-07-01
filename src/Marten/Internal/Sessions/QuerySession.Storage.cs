@@ -12,7 +12,12 @@ public partial class QuerySession
 {
     protected readonly IProviderGraph _providers;
 
-    private ImHashMap<Type, IDocumentStorage> _byType = ImHashMap<Type, IDocumentStorage>.Empty;
+    protected ImHashMap<Type, IDocumentStorage> _byType = ImHashMap<Type, IDocumentStorage>.Empty;
+
+    protected void overrideStorage(Type type, IDocumentStorage storage)
+    {
+        _byType = _byType.AddOrUpdate(type, storage);
+    }
 
     public IDocumentStorage StorageFor(Type documentType)
     {
@@ -27,11 +32,13 @@ public partial class QuerySession
         return storage;
     }
 
-    protected ImHashMap<Type, IDocumentStorage> _rememberedStorage = ImHashMap<Type, IDocumentStorage>.Empty;
-
     public IDocumentStorage<T> StorageFor<T>() where T : notnull
     {
-        if (_rememberedStorage.TryFind(typeof(T), out var storage)) return (IDocumentStorage<T>)storage;
+        if (_byType.TryFind(typeof(T), out var storage))
+        {
+            return (IDocumentStorage<T>)storage;
+        }
+
         return selectStorage(_providers.StorageFor<T>());
     }
 

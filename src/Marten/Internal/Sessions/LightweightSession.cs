@@ -17,7 +17,8 @@ public class LightweightSession: DocumentSessionBase
 
     public override void UseIdentityMapFor<T>()
     {
-        _rememberedStorage = _rememberedStorage.AddOrUpdate(typeof(T), _providers.StorageFor<T>().IdentityMap);
+        var documentStorage = _providers.StorageFor<T>().IdentityMap;
+        overrideStorage(typeof(T), documentStorage);
     }
 
     protected internal override IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider)
