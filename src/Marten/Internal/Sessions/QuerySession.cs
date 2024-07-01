@@ -22,7 +22,7 @@ public partial class QuerySession: IMartenSession, IQuerySession
     public StoreOptions Options { get; }
     public IQueryEventStore Events { get; }
 
-    protected virtual IQueryEventStore CreateEventStore(DocumentStore store, Tenant tenant)
+    protected virtual IQueryEventStore createEventStore(DocumentStore store, Tenant tenant)
     {
         return new QueryEventStore(this, store, tenant);
     }
@@ -71,7 +71,7 @@ public partial class QuerySession: IMartenSession, IQuerySession
         Serializer = store.Serializer;
         Options = store.Options;
 
-        Events = CreateEventStore(store, tenant ?? sessionOptions.Tenant);
+        Events = createEventStore(store, tenant ?? sessionOptions.Tenant);
 
         Logger = store.Options.Logger().StartSession(this);
 
@@ -84,20 +84,19 @@ public partial class QuerySession: IMartenSession, IQuerySession
     {
         get
         {
-            if (_connection is IAlwaysConnectedLifetime lifetime)
+            switch (_connection)
             {
-                return lifetime.Connection;
-            }
-            else if (_connection is ITransactionStarter starter)
-            {
-                var l = starter.Start();
-                _connection = l;
-                return l.Connection;
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    $"The current lifetime {_connection} is neither a {nameof(IAlwaysConnectedLifetime)} nor a {nameof(ITransactionStarter)}");
+                case IAlwaysConnectedLifetime lifetime:
+                    return lifetime.Connection;
+                case ITransactionStarter starter:
+                {
+                    var l = starter.Start();
+                    _connection = l;
+                    return l.Connection;
+                }
+                default:
+                    throw new InvalidOperationException(
+                        $"The current lifetime {_connection} is neither a {nameof(IAlwaysConnectedLifetime)} nor a {nameof(ITransactionStarter)}");
             }
         }
     }

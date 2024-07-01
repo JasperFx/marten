@@ -304,7 +304,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         return tenantSession;
     }
 
-    protected override IQueryEventStore CreateEventStore(DocumentStore store, Tenant tenant)
+    protected override IQueryEventStore createEventStore(DocumentStore store, Tenant tenant)
     {
         return new EventStore(this, store, tenant);
     }
@@ -365,22 +365,19 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
     private void storeEntity<T>(T entity, IDocumentStorage<T> storage) where T : notnull
     {
-        if (entity is IVersioned versioned)
+        switch (entity)
         {
-            if (versioned.Version != Guid.Empty)
-            {
-                storage.Store(this, entity, versioned.Version);
+            case IVersioned v when v.Version != Guid.Empty:
+                storage.Store(this, entity, v.Version);
                 return;
-            }
+            case IRevisioned r when r.Version != 0:
+                storage.Store(this, entity, r.Version);
+                return;
+            default:
+                // Put it in the identity map -- if necessary
+                storage.Store(this, entity);
+                break;
         }
-        else if (entity is IRevisioned revisioned && revisioned.Version != 0)
-        {
-            storage.Store(this, entity, revisioned.Version);
-            return;
-        }
-
-        // Put it in the identity map -- if necessary
-        storage.Store(this, entity);
     }
 
     public void EjectPatchedTypes(IUnitOfWork changes)
