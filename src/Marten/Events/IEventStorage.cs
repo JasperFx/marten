@@ -42,4 +42,17 @@ public interface IEventStorage: ISelector<IEvent>, IDocumentStorage<IEvent>
     /// <param name="stream"></param>
     /// <returns></returns>
     IStorageOperation UpdateStreamVersion(StreamAction stream);
+
+    /// <summary>
+    /// Create a storage operation to just increment the existing stream
+    /// based on the number of the events being appended
+    /// </summary>
+    /// <param name="stream"></param>
+    /// <returns></returns>
+    IStorageOperation IncrementStreamVersion(StreamAction stream);
+
+    IStorageOperation QuickAppendEvents(StreamAction stream);
+
+    IStorageOperation QuickAppendEventWithVersion(EventGraph events, IMartenSession session, StreamAction stream,
+        IEvent e);
 }

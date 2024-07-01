@@ -18,6 +18,26 @@ The event data is persisted to two tables:
 Events can be captured by either starting a new stream or by appending events to an existing stream. In addition, Marten has some tricks up its sleeve for dealing
 with concurrency issues that may result from multiple transactions trying to simultaneously append events to the same stream.
 
+## "Rich" vs "Quick" Appends <Badge type="tip" text="7.21" />
+
+Before diving into starting new event streams or appending events to existing streams, just know that there are two different
+modes of event appending you can use with Marten:
+
+snippet: sample_configuring_event_append_mode
+
+The classic `Rich` mode will append events in a two step process where the local session will first determine all possible
+metadata for the events about to be appended such that inline projections can use event versions and the global event sequence
+numbers at the time that the inline projections are created. 
+
+The newer `Quick` mode eschews version and sequence metadata in favor of performing the event append and stream creation
+operations with minimal overhead. The improved performance comes at the cost of not having the `IEvent.Version` and `IEvent.Sequence`
+information available at the time that inline projections are executed.
+
+If using inline projections for a single stream (`SingleStreamProjection` or _snapshots_) and the `Quick` mode, the Marten team
+highly recommends using the `IRevisioned` interface on your projected aggregate documents so that Marten can "move" the version
+set by the database operations to the version of the projected documents loaded from the database later. Mapping a custom member
+to the `Revision` metadata will work as well.
+
 ## Starting a new Stream
 
 You can **optionally** start a new event stream against some kind of .Net type that theoretically marks the type of stream you're capturing.

@@ -40,7 +40,7 @@ internal class CorrelationIdColumn: MetadataColumn<string>, ISelectableColumn, I
         });
     }
 
-    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index)
+    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
         method.SetParameterFromMember<IEvent>(index, x => x.CorrelationId);
     }
@@ -67,6 +67,11 @@ internal class CorrelationIdColumn: MetadataColumn<string>, ISelectableColumn, I
         builder.Append(ColumnName);
         builder.Append(" = ");
         builder.AppendParameter(session.CorrelationId);
+    }
+
+    public string ValueSql(EventGraph graph, AppendMode mode)
+    {
+        return "?";
     }
 }
 

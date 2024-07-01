@@ -40,7 +40,7 @@ internal class CausationIdColumn: MetadataColumn<string>, ISelectableColumn, IEv
         });
     }
 
-    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index)
+    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
         method.SetParameterFromMember<IEvent>(index, x => x.CausationId);
     }
@@ -67,6 +67,11 @@ internal class CausationIdColumn: MetadataColumn<string>, ISelectableColumn, IEv
         builder.Append(ColumnName);
         builder.Append(" = ");
         builder.AppendParameter(session.CausationId);
+    }
+
+    public string ValueSql(EventGraph graph, AppendMode mode)
+    {
+        return "?";
     }
 }
 
@@ -110,5 +115,10 @@ internal class CausationIdArgument: UpsertArgument
     {
         load.Frames.CodeAsync("await writer.WriteAsync(\"BULK_INSERT\", {0}, {1});", DbType,
             Use.Type<CancellationToken>());
+    }
+
+    public string ValueSql(EventGraph graph, AppendMode mode)
+    {
+        return "?";
     }
 }

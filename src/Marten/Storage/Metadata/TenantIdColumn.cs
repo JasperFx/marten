@@ -33,7 +33,7 @@ internal class TenantIdColumn: MetadataColumn<string>, ISelectableColumn, IEvent
         });
     }
 
-    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index)
+    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
         method.SetParameterFromMember<StreamAction>(index, x => x.TenantId);
     }
@@ -81,4 +81,9 @@ internal class TenantIdColumn: MetadataColumn<string>, ISelectableColumn, IEvent
     bool IStreamTableColumn.Reads => true;
 
     bool IStreamTableColumn.Writes => true;
+
+    public string ValueSql(EventGraph graph, AppendMode mode)
+    {
+        return "?";
+    }
 }

@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Operations;
-using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
@@ -14,14 +13,45 @@ using Weasel.Core;
 
 namespace Marten.Events;
 
+public enum EventAppendMode
+{
+    /// <summary>
+    /// Default behavior that ensures that all inline projections will have full access to all event
+    /// metadata including intended event sequences, versions, and timestamps
+    /// </summary>
+    Rich,
+
+    /// <summary>
+    /// Stripped down, more performant mode of appending events that will omit some event metadata within
+    /// inline projections
+    /// </summary>
+    Quick
+}
+
 public partial class EventGraph
 {
     private RetryBlock<UpdateBatch> _tombstones;
 
     private async Task executeTombstoneBlock(UpdateBatch batch, CancellationToken cancellationToken)
     {
-        await using var session = (DocumentSessionBase)(batch.TenantId.IsEmpty() ? _store.LightweightSession() : _store.LightweightSession(batch.TenantId!));
+        await using var session = (DocumentSessionBase)(batch.TenantId.IsEmpty()
+            ? _store.LightweightSession()
+            : _store.LightweightSession(batch.TenantId!));
         await session.ExecuteBatchAsync(batch, cancellationToken).ConfigureAwait(false);
+    }
+
+    internal IEventAppender EventAppender { get; set; } = new RichEventAppender();
+
+    public EventAppendMode AppendMode
+    {
+        get
+        {
+            return EventAppender is RichEventAppender ? EventAppendMode.Rich : EventAppendMode.Quick;
+        }
+        set
+        {
+            EventAppender = value == EventAppendMode.Quick ? new QuickEventAppender() : new RichEventAppender();
+        }
     }
 
     internal void ProcessEvents(DocumentSessionBase session)
@@ -36,50 +66,7 @@ public partial class EventGraph
             session.Database.EnsureStorageExists(typeof(IEvent));
         }
 
-        var storage = session.EventStorage();
-
-        var fetcher = new EventSequenceFetcher(this, session.WorkTracker.Streams.Sum(x => x.Events.Count));
-        var sequences = session.ExecuteHandler(fetcher);
-
-
-        foreach (var stream in session.WorkTracker.Streams.Where(x => x.Events.Any()))
-        {
-            stream.TenantId ??= session.TenantId;
-
-            if (stream.ActionType == StreamActionType.Start)
-            {
-                stream.PrepareEvents(0, this, sequences, session);
-                session.QueueOperation(storage.InsertStream(stream));
-            }
-            else
-            {
-                var handler = storage.QueryForStream(stream);
-                var state = session.ExecuteHandler(handler);
-
-                if (state == null)
-                {
-                    stream.PrepareEvents(0, this, sequences, session);
-                    session.QueueOperation(storage.InsertStream(stream));
-                }
-                else
-                {
-                    if (state.IsArchived)
-                    {
-                        throw new InvalidStreamOperationException(
-                            $"Attempted to append event to archived stream with Id '{state.Id}'.");
-                    }
-
-                    stream.PrepareEvents(state.Version, this, sequences, session);
-                    session.QueueOperation(storage.UpdateStreamVersion(stream));
-                }
-            }
-
-            foreach (var @event in stream.Events)
-                session.QueueOperation(storage.AppendEvent(this, session, stream, @event));
-        }
-
-        foreach (var projection in _inlineProjections.Value)
-            projection.Apply(session, session.WorkTracker.Streams.ToList());
+        EventAppender.ProcessEvents(this, session, _inlineProjections.Value);
     }
 
     internal async Task ProcessEventsAsync(DocumentSessionBase session, CancellationToken token)
@@ -94,54 +81,7 @@ public partial class EventGraph
             await session.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
         }
 
-        var fetcher = new EventSequenceFetcher(this, session.WorkTracker.Streams.Sum(x => x.Events.Count));
-        var sequences = await session.ExecuteHandlerAsync(fetcher, token).ConfigureAwait(false);
-
-
-        var storage = session.EventStorage();
-
-        foreach (var stream in session.WorkTracker.Streams.Where(x => x.Events.Any()))
-        {
-            stream.TenantId ??= session.TenantId;
-
-            if (stream.ActionType == StreamActionType.Start)
-            {
-                stream.PrepareEvents(0, this, sequences, session);
-                session.QueueOperation(storage.InsertStream(stream));
-            }
-            else
-            {
-                var handler = storage.QueryForStream(stream);
-                var state = await session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
-
-                if (state == null)
-                {
-                    stream.PrepareEvents(0, this, sequences, session);
-                    session.QueueOperation(storage.InsertStream(stream));
-                }
-                else
-                {
-                    if (state.IsArchived)
-                    {
-                        throw new InvalidStreamOperationException(
-                            $"Attempted to append event to archived stream with Id '{state.Id}'.");
-                    }
-
-                    stream.PrepareEvents(state.Version, this, sequences, session);
-                    session.QueueOperation(storage.UpdateStreamVersion(stream));
-                }
-            }
-
-            foreach (var @event in stream.Events)
-            {
-                session.QueueOperation(storage.AppendEvent(this, session, stream, @event));
-            }
-        }
-
-        foreach (var projection in _inlineProjections.Value)
-        {
-            await projection.ApplyAsync(session, session.WorkTracker.Streams.ToList(), token).ConfigureAwait(false);
-        }
+        await EventAppender.ProcessEventsAsync(this, session, _inlineProjections.Value, token).ConfigureAwait(false);
     }
 
     internal bool TryCreateTombstoneBatch(DocumentSessionBase session, out UpdateBatch batch)
@@ -174,10 +114,7 @@ public partial class EventGraph
 
             operations.AddRange(tombstones);
 
-            batch = new UpdateBatch(operations)
-            {
-                TenantId = session.TenantId
-            };
+            batch = new UpdateBatch(operations) { TenantId = session.TenantId };
 
             return true;
         }

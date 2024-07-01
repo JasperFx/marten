@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Events.Archiving;
+using Marten.Events.Operations;
 using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -222,6 +223,12 @@ public abstract class EventDocumentStorage: IEventStorage
     public abstract IStorageOperation InsertStream(StreamAction stream);
     public abstract IQueryHandler<StreamState> QueryForStream(StreamAction stream);
     public abstract IStorageOperation UpdateStreamVersion(StreamAction stream);
+    public IStorageOperation IncrementStreamVersion(StreamAction stream)
+    {
+        return Events.StreamIdentity == StreamIdentity.AsGuid
+            ? new IncrementStreamVersionById(Events, stream)
+            : new IncrementStreamVersionByKey(Events, stream);
+    }
 
     public IEvent Resolve(DbDataReader reader)
     {
@@ -292,4 +299,16 @@ public abstract class EventDocumentStorage: IEventStorage
         return Events.EventMappingFor(type);
     }
 
+    public virtual IStorageOperation
+        QuickAppendEventWithVersion(EventGraph events, IMartenSession session, StreamAction stream, IEvent e)
+    {
+        throw new NotSupportedException(
+            "You will have to re-generate the Marten code before the \"quick append events\" feature is available");
+    }
+
+    public virtual IStorageOperation QuickAppendEvents(StreamAction stream)
+    {
+        throw new NotSupportedException(
+            "You will have to re-generate the Marten code before the \"quick append events\" feature is available");
+    }
 }

@@ -35,7 +35,7 @@ internal class StreamIdColumn: TableColumn, IEventTableColumn
         }
     }
 
-    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index)
+    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
         if (graph.StreamIdentity == StreamIdentity.AsGuid)
         {
@@ -45,5 +45,10 @@ internal class StreamIdColumn: TableColumn, IEventTableColumn
         {
             method.SetParameterFromMember<StreamAction>(index, x => x.Key);
         }
+    }
+
+    public string ValueSql(EventGraph graph, AppendMode mode)
+    {
+        return "?";
     }
 }

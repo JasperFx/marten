@@ -24,10 +24,15 @@ internal class EventJsonDataColumn: TableColumn, IEventTableColumn
         throw new NotSupportedException();
     }
 
-    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index)
+    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
         method.Frames.Code($"parameters[{index}].NpgsqlDbType = {{0}};", NpgsqlDbType.Jsonb);
         method.Frames.Code($"parameters[{index}].Value = {{0}}.Serializer.ToJson({{1}}.{nameof(IEvent.Data)});",
             Use.Type<IMartenSession>(), Use.Type<IEvent>());
+    }
+
+    public string ValueSql(EventGraph graph, AppendMode mode)
+    {
+        return "?";
     }
 }

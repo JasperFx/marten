@@ -58,10 +58,7 @@ internal static class EventDocumentStorageGenerator
 
         buildSelectorMethods(options, builderType);
 
-        var appendEventOperationType = buildAppendEventOperation(options.EventGraph, assembly);
-
-        builderType.MethodFor(nameof(EventDocumentStorage.AppendEvent))
-            .Frames.ReturnNewGeneratedTypeObject(appendEventOperationType, "stream", "e");
+        buildAppendEventOperations(options, assembly, builderType);
 
 
         buildInsertStream(builderType, assembly, options.EventGraph);
@@ -72,6 +69,23 @@ internal static class EventDocumentStorageGenerator
 
         buildUpdateStreamVersion(builderType, assembly, options.EventGraph);
         return builderType;
+    }
+
+    private static void buildAppendEventOperations(StoreOptions options, GeneratedAssembly assembly,
+        GeneratedType builderType)
+    {
+        var appendEventOperationType = buildAppendEventOperation(options.EventGraph, assembly, AppendMode.Full);
+        builderType.MethodFor(nameof(EventDocumentStorage.AppendEvent))
+            .Frames.ReturnNewGeneratedTypeObject(appendEventOperationType, "stream", "e");
+
+        var quickAppendEventGivenVersion =
+            buildAppendEventOperation(options.EventGraph, assembly, AppendMode.QuickWithVersion);
+        builderType.MethodFor(nameof(EventDocumentStorage.QuickAppendEventWithVersion))
+            .Frames.ReturnNewGeneratedTypeObject(quickAppendEventGivenVersion, "stream", "e");
+
+        var quickAppend = buildQuickAppendOperation(options.EventGraph, assembly);
+        builderType.MethodFor(nameof(EventDocumentStorage.QuickAppendEvents))
+            .Frames.ReturnNewGeneratedTypeObject(quickAppend, "stream");
     }
 
     private static void buildSelectorMethods(StoreOptions options, GeneratedType builderType)
@@ -245,9 +259,17 @@ internal static class EventDocumentStorageGenerator
         }
     }
 
-    private static GeneratedType buildAppendEventOperation(EventGraph graph, GeneratedAssembly assembly)
+    private static GeneratedType buildAppendEventOperation(EventGraph graph, GeneratedAssembly assembly,
+        AppendMode mode)
     {
-        var operationType = assembly.AddType("AppendEventOperation", typeof(AppendEventOperationBase));
+        var typeName = "AppendEventOperation";
+        if (mode != AppendMode.Full)
+        {
+            typeName += mode.ToString();
+        }
+
+        var baseType = typeof(AppendEventOperationBase);
+        var operationType = assembly.AddType(typeName, baseType);
 
         var configure = operationType.MethodFor(nameof(AppendEventOperationBase.ConfigureCommand));
         configure.DerivedVariables.Add(new Variable(typeof(IEvent), nameof(AppendEventOperationBase.Event)));
@@ -258,8 +280,13 @@ internal static class EventDocumentStorageGenerator
             // Hokey, use an explicit model for writeable vs readable columns some day
             .Where(x => !(x is IsArchivedColumn)).ToList();
 
+        // Hokey, but we need to move Sequence to the end
+        var sequence = columns.OfType<SequenceColumn>().Single();
+        columns.Remove(sequence);
+        columns.Add(sequence);
+
         var sql =
-            $"insert into {graph.DatabaseSchemaName}.mt_events ({columns.Select(x => x.Name).Join(", ")}) values ({columns.Select(_ => "?").Join(", ")})";
+            $"insert into {graph.DatabaseSchemaName}.mt_events ({columns.Select(x => x.Name).Join(", ")}) values ({columns.Select(c => c.ValueSql(graph, mode)).Join(", ")})";
 
         operationType.AddStringConstant("SQL", sql);
 
@@ -268,7 +295,77 @@ internal static class EventDocumentStorageGenerator
 
         for (var i = 0; i < columns.Count; i++)
         {
-            columns[i].GenerateAppendCode(configure, graph, i);
+            columns[i].GenerateAppendCode(configure, graph, i, mode);
+        }
+
+        return operationType;
+    }
+
+    private static GeneratedType buildQuickAppendOperation(EventGraph graph, GeneratedAssembly assembly)
+    {
+        var operationType = assembly.AddType("QuickAppendEventsOperation", typeof(QuickAppendEventsOperationBase));
+
+        var table = new EventsTable(graph);
+        var parameterList = "";
+
+
+        var index = 6;
+        int causationIndex = 0;
+        int correlationIndex = 0;
+        int headerIndex = 0;
+        if (table.Columns.OfType<CausationIdColumn>().Any())
+        {
+            parameterList += ", ?";
+            causationIndex = ++index;
+        }
+
+        if (table.Columns.OfType<CorrelationIdColumn>().Any())
+        {
+            parameterList += ", ?";
+            correlationIndex = ++index;
+        }
+
+        if (table.Columns.OfType<HeadersColumn>().Any())
+        {
+            parameterList += ", ?";
+            headerIndex = ++index;
+        }
+
+        var sql =
+            $"select {graph.DatabaseSchemaName}.mt_quick_append_events(?, ?, ?, ?, ?, ?, ?{parameterList})";
+
+        operationType.AddStringConstant("SQL", sql);
+
+        var configure = operationType.MethodFor(nameof(QuickAppendEventsOperationBase.ConfigureCommand));
+        configure.DerivedVariables.Add(new Variable(typeof(StreamAction), nameof(QuickAppendEventsOperationBase.Stream)));
+
+        configure.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(SQL);",
+            Use.Type<ICommandBuilder>());
+
+        if (graph.StreamIdentity == StreamIdentity.AsGuid)
+        {
+            configure.Frames.Code("writeId(parameters);");
+        }
+        else
+        {
+            configure.Frames.Code("writeKey(parameters);");
+        }
+
+        configure.Frames.Code("writeBasicParameters(parameters, session);");
+
+        if (causationIndex > 0)
+        {
+            configure.Frames.Code($"writeCausationIds({causationIndex}, parameters);");
+        }
+
+        if (correlationIndex > 0)
+        {
+            configure.Frames.Code($"writeCorrelationIds({correlationIndex}, parameters);");
+        }
+
+        if (headerIndex > 0)
+        {
+            configure.Frames.Code($"writeHeaders({headerIndex}, parameters, session);");
         }
 
         return operationType;

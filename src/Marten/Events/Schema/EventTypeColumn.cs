@@ -22,8 +22,13 @@ internal class EventTypeColumn: TableColumn, IEventTableColumn
         throw new NotSupportedException();
     }
 
-    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index)
+    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
         method.SetParameterFromMember<IEvent>(index, x => x.EventTypeName);
+    }
+
+    public string ValueSql(EventGraph graph, AppendMode mode)
+    {
+        return "?";
     }
 }

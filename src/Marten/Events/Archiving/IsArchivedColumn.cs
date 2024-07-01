@@ -25,8 +25,13 @@ internal class IsArchivedColumn: TableColumn, IEventTableColumn
         method.AssignMemberFromReaderAsync<IEvent>(null, index, x => x.IsArchived);
     }
 
-    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index)
+    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
         throw new NotSupportedException();
+    }
+
+    public string ValueSql(EventGraph graph, AppendMode mode)
+    {
+        return "?";
     }
 }
