@@ -36,6 +36,42 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     }
 
     [Fact]
+    public async Task silently_turns_on_identity_map_for_inline_aggregates()
+    {
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
+
+        var streamId = Guid.NewGuid();
+
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        stream.Aggregate.ShouldBeNull();
+        stream.CurrentVersion.ShouldBe(0);
+
+        stream.AppendOne(new AEvent());
+        stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
+        stream.AppendMany(new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        using var session = theStore.LightweightSession();
+        var existing = await session.Events.FetchForWriting<SimpleAggregate>(streamId);
+
+        // Should already be using the identity map
+        var loadAgain = await session.LoadAsync<SimpleAggregate>(streamId);
+        loadAgain.ShouldBeTheSameAs(existing.Aggregate);
+
+        // Append to the stream and see that the existing aggregate is changed
+        existing.AppendOne(new AEvent());
+        await session.SaveChangesAsync();
+
+        // 1 from the original version, another we just appended
+        existing.Aggregate.ACount.ShouldBe(2);
+
+        using var query = theStore.QuerySession();
+        var loadedFresh = await query.LoadAsync<SimpleAggregate>(streamId);
+        loadedFresh.ACount.ShouldBe(2);
+    }
+
+    [Fact]
     public async Task fetch_new_stream_for_writing_Guid_identifier_exception_handling()
     {
         StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
