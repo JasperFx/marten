@@ -231,4 +231,13 @@ public interface IDocumentOperations: IQuerySession
     /// <param name="sql"></param>
     /// <param name="parameterValues"></param>
     void QueueSqlCommand(string sql, params object[] parameterValues);
+
+
+    /// <summary>
+    /// In the case of a lightweight session, this will direct Marten to opt into identity map mechanics
+    /// for only the document type T. This is a micro-optimization added for the event sourcing + projections
+    /// support
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public void UseIdentityMapFor<T>();
 }
