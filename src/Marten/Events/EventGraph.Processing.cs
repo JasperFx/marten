@@ -99,6 +99,7 @@ public partial class EventGraph
             operations.Add(new EstablishTombstoneStream(this, session.TenantId));
             var tombstones = session.WorkTracker.Streams
                 .SelectMany(x => x.ToTombstoneEvents(mapping, tombstone))
+                .Where(x => x.Sequence != 0) // don't even try to save a tombstone if you don't know the sequence
                 .Select(x => new Event<Tombstone>(tombstone)
                 {
                     Sequence = x.Sequence,
