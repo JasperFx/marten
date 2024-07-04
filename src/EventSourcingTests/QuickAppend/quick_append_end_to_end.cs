@@ -30,6 +30,9 @@ public class quick_append_end_to_end : OneOffConfigurationsContext
             theSession.Events.StartStream<Quest>(new QuestStarted(), new MembersJoined(1, "Hobbiton", "Frodo", "Sam")).Id;
         await theSession.SaveChangesAsync();
 
+        theSession.Events.Append(streamId, new MembersDeparted { Members = new string[] { "Frodo" } });
+        await theSession.SaveChangesAsync();
+
         var events = await theSession.Events.FetchStreamAsync(streamId);
 
         foreach (var e in events)
