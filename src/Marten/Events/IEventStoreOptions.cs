@@ -54,6 +54,14 @@ namespace Marten.Events
         public EventAppendMode AppendMode { get; set; }
 
         /// <summary>
+        /// Setting this to true will direct Marten to automatically use the identity map for inline projections
+        /// in calls to FetchForWriting as an optimization to reduce repeated queries for the same aggregate.
+        /// The default is true. Disable this call if applying state changes to the loaded aggregate in your own
+        /// command handlers
+        /// </summary>
+        public bool UseIdentityMapForInlineAggregates { get; set; }
+
+        /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
         ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
         ///     the event type. It can also be used for the event namespace migration.
