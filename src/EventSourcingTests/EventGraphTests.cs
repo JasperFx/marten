@@ -106,6 +106,12 @@ public class EventGraphTests
         theGraph.EventAppender.ShouldBeOfType<RichEventAppender>();
     }
 
+    [Fact]
+    public void use_identity_map_optimization_is_true_by_default()
+    {
+        theGraph.UseIdentityMapForInlineAggregates.ShouldBeTrue();
+    }
+
     public class HouseRemodeling
     {
         public Guid Id { get; set; }
