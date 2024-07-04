@@ -40,7 +40,7 @@ namespace Marten.Events.Schema;
             {
                 metadataColumns += ", " + CausationIdColumn.ColumnName;
                 metadataParameters += ", causation_ids varchar[]";
-                metadataValues += ", causations_ids[index]";
+                metadataValues += ", causation_ids[index]";
             }
 
             if (table.Columns.OfType<CorrelationIdColumn>().Any())
