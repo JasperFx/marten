@@ -156,12 +156,14 @@ workflow operations. There can of course be a downside if you happen to be makin
 document somewhere in between calling `FetchForWriting()` and `SaveChangesAsync()`, so to opt out of this behavior if 
 that causes you any trouble, use this:
 
+
 ::: info
 Marten's default behavior of using sessions with the _Identity Map_ functionality option turned on was admittedly copied
 from RavenDb almost a decade ago, and the Marten team has been too afraid to change the default behavior to the more performant, _Lightweight_ sessions because of the 
 very real risk of introducing difficult to diagnose regression errors. There you go folks, a 10 year old decision that this 
 author still regrets, but we're probably stuck with for the foreseeable future.
 :::
+
 
 ## Explicit Optimistic Concurrency
 
