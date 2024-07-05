@@ -74,14 +74,6 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     internal EventMetadataCollection Metadata { get; } = new();
 
     /// <summary>
-    /// Setting this to true will direct Marten to automatically use the identity map for inline projections
-    /// in calls to FetchForWriting as an optimization to reduce repeated queries for the same aggregate.
-    /// The default is true. Disable this call if applying state changes to the loaded aggregate in your own
-    /// command handlers
-    /// </summary>
-    public bool UseIdentityMapForInlineAggregates { get; set; } = true;
-
-    /// <summary>
     /// TimeProvider used for event timestamping metadata. Replace for controlling the timestamps
     /// in testing
     /// </summary>

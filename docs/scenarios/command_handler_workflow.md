@@ -133,38 +133,6 @@ the standard `IDocumentSession.SaveChangesAsync()` method call. At that point, i
 `Order` stream between our handler calling `FetchForWriting()` and `IDocumentSession.SaveChangesAsync()`, the entire command will fail with a Marten
 `ConcurrencyException`.
 
-## Inline Aggregates <Badge type="tip" text="7.22" />
-
-::: warning
-You may need to opt out of this behavior if you are modifying the aggregate document returned by `FetchForWriting`
-before new events are applied to it to not arrive at incorrectly applied projection data. 
-:::
-
-`FetchForWriting()` works with all possible projection lifecycles as of Marten 7. However, there's a wrinkle with `Inline`
-projections you should be aware of. It's frequently a valuable optimization to use _Lightweight_ sessions that omit
-the identity map behavior. Let's say that we have a configuration like this:
-
-snippet: sample_using_lightweight_sessions_with_inline_single_stream_projection
-
-As an optimization, Marten is quietly turning on the identity map behavior for just a single aggregate document type
-when `FetchForWriting()` is called with an `Inline` projection as shown below:
-
-snippet: sample_usage_of_identity_map_for_inline_projections
-
-This was done specifically to prevent unnecessary database fetches for the exact same data within common command handler
-workflow operations. There can of course be a downside if you happen to be making any kind of mutations to the aggregate
-document somewhere in between calling `FetchForWriting()` and `SaveChangesAsync()`, so to opt out of this behavior if 
-that causes you any trouble, use this:
-
-
-::: info
-Marten's default behavior of using sessions with the _Identity Map_ functionality option turned on was admittedly copied
-from RavenDb almost a decade ago, and the Marten team has been too afraid to change the default behavior to the more performant, _Lightweight_ sessions because of the 
-very real risk of introducing difficult to diagnose regression errors. There you go folks, a 10 year old decision that this 
-author still regrets, but we're probably stuck with for the foreseeable future.
-:::
-
-
 ## Explicit Optimistic Concurrency
 
 This time let's explicitly opt into optimistic concurrency checks by telling Marten what the expected starting

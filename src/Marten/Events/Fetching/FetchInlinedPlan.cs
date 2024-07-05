@@ -29,12 +29,9 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
         await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
         await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
 
-        if (session.Options.Events.UseIdentityMapForInlineAggregates)
-        {
-            // Opt into the identity map mechanics for this aggregate type just in case
-            // you're using a lightweight session
-            session.UseIdentityMapFor<TDoc>();
-        }
+        // Opt into the identity map mechanics for this aggregate type just in case
+        // you're using a lightweight session
+        session.UseIdentityMapFor<TDoc>();
 
         if (forUpdate)
         {
