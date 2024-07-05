@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -27,22 +26,20 @@ public class document_inserts: IntegrationContext
     }
 
     [Fact]
-    public async Task can_insert_a_mixed_bag_of_documents()
+    public void can_insert_a_mixed_bag_of_documents()
     {
-        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
-
         var docs = new object[]
         {
             Target.Random(), Target.Random(), Target.Random(), new User(), new User(), new User(), new User()
         };
 
-        await using (var session = theStore.LightweightSession())
+        using (var session = theStore.LightweightSession())
         {
             session.InsertObjects(docs);
-            await session.SaveChangesAsync();
+            session.SaveChanges();
         }
 
-        await using (var query = theStore.QuerySession())
+        using (var query = theStore.QuerySession())
         {
             query.Query<Target>().Count().ShouldBe(3);
             query.Query<User>().Count().ShouldBe(4);
