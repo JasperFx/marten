@@ -69,9 +69,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         var aggregate = slice.Aggregate;
         if (slice.Aggregate == null && lifecycle == ProjectionLifecycle.Inline)
         {
-            // It's actually important to go in through the front door and use the session so that
-            // the identity map can kick in here
-            aggregate = await session.LoadAsync<TDoc>(slice.Id, cancellation).ConfigureAwait(false);
+            aggregate = await Storage.LoadAsync(slice.Id, session, cancellation).ConfigureAwait(false);
         }
 
         // Does the aggregate already exist before the events are applied?
