@@ -69,7 +69,7 @@ public abstract class BulkLoader<T, TId>: IBulkLoader<T>
         IEnumerable<T> documents,
         CancellationToken cancellation)
     {
-        await using var writer = conn.BeginBinaryImport(TempLoaderSql());
+        await using var writer = await conn.BeginBinaryImportAsync(TempLoaderSql(), cancellation).ConfigureAwait(false);
         foreach (var document in documents)
         {
             await writer.StartRowAsync(cancellation).ConfigureAwait(false);

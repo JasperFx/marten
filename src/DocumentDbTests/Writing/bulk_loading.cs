@@ -263,6 +263,33 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
     }
 
     [Fact]
+    public async Task load_across_multiple_tenants_async()
+    {
+        StoreOptions(opts => 
+        {
+            opts.Policies.AllDocumentsAreMultiTenanted();
+        });
+
+        var data = Target.GenerateRandomData(100).ToArray();
+
+        var tenant1 = "tenant_1";
+        var tenant2 = "tenant_2";
+
+        await theStore.BulkInsertAsync(tenant1, data, BulkInsertMode.OverwriteExisting);
+        await theStore.BulkInsertAsync(tenant2, data, BulkInsertMode.OverwriteExisting);
+
+        var tenant1Session = theStore.QuerySession(tenant1);
+        var tenant2Session = theStore.QuerySession(tenant2);
+
+        theSession.Query<Target>().Where(x => x.AnyTenant()).Count().ShouldBe(data.Length * 2);
+        tenant1Session.Query<Target>().Count().ShouldBe(data.Length);
+        tenant2Session.Query<Target>().Count().ShouldBe(data.Length);
+
+        tenant1Session.Load<Target>(data[0].Id).ShouldNotBeNull();
+        tenant2Session.Load<Target>(data[0].Id).ShouldNotBeNull();
+    }
+
+    [Fact]
     public async Task load_with_small_batch_and_duplicated_data_field_async()
     {
         StoreOptions(_ =>
