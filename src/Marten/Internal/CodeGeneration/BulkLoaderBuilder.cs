@@ -84,6 +84,7 @@ public class BulkLoaderBuilder
     public string CopyNewDocumentsFromTempTable()
     {
         var table = _mapping.Schema.Table;
+        var isMultiTenanted = _mapping.TenancyStyle == TenancyStyle.Conjoined;
 
         var storageTable = table.Identifier.QualifiedName;
         var columns = table.Columns.Where(x => x.Name != SchemaConstants.LastModifiedColumn)
@@ -91,23 +92,32 @@ public class BulkLoaderBuilder
         var selectColumns = table.Columns.Where(x => x.Name != SchemaConstants.LastModifiedColumn)
             .Select(x => $"{_tempTable}.\\\"{x.Name}\\\"").Join(", ");
 
+        var joinExpression = isMultiTenanted
+            ? $"{_tempTable}.id = {storageTable}.id and {_tempTable}.tenant_id = {storageTable}.tenant_id"
+            : $"{_tempTable}.id = {storageTable}.id";
+
         return
             $"insert into {storageTable} ({columns}, {SchemaConstants.LastModifiedColumn}) " +
             $"(select {selectColumns}, transaction_timestamp() " +
-            $"from {_tempTable} left join {storageTable} on {_tempTable}.id = {storageTable}.id " +
+            $"from {_tempTable} left join {storageTable} on {joinExpression} " +
             $"where {storageTable}.id is null)";
     }
 
     public string OverwriteDuplicatesFromTempTable()
     {
         var table = _mapping.Schema.Table;
+        var isMultiTenanted = _mapping.TenancyStyle == TenancyStyle.Conjoined;
         var storageTable = table.Identifier.QualifiedName;
 
         var updates = table.Columns.Where(x => x.Name != "id" && x.Name != SchemaConstants.LastModifiedColumn)
             .Select(x => $"{x.Name} = source.{x.Name}").Join(", ");
 
+        var joinExpression = isMultiTenanted
+            ? "source.id = target.id and source.tenant_id = target.tenant_id"
+            : "source.id = target.id";
+
         return
-            $@"update {storageTable} target SET {updates}, {SchemaConstants.LastModifiedColumn} = transaction_timestamp() FROM {_tempTable} source WHERE source.id = target.id";
+            $"update {storageTable} target SET {updates}, {SchemaConstants.LastModifiedColumn} = transaction_timestamp() FROM {_tempTable} source WHERE {joinExpression}";
     }
 
     public string CreateTempTableForCopying()
