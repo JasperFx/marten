@@ -112,6 +112,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ValueTypeTests", "ValueType
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharpTypes", "FSharpTypes\FSharpTypes.fsproj", "{B1F935FC-55DC-418B-A5DC-6049A5C06871}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Daemon.StressTest", "Daemon.StressTest\Daemon.StressTest.csproj", "{34ACE7DA-6034-465F-A281-93A872E5E160}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -270,6 +272,10 @@ Global
 		{B1F935FC-55DC-418B-A5DC-6049A5C06871}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1F935FC-55DC-418B-A5DC-6049A5C06871}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1F935FC-55DC-418B-A5DC-6049A5C06871}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34ACE7DA-6034-465F-A281-93A872E5E160}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34ACE7DA-6034-465F-A281-93A872E5E160}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34ACE7DA-6034-465F-A281-93A872E5E160}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34ACE7DA-6034-465F-A281-93A872E5E160}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -280,4 +280,9 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
             parameter.Value = session.Serializer.ToJson(session.Headers);
         }
     }
+
+    public override string ToString()
+    {
+        return $"{_id}";
+    }
 }
