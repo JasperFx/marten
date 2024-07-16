@@ -15,7 +15,7 @@ using Xunit.Abstractions;
 
 namespace EventSourcingTests.Bugs;
 
-public class Bug_3xxx_inline_projections_with_quick_append : BugIntegrationContext
+public class Bug_3310_inline_projections_with_quick_append : BugIntegrationContext
 {
     private readonly ITestOutputHelper _testOutputHelper;
 
@@ -26,7 +26,7 @@ public class Bug_3xxx_inline_projections_with_quick_append : BugIntegrationConte
 
     private const string tenant = "tenant-1";
 
-    public Bug_3xxx_inline_projections_with_quick_append(ITestOutputHelper testOutputHelper)
+    public Bug_3310_inline_projections_with_quick_append(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
         StoreOptions(opts =>
