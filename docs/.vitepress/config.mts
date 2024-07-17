@@ -74,7 +74,7 @@ const config: UserConfig<DefaultTheme.Config> = {
       '/': [
         {
           text: 'Introduction',
-          collapsed: false,
+          collapsed: true,
           items: [
             { text: 'What is Marten?', link: '/introduction' },
             { text: 'Getting Started', link: '/getting-started' }
@@ -82,7 +82,7 @@ const config: UserConfig<DefaultTheme.Config> = {
         },
         {
           text: 'Configuration',
-          collapsed: false,
+          collapsed: true,
           items: [
             { text: 'Bootstrapping Marten', link: '/configuration/hostbuilder' },
             { text: 'Configuring Document Storage', link: '/configuration/storeoptions' },
@@ -98,7 +98,7 @@ const config: UserConfig<DefaultTheme.Config> = {
         },
         {
           text: 'Document Database',
-          collapsed: false,
+          collapsed: true,
           items: [
             { text: 'Marten as Document DB', link: '/documents/' },
             { text: 'Document Identity', link: '/documents/identity' },
@@ -155,7 +155,7 @@ const config: UserConfig<DefaultTheme.Config> = {
         },
         {
           text: 'Event Store',
-          collapsed: false,
+          collapsed: true,
           items: [
             { text: 'Marten as Event Store', link: '/events/' },
             { text: 'Quick Start', link: '/events/quickstart' },
@@ -181,10 +181,10 @@ const config: UserConfig<DefaultTheme.Config> = {
                 { text: 'Rebuilding Projections', link: '/events/projections/rebuilding' },
                 { text: 'Projections and IoC Services', link: '/events/projections/ioc' },
                 { text: 'Async Daemon HealthChecks', link: '/events/projections/healthchecks' },]
-            }, 
+            },
             {
-                text: 'Event Subscriptions',
-                link: '/events/subscriptions'
+              text: 'Event Subscriptions',
+              link: '/events/subscriptions'
             },
             {
               text: 'Event Versioning',
@@ -203,21 +203,21 @@ const config: UserConfig<DefaultTheme.Config> = {
         },
         {
           text: 'Testing',
-          collapsed: false,
+          collapsed: true,
           items: [
             { text: 'Integration Testing', link: '/testing/integration' },
           ]
         },
         {
           text: 'DevOps',
-          collapsed: false,
+          collapsed: true,
           items: [
             { text: 'DevOps', link: '/devops/devops' },
           ]
         },
         {
           text: 'Diagnostics',
-          collapsed: false,
+          collapsed: true,
           items: [
             { text: 'Diagnostics and Instrumentation', link: '/diagnostics' },
             { text: 'Open Telemetry and Metrics', link: '/otel' },
@@ -225,7 +225,7 @@ const config: UserConfig<DefaultTheme.Config> = {
         },
         {
           text: 'Schema',
-          collapsed: false,
+          collapsed: true,
           items: [
             { text: 'Database Management', link: '/schema/' },
             { text: 'How Documents are Stored', link: '/schema/storage' },
@@ -237,14 +237,14 @@ const config: UserConfig<DefaultTheme.Config> = {
         },
         {
           text: 'Troubleshoot',
-          collapsed: false,
+          collapsed: true,
           items: [
             { text: 'FAQ & Troubleshooting', link: '/troubleshoot' }
           ]
         },
         {
           text: 'Scenarios',
-          collapsed: false,
+          collapsed: true,
           items: [
             {
               text: 'Aggregates, events and repositories',
@@ -270,7 +270,7 @@ const config: UserConfig<DefaultTheme.Config> = {
         },
         {
           text: 'Postgres for SQL Server users',
-          collapsed: false,
+          collapsed: true,
           items: [
             {
               text: 'Naming conventions',
@@ -341,7 +341,17 @@ const config: UserConfig<DefaultTheme.Config> = {
             //   link: '/postgres/backup-restore/remote'
             // },
           ]
-        }
+        },
+        {
+          text: 'Community',
+          collapsed: true,
+          items: [
+            {
+              text: 'Tools and Libraries',
+              link: '/community/tools-and-libraries'
+            },
+          ]
+        },
       ]
     }
   }
