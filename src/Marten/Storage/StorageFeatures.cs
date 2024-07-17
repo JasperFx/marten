@@ -47,7 +47,7 @@ public class StorageFeatures: IFeatureSchema
     /// <summary>
     ///     Additional Postgresql tables, functions, or sequences to be managed by this DocumentStore
     /// </summary>
-    public IList<ISchemaObject> ExtendedSchemaObjects { get; } = new List<ISchemaObject>();
+    public List<ISchemaObject> ExtendedSchemaObjects { get; } = new();
 
     internal SystemFunctions SystemFunctions { get; }
 

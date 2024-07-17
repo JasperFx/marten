@@ -79,7 +79,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     internal readonly List<Action<ISerializer>> SerializationConfigurations = new();
 
-    private readonly IList<IDocumentPolicy> _policies = new List<IDocumentPolicy>
+    private readonly List<IDocumentPolicy> _policies = new List<IDocumentPolicy>
     {
         new VersionedPolicy(), new SoftDeletedPolicy(), new TrackedPolicy(), new TenancyPolicy(), new ProjectionDocumentPolicy()
     };
@@ -88,7 +88,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///     Register "initial data loads" that will be applied to the DocumentStore when it is
     ///     bootstrapped
     /// </summary>
-    internal readonly IList<IInitialData> InitialData = new List<IInitialData>();
+    internal readonly List<IInitialData> InitialData = new();
 
     /// <summary>
     /// Configure tenant id behavior within this Marten DocumentStore
@@ -98,7 +98,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Add, remove, or reorder global session listeners
     /// </summary>
-    public readonly IList<IDocumentSessionListener> Listeners = new List<IDocumentSessionListener>();
+    public readonly List<IDocumentSessionListener> Listeners = new();
 
     /// <summary>
     /// Used to enable or disable Marten's OpenTelemetry features for just this session.
@@ -399,7 +399,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     private Lazy<ITenancy>? _tenancy;
     private Func<string, NpgsqlDataSourceBuilder> _npgsqlDataSourceBuilderFactory = DefaultNpgsqlDataSourceBuilderFactory;
     private INpgsqlDataSourceFactory _npgsqlDataSourceFactory;
-    private readonly IList<Type> _compiledQueryTypes = new List<Type>();
+    private readonly List<Type> _compiledQueryTypes = new();
     private int _applyChangesLockId = 4004;
     private bool _shouldApplyChangesOnStartup = false;
     private bool _shouldAssertDatabaseMatchesConfigurationOnStartup = false;

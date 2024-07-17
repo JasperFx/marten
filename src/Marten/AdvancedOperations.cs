@@ -54,7 +54,7 @@ public class AdvancedOperations
     ///     Mostly for testing support. Register a new IInitialData object
     ///     that would be called from ResetAllData() later.
     /// </summary>
-    public IList<IInitialData> InitialDataCollection => _store.Options.InitialData;
+    public List<IInitialData> InitialDataCollection => _store.Options.InitialData;
 
     /// <summary>
     ///     Deletes all current document and event data, then (re)applies the configured
