@@ -48,4 +48,10 @@ public class LightweightSession: DocumentSessionBase
     {
         // Nothing
     }
+
+    public override void UseIdentityMapFor<T>()
+    {
+        var documentStorage = _providers.StorageFor<T>().IdentityMap;
+        overrideStorage(typeof(T), documentStorage);
+    }
 }
