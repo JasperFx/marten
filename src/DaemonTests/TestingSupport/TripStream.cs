@@ -2,9 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using JasperFx.Core;
+using Marten;
 using Marten.Events;
 
 namespace DaemonTests.TestingSupport;
+
+public class TripPublisher
+{
+    public List<object> Events { get; set; } = new();
+
+
+}
 
 public class TripStream
 {
@@ -50,11 +60,14 @@ public class TripStream
         return new TimeOnly(hour, 0, 0);
     }
 
-    public Guid StreamId = Guid.NewGuid();
+    public Guid StreamId = CombGuidIdGeneration.NewGuid();
 
     public readonly List<object> Events = new List<object>();
 
-
+    public TripStream(List<object> events)
+    {
+        Events = events;
+    }
 
     public TripStream()
     {
@@ -123,6 +136,91 @@ public class TripStream
     public void Reset()
     {
         _index = 0;
+    }
+
+    public static async Task PublishMultiplesSimple(IDocumentSession session, TripStream[] streams)
+    {
+        var list = streams.ToList();
+        while (list.Any())
+        {
+            foreach (var stream in list.ToArray())
+            {
+                if (stream.TryCheckOutEvents(out var events))
+                {
+                    if (stream.Started)
+                    {
+                        session.Events.Append(stream.StreamId, events);
+                    }
+                    else
+                    {
+                        stream.Started = true;
+                        session.Events.StartStream<Trip>(stream.StreamId, events);
+                    }
+                }
+
+                if (stream.IsFinishedPublishing())
+                {
+                    list.Remove(stream);
+                }
+            }
+
+            await session.SaveChangesAsync();
+        }
+    }
+
+    public bool Started { get; private set; }
+
+    public async Task PublishSingleFileSimple(IDocumentSession session)
+    {
+        while (TryAppendSimple(session))
+        {
+            await session.SaveChangesAsync();
+        }
+    }
+
+    public async Task PublishSingleFileWithFetchForWriting(IDocumentSession session)
+    {
+        while (await TryAppendWithFetchForWriting(session))
+        {
+            await session.SaveChangesAsync();
+        }
+    }
+
+    public async Task<bool> TryAppendWithFetchForWriting(IDocumentSession session)
+    {
+        if (TryCheckOutEvents(out var events))
+        {
+            if (Started)
+            {
+                var stream = await session.Events.FetchForWriting<Trip>(StreamId);
+                stream.AppendMany(events);
+            }
+            else
+            {
+                session.Events.StartStream<Trip>(StreamId, events);
+                Started = true;
+            }
+        }
+
+        return !IsFinishedPublishing();
+    }
+
+    public bool TryAppendSimple(IDocumentSession session)
+    {
+        if (TryCheckOutEvents(out var events))
+        {
+            if (Started)
+            {
+                session.Events.Append(StreamId, events);
+            }
+            else
+            {
+                session.Events.StartStream<Trip>(StreamId, events);
+                Started = true;
+            }
+        }
+
+        return !IsFinishedPublishing();
     }
 
     public bool TryCheckOutEvents(out object[] events)
