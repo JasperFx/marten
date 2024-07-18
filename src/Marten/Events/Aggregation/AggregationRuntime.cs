@@ -70,7 +70,16 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         // do not load if sliced by stream and the stream does not yet exist
         if (slice.Aggregate == null && lifecycle == ProjectionLifecycle.Inline && (Slicer is not ISingleStreamSlicer || slice.ActionType != StreamActionType.Start))
         {
-            aggregate = await Storage.LoadAsync(slice.Id, session, cancellation).ConfigureAwait(false);
+            if (session.Options.Events.UseIdentityMapForInlineAggregates)
+            {
+                // It's actually important to go in through the front door and use the session so that
+                // the identity map can kick in here
+                aggregate = await session.LoadAsync<TDoc>(slice.Id, cancellation).ConfigureAwait(false);
+            }
+            else
+            {
+                aggregate = await Storage.LoadAsync(slice.Id, session, cancellation).ConfigureAwait(false);
+            }
         }
 
         // Does the aggregate already exist before the events are applied?

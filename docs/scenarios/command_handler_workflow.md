@@ -133,6 +133,19 @@ the standard `IDocumentSession.SaveChangesAsync()` method call. At that point, i
 `Order` stream between our handler calling `FetchForWriting()` and `IDocumentSession.SaveChangesAsync()`, the entire command will fail with a Marten
 `ConcurrencyException`.
 
+### Inline Optimization <Badge type="tip" text="7.25" />
+
+If you are using and `Inline` single stream projection for the aggregate being targeted by `FetchForWriting()`, you can 
+make a performance optimization with this setting:
+
+sample: sample_use_identity_map_for_inline_aggregates
+
+It's pretty involved, but the key takeaway is that _if_ you are using lightweight sessions for a performance optimization
+-- and you probably should even though that's not a Marten default! -- and _also_ using `FetchForWriting<T>()` with 
+`Inline` projections, this optimizes your system to make fewer network round trips to the database and reuse the data
+you already fetched when applying the `Inline` projection. This is an _opt in_ setting because it can be harmful to 
+existing code that might be modifying the aggregate document fetched by `FetchForWriting()` outside of Marten itself.
+
 ## Explicit Optimistic Concurrency
 
 This time let's explicitly opt into optimistic concurrency checks by telling Marten what the expected starting

@@ -365,22 +365,19 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
     private void storeEntity<T>(T entity, IDocumentStorage<T> storage) where T : notnull
     {
-        if (entity is IVersioned versioned)
+        switch (entity)
         {
-            if (versioned.Version != Guid.Empty)
-            {
+            case IVersioned versioned when versioned.Version != Guid.Empty:
                 storage.Store(this, entity, versioned.Version);
                 return;
-            }
+            case IRevisioned revisioned when revisioned.Version != 0:
+                storage.Store(this, entity, revisioned.Version);
+                return;
+            default:
+                // Put it in the identity map -- if necessary
+                storage.Store(this, entity);
+                break;
         }
-        else if (entity is IRevisioned revisioned && revisioned.Version != 0)
-        {
-            storage.Store(this, entity, revisioned.Version);
-            return;
-        }
-
-        // Put it in the identity map -- if necessary
-        storage.Store(this, entity);
     }
 
     public void EjectPatchedTypes(IUnitOfWork changes)
