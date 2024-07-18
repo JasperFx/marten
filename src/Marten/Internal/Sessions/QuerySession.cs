@@ -84,20 +84,19 @@ public partial class QuerySession: IMartenSession, IQuerySession
     {
         get
         {
-            if (_connection is IAlwaysConnectedLifetime lifetime)
+            switch (_connection)
             {
-                return lifetime.Connection;
-            }
-            else if (_connection is ITransactionStarter starter)
-            {
-                var l = starter.Start();
-                _connection = l;
-                return l.Connection;
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    $"The current lifetime {_connection} is neither a {nameof(IAlwaysConnectedLifetime)} nor a {nameof(ITransactionStarter)}");
+                case IAlwaysConnectedLifetime lifetime:
+                    return lifetime.Connection;
+                case ITransactionStarter starter:
+                {
+                    var l = starter.Start();
+                    _connection = l;
+                    return l.Connection;
+                }
+                default:
+                    throw new InvalidOperationException(
+                        $"The current lifetime {_connection} is neither a {nameof(IAlwaysConnectedLifetime)} nor a {nameof(ITransactionStarter)}");
             }
         }
     }

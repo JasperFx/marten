@@ -31,6 +31,13 @@ namespace Marten.Events
         bool EnableGlobalProjectionsForConjoinedTenancy { get; set; }
 
         /// <summary>
+        /// Opt into a performance optimization that directs Marten to always use the identity map for an
+        /// Inline single stream projection's aggregate type when FetchForWriting() is called. Default is false.
+        /// Do not use this if you manually alter the fetched aggregate from FetchForWriting() outside of Marten
+        /// </summary>
+        bool UseIdentityMapForInlineAggregates { get; set; }
+
+        /// <summary>
         ///     Override the database schema name for event related tables. By default this
         ///     is the same schema as the document storage
         /// </summary>
@@ -581,5 +588,7 @@ public static class EventStoreOptionsExtensions
     {
         return options.Upcast(GetEventTypeNameWithSchemaVersion<TOldEvent>(schemaVersion), upcastAsync);
     }
+
+
 
 }

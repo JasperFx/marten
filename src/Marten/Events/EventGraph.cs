@@ -105,6 +105,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
 
     public bool EnableGlobalProjectionsForConjoinedTenancy { get; set; }
+    public bool UseIdentityMapForInlineAggregates { get; set; }
 
     /// <summary>
     ///     Configure the meta data required to be stored for events. By default meta data fields are disabled
