@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 
 namespace Marten.Services.BatchQuerying;
 
@@ -136,4 +137,13 @@ public interface IBatchedQuery
     ///     Force the batched query to execute synchronously
     /// </summary>
     void ExecuteSynchronously();
+
+    /// <summary>
+    /// Used internally by Marten. Allows for the usage of any old IQueryHandler<T>
+    /// in a batch
+    /// </summary>
+    /// <param name="handler"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Task<T> AddItem<T>(IQueryHandler<T> handler);
 }
