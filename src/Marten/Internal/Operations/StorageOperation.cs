@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using JasperFx.Core.Exceptions;
 using Marten.Exceptions;
 using Marten.Internal.DirtyTracking;
-using Marten.Metadata;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Npgsql;
@@ -40,8 +39,8 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         _tableName = mapping.TableName.Name;
     }
 
-    // Using 1 as the default so that inserts "just work"
-    public int Revision { get; set; } = 1;
+    // Using 0 as the default so that inserts "just work"
+    public int Revision { get; set; } = 0;
 
     public bool IgnoreConcurrencyViolation { get; set; }
 
@@ -132,7 +131,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         if (reader.Read())
         {
             var revision = reader.GetFieldValue<int>(0);
-            if (Revision > 1) // don't care about zero or 1
+            if (Revision != 0) // don't care about zero or 1
             {
                 if (revision > Revision)
                 {
@@ -159,7 +158,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         if (await reader.ReadAsync(token).ConfigureAwait(false))
         {
             var revision = await reader.GetFieldValueAsync<int>(0, token).ConfigureAwait(false);
-            if (Revision > 1) // don't care about zero or 1
+            if (Revision != 0) // don't care about zero or 1
             {
                 if (revision > Revision)
                 {

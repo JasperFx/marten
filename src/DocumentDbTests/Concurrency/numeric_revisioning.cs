@@ -280,35 +280,33 @@ public class numeric_revisioning: OneOffConfigurationsContext
     [Fact]
     public async Task overwrite_increments_version()
     {
-        theSession.Logger = new TestOutputMartenLogger(_output);
-
         var doc1 = new RevisionedDoc { Name = "Tim" };
         theSession.Store(doc1);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         doc1.Name = "Bill";
         doc1.Version = 0;
         theSession.Store(doc1);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         doc1.Name = "Dru";
         doc1.Version = 0;
         theSession.Store(doc1);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong", Version = 2};
         theSession.UpdateRevision(doc2, doc1.Version + 1);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var session2 =
             theStore.OpenSession(new SessionOptions { ConcurrencyChecks = ConcurrencyChecks.Disabled });
 
-
-        session2.Logger = new TestOutputMartenLogger(_output);
-
         doc2.Name = "Last";
         doc2.Version = 0;
         session2.Store(doc2);
+
+        session2.Logger = new TestOutputMartenLogger(_output);
+
         await session2.SaveChangesAsync();
 
         var doc3 = await session2.LoadAsync<RevisionedDoc>(doc1.Id);

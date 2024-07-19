@@ -145,6 +145,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
             {
                 storage.Store(this, entity);
                 var op = storage.Insert(entity, this, TenantId);
+                if (op is IRevisionedOperation r) r.Revision = 1;
                 _workTracker.Add(op);
             }
         }
