@@ -44,6 +44,28 @@ public class Bug_3310_inline_projections_with_quick_append : BugIntegrationConte
     }
 
     [Fact]
+    public async Task start_and_append_events_to_same_stream()
+    {
+        await using var session = theStore.LightweightSession(tenant);
+
+        session.Logger = new TestOutputMartenLogger(_testOutputHelper);
+
+        var streamId = Guid.NewGuid().ToString();
+
+        session.Events.StartStream<LoadTestInlineProjection>(streamId,new LoadTestEvent(Guid.NewGuid(), 1),
+            new LoadTestEvent(Guid.NewGuid(), 2), new LoadTestEvent(Guid.NewGuid(), 3));
+        await session.SaveChangesAsync();
+
+        _testOutputHelper.WriteLine("APPEND STARTS HERE");
+
+        session.Events.Append(streamId, new LoadTestEvent(Guid.NewGuid(), 4), new LoadTestEvent(Guid.NewGuid(), 5));
+        await session.SaveChangesAsync();
+
+        var doc = await session.LoadAsync<LoadTestInlineProjection>(streamId);
+        doc.Version.ShouldBe(5);
+    }
+
+    [Fact]
     public async Task create_1_stream_with_many_events()
     {
         await using var session = theStore.LightweightSession(tenant);
