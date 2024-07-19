@@ -151,4 +151,9 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
             .Concat(DeleteEvents).Concat(TransformedEvents).Distinct().ToArray();
         return eventTypes;
     }
+
+    public virtual void ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
+    {
+        // nothing
+    }
 }

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
+using Marten.Schema;
 
 namespace Marten.Events.Aggregation;
 
@@ -33,4 +34,12 @@ public interface IAggregateProjection // THIS NEEDS TO REMAIN PUBLIC
     uint ProjectionVersion { get; set; }
 
     object ApplyMetadata(object aggregate, IEvent lastEvent);
+
+    /// <summary>
+    /// Apply any necessary configuration to the document mapping to work with the projection and append
+    /// mode
+    /// </summary>
+    /// <param name="mapping"></param>
+    /// <param name="storeOptions"></param>
+    void ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions);
 }
