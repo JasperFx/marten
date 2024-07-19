@@ -79,6 +79,7 @@ public abstract class EventMapping: IDocumentMapping, IEventType
     public TenancyStyle TenancyStyle { get; } = TenancyStyle.Single;
     public IReadOnlyList<DuplicatedField> DuplicatedFields { get; }
     public DeleteStyle DeleteStyle { get; }
+    public bool UseVersionFromMatchingStream { get; set; }
 
     public PropertySearching PropertySearching { get; } = PropertySearching.JSON_Locator_Only;
 

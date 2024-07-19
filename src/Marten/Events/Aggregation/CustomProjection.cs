@@ -9,6 +9,7 @@ using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
+using Marten.Schema;
 using Marten.Services;
 using Marten.Sessions;
 using Marten.Storage;
@@ -21,7 +22,7 @@ namespace Marten.Events.Aggregation;
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
-public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationRuntime<TDoc, TId>, IProjectionSource
+public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationRuntime<TDoc, TId>, IProjectionSource, IAggregateProjection
 {
     private IDocumentStorage<TDoc, TId> _storage;
 
@@ -128,7 +129,6 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
     }
 
     Type IReadOnlyProjectionData.ProjectionType => GetType();
-    AsyncOptions IProjectionSource.Options { get; } = new();
 
     IEnumerable<Type> IProjectionSource.PublishedTypes()
     {
@@ -224,6 +224,53 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
             throw new InvalidProjectionException(
                 $"Invalid identity type {typeof(TId).NameInCode()} for aggregating by stream in projection {GetType().FullNameInCode()}");
         }
+    }
+
+    public Type AggregateType
+    {
+        get => typeof(TDoc);
+    }
+
+    public Type[] AllEventTypes { get; set; }
+    public bool MatchesAnyDeleteType(StreamAction action)
+    {
+        return false; // just no way of knowing
+    }
+
+    public bool MatchesAnyDeleteType(IEventSlice slice)
+    {
+        return false; // just no way of knowing
+    }
+
+    public bool AppliesTo(IEnumerable<Type> eventTypes)
+    {
+        return true; // just no way of knowing
+    }
+
+    public AsyncOptions Options { get; } = new();
+    public object ApplyMetadata(object aggregate, IEvent lastEvent)
+    {
+        if (aggregate is TDoc t) return ApplyMetadata(t, lastEvent);
+
+        return aggregate;
+    }
+
+    /// <summary>
+    /// Template method that is called on the last event in a slice of events that
+    /// are updating an aggregate. This was added specifically to add metadata like "LastModifiedBy"
+    /// from the last event to an aggregate with user-defined logic. Override this for your own specific logic
+    /// </summary>
+    /// <param name="aggregate"></param>
+    /// <param name="lastEvent"></param>
+    public virtual TDoc ApplyMetadata(TDoc aggregate, IEvent lastEvent)
+    {
+        return aggregate;
+    }
+
+    public void ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
+    {
+        mapping.UseVersionFromMatchingStream =
+            storeOptions.Events.AppendMode == EventAppendMode.Quick && Slicer is ISingleStreamSlicer;
     }
 }
 

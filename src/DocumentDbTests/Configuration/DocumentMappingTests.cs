@@ -40,6 +40,13 @@ public class DocumentMappingTests
     }
 
     [Fact]
+    public void use_revision_from_stream_is_false_by_default()
+    {
+        var mapping = DocumentMapping.For<LongId>();
+        mapping.UseVersionFromMatchingStream.ShouldBeFalse();
+    }
+
+    [Fact]
     public void concrete_type_with_subclasses_is_hierarchy()
     {
         var mapping = DocumentMapping.For<User>();

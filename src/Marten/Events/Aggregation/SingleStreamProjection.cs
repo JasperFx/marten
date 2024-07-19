@@ -38,6 +38,11 @@ public class SingleStreamProjection<T>: GeneratedAggregateProjectionBase<T>
         return Activator.CreateInstance(slicerType);
     }
 
+    public override void ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
+    {
+        mapping.UseVersionFromMatchingStream = storeOptions.Events.AppendMode == EventAppendMode.Quick;
+    }
+
     protected sealed override Type baseTypeForAggregationRuntime()
     {
         return typeof(AggregationRuntime<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
