@@ -28,8 +28,7 @@ DECLARE
   final_version INTEGER;
   current_version INTEGER;
 BEGIN
-
-  if revision = 1 then
+  if revision <= 1 then
     SELECT mt_version FROM {_tableName.QualifiedName} into current_version WHERE id = docId {_andTenantWhereClause};
     if current_version is not null then
       revision = current_version + 1;
