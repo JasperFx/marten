@@ -270,7 +270,7 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
     public void ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
     {
         mapping.UseVersionFromMatchingStream =
-            storeOptions.Events.AppendMode == EventAppendMode.Quick && Slicer is ISingleStreamSlicer;
+            Lifecycle == ProjectionLifecycle.Inline && storeOptions.Events.AppendMode == EventAppendMode.Quick && Slicer is ISingleStreamSlicer;
     }
 }
 
