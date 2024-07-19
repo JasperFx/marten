@@ -1,6 +1,7 @@
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
+using Marten.Events.Projections;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Shouldly;
@@ -17,6 +18,7 @@ public class SingleStreamProjectionTests
         var mapping = DocumentMapping.For<User>();
 
         mapping.StoreOptions.EventGraph.AppendMode = EventAppendMode.Quick;
+        projection.Lifecycle = ProjectionLifecycle.Inline;
 
         projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
 

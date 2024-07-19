@@ -279,26 +279,29 @@ public class StreamAction
             AggregateTypeName = graph.AggregateAliasFor(AggregateType);
         }
 
-        var i = currentVersion;
-
         // Augment the events before checking expected versions, this allows the sequence/etc to properly be set on the resulting tombstone events
-        foreach (var @event in _events)
+        if (graph.AppendMode == EventAppendMode.Rich)
         {
-            @event.Version = ++i;
-            if (@event.Id == Guid.Empty)
+            applyRichMetadata(currentVersion, graph, sequences, session, timestamp);
+        }
+        else
+        {
+            applyQuickMetadata(graph, session, timestamp);
+
+            if (ActionType == StreamActionType.Start)
             {
-                @event.Id = CombGuidIdGeneration.NewGuid();
+                ExpectedVersionOnServer = 0;
             }
 
-            if (sequences.TryDequeue(out var sequence))
+            // In this case, we "know" what the event versions should be, so just set them now
+            if (ExpectedVersionOnServer.HasValue)
             {
-                @event.Sequence = sequence;
+                var i = ExpectedVersionOnServer.Value;
+                foreach (var e in Events)
+                {
+                    e.Version = ++i;
+                }
             }
-
-            @event.TenantId = session.TenantId;
-            @event.Timestamp = timestamp;
-
-            ProcessMetadata(@event, graph, session);
         }
 
         if (currentVersion != 0)
@@ -326,6 +329,46 @@ public class StreamAction
         }
 
         Version = Events.Last().Version;
+    }
+
+    private void applyQuickMetadata(EventGraph graph, IMartenSession session, DateTimeOffset timestamp)
+    {
+        foreach (var @event in _events)
+        {
+            if (@event.Id == Guid.Empty)
+            {
+                @event.Id = CombGuidIdGeneration.NewGuid();
+            }
+
+            @event.TenantId = session.TenantId;
+            @event.Timestamp = timestamp;
+
+            ProcessMetadata(@event, graph, session);
+        }
+    }
+
+    private void applyRichMetadata(long currentVersion, EventGraph graph, Queue<long> sequences, IMartenSession session,
+        DateTimeOffset timestamp)
+    {
+        var i = currentVersion;
+        foreach (var @event in _events)
+        {
+            @event.Version = ++i;
+            if (@event.Id == Guid.Empty)
+            {
+                @event.Id = CombGuidIdGeneration.NewGuid();
+            }
+
+            if (sequences.TryDequeue(out var sequence))
+            {
+                @event.Sequence = sequence;
+            }
+
+            @event.TenantId = session.TenantId;
+            @event.Timestamp = timestamp;
+
+            ProcessMetadata(@event, graph, session);
+        }
     }
 
     internal static StreamAction ForReference(Guid streamId, string tenantId)

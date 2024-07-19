@@ -16,6 +16,11 @@ public abstract class AppendEventOperationBase: IStorageOperation
     {
         Stream = stream;
         Event = e;
+
+        if (e.Version == 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(e), "Version cannot be 0");
+        }
     }
 
     public StreamAction Stream { get; }

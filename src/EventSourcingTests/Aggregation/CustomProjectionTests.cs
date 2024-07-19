@@ -19,15 +19,18 @@ namespace EventSourcingTests.Aggregation;
 public class CustomProjectionTests
 {
     [Theory]
-    [InlineData(true, EventAppendMode.Quick, true)]
-    [InlineData(true, EventAppendMode.Rich, false)]
-    [InlineData(false, EventAppendMode.Rich, false)]
-    [InlineData(false, EventAppendMode.Quick, false)]
-    public void configure_mapping(bool isSingleGrouper, EventAppendMode appendMode, bool useVersionFromStream)
+    [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Inline, true)]
+    [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Async, false)]
+    [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Live, false)]
+    [InlineData(true, EventAppendMode.Rich, ProjectionLifecycle.Inline, false)]
+    [InlineData(false, EventAppendMode.Rich, ProjectionLifecycle.Inline, false)]
+    [InlineData(false, EventAppendMode.Quick, ProjectionLifecycle.Inline, false)]
+    public void configure_mapping(bool isSingleGrouper, EventAppendMode appendMode, ProjectionLifecycle lifecycle, bool useVersionFromStream)
     {
         var projection = isSingleGrouper ? (IAggregateProjection)new MySingleStreamProjection() : new MyCustomProjection();
         var mapping = DocumentMapping.For<MyAggregate>();
         mapping.StoreOptions.Events.AppendMode = appendMode;
+        projection.Lifecycle = lifecycle;
 
         projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
 
