@@ -39,6 +39,7 @@ public class projections_with_IoC_services
 
                 services.AddMarten(opts =>
                     {
+                        opts.ApplyChangesLockId = opts.ApplyChangesLockId + 10; // just make it different
                         opts.Connection(ConnectionSource.ConnectionString);
                         opts.DatabaseSchemaName = "ioc";
                     })

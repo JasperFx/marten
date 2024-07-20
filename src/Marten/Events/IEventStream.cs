@@ -38,6 +38,8 @@ internal class EventStream<T>: IEventStream<T>
         };
 
         _stream = stream;
+        _stream.AggregateType = typeof(T);
+
         Cancellation = cancellation;
         Aggregate = aggregate;
     }
@@ -53,6 +55,8 @@ internal class EventStream<T>: IEventStream<T>
         };
 
         _stream = stream;
+        _stream.AggregateType = typeof(T);
+
         Cancellation = cancellation;
         Aggregate = aggregate;
     }
