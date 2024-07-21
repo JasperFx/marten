@@ -37,7 +37,8 @@ resources:
         NAMEDATALEN: 150
 
 variables:
-  config: Release
+  configuration: Release
+  framework: net8.0
   disable_test_parallelization: true
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
@@ -100,15 +101,13 @@ jobs:
           docker exec $PG_CONTAINER_NAME psql -U postgres -c "DO 'plv8.elog(NOTICE, plv8.version);' LANGUAGE plv8;"
         displayName: Add plv8 extension
         condition: eq(variables['plv8'], 'true')
-      - script: |
-          dotnet run --project build/build.csproj -f $(dotnet_framework_version) -c Release -- ci
-          dotnet run --project build/build.csproj -f $(dotnet_framework_version) -c Release -- test-extension-libs-without-plv8
-        displayName: Build
+      - script: ./build.sh ci
+        displayName: Build without plv8
         env:
           DEFAULT_SERIALIZER: $(serializer)
-      - script: |
-          dotnet run --project build/build.csproj -f $(dotnet_framework_version) -c Release -- test-plv8
-        displayName: Build plv8
+        condition: eq(variables['plv8'], 'false')
+      - script: ./build.sh ci-with-test-plv8
+        displayName: Build with plv8
         env:
           DEFAULT_SERIALIZER: $(serializer)
         condition: eq(variables['plv8'], 'true')
