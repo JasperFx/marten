@@ -80,6 +80,10 @@ jobs:
         inputs:
           packageType: 'sdk'
           version: $(dotnet_version)
+      - script: |
+          dotnet workload update
+          dotnet workload install aspire
+        displayName: Install .NET Aspire workload
       - task: UseNode@1
         displayName: Install Node.js
         inputs:

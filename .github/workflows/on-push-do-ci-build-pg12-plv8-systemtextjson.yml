@@ -64,6 +64,11 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Install .NET Aspire workload
+        run: |
+          dotnet workload update
+          dotnet workload install aspire
+
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
