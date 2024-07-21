@@ -1,172 +1,183 @@
 using System;
 using System.IO;
-using System.Reflection;
-using System.Runtime.Versioning;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
-using Npgsql;
-using static System.Globalization.CultureInfo;
-using static Bullseye.Targets;
-using static SimpleExec.Command;
-using static Westwind.Utilities.FileUtils;
+using Nuke.Common;
+using Nuke.Common.IO;
+using Nuke.Common.ProjectModel;
+using Nuke.Common.Tooling;
+using Nuke.Common.Tools.DotNet;
+using Nuke.Common.Tools.Npm;
+using Serilog;
+using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
-namespace martenbuild;
-
-internal class MartenBuild
+class Build : NukeBuild
 {
-    private static string _framework;
-    private static string _configuration;
+    public static int Main() => Execute<Build>(x => x.Default);
 
-    private const string DockerConnectionString =
-        "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
+    [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
+    readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
-    private static async Task Main(string[] args)
-    {
-        _framework = GetFramework();
+    [Solution] readonly Solution Solution;
+    [Parameter] readonly bool DisableTestParallelization;
+    [Parameter] readonly string Framework;
+    [Parameter] readonly string Profile;
+    [Parameter] readonly string ConnectionString = "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
 
-        var configuration = GetEnvironmentVariable("config");
-        configuration = string.IsNullOrEmpty(configuration) ? "debug" : configuration;
+    Target Default => _ => _
+        .DependsOn(Mocha)
+        .DependsOn(Test)
+        .DependsOn(TestCodeGen);
 
-        _configuration = configuration;
+    Target CI => _ => _
+        .DependsOn(SetupTestParallelization)
+        .DependsOn(Connection)
+        .DependsOn(Default);
 
-        var disableTestParallelization = GetEnvironmentVariable("disable_test_parallelization");
-
-        Target("ci", DependsOn("setup-test-parallelization", "connection", "default"));
-
-        Target("default", DependsOn("mocha", "test"));
-
-        Target("clean", () =>
-            EnsureDirectoriesDeleted("results", "artifacts"));
-
-        Target("connection", () =>
-            File.WriteAllText("src/Marten.Testing/connection.txt", GetEnvironmentVariable("connection")));
-
-        Target("install", () =>
-            Run("npm", "install"));
-
-        Target("mocha", DependsOn("install"), () =>
-            Run("npm", "run test"));
-
-        Target("compile", DependsOn("clean"), () =>
+    Target Clean => _ => _
+        .Executes(() =>
         {
-            Run("dotnet",
-                $"build src/Marten.Testing/Marten.Testing.csproj --framework {_framework} --configuration {configuration}");
+            var results = AbsolutePath.Create("results");
+            var artifacts = AbsolutePath.Create("artifacts");
+            results.CreateOrCleanDirectory();
+            artifacts.CreateOrCleanDirectory();
         });
 
-        Target("test-base-lib", DependsOn("compile"), () =>
-            RunTests("Marten.Testing"));
+    Target Connection => _ => _
+        .Executes(() => File.WriteAllText("src/Marten.Testing/connection.txt", ConnectionString));
 
-        Target("compile-noda-time", DependsOn("clean"), () =>
-            Run("dotnet", $"build src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --framework {_framework} --configuration {configuration}"));
+    Target NpmInstall => _ => _
+        .Executes(() => NpmTasks.NpmInstall());
+   
+    Target Mocha => _ => _
+        .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("test")));
 
-        Target("test-noda-time", DependsOn("compile-noda-time"), () =>
-            RunTests("Marten.NodaTime.Testing"));
-
-        Target("compile-aspnetcore", DependsOn("clean"), () =>
-            Run("dotnet", $"build src/Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj --framework {_framework} --configuration {configuration}"));
-
-        Target("test-aspnetcore", DependsOn("compile-aspnetcore"), () =>
-            RunTests("Marten.AspNetCore.Testing"));
-
-        Target("compile-core-tests", DependsOn("clean"), () =>
-            Run("dotnet", $"build src/CoreTests/CoreTests.csproj --framework {_framework} --configuration {configuration}"));
-
-        Target("test-core", DependsOn("compile-core-tests"), () =>
-            RunTests("CoreTests"));
-
-        Target("test-cli", () =>
+    Target Compile => _ => _
+        .DependsOn(Restore)
+        .Executes(() =>
         {
-            Run("dotnet", $"test --configuration {_configuration} src/Marten.CommandLine.Tests/Marten.CommandLine.Tests.csproj");
+            DotNetBuild(s => s
+                .SetProjectFile(Solution)
+                .SetConfiguration(Configuration)
+                .EnableNoRestore());
         });
 
-        Target("compile-document-db-tests", DependsOn("clean"), () =>
-            Run("dotnet", $"build src/DocumentDbTests/DocumentDbTests.csproj --framework {_framework} --configuration {configuration}"));
-
-        Target("test-document-db", DependsOn("compile-document-db-tests"), () =>
-            RunTests("DocumentDbTests"));
-
-        Target("compile-event-sourcing-tests", DependsOn("clean"), () =>
-            Run("dotnet", $"build src/EventSourcingTests/EventSourcingTests.csproj --framework {_framework} --configuration {configuration}"));
-
-        Target("test-event-sourcing", DependsOn("compile-event-sourcing-tests"), () =>
-            RunTests("EventSourcingTests"));
-        
-        Target("compile-linq-tests", DependsOn("clean"), () =>
-            Run("dotnet", $"build src/LinqTests/LinqTests.csproj --framework {_framework} --configuration {configuration}"));
-
-        Target("test-linq", DependsOn("compile-linq-tests"), () =>
-            RunTests("LinqTests"));
-        
-        Target("compile-value-types-tests", DependsOn("clean"), () =>
-            Run("dotnet", $"build src/ValueTypeTests/ValueTypeTests.csproj --framework {_framework} --configuration {configuration}"));
-
-        
-        Target("test-value-types", DependsOn("compile-linq-tests"), () =>
-            RunTests("ValueTypeTests"));
-        
-        Target("compile-multi-tenancy-tests", DependsOn("clean"), () =>
-            Run("dotnet", $"build src/MultiTenancyTests/MultiTenancyTests.csproj --framework {_framework} --configuration {configuration}"));
-
-        Target("test-multi-tenancy", DependsOn("compile-multi-tenancy-tests"), () =>
-            RunTests("MultiTenancyTests"));
-
-	    Target("compile-patching-tests", DependsOn("clean"), () =>
-            Run("dotnet", $"build src/PatchingTests/PatchingTests.csproj --framework {_framework} --configuration {configuration}"));
-
-        Target("test-patching", DependsOn("compile-patching-tests"), () =>
-            RunTests("PatchingTests"));
-
-        Target("test-codegen", () =>
+    Target Restore => _ => _
+        .DependsOn(Clean)
+        .Executes(() =>
         {
-            var projectPath = "src/CommandLineRunner";
-            Run("dotnet", $"run --framework net8.0 -- codegen delete", projectPath);
-            Run("dotnet", $"run --framework net8.0 -- codegen write", projectPath);
-            Run("dotnet", $"run --framework net8.0 -- test", projectPath);
+            DotNetRestore(s => s
+                .SetProjectFile(Solution));
+        });
+    
+    Target SetupTestParallelization => _ => _
+        .Executes(() =>
+        {
+            if (DisableTestParallelization)
+            {
+                Log.Information("disable_test_parallelization env var not set, this step is ignored.");
+                return;
+            }
+            else
+            {
+                Log.Information($"disable_test_parallelization={DisableTestParallelization}");
+            }
+
+            var testProjects = new[]
+            {
+                "src/Marten.Testing",
+                "src/Marten.NodaTime.Testing",
+                "src/EventSourcingTests",
+                "src/DocumentDbTests",
+                "src/CoreTests",
+                "src/Marten.PLv8.Testing",
+                "src/Marten.AspNetCore.Testing"
+            };
+
+            foreach (var item in testProjects)
+            {
+                var assemblyInfoFile = Path.Combine(item, "AssemblyInfo.cs");
+                File.WriteAllText(assemblyInfoFile, $"using Xunit;{Environment.NewLine}[assembly: CollectionBehavior(DisableTestParallelization = {DisableTestParallelization.ToString().ToLower()})]");
+            }
         });
 
-        Target("rebuild-database", () =>
+    Target Test => _ => _
+        .DependsOn(Compile)
+        .Executes(() =>
         {
-            Run("docker", "compose down");
-            Run("docker", "compose up -d");
+            if (!string.IsNullOrEmpty(Framework))
+            {
+                Log.Information($"Using framework {Framework} for tests");
+            }
+
+            DotNetTest(c =>
+            {
+                return c.SetConfiguration(Configuration)
+                    .EnableNoBuild()
+                    .EnableNoRestore()
+                    .CombineWith(Solution.AllProjects.Where(p => p.Name.EndsWith(".Testing") || p.Name.EndsWith("Tests")), (cs, v) => cs
+                    .SetProjectFile(v)
+                    .SetFramework(Framework));
+            });
         });
 
-        Target("compile-plv8", DependsOn("clean"), () =>
-            Run("dotnet", $"build src/Marten.PLv8.Testing/Marten.PLv8.Testing.csproj --framework {_framework} --configuration {configuration}"));
-
-        Target("test-plv8", DependsOn("compile", "compile-plv8"), () =>
-            RunTests("Marten.PLv8.Testing"));
-
-        Target("test", DependsOn("test-base-lib", "test-core", "test-document-db", "test-event-sourcing", "test-cli", "test-linq", "test-codegen", "test-patching", "test-value-types"));
-
-        Target("test-extension-libs-without-plv8", DependsOn("test-noda-time", "test-aspnetcore"));
-
-        Target("test-extension-libs", DependsOn("test-extension-libs-without-plv8", "test-plv8"));
-
-        Target("install-mdsnippets", IgnoreIfFailed(() =>
-            Run("dotnet", $"tool install -g MarkdownSnippets.Tool")
-        ));
-
-        Target("docs", DependsOn("install", "install-mdsnippets"), () =>
+    Target TestCodeGen => _ => _
+        .Executes(() =>
         {
-            // Run docs site
-            Run("npm", "run docs");
+            var codegenCommands = new[] { "codegen delete", "codegen write", "codegen test" };
+            foreach (var command in codegenCommands)
+            {
+                DotNetRun(s => s
+                    .SetProjectFile("src/CommandLineRunner")
+                    .SetConfiguration(Configuration)
+                    .SetFramework(Framework)
+                    .SetApplicationArguments(command)
+                );
+            }
         });
 
-        Target("docs-build", DependsOn("install", "install-mdsnippets"), () =>
+    Target RebuildDb => _ => _
+        .Executes(() =>
         {
-            // Run docs site
-            Run("npm", "run docs-build");
+            ProcessTasks.StartProcess("docker", "compose down");
+            ProcessTasks.StartProcess("docker", "compose up -d");
         });
 
-        Target("docs-import-v3", DependsOn("docs-build"), () =>
+    Target InitDb => _ => _
+        .Executes(() =>
         {
-            const string branchName = "gh-pages";
-            const string docTargetDir = "docs/.vitepress/dist/v3";
-            Run("git", $"clone -b {branchName} https://github.com/jasperfx/marten.git {InitializeDirectory(docTargetDir)}");
+            ProcessTasks.StartProcess("docker", "compose up -d");
+            WaitForDatabaseToBeReady();
         });
+    
+    Target InstallMdSnippets => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            const string toolName = "markdownSnippets.tool";
+            
+            if (IsDotNetToolInstalled(toolName))
+            {
+                Log.Information($"{toolName} is already installed, skipping this step.");
+                return;
+            }
+            
+            DotNetToolInstall(c => c
+                .SetPackageName(toolName)
+                .EnableGlobal());
+        });
+    
+    Target Docs => _ => _
+        .DependsOn(NpmInstall, InstallMdSnippets)
+        .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("docs")));
 
-        Target("clear-inline-samples", () =>
+    Target DocsBuild => _ => _
+        .DependsOn(NpmInstall, InstallMdSnippets)
+        .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("docs-build")));
+
+    Target ClearInlineSamples => _ => _
+        .Executes(() =>
         {
             var files = Directory.GetFiles("./docs", "*.md", SearchOption.AllDirectories);
             var pattern = @"<!-- snippet:(.+)-->[\s\S]*?<!-- endSnippet -->";
@@ -185,82 +196,65 @@ internal class MartenBuild
                 File.WriteAllText(file, updatedContent);
             }
         });
-
-
-        Target("publish-docs-preview", DependsOn("docs-import-v3"), () =>
-            Run("npm", "run deploy"));
-
-        Target("publish-docs", DependsOn("docs-import-v3"), () =>
-            Run("npm", "run deploy:prod"));
-
-        Target("benchmarks", () =>
-            Run("dotnet", "run --project src/MartenBenchmarks --configuration Release"));
-
-        Target("recordbenchmarks", () =>
+    
+    Target PublicDocsPreview => _ => _
+        .DependsOn(NpmInstall, InstallMdSnippets)
+        .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("deploy")));
+    
+    Target PublicDocs => _ => _
+        .DependsOn(NpmInstall, InstallMdSnippets)
+        .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("deploy:prod")));
+    
+    Target Benchmarks => _ => _
+        .Executes(() =>
         {
-            var profile = GetEnvironmentVariable("profile");
-
-            if (!string.IsNullOrEmpty(profile))
-            {
-                CopyDirectory("BenchmarkDotNet.Artifacts/results", InitializeDirectory($"benchmarks/{profile}"));
-            }
+            DotNetRun(s => s
+                .SetProjectFile(Solution.GetProject("MartenBenchmarks"))
+                .SetConfiguration(Configuration.Release)
+                .SetFramework(Framework)
+            );
         });
 
-        Target("pack", DependsOn("compile"), ForEach("./src/Marten", "./src/Marten.CommandLine", "./src/Marten.NodaTime", "./src/Marten.PLv8", "./src/Marten.AspNetCore"), project =>
-            Run("dotnet", $"pack {project} -o ./artifacts --configuration Release"));
-
-        Target("init-db", () =>
+    Target RecordBenchmarks => _ => _
+        .Executes(() =>
         {
-            Run("docker", "compose up -d");
-
-            WaitForDatabaseToBeReady();
-
+            if (!string.IsNullOrEmpty(Profile))
+            {
+                var resultsDir = AbsolutePath.Create($"benchmarks/{Profile}");
+                resultsDir.CreateOrCleanDirectory();
+                // CopyDirectory("BenchmarkDotNet.Artifacts/results", resultsDir);
+            }
         });
-
-        Target("setup-test-parallelization", () =>
+    
+    Target Pack => _ => _
+        .DependsOn(Compile)
+        .Executes(() =>
         {
-            if (string.IsNullOrEmpty(disableTestParallelization))
+            var projects = new[]
             {
-                Console.WriteLine("disable_test_parallelization env var not set, this step is ignored.");
-                return;
-            }
-            else
-            {
-                Console.WriteLine($"disable_test_parallelization={disableTestParallelization}");
-            }
-
-            var test_projects = new string[] {
-                "src/Marten.Testing",
-                "src/Marten.NodaTime.Testing",
-                "src/EventSourcingTests",
-                "src/DocumentDbTests",
-                "src/CoreTests",
-                "src/Marten.PLv8.Testing",
-                "src/Marten.AspNetCore.Testing"
+                "./src/Marten",
+                "./src/Marten.CommandLine",
+                "./src/Marten.NodaTime",
+                "./src/Marten.PLv8",
+                "./src/Marten.AspNetCore"
             };
 
-            foreach (var item in test_projects)
+            foreach (var project in projects)
             {
-                var assemblyInfoFile = Path.Join(item, "AssemblyInfo.cs");
-                File.WriteAllText(assemblyInfoFile, $"using Xunit;{Environment.NewLine}[assembly: CollectionBehavior(DisableTestParallelization = {disableTestParallelization})]");
+                DotNetPack(s => s
+                    .SetProject(project)
+                    .SetOutputDirectory("./artifacts")
+                    .SetConfiguration(Configuration.Release));
             }
         });
 
-        await RunTargetsAndExitAsync(args);
-    }
-
-    private static void RunTests(string projectName, string directoryName = "src")
-    {
-        Run("dotnet", $"test --no-build --no-restore --configuration {_configuration} --framework {_framework} {directoryName}/{projectName}/{projectName}.csproj");
-    }
-
-    private static void WaitForDatabaseToBeReady()
+    private void WaitForDatabaseToBeReady()
     {
         var attempt = 0;
         while (attempt < 10)
             try
             {
-                using (var conn = new NpgsqlConnection(DockerConnectionString))
+                using (var conn = new Npgsql.NpgsqlConnection(ConnectionString + ";Pooling=false"))
                 {
                     conn.Open();
 
@@ -268,85 +262,24 @@ internal class MartenBuild
                     cmd.CommandText = "create extension if not exists plv8";
                     cmd.ExecuteNonQuery();
 
-                    Console.WriteLine("Postgresql is up and ready!");
+                    Log.Information("Postgresql is up and ready!");
                     break;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.Error(ex, "Error while waiting for the database to be ready");
                 Thread.Sleep(250);
                 attempt++;
             }
     }
-
-    private static string InitializeDirectory(string path)
+    
+    bool IsDotNetToolInstalled(string toolName)
     {
-        EnsureDirectoriesDeleted(path);
-        Directory.CreateDirectory(path);
-        return path;
-    }
+        var process = ProcessTasks.StartProcess("dotnet", "tool list -g", logOutput: false);
+        process.AssertZeroExitCode();
+        var output = process.Output.Select(x => x.Text).ToList();
 
-    private static void EnsureDirectoriesDeleted(params string[] paths)
-    {
-        foreach (var path in paths)
-        {
-            if (Directory.Exists(path))
-            {
-                var dir = new DirectoryInfo(path);
-                DeleteDirectory(dir);
-            }
-        }
-    }
-
-    private static void DeleteDirectory(DirectoryInfo baseDir)
-    {
-        baseDir.Attributes = FileAttributes.Normal;
-        foreach (var childDir in baseDir.GetDirectories())
-            DeleteDirectory(childDir);
-
-        foreach (var file in baseDir.GetFiles())
-            file.IsReadOnly = false;
-
-        baseDir.Delete(true);
-    }
-
-    private static string GetEnvironmentVariable(string variableName)
-    {
-        var val = Environment.GetEnvironmentVariable(variableName);
-
-        // Azure devops converts environment variable to upper case and dot to underscore
-        // https://docs.microsoft.com/en-us/azure/devops/pipelines/process/variables?view=azure-devops&tabs=yaml%2Cbatch
-        // Attempt to fetch variable by updating it
-        if (string.IsNullOrEmpty(val))
-        {
-            val = Environment.GetEnvironmentVariable(variableName.ToUpper().Replace(".", "_"));
-        }
-
-        Console.WriteLine(val);
-
-        return val;
-    }
-
-    private static string GetFramework()
-    {
-        var frameworkName = Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName;
-        var version = float.Parse(frameworkName.Split('=')[1].Replace("v", ""), InvariantCulture.NumberFormat);
-
-        return version < 5.0 ? $"netcoreapp{version.ToString("N1", InvariantCulture.NumberFormat)}" : $"net{version.ToString("N1", InvariantCulture.NumberFormat)}";
-    }
-
-    private static Action IgnoreIfFailed(Action action)
-    {
-        return () =>
-        {
-            try
-            {
-                action();
-            }
-            catch (Exception exception)
-            {
-                Console.WriteLine(exception.Message);
-            }
-        };
+        return output.Any(line => line.Contains(toolName, StringComparison.OrdinalIgnoreCase));
     }
 }
