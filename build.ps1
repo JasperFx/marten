@@ -1,26 +1,74 @@
-$ErrorActionPreference = "Stop";
+[CmdletBinding()]
+Param(
+    [Parameter(Position=0,Mandatory=$false,ValueFromRemainingArguments=$true)]
+    [string[]]$BuildArguments
+)
 
-$target_framework = ""
-$dotnet_sdks = dotnet --list-sdks
-$pattern = "\d+\.\d+\.\d+"
-$versions = [regex]::Matches($dotnet_sdks, $pattern)
+Write-Output "PowerShell $($PSVersionTable.PSEdition) version $($PSVersionTable.PSVersion)"
 
-foreach ($item in $versions) {
-  if ($item.Value.StartsWith("6.")) {
-    $target_framework = "net6.0"
-  } 
-  elseif ($item.Value.StartsWith("7.")) {
-    $target_framework = "net7.0"
-  }
-  elseif ($item.Value.StartsWith("8.")) {
-    $target_framework = "net8.0"
-  }
+Set-StrictMode -Version 2.0; $ErrorActionPreference = "Stop"; $ConfirmPreference = "None"; trap { Write-Error $_ -ErrorAction Continue; exit 1 }
+$PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
+
+###########################################################################
+# CONFIGURATION
+###########################################################################
+
+$BuildProjectFile = "$PSScriptRoot\build\build.csproj"
+$TempDirectory = "$PSScriptRoot\..\.nuke\temp"
+
+$DotNetGlobalFile = "$PSScriptRoot\..\global.json"
+$DotNetInstallUrl = "https://dot.net/v1/dotnet-install.ps1"
+$DotNetChannel = "STS"
+
+$env:DOTNET_CLI_TELEMETRY_OPTOUT = 1
+$env:DOTNET_NOLOGO = 1
+
+###########################################################################
+# EXECUTION
+###########################################################################
+
+function ExecSafe([scriptblock] $cmd) {
+    & $cmd
+    if ($LASTEXITCODE) { exit $LASTEXITCODE }
 }
 
-if ([string]::IsNullOrEmpty($target_framework)) {
-    Write-Output "BUILD FAILURE: .NET 6, .NET 7 or .NET 8 SDK required to run build"
-    exit 1
+# If dotnet CLI is installed globally and it matches requested version, use for execution
+if ($null -ne (Get-Command "dotnet" -ErrorAction SilentlyContinue) -and `
+     $(dotnet --version) -and $LASTEXITCODE -eq 0) {
+    $env:DOTNET_EXE = (Get-Command "dotnet").Path
+}
+else {
+    # Download install script
+    $DotNetInstallFile = "$TempDirectory\dotnet-install.ps1"
+    New-Item -ItemType Directory -Path $TempDirectory -Force | Out-Null
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    (New-Object System.Net.WebClient).DownloadFile($DotNetInstallUrl, $DotNetInstallFile)
+
+    # If global.json exists, load expected version
+    if (Test-Path $DotNetGlobalFile) {
+        $DotNetGlobal = $(Get-Content $DotNetGlobalFile | Out-String | ConvertFrom-Json)
+        if ($DotNetGlobal.PSObject.Properties["sdk"] -and $DotNetGlobal.sdk.PSObject.Properties["version"]) {
+            $DotNetVersion = $DotNetGlobal.sdk.version
+        }
+    }
+
+    # Install by channel or version
+    $DotNetDirectory = "$TempDirectory\dotnet-win"
+    if (!(Test-Path variable:DotNetVersion)) {
+        ExecSafe { & powershell $DotNetInstallFile -InstallDir $DotNetDirectory -Channel $DotNetChannel -NoPath }
+    } else {
+        ExecSafe { & powershell $DotNetInstallFile -InstallDir $DotNetDirectory -Version $DotNetVersion -NoPath }
+    }
+    $env:DOTNET_EXE = "$DotNetDirectory\dotnet.exe"
+    $env:PATH = "$DotNetDirectory;$env:PATH"
 }
 
-Write-Output "Using $target_framework"
-dotnet run --project build/build.csproj -f $target_framework -c Release -- $args
+Write-Output "Microsoft (R) .NET SDK version $(& $env:DOTNET_EXE --version)"
+
+if (Test-Path env:NUKE_ENTERPRISE_TOKEN) {
+    & $env:DOTNET_EXE nuget remove source "nuke-enterprise" > $null
+    & $env:DOTNET_EXE nuget add source "https://f.feedz.io/nuke/enterprise/nuget" --name "nuke-enterprise" --username "PAT" --password $env:NUKE_ENTERPRISE_TOKEN > $null
+}
+
+ExecSafe { & $env:DOTNET_EXE build $BuildProjectFile /nodeReuse:false /p:UseSharedCompilation=false -nologo -clp:NoSummary --verbosity quiet }
+ExecSafe { & $env:DOTNET_EXE run --project $BuildProjectFile --no-build -- $BuildArguments }
