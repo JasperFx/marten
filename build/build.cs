@@ -14,7 +14,7 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 class Build : NukeBuild
 {
-    public static int Main() => Execute<Build>(x => x.Default);
+    public static int Main() => Execute<Build>(x => x.Test);
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
@@ -25,23 +25,23 @@ class Build : NukeBuild
     [Parameter] readonly string Profile;
     [Parameter] readonly string ConnectionString = "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
 
-    Target Default => _ => _
+    Target CI => _ => _
         .DependsOn(Mocha)
         .DependsOn(Test)
         .DependsOn(TestCodeGen);
 
-    Target CI => _ => _
-        .DependsOn(SetupTestParallelization)
-        .DependsOn(Connection)
-        .DependsOn(Default);
+    Target CIWithTestPlv8 => _ => _
+        .DependsOn(Mocha)
+        .DependsOn(Test)
+        .DependsOn(TestCodeGen)
+        .DependsOn(TestPlv8);
 
-    Target Clean => _ => _
+    Target Init => _ => _
         .Executes(() =>
-        {
-            var results = AbsolutePath.Create("results");
-            var artifacts = AbsolutePath.Create("artifacts");
-            results.CreateOrCleanDirectory();
-            artifacts.CreateOrCleanDirectory();
+        { 
+            Clean();
+            WriteConnectionStringToFile();
+            SetupTestParallelization();
         });
 
     Target Connection => _ => _
@@ -51,6 +51,7 @@ class Build : NukeBuild
         .Executes(() => NpmTasks.NpmInstall());
    
     Target Mocha => _ => _
+        .ProceedAfterFailure()
         .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("test")));
 
     Target Compile => _ => _
@@ -64,45 +65,15 @@ class Build : NukeBuild
         });
 
     Target Restore => _ => _
-        .DependsOn(Clean)
+        .DependsOn(Init)
         .Executes(() =>
         {
             DotNetRestore(s => s
                 .SetProjectFile(Solution));
         });
-    
-    Target SetupTestParallelization => _ => _
-        .Executes(() =>
-        {
-            if (DisableTestParallelization)
-            {
-                Log.Information("disable_test_parallelization env var not set, this step is ignored.");
-                return;
-            }
-            else
-            {
-                Log.Information($"disable_test_parallelization={DisableTestParallelization}");
-            }
-
-            var testProjects = new[]
-            {
-                "src/Marten.Testing",
-                "src/Marten.NodaTime.Testing",
-                "src/EventSourcingTests",
-                "src/DocumentDbTests",
-                "src/CoreTests",
-                "src/Marten.PLv8.Testing",
-                "src/Marten.AspNetCore.Testing"
-            };
-
-            foreach (var item in testProjects)
-            {
-                var assemblyInfoFile = Path.Combine(item, "AssemblyInfo.cs");
-                File.WriteAllText(assemblyInfoFile, $"using Xunit;{Environment.NewLine}[assembly: CollectionBehavior(DisableTestParallelization = {DisableTestParallelization.ToString().ToLower()})]");
-            }
-        });
 
     Target Test => _ => _
+        .ProceedAfterFailure()
         .DependsOn(Compile)
         .Executes(() =>
         {
@@ -116,13 +87,32 @@ class Build : NukeBuild
                 return c.SetConfiguration(Configuration)
                     .EnableNoBuild()
                     .EnableNoRestore()
-                    .CombineWith(Solution.AllProjects.Where(p => p.Name.EndsWith(".Testing") || p.Name.EndsWith("Tests")), (cs, v) => cs
+                    .CombineWith(Solution.AllProjects.Where(p => (p.Name.EndsWith(".Testing") || p.Name.EndsWith("Tests")) && !p.Name.Contains("PLv8", StringComparison.InvariantCultureIgnoreCase)), (cs, v) => cs
                     .SetProjectFile(v)
                     .SetFramework(Framework));
             });
         });
 
+    Target TestPlv8 => _ => _
+        .ProceedAfterFailure()
+        .DependsOn(Compile)
+        .Executes(() =>
+        {
+            if (!string.IsNullOrEmpty(Framework))
+            {
+                Log.Information($"Using framework {Framework} for tests");
+            }
+
+            DotNetTest(c => c
+                .SetProjectFile("src/Marten.PLv8.Testing")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
     Target TestCodeGen => _ => _
+        .ProceedAfterFailure()
         .Executes(() =>
         {
             var codegenCommands = new[] { "codegen delete", "codegen write", "codegen test" };
@@ -281,5 +271,48 @@ class Build : NukeBuild
         var output = process.Output.Select(x => x.Text).ToList();
 
         return output.Any(line => line.Contains(toolName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    static void Clean()
+    {
+        var results = AbsolutePath.Create("results");
+        var artifacts = AbsolutePath.Create("artifacts");
+        results.CreateOrCleanDirectory();
+        artifacts.CreateOrCleanDirectory();
+    }
+
+    void WriteConnectionStringToFile()
+    {
+        File.WriteAllText("src/Marten.Testing/connection.txt", ConnectionString);
+    }
+
+    void SetupTestParallelization()
+    {
+        if (DisableTestParallelization)
+        {
+            Log.Information("disable_test_parallelization env var not set, this step is ignored.");
+            return;
+        }
+        else
+        {
+            Log.Information($"disable_test_parallelization={DisableTestParallelization}");
+        }
+
+        var testProjects = new[]
+        {
+            "src/Marten.Testing",
+            "src/Marten.NodaTime.Testing",
+            "src/EventSourcingTests",
+            "src/DocumentDbTests",
+            "src/CoreTests",
+            "src/Marten.PLv8.Testing",
+            "src/Marten.AspNetCore.Testing"
+        };
+
+        foreach (var item in testProjects)
+        {
+            var assemblyInfoFile = Path.Combine(item, "AssemblyInfo.cs");
+            File.WriteAllText(assemblyInfoFile, $"using Xunit;{Environment.NewLine}[assembly: CollectionBehavior(DisableTestParallelization = {DisableTestParallelization.ToString().ToLower()})]");
+        }
     }
 }

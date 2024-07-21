@@ -79,13 +79,13 @@
             "enum": [
               "Benchmarks",
               "CI",
-              "Clean",
+              "CIWithTestPlv8",
               "ClearInlineSamples",
               "Compile",
               "Connection",
-              "Default",
               "Docs",
               "DocsBuild",
+              "Init",
               "InitDb",
               "InstallMdSnippets",
               "Mocha",
@@ -96,9 +96,9 @@
               "RebuildDb",
               "RecordBenchmarks",
               "Restore",
-              "SetupTestParallelization",
               "Test",
-              "TestCodeGen"
+              "TestCodeGen",
+              "TestPlv8"
             ]
           }
         },
@@ -114,13 +114,13 @@
             "enum": [
               "Benchmarks",
               "CI",
-              "Clean",
+              "CIWithTestPlv8",
               "ClearInlineSamples",
               "Compile",
               "Connection",
-              "Default",
               "Docs",
               "DocsBuild",
+              "Init",
               "InitDb",
               "InstallMdSnippets",
               "Mocha",
@@ -131,9 +131,9 @@
               "RebuildDb",
               "RecordBenchmarks",
               "Restore",
-              "SetupTestParallelization",
               "Test",
-              "TestCodeGen"
+              "TestCodeGen",
+              "TestPlv8"
             ]
           }
         },
