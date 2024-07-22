@@ -47,6 +47,7 @@ variables:
   FRAMEWORK: net8.0
   DISABLE_TEST_PARALLELIZATION: true
   CONNECTION_STRING: "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;Password=Password12!;Timeout=60;Cancellation Timeout=5000; Command Timeout=60"
+  NUKE_TELEMETRY_OPTOUT: true
 
 jobs:
   - job: build_dotnet
