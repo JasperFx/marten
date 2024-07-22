@@ -137,18 +137,6 @@
         </Compile>
     </ItemGroup>
 
-    <ItemGroup>
-        <None Update="fake_aggregate.js">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="location.js">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="party.js">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-    </ItemGroup>
-
     <PropertyGroup>
         <NoWarn>xUnit1013</NoWarn>
     </PropertyGroup>
