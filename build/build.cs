@@ -14,26 +14,36 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 class Build : NukeBuild
 {
-    public static int Main() => Execute<Build>(x => x.Test);
+    public static int Main() => Execute<Build>(x => x.Compile);
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
     [Solution] readonly Solution Solution;
     [Parameter] readonly bool DisableTestParallelization;
-    [Parameter] readonly string Framework;
+    [Parameter]readonly string Framework;
     [Parameter] readonly string Profile;
-    [Parameter] readonly string ConnectionString = "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
+    [Parameter] readonly string ConnectionString ="Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
 
-    Target CI => _ => _
-        .DependsOn(Mocha)
-        .DependsOn(Test)
+    Target Test => _ => _
+        .DependsOn(TestBaseLib)
+        .DependsOn(TestCore)
+        .DependsOn(TestDocumentDb)
+        .DependsOn(TestEventSourcing)
+        .DependsOn(TestCli)
+        .DependsOn(TestLinq)
+        .DependsOn(TestMultiTenancy)
+        .DependsOn(TestPatching)
+        .DependsOn(TestValueTypes)
         .DependsOn(TestCodeGen);
 
-    Target CIWithTestPlv8 => _ => _
-        .DependsOn(Mocha)
-        .DependsOn(Test)
-        .DependsOn(TestCodeGen)
+    Target TestExtensions => _ => _
+        .DependsOn(TestNodaTime)
+        .DependsOn(TestAspnetcore);
+
+    Target TestExtensionsIncludingPlv8 => _ => _
+        .DependsOn(TestNodaTime)
+        .DependsOn(TestAspnetcore)
         .DependsOn(TestPlv8);
 
     Target Init => _ => _
@@ -52,6 +62,7 @@ class Build : NukeBuild
    
     Target Mocha => _ => _
         .ProceedAfterFailure()
+        .DependsOn(NpmInstall)
         .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("test")));
 
     Target Compile => _ => _
@@ -72,25 +83,137 @@ class Build : NukeBuild
                 .SetProjectFile(Solution));
         });
 
-    Target Test => _ => _
+
+    Target TestBaseLib => _ => _
         .ProceedAfterFailure()
-        .DependsOn(Compile)
         .Executes(() =>
         {
-            if (!string.IsNullOrEmpty(Framework))
-            {
-                Log.Information($"Using framework {Framework} for tests");
-            }
+            DotNetTest(c => c
+                .SetProjectFile("src/Marten.Testing")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
 
-            DotNetTest(c =>
-            {
-                return c.SetConfiguration(Configuration)
-                    .EnableNoBuild()
-                    .EnableNoRestore()
-                    .CombineWith(Solution.AllProjects.Where(p => (p.Name.EndsWith(".Testing") || p.Name.EndsWith("Tests")) && !p.Name.Contains("PLv8", StringComparison.InvariantCultureIgnoreCase)), (cs, v) => cs
-                    .SetProjectFile(v)
-                    .SetFramework(Framework));
-            });
+    Target TestNodaTime => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/Marten.NodaTime.Testing")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
+    Target TestAspnetcore => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/Marten.AspNetCore.Testing")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
+    Target TestCore => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/CoreTests")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
+    Target TestCli => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/Marten.CommandLine.Tests")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
+    Target TestDocumentDb => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/DocumentDbTests")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
+    Target TestEventSourcing => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/EventSourcingTests")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
+    Target TestLinq => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/LinqTests")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
+    Target TestValueTypes => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/ValueTypeTests")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
+    Target TestMultiTenancy => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/MultiTenancyTests")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
+    Target TestPatching => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/PatchingTests")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
         });
 
     Target TestPlv8 => _ => _
@@ -98,11 +221,6 @@ class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
-            if (!string.IsNullOrEmpty(Framework))
-            {
-                Log.Information($"Using framework {Framework} for tests");
-            }
-
             DotNetTest(c => c
                 .SetProjectFile("src/Marten.PLv8.Testing")
                 .SetConfiguration(Configuration)
@@ -288,14 +406,14 @@ class Build : NukeBuild
 
     void SetupTestParallelization()
     {
-        if (DisableTestParallelization)
+        if (!DisableTestParallelization)
         {
-            Log.Information("disable_test_parallelization env var not set, this step is ignored.");
+            Log.Information("DISABLE_TEST_PARALLELIZATION env var not set, this step is ignored.");
             return;
         }
         else
         {
-            Log.Information($"disable_test_parallelization={DisableTestParallelization}");
+            Log.Information($"DISABLE_TEST_PARALLELIZATION={DisableTestParallelization}");
         }
 
         var testProjects = new[]

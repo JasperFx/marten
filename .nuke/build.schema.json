@@ -78,8 +78,6 @@
             "type": "string",
             "enum": [
               "Benchmarks",
-              "CI",
-              "CIWithTestPlv8",
               "ClearInlineSamples",
               "Compile",
               "Connection",
@@ -97,8 +95,21 @@
               "RecordBenchmarks",
               "Restore",
               "Test",
+              "TestAspnetcore",
+              "TestBaseLib",
+              "TestCli",
               "TestCodeGen",
-              "TestPlv8"
+              "TestCore",
+              "TestDocumentDb",
+              "TestEventSourcing",
+              "TestExtensions",
+              "TestExtensionsIncludingPlv8",
+              "TestLinq",
+              "TestMultiTenancy",
+              "TestNodaTime",
+              "TestPatching",
+              "TestPlv8",
+              "TestValueTypes"
             ]
           }
         },
@@ -113,8 +124,6 @@
             "type": "string",
             "enum": [
               "Benchmarks",
-              "CI",
-              "CIWithTestPlv8",
               "ClearInlineSamples",
               "Compile",
               "Connection",
@@ -132,8 +141,21 @@
               "RecordBenchmarks",
               "Restore",
               "Test",
+              "TestAspnetcore",
+              "TestBaseLib",
+              "TestCli",
               "TestCodeGen",
-              "TestPlv8"
+              "TestCore",
+              "TestDocumentDb",
+              "TestEventSourcing",
+              "TestExtensions",
+              "TestExtensionsIncludingPlv8",
+              "TestLinq",
+              "TestMultiTenancy",
+              "TestNodaTime",
+              "TestPatching",
+              "TestPlv8",
+              "TestValueTypes"
             ]
           }
         },
