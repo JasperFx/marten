@@ -13,11 +13,11 @@ using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
-using Xunit;
 using Shouldly;
 using Weasel.Postgresql;
+using Xunit;
 
-namespace EventSourcingTests.Projections;
+namespace StressTests;
 
 [Collection("ioc")]
 public class projections_with_IoC_services

@@ -6,6 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\EventSourcingTests\EventSourcingTests.csproj" />
         <ProjectReference Include="..\Marten\Marten.csproj" />
         <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
         <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
@@ -26,115 +27,6 @@
         <PackageReference Include="xunit" Version="2.8.1" />
         <PackageReference Include="NSubstitute" Version="5.1.0" />
         <PackageReference Include="Shouldly" Version="4.2.1" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Compile Include="..\Marten.Testing\DocumentStoreExtensions.cs">
-            <Link>DocumentStoreExtensions.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Documents\Account.cs">
-            <Link>Documents\Account.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Documents\Company.cs">
-            <Link>Documents\Company.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Documents\CriticalIssue.cs">
-            <Link>Documents\CriticalIssue.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Documents\GuidDoc.cs">
-            <Link>GuidDoc.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Documents\IntDoc.cs">
-            <Link>Documents\IntDoc.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Documents\InvalidDocument.cs">
-            <Link>Documents\InvalidDocument.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Documents\Issue.cs">
-            <Link>Documents\Issue.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Documents\LongDoc.cs">
-            <Link>LongDoc.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Documents\StringDoc.cs">
-            <Link>Documents\StringDoc.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Documents\Target.cs">
-            <Link>Documents\Target.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Documents\TargetIntId.cs">
-            <Link>Documents\TargetIntId.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Documents\User.cs">
-            <Link>Documents\User.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Documents\UserWithInheritedId.cs">
-            <Link>Documents\UserWithInheritedId.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Harness\BugIntegrationContext.cs">
-            <Link>Harness\BugIntegrationContext.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Harness\ConnectionSource.cs">
-            <Link>Harness\ConnectionSource.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Harness\DefaultStoreFixture.cs">
-            <Link>Harness\DefaultStoreFixture.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Harness\DestructiveIntegrationContext.cs">
-            <Link>Harness\DestructiveIntegrationContext.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Harness\IntegrationContext.cs">
-            <Link>Harness\IntegrationContext.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Harness\OneOffConfigurationsContext.cs">
-            <Link>Harness\OneOffConfigurationsContext.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Harness\PgVersionTargetedFact.cs">
-            <Link>Harness\PgVersionTargetedFact.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Harness\SerializerTypeTargetedFact.cs">
-            <Link>Harness\SerializerTypeTargetedFact.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Harness\SerializerTypeTargetedTheory.cs">
-            <Link>Harness\SerializerTypeTargetedTheory.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Harness\SpecificationExtensions.cs">
-            <Link>Harness\SpecificationExtensions.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Harness\StoreContext.cs">
-            <Link>Harness\StoreContext.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Harness\StoreFixture.cs">
-            <Link>Harness\StoreFixture.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Harness\TestOutputMartenLogger.cs">
-            <Link>Harness\TestOutputMartenLogger.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Harness\TestsSettings.cs">
-            <Link>Harness\TestsSettings.cs</Link>
-        </Compile>
-        <Compile Remove="Internal\Generated\DocumentStorage\UsersByFirstNameWithFieldsCompiledQuerySource1406914266.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UsersByFirstNameCompiledQuerySource1731835173.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserProjectionToLoginPayloadCompiledQuerySource644855229.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserNameStartsWithCompiledQuerySource1368662454.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserNameEndsWithCompiledQuerySource575560707.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserNameContainsInsensitiveCompiledQuerySource1149292827.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserNameContainsCompiledQuerySource1819506690.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserCountByFirstNameCompiledQuerySource635059239.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserByUsernameWithFieldsCompiledQuerySource32749610.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserByUsernameSingleOrDefaultCompiledQuerySource375016023.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserByUsernameCompiledQuerySource372230447.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\TestQueryCompiledQuerySource2107566787.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\FindUserByAllTheThingsCompiledQuerySource1212126941.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\FindJsonUsersByUsernameCompiledQuerySource857172819.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\CompiledQuery2CompiledQuerySource1513358228.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\CompiledQuery1CompiledQuerySource1513358227.cs" />
-        <Compile Include="..\Marten.Testing\SchemaMigrationExtensions.cs">
-            <Link>SchemaMigrationExtensions.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\StubDocumentSessionListener.cs">
-            <Link>StubDocumentSessionListener.cs</Link>
-        </Compile>
     </ItemGroup>
 
     <PropertyGroup>

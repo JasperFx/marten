@@ -19,9 +19,9 @@ public class using_string_identity : IntegrationContext
         theSession.SaveChanges();
 
         using var session = theStore.QuerySession();
-        SpecificationExtensions.ShouldNotBeNull(session.Load<Account>("email@server.com"));
+        session.Load<Account>("email@server.com").ShouldNotBeNull();
 
-        SpecificationExtensions.ShouldBeNull(session.Load<Account>("nonexistent@server.com"));
+        session.Load<Account>("nonexistent@server.com").ShouldBeNull();
     }
 
     #region sample_persist_and_load_async
@@ -34,9 +34,9 @@ public class using_string_identity : IntegrationContext
         await theSession.SaveChangesAsync();
 
         await using var session = theStore.QuerySession();
-        SpecificationExtensions.ShouldNotBeNull((await session.LoadAsync<Account>("email@server.com")));
+        (await session.LoadAsync<Account>("email@server.com")).ShouldNotBeNull();
 
-        SpecificationExtensions.ShouldBeNull((await session.LoadAsync<Account>("nonexistent@server.com")));
+        (await session.LoadAsync<Account>("nonexistent@server.com")).ShouldBeNull();
     }
     #endregion
 
@@ -79,7 +79,7 @@ public class using_string_identity : IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            SpecificationExtensions.ShouldBeNull(session.Load<Account>(account.Id));
+            session.Load<Account>(account.Id).ShouldBeNull();
         }
     }
 
