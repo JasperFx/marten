@@ -89,66 +89,66 @@ jobs:
         shell: bash
 
       - name: mocha
-        continue-on-error: true
+        if: ${{ success() || failure() }}
         run: ./build.sh mocha
         shell: bash
 
       - name: test-base-lib
-        continue-on-error: true
+        if: ${{ success() || failure() }}
         run: ./build.sh test-base-lib
         shell: bash
 
       - name: test-core
-        continue-on-error: true
+        if: ${{ success() || failure() }}
         run: ./build.sh test-core
         shell: bash
 
       - name: test-document-db
-        continue-on-error: true
+        if: ${{ success() || failure() }}
         run: ./build.sh test-document-db
         shell: bash
 
       - name: test-event-sourcing
-        continue-on-error: true
+        if: ${{ success() || failure() }}
         run: ./build.sh test-event-sourcing
         shell: bash
 
       - name: test-cli
-        continue-on-error: true
+        if: ${{ success() || failure() }}
         run: ./build.sh test-cli
         shell: bash
 
       - name: test-linq
-        continue-on-error: true
+        if: ${{ success() || failure() }}
         run: ./build.sh test-linq
         shell: bash
 
       # - name: test-multi-tenancy
-      #   continue-on-error: true
+      #   if: ${{ success() || failure() }}
       #   run: ./build.sh test-multi-tenancy
       #   shell: bash
 
       - name: test-patching
-        continue-on-error: true
+        if: ${{ success() || failure() }}
         run: ./build.sh test-patching
         shell: bash
 
       - name: test-value-types
-        continue-on-error: true
+        if: ${{ success() || failure() }}
         run: ./build.sh test-value-types
         shell: bash
 
       - name: test-code-gen
-        continue-on-error: true
+        if: ${{ success() || failure() }}
         run: ./build.sh test-code-gen
         shell: bash
 
       - name: test-noda-time
-        continue-on-error: true
+        if: ${{ success() || failure() }}
         run: ./build.sh test-noda-time
         shell: bash
 
       - name: test-aspnet-core
-        continue-on-error: true
+        if: ${{ success() || failure() }}
         run: ./build.sh test-aspnet-core
         shell: bash
