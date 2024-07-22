@@ -12,6 +12,9 @@ namespace Marten.Linq;
 /// </summary>
 public interface IQueryPlanning
 {
+    /// <summary>
+    /// Called to give the implementor a chance to set unique values for their publicly visible members and fields
+    /// </summary>
     void SetUniqueValuesForQueryPlanning();
 }
 
@@ -31,6 +34,10 @@ public interface ICompiledQueryMarker{}
 
 public interface ICompiledQuery<TDoc, TOut> : ICompiledQueryMarker where TDoc: notnull
 {
+    /// <summary>
+    /// Called to retrieve the query itself
+    /// </summary>
+    /// <returns>An expression that defines the query</returns>
     Expression<Func<IMartenQueryable<TDoc>, TOut>> QueryIs();
 }
 
