@@ -42,6 +42,7 @@ public class projections_with_IoC_services
                         opts.ApplyChangesLockId = opts.ApplyChangesLockId + 10; // just make it different
                         opts.Connection(ConnectionSource.ConnectionString);
                         opts.DatabaseSchemaName = "ioc";
+                        opts.ApplyChangesLockId = opts.ApplyChangesLockId + 1;
                     })
                     // Note that this is chained after the call to AddMarten()
                     .AddProjectionWithServices<ProductProjection>(
@@ -74,6 +75,7 @@ public class projections_with_IoC_services
                     {
                         opts.Connection(ConnectionSource.ConnectionString);
                         opts.DatabaseSchemaName = "ioc";
+                        opts.ApplyChangesLockId = opts.ApplyChangesLockId + 2;
                     })
                     // Note that this is chained after the call to AddMarten()
                     .AddProjectionWithServices<ProductProjection>(
@@ -110,7 +112,7 @@ public class projections_with_IoC_services
                     {
                         opts.Connection(ConnectionSource.ConnectionString);
                         opts.DatabaseSchemaName = "ioc";
-                        opts.Projections.DaemonLockId = 99123;
+                        opts.ApplyChangesLockId = opts.ApplyChangesLockId + 3;
                     })
                     .AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Async, ServiceLifetime.Singleton);
             }).StartAsync();
@@ -145,6 +147,7 @@ public class projections_with_IoC_services
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "ioc";
+                    opts.ApplyChangesLockId = opts.ApplyChangesLockId + 4;
                 }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped, "MyProjection");
             }).StartAsync();
 
@@ -174,6 +177,7 @@ public class projections_with_IoC_services
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "ioc";
+                    opts.ApplyChangesLockId = opts.ApplyChangesLockId + 5;
                 }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Async, ServiceLifetime.Scoped, "MyProjection");
             }).StartAsync();
 
@@ -207,6 +211,7 @@ public class projections_with_IoC_services
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "ioc";
+                    opts.ApplyChangesLockId = opts.ApplyChangesLockId + 6;
                 });
 
                 mse.AddProjectionWithServices<ProductProjection>(
@@ -239,6 +244,7 @@ public class projections_with_IoC_services
                     {
                         opts.Connection(ConnectionSource.ConnectionString);
                         opts.DatabaseSchemaName = "ioc";
+                        opts.ApplyChangesLockId = opts.ApplyChangesLockId + 7;
                     })
                     // Note that this is chained after the call to AddMartenStore()
                     .AddProjectionWithServices<ProductProjection>(
@@ -273,7 +279,7 @@ public class projections_with_IoC_services
                     {
                         opts.Connection(ConnectionSource.ConnectionString);
                         opts.DatabaseSchemaName = "ioc";
-                        opts.Projections.DaemonLockId = 99123;
+                        opts.ApplyChangesLockId = opts.ApplyChangesLockId + 8;
                     })
                     .AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Async, ServiceLifetime.Singleton)
                     .ApplyAllDatabaseChangesOnStartup();
@@ -309,6 +315,7 @@ public class projections_with_IoC_services
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "ioc";
+                    opts.ApplyChangesLockId = opts.ApplyChangesLockId + 9;
                 }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped, "MyProjection")
                 .ApplyAllDatabaseChangesOnStartup();
             }).StartAsync();
@@ -339,6 +346,7 @@ public class projections_with_IoC_services
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "ioc";
+                    opts.ApplyChangesLockId = opts.ApplyChangesLockId + 10;
                 }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Async, ServiceLifetime.Scoped, "MyProjection")
                     .ApplyAllDatabaseChangesOnStartup();
             }).StartAsync();
