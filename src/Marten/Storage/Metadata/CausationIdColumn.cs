@@ -102,7 +102,7 @@ internal class CausationIdArgument: UpsertArgument
         Argument parameters,
         DocumentMapping mapping, StoreOptions options)
     {
-        method.Frames.Code($"setStringParameter({parameters.Usage}[{i}], {{0}}.{nameof(IMartenSession.CausationId)});",
+        method.Frames.Code($"setStringParameter({parameters.Usage}, {{0}}.{nameof(IMartenSession.CausationId)});",
             Use.Type<IMartenSession>());
     }
 

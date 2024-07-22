@@ -55,8 +55,9 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
-        var parameters = builder.AppendWithParameters(CommandText());
-        ConfigureParameters(parameters, _document, session);
+        var groupedParameters = builder.CreateGroupedParameterBuilder(',');
+        // this is gross
+        ConfigureParameters(groupedParameters, builder, _document, session);
     }
 
     public Type DocumentType => typeof(T);
@@ -73,16 +74,14 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
 
     public abstract OperationRole Role();
 
-    public abstract string CommandText();
-
     public abstract NpgsqlDbType DbType();
 
-    public abstract void ConfigureParameters(NpgsqlParameter[] parameters, T document, IMartenSession session);
+    public abstract void ConfigureParameters(IGroupedParameterBuilder parameterBuilder, ICommandBuilder builder, T document, IMartenSession session);
 
-    protected void setVersionParameter(NpgsqlParameter parameter)
+    protected void setVersionParameter(IGroupedParameterBuilder builder)
     {
+        var parameter = builder.AppendParameter(_version);
         parameter.NpgsqlDbType = NpgsqlDbType.Uuid;
-        parameter.Value = _version;
     }
 
     protected void storeVersion()
@@ -90,23 +89,24 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         _versions[_id] = _version;
     }
 
-    protected void setCurrentVersionParameter(NpgsqlParameter parameter)
+    protected void setCurrentVersionParameter(IGroupedParameterBuilder builder)
     {
-        parameter.NpgsqlDbType = NpgsqlDbType.Uuid;
         if (_versions.TryGetValue(_id, out var version))
         {
-            parameter.Value = version;
+            var parameter = builder.AppendParameter(version);
+            parameter.NpgsqlDbType = NpgsqlDbType.Uuid;
         }
         else
         {
-            parameter.Value = DBNull.Value;
+            var parameter = builder.AppendParameter<object>(DBNull.Value);
+            parameter.NpgsqlDbType = NpgsqlDbType.Uuid;
         }
     }
 
-    protected void setCurrentRevisionParameter(NpgsqlParameter parameter)
+    protected void setCurrentRevisionParameter(IGroupedParameterBuilder builder)
     {
+        var parameter = builder.AppendParameter(Revision);
         parameter.NpgsqlDbType = NpgsqlDbType.Integer;
-        parameter.Value = Revision;
     }
 
     protected bool postprocessConcurrency(DbDataReader reader, IList<Exception> exceptions)
@@ -254,29 +254,31 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         return false;
     }
 
-    protected void setStringParameter(NpgsqlParameter parameter, string value)
+    protected void setStringParameter(IGroupedParameterBuilder builder, string value)
     {
-        parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
         if (value == null)
         {
-            parameter.Value = DBNull.Value;
+            var parameter = builder.AppendParameter(DBNull.Value);
+            parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
         }
         else
         {
-            parameter.Value = value;
+            var parameter = builder.AppendParameter(value);
+            parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
         }
     }
 
-    protected void setHeaderParameter(NpgsqlParameter parameter, IMartenSession session)
+    protected void setHeaderParameter(IGroupedParameterBuilder builder, IMartenSession session)
     {
-        parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
         if (session.Headers == null)
         {
-            parameter.Value = DBNull.Value;
+            var parameter = builder.AppendParameter(DBNull.Value);
+            parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
         }
         else
         {
-            parameter.Value = session.Serializer.ToJson(session.Headers);
+            var parameter = builder.AppendParameter(session.Serializer.ToJson(session.Headers));
+            parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
         }
     }
 }
