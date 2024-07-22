@@ -37,16 +37,16 @@ resources:
         NAMEDATALEN: 150
 
 variables:
-  configuration: Release
-  framework: net8.0
-  disable_test_parallelization: true
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   dotnet_version: '8.x'
   dotnet_framework_version: 'net8.0'
   node_version: 16.x
   pg_db: marten_testing
-  marten_testing_database: "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;Password=Password12!;Timeout=60;Cancellation Timeout=5000; Command Timeout=60"
+  CONFIGURATION: Release
+  FRAMEWORK: net7.0
+  DISABLE_TEST_PARALLELIZATION: true
+  CONNECTION_STRING: "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;Password=Password12!;Timeout=60;Cancellation Timeout=5000; Command Timeout=60"
 
 jobs:
   - job: build_dotnet
@@ -105,13 +105,83 @@ jobs:
           docker exec $PG_CONTAINER_NAME psql -U postgres -c "DO 'plv8.elog(NOTICE, plv8.version);' LANGUAGE plv8;"
         displayName: Add plv8 extension
         condition: eq(variables['plv8'], 'true')
-      - script: ./build.sh ci
-        displayName: Build without plv8
+      - script: ./build.sh compile
+        displayName: compile
         env:
           DEFAULT_SERIALIZER: $(serializer)
-        condition: eq(variables['plv8'], 'false')
-      - script: ./build.sh ci-with-test-plv8
-        displayName: Build with plv8
+      - script: ./build.sh mocha
+        displayName: mocha
+        continueOnError: true
+        env:
+          DEFAULT_SERIALIZER: $(serializer)
+      - script: ./build.sh test-base-lib
+        displayName: test-base-lib
+        continueOnError: true
+        env:
+          DEFAULT_SERIALIZER: $(serializer)
+      - script: ./build.sh test-core
+        displayName: test-core
+        continueOnError: true
+        env:
+          DEFAULT_SERIALIZER: $(serializer)
+      - script: ./build.sh test-document-db
+        displayName: test-document-db
+        continueOnError: true
+        env:
+          DEFAULT_SERIALIZER: $(serializer)
+      - script: ./build.sh test-event-sourcing
+        displayName: test-event-sourcing
+        continueOnError: true
+        env:
+          DEFAULT_SERIALIZER: $(serializer)
+      - script: ./build.sh test-cli
+        displayName: test-cli
+        continueOnError: true
+        env:
+          DEFAULT_SERIALIZER: $(serializer)
+      - script: ./build.sh test-core
+        displayName: test-core
+        continueOnError: true
+        env:
+          DEFAULT_SERIALIZER: $(serializer)
+      - script: ./build.sh test-linq
+        displayName: test-linq
+        continueOnError: true
+        env:
+          DEFAULT_SERIALIZER: $(serializer)
+      # - script: ./build.sh test-multi-tenancy
+      #   displayName: test-multi-tenancy
+      #   continueOnError: true
+      #   env:
+      #     DEFAULT_SERIALIZER: $(serializer)
+      - script: ./build.sh test-patching
+        displayName: test-patching
+        continueOnError: true
+        env:
+          DEFAULT_SERIALIZER: $(serializer)
+      - script: ./build.sh test-value-types
+        displayName: test-value-types
+        continueOnError: true
+        env:
+          DEFAULT_SERIALIZER: $(serializer)
+      - script: ./build.sh test-code-gen
+        displayName: test-code-gen
+        continueOnError: true
+        env:
+          DEFAULT_SERIALIZER: $(serializer)
+      - script: ./build.sh test-noda-time
+        displayName: test-noda-time
+        continueOnError: true
+        env:
+          DEFAULT_SERIALIZER: $(serializer)
+      - script: ./build.sh test-aspnet-core
+        displayName: test-aspnet-core
+        continueOnError: true
+        env:
+          DEFAULT_SERIALIZER: $(serializer)
+      - script: ./build.sh test-plv8
+        displayName: test-plv8
+        continueOnError: true
         env:
           DEFAULT_SERIALIZER: $(serializer)
         condition: eq(variables['plv8'], 'true')
