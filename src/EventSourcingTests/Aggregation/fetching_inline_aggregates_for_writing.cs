@@ -38,6 +38,62 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     }
 
     [Fact]
+    public async Task revision_is_updated_after_quick_appending_with_IRevisioned()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
+            opts.Events.AppendMode = EventAppendMode.Quick;
+            opts.Events.UseIdentityMapForInlineAggregates = true;
+        });
+
+        var streamId = Guid.NewGuid();
+
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        stream.Aggregate.ShouldBeNull();
+        stream.CurrentVersion.ShouldBe(0);
+
+        stream.AppendOne(new AEvent());
+        stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
+        stream.AppendMany(new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        var document = await theSession.LoadAsync<SimpleAggregate>(streamId);
+        document.Version.ShouldBe(6);
+    }
+
+    [Fact]
+    public async Task revision_is_updated_after_quick_appending_with_custom_mapped_version()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregate2>(SnapshotLifecycle.Inline).Metadata(m =>
+            {
+                m.Revision.MapTo(x => x.Version);
+            });
+
+            opts.Events.AppendMode = EventAppendMode.Quick;
+            opts.Events.UseIdentityMapForInlineAggregates = true;
+        });
+
+        var streamId = Guid.NewGuid();
+
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregate2>(streamId);
+        stream.Aggregate.ShouldBeNull();
+        stream.CurrentVersion.ShouldBe(0);
+
+        stream.AppendOne(new AEvent());
+        stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
+        stream.AppendMany(new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        var document = await theSession.LoadAsync<SimpleAggregate2>(streamId);
+        document.Version.ShouldBe(6);
+    }
+
+    [Fact]
     public async Task fetch_new_stream_for_writing_Guid_identifier_exception_handling()
     {
         StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));

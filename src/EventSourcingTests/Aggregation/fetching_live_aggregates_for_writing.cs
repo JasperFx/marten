@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Exceptions;
+using Marten.Metadata;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -344,36 +345,52 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         });
     }
 
-
-
-
-    /* TODO on Tuesday
-     1. Happy path append to existing stream
-     2. Sad path append to existing stream w/ optimistic concurrency check
-     3. Happy path while providing version
-     4. Sad path quickly while providing version
-     5. Sad path while providing version between starting and committing
-
-     6. Switch to Inline!
-
-
-
-
-
-
-
-
-
-
-     */
-
 }
 
-public class SimpleAggregate
+public class SimpleAggregate : IRevisioned
 {
     // This will be the aggregate version
-    public long Version { get; set; }
+    public int Version { get; set; }
 
+    public Guid Id { get; set; }
+
+    public int ACount { get; set; }
+    public int BCount { get; set; }
+    public int CCount { get; set; }
+    public int DCount { get; set; }
+    public int ECount { get; set; }
+
+    public void Apply(AEvent _)
+    {
+        ACount++;
+    }
+
+    public void Apply(BEvent _)
+    {
+        BCount++;
+    }
+
+    public void Apply(CEvent _)
+    {
+        CCount++;
+    }
+
+    public void Apply(DEvent _)
+    {
+        DCount++;
+    }
+
+    public void Apply(EEvent _)
+    {
+        ECount++;
+    }
+}
+
+
+public class SimpleAggregate2
+{
+    // This will be the aggregate version
+    public int Version { get; set; }
 
     public Guid Id { get; set; }
 
