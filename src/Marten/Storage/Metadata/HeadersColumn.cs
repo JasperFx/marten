@@ -14,6 +14,7 @@ using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using NpgsqlTypes;
+using Weasel.Postgresql;
 
 namespace Marten.Storage.Metadata;
 
@@ -45,9 +46,8 @@ internal class HeadersColumn: MetadataColumn<Dictionary<string, object>>, IEvent
 
     public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
-        method.Frames.Code($"parameters[{index}].NpgsqlDbType = {{0}};", NpgsqlDbType.Jsonb);
-        method.Frames.Code($"parameters[{index}].Value = {{0}}.Serializer.ToJson({{1}}.{nameof(IEvent.Headers)});",
-            Use.Type<IMartenSession>(), Use.Type<IEvent>());
+        method.Frames.Code($"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder.AppendParameter)}({{0}}.Serializer.ToJson({{1}}.{nameof(IEvent.Headers)}));", Use.Type<IMartenSession>(), Use.Type<IEvent>());
+        method.Frames.Code($"parameter{index}.NpgsqlDbType = {{0}};", NpgsqlDbType.Jsonb);
     }
 
     internal override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
@@ -116,7 +116,7 @@ internal class HeadersArgument: UpsertArgument
         Argument parameters,
         DocumentMapping mapping, StoreOptions options)
     {
-        method.Frames.Code($"setHeaderParameter({parameters.Usage}[{i}], {{0}});", Use.Type<IMartenSession>());
+        method.Frames.Code($"setHeaderParameter({parameters.Usage}, {{0}});", Use.Type<IMartenSession>());
     }
 
     public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)

@@ -20,7 +20,7 @@ internal class RevisionArgument: UpsertArgument
         Argument parameters,
         DocumentMapping mapping, StoreOptions options)
     {
-        method.Frames.Code("setCurrentRevisionParameter({0}[{1}]);", parameters, i);
+        method.Frames.Code("setCurrentRevisionParameter(parameterBuilder);");
     }
 
     public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)

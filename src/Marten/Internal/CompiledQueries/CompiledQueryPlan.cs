@@ -200,7 +200,7 @@ public class CompiledQueryPlan : ICommandBuilder
 
     public IGroupedParameterBuilder CreateGroupedParameterBuilder(char? seperator = null)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 
     NpgsqlParameter[] ICommandBuilder.AppendWithParameters(string text)

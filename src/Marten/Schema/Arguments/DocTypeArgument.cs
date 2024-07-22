@@ -4,9 +4,11 @@ using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core.Reflection;
+using Marten.Events.CodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Npgsql;
 using NpgsqlTypes;
+using Weasel.Postgresql;
 
 namespace Marten.Schema.Arguments;
 
@@ -39,8 +41,8 @@ internal class DocTypeArgument: UpsertArgument
         Argument parameters,
         DocumentMapping mapping, StoreOptions options)
     {
-        method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};", DbType);
-        method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.Value)} = docType;");
+        method.Frames.Code($"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}(docType);", Use.Type<IGroupedParameterBuilder>());
+        method.Frames.Code($"parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};", DbType);
     }
 
     public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)

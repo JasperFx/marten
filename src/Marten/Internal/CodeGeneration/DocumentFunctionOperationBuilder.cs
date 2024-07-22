@@ -8,6 +8,7 @@ using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Marten.Events.CodeGeneration;
 using Marten.Internal.Operations;
 using Marten.Schema;
 using Marten.Storage;
@@ -29,7 +30,7 @@ internal class DocumentFunctionOperationBuilder
         _role = role;
         _options = options;
 
-        CommandText = $"select {_function.Identifier}({_function.OrderedArguments().Select(x => "?").Join(", ")})";
+        CommandText = $"select {_function.Identifier}(";
 
         ClassName =
             $"{function.GetType().Name.Replace("Function", "")}{mapping.DocumentType.ToSuffixedTypeName("Operation")}";
@@ -53,7 +54,6 @@ internal class DocumentFunctionOperationBuilder
         type.MethodFor("Role").Frames.Return(Constant.ForEnum(_role));
         type.MethodFor("DbType").Frames
             .Return(Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(_mapping.IdType)));
-        type.MethodFor("CommandText").Frames.ReturnNewStringConstant("COMMAND_TEXT", CommandText);
 
         buildConfigureMethod(type);
 
@@ -154,20 +154,24 @@ internal class DocumentFunctionOperationBuilder
                 $"if (document.{_mapping.Metadata.Revision.Member.Name} > 0 && {nameof(IRevisionedOperation.Revision)} == 1) {nameof(IRevisionedOperation.Revision)} = document.{_mapping.Metadata.Revision.Member.Name};");
         }
 
-        var parameters = method.Arguments[0];
+        method.Frames.AppendSql(CommandText);
+
+        var parameterBuilder = method.Arguments[0];
 
         var arguments = _function.OrderedArguments();
 
         for (var i = 0; i < arguments.Length; i++)
         {
             var argument = arguments[i];
-            argument.GenerateCodeToModifyDocument(method, type, i, parameters, _mapping, _options);
+            argument.GenerateCodeToModifyDocument(method, type, i, parameterBuilder, _mapping, _options);
         }
 
         for (var i = 0; i < arguments.Length; i++)
         {
             var argument = arguments[i];
-            argument.GenerateCodeToSetDbParameterValue(method, type, i, parameters, _mapping, _options);
+            argument.GenerateCodeToSetDbParameterValue(method, type, i, parameterBuilder, _mapping, _options);
         }
+
+        method.Frames.AppendSql(')');
     }
 }

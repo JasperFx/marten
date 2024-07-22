@@ -43,7 +43,7 @@ internal class VersionArgument: UpsertArgument
         Argument parameters,
         DocumentMapping mapping, StoreOptions options)
     {
-        method.Frames.Code("setVersionParameter({0}[{1}]);", parameters, i);
+        method.Frames.Code("setVersionParameter(parameterBuilder);");
     }
 
     public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)

@@ -28,9 +28,10 @@ internal sealed class EventTypeFilter: ISqlFragment
 
     public void Apply(ICommandBuilder builder)
     {
-        var parameters = builder.AppendWithParameters("d.type = ANY(?)");
-        parameters[0].NpgsqlDbType = NpgsqlDbType.Varchar | NpgsqlDbType.Array;
-        parameters[0].Value = _typeNames;
+        builder.Append("d.type = ANY(");
+        var parameter = builder.AppendParameter(_typeNames);
+        parameter.NpgsqlDbType = NpgsqlDbType.Varchar | NpgsqlDbType.Array;
+        builder.Append(')');
     }
 
 }

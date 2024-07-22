@@ -104,7 +104,7 @@ internal class CorrelationIdArgument: UpsertArgument
         DocumentMapping mapping, StoreOptions options)
     {
         method.Frames.Code(
-            $"setStringParameter({parameters.Usage}[{i}], {{0}}.{nameof(IMartenSession.CorrelationId)});",
+            $"setStringParameter({parameters.Usage} {{0}}.{nameof(IMartenSession.CorrelationId)});",
             Use.Type<IMartenSession>());
     }
 

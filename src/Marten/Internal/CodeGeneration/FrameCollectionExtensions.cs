@@ -9,6 +9,7 @@ using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Marten.Events.CodeGeneration;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Util;
@@ -258,9 +259,8 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
         Expression<Func<T, string>> memberExpression)
     {
         var member = MemberFinder.Determine(memberExpression).Single();
-
-        method.Frames.Code($"parameters[{index}].Value = {{0}}.{member.Name};", Use.Type<T>());
-        method.Frames.Code($"parameters[{index}].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;");
+        method.Frames.Code($"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder.AppendParameter)}({{1}}.{member.Name});", Use.Type<T>());
+        method.Frames.Code($"parameter{index}.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;");
     }
 
     public static void SetParameterFromMember<T>(this GeneratedMethod method, int index,
@@ -268,19 +268,20 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
     {
         var member = MemberFinder.Determine(memberExpression).Single();
         var memberType = member.GetMemberType();
-        var pgType = PostgresqlProvider.Instance.ToParameterType(memberType);
+        var pgType = PostgresqlProvider.Instance.ToParameterType(memberType!);
 
         if (memberType == typeof(string))
         {
             method.Frames.Code(
-                $"parameters[{index}].Value = {{0}}.{member.Name} != null ? (object){{0}}.{member.Name} : {typeof(DBNull).FullNameInCode()}.Value;",
+                $"var parameter{index} = {{0}}.{member.Name} != null ? parameterBuilder.{nameof(IGroupedParameterBuilder.AppendParameter)}({{0}}.{member.Name}) : parameterBuilder.{nameof(IGroupedParameterBuilder.AppendParameter)}<object>({typeof(DBNull).FullNameInCode()}.Value);",
                 Use.Type<T>());
-            method.Frames.Code($"parameters[{index}].NpgsqlDbType = {{0}};", pgType);
+            method.Frames.Code($"parameter{index}.NpgsqlDbType = {{0}};", pgType);
         }
         else
         {
-            method.Frames.Code($"parameters[{index}].Value = {{0}}.{member.Name};", Use.Type<T>());
-            method.Frames.Code($"parameters[{index}].NpgsqlDbType = {{0}};", pgType);
+            method.Frames.Code($"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder.AppendParameter)}({{0}}.{member.Name});", Use.Type<T>());
+            method.Frames.Code($"parameter{index}.NpgsqlDbType = {{0}};", pgType);
+
         }
     }
 
