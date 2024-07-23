@@ -160,14 +160,14 @@ Refer to build commands section to look up the commands to open the StoryTeller 
 
 | CI              | .NET | Postgres  |        plv8        | Serializer | 
 |-----------------|:----:|:---------:|:------------------:|:----------:|
-| GitHub Actions  |  6   |   12.8    | :white_check_mark: |    STJ     | 
-| GitHub Actions  |  6   | 15-alpine |        :x:         | Newtonsoft | 
+| GitHub Actions  |  8   |   12.8    | :white_check_mark: |    STJ     | 
+| GitHub Actions  |  8   | 15-alpine |        :x:         | Newtonsoft | 
 | GitHub Actions  |  7   |   12.8    | :white_check_mark: |  JSON.NET  | 
 | GitHub Actions  |  7   |  latest   |        :x:         |    STJ     | 
-| Azure Pipelines |  8   |   12.8    | :white_check_mark: |  JSON.NET  | 
-| Azure Pipelines |  8   |   12.8    | :white_check_mark: |    STJ     | 
-| Azure Pipelines |  8   | 15-alpine |        :x:         |    STJ     | 
-| Azure Pipelines |  8   |  latest   |        :x:         | Newtonsoft | 
+| Azure Pipelines |  6   |   12.8    | :white_check_mark: |  JSON.NET  | 
+| Azure Pipelines |  6   |   12.8    | :white_check_mark: |    STJ     | 
+| Azure Pipelines |  6   | 15-alpine |        :x:         |    STJ     | 
+| Azure Pipelines |  6   |  latest   |        :x:         | Newtonsoft | 
 
 ## Documentation
 
