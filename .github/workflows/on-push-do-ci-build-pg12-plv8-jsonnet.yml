@@ -26,6 +26,7 @@ env:
   FRAMEWORK: net7.0
   DISABLE_TEST_PARALLELIZATION: true
   DEFAULT_SERIALIZER: "Newtonsoft"
+  NUKE_TELEMETRY_OPTOUT: true
 
 jobs:
   build:
