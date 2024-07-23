@@ -305,11 +305,11 @@ class Build : NukeBuild
             }
         });
     
-    Target PublicDocsPreview => _ => _
+    Target PublishDocsPreview => _ => _
         .DependsOn(NpmInstall, InstallMdSnippets)
         .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("deploy")));
     
-    Target PublicDocs => _ => _
+    Target PublishDocs => _ => _
         .DependsOn(NpmInstall, InstallMdSnippets)
         .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("deploy:prod")));
     
