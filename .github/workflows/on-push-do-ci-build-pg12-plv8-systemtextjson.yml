@@ -1,4 +1,4 @@
-name: build_net6.0 pg12-plv8 System.Text.Json
+name: build_net8.0 pg12-plv8 System.Text.Json
 
 on:
   push:
@@ -23,7 +23,7 @@ env:
   pg_db: marten_testing
   pg_user: postgres
   CONFIGURATION: Release
-  FRAMEWORK: net7.0
+  FRAMEWORK: net8.0
   DISABLE_TEST_PARALLELIZATION: true
   DEFAULT_SERIALIZER: "SystemTextJson"
   NUKE_TELEMETRY_OPTOUT: true

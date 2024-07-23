@@ -1,4 +1,4 @@
-name: build_net6.0 pg15 Json.NET
+name: build_net8.0 pg15 Json.NET
 
 on:
   push:
@@ -23,7 +23,7 @@ env:
   pg_db: marten_testing
   pg_user: postgres
   CONFIGURATION: Release
-  FRAMEWORK: net7.0
+  FRAMEWORK: net8.0
   DISABLE_TEST_PARALLELIZATION: true
   DEFAULT_SERIALIZER: "Newtonsoft"
   NUKE_TELEMETRY_OPTOUT: true
