@@ -8,31 +8,40 @@ on:
     branches:
       - master
 
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  node_version: 20.x
+  NUKE_TELEMETRY_OPTOUT: true
+
 jobs:
-  linting:
+  run:
     name: "Markdown linting"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         name: Check out the code
+
       - name: Lint Code Base
         uses: docker://ghcr.io/igorshubovych/markdownlint-cli:latest
         with:
           args: "--disable MD009 -- docs/**/*.md"
-  spellcheck:
-    name: "Spell check"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        name: Check out the code
+
       - uses: actions/setup-node@v4
-        name: Setup node
+        name: Install Node.js
         with:
-          node-version: 20
+          node-version: ${{ env.node_version }}
+
       - run: npm install -g cspell
         name: Install cSpell
+
       - run: cspell --config ./docs/cSpell.json "docs/**/*.md"
         name: run cSpell
 
+      - name: Install .NET 8.0.x
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+
       - name: Build docs
-        run: ./build.sh --no-color docs-import-v3
+        run: ./build.sh docs-build
