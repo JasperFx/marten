@@ -16,7 +16,7 @@ env:
 
 jobs:
   run:
-    name: "Markdown linting"
+    name: "linting, spell check and build"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
