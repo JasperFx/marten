@@ -138,6 +138,12 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
     public IQueryProvider Provider { get; }
     public Expression Expression { get; }
 
+    internal IQueryHandler<IReadOnlyList<T>> BuilderListHandler()
+    {
+        var builder = new LinqQueryParser(MartenProvider, Session, Expression);
+        return builder.BuildListHandler<T>();
+    }
+
     public async Task<IReadOnlyList<TResult>> ToListAsync<TResult>(CancellationToken token)
     {
         var builder = new LinqQueryParser(MartenProvider, Session, Expression);

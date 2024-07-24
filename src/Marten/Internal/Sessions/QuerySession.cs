@@ -1,6 +1,8 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Events;
 using Marten.Services;
@@ -111,4 +113,9 @@ public partial class QuerySession: IMartenSession, IQuerySession
     public IDocumentStore DocumentStore => _store;
 
     public IAdvancedSql AdvancedSql => this;
+    public Task<T> QueryByPlanAsync<T>(IQueryPlan<T> plan, CancellationToken token = default)
+    {
+        // This is literally like this *just* to make mocking easier -- even though I don't agree with that often!
+        return plan.Fetch(this, token);
+    }
 }
