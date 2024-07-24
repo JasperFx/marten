@@ -147,7 +147,16 @@ public class CompiledQueryPlan : ICommandBuilder
 
     NpgsqlParameter ICommandBuilder.AppendParameter<T>(T value, NpgsqlDbType dbType)
     {
-        throw new NotSupportedException();
+        _current ??= appendCommand();
+        var name = "p" + _parameterIndex;
+        _parameterIndex++;
+        var usage = new ParameterUsage(_current.Parameters.Count, name, value, dbType);
+
+        _current.Parameters.Add(usage);
+
+        _current.CommandText += ParameterPlaceholder;
+
+        return usage.Parameter;
     }
 
     private int _parameterIndex = 0;
