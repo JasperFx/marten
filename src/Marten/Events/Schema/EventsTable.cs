@@ -70,7 +70,11 @@ internal class EventsTable: Table
             });
         }
 
-        AddColumn<IsArchivedColumn>();
+        var archiving = AddColumn<IsArchivedColumn>();
+        if (events.UseArchivedStreamPartitioning)
+        {
+            archiving.PartitionByListValues().AddPartition("archived", true);
+        }
     }
 
     internal IList<IEventTableColumn> SelectColumns()

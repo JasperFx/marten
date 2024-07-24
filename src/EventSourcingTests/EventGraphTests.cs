@@ -27,6 +27,12 @@ public class EventGraphTests
     }
 
     [Fact]
+    public void archive_partitioning_is_off_by_default()
+    {
+        theGraph.UseArchivedStreamPartitioning.ShouldBeFalse();
+    }
+
+    [Fact]
     public void enable_unique_index_on_event_id_is_false_by_default()
     {
         theGraph.EnableUniqueIndexOnEventId.ShouldBeFalse();

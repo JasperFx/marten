@@ -56,4 +56,10 @@ public interface IReadOnlyEventStoreOptions
     /// Do not use this if you manually alter the fetched aggregate from FetchForWriting() outside of Marten
     /// </summary>
     bool UseIdentityMapForInlineAggregates { get; set; }
+
+    /// <summary>
+    /// Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
+    /// *if* you are also aggressively using event stream archiving
+    /// </summary>
+    bool UseArchivedStreamPartitioning { get; set; }
 }
