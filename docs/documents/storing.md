@@ -81,7 +81,7 @@ using (var session = theStore.LightweightSession())
     session.SaveChanges();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/document_inserts.cs#L74-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-document-insertonly' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/document_inserts.cs#L75-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-document-insertonly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Bulk Loading
@@ -151,7 +151,7 @@ await store.BulkInsertDocumentsAsync(data, BulkInsertMode.InsertsOnly);
 // being loaded
 await store.BulkInsertDocumentsAsync(data, BulkInsertMode.OverwriteExisting);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L302-L321' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulkinsertmode_usages' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L329-L348' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulkinsertmode_usages' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The bulk insert feature can also be used with multi-tenanted documents, but in that
@@ -173,5 +173,5 @@ using var store = DocumentStore.For(opts =>
 // If multi-tenanted
 await store.BulkInsertDocumentsAsync("a tenant id", data);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L326-L340' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multitenancywithbulkinsert' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L353-L367' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multitenancywithbulkinsert' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

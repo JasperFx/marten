@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Marten.Storage;
+using NpgsqlTypes;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Archiving;
@@ -22,11 +24,24 @@ internal class ArchiveStreamOperation: IStorageOperation
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
-        var parameter =
-            builder.AppendWithParameters($"select {_events.DatabaseSchemaName}.{ArchiveStreamFunction.Name}(?)")[0];
-        parameter.Value = _streamId;
+        if (_events.TenancyStyle == TenancyStyle.Conjoined)
+        {
+            var parameters = builder.AppendWithParameters($"select {_events.DatabaseSchemaName}.{ArchiveStreamFunction.Name}(?, ?)");
+            parameters[0].Value = _streamId;
+            parameters[0].NpgsqlDbType = _events.StreamIdDbType;
+            parameters[1].Value = session.TenantId;
+            parameters[1].NpgsqlDbType = NpgsqlDbType.Varchar;
+        }
+        else
+        {
+            var parameter =
+                builder.AppendWithParameters($"select {_events.DatabaseSchemaName}.{ArchiveStreamFunction.Name}(?)")[0];
+            parameter.Value = _streamId;
 
-        parameter.NpgsqlDbType = _events.StreamIdDbType;
+            parameter.NpgsqlDbType = _events.StreamIdDbType;
+        }
+
+
     }
 
 
