@@ -48,7 +48,7 @@
         <PackageReference Include="Polly.Core" Version="8.3.1" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" Version="8.0.0" />
         <PackageReference Include="System.Text.Json" Version="8.0.4" />
-        <PackageReference Include="Weasel.Postgresql" Version="7.4.1" />
+        <!--<PackageReference Include="Weasel.Postgresql" Version="7.4.1" />-->
     </ItemGroup>
 
     <!--SourceLink specific settings-->
@@ -68,6 +68,9 @@
     </ItemGroup>
     <ItemGroup>
       <Folder Include="Internal\OpenTelemetry\" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\weasel\src\Weasel.Postgresql\Weasel.Postgresql.csproj" />
     </ItemGroup>
     <Import Project="../../Analysis.Build.props" />
 </Project>

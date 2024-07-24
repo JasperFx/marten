@@ -56,7 +56,11 @@ internal class StreamsTable: Table
             AddColumn<TenantIdColumn>();
         }
 
-        AddColumn<IsArchivedColumn>();
+        var archiving = AddColumn<IsArchivedColumn>();
+        if (events.UseArchivedStreamPartitioning)
+        {
+            archiving.PartitionByListValues().AddPartition("archived", true);
+        }
     }
 }
 

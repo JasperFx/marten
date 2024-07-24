@@ -65,6 +65,12 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         _aggregateTypeByName = new Cache<string, Type>(findAggregateType);
     }
 
+    /// <summary>
+    /// Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
+    /// *if* you are also aggressively using event stream archiving
+    /// </summary>
+    public bool UseArchivedStreamPartitioning { get; set; }
+
     internal NpgsqlDbType StreamIdDbType { get; private set; }
 
     internal StoreOptions Options { get; }

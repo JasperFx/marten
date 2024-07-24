@@ -61,6 +61,12 @@ namespace Marten.Events
         public EventAppendMode AppendMode { get; set; }
 
         /// <summary>
+        /// Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
+        /// *if* you are also aggressively using event stream archiving
+        /// </summary>
+        public bool UseArchivedStreamPartitioning { get; set; }
+
+        /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
         ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
         ///     the event type. It can also be used for the event namespace migration.
