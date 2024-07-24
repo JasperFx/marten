@@ -10,7 +10,7 @@
     "docs": "npm-run-all -s mdsnippets vitepress-dev",
     "docs-build": "npm-run-all -s mdsnippets vitepress-build",
     "deploy": "netlify deploy",
-    "deploy:prod": "netlify deploy --prod --build"
+    "deploy:prod": "npm run docs-build && netlify deploy --prod"
   },
   "devDependencies": {
     "@mermaid-js/mermaid-mindmap": "^9.3.0",
