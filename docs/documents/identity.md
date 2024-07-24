@@ -337,7 +337,7 @@ public struct Task2Id
     public static Task2Id From(Guid value) => new Task2Id(value);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/TestingTypes.cs#L29-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_valid_strong_typed_identifiers' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/TestingTypes.cs#L30-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_valid_strong_typed_identifiers' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In _all_ cases, the type name will have to be suffixed with "Id" (and it's case sensitive) to be considered by Marten to be

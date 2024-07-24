@@ -164,6 +164,8 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Querying Events', link: '/events/querying' },
             { text: 'Metadata', link: '/events/metadata' },
             { text: 'Archiving Streams', link: '/events/archiving' },
+            { text: 'Optimizing Performance', link: '/events/optimizing' },
+              
             {
               text: 'Projections Overview', link: '/events/projections/', collapsed: true, items: [
                 {

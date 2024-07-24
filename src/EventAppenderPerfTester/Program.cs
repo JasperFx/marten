@@ -5,6 +5,8 @@ using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using Oakton;
 
+#region sample_disabling_npgsql_logging
+
 var builder = Host.CreateDefaultBuilder();
 builder.ConfigureServices(services =>
 {
@@ -12,6 +14,7 @@ builder.ConfigureServices(services =>
     {
         opts.Connection(ConnectionSource.ConnectionString);
 
+        // Disable the absurdly verbose Npgsql logging
         opts.DisableNpgsqlLogging = true;
 
         opts.Events.AppendMode = EventAppendMode.Quick;
@@ -20,6 +23,8 @@ builder.ConfigureServices(services =>
         opts.Projections.Add<DaemonTests.TestingSupport.TripProjection>(ProjectionLifecycle.Inline);
     });
 });
+
+#endregion
 
 return await builder.RunOaktonCommands(args);
 

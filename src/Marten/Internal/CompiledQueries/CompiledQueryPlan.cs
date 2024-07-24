@@ -145,6 +145,11 @@ public class CompiledQueryPlan : ICommandBuilder
         return usage.Parameter;
     }
 
+    NpgsqlParameter ICommandBuilder.AppendParameter<T>(T value, NpgsqlDbType dbType)
+    {
+        throw new NotSupportedException();
+    }
+
     private int _parameterIndex = 0;
 
     NpgsqlParameter ICommandBuilder.AppendParameter(object value)
@@ -182,6 +187,11 @@ public class CompiledQueryPlan : ICommandBuilder
     {
         _current ??= appendCommand();
         throw new NotSupportedException();
+    }
+
+    public IGroupedParameterBuilder CreateGroupedParameterBuilder(char? seperator = null)
+    {
+        throw new NotImplementedException();
     }
 
     NpgsqlParameter[] ICommandBuilder.AppendWithParameters(string text)

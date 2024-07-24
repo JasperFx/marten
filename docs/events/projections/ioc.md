@@ -56,7 +56,7 @@ public class ProductProjection: CustomProjection<Product, Guid>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/projections_with_IoC_services.cs#L381-L423' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_productprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/StressTests/projections_with_IoC_services.cs#L390-L432' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_productprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, we *want* to use this projection at runtime within Marten, and need to register the projection
@@ -75,6 +75,7 @@ using var host = await Host.CreateDefaultBuilder()
             {
                 opts.Connection(ConnectionSource.ConnectionString);
                 opts.DatabaseSchemaName = "ioc";
+                opts.ApplyChangesLockId = opts.ApplyChangesLockId + 2;
             })
             // Note that this is chained after the call to AddMarten()
             .AddProjectionWithServices<ProductProjection>(
@@ -84,7 +85,7 @@ using var host = await Host.CreateDefaultBuilder()
     })
     .StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/projections_with_IoC_services.cs#L65-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_projection_built_by_services' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/StressTests/projections_with_IoC_services.cs#L67-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_projection_built_by_services' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that we're having to explicitly specify the projection lifecycle for the projection used within

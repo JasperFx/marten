@@ -55,7 +55,7 @@ public class Customer
     [Identity] public string Name { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/DocumentMappingTests.cs#L830-L838' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_databaseschemaname_attribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/DocumentMappingTests.cs#L837-L845' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_databaseschemaname_attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Type Aliases

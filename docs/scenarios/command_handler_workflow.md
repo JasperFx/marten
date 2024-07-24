@@ -279,3 +279,24 @@ public Task Handle4(MarkItemReady command, IDocumentSession session)
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L171-L198' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_writetoaggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Optimizing FetchForWriting with Inline Aggregates
+
+If you are utilizing `FetchForWriting()` for your command handlers -- and you really, really should! -- and at least
+some of your aggregates are updated `Inline` as shown below:
+
+snippet: sample_registering_Order_as_Inline
+
+You can potentially gain some significant performance optimization by using the `UseIdentityMapForInlineAggregates`
+flag shown above. To be clear, this optimization mostly helps when you have the combination in a command handler that:
+
+1. Uses `FetchForWriting` for an aggregate type
+2. That aggregate type is updated or built through an `Inline` projection or snapshot
+
+With this optimization, Marten will take steps to make sure that it uses the version of the aggregate document that was
+originally fetched by `FetchForWriting()` as the starting point for updating that aggregate in its `Inline` projection
+with the events that were appended by the command itself.
+
+**This optimization will be harmful if you alter the loaded aggregate in any way between `FetchForWriting()` and `SaveChangesAsync()`
+by potentially making your projected data being saved be invalid.**
+
