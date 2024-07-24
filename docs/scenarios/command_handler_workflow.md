@@ -299,4 +299,3 @@ with the events that were appended by the command itself.
 
 **This optimization will be harmful if you alter the loaded aggregate in any way between `FetchForWriting()` and `SaveChangesAsync()`
 by potentially making your projected data being saved be invalid.**
-
