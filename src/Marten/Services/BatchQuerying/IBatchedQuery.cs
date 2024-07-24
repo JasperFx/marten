@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 
@@ -61,6 +62,8 @@ public interface IBatchedQuery
     ///     Access to event store specific query mechanisms
     /// </summary>
     IBatchEvents Events { get; }
+
+    QuerySession Parent { get; }
 
     /// <summary>
     ///     Load a single document of Type "T" by id
@@ -146,4 +149,12 @@ public interface IBatchedQuery
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     Task<T> AddItem<T>(IQueryHandler<T> handler);
+
+    /// <summary>
+    /// Enroll a query plan with a batch query
+    /// </summary>
+    /// <param name="plan"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Task<T> QueryByPlan<T>(IBatchQueryPlan<T> plan);
 }

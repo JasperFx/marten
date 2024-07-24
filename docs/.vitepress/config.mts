@@ -125,7 +125,7 @@ const config: UserConfig<DefaultTheme.Config> = {
                 { text: 'Querying with Postgres SQL', link: '/documents/querying/sql' },
                 { text: 'Advanced Querying with Postgres SQL', link: '/documents/querying/advanced-sql' },
                 { text: 'Querying for Raw JSON', link: '/documents/querying/query-json' },
-                { text: 'Compiled Queries', link: '/documents/querying/compiled-queries' },
+                { text: 'Compiled Queries and Reusable Query Plans', link: '/documents/querying/compiled-queries' },
                 { text: 'Batched Queries', link: '/documents/querying/batched-queries' },]
             },
 

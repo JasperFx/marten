@@ -736,4 +736,13 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     ///     beyond what you can do with LINQ.
     /// </summary>
     IAdvancedSql AdvancedSql { get; }
+
+    /// <summary>
+    /// Use a query plan to execute a query
+    /// </summary>
+    /// <param name="plan"></param>
+    /// <param name="token"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Task<T> QueryByPlanAsync<T>(IQueryPlan<T> plan, CancellationToken token = default);
 }

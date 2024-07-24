@@ -1,9 +1,13 @@
-# Compiled Queries
+# Compiled Queries and Query Plans
 
-::: tip
-The compiled query support was completely rewritten for Marten V4, and the signature changed somewhat. The new signature depends
-on `IMartenQueryable<T>` instead of `IQueryable<T>`, and most Marten specific Linq usages are available.
-:::
+Marten has two different implementations for the ["Specification" pattern](https://deviq.com/design-patterns/specification-pattern) that
+enable you to encapsulate all the filtering, ordering, and paging for a logically reusable data query into a single class:
+
+1. Compiled queries that help short circuit the LINQ processing with reusable "execution plans" for maximum performance, but
+   are admittedly limited in terms of their ability to handle all possible LINQ queries or basically any dynamic querying whatsoever
+2. Query plans that can support anything that Marten itself can do, just without the magic LINQ query compilation optimization
+
+## Compiled Queries
 
 ::: warning
 Don't use asynchronous Linq operators in the expression body of a compiled query. This will not impact your ability to use compiled queries
@@ -594,3 +598,41 @@ public async Task use_compiled_query_with_statistics()
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L37-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_querystatistics_with_compiled_query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Query Plans <Badge type="tip" text="7.25" />
+
+::: info
+The query plan concept was created specifically to help a [JasperFx](https://jasperfx.net) client try to eliminate their
+custom repository wrappers around Marten and to better utilize batch querying.
+:::
+
+::: tip
+Batch querying is a great way to improve the performance of your system~~~~
+:::
+
+A query plan is another flavor of "Specification" for Marten that just enables you to bundle up query logic that can
+be reused within your codebase without having to create wrappers around Marten itself. To create a reusable query plan,
+implement the `IQueryPlan<T>` interface where `T` is the type of the result you want. Here's a simplistic sample from
+the tests:
+
+snippet: sample_color_targets
+
+And then use that like so:
+
+snippet: sample_using_query_plan
+
+There is also a similar interface for usage with [batch querying](/documents/querying/batched-queries):
+
+snippet: sample_IBatchQueryPlan
+
+And because we expect this to be very common, there is convenience base class named `QueryListPlan<T>` for querying lists of 
+`T` data that can be used for both querying directly against an `IQuerySession` and for batch querying. The usage within
+a batched query is shown below from the Marten tests:
+
+snippet: sample_using_query_plan_in_batch_query
+
+
+
+
+
+
