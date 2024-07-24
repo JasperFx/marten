@@ -116,10 +116,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventAppenderPerfTester", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StressTests", "StressTests\StressTests.csproj", "{C9D33381-3AD3-4005-B854-F04F10EA837F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weasel.Core", "..\..\weasel\src\Weasel.Core\Weasel.Core.csproj", "{F1524942-FA31-4A11-A5DD-EE92B7806511}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weasel.Postgresql", "..\..\weasel\src\Weasel.Postgresql\Weasel.Postgresql.csproj", "{0042C325-5957-4F76-AC4C-B1C417AAF93D}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -286,14 +282,6 @@ Global
 		{C9D33381-3AD3-4005-B854-F04F10EA837F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C9D33381-3AD3-4005-B854-F04F10EA837F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C9D33381-3AD3-4005-B854-F04F10EA837F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F1524942-FA31-4A11-A5DD-EE92B7806511}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F1524942-FA31-4A11-A5DD-EE92B7806511}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F1524942-FA31-4A11-A5DD-EE92B7806511}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F1524942-FA31-4A11-A5DD-EE92B7806511}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0042C325-5957-4F76-AC4C-B1C417AAF93D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0042C325-5957-4F76-AC4C-B1C417AAF93D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0042C325-5957-4F76-AC4C-B1C417AAF93D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0042C325-5957-4F76-AC4C-B1C417AAF93D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

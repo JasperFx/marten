@@ -203,3 +203,4 @@ in the event store sequence due to failed transactions. Marten V4 introduced sup
 event sequence numbers that failed in a Marten transaction. This is done strictly to improve the functioning of the [async daemon](/events/projections/async-daemon) that looks for gaps in the event sequence to "know" how
 far it's safe to process asynchronous projections. If you see event rows in your database of type "tombstone", it's representative of failed transactions (maybe from optimistic concurrency violations,
 transient network issues, timeouts, etc.).
+
