@@ -258,7 +258,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
     {
         if (value == null)
         {
-            var parameter = builder.AppendParameter(DBNull.Value);
+            var parameter = builder.AppendParameter<object>(DBNull.Value);
             parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
         }
         else
@@ -272,7 +272,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
     {
         if (session.Headers == null)
         {
-            var parameter = builder.AppendParameter(DBNull.Value);
+            var parameter = builder.AppendParameter<object>(DBNull.Value);
             parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
         }
         else
