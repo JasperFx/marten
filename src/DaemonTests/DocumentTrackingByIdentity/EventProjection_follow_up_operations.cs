@@ -15,8 +15,11 @@ public class EventProjection_follow_up_operations: DaemonContext
     [Fact]
     public async Task rebuild_with_follow_up_operations_should_work()
     {
-        StoreOptions(x => x.Projections.Add<NestedEntityEventProjection>(ProjectionLifecycle.Inline,
-            asyncOptions => asyncOptions.EnableDocumentTrackingByIdentity = true));
+        StoreOptions(x =>
+        {
+            x.Projections.Add<NestedEntityEventProjection>(ProjectionLifecycle.Inline,
+                asyncOptions => asyncOptions.EnableDocumentTrackingByIdentity = true);
+        });
 
         var nestedEntity = new NestedEntity("etc");
 
@@ -30,6 +33,7 @@ public class EventProjection_follow_up_operations: DaemonContext
                 {
                     { Guid.NewGuid(), nestedEntity }, { Guid.NewGuid(), nestedEntity }
                 }));
+
         session.Events.Append(Guid.NewGuid(), new SomeOtherEntityWithNestedIdentifierPublished(guid));
 
         await session.SaveChangesAsync();
