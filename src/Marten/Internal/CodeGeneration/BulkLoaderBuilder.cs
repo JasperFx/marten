@@ -122,6 +122,6 @@ public class BulkLoaderBuilder
 
     public string CreateTempTableForCopying()
     {
-        return $"create temporary table {_tempTable} as select * from {_mapping.TableName.QualifiedName} limit 0";
+        return $"create temporary table {_tempTable} (like {_mapping.TableName.QualifiedName} including defaults)";
     }
 }
