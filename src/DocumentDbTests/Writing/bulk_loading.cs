@@ -598,6 +598,24 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         }
     }
 
+    [Fact]
+    public async Task can_bulk_insert_soft_deletable_documents_when_using_overwrite_mode()
+    {
+        StoreOptions(x => x.Schema.For<User>().SoftDeletedWithIndex());
+
+        var doc1 = new User();
+        var doc2 = new User();
+
+        var documents = new object[] { doc1, doc2 };
+
+        await theStore.BulkInsertAsync(documents, BulkInsertMode.OverwriteExisting);
+
+        await using (var querying = theStore.QuerySession())
+        {
+            querying.Query<User>().Count().ShouldBe(2);
+        }
+    }
+
     public Task InitializeAsync()
     {
         return theStore.Advanced.Clean.DeleteAllDocumentsAsync();
