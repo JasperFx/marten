@@ -122,7 +122,7 @@ internal static class EventDocumentStorageGenerator
         configureCommand.Frames.AppendSql("set version = ");
         configureCommand.SetParameterFromMember<StreamAction>(0, x => x.Version);
 
-        configureCommand.Frames.AppendSql("where id = ");
+        configureCommand.Frames.AppendSql(" where id = ");
         if (graph.StreamIdentity == StreamIdentity.AsGuid)
         {
             configureCommand.SetParameterFromMember<StreamAction>(1, x => x.Id);
@@ -132,7 +132,7 @@ internal static class EventDocumentStorageGenerator
             configureCommand.SetParameterFromMember<StreamAction>(1, x => x.Key);
         }
 
-        configureCommand.Frames.AppendSql("and version = ");
+        configureCommand.Frames.AppendSql(" and version = ");
         configureCommand.SetParameterFromMember<StreamAction>(2, x => x.ExpectedVersionOnServer);
 
         if (graph.TenancyStyle == TenancyStyle.Conjoined)
