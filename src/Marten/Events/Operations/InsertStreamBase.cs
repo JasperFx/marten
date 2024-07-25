@@ -7,12 +7,13 @@ using JasperFx.Core.Exceptions;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Marten.Services;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Operations;
 
 // Leave public for codegen!
-public abstract class InsertStreamBase: IStorageOperation, IExceptionTransform
+public abstract class InsertStreamBase: IStorageOperation, IExceptionTransform, NoDataReturnedCall
 {
     public InsertStreamBase(StreamAction stream)
     {
