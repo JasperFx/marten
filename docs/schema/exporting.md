@@ -37,7 +37,7 @@ public async Task export_ddl()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ExportingDDL.cs#L9-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_export-ddl' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-For the moment, Marten is not directly supporting any kind of database migration strategy. There are community tools build on top of Marten for managing schema db migration, refer to our [community section](https://martendb.io/community/tools-and-libraries.html#sable) for more details.
+For the moment, Marten is not directly supporting any kind of database migration strategy. There are community tools build on top of Marten for managing schema db migration, refer to our [community section](/community/tools-and-libraries.html#sable) for more details.
 
 The code above creates the following SQL script below, with these elements:
 
