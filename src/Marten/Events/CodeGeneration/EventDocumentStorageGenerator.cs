@@ -141,6 +141,8 @@ internal static class EventDocumentStorageGenerator
             new TenantIdColumn().As<IStreamTableColumn>().GenerateAppendCode(configureCommand, 3);
         }
 
+        configureCommand.Frames.AppendSql(" returning version");
+
         builderType.MethodFor(nameof(EventDocumentStorage.UpdateStreamVersion))
             .Frames.Code($"return new {assembly.Namespace}.{UpdateStreamVersionOperationName}({{0}});",
                 Use.Type<StreamAction>());
