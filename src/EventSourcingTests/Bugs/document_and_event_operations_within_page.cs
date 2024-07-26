@@ -10,11 +10,19 @@ using Marten.Events.Projections;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace EventSourcingTests.Bugs;
 
 public class document_and_event_operations_within_page : BugIntegrationContext
 {
+    private readonly ITestOutputHelper _output;
+
+    public document_and_event_operations_within_page(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
     [Fact]
     public async Task failure_due_to_ordering_change()
     {
@@ -26,7 +34,10 @@ public class document_and_event_operations_within_page : BugIntegrationContext
         theStore.Options.Projections.Add<SampleProjection>(ProjectionLifecycle.Inline);
         theStore.Options.Projections.Add<SampleEventProjection>(ProjectionLifecycle.Inline);
 
+
         using var session = theStore.LightweightSession("tenant");
+        session.Logger = new TestOutputMartenLogger(_output);
+
         var mrCreated = new SamplesRolledUpCreated(Guid.NewGuid());
         session.Events.StartStream(mrCreated.Id, mrCreated);
         await session.SaveChangesAsync();
