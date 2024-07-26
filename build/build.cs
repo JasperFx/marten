@@ -20,7 +20,7 @@ class Build : NukeBuild
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
     [Solution] readonly Solution Solution;
-    [Parameter] readonly bool DisableTestParallelization;
+    [Parameter] readonly bool DisableTestParallelization = true;
     [Parameter]readonly string Framework;
     [Parameter] readonly string Profile;
     [Parameter] readonly string ConnectionString ="Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
