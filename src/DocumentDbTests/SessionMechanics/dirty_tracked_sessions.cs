@@ -79,4 +79,23 @@ public class dirty_tracked_sessions: IntegrationContext
         user3.FirstName.ShouldBe("Jens");
         user3.LastName.ShouldBe("Pettersson");
     }
+
+    [Fact]
+    public void store_reload_update_and_delete_by_id_in_same_dirty_tracked_session()
+    {
+        var user = new User { FirstName = "James", LastName = "Worthy" };
+
+        using var session = theStore.DirtyTrackedSession();
+        session.Store(user);
+        session.SaveChanges();
+
+        var user2 = session.Load<User>(user.Id);
+        user2.FirstName = "Jens";
+        session.Delete<User>(user2.Id);
+        session.SaveChanges();
+
+        using var query = theStore.QuerySession();
+        var user3 = query.Load<User>(user.Id);
+        user3.ShouldBeNull();
+    }
 }
