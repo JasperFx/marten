@@ -250,6 +250,12 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
     public IReadOnlyList<DuplicatedField> DuplicatedFields => _duplicates;
 
+    /// <summary>
+    /// Setting this to true just means that Weasel should assume that *something* else is
+    /// managing the partitions and that Weasel should not try to manage them at all
+    /// </summary>
+    public bool IgnorePartitions { get; set; }
+
     public bool IsHierarchy()
     {
         return SubClasses.Any() || DocumentType.GetTypeInfo().IsAbstract || DocumentType.GetTypeInfo().IsInterface;
@@ -739,6 +745,12 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
         var memberType = _idMember.GetMemberType();
         return memberType.IsNullable() ? memberType.GetGenericArguments()[0] : memberType;
+    }
+
+    internal void PartitionByDeleted()
+    {
+        Partitioning = new ListPartitioning { Columns = [SchemaConstants.DeletedColumn] }
+            .AddPartition("deleted", true);
     }
 }
 

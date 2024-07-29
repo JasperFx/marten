@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Parsing;
+using Marten.Linq.SoftDeletes;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
@@ -17,6 +18,7 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Weasel.Postgresql.Tables.Indexes;
+using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten;
 
@@ -651,6 +653,38 @@ public class MartenRegistry
         {
             SoftDeleted();
             _builder.Alter = m => m.AddDeletedAtIndex(configure);
+
+            return this;
+        }
+
+        /// <summary>
+        ///     Directs Marten to apply "soft deletes" to this document type
+        /// </summary>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> SoftDeletedWithPartitioning()
+        {
+            _builder.Alter = m =>
+            {
+                m.DeleteStyle = DeleteStyle.SoftDelete;
+                m.PartitionByDeleted();
+            };
+
+            return this;
+        }
+
+        /// <summary>
+        ///     Mark this document type as soft-deleted, with an index on the is_deleted column
+        /// </summary>
+        /// <param name="configure"></param>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> SoftDeletedWithPartitioningAndIndex(Action<DocumentIndex>? configure = null)
+        {
+            SoftDeleted();
+            _builder.Alter = m =>
+            {
+                m.AddDeletedAtIndex(configure);
+                m.PartitionByDeleted();
+            };
 
             return this;
         }
