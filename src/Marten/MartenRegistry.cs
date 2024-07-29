@@ -115,6 +115,30 @@ public class MartenRegistry
         }
 
         /// <summary>
+        /// Set up PostgreSQL table partitioning based on the value of a property or member of the document.
+        /// This will create a duplicate field for this member -- or use the duplicated field already definied
+        /// as the column for the PostgreSQL partitioning
+        /// </summary>
+        /// <param name="memberExpression">An expression like "x => x.RegionName" to define the member to partition against</param>
+        /// <param name="partitioning">Configure the PostgreSQL </param>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> PartitionOn(Expression<Func<T, object>> memberExpression,
+            Action<PartitioningExpression> partitioning)
+        {
+            _builder.Alter = m =>
+            {
+                var members = FindMembers.Determine(memberExpression);
+                var field = m.DuplicateField(members);
+                var columnName = field.ColumnName;
+
+                var expression = new PartitioningExpression(m, [columnName]);
+                partitioning(expression);
+            };
+
+            return this;
+        }
+
+        /// <summary>
         ///     Direct the schema migration detection to ignore the presence of the
         ///     named index on the document storage table
         /// </summary>
@@ -707,6 +731,21 @@ public class MartenRegistry
         public DocumentMappingExpression<T> MultiTenanted()
         {
             _builder.Alter = m => m.TenancyStyle = TenancyStyle.Conjoined;
+            return this;
+        }
+
+        /// <summary>
+        ///     Marks just this document type as being stored with conjoined multi-tenancy
+        /// </summary>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> MultiTenantedWithPartitioning(Action<PartitioningExpression> configure)
+        {
+            _builder.Alter = m =>
+            {
+                m.TenancyStyle = TenancyStyle.Conjoined;
+                var expression = new PartitioningExpression(m, [TenantIdColumn.Name]);
+                configure(expression);
+            };
             return this;
         }
 
