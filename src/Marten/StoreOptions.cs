@@ -834,6 +834,21 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         }
 
         /// <summary>
+        /// Unless explicitly marked otherwise, all document types should
+        /// be soft-deleted and use partitioning based on its deletion status
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public PoliciesExpression AllDocumentsSoftDeletedWithPartitioning()
+        {
+            return ForAllDocuments(_ =>
+            {
+                _.PartitionByDeleted();
+                _.DeleteStyle = DeleteStyle.SoftDelete;
+            });
+        }
+
+        /// <summary>
         ///     Turn off the informational metadata columns
         ///     in storage like the last modified, version, and
         ///     dot net type for leaner storage
@@ -859,6 +874,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
                 x.UseOptimisticConcurrency = true;
             });
         }
+
+
     }
 
     /// <summary>
