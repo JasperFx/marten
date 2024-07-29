@@ -164,5 +164,3 @@ var store = DocumentStore.For(opts =>
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Partitioning/partitioning_documents_on_duplicate_fields.cs#L35-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_partitioning_by_document_member' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
-
