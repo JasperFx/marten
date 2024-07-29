@@ -1401,6 +1401,27 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         partitioning.Partitions.Single().ShouldBe(new ListPartition("deleted", "TRUE"));
 
     }
+
+    public static void sample_configuration()
+    {
+        #region sample_soft_deletes_with_partitioning
+
+        var store = DocumentStore.For(opts =>
+        {
+            opts.Connection("some connection string");
+
+            // Opt into partitioning for one document type
+            opts.Schema.For<User>().SoftDeletedWithPartitioning();
+
+            // Opt into partitioning and and index for one document type
+            opts.Schema.For<User>().SoftDeletedWithPartitioningAndIndex();
+
+            // Opt into partitioning for all soft-deleted documents
+            opts.Policies.AllDocumentsSoftDeletedWithPartitioning();
+        });
+
+        #endregion
+    }
 }
 
 
@@ -1414,8 +1435,12 @@ public class File
     public DateTimeOffset? DeletedAt { get; set; }
 }
 
+#region sample_soft_deleted_attribute_with_partitioning
+
 [SoftDeleted(UsePartitioning = true)]
 public class SoftDeletedAndPartitionedDocument
 {
     public Guid Id { get; set; }
 }
+
+#endregion
