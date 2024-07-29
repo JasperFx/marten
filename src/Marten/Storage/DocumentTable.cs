@@ -80,6 +80,7 @@ internal class DocumentTable: Table
         // part of the primary key
         if (Partitioning != null)
         {
+            IgnorePartitionsInMigration = mapping.IgnorePartitions;
             foreach (var columnName in Partitioning.Columns)
             {
                 var column = this.ModifyColumn(columnName);

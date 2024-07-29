@@ -111,6 +111,8 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
         applyAnyMartenAttributes(documentType);
 
+        StoreOptions.applyPostPolicies(this);
+
         _schema = new Lazy<DocumentSchema>(() => new DocumentSchema(this));
     }
 

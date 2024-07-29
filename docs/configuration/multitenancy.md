@@ -39,7 +39,7 @@ var store = DocumentStore.For(opts =>
     opts.TenantIdStyle = TenantIdStyle.ForceUpperCase;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L12-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_tenant_id_style' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L13-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_tenant_id_style' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Static Database to Tenant Mapping

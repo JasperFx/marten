@@ -20,6 +20,7 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Services;
 using Marten.Services.Json;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Marten.Util;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -79,10 +80,13 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     internal readonly List<Action<ISerializer>> SerializationConfigurations = new();
 
-    private readonly List<IDocumentPolicy> _policies = new List<IDocumentPolicy>
-    {
-        new VersionedPolicy(), new SoftDeletedPolicy(), new TrackedPolicy(), new TenancyPolicy(), new ProjectionDocumentPolicy()
-    };
+    private readonly List<IDocumentPolicy> _policies =
+    [
+        new VersionedPolicy(), new SoftDeletedPolicy(), new TrackedPolicy(), new TenancyPolicy(),
+        new ProjectionDocumentPolicy()
+    ];
+
+    private readonly List<IDocumentPolicy> _postPolicies = new();
 
     /// <summary>
     ///     Register "initial data loads" that will be applied to the DocumentStore when it is
@@ -668,6 +672,14 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         foreach (var policy in _policies) policy.Apply(mapping);
     }
 
+    internal void applyPostPolicies(DocumentMapping mapping)
+    {
+        foreach (var policy in _postPolicies)
+        {
+            policy.Apply(mapping);
+        }
+    }
+
     /// <summary>
     ///     Validate that minimal options to initialize a document store have been specified
     /// </summary>
@@ -821,6 +833,46 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         public PoliciesExpression AllDocumentsAreMultiTenanted()
         {
             return ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
+        }
+
+        /// <summary>
+        ///     Unless explicitly marked otherwise, all documents should
+        ///     use conjoined multi-tenancy and opt into using user defined
+        /// PostgreSQL table partitioning
+        /// </summary>
+        /// <param name="configure">Customize the table partitioning on the tenant id</param>
+        /// <returns></returns>
+        public PoliciesExpression AllDocumentsAreMultiTenantedWithPartitioning(Action<PartitioningExpression> configure)
+        {
+            return ForAllDocuments(mapping =>
+            {
+                mapping.TenancyStyle = TenancyStyle.Conjoined;
+                var expression = new PartitioningExpression(mapping, [TenantIdColumn.Name]);
+                configure(expression);
+            });
+        }
+
+        /// <summary>
+        /// Add table partitioning to all document table storage that is configured as using conjoined
+        /// multi-tenancy
+        /// </summary>
+        /// <param name="configure"></param>
+        /// <returns></returns>
+        public PoliciesExpression PartitionMultiTenantedDocuments(Action<PartitioningExpression> configure)
+        {
+            return PostConfiguration(mapping =>
+            {
+                if (mapping.TenancyStyle == TenancyStyle.Single) return;
+
+                var expression = new PartitioningExpression(mapping, [TenantIdColumn.Name]);
+                configure(expression);
+            });
+        }
+
+        internal PoliciesExpression PostConfiguration(Action<DocumentMapping> action)
+        {
+            _parent._postPolicies.Add(new LambdaDocumentPolicy(action));
+            return this;
         }
 
         /// <summary>
