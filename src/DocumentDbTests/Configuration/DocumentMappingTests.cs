@@ -707,6 +707,33 @@ public class DocumentMappingTests
         ex.Message.ShouldContain("cannot be configured with UseNumericRevision and UseOptimisticConcurrency. Choose one or the other", Case.Insensitive);
     }
 
+    [Fact]
+    public void duplicate_field_needs_to_be_idempotent_for_single_member()
+    {
+        var mapping = DocumentMapping.For<Target>();
+        var field1 = mapping.DuplicateField(nameof(Target.Color));
+        var field2 = mapping.DuplicateField(nameof(Target.Color));
+
+        field1.ShouldBeSameAs(field2);
+    }
+
+    [Fact]
+    public void duplicate_field_needs_to_be_idempotent_for_deep_members()
+    {
+        var mapping = DocumentMapping.For<Target>();
+
+        MemberInfo[] props = new[]
+        {
+            ReflectionHelper.GetProperty<Target>(x => x.Inner),
+            ReflectionHelper.GetProperty<Target>(x => x.Number)
+        };
+
+        var field1 = mapping.DuplicateField(props);
+        var field2 = mapping.DuplicateField(props);
+
+        field1.ShouldBeSameAs(field2);
+    }
+
 
 
     public class FieldId
@@ -804,6 +831,8 @@ public class DocumentMappingTests
             throw new NotSupportedException();
         }
     }
+
+
 
     #region sample_ConfigureMarten-generic
 

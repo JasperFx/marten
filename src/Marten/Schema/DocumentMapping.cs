@@ -20,6 +20,7 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Weasel.Postgresql.Tables.Indexes;
+using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten.Schema;
 
@@ -112,6 +113,8 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
         _schema = new Lazy<DocumentSchema>(() => new DocumentSchema(this));
     }
+
+    public IPartitionStrategy? Partitioning { get; set; }
 
     public DocumentCodeGen? CodeGen { get; private set; }
 
@@ -603,7 +606,10 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
     public DuplicatedField DuplicateField(string memberName, string pgType = null, bool notNull = false)
     {
-        var member = (QueryableMember)QueryMembers.MemberFor(memberName);
+        var existing = QueryMembers.MemberFor(memberName);
+        if (existing is DuplicatedField f) return f;
+
+        var member = (QueryableMember)existing;
 
         var enumStorage = StoreOptions.Advanced.DuplicatedFieldEnumStorage;
         var dateTimeStorage = StoreOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime;
