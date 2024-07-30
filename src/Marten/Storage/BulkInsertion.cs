@@ -234,7 +234,7 @@ internal class BulkInsertion: IDisposable
         BulkInsertMode mode)
     {
         var provider = _tenant.Database.Providers.StorageFor<T>();
-        var loader = provider.BulkLoader;
+        var loader = provider.BulkLoader!;
 
         if (mode != BulkInsertMode.InsertsOnly)
         {
@@ -274,10 +274,9 @@ internal class BulkInsertion: IDisposable
         }
         else if (mode == BulkInsertMode.OverwriteExisting)
         {
-            var overwrite = loader.OverwriteDuplicatesFromTempTable();
-            var copy = loader.CopyNewDocumentsFromTempTable();
+            var upsert = loader.UpsertFromTempTable();
 
-            conn.CreateCommand(overwrite + ";" + copy).ExecuteNonQuery();
+            conn.CreateCommand(upsert).ExecuteNonQuery();
         }
     }
 
@@ -285,7 +284,7 @@ internal class BulkInsertion: IDisposable
         NpgsqlConnection conn, BulkInsertMode mode, CancellationToken cancellation)
     {
         var provider = _tenant.Database.Providers.StorageFor<T>();
-        var loader = provider.BulkLoader;
+        var loader = provider.BulkLoader!;
 
         if (mode != BulkInsertMode.InsertsOnly)
         {
@@ -325,11 +324,9 @@ internal class BulkInsertion: IDisposable
         }
         else if (mode == BulkInsertMode.OverwriteExisting)
         {
-            var overwrite = loader.OverwriteDuplicatesFromTempTable();
-            var copy = loader.CopyNewDocumentsFromTempTable();
+            var upsert = loader.UpsertFromTempTable();
 
-            await conn.CreateCommand(overwrite + ";" + copy)
-                .ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
+            await conn.CreateCommand(upsert).ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
         }
     }
 
