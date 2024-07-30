@@ -18,7 +18,7 @@ internal class PassthroughSelectStatement: SelectorStatement
 
     protected override void configure(ICommandBuilder sql)
     {
-        if (SelectClause is IDocumentStorage || (SelectClause is IStatsSelectClause stats && stats.Inner is IDocumentStorage))
+        if (SelectClause is IDocumentStorage || (SelectClause is IStatsSelectClause stats && (stats.Inner is IDocumentStorage || stats.Inner is DuplicatedFieldSelectClause)))
         {
             sql.Append("select * from ");
             sql.Append(TableName);
