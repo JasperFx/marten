@@ -48,7 +48,13 @@ internal class SelectDataSelectClause<T>: ISelectClause, IScalarSelectClause, IM
 
     public string[] SelectFields()
     {
-        return new[] { "data" };
+        // Fix for GH-3337
+        var builder = new CommandBuilder();
+        Selector.Apply(builder);
+
+        var fieldName = builder.Compile().CommandText;
+
+        return new[] { fieldName };
     }
 
     public ISelector BuildSelector(IMartenSession session)
