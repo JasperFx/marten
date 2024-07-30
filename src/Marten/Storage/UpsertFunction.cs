@@ -103,11 +103,8 @@ internal class UpsertFunction: Function
             _tenantWhereClause = $"{_tableName.QualifiedName}.{TenantIdColumn.Name} = {TenantIdArgument.ArgName}";
             _andTenantWhereClause = $" and {_tenantWhereClause}";
 
-            if (_mapping.UseVersionFromMatchingStream)
-            {
-                _tenantVersionWhereClause = $"{_versionSourceTable}.{TenantIdColumn.Name} = {TenantIdArgument.ArgName}";
-                _andTenantVersionWhereClause = $" and {_tenantVersionWhereClause}";
-            }
+            _tenantVersionWhereClause = $"{_versionSourceTable}.{TenantIdColumn.Name} = {TenantIdArgument.ArgName}";
+            _andTenantVersionWhereClause = $" and {_tenantVersionWhereClause}";
         }
 
         _primaryKeyFields = table.Columns.Where(x => x.IsPrimaryKey).Select(x => x.Name).Join(", ");
