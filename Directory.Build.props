@@ -10,4 +10,9 @@
         <NoWarn>1570;1571;1572;1573;1574;1587;1591;1701;1702;1711;1735;0618</NoWarn>
         <RepositoryUrl>https://github.com/JasperFx/marten</RepositoryUrl>
     </PropertyGroup>
+
+    <PropertyGroup>
+        <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
+        <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
+    </PropertyGroup>
 </Project>
