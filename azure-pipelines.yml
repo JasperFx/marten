@@ -196,7 +196,7 @@ jobs:
         condition: eq(variables['plv8'], 'true')
       # This step will fail the job if the any previous step had failed
       - script: |
-          if [ $(System.JobStatus) == 'SucceededWithIssues' ]; then
+          if [ $(Agent.JobStatus) == 'SucceededWithIssues' ]; then
             exit 1
           fi
         name: CheckForFailure
