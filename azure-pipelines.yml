@@ -120,7 +120,7 @@ jobs:
           DEFAULT_SERIALIZER: $(serializer)
       - script: ./build.sh mocha
         displayName: mocha
-        continueOnError: true
+        # continueOnError: true
         env:
           DEFAULT_SERIALIZER: $(serializer)
       - script: ./build.sh test-base-lib
@@ -194,4 +194,11 @@ jobs:
         env:
           DEFAULT_SERIALIZER: $(serializer)
         condition: eq(variables['plv8'], 'true')
+      # This step will fail the job if the any previous step had failed
+      - script: |
+          if [ $(System.JobStatus) == 'SucceededWithIssues' ]; then
+            exit 1
+          fi
+        name: CheckForFailure
+        condition: always()
 
