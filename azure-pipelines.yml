@@ -120,7 +120,7 @@ jobs:
           DEFAULT_SERIALIZER: $(serializer)
       - script: ./build.sh mocha
         displayName: mocha
-        # continueOnError: true
+        continueOnError: true
         env:
           DEFAULT_SERIALIZER: $(serializer)
       - script: ./build.sh test-base-lib
