@@ -66,7 +66,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
     }
 
     [Fact]
-    public async Task should_be_healty_without_events()
+    public async Task should_be_healthy_without_events()
     {
         StoreOptions(x =>
         {
@@ -80,7 +80,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
     }
 
     [Fact]
-    public async Task should_be_healty_with_one_projection_no_relevant_events()
+    public async Task should_be_healthy_with_one_projection_no_relevant_events()
     {
         StoreOptions(x =>
         {
@@ -99,7 +99,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
     }
 
     [Fact]
-    public async Task should_be_unhealty_with_no_projection_lag_allowed()
+    public async Task should_be_unhealthy_with_no_projection_lag_allowed()
     {
         StoreOptions(x =>
         {
@@ -123,7 +123,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
 
 
     [Fact]
-    public async Task should_be_healty_with_all_projections_caught_up()
+    public async Task should_be_healthy_with_all_projections_caught_up()
     {
 
         StoreOptions(x =>
@@ -153,7 +153,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
     }
 
     [Fact]
-    public async Task should_be_unhealty_with_one_projection_lagging()
+    public async Task should_be_unhealthy_with_one_projection_lagging()
     {
         StoreOptions(x =>
         {
