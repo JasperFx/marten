@@ -425,8 +425,8 @@ class Build : NukeBuild
             "src/CoreTests",
             "src/Marten.PLv8.Testing",
             "src/Marten.AspNetCore.Testing",
-            "src/LinqTests/LinqTests.csproj",
-            "src/ValueTypeTests/ValueTypeTests.csproj"
+            "src/LinqTests",
+            "src/ValueTypeTests"
         };
 
         foreach (var item in testProjects)
