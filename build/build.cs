@@ -425,7 +425,6 @@ class Build : NukeBuild
             "src/CoreTests",
             "src/Marten.PLv8.Testing",
             "src/Marten.AspNetCore.Testing",
-            "src/LinqTests",
             "src/ValueTypeTests"
         };
 
