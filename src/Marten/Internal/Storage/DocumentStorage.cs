@@ -206,7 +206,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     {
         session.ChangeTrackers.RemoveAll(x =>
         {
-            if (x is T doc)
+            if (x.Document is T doc)
             {
                 return Identity(doc).Equals(id);
             }
