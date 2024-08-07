@@ -332,6 +332,11 @@ public class ProjectionOptions: DaemonSettings
     )
         where TProjection : GeneratedProjection, new()
     {
+        if (lifecycle == ProjectionLifecycle.Live)
+        {
+            throw new InvalidOperationException("The generic overload of Add does not support Live projections, please use the non-generic overload.");
+        }
+
         var projection = new TProjection { Lifecycle = lifecycle };
 
         asyncConfiguration?.Invoke(projection.Options);
