@@ -4,6 +4,7 @@ using Marten;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Shouldly;
 using Weasel.Core;
@@ -15,6 +16,38 @@ namespace CoreTests;
 [Collection("multi-tenancy")]
 public class create_database_Tests : IDisposable
 {
+    public static async Task example()
+    {
+        #region sample_marten_create_database
+        var maintenanceConnectionString = ConnectionSource.ConnectionString;
+        var applicationConnectionString = "";
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddMarten(options =>
+        {
+            // This might be different than the maintenance connection string
+            options.Connection(applicationConnectionString);
+
+            options.CreateDatabasesForTenants(c =>
+            {
+                // Specify a db to which to connect in case database needs to be created.
+                // If not specified, defaults to 'postgres' on the connection for a tenant.
+                c.MaintenanceDatabase(maintenanceConnectionString);
+                c.ForTenant()
+                    .CheckAgainstPgDatabase()
+
+                    .WithOwner("postgres")
+                    .WithEncoding("UTF-8")
+                    .ConnectionLimit(-1);
+            });
+        });
+
+        using var host = builder.Build();
+
+        // NOTE: The new database will only be built upon the call to IHost.StartAsync()
+        await host.StartAsync();
+        #endregion
+    }
+
     [Fact]
     public async Task can_create_new_database_when_one_does_not_exist_for_default_tenant_with_DatabaseGenerator()
     {
@@ -38,7 +71,7 @@ public class create_database_Tests : IDisposable
         using var store = DocumentStore.For(storeOptions =>
         {
             storeOptions.Connection(dbToCreateConnectionString);
-            #region sample_marten_create_database
+
             storeOptions.CreateDatabasesForTenants(c =>
             {
                 // Specify a db to which to connect in case database needs to be created.
@@ -55,7 +88,7 @@ public class create_database_Tests : IDisposable
                         dbCreated = true;
                     });
             });
-            #endregion
+
         });
         // That should be done with Hosted Service, but let's test it also here
         var databaseGenerator = new DatabaseGenerator();
