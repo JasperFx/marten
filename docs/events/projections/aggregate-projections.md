@@ -127,7 +127,7 @@ projection class. It's completely up to your preference to decide which to use.
 
 Alternatively, if your aggregate will never be deleted you can use a stream aggregation as explained in the last section of this page.
 
-To create aggregate projections that include events in multiple streams, see [Cross-Stream Projections](/events/projections/multi-stream-projections).
+To create aggregate projections that include events in multiple streams, see [Multi-Stream Projections](/events/projections/multi-stream-projections).
 
 ## Aggregate Creation
 
