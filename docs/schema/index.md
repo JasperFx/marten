@@ -88,7 +88,12 @@ You will probably need to use the `AddMarten().ApplyAllDatabaseChangesOnStartup(
 an `IHostedService` into your system that will run on startup.
 :::
 
+
 Marten can be configured to create (or drop & create) databases in case they do not exist. This is done via store options, through `StoreOptions.CreateDatabasesForTenants`.
+Note that this functionality is only available by bootstrapping Marten as part of an `IHost` and does not execute by 
+merely building a `DocumentStore`. This change was made in V7 so the database connectivity could run with asynchronous code. You 
+might need to add `Persist Security Info Property=true` to your connection string if there is any issue with PostgreSQL claiming
+that it is missing a password.
 
 <!-- snippet: sample_marten_create_database -->
 <a id='snippet-sample_marten_create_database'></a>
