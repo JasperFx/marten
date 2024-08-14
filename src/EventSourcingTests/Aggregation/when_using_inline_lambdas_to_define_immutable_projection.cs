@@ -14,7 +14,7 @@ public class when_using_inline_lambdas_to_define_immutable_projection : OneOffCo
     [Fact]
     public async Task async_apply_with_immutable_aggregate()
     {
-        StoreOptions(_ => _.Projections.Add<MyAggregateImmutableProjection>(ProjectionLifecycle.Live));
+        StoreOptions(_ => _.Projections.Add(new MyAggregateImmutableProjection(), ProjectionLifecycle.Live));
 
         var user1 = new User {UserName = "Creator"};
         var user2 = new User {UserName = "Updater"};
