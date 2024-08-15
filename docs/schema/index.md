@@ -88,7 +88,6 @@ You will probably need to use the `AddMarten().ApplyAllDatabaseChangesOnStartup(
 an `IHostedService` into your system that will run on startup.
 :::
 
-
 Marten can be configured to create (or drop & create) databases in case they do not exist. This is done via store options, through `StoreOptions.CreateDatabasesForTenants`.
 Note that this functionality is only available by bootstrapping Marten as part of an `IHost` and does not execute by 
 merely building a `DocumentStore`. This change was made in V7 so the database connectivity could run with asynchronous code. You 
