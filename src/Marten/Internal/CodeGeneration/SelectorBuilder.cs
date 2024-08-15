@@ -89,7 +89,7 @@ public class SelectorBuilder
                 return typeof(DocumentSelectorWithOnlySerializer);
 
             case StorageStyle.IdentityMap:
-                return typeof(DocumentSelectorWithIdentityMap<,>)
+                return (_mapping.UseNumericRevisions ? typeof(RevisionedDocumentSelectorWithIdentityMap<,>) : typeof(DocumentSelectorWithIdentityMap<,>))
                     .MakeGenericType(_mapping.DocumentType, _mapping.IdType);
 
             case StorageStyle.Lightweight:
@@ -106,7 +106,7 @@ public class SelectorBuilder
 
 
             case StorageStyle.DirtyTracking:
-                return typeof(DocumentSelectorWithDirtyChecking<,>)
+                return (_mapping.UseNumericRevisions ? typeof(RevisionedDocumentSelectorWithDirtyChecking<,>) : typeof(DocumentSelectorWithDirtyChecking<,>))
                     .MakeGenericType(_mapping.DocumentType, _mapping.IdType);
 
             default:

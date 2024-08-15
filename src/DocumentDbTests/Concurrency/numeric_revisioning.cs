@@ -543,7 +543,69 @@ public class numeric_revisioning: OneOffConfigurationsContext
 
     }
 
+    [Fact]
+    public async Task load_and_update_revisioned_document_from_identity_map_session()
+    {
+        var doc1 = new RevisionedDoc();
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
 
+        using var session = theStore.IdentitySession();
+        var doc2 = await session.LoadAsync<RevisionedDoc>(doc1.Id);
+
+        doc2.Version++;
+        doc2.Name = "Different";
+        session.Update(doc2);
+        await session.SaveChangesAsync();
+    }
+
+
+    [Fact]
+    public async Task load_and_update_revisioned_document_by_revision_from_identity_map_session()
+    {
+        var doc1 = new RevisionedDoc();
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        using var session = theStore.IdentitySession();
+        var doc2 = await session.LoadAsync<RevisionedDoc>(doc1.Id);
+
+        doc2.Name = "Different";
+        session.UpdateRevision(doc2, 2);
+        await session.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task load_and_update_revisioned_document_from_dirty_session()
+    {
+        var doc1 = new RevisionedDoc();
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        using var session = theStore.DirtyTrackedSession();
+        var doc2 = await session.LoadAsync<RevisionedDoc>(doc1.Id);
+
+        doc2.Version++;
+        doc2.Name = "Different";
+        session.Update(doc2);
+        await session.SaveChangesAsync();
+    }
+
+
+    [Fact]
+    public async Task load_and_update_revisioned_document_by_revision_from_dirty_session()
+    {
+        var doc1 = new RevisionedDoc();
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        using var session = theStore.DirtyTrackedSession();
+        var doc2 = await session.LoadAsync<RevisionedDoc>(doc1.Id);
+
+        doc2.Name = "Different";
+        session.UpdateRevision(doc2, 2);
+        await session.SaveChangesAsync();
+    }
 
 }
 
