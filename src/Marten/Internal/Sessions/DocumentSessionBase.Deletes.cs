@@ -27,7 +27,8 @@ public abstract partial class DocumentSessionBase
         _workTracker.Add(deletion);
 
         documentStorage.Eject(this, entity);
-        ChangeTrackers.RemoveAll(x => ReferenceEquals(entity, x.Document));
+
+        ChangeTrackers.RemoveAll(x => x.Document is T t && documentStorage.IdentityFor(entity).Equals(documentStorage.IdentityFor(t)));
     }
 
     public void Delete<T>(int id) where T : notnull

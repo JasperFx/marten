@@ -1,5 +1,8 @@
+using System.Threading;
 using System.Threading.Tasks;
 using Marten;
+using Marten.Schema;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using Xunit;
@@ -35,7 +38,7 @@ public class reset_all_data_usage_ihost
                                 opts.Logger(new TestOutputMartenLogger(_output));
                             }
                         )
-                        .InitializeWith(new reset_all_data_usage.Users());
+                        .InitializeWith(new Users());
                 }
             )
             .StartAsync();
@@ -61,7 +64,7 @@ public class reset_all_data_usage_ihost
                                 opts.Logger(new TestOutputMartenLogger(_output));
                             }
                         )
-                        .InitializeWith(new reset_all_data_usage.Users());
+                        .InitializeWith(new Users());
                 }
             )
             .StartAsync();
@@ -69,5 +72,19 @@ public class reset_all_data_usage_ihost
         await host.ResetAllMartenDataAsync<IInvoicingStore>();
 
         #endregion
+    }
+}
+
+public class Users : IInitialData
+{
+    public Task Populate(IDocumentStore store, CancellationToken cancellation)
+    {
+        var users = new User[]
+        {
+            new User { UserName = "one" }, new User { UserName = "two" }, new User { UserName = "three" },
+            new User { UserName = "four" },
+        };
+
+        return store.BulkInsertDocumentsAsync(users, cancellation: cancellation);
     }
 }
