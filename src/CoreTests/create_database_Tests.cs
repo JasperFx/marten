@@ -77,9 +77,10 @@ public class create_database_Tests : IDisposable
                 // Specify a db to which to connect in case database needs to be created.
                 // If not specified, defaults to 'postgres' on the connection for a tenant.
                 c.MaintenanceDatabase(cstring);
+
                 c.ForTenant()
                     .CheckAgainstPgDatabase()
-
+                    .DropExisting()
                     .WithOwner("postgres")
                     .WithEncoding("UTF-8")
                     .ConnectionLimit(-1)
