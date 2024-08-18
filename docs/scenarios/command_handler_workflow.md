@@ -135,22 +135,38 @@ the standard `IDocumentSession.SaveChangesAsync()` method call. At that point, i
 
 ### Inline Optimization <Badge type="tip" text="7.25" />
 
-If you are using and `Inline` single stream projection for the aggregate being targeted by `FetchForWriting()`, you can 
-make a performance optimization with this setting:
+If you are using and `Inline` single stream projection for the aggregate being targeted by `FetchForWriting()`, you can make a performance optimization with this setting:
 
-sample: sample_use_identity_map_for_inline_aggregates
+<!-- snippet: sample_use_identity_map_for_inline_aggregates -->
+<a id='snippet-sample_use_identity_map_for_inline_aggregates'></a>
+```cs
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+    {
+        opts.Connection("some connection string");
+
+        // Force Marten to use the identity map for only the aggregate type
+        // that is the targeted "T" in FetchForWriting<T>() when using
+        // an Inline projection for the "T". Saves on Marten doing an extra
+        // database fetch of the same data you already fetched from FetchForWriting()
+        // when Marten needs to apply the Inline projection as part of SaveChanges()
+        opts.Events.UseIdentityMapForInlineAggregates = true;
+    })
+    // This is non-trivial performance optimization if you never
+    // need identity map mechanics in your commands or query handlers
+    .UseLightweightSessions();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/fetching_inline_aggregates_for_writing.cs#L520-L538' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_identity_map_for_inline_aggregates' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 It's pretty involved, but the key takeaway is that _if_ you are using lightweight sessions for a performance optimization
--- and you probably should even though that's not a Marten default! -- and _also_ using `FetchForWriting<T>()` with 
-`Inline` projections, this optimizes your system to make fewer network round trips to the database and reuse the data
-you already fetched when applying the `Inline` projection. This is an _opt in_ setting because it can be harmful to 
-existing code that might be modifying the aggregate document fetched by `FetchForWriting()` outside of Marten itself.
+-- and you probably should even though that's not a Marten default! -- and _also_ using `FetchForWriting<T>()` with `Inline` projections, this optimizes your system to make fewer network round trips to the database and reuse the data
+you already fetched when applying the `Inline` projection. This is an _opt in_ setting because it can be harmful to existing code that might be modifying the aggregate document fetched by `FetchForWriting()` outside of Marten itself.
 
 ## Explicit Optimistic Concurrency
 
 This time let's explicitly opt into optimistic concurrency checks by telling Marten what the expected starting
-version of the stream should be in order for the command to be processed. In this usage, you're probably assuming that
-the command message was based on the starting state.
+version of the stream should be in order for the command to be processed. In this usage, you're probably assuming that the command message was based on the starting state.
 
 The ever so slightly version of the original handler is shown below:
 
@@ -198,9 +214,7 @@ been incremented by some other process before this command. The same expected ve
 
 ## Exclusive Concurrency
 
-The last flavor of concurrency is to leverage Postgresql's ability to do row level locking and wait to achieve an exclusive lock on
-the event stream. This might be applicable when the result of the command is just dependent upon the initial state of the
-`Order` aggregate. This usage is shown below:
+The last flavor of concurrency is to leverage Postgresql's ability to do row level locking and wait to achieve an exclusive lock on the event stream. This might be applicable when the result of the command is just dependent upon the initial state of the `Order` aggregate. This usage is shown below:
 
 <!-- snippet: sample_sample_fetch_for_writing_exclusive_lock -->
 <a id='snippet-sample_sample_fetch_for_writing_exclusive_lock'></a>
@@ -240,9 +254,7 @@ public async Task Handle3(MarkItemReady command, IDocumentSession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L137-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample_fetch_for_writing_exclusive_lock' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Do note that the `FetchForExclusiveWriting()` command can time out if it is unable to achieve a lock in a timely manner. In this case,
-Marten will throw a `StreamLockedException`. The lock will be released when either `IDocumentSession.SaveChangesAsync()` is called or
-the `IDocumentSession` is disposed.
+Do note that the `FetchForExclusiveWriting()` command can time out if it is unable to achieve a lock in a timely manner. In this case, Marten will throw a `StreamLockedException`. The lock will be released when either `IDocumentSession.SaveChangesAsync()` is called or the `IDocumentSession` is disposed.
 
 ## WriteToAggregate
 
@@ -282,8 +294,7 @@ public Task Handle4(MarkItemReady command, IDocumentSession session)
 
 ## Optimizing FetchForWriting with Inline Aggregates
 
-If you are utilizing `FetchForWriting()` for your command handlers -- and you really, really should! -- and at least
-some of your aggregates are updated `Inline` as shown below:
+If you are utilizing `FetchForWriting()` for your command handlers -- and you really, really should! -- and at least some of your aggregates are updated `Inline` as shown below:
 
 <!-- snippet: sample_registering_Order_as_Inline -->
 <a id='snippet-sample_registering_order_as_inline'></a>
@@ -310,15 +321,11 @@ builder.Services.AddMarten(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L207-L228' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_order_as_inline' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-You can potentially gain some significant performance optimization by using the `UseIdentityMapForInlineAggregates`
-flag shown above. To be clear, this optimization mostly helps when you have the combination in a command handler that:
+You can potentially gain some significant performance optimization by using the `UseIdentityMapForInlineAggregates` flag shown above. To be clear, this optimization mostly helps when you have the combination in a command handler that:
 
 1. Uses `FetchForWriting` for an aggregate type
 2. That aggregate type is updated or built through an `Inline` projection or snapshot
 
-With this optimization, Marten will take steps to make sure that it uses the version of the aggregate document that was
-originally fetched by `FetchForWriting()` as the starting point for updating that aggregate in its `Inline` projection
-with the events that were appended by the command itself.
+With this optimization, Marten will take steps to make sure that it uses the version of the aggregate document that was originally fetched by `FetchForWriting()` as the starting point for updating that aggregate in its `Inline` projection with the events that were appended by the command itself.
 
-**This optimization will be harmful if you alter the loaded aggregate in any way between `FetchForWriting()` and `SaveChangesAsync()`
-by potentially making your projected data being saved be invalid.**
+**This optimization will be harmful if you alter the loaded aggregate in any way between `FetchForWriting()` and `SaveChangesAsync()` by potentially making your projected data being saved be invalid.**
