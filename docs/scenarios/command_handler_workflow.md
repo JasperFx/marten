@@ -2,7 +2,7 @@
 
 ::: tip
 Definitely see the
-Wolverine [Aggregate Handler Workflow](https://wolverine.netlify.app/guide/durability/marten/event-sourcing.html) for a low ceremony approach to CQRS "writes" that uses
+Wolverine [Aggregate Handler Workflow](https://wolverinefx.net/guide/durability/marten/event-sourcing.html) for a low ceremony approach to CQRS "writes" that uses
 the `FetchForWriting()` API under the covers that is introduced in this topic.
 :::
 
