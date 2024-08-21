@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit.Abstractions;
 
@@ -156,6 +158,36 @@ public class first_operator: IntegrationContext
 
         var target = await theSession.Query<Target>().Where(x => x.Number == 2).FirstOrDefaultAsync();
         target.Flag.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task first_or_default_correct_hit_with_more_than_one_match_async_in_combo_with_order_by()
+    {
+        theSession.Store(new Target { Number = 1, AnotherNumber = 10});
+        theSession.Store(new Target { Number = 2, Flag = true, AnotherNumber = 30, String = "Correct" });
+        theSession.Store(new Target { Number = 2, AnotherNumber = 20, String = "Wrong"});
+        theSession.Store(new Target { Number = 4 });
+        await theSession.SaveChangesAsync();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        var target = await theSession.Query<Target>().Where(x => x.Number == 2).OrderByDescending(x => x.AnotherNumber).FirstOrDefaultAsync();
+        target.String.ShouldBe("Correct");
+    }
+
+    [Fact]
+    public async Task first_or_default_correct_hit_with_more_than_one_match_async_in_combo_with_order_by_2()
+    {
+        theSession.Store(new Target { Number = 1, AnotherNumber = 10});
+        theSession.Store(new Target { Number = 2, Flag = true, AnotherNumber = 30, String = "Correct" });
+        theSession.Store(new Target { Number = 2, AnotherNumber = 20, String = "Wrong"});
+        theSession.Store(new Target { Number = 4 });
+        await theSession.SaveChangesAsync();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        var target = await theSession.Query<Target>().OrderByDescending(x => x.AnotherNumber).FirstOrDefaultAsync(x => x.Number == 2, CancellationToken.None);
+        target.String.ShouldBe("Correct");
     }
 
     [Fact]
