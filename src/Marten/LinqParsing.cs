@@ -11,7 +11,6 @@ using Marten.Linq.LastModified;
 using Marten.Linq.MatchesSql;
 using Marten.Linq.Parsing;
 using Marten.Linq.Parsing.Methods;
-using Marten.Linq.QueryHandlers;
 using Marten.Linq.SoftDeletes;
 using Weasel.Postgresql.SqlGeneration;
 
