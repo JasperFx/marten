@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using JasperFx.Core;
 using Marten.Events.Archiving;
 using Marten.Linq.CreatedAt;
@@ -10,6 +11,7 @@ using Marten.Linq.LastModified;
 using Marten.Linq.MatchesSql;
 using Marten.Linq.Parsing;
 using Marten.Linq.Parsing.Methods;
+using Marten.Linq.QueryHandlers;
 using Marten.Linq.SoftDeletes;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -90,8 +92,8 @@ public class LinqParsing: IReadOnlyLinqParsing
     /// </summary>
     public readonly IList<IMethodCallParser> MethodCallParsers = new List<IMethodCallParser>();
 
-    private ImHashMap<Type, ImHashMap<string, IMethodCallParser>> _methodParsing =
-        ImHashMap<Type, ImHashMap<string, IMethodCallParser>>.Empty;
+    private ImHashMap<Module, ImHashMap<int, IMethodCallParser>> _methodParsersByModule =
+        ImHashMap<Module, ImHashMap<int, IMethodCallParser>>.Empty;
 
     internal LinqParsing()
     {
@@ -124,18 +126,22 @@ public class LinqParsing: IReadOnlyLinqParsing
 
     internal IMethodCallParser FindMethodParser(MethodCallExpression expression)
     {
-        if (_methodParsing.TryFind(expression.Method.DeclaringType, out var byName))
+        var module = expression.Method.Module;
+
+        if (!_methodParsersByModule.TryFind(module, out var methodParsers))
         {
-            if (byName.TryFind(expression.Method.Name, out var p))
-            {
-                return p;
-            }
+            methodParsers = ImHashMap<int, IMethodCallParser>.Empty;
+            _methodParsersByModule = _methodParsersByModule.AddOrUpdate(module, methodParsers);
         }
 
-        byName ??= ImHashMap<string, IMethodCallParser>.Empty;
-        var parser = determineMethodParser(expression);
-        byName = byName.AddOrUpdate(expression.Method.Name, parser);
-        _methodParsing = _methodParsing.AddOrUpdate(expression.Method.DeclaringType, byName);
+        if (methodParsers.TryFind(expression.Method.MetadataToken, out var parser))
+        {
+            return parser;
+        }
+
+        parser = determineMethodParser(expression);
+
+        _methodParsersByModule = _methodParsersByModule.AddOrUpdate(module, methodParsers.AddOrUpdate(expression.Method.MetadataToken, parser));
 
         return parser;
     }
