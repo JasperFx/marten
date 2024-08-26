@@ -141,7 +141,7 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
 
         return new List<AsyncProjectionShard> { new(this)
         {
-            IncludeArchivedEvents = false,
+            IncludeArchivedEvents = IncludeArchivedEvents,
             EventTypes = IncludedEventTypes,
             StreamType = StreamType
         } };
