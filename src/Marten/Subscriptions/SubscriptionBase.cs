@@ -61,7 +61,7 @@ public abstract class SubscriptionBase: EventFilterable, ISubscription, ISubscri
         {
             EventTypes = IncludedEventTypes,
             StreamType = StreamType,
-            IncludeArchivedEvents = false
+            IncludeArchivedEvents = IncludeArchivedEvents
         } };
     }
 
