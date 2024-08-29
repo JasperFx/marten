@@ -23,6 +23,7 @@ internal class ChildCollectionMember: QueryableMember, ICollectionMember, IQuery
     private readonly StoreOptions _options;
     private readonly RootMember _root;
     private ImHashMap<string, IQueryableMember> _members = ImHashMap<string, IQueryableMember>.Empty;
+    private readonly string _arraySelector;
 
     public ChildCollectionMember(StoreOptions options, IQueryableMember parent, Casing casing, MemberInfo member, Type? memberType): base(
         parent, casing, member)
@@ -31,6 +32,12 @@ internal class ChildCollectionMember: QueryableMember, ICollectionMember, IQuery
         TypedLocator = $"{parent.RawLocator} -> '{MemberName}'";
         MemberType ??= memberType;
         ElementType = MemberType.DetermineElementType();
+
+        // I know, this is goofy, but...
+        _arraySelector = $"jsonb_array_elements({JSONBLocator})";
+
+        // This to work with GIN indexes
+        JSONBLocator = TypedLocator;
 
         _root = new RootMember(ElementType) { Ancestors = Array.Empty<IQueryableMember>() };
 
@@ -79,8 +86,7 @@ internal class ChildCollectionMember: QueryableMember, ICollectionMember, IQuery
 
     public ISelectClause BuildSelectClauseForExplosion(string fromObject)
     {
-        var selection = $"jsonb_array_elements({JSONBLocator})";
-        return typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(fromObject, selection,
+        return typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(fromObject, _arraySelector,
             ElementType);
     }
 
