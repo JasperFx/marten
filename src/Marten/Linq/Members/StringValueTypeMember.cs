@@ -10,7 +10,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;
 
-internal class StringValueTypeMember<T>: StringMember
+public class StringValueTypeMember<T>: StringMember
 {
     private readonly Func<T, string> _valueSource;
 
