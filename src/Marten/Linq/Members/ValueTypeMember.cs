@@ -12,7 +12,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;
 
-internal class ValueTypeMember<TOuter, TInner>: SimpleCastMember
+public class ValueTypeMember<TOuter, TInner>: SimpleCastMember
 {
     private readonly Func<TOuter, TInner> _valueSource;
 

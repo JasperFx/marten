@@ -6,9 +6,8 @@ using Weasel.Postgresql;
 
 namespace Marten.Linq.Members;
 
-internal class SimpleCastMember: QueryableMember, IComparableMember
+public class SimpleCastMember: QueryableMember, IComparableMember
 {
-
     internal static SimpleCastMember ForArrayIndex(ValueCollectionMember parent, ArrayIndexMember member)
     {
         var pgType = PostgresqlProvider.Instance.GetDatabaseType(parent.ElementType, EnumStorage.AsInteger);

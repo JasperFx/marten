@@ -5,7 +5,7 @@ using Marten.Linq.Parsing.Operators;
 
 namespace Marten.Linq.Members;
 
-internal class StringMember: QueryableMember, IComparableMember
+public class StringMember: QueryableMember, IComparableMember
 {
     private readonly string _lowerLocator;
 

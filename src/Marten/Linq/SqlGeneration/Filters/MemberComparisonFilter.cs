@@ -9,7 +9,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration.Filters;
 
-internal class MemberComparisonFilter: ComparisonFilter, ICollectionAware
+public class MemberComparisonFilter: ComparisonFilter, ICollectionAware
 {
     public MemberComparisonFilter(IQueryableMember member, ISqlFragment right, string op): base(member, right, op)
     {

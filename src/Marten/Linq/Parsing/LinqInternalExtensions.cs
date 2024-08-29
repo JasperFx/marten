@@ -321,7 +321,7 @@ public static class LinqInternalExtensions
                expression.NodeType == ExpressionType.Lambda;
     }
 
-    internal static ConstantExpression ReduceToConstant(this Expression expression)
+    public static ConstantExpression ReduceToConstant(this Expression expression)
     {
         if (expression is LambdaExpression l)
         {
