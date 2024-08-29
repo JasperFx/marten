@@ -19,6 +19,12 @@ As of Marten 7, this API is usable with aggregation projections that are running
 is key to create "zero downtime deployments" for projection changes.
 :::
 
+::: warning
+`FetchForWriting()` is only possible with single stream aggregation projections, which includes the "self-aggregating"
+snapshot feature. This API assumes that it's working with one stream, and directly accesses the stream table. Multi-stream
+projections will not work with this feature.
+:::
+
 To that end, Marten has the `FetchForWriting()` operation for optimized command handling with Marten.
 
 Let's say that you are building an order fulfillment system, so we're naturally going to model our domain as an `Order` aggregate:
