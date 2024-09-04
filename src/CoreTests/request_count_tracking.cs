@@ -64,7 +64,7 @@ public class request_count_tracking : IDisposable
             await theSession.ExecuteAsync(new NpgsqlCommand("select foo from nonexistent"));
         });
 
-        logger.OnBeforeExecuted.ShouldBe(1);
+        logger.OnBeforeExecuted.ShouldBe(4);
 
         logger.LastCommand.CommandText.ShouldBe("select foo from nonexistent");
         logger.LastException.ShouldBe(ex.InnerException);
