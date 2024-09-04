@@ -23,7 +23,7 @@ public class query_by_sql: IntegrationContext
     }
 
     [Fact]
-    public async void can_query_by_document_type()
+    public async Task can_query_by_document_type()
     {
         var user = new User();
         var company = new Company { Name = "Megadodo Publications" };

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.PLv8.Transforms;
 using Marten.Testing;
@@ -23,7 +24,7 @@ public class TransformFunctionTests : OneOffConfigurationsContext
 
 
     [Fact]
-    public async void writes_transform_function()
+    public async Task writes_transform_function()
     {
         var file = _binAllsql.AppendPath("transforms.sql");
 
