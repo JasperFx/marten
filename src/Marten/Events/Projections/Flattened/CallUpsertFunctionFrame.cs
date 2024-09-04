@@ -29,13 +29,17 @@ internal class CallUpsertFunctionFrame: MethodCall, IEventHandlingFrame
     {
         var pk = $"{parent.SpecificEvent.Usage}.{_members.Select(x => x.Name).Join(".")}";
         var sql =
-            $"select {_functionIdentifier.QualifiedName}(?, {_columnMaps.Where(x => x.RequiresInput).Select(x => "?").Join(", ")});";
+            _columnMaps.Any(x => x.RequiresInput)
+                ? $"select {_functionIdentifier.QualifiedName}(?, {_columnMaps.Where(x => x.RequiresInput).Select(x => "?").Join(", ")});"
+                : $"select {_functionIdentifier.QualifiedName}(?);";
 
         var values = _columnMaps.Where(x => x.RequiresInput).Select(x => x.ToValueAccessorCode(parent.SpecificEvent))
             .Join(", ");
 
         Arguments[0] = Constant.ForString(sql);
-        Arguments[1] = new Variable(typeof(object[]), $"{pk}, {values}");
+        Arguments[1] = _columnMaps.Any(x => x.RequiresInput)
+            ? new Variable(typeof(object[]), $"{pk}, {values}")
+            : new Variable(typeof(object[]), $"{pk}");
     }
 
     public Type EventType { get; }
