@@ -5,6 +5,7 @@ using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
+using Npgsql;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Fetching;
@@ -68,6 +69,11 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
         }
         catch (Exception e)
         {
+            if (e.InnerException is NpgsqlException inner && inner.Message.Contains("current transaction is aborted"))
+            {
+                throw new StreamLockedException(id, e.InnerException);
+            }
+
             if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
             {
                 throw new StreamLockedException(id, e.InnerException);
@@ -121,6 +127,11 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
         }
         catch (Exception e)
         {
+            if (e.InnerException is NpgsqlException inner && inner.Message.Contains("current transaction is aborted"))
+            {
+                throw new StreamLockedException(id, e.InnerException);
+            }
+
             if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
             {
                 throw new StreamLockedException(id, e.InnerException);
