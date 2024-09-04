@@ -11,7 +11,7 @@ namespace EventSourcingTests.QuickAppend;
 
 public class quick_append_timestamp
 {
-    [Fact] //-- this was only getting used for a one off test, but I didn't want to throw it away yet
+    //[Fact] //-- this was only getting used for a one off test, but I didn't want to throw it away yet
     public async Task see_the_timestamps()
     {
         using var store = DocumentStore.For(opts =>

@@ -9,6 +9,7 @@ using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
+using Npgsql;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -131,6 +132,11 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
         }
         catch (Exception e)
         {
+            if (e.InnerException is NpgsqlException inner && inner.Message.Contains("current transaction is aborted"))
+            {
+                throw new StreamLockedException(id, e.InnerException);
+            }
+
             if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
             {
                 throw new StreamLockedException(id, e.InnerException);
@@ -217,6 +223,11 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
         }
         catch (Exception e)
         {
+            if (e.InnerException is NpgsqlException inner && inner.Message.Contains("current transaction is aborted"))
+            {
+                throw new StreamLockedException(id, e.InnerException);
+            }
+
             if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
             {
                 throw new StreamLockedException(id, e.InnerException);
