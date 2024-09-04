@@ -88,12 +88,24 @@ internal partial class EventStore
         _store.Events.EnsureAsStringStorage(_session);
         await _session.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
-        await _session.BeginTransactionAsync(token).ConfigureAwait(false);
+        try
+        {
+            await _session.BeginTransactionAsync(token).ConfigureAwait(false);
 
-        var version = await readVersionFromExistingStream(streamKey, true, token).ConfigureAwait(false);
+            var version = await readVersionFromExistingStream(streamKey, true, token).ConfigureAwait(false);
 
-        var action = Append(streamKey, events);
-        action.ExpectedVersionOnServer = version;
+            var action = Append(streamKey, events);
+            action.ExpectedVersionOnServer = version;
+        }
+        catch (Exception e)
+        {
+            if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage) || e.Message.Contains("current transaction is aborted"))
+            {
+                throw new StreamLockedException(streamKey, e.InnerException);
+            }
+
+            throw;
+        }
     }
 
     public Task AppendExclusive(string streamKey, params object[] events)
@@ -106,12 +118,23 @@ internal partial class EventStore
         _store.Events.EnsureAsGuidStorage(_session);
         await _session.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
-        await _session.BeginTransactionAsync(token).ConfigureAwait(false);
+        try
+        {
+            await _session.BeginTransactionAsync(token).ConfigureAwait(false);
 
-        var version = await readVersionFromExistingStream(streamId, true, token).ConfigureAwait(false);
+            var version = await readVersionFromExistingStream(streamId, true, token).ConfigureAwait(false);
 
-        var action = Append(streamId, events);
-        action.ExpectedVersionOnServer = version;
+            var action = Append(streamId, events);
+            action.ExpectedVersionOnServer = version;
+        }
+        catch (Exception e)
+        {
+            if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage) || e.Message.Contains("current transaction is aborted"))
+            {
+                throw new StreamLockedException(streamId, e.InnerException);
+            }
+            throw;
+        }
     }
 
     public Task AppendExclusive(Guid streamId, params object[] events)
