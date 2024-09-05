@@ -12,7 +12,7 @@ internal class InlineFetchPlanner : IFetchPlanner
         {
             if (projection.Lifecycle == ProjectionLifecycle.Inline)
             {
-                plan = new FetchInlinedPlan<TDoc, TId>(options.EventGraph, identity, storage);
+                plan = new FetchInlinedPlan<TDoc, TId>(options.EventGraph, identity);
                 return true;
             }
         }

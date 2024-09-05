@@ -5,6 +5,7 @@ using Marten.Schema;
 using Marten.Testing.Harness;
 using System;
 using System.Threading.Tasks;
+using Shouldly;
 using Xunit;
 
 namespace EventSourcingTests.Bugs;
@@ -29,12 +30,14 @@ public class Bug_fetch_for_writing_cache: BugIntegrationContext
         await theSession.SaveChangesAsync();
 
         var test = await theSession.Events.FetchForWriting<TestAggregate>(streamKey);
+        test.Aggregate.Name.ShouldBe("foo");
+
         test.AppendOne(new NamedEvent2("bar"));
         //await theSession.Events.AppendOptimistic(streamKey, new NamedEvent2("bar")); If I commented the two lines above and uncommented this one it works fine
         await theSession.SaveChangesAsync();
 
         test = await theSession.Events.FetchForWriting<TestAggregate>(streamKey);
-        Assert.Equal("bar", test.Aggregate.Name);
+        test.Aggregate.Name.ShouldBe("bar");
     }
 
 }
