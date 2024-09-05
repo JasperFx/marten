@@ -14,28 +14,31 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
 {
     private readonly EventGraph _events;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
-    private readonly IDocumentStorage<TDoc, TId> _storage;
 
-    internal FetchInlinedPlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy,
-        IDocumentStorage<TDoc, TId> storage)
+    internal FetchInlinedPlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy)
     {
         _events = events;
         _identityStrategy = identityStrategy;
-        _storage = storage;
     }
 
     public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate,
         CancellationToken cancellation = default)
     {
-        await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
-        await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
-
+        IDocumentStorage<TDoc, TId> storage = null;
         if (session.Options.Events.UseIdentityMapForInlineAggregates)
         {
+            storage = (IDocumentStorage<TDoc, TId>)session.Options.Providers.StorageFor<TDoc>().IdentityMap;
             // Opt into the identity map mechanics for this aggregate type just in case
             // you're using a lightweight session
             session.UseIdentityMapFor<TDoc>();
         }
+        else
+        {
+            storage = session.StorageFor<TDoc, TId>();
+        }
+
+        await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
+        await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
 
         if (forUpdate)
         {
@@ -47,7 +50,7 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
 
         builder.StartNewCommand();
 
-        var handler = new LoadByIdHandler<TDoc, TId>(_storage, id);
+        var handler = new LoadByIdHandler<TDoc, TId>(storage, id);
         handler.ConfigureCommand(builder, session);
 
         long version = 0;
@@ -86,6 +89,19 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
     public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id,
         long expectedStartingVersion, CancellationToken cancellation = default)
     {
+        IDocumentStorage<TDoc, TId> storage = null;
+        if (session.Options.Events.UseIdentityMapForInlineAggregates)
+        {
+            storage = (IDocumentStorage<TDoc, TId>)session.Options.Providers.StorageFor<TDoc>();
+            // Opt into the identity map mechanics for this aggregate type just in case
+            // you're using a lightweight session
+            session.UseIdentityMapFor<TDoc>();
+        }
+        else
+        {
+            storage = session.StorageFor<TDoc, TId>();
+        }
+
         await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
         await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
 
@@ -95,7 +111,7 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
 
         builder.StartNewCommand();
 
-        var handler = new LoadByIdHandler<TDoc, TId>(_storage, id);
+        var handler = new LoadByIdHandler<TDoc, TId>(storage, id);
         handler.ConfigureCommand(builder, session);
 
         long version = 0;
