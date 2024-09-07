@@ -1,26 +1,19 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
 using FastExpressionCompiler;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
-using Marten.Linq;
 using Marten.Linq.Members;
-using Marten.Linq.QueryHandlers;
-using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
 using Marten.Storage;
 using Weasel.Core;
 using Weasel.Postgresql;
-using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Schema.Identity;
 
@@ -31,13 +24,15 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
     private ValueTypeIdGeneration(Type outerType, PropertyInfo valueProperty, Type simpleType, ConstructorInfo ctor)
         : base(outerType, simpleType, valueProperty, ctor)
     {
-        _selector = typeof(ValueTypeIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType, SimpleType);
+        _selector = typeof(ValueTypeIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType,
+            SimpleType);
     }
 
     private ValueTypeIdGeneration(Type outerType, PropertyInfo valueProperty, Type simpleType, MethodInfo builder)
         : base(outerType, simpleType, valueProperty, builder)
     {
-        _selector = typeof(ValueTypeIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType, SimpleType);
+        _selector = typeof(ValueTypeIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType,
+            SimpleType);
     }
 
     public IEnumerable<Type> KeyTypes => Type.EmptyTypes;
@@ -248,94 +243,12 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
     }
 }
 
-internal class ValueTypeIdSelectClause<TOuter, TInner>: ISelectClause, IScalarSelectClause, IModifyableFromObject,
-    ISelector<TOuter?> where TOuter : struct
+public class ValueTypeIdSelectClause<TOuter, TInner>: ValueTypeSelectClause<TOuter, TInner> where TOuter : struct
 {
-    public ValueTypeIdSelectClause(ValueTypeIdGeneration idGeneration)
+    public ValueTypeIdSelectClause(ValueTypeIdGeneration idGeneration): base(
+        "d.id",
+        idGeneration.CreateConverter<TOuter, TInner>()
+    )
     {
-        Converter = idGeneration.CreateConverter<TOuter, TInner>();
-        MemberName = "d.id";
-    }
-
-    public ValueTypeIdSelectClause(Func<TInner, TOuter> converter)
-    {
-        Converter = converter;
-    }
-
-    public Func<TInner, TOuter> Converter { get; }
-
-    public string MemberName { get; set; } = "d.id";
-
-    public ISelectClause CloneToOtherTable(string tableName)
-    {
-        return new ValueTypeIdSelectClause<TOuter, TInner>(Converter)
-        {
-            FromObject = tableName, MemberName = MemberName
-        };
-    }
-
-    public void ApplyOperator(string op)
-    {
-        MemberName = $"{op}({MemberName})";
-    }
-
-    public ISelectClause CloneToDouble()
-    {
-        throw new NotSupportedException();
-    }
-
-    public Type SelectedType => typeof(TOuter);
-
-    public string FromObject { get; set; }
-
-    public void Apply(ICommandBuilder sql)
-    {
-        if (MemberName.IsNotEmpty())
-        {
-            sql.Append("select ");
-            sql.Append(MemberName);
-            sql.Append(" as data from ");
-        }
-
-        sql.Append(FromObject);
-        sql.Append(" as d");
-    }
-
-    public string[] SelectFields()
-    {
-        return new[] { MemberName };
-    }
-
-    public ISelector BuildSelector(IMartenSession session)
-    {
-        return this;
-    }
-
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
-        ISqlFragment currentStatement)
-    {
-        return (IQueryHandler<TResult>)new ListQueryHandler<TOuter?>(statement, this);
-    }
-
-    public ISelectClause UseStatistics(QueryStatistics statistics)
-    {
-        return new StatsSelectClause<TOuter?>(this, statistics);
-    }
-
-    public TOuter? Resolve(DbDataReader reader)
-    {
-        var inner = reader.GetFieldValue<TInner>(0);
-        return Converter(inner);
-    }
-
-    public async Task<TOuter?> ResolveAsync(DbDataReader reader, CancellationToken token)
-    {
-        var inner = await reader.GetFieldValueAsync<TInner>(0, token).ConfigureAwait(false);
-        return Converter(inner);
-    }
-
-    public override string ToString()
-    {
-        return $"Data from {FromObject}";
     }
 }

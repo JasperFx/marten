@@ -5,18 +5,11 @@ using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Parsing.Operators;
-using Marten.Linq.SqlGeneration;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;
-
-public interface IValueTypeMember: IQueryableMember
-{
-    object ConvertFromWrapperArray(object values);
-    ISelectClause BuildSelectClause(string fromObject);
-}
 
 public class IdMember: IQueryableMember, IComparableMember
 {
