@@ -350,6 +350,76 @@ public class foreign_keys: OneOffConfigurationsContext
 
     }
 
+    [Fact]
+    public void id_can_be_a_foreign_key()
+    {
+        StoreOptions(_ =>
+        {
+            _.Schema.For<Node2>().ForeignKey<Node1>(x => x.Id, fkc => fkc.OnDelete = CascadeAction.Cascade);
+        });
+
+        var node1 = new Node1 { Id = Guid.NewGuid() };
+        var node2 = new Node2 { Id = node1.Id };
+
+        using (var session = theStore.LightweightSession())
+        {
+            session.Store(node1);
+            session.Store(node2);
+            session.SaveChanges();
+        }
+
+        using (var session = theStore.LightweightSession())
+        {
+            node1 = session.Load<Node1>(node1.Id);
+            node2 = session.Load<Node2>(node2.Id);
+            node1.ShouldNotBeNull();
+            node2.ShouldNotBeNull();
+            session.Delete(node1);
+            session.SaveChanges();
+        }
+
+        using (var session = theStore.QuerySession())
+        {
+            session.Load<Node2>(node2.Id).ShouldBeNull();
+        }
+    }
+
+    [Fact]
+    public void non_standard_id_can_be_a_foreign_key()
+    {
+        StoreOptions(_ =>
+        {
+            _.Schema.For<Node2>()
+                .Identity(x => x.NonStandardId)
+                .ForeignKey<Node1>(x => x.NonStandardId, fkc => fkc.OnDelete = CascadeAction.Cascade);
+        });
+
+        var node1 = new Node1 { Id = Guid.NewGuid() };
+        var node2 = new Node2 { NonStandardId = node1.Id };
+
+        using (var session = theStore.LightweightSession())
+        {
+            session.Store(node1);
+            session.Store(node2);
+            session.SaveChanges();
+        }
+
+        using (var session = theStore.LightweightSession())
+        {
+            node1 = session.Load<Node1>(node1.Id);
+            node2 = session.Load<Node2>(node2.NonStandardId);
+            node1.ShouldNotBeNull();
+            node2.ShouldNotBeNull();
+            session.Delete(node1);
+            session.SaveChanges();
+        }
+
+        using (var session = theStore.QuerySession())
+        {
+            session.Load<Node2>(node2.Id).ShouldBeNull();
+        }
+    }
+
     public class Node1
     {
         public Guid Id { get; set; }
@@ -360,6 +430,7 @@ public class foreign_keys: OneOffConfigurationsContext
     {
         public Guid Id { get; set; }
         public Guid Link { get; set; }
+        public Guid NonStandardId { get; set; }
     }
 
     public class Node3

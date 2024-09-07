@@ -587,9 +587,16 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         var referenceMapping =
             referenceType != DocumentType ? StoreOptions.Storage.MappingFor(referenceType) : this;
 
-        var duplicateField = DuplicateField(members);
-
-        var foreignKey = new DocumentForeignKey(duplicateField.ColumnName, this, referenceMapping);
+        DocumentForeignKey foreignKey;
+        if (members.Contains(IdMember))
+        {
+            foreignKey = new DocumentForeignKey("id", this, referenceMapping);
+        }
+        else
+        {
+            var duplicateField = DuplicateField(members);
+            foreignKey = new DocumentForeignKey(duplicateField.ColumnName, this, referenceMapping);
+        }
         ForeignKeys.Add(foreignKey);
 
         return foreignKey;

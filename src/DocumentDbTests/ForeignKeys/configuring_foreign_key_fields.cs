@@ -62,7 +62,7 @@ public class configuring_foreign_key_fields : OneOffConfigurationsContext
         store.StorageFeatures.MappingFor(typeof(FooExtra))
             .As<DocumentMapping>()
             .ForeignKeys
-            .ShouldContain(x => x.ColumnNames[0] == "foo_id");
+            .ShouldContain(x => x.ColumnNames[0] == "id");
     }
 
     #region sample_issue-with-fk-attribute
