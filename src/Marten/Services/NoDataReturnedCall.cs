@@ -7,3 +7,5 @@ namespace Marten.Services;
 public interface NoDataReturnedCall
 {
 }
+
+public interface AssertsOnCallback{}

@@ -13,12 +13,13 @@ namespace Marten.Events.Daemon.Internals;
 /// </summary>
 internal class ProjectionDocumentSession: DocumentSessionBase
 {
-    public ProjectionDocumentSession(
-        DocumentStore store,
+    public ShardExecutionMode Mode { get; }
+
+    public ProjectionDocumentSession(DocumentStore store,
         ISessionWorkTracker workTracker,
-        SessionOptions sessionOptions
-    ): base(store, sessionOptions, new TransactionalConnection(sessionOptions), workTracker)
+        SessionOptions sessionOptions, ShardExecutionMode mode): base(store, sessionOptions, new TransactionalConnection(sessionOptions), workTracker)
     {
+        Mode = mode;
     }
 
     internal override DocumentTracking TrackingMode => SessionOptions.Tracking;

@@ -7,12 +7,13 @@ using Marten.Events.Daemon.Internals;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Marten.Services;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Daemon.Progress;
 
-internal class UpdateProjectionProgress: IStorageOperation
+internal class UpdateProjectionProgress: IStorageOperation, AssertsOnCallback, NoDataReturnedCall
 {
     private readonly EventGraph _events;
 

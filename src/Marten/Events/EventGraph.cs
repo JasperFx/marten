@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
@@ -78,6 +79,12 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     internal DbObjectName Table => new PostgresqlObjectName(DatabaseSchemaName, "mt_events");
 
     internal EventMetadataCollection Metadata { get; } = new();
+
+    /// <summary>
+    /// Optional extension point to receive published messages as a side effect from
+    /// aggregation projections
+    /// </summary>
+    public IMessageOutbox MessageOutbox { get; set; } = new NulloMessageOutbox();
 
     /// <summary>
     /// TimeProvider used for event timestamping metadata. Replace for controlling the timestamps

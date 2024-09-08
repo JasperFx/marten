@@ -26,31 +26,6 @@ public class NulloEventAppendStep: IEventAppendingStep
     }
 }
 
-/// <summary>
-/// Place holder for just running the inline projection
-/// </summary>
-public class ExecuteInlineProjectionStep: IEventAppendingStep
-{
-    private readonly IProjection _projection;
-    private readonly IReadOnlyList<StreamAction> _actions;
-
-    public ExecuteInlineProjectionStep(IProjection projection, IReadOnlyList<StreamAction> actions)
-    {
-        _projection = projection;
-        _actions = actions;
-    }
-
-    public ValueTask ApplyAsync(DocumentSessionBase session, EventGraph eventGraph, Queue<long> sequences, IEventStorage storage,
-        CancellationToken cancellationToken)
-    {
-        return new ValueTask(_projection.ApplyAsync(session, _actions, cancellationToken));
-    }
-}
-
-public interface IEventAppendPreProcessor
-{
-    IEventAppendingStep TryPreFetch(IBatchedQuery query, DocumentSessionBase session, StreamAction[] actions);
-}
 
 internal interface IEventAppender
 {

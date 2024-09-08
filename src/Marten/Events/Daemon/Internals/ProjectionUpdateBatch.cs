@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
+using Marten.Events.Aggregation;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
@@ -19,7 +20,6 @@ namespace Marten.Events.Daemon.Internals;
 public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable, ISessionWorkTracker
 {
     private readonly List<Type> _documentTypes = new();
-    private readonly ShardExecutionMode _mode;
     private readonly List<OperationPage> _pages = new();
     private readonly DaemonSettings _settings;
     private readonly CancellationToken _token;
@@ -33,6 +33,8 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     public List<IChangeListener> Listeners { get; } = new();
 
+    public ShardExecutionMode Mode { get; }
+
     public bool IsDisposed()
     {
         return _session == null;
@@ -45,7 +47,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         _settings = settings;
         _session = session ?? throw new ArgumentNullException(nameof(session));
         _token = token;
-        _mode = mode;
+        Mode = mode;
         Queue = new ActionBlock<IStorageOperation>(processOperation,
             new ExecutionDataflowBlockOptions
             {
@@ -232,7 +234,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     private bool shouldApplyListeners()
     {
-        return _mode == ShardExecutionMode.Rebuild || !Range.Events.Any();
+        return Mode == ShardExecutionMode.Rebuild || !Range.Events.Any();
     }
 
     public async Task PreUpdateAsync(IMartenSession session)
@@ -246,7 +248,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         if (!listeners.Any()) return;
 
         var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
-        foreach (var listener in _settings.AsyncListeners)
+        foreach (var listener in listeners)
         {
             await listener.BeforeCommitAsync((IDocumentSession)session, unitOfWorkData, _token)
                 .ConfigureAwait(false);
@@ -326,5 +328,26 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         _session = null;
     }
 
+    private IMessageBatch? _batch;
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
+    public async ValueTask<IMessageBatch> CurrentMessageBatch(DocumentSessionBase session)
+    {
+        if (_batch != null) return _batch;
 
+        await _semaphore.WaitAsync(_token).ConfigureAwait(false);
+
+        if (_batch != null) return _batch;
+
+        try
+        {
+            _batch = await _session.Options.Events.MessageOutbox.CreateBatch(session).ConfigureAwait(false);
+            Listeners.Add(_batch);
+
+            return _batch;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
 }

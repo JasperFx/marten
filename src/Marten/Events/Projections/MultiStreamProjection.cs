@@ -51,6 +51,11 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
     {
     }
 
+    public override bool IsSingleStream()
+    {
+        return Slicer is ISingleStreamSlicer;
+    }
+
     /// <summary>
     /// Group events by the tenant id. Use this option if you need to do roll up summaries by
     /// tenant id within a conjoined multi-tenanted event store.

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Events.Projections;
@@ -17,6 +18,11 @@ public class SingleStreamProjection<T>: GeneratedAggregateProjectionBase<T>
 {
     public SingleStreamProjection(): base(AggregationScope.SingleStream)
     {
+    }
+
+    public override bool IsSingleStream()
+    {
+        return true;
     }
 
     protected sealed override object buildEventSlicer(StoreOptions documentMapping)

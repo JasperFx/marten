@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Events.Aggregation;
 using Marten.Exceptions;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
@@ -65,6 +66,12 @@ namespace Marten.Events
         /// *if* you are also aggressively using event stream archiving
         /// </summary>
         public bool UseArchivedStreamPartitioning { get; set; }
+
+        /// <summary>
+        /// Optional extension point to receive published messages as a side effect from
+        /// aggregation projections
+        /// </summary>
+        public IMessageOutbox MessageOutbox { get; set; }
 
         /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
