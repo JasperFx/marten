@@ -1,11 +1,26 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Schema;
 
 namespace Marten.Events.Aggregation;
+
+public interface IAggregateProjectionWithSideEffects<T>
+{
+    /// <summary>
+    /// Use to create "side effects" when running an aggregation (single stream, custom projection, multi-stream)
+    /// asynchronously in a continuous mode (i.e., not in rebuilds)
+    /// </summary>
+    /// <param name="operations"></param>
+    /// <param name="slice"></param>
+    /// <returns></returns>
+    ValueTask RaiseSideEffects(IDocumentOperations operations, IEventSlice<T> slice);
+
+    bool IsSingleStream();
+}
 
 /// <summary>
 ///     Internal service within aggregating projections

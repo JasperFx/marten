@@ -2,6 +2,7 @@ using System;
 using EventSourcingTests.Projections;
 using Marten;
 using Marten.Events;
+using Marten.Events.Aggregation;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -24,6 +25,12 @@ public class EventGraphTests
         var mapping = theGraph.EventMappingFor<MonsterSlayed>();
         @event.EventTypeName.ShouldBe(mapping.EventTypeName);
         @event.DotNetTypeName.ShouldBe(mapping.DotNetTypeName);
+    }
+
+    [Fact]
+    public void use_nullo_message_outbox_by_default()
+    {
+        theGraph.MessageOutbox.ShouldBeOfType<NulloMessageOutbox>();
     }
 
     [Fact]

@@ -15,6 +15,7 @@ using Marten.Internal.Storage;
 using Marten.Services;
 using Marten.Sessions;
 using Marten.Storage;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace Marten.Events.Aggregation;
@@ -47,7 +48,10 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         Projection = projection;
         Slicer = slicer;
         Storage = storage;
+        Options = store.As<DocumentStore>().Options;
     }
+
+    internal StoreOptions Options { get; }
 
     public IAggregateProjection Projection { get; }
     public IEventSlicer<TDoc, TId> Slicer { get; }
@@ -105,10 +109,21 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
             }
         }
 
-        var lastEvent = slice.Events().LastOrDefault();
         if (aggregate != null)
         {
             Storage.SetIdentity(aggregate, slice.Id);
+        }
+
+        if (session is ProjectionDocumentSession pds && pds.Mode == ShardExecutionMode.Continuous)
+        {
+            // Need to set the aggregate in case it didn't exist upfront
+            slice.Aggregate = aggregate;
+            await processPossibleSideEffects(session, slice).ConfigureAwait(false);
+        }
+
+        var lastEvent = slice.Events().LastOrDefault();
+        if (aggregate != null)
+        {
             Versioning.TrySetVersion(aggregate, lastEvent);
 
             Projection.ApplyMetadata(aggregate, lastEvent);
@@ -134,6 +149,33 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         }
 
         session.QueueOperation(storageOperation);
+    }
+
+    private async Task processPossibleSideEffects(DocumentSessionBase session, EventSlice<TDoc, TId> slice)
+    {
+        if (Projection is IAggregateProjectionWithSideEffects<TDoc> sideEffects)
+        {
+            await sideEffects.RaiseSideEffects(session, slice).ConfigureAwait(false);
+
+            if (slice.RaisedEvents != null)
+            {
+                var storage = session.EventStorage();
+                var ops = slice.BuildOperations(Options.EventGraph, session, storage, sideEffects.IsSingleStream());
+                foreach (var op in ops)
+                {
+                    session.QueueOperation(op);
+                }
+            }
+
+            if (slice.PublishedMessages != null)
+            {
+                var batch = await session.CurrentMessageBatch().ConfigureAwait(false);
+                foreach (var message in slice.PublishedMessages)
+                {
+                    await batch.PublishAsync(message).ConfigureAwait(false);
+                }
+            }
+        }
     }
 
     public IAggregateVersioning Versioning { get; set; }

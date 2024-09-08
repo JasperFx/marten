@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using JasperFx.CodeGeneration;
@@ -46,6 +47,7 @@ internal static class EventDocumentStorageGenerator
         compiler.ReferenceAssembly(typeof(IMartenSession).Assembly);
         compiler.Compile(assembly);
 
+        Debug.WriteLine(builderType.SourceCode);
 
         return (EventDocumentStorage)Activator.CreateInstance(builderType.CompiledType, options);
     }
@@ -68,6 +70,7 @@ internal static class EventDocumentStorageGenerator
         buildQueryForStreamMethod(options.EventGraph, builderType);
 
         buildUpdateStreamVersion(builderType, assembly, options.EventGraph);
+
         return builderType;
     }
 

@@ -28,7 +28,7 @@ public class Bug_3221_assert_on_wrong_identity_type_from_multi_stream_projection
             });
         });
 
-        ex.Message.ShouldContain("Invalid projection DaemonTests.Bugs.MismatchedIdentityProjection", Case.Insensitive);
+        ex.Message.ShouldContain("Id type mismatch. The projection identity type is string", Case.Insensitive);
     }
 }
 

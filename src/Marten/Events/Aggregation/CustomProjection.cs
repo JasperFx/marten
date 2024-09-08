@@ -22,7 +22,7 @@ namespace Marten.Events.Aggregation;
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
-public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationRuntime<TDoc, TId>, IProjectionSource, IAggregateProjection
+public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationRuntime<TDoc, TId>, IProjectionSource, IAggregateProjection, IAggregateProjectionWithSideEffects<TDoc>
 {
     private IDocumentStorage<TDoc, TId> _storage;
 
@@ -38,6 +38,23 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
         {
             Slicer = (IEventSlicer<TDoc, TId>)new ByStreamKey<TDoc>();
         }
+    }
+
+    public bool IsSingleStream()
+    {
+        return Slicer is ISingleStreamSlicer;
+    }
+
+    /// <summary>
+    /// Use to create "side effects" when running an aggregation (single stream, custom projection, multi-stream)
+    /// asynchronously in a continuous mode (i.e., not in rebuilds)
+    /// </summary>
+    /// <param name="operations"></param>
+    /// <param name="slice"></param>
+    /// <returns></returns>
+    public virtual ValueTask RaiseSideEffects(IDocumentOperations operations, IEventSlice<TDoc> slice)
+    {
+        return new ValueTask();
     }
 
     public IEventSlicer<TDoc, TId> Slicer { get; protected internal set; }

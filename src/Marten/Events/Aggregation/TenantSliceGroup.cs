@@ -116,7 +116,7 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
         EventRangeGroup parent)
     {
         _session = new ProjectionDocumentSession(store, updateBatch,
-            new SessionOptions { Tracking = DocumentTracking.None, Tenant = Tenant });
+            new SessionOptions { Tracking = DocumentTracking.None, Tenant = Tenant }, updateBatch.Mode);
 
         _builder = new ActionBlock<EventSlice<TDoc, TId>>(async slice =>
         {

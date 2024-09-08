@@ -2,9 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events;
+using Marten.Events.Aggregation;
+using Marten.Events.Daemon.Internals;
 using Marten.Exceptions;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -40,6 +43,16 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     {
         Concurrency = sessionOptions.ConcurrencyChecks;
         _workTracker = workTracker;
+    }
+
+    internal ValueTask<IMessageBatch> CurrentMessageBatch()
+    {
+        if (_workTracker is ProjectionUpdateBatch batch)
+        {
+            return batch.CurrentMessageBatch(this);
+        }
+
+        throw new InvalidOperationException("This session is not a ProjectionDocumentSession");
     }
 
     internal ITenancy Tenancy => DocumentStore.As<DocumentStore>().Tenancy;

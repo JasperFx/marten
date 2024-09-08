@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections.Generic;
+using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Storage;
@@ -62,4 +63,10 @@ public interface IReadOnlyEventStoreOptions
     /// *if* you are also aggressively using event stream archiving
     /// </summary>
     bool UseArchivedStreamPartitioning { get; set; }
+
+    /// <summary>
+    /// Optional extension point to receive published messages as a side effect from
+    /// aggregation projections
+    /// </summary>
+    IMessageOutbox MessageOutbox { get; set; }
 }
