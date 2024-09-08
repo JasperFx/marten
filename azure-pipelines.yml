@@ -21,6 +21,7 @@ resources:
       env:
         POSTGRES_HOST_AUTH_METHOD: trust
         NAMEDATALEN: 150
+      user: postgres  
     - container: pg15
       image: postgres:15-alpine
       ports:
@@ -28,6 +29,7 @@ resources:
       env:
         POSTGRES_HOST_AUTH_METHOD: trust
         NAMEDATALEN: 150
+      user: postgres  
     - container: pgLatest
       image: postgres:latest
       ports:
@@ -35,6 +37,7 @@ resources:
       env:
         POSTGRES_HOST_AUTH_METHOD: trust
         NAMEDATALEN: 150
+      user: postgres
 
 variables:
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
