@@ -120,6 +120,7 @@
         <Compile Include="..\Marten.Testing\JilSerializer.cs">
             <Link>JilSerializer.cs</Link>
         </Compile>
+        <Compile Remove="AssemblyInfo.cs" />
     </ItemGroup>
 
     <PropertyGroup>

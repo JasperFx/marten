@@ -135,6 +135,7 @@
         <Compile Include="..\Marten.Testing\StubDocumentSessionListener.cs">
             <Link>StubDocumentSessionListener.cs</Link>
         </Compile>
+        <Compile Remove="AssemblyInfo.cs" />
     </ItemGroup>
 
     <ItemGroup>
