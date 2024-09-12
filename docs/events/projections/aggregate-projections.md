@@ -724,8 +724,8 @@ To do any of this, you can override the `RaiseSideEffects()` method in any aggre
 following base classes:
 
 1. `SingleStreamProjection`
-1. `MultiStreamProjection`
-1. `CustomStreamProjection`
+2. `MultiStreamProjection`
+3. `CustomStreamProjection`
 
 Here's an example of that method overridden in a projection:
 
@@ -733,13 +733,13 @@ snippet: sample_aggregation_using_event_metadata
 
 A couple important facts about this new functionality:
 
-* The `RaiseSideEffects()` method is only called during _continuus_ asynchronous projection execution, and will not
+- The `RaiseSideEffects()` method is only called during _continuus_ asynchronous projection execution, and will not
   be called during projection rebuilds or `Inline` projection usage
-* Events emitted during the side effect method are _not_ immediately applied to the current projected document value by Marten
-* You *can* alter the aggregate value or replace it yourself in this side effect method to reflect new events, but the onus
+- Events emitted during the side effect method are _not_ immediately applied to the current projected document value by Marten
+- You _can_ alter the aggregate value or replace it yourself in this side effect method to reflect new events, but the onus
   is on you the user to apply idempotent updates to the aggregate based on these new events in the actual handlers for
   the new events when those events are handled by the daemon in a later batch
-* There is a [Wolverine](https://wolverinefx.net) integration (of course) to publish the messages through Wolverine if using the `AddMarten()IntegrateWithWolverine()` option
+- There is a [Wolverine](https://wolverinefx.net) integration (of course) to publish the messages through Wolverine if using the `AddMarten()IntegrateWithWolverine()` option
 
 This relatively new behavior that was built for a specific [JasperFx Software](https://jasperfx.net) client project, 
 but has been on the backlog for quite some time. If there are any difficulties with this approach, please feel free
