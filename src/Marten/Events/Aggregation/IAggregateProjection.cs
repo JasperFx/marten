@@ -8,6 +8,13 @@ using Marten.Schema;
 
 namespace Marten.Events.Aggregation;
 
+#region IAggregateProjectionWithSideEffects
+
+/// <summary>
+/// Marks a grouped or aggregated projection as emitting "side effects"
+/// during asynchronous projection processing
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public interface IAggregateProjectionWithSideEffects<T>
 {
     /// <summary>
@@ -21,6 +28,8 @@ public interface IAggregateProjectionWithSideEffects<T>
 
     bool IsSingleStream();
 }
+
+#endregion
 
 /// <summary>
 ///     Internal service within aggregating projections

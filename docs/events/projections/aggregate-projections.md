@@ -707,3 +707,41 @@ public class using_apply_metadata : OneOffConfigurationsContext
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L12-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Raising Events, Messages, or other Operations in Aggregation Projections <Badge type="tip" text="7.27" />
+
+Man, that's a mouthful of a title. _Sometimes_, it can be valuable to emit new events during the processing of a projection
+when you first know the new state of the projected aggregate documents. Or maybe what you might want to do is to send
+a message for the new state of an updated projection. Here's a couple possible scenarios that might lead you here:
+
+* There's some kind of business logic that can be processed against an aggregate to "decide" what the system
+  can do next
+* You need to send updates about the aggregated projection state to clients via web sockets
+* You need to replicate the Marten projection data in a completely different database
+* There are business processes that can be kicked off for updates to the aggregated state
+
+To do any of this, you can override the `RaiseSideEffects()` method in any aggregated projection that uses one of the 
+following base classes:
+
+1. `SingleStreamProjection`
+1. `MultiStreamProjection`
+1. `CustomStreamProjection`
+
+Here's an example of that method overridden in a projection:
+
+snippet: sample_aggregation_using_event_metadata
+
+A couple important facts about this new functionality:
+
+* The `RaiseSideEffects()` method is only called during _continuus_ asynchronous projection execution, and will not
+  be called during projection rebuilds or `Inline` projection usage
+* Events emitted during the side effect method are _not_ immediately applied to the current projected document value by Marten
+* You *can* alter the aggregate value or replace it yourself in this side effect method to reflect new events, but the onus
+  is on you the user to apply idempotent updates to the aggregate based on these new events in the actual handlers for
+  the new events when those events are handled by the daemon in a later batch
+* There is a [Wolverine](https://wolverinefx.net) integration (of course) to publish the messages through Wolverine if using the `AddMarten()IntegrateWithWolverine()` option
+
+This relatively new behavior that was built for a specific [JasperFx Software](https://jasperfx.net) client project, 
+but has been on the backlog for quite some time. If there are any difficulties with this approach, please feel free
+to join the [Marten Discord room](https://discord.gg/BGkCDx5d). 
+
