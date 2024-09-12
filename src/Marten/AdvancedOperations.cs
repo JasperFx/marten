@@ -189,4 +189,38 @@ public class AdvancedOperations
             .Select(x => x.Name)
             .ToList();
     }
+
+    /// <summary>
+    /// Convenience method to rebuild the projected document of type T for a single stream
+    /// identified by id
+    /// *You will still have to call SaveChangesAsync() to commit the changes though!*
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="token"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public async Task RebuildSingleStreamAsync<T>(string id, CancellationToken token = default) where T : class
+    {
+        await using var session = _store.LightweightSession();
+        var document = await session.Events.AggregateStreamAsync<T>(id, token:token).ConfigureAwait(false);
+        session.Store(document);
+        await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Convenience method to rebuild the projected document of type T for a single stream
+    /// identified by id
+    /// *You will still have to call SaveChangesAsync() to commit the changes though!*
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="token"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public async Task RebuildSingleStreamAsync<T>(Guid id, CancellationToken token = default) where T : class
+    {
+        await using var session = _store.LightweightSession();
+        var document = await session.Events.AggregateStreamAsync<T>(id, token:token).ConfigureAwait(false);
+        session.Store(document);
+        await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
 }

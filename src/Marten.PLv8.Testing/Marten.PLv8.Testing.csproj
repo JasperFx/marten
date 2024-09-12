@@ -33,4 +33,8 @@
         </None>
         <EmbeddedResource Include="*.js"/>
     </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="AssemblyInfo.cs" />
+    </ItemGroup>
 </Project>

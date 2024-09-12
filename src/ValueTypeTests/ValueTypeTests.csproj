@@ -33,4 +33,8 @@
     <ItemGroup>
         <Using Include="Xunit"/>
     </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="AssemblyInfo.cs" />
+    </ItemGroup>
 </Project>
