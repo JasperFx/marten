@@ -15,7 +15,7 @@ using Xunit.Abstractions;
 
 namespace DocumentDbTests.MultiTenancy;
 
-public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<MultiTenancyFixture>
+public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsContext
 {
     private readonly ITestOutputHelper _output;
     private readonly Target[] _greens = Target.GenerateRandomData(100).ToArray();
@@ -27,8 +27,19 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
     private readonly Target targetRed1 = Target.Random();
     private readonly Target targetRed2 = Target.Random();
 
-    public conjoined_multi_tenancy(MultiTenancyFixture fixture): base(fixture)
+    public conjoined_multi_tenancy_with_partitioning()
     {
+
+        StoreOptions(opts =>
+        {
+            opts.Policies.AllDocumentsAreMultiTenantedWithPartitioning(x =>
+            {
+                x.ByList()
+                    .AddPartition("red", "Red")
+                    .AddPartition("blue", "Blue");
+            });
+        });
+
         using (var session = theStore.LightweightSession("Red"))
         {
             session.Store(targetRed1, targetRed2);
@@ -40,6 +51,14 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
             session.Store(targetBlue1, targetBlue2);
             session.SaveChanges();
         }
+    }
+
+    [Fact]
+    public async Task primary_key_is_ordered_by_id_then_tenant_id()
+    {
+        var table = await theStore.Storage.Database.ExistingTableFor(typeof(Target));
+        table.PrimaryKeyColumns.ShouldBe(["id", "tenant_id"]);
+        table.PrimaryKeyName.ShouldBe("pkey_mt_doc_target_id_tenant_id");
     }
 
     [Fact]

@@ -848,6 +848,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             {
                 if (mapping.DocumentType == typeof(DeadLetterEvent)) return;
 
+                mapping.PrimaryKeyTenancyOrdering = PrimaryKeyTenancyOrdering.Id_Then_TenantId;
+
                 mapping.TenancyStyle = TenancyStyle.Conjoined;
                 var expression = new PartitioningExpression(mapping, [TenantIdColumn.Name]);
                 configure(expression);

@@ -28,7 +28,7 @@ internal class DocumentTable: Table
 
         // Per https://github.com/JasperFx/marten/issues/2430 the tenant_id needs to be first in
         // PK
-        if (mapping.TenancyStyle == TenancyStyle.Conjoined)
+        if (mapping.TenancyStyle == TenancyStyle.Conjoined && mapping.PrimaryKeyTenancyOrdering == PrimaryKeyTenancyOrdering.TenantId_Then_Id)
         {
             AddColumn(mapping.Metadata.TenantId).AsPrimaryKey();
 
@@ -36,6 +36,13 @@ internal class DocumentTable: Table
         }
 
         AddColumn(idColumn).AsPrimaryKey();
+
+        if (mapping.TenancyStyle == TenancyStyle.Conjoined && mapping.PrimaryKeyTenancyOrdering == PrimaryKeyTenancyOrdering.Id_Then_TenantId)
+        {
+            AddColumn(mapping.Metadata.TenantId).AsPrimaryKey();
+
+            Indexes.Add(new DocumentIndex(mapping, TenantIdColumn.Name));
+        }
 
         AddColumn<DataColumn>();
 
