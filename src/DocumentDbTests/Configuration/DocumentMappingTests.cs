@@ -40,6 +40,13 @@ public class DocumentMappingTests
     }
 
     [Fact]
+    public void default_PrimaryKeyTenancyOrdering_mode()
+    {
+        var mapping = DocumentMapping.For<Target>();
+        mapping.PrimaryKeyTenancyOrdering.ShouldBe(PrimaryKeyTenancyOrdering.TenantId_Then_Id);
+    }
+
+    [Fact]
     public void use_revision_from_stream_is_false_by_default()
     {
         var mapping = DocumentMapping.For<LongId>();

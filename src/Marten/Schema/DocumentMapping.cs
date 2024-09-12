@@ -24,6 +24,21 @@ using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten.Schema;
 
+public enum PrimaryKeyTenancyOrdering
+{
+    /// <summary>
+    /// This is the normal ordering with tenant id, then id for the primary
+    /// key ordering. This is appropriate for most conjoined tenancy modeling
+    /// </summary>
+    TenantId_Then_Id,
+
+    /// <summary>
+    /// V6 compatible mode. The PK is ordered by id, tenant_id. May be more efficient for querying
+    /// when using partitioning by tenant id
+    /// </summary>
+    Id_Then_TenantId
+}
+
 public interface IDocumentType
 {
     IDocumentType Root { get; }
@@ -115,6 +130,9 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
         _schema = new Lazy<DocumentSchema>(() => new DocumentSchema(this));
     }
+
+    public PrimaryKeyTenancyOrdering PrimaryKeyTenancyOrdering { get; set; } =
+        PrimaryKeyTenancyOrdering.TenantId_Then_Id;
 
     public IPartitionStrategy? Partitioning { get; set; }
 
