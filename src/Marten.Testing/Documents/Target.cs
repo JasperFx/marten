@@ -94,6 +94,8 @@ public class Target
         target.Double = _random.NextDouble();
         target.Long = _random.Next() * 10000;
 
+        target.HowLong = TimeSpan.FromSeconds(target.Long);
+
         target.Date = DateTime.Today.AddDays(_random.Next(-10000, 10000));
 
         if (value > 15)
@@ -185,6 +187,8 @@ public class Target
     public List<string> StringList { get; set; }
 
     public Guid[] GuidArray { get; set; }
+
+    public TimeSpan HowLong { get; set; }
 }
 
 public class Address
