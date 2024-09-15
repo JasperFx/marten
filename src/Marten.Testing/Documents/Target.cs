@@ -46,6 +46,7 @@ public class Target
     {
         var target = new Target();
         target.String = _strings[_random.Next(0, 10)];
+        target.PaddedString = " " + target.String + " ";
         target.AnotherString = _otherStrings[_random.Next(0, 10)];
         target.Number = _random.Next();
         target.AnotherNumber = _random.Next();
@@ -121,6 +122,8 @@ public class Target
 
         return target;
     }
+
+    public string PaddedString { get; set; }
 
     public Target()
     {
