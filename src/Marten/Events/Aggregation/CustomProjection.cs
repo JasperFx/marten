@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
@@ -18,11 +19,17 @@ namespace Marten.Events.Aggregation;
 
 /// <summary>
 /// Helpful as a base class for more custom aggregation projections that are not supported
-/// by the Single/MultipleStreamProjections
+/// by the Single/MultipleStreamProjections -- or if you'd just prefer to use explicit code
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
-public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationRuntime<TDoc, TId>, IProjectionSource, IAggregateProjection, IAggregateProjectionWithSideEffects<TDoc>
+public abstract class CustomProjection<TDoc, TId>:
+    ProjectionBase,
+    IAggregationRuntime<TDoc, TId>,
+    IProjectionSource,
+    IAggregateProjection,
+    IAggregateProjectionWithSideEffects<TDoc>,
+    ILiveAggregator<TDoc>
 {
     private IDocumentStorage<TDoc, TId> _storage;
 
@@ -107,9 +114,44 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
     /// <param name="cancellation"></param>
     /// <param name="lifecycle"></param>
     /// <returns></returns>
-    public abstract ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<TDoc, TId> slice,
+    public virtual async ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<TDoc, TId> slice,
         CancellationToken cancellation,
-        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline);
+        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
+    {
+        if (!slice.Events().Any()) return;
+
+        var snapshot = slice.Aggregate;
+        snapshot = await BuildAsync(session, snapshot, slice.Events()).ConfigureAwait(false);
+        ApplyMetadata(snapshot, slice.Events().Last());
+
+        slice.Aggregate = snapshot;
+        session.Store(snapshot);
+    }
+
+    /// <summary>
+    /// Override if the aggregation always updates the aggregate from new events, but may
+    /// require data lookup to update the snapshot
+    /// </summary>
+    /// <param name="session"></param>
+    /// <param name="snapshot"></param>
+    /// <param name="events"></param>
+    /// <returns></returns>
+    public virtual ValueTask<TDoc> BuildAsync(IQuerySession session, TDoc? snapshot, IReadOnlyList<IEvent> events)
+    {
+        return new ValueTask<TDoc>(Apply(snapshot, events));
+    }
+
+    /// <summary>
+    /// Override if the aggregation always updates the aggregate from new events and you
+    /// don't need to do any other kind of data lookup. Simplest possible way to use this
+    /// </summary>
+    /// <param name="snapshot"></param>
+    /// <param name="events"></param>
+    /// <returns></returns>
+    public virtual TDoc Apply(TDoc? snapshot, IReadOnlyList<IEvent> events)
+    {
+        throw new NotImplementedException("Did you forget to implement this method?");
+    }
 
     public IAggregateVersioning Versioning { get; set; }
 
@@ -289,5 +331,25 @@ public abstract class CustomProjection<TDoc, TId>: ProjectionBase, IAggregationR
         mapping.UseVersionFromMatchingStream =
             Lifecycle == ProjectionLifecycle.Inline && storeOptions.Events.AppendMode == EventAppendMode.Quick && Slicer is ISingleStreamSlicer;
     }
+
+    TDoc ILiveAggregator<TDoc>.Build(IReadOnlyList<IEvent> events, IQuerySession session, TDoc snapshot)
+    {
+        throw new NotSupportedException("It's not supported to do a synchronous, live aggregation with a custom projection");
+    }
+
+    async ValueTask<TDoc> ILiveAggregator<TDoc>.BuildAsync(IReadOnlyList<IEvent> events, IQuerySession session, TDoc snapshot, CancellationToken cancellation)
+    {
+        if (!events.Any()) return default;
+
+        var documentSessionBase = session.As<DocumentSessionBase>();
+
+        var slice = new EventSlice<TDoc, TId>(default, session, events);
+        await ApplyChangesAsync(documentSessionBase, slice, cancellation).ConfigureAwait(false);
+
+        ApplyMetadata(slice.Aggregate, events.Last());
+
+        return slice.Aggregate;
+    }
 }
+
 
