@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EventSourcingTests.Aggregation;
 using Marten;
+using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
@@ -130,7 +133,10 @@ public class ConjoinedTenancyProjectionsTests: IntegrationContext
         singleCompanyLocation.Id.ShouldBe(companyLocationId);
         singleCompanyLocation.Name.ShouldBe(companyLocationName);
     }
+
 }
+
+
 
 public record Event;
 

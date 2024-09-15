@@ -160,8 +160,11 @@ public class ProjectionOptions: DaemonSettings
     {
         if (lifecycle == ProjectionLifecycle.Live)
         {
-            throw new ArgumentOutOfRangeException(nameof(lifecycle),
-                $"{nameof(ProjectionLifecycle.Live)} cannot be used for IProjection");
+            if (!projection.GetType().Closes(typeof(ILiveAggregator<>)))
+            {
+                throw new ArgumentOutOfRangeException(nameof(lifecycle),
+                    $"{nameof(ProjectionLifecycle.Live)} cannot be used for IProjection");
+            }
         }
 
         if (projection is ProjectionBase p)
@@ -414,6 +417,13 @@ public class ProjectionOptions: DaemonSettings
     {
         if (_liveAggregators.TryFind(typeof(T), out var aggregator))
         {
+            return (ILiveAggregator<T>)aggregator;
+        }
+
+        aggregator = All.OfType<ILiveAggregator<T>>().FirstOrDefault();
+        if (aggregator != null)
+        {
+            _liveAggregators = _liveAggregators.AddOrUpdate(typeof(T), aggregator);
             return (ILiveAggregator<T>)aggregator;
         }
 
