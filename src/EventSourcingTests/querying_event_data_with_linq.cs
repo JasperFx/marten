@@ -119,7 +119,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
 
 
         theStore.StorageFeatures.FindMapping(typeof(MembersDeparted))
-            .TableName.Schema.ShouldBe("query_against_event_documents_tests_events");
+            .TableName.Schema.ShouldBe("querying_event_data_with_linq_events");
 
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
