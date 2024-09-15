@@ -81,4 +81,6 @@ public static class AggregateToExtensions
     {
         return await AggregateToAsync(queryable.As<IMartenQueryable<IEvent>>(), state, token).ConfigureAwait(false);
     }
+
+
 }

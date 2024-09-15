@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core;
+using Marten.Events;
 using Marten.Events.Archiving;
 using Marten.Linq.CreatedAt;
 using Marten.Linq.LastModified;
@@ -70,6 +71,7 @@ public class LinqParsing: IReadOnlyLinqParsing
 
         // event is archived
         new MaybeArchivedMethodCallParser(),
+        new EventTypesAreParser(),
 
         // last modified
         new ModifiedSinceParser(),

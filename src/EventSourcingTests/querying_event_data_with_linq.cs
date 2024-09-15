@@ -1,8 +1,11 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using EventSourcingTests.Aggregation;
 using Marten;
+using Marten.Events;
 using Marten.Testing.Harness;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Shouldly;
 using Weasel.Core;
 using Xunit;
@@ -10,7 +13,7 @@ using Xunit.Abstractions;
 
 namespace EventSourcingTests;
 
-public class query_against_event_documents_Tests: OneOffConfigurationsContext
+public class querying_event_data_with_linq: OneOffConfigurationsContext
 {
     private readonly ITestOutputHelper _output;
     private readonly MembersJoined joined1 = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
@@ -228,11 +231,37 @@ public class query_against_event_documents_Tests: OneOffConfigurationsContext
             .Count(x => x.StreamId == stream1).ShouldBe(2);
     }
 
+    [Fact]
+    public async Task can_search_by_event_types()
+    {
+        theSession.Events.StartStream<Quest>(joined1, departed1);
+        theSession.Events.StartStream<Quest>(joined2, departed2);
+
+        theSession.Events.StartStream<SimpleAggregate>(new AEvent(), new BEvent(), new CEvent(), new DEvent());
+        theSession.Events.StartStream<SimpleAggregate>(new AEvent(), new BEvent(), new DEvent(), new DEvent());
+        theSession.Events.StartStream<SimpleAggregate>(new AEvent(), new CEvent(), new CEvent(), new DEvent());
+
+        await theSession.SaveChangesAsync();
+
+        #region sample_using_event_types_are
+
+        var raw = await theSession.Events.QueryAllRawEvents()
+            .Where(x => x.EventTypesAre(typeof(CEvent), typeof(DEvent)))
+            .ToListAsync();
+
+        #endregion
+
+        foreach (var e in raw)
+        {
+            ((e.Data is CEvent) || (e.Data is DEvent)).ShouldBeTrue();
+        }
+    }
+
     /*
      * MORE!!!
      * Async everything
      */
-    public query_against_event_documents_Tests(ITestOutputHelper output)
+    public querying_event_data_with_linq(ITestOutputHelper output)
     {
         _output = output;
         theStore.Advanced.Clean.DeleteAllEventData();
