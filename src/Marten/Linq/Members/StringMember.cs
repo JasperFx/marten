@@ -36,6 +36,10 @@ public class StringMember: QueryableMember, IComparableMember
             {
                 RawLocator = $"upper({RawLocator})", TypedLocator = $"upper({RawLocator})"
             },
+            nameof(string.Trim) => new StringMember(this, Casing.Default, member)
+            {
+                RawLocator = $"trim({RawLocator})", TypedLocator = $"trim({RawLocator})"
+            },
             _ => base.FindMember(member)
         };
     }

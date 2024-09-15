@@ -172,6 +172,8 @@ public class where_clauses: LinqTestContext<where_clauses>
         @where(x => x.String.ToLower() == "red");
         @where(x => x.String.ToUpper() == "RED");
 
+        @where(x => x.PaddedString.Trim() == "red");
+
     }
 
     [Theory]
