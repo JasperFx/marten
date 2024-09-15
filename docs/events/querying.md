@@ -292,7 +292,7 @@ public void can_query_against_event_type()
 
 You can use any Linq operator that Marten supports to query against event data. We think that this functionality is probably more useful for diagnostics or troubleshooting rather than something you would routinely use to support your application. We recommend that you favor event projection views over querying within the raw event table.
 
-With Marten 1.0, you can issue queries with Marten's full Linq support against the raw event data with this method:
+You can issue queries with Marten's full Linq support against the raw event data with this method:
 
 <!-- snippet: sample_example_of_querying_for_event_data -->
 <a id='snippet-sample_example_of_querying_for_event_data'></a>
@@ -309,3 +309,10 @@ public void example_of_querying_for_event_data(IDocumentSession session, Guid st
 <!-- endSnippet -->
 
 This mechanism will allow you to query by any property of the `IEvent` interface shown above.
+
+## Filter by Event Types <Badge type="tip" text="7.28" />
+
+You can limit the types of events returned by the LINQ query through the `EventTypesAre()` extension method
+in a `Where()` clause as shown below:
+
+snippet: sample_using_event_types_are
