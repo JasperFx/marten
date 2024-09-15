@@ -29,7 +29,7 @@ namespace Marten.Events;
 public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable
 {
     private readonly Cache<Type, string> _aggregateNameByType =
-        new(type => type.Name.ToTableAlias());
+        new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
 
     private readonly Cache<string, Type> _aggregateTypeByName;
 
