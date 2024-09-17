@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,8 +23,15 @@ public class marten_managed_tenant_id_partitioning : OneOffConfigurationsContext
     {
         using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
-        await conn.CreateCommand($"delete from tenants.{MartenManagedTenantListPartitions.TableName}")
-            .ExecuteNonQueryAsync();
+        try
+        {
+            await conn.CreateCommand($"delete from tenants.{MartenManagedTenantListPartitions.TableName}")
+                .ExecuteNonQueryAsync();
+        }
+        catch (Exception)
+        {
+            // being lazy here
+        }
         await conn.CloseAsync();
     }
 

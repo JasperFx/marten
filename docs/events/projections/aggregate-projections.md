@@ -714,8 +714,7 @@ Man, that's a mouthful of a title. _Sometimes_, it can be valuable to emit new e
 when you first know the new state of the projected aggregate documents. Or maybe what you might want to do is to send
 a message for the new state of an updated projection. Here's a couple possible scenarios that might lead you here:
 
--There's some kind of business logic that can be processed against an aggregate to "decide" what the system
-  can do next
+- There's some kind of business logic that can be processed against an aggregate to "decide" what the system can do next
 - You need to send updates about the aggregated projection state to clients via web sockets
 - You need to replicate the Marten projection data in a completely different database
 - There are business processes that can be kicked off for updates to the aggregated state

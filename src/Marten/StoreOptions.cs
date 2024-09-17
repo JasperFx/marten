@@ -884,6 +884,9 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         public PoliciesExpression PartitionMultiTenantedDocumentsUsingMartenManagement(string schemaName)
         {
             var policy = new MartenManagedTenantListPartitions(_parent, schemaName);
+
+            _parent.Storage.Add(policy.Partitions);
+
             _parent._postPolicies.Add(policy);
 
             return this;
