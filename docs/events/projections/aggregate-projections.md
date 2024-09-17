@@ -732,7 +732,7 @@ snippet: sample_aggregation_using_event_metadata
 
 A couple important facts about this new functionality:
 
-- The `RaiseSideEffects()` method is only called during _continuus_ asynchronous projection execution, and will not
+- The `RaiseSideEffects()` method is only called during _continuous_ asynchronous projection execution, and will not
   be called during projection rebuilds or `Inline` projection usage
 - Events emitted during the side effect method are _not_ immediately applied to the current projected document value by Marten
 - You _can_ alter the aggregate value or replace it yourself in this side effect method to reflect new events, but the onus
