@@ -149,7 +149,7 @@ public class partitioning_configuration : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void configure_list_partitioning_with_external_managed_partitioins_on_by_selective_policy()
+    public void configure_list_partitioning_with_external_managed_partitions_on_by_selective_policy()
     {
         StoreOptions(opts =>
         {
@@ -164,7 +164,7 @@ public class partitioning_configuration : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void configure_range_partitioning_with_external_managed_partitioins_on_tenant_id()
+    public void configure_range_partitioning_with_external_managed_partitions_on_tenant_id()
     {
         StoreOptions(opts =>
         {

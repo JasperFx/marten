@@ -11,7 +11,11 @@ using Marten.Events.Projections;
 using Marten.Events.TestSupport;
 using Marten.Schema;
 using Marten.Storage;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten;
 
@@ -222,5 +226,52 @@ public class AdvancedOperations
         var document = await session.Events.AggregateStreamAsync<T>(id, token:token).ConfigureAwait(false);
         session.Store(document);
         await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// "Upsert" tenant ids and matching partition suffixes to all conjoined, multi-tenanted
+    /// tables *if* Marten-managed partitioning is applied to this store. This assumes a 1-1
+    /// relationship between tenant ids and table partitions
+    /// </summary>
+    /// <param name="token"></param>
+    /// <param name="tenantIds"></param>
+    public Task AddMartenManagedTenantsAsync(CancellationToken token, params string[] tenantIds)
+    {
+        var dict = new Dictionary<string, string>();
+        foreach (var tenantId in tenantIds)
+        {
+            dict[tenantId] = tenantId;
+        }
+
+        return AddMartenManagedTenantsAsync(token, dict);
+    }
+
+    /// <summary>
+    /// "Upsert" tenant ids and matching partition suffixes to all conjoined, multi-tenanted
+    /// tables *if* Marten-managed partitioning is applied to this store. This assumes a 1-1
+    /// relationship between tenant ids and table partitions
+    /// </summary>
+    /// <param name="token"></param>
+    /// <param name="tenantIdToPartitionMapping">Dictionary of tenant id to partition names</param>
+    public async Task<TablePartitionStatus[]> AddMartenManagedTenantsAsync(CancellationToken token, Dictionary<string, string> tenantIdToPartitionMapping)
+    {
+        if (_store.Options.TenantPartitions == null)
+        {
+            throw new InvalidOperationException(
+                $"Marten-managed per-tenant partitioning is not active in this store. Did you miss a call to {nameof(StoreOptions)}.{nameof(StoreOptions.Policies)}.{nameof(StoreOptions.PoliciesExpression.PartitionMultiTenantedDocumentsUsingMartenManagement)}()?");
+        }
+
+        if (_store.Tenancy is not DefaultTenancy)
+            throw new InvalidOperationException(
+                "This option is not (yet) supported in combination with database per tenant multi-tenancy");
+        var database = (PostgresqlDatabase)_store.Tenancy.Default.Database;
+
+
+        var logger = _store.Options.LogFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
+        return await _store.Options.TenantPartitions.Partitions.AddPartitionToAllTables(
+            logger,
+            database,
+            tenantIdToPartitionMapping,
+            token).ConfigureAwait(false);
     }
 }

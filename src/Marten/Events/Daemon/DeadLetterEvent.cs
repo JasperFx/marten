@@ -2,9 +2,11 @@ using System;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
+using Marten.Schema;
 
 namespace Marten.Events.Daemon;
 
+[SingleTenanted]
 public class DeadLetterEvent
 {
     public DeadLetterEvent()

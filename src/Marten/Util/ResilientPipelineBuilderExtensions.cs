@@ -16,7 +16,10 @@ internal static class ResilientPipelineBuilderExtensions
         return builder
            .AddRetry(new()
             {
-                ShouldHandle = new PredicateBuilder().Handle<NpgsqlException>().Handle<MartenCommandException>().Handle<EventLoaderException>(),
+                ShouldHandle = new PredicateBuilder()
+                    .Handle<NpgsqlException>()
+                    .Handle<MartenCommandException>()
+                    .Handle<EventLoaderException>(),
                 MaxRetryAttempts = 3,
                 Delay = TimeSpan.FromMilliseconds(50),
                 BackoffType = DelayBackoffType.Exponential

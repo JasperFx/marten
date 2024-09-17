@@ -417,6 +417,40 @@ storeOptions.Schema.For<Target>().SingleTenanted();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/document_policies.cs#L76-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-override-with-single-tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Marten-Managed Table Partitioning by Tenant <Badge type="tip" text="7.28" />
+
+Man, that's a mouthful! So here's the situation. You have a large number of tenants, use the "conjoined" tenancy model,
+and also want to use the table partitioning support as a way to improve performance in large databases. Marten has an 
+option where you can store the valid tenant ids and what named partition that tenant id should be stored in to a database 
+table (also Marten managed, because that's how we roll!). By using this Marten controlled storage, Marten is able to
+dynamically create the right table partitions for each known tenant id for each known, "conjoined"/multi-tenanted
+document storage.
+
+Here's a sample of using this feature. First, the configuration is:
+
+snippet: sample_configure_marten_managed_tenant_partitioning
+
+The tenant to partition name mapping will be stored in a table created by Marten called `mt_tenant_partitions` with
+two columns:
+
+1. `partition_name` -- really the partition table suffix name. If you want a one to one relationship, this is the tenant id
+2. `partition_value`-- the value of the tenant id
+
+Before the application is initialized, it's possible to load or delete data directly into these tables. At runtime, 
+you can add new tenant id partitions with this helper API on `IDocumentStore.Advanced`:
+
+snippet: sample_add_managed_tenants_at_runtime
+
+The API above will try to add any missing table partitions to all known document types. There is also a separate overload
+that will take a `Dictionary<string, string>` argument that maps tenant ids to a named partition suffix. This might 
+be valuable if you frequently query for multiple tenants at one time. We think that the 1 to 1 tenant id to partition model
+is a good default approach though. 
+
+::: tip
+Just like with the codegen-ahead model, you may want to tell Marten about all possible document types
+upfront so that it is better able to add the partitions for each tenant id as needed.
+:::
+
 ## Implementation Details
 
 At the moment, Marten implements two modes of tenancy, namely single tenancy and conjoined multi-tenancy.
