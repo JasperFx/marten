@@ -31,6 +31,7 @@ using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Connections;
+using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten;
 
@@ -873,6 +874,21 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             });
         }
 
+        /// <summary>
+        /// Use Marten-managed per-tenant table partitions for all multi-tenanted document types.
+        /// The tenant id to partition suffix mapping is controlled by an "mt_tenant_partitions" table
+        /// that Marten will place in your PostgreSQL database
+        /// </summary>
+        /// <param name="schemaName"></param>
+        /// <returns></returns>
+        public PoliciesExpression PartitionMultiTenantedDocumentsUsingMartenManagement(string schemaName)
+        {
+            var policy = new MartenManagedTenantListPartitions(_parent, schemaName);
+            _parent._postPolicies.Add(policy);
+
+            return this;
+        }
+
         internal PoliciesExpression PostConfiguration(Action<DocumentMapping> action)
         {
             _parent._postPolicies.Add(new LambdaDocumentPolicy(action));
@@ -972,6 +988,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     IDocumentSchemaResolver IReadOnlyStoreOptions.Schema => this;
 
     string IDocumentSchemaResolver.EventsSchemaName => Events.DatabaseSchemaName;
+    internal MartenManagedTenantListPartitions TenantPartitions { get; set; }
 
     string IDocumentSchemaResolver.For<TDocument>(bool qualified)
     {
