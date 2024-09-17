@@ -149,5 +149,3 @@ as shown below:
 snippet: sample_using_simple_explicit_code_for_live_aggregation
 
 Note that this usage is valid for all possible projection lifecycles now (`Live`, `Inline`, and `Async`).
-
-
