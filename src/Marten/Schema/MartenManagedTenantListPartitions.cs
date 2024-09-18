@@ -28,7 +28,6 @@ public class MartenManagedTenantListPartitions : IDocumentPolicy
         _options.Storage.Add(Partitions);
 
         _options.TenantPartitions = this;
-
     }
 
     public ManagedListPartitions Partitions { get; }
