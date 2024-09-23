@@ -80,8 +80,6 @@ There is also a matching asynchronous `AggregateStreamAsync()` mechanism as well
 
 ## Inline Projections
 
-_First off, be aware that event metadata (e.g. stream version and sequence number) are not available duing the execution of inline projections. If you need to use event metadata in your projections, please use asynchronous or live projections._
-
 If you would prefer that the projected aggregate document be updated _inline_ with the events being appended, you simply need to register the aggregation type in the `StoreOptions` upfront when you build up your document store like this:
 
 <[sample:registering-quest-party]>
