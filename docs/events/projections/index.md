@@ -91,6 +91,8 @@ There is also a matching asynchronous `AggregateStreamAsync()` mechanism as well
 
 ## Inline Projections
 
+_First off, be aware that some event metadata (`IEvent.Version` and `IEvent.Sequence`) is not available during the execution of inline projections when using the ["Quick" append mode](/events/appending). If you need to use this metadata in your projections, please use asynchronous or live projections, or use the "Rich" append mode._
+
 If you would prefer that the projected aggregate document be updated _inline_ with the events being appended, you simply need to register the aggregation type in the `StoreOptions` upfront when you build up your document store like this:
 
 <!-- snippet: sample_registering-quest-party -->
