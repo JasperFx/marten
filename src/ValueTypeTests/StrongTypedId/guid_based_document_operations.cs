@@ -141,7 +141,7 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
     }
 
     [Fact]
-    public async Task load_many()
+    public async Task load_many_through_linq()
     {
         var invoice1 = new Invoice2{Name = Guid.NewGuid().ToString()};
         var invoice2 = new Invoice2{Name = Guid.NewGuid().ToString()};
@@ -156,6 +156,19 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
             .ToListAsync();
 
         results.Count.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task load_many()
+    {
+        var invoice1 = new Invoice2{Name = Guid.NewGuid().ToString()};
+        var invoice2 = new Invoice2{Name = Guid.NewGuid().ToString()};
+        var invoice3 = new Invoice2{Name = Guid.NewGuid().ToString()};
+        theSession.Store(invoice1, invoice2, invoice3);
+
+        await theSession.SaveChangesAsync();
+        throw new NotImplementedException();
+        //var invoices = await theSession.LoadManyAsync<Invoice2>()
     }
 
     [Fact]

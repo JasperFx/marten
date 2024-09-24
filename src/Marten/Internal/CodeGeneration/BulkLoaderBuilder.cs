@@ -61,11 +61,17 @@ public class BulkLoaderBuilder
 
         var load = type.MethodFor("LoadRow");
 
-        foreach (var argument in arguments) argument.GenerateBulkWriterCode(type, load, _mapping);
+        foreach (var argument in arguments)
+        {
+            argument.GenerateBulkWriterCode(type, load, _mapping);
+        }
 
         var loadAsync = type.MethodFor("LoadRowAsync");
 
-        foreach (var argument in arguments) argument.GenerateBulkWriterCodeAsync(type, loadAsync, _mapping);
+        foreach (var argument in arguments)
+        {
+            argument.GenerateBulkWriterCodeAsync(type, loadAsync, _mapping);
+        }
 
         return type;
     }

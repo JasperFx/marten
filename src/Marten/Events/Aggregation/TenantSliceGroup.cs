@@ -171,6 +171,12 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
             return;
         }
 
+        // Minor optimization
+        if (!beingFetched.Any())
+        {
+            return;
+        }
+
         var ids = beingFetched.Select(x => x.Id).ToArray();
 
         var options = new SessionOptions { Tenant = Tenant, AllowAnyTenant = true };

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
@@ -11,6 +12,8 @@ using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Storage;
 using Npgsql;
+using NpgsqlTypes;
+using Weasel.Postgresql;
 
 namespace Marten.Internal.CodeGeneration;
 
@@ -78,9 +81,55 @@ internal class DocumentStorageBuilder
                 Use.Type<IMartenSession>(), Use.Type<DocumentMapping>());
 
         writeParameterForId(type);
+        writeParameterForIdArray(type);
         writeNotImplementedStubs(type);
 
         return type;
+    }
+
+    internal class BuildArrayParameterFrame: SyncFrame
+    {
+        private readonly ValueTypeIdGeneration _idGeneration;
+        private readonly NpgsqlDbType _dbType;
+        private readonly string _memberName;
+
+        public BuildArrayParameterFrame(ValueTypeIdGeneration idGeneration)
+        {
+            _dbType = PostgresqlProvider.Instance.ToParameterType(idGeneration.SimpleType);
+            _memberName = idGeneration.ValueProperty.Name;
+        }
+
+        public BuildArrayParameterFrame(FSharpDiscriminatedUnionIdGeneration idGeneration)
+        {
+            _dbType = PostgresqlProvider.Instance.ToParameterType(idGeneration.SimpleType);
+            _memberName = idGeneration.ValueProperty.Name;
+        }
+
+        public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
+        {
+            var dbTypeCode = $"{typeof(NpgsqlDbType).FullNameInCode()}.Array | {typeof(NpgsqlDbType).FullNameInCode()}.{_dbType}";
+
+            var code = $"return new(){{Value = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(ids, x => x.{_memberName})), {nameof(NpgsqlParameter.NpgsqlDbType)} = {dbTypeCode}}};";
+            writer.WriteLine(code);
+            Next?.GenerateCode(method, writer);
+        }
+    }
+
+    private void writeParameterForIdArray(GeneratedType type)
+    {
+        var method = type.MethodFor(nameof(DocumentStorage<string, string>.BuildManyIdParameter));
+        if (_mapping.IdStrategy is ValueTypeIdGeneration st)
+        {
+            method.Frames.Add(new BuildArrayParameterFrame(st));
+        }
+        else if (_mapping.IdStrategy is FSharpDiscriminatedUnionIdGeneration fst)
+        {
+            method.Frames.Add(new BuildArrayParameterFrame(fst));
+        }
+        else
+        {
+            method.Frames.Code($"return base.{method.MethodName}(ids);");
+        }
     }
 
     private void writeParameterForId(GeneratedType type)
@@ -88,7 +137,7 @@ internal class DocumentStorageBuilder
         var method = type.MethodFor(nameof(DocumentStorage<string, string>.RawIdentityValue));
         if (_mapping.IdStrategy is ValueTypeIdGeneration st)
         {
-                method.Frames.Code($"return id.{st.ValueProperty.Name};");
+            method.Frames.Code($"return id.{st.ValueProperty.Name};");
         }
         else if (_mapping.IdStrategy is FSharpDiscriminatedUnionIdGeneration fst)
         {
