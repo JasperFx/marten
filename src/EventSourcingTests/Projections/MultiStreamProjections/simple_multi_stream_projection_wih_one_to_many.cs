@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -15,7 +16,9 @@ namespace EventSourcingTests.Projections.MultiStreamProjections.Samples
         public UserGroupsAssignmentProjection()
         {
             Identity<UserRegistered>(x => x.UserId);
-            Identities<MultipleUsersAssignedToGroup>(x => x.UserIds);
+
+            // You can now use IEvent<T> as well as declaring this against the core event type
+            Identities<IEvent<MultipleUsersAssignedToGroup>>(x => x.Data.UserIds);
         }
 
         public void Apply(UserRegistered @event, UserGroupsAssignment view)

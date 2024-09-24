@@ -90,6 +90,16 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
 
     public EventSlicer<TDoc, TId> Identities<TEvent>(Func<TEvent, IReadOnlyList<TId>> identitiesFunc)
     {
+        var eventType = typeof(TEvent);
+        // Check if we are actually dealing with an IEvent<EventType>
+        if (eventType.IsGenericType && eventType.GetGenericTypeDefinition() == typeof(IEvent<>))
+        {
+            var actualEventType = eventType.GetGenericArguments().First();
+            var eventGrouperType = typeof(MultiStreamGrouperWithMetadata<,>).MakeGenericType( typeof(TId), actualEventType);
+            _groupers.Add((IGrouper<TId>) Activator.CreateInstance(eventGrouperType, identitiesFunc));
+            return this;
+        }
+
         _groupers.Add(new MultiStreamGrouper<TId, TEvent>(identitiesFunc));
         return this;
     }
