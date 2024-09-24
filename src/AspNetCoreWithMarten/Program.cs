@@ -79,7 +79,7 @@ app.MapGet("/user/{id:guid}",
 #endregion
 
 
-await app.RunOaktonCommands(args);
+return await app.RunOaktonCommands(args);
 
 
 record CreateUserRequest(string FirstName, string LastName, bool Internal);

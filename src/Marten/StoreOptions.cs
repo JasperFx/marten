@@ -686,7 +686,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// </summary>
     internal void Validate()
     {
-        if (Tenancy == null)
+        if (_tenancy == null)
         {
             throw new InvalidOperationException(
                 "Tenancy not specified - provide either connection string or connection factory through Connection(..)");
