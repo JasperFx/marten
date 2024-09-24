@@ -13,7 +13,7 @@ using Xunit;
 using Xunit.Abstractions;
 using IsolationLevel = System.Data.IsolationLevel;
 
-namespace CoreTests;
+namespace StressTests;
 
 public class ability_to_use_an_existing_connection_and_transaction: IntegrationContext
 {
@@ -24,9 +24,9 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
     {
     }
 
-    protected override Task fixtureSetup()
+    protected override async Task fixtureSetup()
     {
-        return theStore.BulkInsertDocumentsAsync(targets);
+        await theStore.BulkInsertDocumentsAsync(targets);
     }
 
 
