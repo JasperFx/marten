@@ -84,6 +84,47 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task calls_side_effects_when_there_is_a_delete_event()
+    {
+        var outbox = new RecordingMessageOutbox();
+
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add<Projection1>(ProjectionLifecycle.Async);
+            opts.Logger(new TestOutputMartenLogger(_output));
+            opts.Events.MessageOutbox = outbox;
+        });
+
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+
+        var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<SideEffects1>(streamId, new AEvent(),
+            new AEvent(), new AEvent());
+        await theSession.SaveChangesAsync();
+
+        await daemon.WaitForNonStaleData(30.Seconds());
+
+        theSession.Events.Append(streamId, new EEvent());
+        await theSession.SaveChangesAsync();
+
+        await daemon.WaitForNonStaleData(30.Seconds());
+
+        // Should be deleted by now
+        var version1 = await theSession.LoadAsync<SideEffects1>(streamId);
+        version1.ShouldBeNull();
+
+        outbox
+            .Batches
+            .SelectMany(x => x.Messages)
+            .OfType<WasDeleted>().Single().Id.ShouldBe(streamId);
+
+    }
+
+    [Fact]
     public async Task add_events_single_stream_guid_identifier_when_starting_a_stream()
     {
         StoreOptions(opts =>
@@ -317,6 +358,11 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
 
 public class Projection1: SingleStreamProjection<SideEffects1>
 {
+    public Projection1()
+    {
+        DeleteEvent<EEvent>();
+    }
+
     public void Apply(SideEffects1 aggregate, AEvent _)
     {
         aggregate.A++;
@@ -334,7 +380,13 @@ public class Projection1: SingleStreamProjection<SideEffects1>
             slice.AppendEvent(new BEvent());
         }
 
+        if (slice.Events().OfType<IEvent<EEvent>>().Any())
+        {
+            slice.PublishMessage(new WasDeleted(slice.Events().First().StreamId));
+        }
+
         return new ValueTask();
+
     }
 }
 
@@ -347,6 +399,8 @@ public class SideEffects1: IRevisioned
     public int D { get; set; }
     public int Version { get; set; }
 }
+
+public record WasDeleted(Guid Id);
 
 public class Projection2: SingleStreamProjection<SideEffects2>
 {

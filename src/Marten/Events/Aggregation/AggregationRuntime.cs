@@ -66,6 +66,9 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         if (Projection.MatchesAnyDeleteType(slice))
         {
             var operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
+
+            await processPossibleSideEffects(session, slice).ConfigureAwait(false);
+
             session.QueueOperation(operation);
             return;
         }
