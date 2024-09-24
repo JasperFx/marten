@@ -135,7 +135,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
         _versioning.Override(expression);
     }
 
-    protected abstract object buildEventSlicer(StoreOptions documentMapping);
+    protected abstract object buildEventSlicer(StoreOptions options);
     protected abstract Type baseTypeForAggregationRuntime();
 
     /// <summary>

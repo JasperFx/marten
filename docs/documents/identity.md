@@ -309,7 +309,9 @@ Vogen or StronglyTypedID for now.
 :::
 
 ::: info
-There is not yet any direct support for strong typed identifiers for the event store
+As of Marten 7.29.0, the event sourcing features support strong typed identifiers for the aggregated
+document types, but there is still no direct support for supplying strong typed identifiers for event streams yet. 
+This may change in Marten 8.0.
 :::
 
 Marten can now support [strong typed identifiers](https://en.wikipedia.org/wiki/Strongly_typed_identifie) using a couple different strategies.

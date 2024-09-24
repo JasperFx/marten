@@ -129,6 +129,15 @@ Alternatively, if your aggregate will never be deleted you can use a stream aggr
 
 To create aggregate projections that include events in multiple streams, see [Multi-Stream Projections](/events/projections/multi-stream-projections).
 
+## Strong Typed Identifiers <Badge type="tip" text="7.29" />
+
+Marten supports using strong-typed identifiers as the document identity for aggregated documents. Here's an example:
+
+snippet: sample_using_strong_typed_identifier_for_aggregate_projections
+
+Just note that for single stream aggregations, your strong typed identifier types will need to wrap either a `Guid` or
+`string` depending on your application's `StreamIdentity`. 
+
 ## Aggregate Creation
 
 ::: tip
