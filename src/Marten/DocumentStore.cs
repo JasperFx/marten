@@ -48,7 +48,6 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         _logger = options.Logger();
         Serializer = options.Serializer();
 
-
         // Workaround to make database creation lazy so all StoreOptions
         // customizations can be done first
         if (Tenancy is DefaultTenancy d)
