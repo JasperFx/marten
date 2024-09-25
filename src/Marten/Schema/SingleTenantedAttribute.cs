@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using Marten.Storage;
+using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten.Schema;
 
@@ -15,5 +16,10 @@ public class SingleTenantedAttribute: MartenAttribute
     public override void Modify(DocumentMapping mapping)
     {
         mapping.TenancyStyle = TenancyStyle.Conjoined;
+        if (mapping.Partitioning != null && mapping.Partitioning is ListPartitioning lp &&
+            lp.PartitionManager is ManagedListPartitions)
+        {
+            mapping.Partitioning = null;
+        }
     }
 }

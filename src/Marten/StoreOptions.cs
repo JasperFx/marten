@@ -63,6 +63,7 @@ public enum TenantIdStyle
 public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDocumentSchemaResolver
 {
     public const int DefaultTimeout = 5;
+    internal const string? NoConnectionMessage = "No tenancy is configured! Ensure that you provided connection string in `AddMarten` method or called `UseNpgsqlDataSource`";
 
     internal static readonly Func<string, NpgsqlDataSourceBuilder> DefaultNpgsqlDataSourceBuilderFactory =
         connectionString => new NpgsqlDataSourceBuilder(connectionString);
@@ -396,7 +397,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     public ITenancy Tenancy
     {
         get => (_tenancy ?? throw new InvalidOperationException(
-                "No tenancy is configured! Ensure that you provided connection string in `AddMarten` method or called `UseNpgsqlDataSource`"))
+                NoConnectionMessage))
             .Value;
         set => _tenancy = new Lazy<ITenancy>(() => value);
     }
@@ -689,7 +690,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         if (_tenancy == null)
         {
             throw new InvalidOperationException(
-                "Tenancy not specified - provide either connection string or connection factory through Connection(..)");
+                NoConnectionMessage);
         }
     }
 
@@ -833,7 +834,11 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         /// <returns></returns>
         public PoliciesExpression AllDocumentsAreMultiTenanted()
         {
-            return ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
+            return ForAllDocuments(mapping =>
+            {
+                if (mapping.DocumentType.HasAttribute<SingleTenantedAttribute>()) return;
+                mapping.TenancyStyle = TenancyStyle.Conjoined;
+            });
         }
 
         /// <summary>
@@ -848,6 +853,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             return ForAllDocuments(mapping =>
             {
                 if (mapping.DocumentType == typeof(DeadLetterEvent)) return;
+                if (mapping.DocumentType.HasAttribute<SingleTenantedAttribute>()) return;
 
                 mapping.PrimaryKeyTenancyOrdering = PrimaryKeyTenancyOrdering.Id_Then_TenantId;
 
