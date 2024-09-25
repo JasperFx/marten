@@ -16,7 +16,7 @@ internal class CollectionIsEmpty: IReversibleWhereFragment
     {
         _member = member;
         var jsonPath = member.WriteJsonPath();
-        _text = $"d.data @? '$ ? (@.{jsonPath} == null || @.{jsonPath}.size() == 0)'";
+        _text = $"d.data @? '$ ? (@.{member.MemberName} == null || @.{member.MemberName}.size() == 0)'";
     }
 
     public ISqlFragment Reverse()
@@ -28,5 +28,4 @@ internal class CollectionIsEmpty: IReversibleWhereFragment
     {
         builder.Append(_text);
     }
-
 }

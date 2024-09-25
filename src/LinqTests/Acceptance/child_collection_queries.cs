@@ -128,7 +128,7 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
 
     public Target EmptyNumberArray { get; set; }
 
-    [Fact]
+        [Fact]
     public async Task is_empty_with_value_collection()
     {
         await withData();
@@ -146,6 +146,22 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
     }
 
     [Fact]
+    public async Task is_empty_with_object_collection()
+    {
+        await withData();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        var results = await theSession
+            .Query<Target>()
+            .Where(x => x.Children.IsEmpty())
+            .ToListAsync();
+
+        results.ShouldContain(EmptyChildren);
+        results.ShouldContain(NullChildren);
+    }
+
+        [Fact]
     public async Task is_not_empty_with_value_collection()
     {
         await withData();
@@ -161,7 +177,7 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
         results.ShouldNotContain(EmptyNumberArray);
         results.ShouldContain(HasNumberArray);
     }
-}
+    }
 }
 
 
