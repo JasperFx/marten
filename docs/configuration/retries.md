@@ -13,13 +13,16 @@ Out of the box, Marten is using Polly for resiliency on most operations with thi
 return builder
    .AddRetry(new()
     {
-        ShouldHandle = new PredicateBuilder().Handle<NpgsqlException>().Handle<MartenCommandException>().Handle<EventLoaderException>(),
+        ShouldHandle = new PredicateBuilder()
+            .Handle<NpgsqlException>()
+            .Handle<MartenCommandException>()
+            .Handle<EventLoaderException>(),
         MaxRetryAttempts = 3,
         Delay = TimeSpan.FromMilliseconds(50),
         BackoffType = DelayBackoffType.Exponential
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L13-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_polly_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L13-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_polly_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The general idea is to have _some_ level of retry with an exponential backoff on typical transient errors encountered

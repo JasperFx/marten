@@ -529,7 +529,32 @@ public class LimitedDoc
     public LowerLimit Lower { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L73-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_limited_doc' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L74-L89' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_limited_doc' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_limited_doc-1'></a>
+```cs
+[ValueObject<long>]
+public partial struct UpperLimit;
+
+[ValueObject<int>]
+public partial struct LowerLimit;
+
+[ValueObject<string>]
+public partial struct Description;
+
+[ValueObject<Guid>]
+public partial struct GuidId;
+
+public class LimitedDoc
+{
+    public Guid Id { get; set; }
+
+    public GuidId? ParentId { get; set; }
+    public UpperLimit? Upper { get; set; }
+    public LowerLimit Lower { get; set; }
+    public Description? Description { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/linq_querying_with_value_types.cs#L217-L241' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_limited_doc-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the `UpperLimit` and `LowerLimit` value types can be registered with Marten like so:
@@ -542,7 +567,17 @@ And the `UpperLimit` and `LowerLimit` value types can be registered with Marten 
 opts.RegisterValueType(typeof(UpperLimit));
 opts.RegisterValueType(typeof(LowerLimit));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L16-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_value_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L17-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_value_types' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_registering_value_types-1'></a>
+```cs
+// opts is a StoreOptions just like you'd have in
+// AddMarten() calls
+opts.RegisterValueType(typeof(GuidId));
+opts.RegisterValueType(typeof(UpperLimit));
+opts.RegisterValueType(typeof(LowerLimit));
+opts.RegisterValueType(typeof(Description));
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/linq_querying_with_value_types.cs#L16-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_value_types-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And that will enable you to seamlessly use the value types in LINQ expressions like so:
@@ -570,5 +605,53 @@ public async Task store_several_and_order_by()
     ordered.ShouldHaveTheSameElementsAs(doc1.Id, doc4.Id, doc3.Id, doc2.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L27-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_value_type_in_linq' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L28-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_value_type_in_linq' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_using_value_type_in_linq-1'></a>
+```cs
+[Fact]
+public async Task store_several_and_use_in_LINQ_order_by()
+{
+    var commonParentId = GuidId.From(Guid.NewGuid());
+    var doc1 = new LimitedDoc { ParentId = commonParentId, Lower = LowerLimit.From(1), Upper = UpperLimit.From(20), Description = Description.From("desc1") };
+    var doc2 = new LimitedDoc { Lower = LowerLimit.From(5), Upper = UpperLimit.From(25), Description = Description.From("desc3") };
+    var doc3 = new LimitedDoc { Lower = LowerLimit.From(4), Upper = UpperLimit.From(15), Description = Description.From("desc2") };
+    var doc4 = new LimitedDoc { ParentId = commonParentId, Lower = LowerLimit.From(3), Upper = UpperLimit.From(10), Description = Description.From("desc4") };
+
+    theSession.Store(doc1, doc2, doc3, doc4);
+    await theSession.SaveChangesAsync();
+
+    var orderedByIntBased = await theSession
+        .Query<LimitedDoc>()
+        .OrderBy(x => x.Lower)
+        .Select(x => x.Id)
+        .ToListAsync();
+
+    orderedByIntBased.ShouldHaveTheSameElementsAs(doc1.Id, doc4.Id, doc3.Id, doc2.Id);
+
+    var orderedByLongBased = await theSession
+        .Query<LimitedDoc>()
+        .OrderBy(x => x.Upper)
+        .Select(x => x.Id)
+        .ToListAsync();
+
+    orderedByLongBased.ShouldHaveTheSameElementsAs(doc4.Id, doc3.Id, doc1.Id, doc2.Id);
+
+    var orderedByStringBased = await theSession
+        .Query<LimitedDoc>()
+        .OrderBy(x => x.Description)
+        .Select(x => x.Id)
+        .ToListAsync();
+
+    orderedByStringBased.ShouldHaveTheSameElementsAs(doc1.Id, doc3.Id, doc2.Id, doc4.Id);
+
+    var orderedByGuidBased = await theSession
+        .Query<LimitedDoc>()
+        .OrderBy(x => x.ParentId)
+        .Select(x => x.Id)
+        .ToListAsync();
+
+    orderedByGuidBased.ShouldHaveTheSameElementsAs(doc1.Id, doc4.Id, doc2.Id, doc3.Id);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/linq_querying_with_value_types.cs#L29-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_value_type_in_linq-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

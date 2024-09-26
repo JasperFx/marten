@@ -38,10 +38,11 @@ public class MartenManagedTenantListPartitions : IDocumentPolicy
     {
         if (mapping is EventQueryMapping) return;
 
-        if (mapping.TenancyStyle == TenancyStyle.Conjoined && !mapping.DocumentType.HasAttribute<SingleTenantedAttribute>())
-        {
-            mapping.Partitioning =
-                new ListPartitioning { Columns = [TenantIdColumn.Name] }.UsePartitionManager(Partitions);
-        }
+        if (mapping.TenancyStyle == TenancyStyle.Single) return;
+        if (mapping.DocumentType.HasAttribute<SingleTenantedAttribute>()) return;
+        if (mapping.DisablePartitioningIfAny) return;
+
+        mapping.Partitioning =
+            new ListPartitioning { Columns = [TenantIdColumn.Name] }.UsePartitionManager(Partitions);
     }
 }

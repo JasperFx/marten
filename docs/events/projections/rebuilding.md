@@ -45,4 +45,10 @@ A long standing request has been to be able to rebuild only a single stream or s
 by stream id (or string key). Marten now has a (admittedly crude) ability to do so with this syntax
 on `IDocumentStore`:
 
-snippet: sample_rebuild_single_stream
+<!-- snippet: sample_rebuild_single_stream -->
+<a id='snippet-sample_rebuild_single_stream'></a>
+```cs
+await theStore.Advanced.RebuildSingleStreamAsync<SimpleAggregate>(streamId);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/rebuilding_a_single_stream_projection.cs#L29-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild_single_stream' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->

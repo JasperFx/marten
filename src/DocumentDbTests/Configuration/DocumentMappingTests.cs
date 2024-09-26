@@ -40,6 +40,13 @@ public class DocumentMappingTests
     }
 
     [Fact]
+    public void disable_partitioning_is_false_by_default()
+    {
+        var mapping = DocumentMapping.For<LongId>();
+        mapping.DisablePartitioningIfAny = true;
+    }
+
+    [Fact]
     public void default_PrimaryKeyTenancyOrdering_mode()
     {
         var mapping = DocumentMapping.For<Target>();

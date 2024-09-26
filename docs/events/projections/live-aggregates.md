@@ -426,7 +426,7 @@ var questParty = await theSession.Events
 
     .AggregateToAsync<QuestParty>();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/aggregateto_linq_operator_tests.cs#L41-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregateto_async_usage_with_linq' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/aggregateto_linq_operator_tests.cs#L43-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregateto_async_usage_with_linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 These methods are extension methods in the `Marten.Events` namespace.

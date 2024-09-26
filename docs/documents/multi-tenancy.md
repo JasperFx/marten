@@ -140,7 +140,7 @@ using (var session = store.QuerySession())
     session.Query<Target>().Count(x => x.TenantIsOneOf("Red")).ShouldBe(11);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L258-L325' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy_with_partitioning.cs#L268-L335' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample-1'></a>
 ```cs
 using var store = DocumentStore.For(opts =>
@@ -208,7 +208,7 @@ using (var session = store.QuerySession())
     session.Query<Target>().Count(x => x.TenantIsOneOf("Red")).ShouldBe(11);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L988-L1055' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L249-L316' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In some cases, You may want to disable using the default tenant for storing documents, set `StoreOptions.DefaultTenantUsageEnabled` to `false`. With this option disabled, Tenant (non-default tenant) should be passed via method argument or `SessionOptions` when creating a session using document store. Marten will throw an exception `DefaultTenantUsageDisabledException` if a session is created using default tenant.
@@ -244,14 +244,14 @@ filter:
 var actual = await query.Query<Target>().Where(x => x.TenantIsOneOf("Green", "Red") && x.Flag)
     .OrderBy(x => x.Id).Select(x => x.Id).ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L402-L408' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenant_is_one_of' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy_with_partitioning.cs#L412-L418' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenant_is_one_of' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_tenant_is_one_of-1'></a>
 ```cs
 // query data for a selected list of tenants
 var actual = await query.Query<Target>().Where(x => x.TenantIsOneOf("Green", "Red") && x.Flag)
     .OrderBy(x => x.Id).Select(x => x.Id).ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L1132-L1138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenant_is_one_of-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L393-L399' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenant_is_one_of-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or the `AnyTenant()` filter:
@@ -263,14 +263,14 @@ Or the `AnyTenant()` filter:
 var actual = query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
     .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L347-L353' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any_tenant' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy_with_partitioning.cs#L357-L363' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any_tenant' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_any_tenant-1'></a>
 ```cs
 // query data across all tenants
 var actual = query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
     .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L1077-L1083' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any_tenant-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L338-L344' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any_tenant-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Configuring Tenancy
@@ -428,7 +428,26 @@ document storage.
 
 Here's a sample of using this feature. First, the configuration is:
 
-snippet: sample_configure_marten_managed_tenant_partitioning
+<!-- snippet: sample_configure_marten_managed_tenant_partitioning -->
+<a id='snippet-sample_configure_marten_managed_tenant_partitioning'></a>
+```cs
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection(builder.Configuration.GetConnectionString("marten"));
+
+    // Make all document types use "conjoined" multi-tenancy -- unless explicitly marked with
+    // [SingleTenanted] or explicitly configured via the fluent interfce
+    // to be single-tenanted
+    opts.Policies.AllDocumentsAreMultiTenanted();
+
+    // It's required to explicitly tell Marten which database schema to put
+    // the mt_tenant_partitions table
+    opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L113-L130' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_marten_managed_tenant_partitioning' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The tenant to partition name mapping will be stored in a table created by Marten called `mt_tenant_partitions` with
 two columns:
@@ -439,7 +458,17 @@ two columns:
 Before the application is initialized, it's possible to load or delete data directly into these tables. At runtime, 
 you can add new tenant id partitions with this helper API on `IDocumentStore.Advanced`:
 
-snippet: sample_add_managed_tenants_at_runtime
+<!-- snippet: sample_add_managed_tenants_at_runtime -->
+<a id='snippet-sample_add_managed_tenants_at_runtime'></a>
+```cs
+await theStore
+    .Advanced
+    // This is ensuring that there are tenant id partitions for all multi-tenanted documents
+    // with the named tenant ids
+    .AddMartenManagedTenantsAsync(CancellationToken.None, "a1", "a2", "a3");
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L56-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add_managed_tenants_at_runtime' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The API above will try to add any missing table partitions to all known document types. There is also a separate overload
 that will take a `Dictionary<string, string>` argument that maps tenant ids to a named partition suffix. This might 
@@ -450,6 +479,31 @@ is a good default approach though.
 Just like with the codegen-ahead model, you may want to tell Marten about all possible document types
 upfront so that it is better able to add the partitions for each tenant id as needed.
 :::
+
+To exempt document types from having partitioned tables, such as for tables you expect to be so small that there's no value and maybe
+even harm by partitioning, you can use either an attribute on the document type:
+
+<!-- snippet: sample_using_DoNotPartitionAttribute -->
+<a id='snippet-sample_using_donotpartitionattribute'></a>
+```cs
+[DoNotPartition]
+public class DocThatShouldBeExempted1
+{
+    public Guid Id { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L184-L192' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_donotpartitionattribute' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+or exempt a single document type through the fluent interface:
+
+<!-- snippet: sample_exempt_from_partitioning_through_fluent_interface -->
+<a id='snippet-sample_exempt_from_partitioning_through_fluent_interface'></a>
+```cs
+opts.Schema.For<DocThatShouldBeExempted2>().DoNotPartition();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L169-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_exempt_from_partitioning_through_fluent_interface' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Implementation Details
 
