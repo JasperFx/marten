@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -62,6 +63,43 @@ public class marten_managed_tenant_id_partitioning: OneOffConfigurationsContext,
             .AddMartenManagedTenantsAsync(CancellationToken.None, "a1", "a2", "a3");
 
         #endregion
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var targetTable = await theStore.Storage.Database.ExistingTableFor(typeof(Target));
+        assertTableHasTenantPartitions(targetTable, "a1", "a2", "a3");
+
+        var userTable = await theStore.Storage.Database.ExistingTableFor(typeof(User));
+        assertTableHasTenantPartitions(userTable, "a1", "a2", "a3");
+
+    }
+
+    [Fact]
+    public async Task can_build_storage_with_dynamic_tenants_by_variable_tenant_and_suffix_mappings()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
+
+            opts.Schema.For<Target>();
+            opts.Schema.For<User>();
+        }, true);
+
+        var tenantId1 = Guid.NewGuid().ToString();
+        var tenantId2 = Guid.NewGuid().ToString();
+        var tenantId3 = Guid.NewGuid().ToString();
+
+        var names = new Dictionary<string, string>
+        {
+            { tenantId1, "a1" }, { tenantId2, "a2" }, { tenantId3, "a3" }
+        };
+
+        await theStore
+            .Advanced
+            // This is ensuring that there are tenant id partitions for all multi-tenanted documents
+            // with the named tenant ids
+            .AddMartenManagedTenantsAsync(CancellationToken.None, names);
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
