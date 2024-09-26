@@ -268,7 +268,9 @@ public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAss
     public UserGroupsAssignmentProjection()
     {
         Identity<UserRegistered>(x => x.UserId);
-        Identities<MultipleUsersAssignedToGroup>(x => x.UserIds);
+
+        // You can now use IEvent<T> as well as declaring this against the core event type
+        Identities<IEvent<MultipleUsersAssignedToGroup>>(x => x.Data.UserIds);
     }
 
     public void Apply(UserRegistered @event, UserGroupsAssignment view)
@@ -282,7 +284,7 @@ public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAss
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/simple_multi_stream_projection_wih_one_to_many.cs#L11-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-with-one-to-many' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/simple_multi_stream_projection_wih_one_to_many.cs#L12-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-with-one-to-many' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## View Projection with Custom Grouper

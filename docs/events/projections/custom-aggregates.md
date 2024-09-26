@@ -146,6 +146,29 @@ mechanism for `Live` aggregation, or have a simple workflow where the aggregate 
 going to be built strictly from the event data, you can override _only_ the `Apply()` method 
 as shown below:
 
-snippet: sample_using_simple_explicit_code_for_live_aggregation
+<!-- snippet: sample_using_simple_explicit_code_for_live_aggregation -->
+<a id='snippet-sample_using_simple_explicit_code_for_live_aggregation'></a>
+```cs
+public class ExplicitCounter: CustomProjection<SimpleAggregate, Guid>
+{
+    public override SimpleAggregate Apply(SimpleAggregate snapshot, IReadOnlyList<IEvent> events)
+    {
+        snapshot ??= new SimpleAggregate();
+        foreach (var e in events.Select(x => x.Data))
+        {
+            if (e is AEvent) snapshot.ACount++;
+            if (e is BEvent) snapshot.BCount++;
+            if (e is CEvent) snapshot.CCount++;
+            if (e is DEvent) snapshot.DCount++;
+        }
+
+        // You have to explicitly return the new value
+        // of the aggregated document no matter what!
+        return snapshot;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/using_explicit_code_for_live_aggregation.cs#L40-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_simple_explicit_code_for_live_aggregation' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Note that this usage is valid for all possible projection lifecycles now (`Live`, `Inline`, and `Async`).

@@ -129,10 +129,17 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         StoreOptions.applyPostPolicies(this);
 
         _schema = new Lazy<DocumentSchema>(() => new DocumentSchema(this));
+
+        if (DisablePartitioningIfAny)
+        {
+            Partitioning = null;
+        }
     }
 
     public PrimaryKeyTenancyOrdering PrimaryKeyTenancyOrdering { get; set; } =
         PrimaryKeyTenancyOrdering.TenantId_Then_Id;
+
+    public bool DisablePartitioningIfAny { get; set; } = false;
 
     public IPartitionStrategy? Partitioning { get; set; }
 

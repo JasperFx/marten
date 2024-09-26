@@ -133,7 +133,41 @@ To create aggregate projections that include events in multiple streams, see [Mu
 
 Marten supports using strong-typed identifiers as the document identity for aggregated documents. Here's an example:
 
-snippet: sample_using_strong_typed_identifier_for_aggregate_projections
+<!-- snippet: sample_using_strong_typed_identifier_for_aggregate_projections -->
+<a id='snippet-sample_using_strong_typed_identifier_for_aggregate_projections'></a>
+```cs
+[StronglyTypedId(Template.Guid)]
+public readonly partial struct PaymentId;
+
+public class Payment
+{
+    [JsonInclude] public PaymentId? Id { get; private set; }
+
+    [JsonInclude] public DateTimeOffset CreatedAt { get; private set; }
+
+    [JsonInclude] public PaymentState State { get; private set; }
+
+    public static Payment Create(IEvent<PaymentCreated> @event)
+    {
+        return new Payment
+        {
+            Id = new PaymentId(@event.StreamId), CreatedAt = @event.Data.CreatedAt, State = PaymentState.Created
+        };
+    }
+
+    public void Apply(PaymentCanceled @event)
+    {
+        State = PaymentState.Canceled;
+    }
+
+    public void Apply(PaymentVerified @event)
+    {
+        State = PaymentState.Verified;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_guid_based_strong_typed_id_for_aggregate_identity.cs#L104-L136' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_strong_typed_identifier_for_aggregate_projections' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Just note that for single stream aggregations, your strong typed identifier types will need to wrap either a `Guid` or
 `string` depending on your application's `StreamIdentity`. 
@@ -608,9 +642,44 @@ public class TripProjection: SingleStreamProjection<Trip>
     }
 
     // Other Apply/ShouldDelete methods
+
+    public override ValueTask RaiseSideEffects(IDocumentOperations operations, IEventSlice<Trip> slice)
+    {
+        // Emit other events or messages during asynchronous projection
+        // processing
+
+        // Access to the current state as of the projection
+        // event page being processed *right* now
+        var currentTrip = slice.Aggregate;
+
+        if (currentTrip.TotalMiles > 1000)
+        {
+            // Append a new event to this stream
+            slice.AppendEvent(new PassedThousandMiles());
+
+            // Append a new event to a different event stream by
+            // first specifying a different stream id
+            slice.AppendEvent(currentTrip.InsuranceCompanyId, new IncrementThousandMileTrips());
+
+            // "Publish" outgoing messages when the event page is successfully committed
+            slice.PublishMessage(new SendCongratulationsOnLongTrip(currentTrip.Id));
+
+            // And yep, you can make additional changes to Marten
+            operations.Store(new CompletelyDifferentDocument
+            {
+                Name = "New Trip Segment",
+                OriginalTripId = currentTrip.Id
+            });
+        }
+
+        // This usage has to be async in case you're
+        // doing any additional data access with the
+        // Marten operations
+        return new ValueTask();
+    }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TripProjectionWithEventMetadata.cs#L23-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregation_using_event_metadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TripProjectionWithEventMetadata.cs#L30-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregation_using_event_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Working with Event Metadata <Badge type="tip" text="7.12" />
@@ -737,7 +806,76 @@ following base classes:
 
 Here's an example of that method overridden in a projection:
 
-snippet: sample_aggregation_using_event_metadata
+<!-- snippet: sample_aggregation_using_event_metadata -->
+<a id='snippet-sample_aggregation_using_event_metadata'></a>
+```cs
+public class TripProjection: SingleStreamProjection<Trip>
+{
+    // Access event metadata through IEvent<T>
+    public Trip Create(IEvent<TripStarted> @event)
+    {
+        var trip = new Trip
+        {
+            Id = @event.StreamId, // Marten does this for you anyway
+            Started = @event.Timestamp,
+            CorrelationId = @event.Timestamp, // Open telemetry type tracing
+            Description = @event.Data.Description // Still access to the event body
+        };
+
+        // Use a custom header
+        if (@event.Headers.TryGetValue("customer", out var customerId))
+        {
+            trip.CustomerId = (string)customerId;
+        }
+
+        return trip;
+    }
+
+    public void Apply(TripEnded ended, Trip trip, IEvent @event)
+    {
+        trip.Ended = @event.Timestamp;
+    }
+
+    // Other Apply/ShouldDelete methods
+
+    public override ValueTask RaiseSideEffects(IDocumentOperations operations, IEventSlice<Trip> slice)
+    {
+        // Emit other events or messages during asynchronous projection
+        // processing
+
+        // Access to the current state as of the projection
+        // event page being processed *right* now
+        var currentTrip = slice.Aggregate;
+
+        if (currentTrip.TotalMiles > 1000)
+        {
+            // Append a new event to this stream
+            slice.AppendEvent(new PassedThousandMiles());
+
+            // Append a new event to a different event stream by
+            // first specifying a different stream id
+            slice.AppendEvent(currentTrip.InsuranceCompanyId, new IncrementThousandMileTrips());
+
+            // "Publish" outgoing messages when the event page is successfully committed
+            slice.PublishMessage(new SendCongratulationsOnLongTrip(currentTrip.Id));
+
+            // And yep, you can make additional changes to Marten
+            operations.Store(new CompletelyDifferentDocument
+            {
+                Name = "New Trip Segment",
+                OriginalTripId = currentTrip.Id
+            });
+        }
+
+        // This usage has to be async in case you're
+        // doing any additional data access with the
+        // Marten operations
+        return new ValueTask();
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TripProjectionWithEventMetadata.cs#L30-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregation_using_event_metadata' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 A couple important facts about this new functionality:
 

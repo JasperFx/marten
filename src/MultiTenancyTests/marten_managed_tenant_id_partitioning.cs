@@ -17,7 +17,7 @@ using Weasel.Postgresql.Tables.Partitioning;
 
 namespace MultiTenancyTests;
 
-public class marten_managed_tenant_id_partitioning : OneOffConfigurationsContext, IAsyncLifetime
+public class marten_managed_tenant_id_partitioning: OneOffConfigurationsContext, IAsyncLifetime
 {
     public async Task InitializeAsync()
     {
@@ -32,6 +32,7 @@ public class marten_managed_tenant_id_partitioning : OneOffConfigurationsContext
         {
             // being lazy here
         }
+
         await conn.CloseAsync();
     }
 
@@ -58,9 +59,9 @@ public class marten_managed_tenant_id_partitioning : OneOffConfigurationsContext
             .Advanced
             // This is ensuring that there are tenant id partitions for all multi-tenanted documents
             // with the named tenant ids
-            .AddMartenManagedTenantsAsync(CancellationToken.None,"a1", "a2", "a3");
+            .AddMartenManagedTenantsAsync(CancellationToken.None, "a1", "a2", "a3");
 
-            #endregion
+        #endregion
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
@@ -84,12 +85,12 @@ public class marten_managed_tenant_id_partitioning : OneOffConfigurationsContext
             opts.Schema.For<User>();
         }, true);
 
-        await theStore.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None,"a1", "a2", "a3");
+        await theStore.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "a1", "a2", "a3");
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         // Little overlap to prove it's idempotent
-        await theStore.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None,"a1", "b1", "b2");
+        await theStore.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "a1", "b1", "b2");
 
         var targetTable = await theStore.Storage.Database.ExistingTableFor(typeof(Target));
         assertTableHasTenantPartitions(targetTable, "a1", "a2", "a3", "b1", "b2");
@@ -126,10 +127,72 @@ public class marten_managed_tenant_id_partitioning : OneOffConfigurationsContext
             opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
         });
 
-#endregion
+        #endregion
+
 #endif
 
+
+
+
+    }
+
+    [Fact]
+    public void exempt_from_partitioning_through_attribute_usage()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
+
+            opts.Schema.For<Target>();
+            opts.Schema.For<User>();
+        }, true);
+
+        var mapping = theStore.Options.Storage.MappingFor(typeof(DocThatShouldBeExempted1));
+        mapping.DisablePartitioningIfAny.ShouldBeTrue();
+
+        var table = new DocumentTable(mapping);
+        table.Partitioning.ShouldBeNull();
+    }
+
+    [Fact]
+    public void exempt_from_partitioning_through_fluent_interface_usage()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
+
+            opts.Schema.For<Target>();
+            opts.Schema.For<User>();
+
+            #region sample_exempt_from_partitioning_through_fluent_interface
+
+            opts.Schema.For<DocThatShouldBeExempted2>().DoNotPartition();
+
+            #endregion
+        }, true);
+
+        var mapping = theStore.Options.Storage.MappingFor(typeof(DocThatShouldBeExempted2));
+        mapping.DisablePartitioningIfAny.ShouldBeTrue();
+
+        var table = new DocumentTable(mapping);
+        table.Partitioning.ShouldBeNull();
     }
 }
 
+#region sample_using_DoNotPartitionAttribute
+
+[DoNotPartition]
+public class DocThatShouldBeExempted1
+{
+    public Guid Id { get; set; }
+}
+
+#endregion
+
+public class DocThatShouldBeExempted2
+{
+    public Guid Id { get; set; }
+}
 

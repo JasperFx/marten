@@ -383,7 +383,7 @@ var session3 = store.LightweightSession(SessionOptions.ForTransaction(transactio
 using var scope = new TransactionScope();
 var session4 = store.LightweightSession(SessionOptions.ForCurrentTransaction());
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/ability_to_use_an_existing_connection_and_transaction.cs#L35-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_passing-in-existing-connections-and-transactions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/StressTests/ability_to_use_an_existing_connection_and_transaction.cs#L35-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_passing-in-existing-connections-and-transactions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Transaction Isolation Level

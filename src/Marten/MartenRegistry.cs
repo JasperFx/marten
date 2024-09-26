@@ -770,6 +770,21 @@ public class MartenRegistry
         }
 
         /// <summary>
+        /// Override any table partitioning policy on just this document type
+        /// </summary>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> DoNotPartition()
+        {
+            _builder.Alter = m =>
+            {
+                m.DisablePartitioningIfAny = true;
+                m.Partitioning = null;
+            };
+
+            return this;
+        }
+
+        /// <summary>
         ///     Configure the metadata storage for only this document type
         /// </summary>
         /// <param name="configure"></param>
@@ -916,6 +931,8 @@ public class MartenRegistry
                 }
             }
         }
+
+
     }
 }
 
