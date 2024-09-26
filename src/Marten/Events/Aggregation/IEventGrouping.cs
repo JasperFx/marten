@@ -59,4 +59,12 @@ public interface IEventGrouping<TId>
     /// <typeparam name="TSource"></typeparam>
     /// <typeparam name="TChild"></typeparam>
     void FanOutOnEach<TSource, TChild>(Func<TSource, IEnumerable<TChild>> fanOutFunc);
+
+    /// <summary>
+    ///     Add events to the grouping based on the outer IEvent<TEvent> envelope type
+    /// </summary>
+    /// <param name="singleIdSource"></param>
+    /// <param name="events"></param>
+    /// <typeparam name="TEvent"></typeparam>
+    void AddEventsWithMetadata<TEvent>(Func<IEvent<TEvent>, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events);
 }

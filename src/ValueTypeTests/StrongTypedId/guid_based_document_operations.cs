@@ -141,7 +141,7 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
     }
 
     [Fact]
-    public async Task load_many()
+    public async Task load_many_through_linq()
     {
         var invoice1 = new Invoice2{Name = Guid.NewGuid().ToString()};
         var invoice2 = new Invoice2{Name = Guid.NewGuid().ToString()};

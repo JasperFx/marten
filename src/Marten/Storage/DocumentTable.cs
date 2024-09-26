@@ -81,7 +81,17 @@ internal class DocumentTable: Table
         Indexes.AddRange(mapping.Indexes);
         ForeignKeys.AddRange(mapping.ForeignKeys);
 
-        Partitioning = mapping.Partitioning;
+        if (mapping.Partitioning != null)
+        {
+            if (mapping.Partitioning.Columns.All(HasColumn))
+            {
+                Partitioning = mapping.Partitioning;
+            }
+            else
+            {
+                Console.WriteLine($"Warning: Table {Identifier} is missing columns specified in the Partitioning scheme. This is probably an error in configuration");
+            }
+        }
 
         // Any column referred to in the partitioning has to be
         // part of the primary key
@@ -90,7 +100,7 @@ internal class DocumentTable: Table
             IgnorePartitionsInMigration = mapping.IgnorePartitions;
             foreach (var columnName in Partitioning.Columns)
             {
-                var column = this.ModifyColumn(columnName);
+                var column = ModifyColumn(columnName);
                 column.AsPrimaryKey();
             }
         }

@@ -11,4 +11,8 @@
         <ProjectReference Include="..\Marten.CommandLine\Marten.CommandLine.csproj"/>
         <ProjectReference Include="..\Marten\Marten.csproj"/>
     </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="JasperFx.CodeGeneration.Commands" Version="3.6.0" />
+    </ItemGroup>
 </Project>

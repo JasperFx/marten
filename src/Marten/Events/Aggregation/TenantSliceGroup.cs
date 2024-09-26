@@ -17,6 +17,7 @@ namespace Marten.Events.Aggregation;
 
 public interface ITenantSliceGroup<TId>: IEventGrouping<TId>, IDisposable
 {
+
 }
 
 /// <summary>
@@ -50,12 +51,7 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
 
     public void AddEvents<TEvent>(Func<TEvent, TId> singleIdSource, IEnumerable<IEvent> events)
     {
-        var matching = events.Where(x => x.Data is TEvent);
-        foreach (var @event in matching)
-        {
-            var id = singleIdSource((TEvent)@event.Data);
-            AddEvent(id, @event);
-        }
+        AddEventsWithMetadata<TEvent>(e => singleIdSource(e.Data), events);
     }
 
     /// <summary>
@@ -81,8 +77,19 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
 
     public void AddEvents<TEvent>(Func<TEvent, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events)
     {
-        var matching = events.Where(x => x.Data is TEvent)
-            .SelectMany(@event => multipleIdSource(@event.Data.As<TEvent>()).Select(id => (id, @event)));
+        AddEventsWithMetadata<TEvent>(e => multipleIdSource(e.Data), events);
+    }
+
+    /// <summary>
+    ///     Add events to the grouping based on the outer IEvent<TEvent> envelope type
+    /// </summary>
+    /// <param name="singleIdSource"></param>
+    /// <param name="events"></param>
+    /// <typeparam name="TEvent"></typeparam>
+    public void AddEventsWithMetadata<TEvent>(Func<IEvent<TEvent>, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events)
+    {
+        var matching = events.OfType<IEvent<TEvent>>()
+            .SelectMany(e => multipleIdSource(e).Select(id => (id, @event: e)));
 
         var groups = matching.GroupBy(x => x.id);
         foreach (var group in groups) AddEvents(group.Key, group.Select(x => x.@event));
@@ -167,6 +174,12 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
         }
 
         if (token.IsCancellationRequested)
+        {
+            return;
+        }
+
+        // Minor optimization
+        if (!beingFetched.Any())
         {
             return;
         }
