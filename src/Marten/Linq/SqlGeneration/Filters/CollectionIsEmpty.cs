@@ -15,7 +15,6 @@ internal class CollectionIsEmpty: IReversibleWhereFragment
     public CollectionIsEmpty(ICollectionMember member)
     {
         _member = member;
-        var jsonPath = member.WriteJsonPath();
         _text = $"d.data @? '$ ? (@.{member.MemberName} == null || @.{member.MemberName}.size() == 0)'";
     }
 
