@@ -125,7 +125,8 @@ public class BulkLoaderBuilder
             $"select {selectColumns}, transaction_timestamp() " +
             $"from {_tempTable} " +
             $"on conflict ({conflictColumns}) do update " +
-            $"set {updates}, {SchemaConstants.LastModifiedColumn} = excluded.{SchemaConstants.LastModifiedColumn}";
+            $"set {updates}, {SchemaConstants.LastModifiedColumn} = excluded.{SchemaConstants.LastModifiedColumn} " +
+            "where ( {0} )";
     }
 
     public string CreateTempTableForCopying()
