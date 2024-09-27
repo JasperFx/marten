@@ -121,7 +121,7 @@ public class BulkLoaderBuilder
             : "id";
 
         return
-            $"insert into {storageTable} ({columns}, {SchemaConstants.LastModifiedColumn}) " +
+            $"insert into {storageTable} as d ({columns}, {SchemaConstants.LastModifiedColumn}) " +
             $"select {selectColumns}, transaction_timestamp() " +
             $"from {_tempTable} " +
             $"on conflict ({conflictColumns}) do update " +
