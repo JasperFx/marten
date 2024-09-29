@@ -14,8 +14,14 @@ namespace Marten.Internal.CompiledQueries;
 
 internal class QueryCompiler
 {
+    /// <summary>
+    /// A list of <see cref="IParameterFinder"/>
+    /// </summary>
     internal static readonly IList<IParameterFinder> Finders = new List<IParameterFinder> { new EnumParameterFinder() };
 
+    /// <summary>
+    /// Query compiler static constructor that sets up unique value sources for
+    /// </summary>
     static QueryCompiler()
     {
         forType(count =>
@@ -113,9 +119,15 @@ internal class QueryCompiler
         });
     }
 
-    private static void forType<T>(Func<int, T[]> uniqueValues)
+    /// <summary>
+    /// Creates a new <see cref="SimpleParameterFinder{T}"/> using <paramref name="uniqueValueGenerator"/>
+    /// as a unique value source and adds it to <see cref="Finders"/>
+    /// </summary>
+    /// <param name="uniqueValueGenerator">Function that generates unique values</param>
+    /// <typeparam name="T">The type for the new <see cref="SimpleParameterFinder{T}"/> </typeparam>
+    private static void forType<T>(Func<int, T[]> uniqueValueGenerator)
     {
-        var finder = new SimpleParameterFinder<T>(uniqueValues);
+        var finder = new SimpleParameterFinder<T>(uniqueValueGenerator);
         Finders.Add(finder);
     }
 
@@ -135,6 +147,16 @@ internal class QueryCompiler
         return builder.BuildPlan(session, queryType, storeOptions);
     }
 
+    /// <summary>
+    /// Try to build a <see cref="CompiledQueryPlan"/> for the <paramref name="query"/>
+    /// </summary>
+    /// <param name="session">The <see cref="QuerySession"/> to build the command for</param>
+    /// <param name="query">The actual <see cref="ICompiledQuery{TDoc,TOut}"/> instance</param>
+    /// <typeparam name="TDoc">The input type of <see cref="ICompiledQuery{TDoc,TOut}"/></typeparam>
+    /// <typeparam name="TOut">The output type of <see cref="ICompiledQuery{TDoc,TOut}"/></typeparam>
+    /// <returns>A compiled query plan</returns>
+    /// <exception cref="InvalidCompiledQueryException">Thrown if the <paramref name="query"/> passed is invalid somehow</exception>
+    /// TODO: Document exceptions
     public static CompiledQueryPlan BuildQueryPlan<TDoc, TOut>(QuerySession session, ICompiledQuery<TDoc, TOut> query)
     {
         eliminateStringNulls(query);
@@ -161,9 +183,20 @@ internal class QueryCompiler
         return plan;
     }
 
+    /// <summary>
+    /// Uses the <see cref="ICompiledQuery{TDoc,TOut}"/> template <paramref name="queryTemplate"/> to build a template
+    /// database command. Also matches parameters against a provided <see cref="CompiledQueryPlan"/>.
+    /// </summary>
+    /// <param name="session">The session this command should be built for</param>
+    /// <param name="queryTemplate">The template to build the command from</param>
+    /// <param name="statistics">Where if any QueryStatistics should be saved</param>
+    /// <param name="queryPlan">The query plan to match parameters against</param>
+    /// <typeparam name="TDoc">The input type of the <see cref="ICompiledQuery{TDoc,TOut}"/></typeparam>
+    /// <typeparam name="TOut">The output type of the <see cref="ICompiledQuery{TDoc,TOut}"/></typeparam>
+    /// <returns>A <see cref="LinqQueryParser"/> built from the template containing the template command</returns>
     internal static LinqQueryParser BuildDatabaseCommand<TDoc, TOut>(QuerySession session,
         ICompiledQuery<TDoc, TOut> queryTemplate,
-        QueryStatistics statistics,
+        QueryStatistics? statistics,
         CompiledQueryPlan queryPlan)
     {
         Expression expression = queryTemplate.QueryIs();
@@ -187,6 +220,11 @@ internal class QueryCompiler
         return parser;
     }
 
+    /// <summary>
+    /// Sets all writable public string properties and fields that are <see langword="null"/> to <see cref="string.Empty"/>
+    /// </summary>
+    /// <remarks>This also sets all public static string properties and fields</remarks>
+    /// <param name="query">The query instance</param>
     private static void eliminateStringNulls(object query)
     {
         var type = query.GetType();
@@ -211,11 +249,18 @@ internal class QueryCompiler
     }
 
 
+    /// <summary>
+    /// Throws if <paramref name="plan"/> has any invalid members
+    /// </summary>
+    /// <param name="plan">The plan to check</param>
+    /// <param name="type">Unused</param>
+    /// <exception cref="InvalidCompiledQueryException">Thrown if any members on the <see cref="CompiledQueryPlan"/> are invalid </exception>
+    /// TODO: Should this actually throw if the members are unused during the actual query?
     private static void assertValidityOfQueryType(CompiledQueryPlan plan, Type type)
     {
         if (plan.InvalidMembers.Any())
         {
-            var members = plan.InvalidMembers.Select(x => $"{x.GetRawMemberType().NameInCode()} {x.Name}")
+            var members = plan.InvalidMembers.Select(x => $"{x.GetRawMemberType()?.NameInCode()} {x.Name}")
                 .Join(", ");
             var message = $"Members {members} cannot be used as parameters to a compiled query";
 
