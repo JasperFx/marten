@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Marten.Events.Aggregation.Rebuilds;
 using Marten.Events.Archiving;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -53,12 +54,17 @@ public partial class EventGraph: IFeatureSchema
 
         yield return sequence;
 
-        yield return new EventProgressionTable(DatabaseSchemaName);
+        yield return new EventProgressionTable(this);
 
         yield return new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint");
         yield return new ArchiveStreamFunction(this);
 
         yield return new QuickAppendEventFunction(this);
+
+        if (UseOptimizedProjectionRebuilds)
+        {
+            yield return new AggregateRebuildTable(this);
+        }
 
 
         foreach (var schemaSource in Options.Projections.All.OfType<IProjectionSchemaSource>())

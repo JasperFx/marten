@@ -323,6 +323,16 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
         throw new NotSupportedException();
     }
 
+    public void SetIdentityFromString(T document, string identityString)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void SetIdentityFromGuid(T document, Guid identityGuid)
+    {
+        throw new NotImplementedException();
+    }
+
     public override IEvent Wrap(object data)
     {
         return new Event<T>((T)data) { EventTypeName = EventTypeName, DotNetTypeName = DotNetTypeName };

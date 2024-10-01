@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
@@ -87,7 +88,10 @@ internal class ProjectionHost: IProjectionHost
 
                     try
                     {
+                        var stopwatch = new Stopwatch();
+                        stopwatch.Start();
                         await daemon.RebuildProjectionAsync(projectionName, shardTimeout.Value, token).ConfigureAwait(false);
+                        AnsiConsole.MarkupLine($"[green]Finished rebuilding {projectionName} in {stopwatch.ElapsedMilliseconds} ms[/]");
                     }
                     catch (Exception e)
                     {

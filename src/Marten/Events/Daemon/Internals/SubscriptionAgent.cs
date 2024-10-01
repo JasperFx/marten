@@ -146,6 +146,7 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         ErrorOptions = request.ErrorHandling;
         _runtime = request.Runtime;
         await _execution.EnsureStorageExists().ConfigureAwait(false);
+
         _commandBlock.Post(Command.Started(_tracker.HighWaterMark, request.Floor));
         _tracker.Publish(new ShardState(Name, request.Floor){Action = ShardAction.Started});
 
@@ -166,10 +167,20 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         try
         {
             await _execution.EnsureStorageExists().ConfigureAwait(false);
-            _tracker.Publish(new ShardState(Name, request.Floor) { Action = ShardAction.Started });
-            _commandBlock.Post(Command.Started(highWaterMark, request.Floor));
 
-            await _rebuild.Task.TimeoutAfterAsync((int)timeout.TotalMilliseconds).ConfigureAwait(false);
+            if (_execution.TryBuildReplayExecutor(out var executor))
+            {
+                _logger.LogInformation("Starting optimized rebuild for projection/subscription {ShardName}", Name.Identity);
+                var cancellationSource = new CancellationTokenSource(timeout);
+                await executor.StartAsync(request, this, cancellationSource.Token).ConfigureAwait(false);
+            }
+            else
+            {
+                _tracker.Publish(new ShardState(Name, request.Floor) { Action = ShardAction.Started });
+                _commandBlock.Post(Command.Started(highWaterMark, request.Floor));
+
+                await _rebuild.Task.TimeoutAfterAsync((int)timeout.TotalMilliseconds).ConfigureAwait(false);
+            }
         }
         catch (Exception e)
         {
@@ -235,6 +246,21 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
                 HighWaterMark = command.HighWaterMark;
                 LastCommitted = LastEnqueued = command.LastCommitted;
 
+                if (LastCommitted == 0 && HighWaterMark > 0 && _execution.TryBuildReplayExecutor(out var executor))
+                {
+                    try
+                    {
+                        _logger.LogInformation("Starting optimized rebuild for projection/subscription {ShardName}", Name.Identity);
+                        await executor.StartAsync(new SubscriptionExecutionRequest(0, ShardExecutionMode.CatchUp, ErrorOptions, _runtime), this, _cancellation.Token).ConfigureAwait(false);
+                        _logger.LogInformation("Finished with optimized rebuild for projection/subscription {ShardName}, proceeding to normal, continuous operation", Name.Identity);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Error trying to perform an optimized rebuild/replay of subscription {ShardName}", Name.Identity);
+                    }
+                }
+
+
                 break;
 
             case CommandType.RangeCompleted:
@@ -299,6 +325,10 @@ public class SubscriptionAgent: ISubscriptionAgent, IAsyncDisposable
         try
         {
             var page = await _loader.LoadAsync(request, _cancellation.Token).ConfigureAwait(false);
+
+            // Passing this along helps the individual executions "know" when to switch from
+            // continuous mode to "catch up" and vice versa
+            page.HighWaterMark = HighWaterMark;
 
             if (_logger.IsEnabled(LogLevel.Debug) && Mode == ShardExecutionMode.Continuous)
             {

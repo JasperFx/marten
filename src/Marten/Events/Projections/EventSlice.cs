@@ -52,7 +52,7 @@ public class EventSlice<TDoc, TId>: IEventSlice, IComparer<IEvent>, IEventSlice<
     }
 
     public EventSlice(TId id, IQuerySession querySession, IEnumerable<IEvent>? events = null): this(id,
-        new Tenant(Tenancy.DefaultTenantId, querySession.Database), events)
+        new Tenant(querySession.TenantId, querySession.Database), events)
     {
     }
 

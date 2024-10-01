@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
@@ -8,6 +6,7 @@ using Marten.Events.Projections;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Storage;
+using Marten.Util;
 
 namespace Marten.Events.Aggregation;
 
@@ -20,11 +19,18 @@ public interface IAggregationRuntime: IProjection
 
     ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase database, EventRange range,
         CancellationToken cancellationToken);
+
+    bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor executor);
+
+    IAggregateProjection Projection { get; }
 }
 
 public interface IAggregationRuntime<TDoc, TId>: IAggregationRuntime where TDoc : notnull where TId : notnull
 {
     IDocumentStorage<TDoc, TId> Storage { get; }
+
+    IEventSlicer<TDoc, TId> Slicer { get; }
+
 
     ValueTask ApplyChangesAsync(DocumentSessionBase session,
         EventSlice<TDoc, TId> slice, CancellationToken cancellation,
@@ -32,5 +38,7 @@ public interface IAggregationRuntime<TDoc, TId>: IAggregationRuntime where TDoc 
 
     bool IsNew(EventSlice<TDoc, TId> slice);
 
-    IEventSlicer<TDoc, TId> Slicer { get; }
+    IAggregateCache<TId, TDoc> CacheFor(Tenant tenant);
+
+    TId IdentityFromEvent(IEvent e);
 }

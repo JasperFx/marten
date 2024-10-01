@@ -73,6 +73,50 @@ public class custom_aggregation_in_async_daemon : OneOffConfigurationsContext
             .ShouldBe(new CustomAggregate{Id = 3, ACount = 0, BCount = 1, CCount = 0, DCount = 1});
 
     }
+
+    [Fact]
+    public async Task run_end_to_end_with_caching()
+    {
+        StoreOptions(opts =>
+        {
+            var myCustomAggregation = new MyCustomProjection(){CacheLimitPerTenant = 100};
+            opts.Projections.Add(myCustomAggregation, ProjectionLifecycle.Async);
+            opts.Logger(new TestOutputMartenLogger(_output));
+        });
+
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+
+        appendCustomEvent(1, 'a');
+        appendCustomEvent(1, 'a');
+        appendCustomEvent(1, 'b');
+        appendCustomEvent(1, 'c');
+        appendCustomEvent(1, 'd');
+        appendCustomEvent(2, 'a');
+        appendCustomEvent(2, 'a');
+        appendCustomEvent(3, 'b');
+        appendCustomEvent(3, 'd');
+        appendCustomEvent(1, 'a');
+        appendCustomEvent(1, 'a');
+
+        await theSession.SaveChangesAsync();
+
+        using var daemon = await theStore.BuildProjectionDaemonAsync(logger:new TestLogger<IProjection>(_output));
+        await daemon.StartAllAsync();
+
+        await  daemon.Tracker.WaitForShardState("Custom:All", 11);
+
+        var agg1 = await theSession.LoadAsync<CustomAggregate>(1);
+        agg1
+            .ShouldBe(new CustomAggregate{Id = 1, ACount = 4, BCount = 1, CCount = 1, DCount = 1});
+
+        (await theSession.LoadAsync<CustomAggregate>(2))
+            .ShouldBe(new CustomAggregate{Id = 2, ACount = 2, BCount = 0, CCount = 0, DCount = 0});
+
+        (await theSession.LoadAsync<CustomAggregate>(3))
+            .ShouldBe(new CustomAggregate{Id = 3, ACount = 0, BCount = 1, CCount = 0, DCount = 1});
+
+    }
 }
 
 

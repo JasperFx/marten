@@ -36,6 +36,7 @@ namespace DaemonTests.TestingSupport
         {
             ProjectionName = "TripCustomName";
             TeardownDataOnRebuild = true;
+            Options.BatchSize = 5000;
         }
     }
 

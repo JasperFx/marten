@@ -49,8 +49,15 @@ public class Optimizations
             // during command handling with some significant
             // caveats
             opts.Events.UseIdentityMapForInlineAggregates = true;
+
+
+            // Opts into a mode where Marten is able to rebuild single
+            // stream projections faster by building one stream at a time
+            // Does require new table migrations for Marten 7 users though
+            opts.Events.UseOptimizedProjectionRebuilds = true;
         });
 
         #endregion
     }
+
 }

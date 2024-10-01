@@ -14,6 +14,12 @@ public class EventGraphTests
     private readonly EventGraph theGraph = new EventGraph(new StoreOptions());
 
     [Fact]
+    public void use_optimized_projection_rebuilds_is_false_by_default()
+    {
+        theGraph.UseOptimizedProjectionRebuilds.ShouldBeFalse();
+    }
+
+    [Fact]
     public void build_event()
     {
         var slayed = new MonsterSlayed {Name = "The Gorgon"};

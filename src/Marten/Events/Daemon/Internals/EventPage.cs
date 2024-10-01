@@ -13,6 +13,8 @@ public class EventPage: List<IEvent>
     public long Floor { get; }
     public long Ceiling { get; private set; }
 
+    public long HighWaterMark { get; set; }
+
     public void CalculateCeiling(int batchSize, long highWaterMark, int skippedEvents = 0)
     {
         Ceiling = (Count + skippedEvents) == batchSize

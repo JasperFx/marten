@@ -95,6 +95,18 @@ internal class HighWaterAgent: IDisposable
             {
                 statistics = await _detector.Detect(_token).ConfigureAwait(false);
             }
+            catch (ObjectDisposedException ex)
+            {
+                if (ex.ObjectName.EqualsIgnoreCase("Npgsql.PoolingDataSource") && _token.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                _logger.LogError(ex, "Failed while trying to detect high water statistics for database {Name}", _detector.DatabaseName);
+                await Task.Delay(_settings.SlowPollingTime, _token).ConfigureAwait(false);
+                continue;
+
+            }
             catch (Exception e)
             {
                 _logger.LogError(e, "Failed while trying to detect high water statistics for database {Name}", _detector.DatabaseName);

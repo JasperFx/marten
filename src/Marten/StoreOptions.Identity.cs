@@ -68,6 +68,12 @@ public partial class StoreOptions
         return ValueTypes.FirstOrDefault(x => x.OuterType == idType);
     }
 
+    internal ValueTypeInfo FindOrCreateValueType(Type idType)
+    {
+        var valueType = ValueTypes.FirstOrDefault(x => x.OuterType == idType);
+        return valueType ?? RegisterValueType(idType);
+    }
+
     /// <summary>
     /// Register a custom value type with Marten. Doing this enables Marten
     /// to use this type correctly within LINQ expressions. The "value type"

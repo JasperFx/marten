@@ -148,6 +148,17 @@ public class DayProjection: MultiStreamProjection<Day, int>
         FanOut<Travel, Stop>(x => x.Data.Stops);
 
         ProjectionName = "Day";
+
+        // Opt into 2nd level caching of up to 100
+        // most recently encountered aggregates as a
+        // performance optimization
+        CacheLimitPerTenant = 1000;
+
+        // With large event stores of relatively small
+        // event objects, moving this number up from the
+        // default can greatly improve throughput and especially
+        // improve projection rebuild times
+        Options.BatchSize = 5000;
     }
 
     public void Apply(Day day, TripStarted e) => day.Started++;

@@ -9,8 +9,11 @@ using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Metadata;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Marten.Util;
+using NSubstitute;
 using Shouldly;
 using Xunit;
 
@@ -35,6 +38,65 @@ public class CustomProjectionTests
         projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
 
         mapping.UseVersionFromMatchingStream.ShouldBe(useVersionFromStream);
+    }
+
+    [Fact]
+    public void caches_aggregate_caches_correctly()
+    {
+        var projection = new MyCustomProjection();
+        var db = Substitute.For<IMartenDatabase>();
+        db.Identifier.Returns("main");
+        var tenant1 = new Tenant("one", db);
+        var tenant2 = new Tenant("two", db);
+        var tenant3 = new Tenant("three", db);
+
+        var cache1 = projection.CacheFor(tenant1);
+        var cache2 = projection.CacheFor(tenant2);
+        var cache3 = projection.CacheFor(tenant3);
+
+        projection.CacheFor(tenant1).ShouldBeTheSameAs(cache1);
+        projection.CacheFor(tenant2).ShouldBeTheSameAs(cache2);
+        projection.CacheFor(tenant3).ShouldBeTheSameAs(cache3);
+
+        cache1.ShouldNotBeTheSameAs(cache2);
+        cache1.ShouldNotBeTheSameAs(cache3);
+        cache2.ShouldNotBeTheSameAs(cache3);
+    }
+
+    [Fact]
+    public void build_nullo_cache_with_no_limit()
+    {
+        var projection = new MyCustomProjection();
+        projection.CacheLimitPerTenant = 0;
+
+        var db = Substitute.For<IMartenDatabase>();
+        db.Identifier.Returns("main");
+        var tenant1 = new Tenant("one", db);
+        var tenant2 = new Tenant("two", db);
+        var tenant3 = new Tenant("three", db);
+
+        projection.CacheFor(tenant1).ShouldBeOfType<NulloAggregateCache<int, CustomAggregate>>();
+        projection.CacheFor(tenant2).ShouldBeOfType<NulloAggregateCache<int, CustomAggregate>>();
+        projection.CacheFor(tenant3).ShouldBeOfType<NulloAggregateCache<int, CustomAggregate>>();
+
+    }
+
+    [Fact]
+    public void build_real_cache_with_limit()
+    {
+        var projection = new MyCustomProjection();
+        projection.CacheLimitPerTenant = 1000;
+
+        var db = Substitute.For<IMartenDatabase>();
+        db.Identifier.Returns("main");
+        var tenant1 = new Tenant("one", db);
+        var tenant2 = new Tenant("two", db);
+        var tenant3 = new Tenant("three", db);
+
+        projection.CacheFor(tenant1).ShouldBeOfType<RecentlyUsedCache<int, CustomAggregate>>().Limit.ShouldBe(projection.CacheLimitPerTenant);
+        projection.CacheFor(tenant2).ShouldBeOfType<RecentlyUsedCache<int, CustomAggregate>>().Limit.ShouldBe(projection.CacheLimitPerTenant);
+        projection.CacheFor(tenant3).ShouldBeOfType<RecentlyUsedCache<int, CustomAggregate>>().Limit.ShouldBe(projection.CacheLimitPerTenant);
+
     }
 
     [Fact]

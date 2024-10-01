@@ -126,10 +126,7 @@ internal class QueryEventStore: IQueryEventStore
         var aggregate = aggregator.Build(events, _session, state);
 
         var storage = _session.StorageFor<T>();
-        if (storage is IDocumentStorage<T, Guid> s)
-        {
-            s.SetIdentity(aggregate, streamId);
-        }
+        storage.SetIdentityFromGuid(aggregate, streamId);
 
         return aggregate;
     }
@@ -152,10 +149,7 @@ internal class QueryEventStore: IQueryEventStore
         }
 
         var storage = _session.StorageFor<T>();
-        if (storage is IDocumentStorage<T, Guid> s)
-        {
-            s.SetIdentity(aggregate, streamId);
-        }
+        storage.SetIdentityFromGuid(aggregate, streamId);
 
         return aggregate;
     }
@@ -173,10 +167,7 @@ internal class QueryEventStore: IQueryEventStore
         var aggregate = aggregator.Build(events, _session, state);
 
         var storage = _session.StorageFor<T>();
-        if (storage is IDocumentStorage<T, string> s)
-        {
-            s.SetIdentity(aggregate, streamKey);
-        }
+        storage.SetIdentityFromString(aggregate, streamKey);
 
         return aggregate;
     }
@@ -195,10 +186,7 @@ internal class QueryEventStore: IQueryEventStore
         var aggregate = await aggregator.BuildAsync(events, _session, state, token).ConfigureAwait(false);
 
         var storage = _session.StorageFor<T>();
-        if (storage is IDocumentStorage<T, string> s)
-        {
-            s.SetIdentity(aggregate, streamKey);
-        }
+        storage.SetIdentityFromString(aggregate, streamKey);
 
         return aggregate;
     }

@@ -2,6 +2,13 @@ using System;
 
 namespace Marten.Events.Daemon;
 
+public enum ShardMode
+{
+    none,
+    continuous,
+    rebuilding
+}
+
 /// <summary>
 ///     Point in time state of a single projection shard or the high water mark
 /// </summary>
@@ -30,6 +37,12 @@ public class ShardState
     {
         Action = action;
     }
+
+    public long RebuildThreshold { get; set; }
+
+    public ShardMode Mode { get; set; } = ShardMode.continuous;
+
+    public int AssignedNodeNumber { get; set; } = 0;
 
     public ShardAction Action { get; set; } = ShardAction.Updated;
 

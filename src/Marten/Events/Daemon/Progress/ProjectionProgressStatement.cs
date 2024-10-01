@@ -17,7 +17,16 @@ internal class ProjectionProgressStatement: Statement
 
     protected override void configure(ICommandBuilder builder)
     {
-        builder.Append($"select name, last_seq_id from {_events.DatabaseSchemaName}.mt_event_progression");
+        if (_events.UseOptimizedProjectionRebuilds)
+        {
+            builder.Append($"select name, last_seq_id, mode, rebuild_threshold, assigned_node from {_events.DatabaseSchemaName}.mt_event_progression");
+        }
+        else
+        {
+            builder.Append($"select name, last_seq_id from {_events.DatabaseSchemaName}.mt_event_progression");
+        }
+
+
         if (Name != null)
         {
             builder.Append(" where name = ");

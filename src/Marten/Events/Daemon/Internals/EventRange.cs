@@ -114,4 +114,12 @@ public class EventRange
         events.RemoveAll(e => e.Sequence == eventSequence);
         Events = events;
     }
+
+    public static EventRange CombineShallow(params EventRange[] ranges)
+    {
+        var floor = ranges.Min(x => x.SequenceFloor);
+        var ceiling = ranges.Max(x => x.SequenceCeiling);
+
+        return new EventRange(ranges[0].ShardName, floor, ceiling);
+    }
 }

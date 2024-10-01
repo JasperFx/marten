@@ -113,7 +113,7 @@ public interface IProjectionDaemon: IDisposable
     /// <returns></returns>
     Task WaitForNonStaleData(TimeSpan timeout);
 
-    long HighWaterMark();
+    public long HighWaterMark();
     AgentStatus StatusFor(string shardName);
 
     /// <summary>

@@ -35,15 +35,11 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     public ShardExecutionMode Mode { get; }
 
-    public bool IsDisposed()
-    {
-        return _session == null;
-    }
+    public bool ShouldApplyListeners { get; set; }
 
-    internal ProjectionUpdateBatch(EventGraph events, DaemonSettings settings,
-        DocumentSessionBase? session, EventRange range, CancellationToken token, ShardExecutionMode mode)
+    internal ProjectionUpdateBatch(DaemonSettings settings,
+        DocumentSessionBase? session, ShardExecutionMode mode, CancellationToken token)
     {
-        Range = range;
         _settings = settings;
         _session = session ?? throw new ArgumentNullException(nameof(session));
         _token = token;
@@ -55,12 +51,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             });
 
         startNewPage(session);
-
-        var progressOperation = range.BuildProgressionOperation(events);
-        Queue.Post(progressOperation);
     }
-
-    public EventRange Range { get; }
 
     public Task WaitForCompletion()
     {
@@ -216,7 +207,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     public async Task PostUpdateAsync(IMartenSession session)
     {
-        if (shouldApplyListeners())
+        if (!ShouldApplyListeners)
         {
             return;
         }
@@ -232,14 +223,9 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         }
     }
 
-    private bool shouldApplyListeners()
-    {
-        return Mode == ShardExecutionMode.Rebuild || !Range.Events.Any();
-    }
-
     public async Task PreUpdateAsync(IMartenSession session)
     {
-        if (shouldApplyListeners())
+        if (!ShouldApplyListeners)
         {
             return;
         }

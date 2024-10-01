@@ -38,6 +38,8 @@ public interface IProjectionSource: IReadOnlyProjectionData
     /// into Marten's parallel blue/green deployment of this projection.
     /// </summary>
     public uint ProjectionVersion { get; set; }
+
+    bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor executor);
 }
 
 /// <summary>
@@ -48,3 +50,5 @@ public interface IProjectionSchemaSource
 {
     IEnumerable<ISchemaObject> CreateSchemaObjects(EventGraph events);
 }
+
+

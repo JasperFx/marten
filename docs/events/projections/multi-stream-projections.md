@@ -501,6 +501,17 @@ public class DayProjection: MultiStreamProjection<Day, int>
         FanOut<Travel, Stop>(x => x.Data.Stops);
 
         ProjectionName = "Day";
+
+        // Opt into 2nd level caching of up to 100
+        // most recently encountered aggregates as a
+        // performance optimization
+        CacheLimitPerTenant = 1000;
+
+        // With large event stores of relatively small
+        // event objects, moving this number up from the
+        // default can greatly improve throughput and especially
+        // improve projection rebuild times
+        Options.BatchSize = 5000;
     }
 
     public void Apply(Day day, TripStarted e) => day.Started++;
@@ -531,7 +542,7 @@ public class DayProjection: MultiStreamProjection<Day, int>
     public void Apply(Day day, Stop e) => day.Stops++;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/ViewProjectionTests.cs#L132-L181' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/ViewProjectionTests.cs#L132-L192' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Using Custom Grouper with Fan Out Feature for Event Projections

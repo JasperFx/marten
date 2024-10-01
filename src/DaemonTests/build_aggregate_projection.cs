@@ -73,12 +73,66 @@ public class build_aggregate_projection: DaemonContext
     }
 
     [Fact]
+    public async Task end_to_end_with_events_already_published_with_caching()
+    {
+        NumberOfStreams = 10;
+
+        Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
+
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new TripProjectionWithCustomName(){CacheLimitPerTenant = 100}, ProjectionLifecycle.Async);
+            x.Logger(new TestOutputMartenLogger(_output));
+        }, true);
+
+        var agent = await StartDaemon();
+
+        await PublishSingleThreaded();
+
+        var shard = theStore.Options.Projections.AllShards().Single();
+        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 60.Seconds());
+
+        await agent.StartAgentAsync(shard.Name.Identity, CancellationToken.None);
+
+        await waiter;
+
+        await CheckAllExpectedAggregatesAgainstActuals();
+    }
+
+    [Fact]
     public async Task build_with_multi_tenancy()
     {
         StoreOptions(x =>
         {
             x.Events.TenancyStyle = TenancyStyle.Conjoined;
             x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
+            x.Schema.For<Trip>().MultiTenanted();
+        }, true);
+
+        UseMixOfTenants(5);
+
+        Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
+
+        var agent = await StartDaemon();
+
+        var shard = theStore.Options.Projections.AllShards().Single();
+        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 60.Seconds());
+
+        await PublishSingleThreaded();
+
+        await waiter;
+
+        await CheckAllExpectedAggregatesAgainstActuals("a");
+        await CheckAllExpectedAggregatesAgainstActuals("b");
+    }
+
+    [Fact]
+    public async Task build_with_multi_tenancy_with_caching()
+    {
+        StoreOptions(x =>
+        {
+            x.Events.TenancyStyle = TenancyStyle.Conjoined;
+            x.Projections.Add(new TripProjectionWithCustomName(){CacheLimitPerTenant = 100}, ProjectionLifecycle.Async);
             x.Schema.For<Trip>().MultiTenanted();
         }, true);
 
@@ -113,6 +167,29 @@ public class build_aggregate_projection: DaemonContext
         await PublishSingleThreaded();
 
         var waiter = agent.Tracker.WaitForShardState(new ShardState("TripCustomName:All", NumberOfEvents), 30.Seconds());
+
+        await waiter;
+        Logger.LogDebug("About to rebuild TripCustomName:All");
+        await agent.RebuildProjectionAsync("TripCustomName", CancellationToken.None);
+        Logger.LogDebug("Done rebuilding TripCustomName:All");
+        await CheckAllExpectedAggregatesAgainstActuals();
+    }
+
+    [Fact]
+    public async Task rebuild_the_projection_with_caching()
+    {
+        NumberOfStreams = 15;
+
+        Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
+
+        StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName(){CacheLimitPerTenant = 100}, ProjectionLifecycle.Async), true);
+
+        var agent = await StartDaemon();
+
+        // Gotta do this to have it mixed up
+        await PublishMultiThreaded(3);
+
+        var waiter = agent.Tracker.WaitForShardState(new ShardState("TripCustomName:All", NumberOfEvents), 120.Seconds());
 
         await waiter;
         Logger.LogDebug("About to rebuild TripCustomName:All");

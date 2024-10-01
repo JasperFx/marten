@@ -106,7 +106,7 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
 
         var handler = (IQueryHandler<IReadOnlyList<ShardState>>)new ListQueryHandler<ShardState>(
             new ProjectionProgressStatement(Options.EventGraph),
-            new ShardStateSelector());
+            new ShardStateSelector(Options.EventGraph));
 
         await using var conn = CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
@@ -135,7 +135,7 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
         var statement = new ProjectionProgressStatement(Options.EventGraph) { Name = name };
 
         var handler = new OneResultHandler<ShardState>(statement,
-            new ShardStateSelector(), true, false);
+            new ShardStateSelector(Options.EventGraph), true, false);
 
         await using var conn = CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);

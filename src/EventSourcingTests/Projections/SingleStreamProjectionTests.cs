@@ -1,9 +1,13 @@
+using EventSourcingTests.Aggregation;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Testing.Documents;
+using Marten.Util;
+using NSubstitute;
 using Shouldly;
 using Xunit;
 

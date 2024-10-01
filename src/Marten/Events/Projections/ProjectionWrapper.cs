@@ -70,4 +70,10 @@ internal class ProjectionWrapper: IProjectionSource
     /// into Marten's parallel blue/green deployment of this projection.
     /// </summary>
     public uint ProjectionVersion { get; set; } = 1;
+
+    public bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor executor)
+    {
+        executor = default;
+        return false;
+    }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -49,8 +50,12 @@ internal class SubscriptionExecution: ISubscriptionExecution
         {
             await using var parent = (DocumentSessionBase)_store.OpenSession(SessionOptions.ForDatabase(_database));
 
-            var batch = new ProjectionUpdateBatch(_store.Events, _store.Options.Projections, parent,
-                range, _cancellation.Token, Mode);
+            var batch = new ProjectionUpdateBatch(_store.Options.Projections, parent, Mode, _cancellation.Token)            {
+                ShouldApplyListeners = Mode == ShardExecutionMode.Continuous && range.Events.Any()
+            };;
+
+            // Mark the progression
+            batch.Queue.Post(range.BuildProgressionOperation(_store.Events));
 
             await using var session = new ProjectionDocumentSession(_store, batch,
                 new SessionOptions
@@ -75,7 +80,7 @@ internal class SubscriptionExecution: ISubscriptionExecution
             if (Mode == ShardExecutionMode.Continuous)
             {
                 _logger.LogInformation("Subscription '{ShardIdentity}': Executed for {Range}",
-                    ShardIdentity, batch.Range);
+                    ShardIdentity, range);
             }
 
             range.Agent.Metrics.UpdateProcessed(range.Size);
@@ -144,4 +149,9 @@ internal class SubscriptionExecution: ISubscriptionExecution
 
     public string DatabaseName => _database.Identifier;
     public ShardExecutionMode Mode { get; set; } = ShardExecutionMode.Continuous;
+    public bool TryBuildReplayExecutor(out IReplayExecutor executor)
+    {
+        executor = default;
+        return false;
+    }
 }

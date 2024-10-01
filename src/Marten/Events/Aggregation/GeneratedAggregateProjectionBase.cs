@@ -61,6 +61,14 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
         }
     }
 
+    // TODO -- duplicated with AggregationRuntime, and that's an ick.
+    /// <summary>
+    /// If more than 0 (the default), this is the maximum number of aggregates
+    /// that will be cached in a 2nd level, most recently used cache during async
+    /// projection. Use this to potentially improve async projection throughput
+    /// </summary>
+    public int CacheLimitPerTenant { get; set; } = 0;
+
     /// <summary>
     /// Use to create "side effects" when running an aggregation (single stream, custom projection, multi-stream)
     /// asynchronously in a continuous mode (i.e., not in rebuilds)

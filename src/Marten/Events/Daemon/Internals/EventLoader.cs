@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using Marten.Events.Aggregation.Rebuilds;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Services;
@@ -82,6 +84,8 @@ internal sealed class EventLoader: IEventLoader
 
         var skippedEvents = 0;
 
+        var runtime = request.Runtime;
+
         await using var reader = await session.ExecuteReaderAsync(_command, token).ConfigureAwait(false);
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
@@ -102,7 +106,7 @@ internal sealed class EventLoader: IEventLoader
             {
                 if (request.ErrorOptions.SkipUnknownEvents)
                 {
-                    request.Runtime.Logger.EventUnknown(e.EventTypeName);
+                    runtime.Logger.EventUnknown(e.EventTypeName);
                     skippedEvents++;
                 }
                 else
@@ -115,9 +119,9 @@ internal sealed class EventLoader: IEventLoader
             {
                 if (request.ErrorOptions.SkipSerializationErrors)
                 {
-                    request.Runtime.Logger.EventDeserializationException(e.InnerException!.GetType().Name!, e.Sequence);
-                    request.Runtime.Logger.EventDeserializationExceptionDebug(e);
-                    await request.Runtime.RecordDeadLetterEventAsync(e.ToDeadLetterEvent(request.Name)).ConfigureAwait(false);
+                    runtime.Logger.EventDeserializationException(e.InnerException!.GetType().Name!, e.Sequence);
+                    runtime.Logger.EventDeserializationExceptionDebug(e);
+                    await runtime.RecordDeadLetterEventAsync(e.ToDeadLetterEvent(request.Name)).ConfigureAwait(false);
                     skippedEvents++;
                 }
                 else

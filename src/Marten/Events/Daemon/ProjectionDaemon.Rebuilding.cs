@@ -116,7 +116,6 @@ public partial class ProjectionDaemon
         // Teardown the current state
        await teardownExistingProjectionProgress(source, token, agents).ConfigureAwait(false);
 
-
         if (token.IsCancellationRequested)
         {
             return;

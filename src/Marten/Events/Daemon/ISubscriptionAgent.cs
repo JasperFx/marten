@@ -21,6 +21,9 @@ public interface ISubscriptionController
     /// </summary>
     ErrorHandlingOptions ErrorOptions { get; }
 
+    ShardName Name { get; }
+    AsyncOptions Options { get; }
+
     void MarkSuccess(long processedCeiling);
 
     /// <summary>
@@ -55,7 +58,6 @@ public interface ISubscriptionController
 // This is public because it's used by the generated code
 public interface ISubscriptionAgent: ISubscriptionController
 {
-    ShardName Name { get; }
     void MarkHighWater(long sequence);
 
     long Position { get; }
@@ -75,7 +77,6 @@ public interface ISubscriptionAgent: ISubscriptionController
     Task RecordDeadLetterEventAsync(DeadLetterEvent @event);
 
     DateTimeOffset? PausedTime { get; }
-    AsyncOptions Options { get; }
     ISubscriptionMetrics Metrics { get; }
     Task ReplayAsync(SubscriptionExecutionRequest request, long highWaterMark, TimeSpan timeout);
 }

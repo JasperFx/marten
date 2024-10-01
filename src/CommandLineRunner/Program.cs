@@ -50,6 +50,9 @@ public static class Program
                 {
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                     opts.DatabaseSchemaName = "cli";
+                    opts.DisableNpgsqlLogging = true;
+
+                    opts.Events.UseOptimizedProjectionRebuilds = true;
 
                     opts.MultiTenantedWithSingleServer(
                         ConnectionSource.ConnectionString,
@@ -60,7 +63,7 @@ public static class Program
                     // *try* to use pre-generated code at runtime
                     opts.GeneratedCodeMode = TypeLoadMode.Auto;
 
-                    opts.Schema.For<Activity>().AddSubClass<DaemonTests.TestingSupport.Trip>();
+                    //opts.Schema.For<Activity>().AddSubClass<DaemonTests.TestingSupport.Trip>();
 
                     // You have to register all persisted document types ahead of time
                     // RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()
@@ -86,7 +89,7 @@ public static class Program
                         .Add(new SimpleProjection(), ProjectionLifecycle.Inline);
 
                     // This is actually important to register "live" aggregations too for the code generation
-                    opts.Projections.LiveStreamAggregation<Trip>();
+                    //opts.Projections.LiveStreamAggregation<Trip>();
                 }).AddAsyncDaemon(DaemonMode.Solo);
             });
     }

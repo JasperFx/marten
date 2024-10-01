@@ -67,6 +67,13 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     }
 
     /// <summary>
+    /// Opt into some performance optimizations for projection rebuilds for both single stream and
+    /// multi-stream projections. This will result in new table columns and a potential database
+    /// migration. This will be a default in Marten 8.
+    /// </summary>
+    public bool UseOptimizedProjectionRebuilds { get; set; }
+
+    /// <summary>
     /// Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
     /// *if* you are also aggressively using event stream archiving
     /// </summary>

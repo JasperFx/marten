@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Marten.Events.Aggregation.Rebuilds;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
@@ -14,6 +16,7 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Sessions;
 using Marten.Storage;
+using Marten.Util;
 
 namespace Marten.Events.Aggregation;
 
@@ -46,6 +49,8 @@ public abstract class CustomProjection<TDoc, TId>:
             Slicer = (IEventSlicer<TDoc, TId>)new ByStreamKey<TDoc>();
         }
     }
+
+    public IAggregateProjection Projection => this;
 
     public bool IsSingleStream()
     {
@@ -104,6 +109,18 @@ public abstract class CustomProjection<TDoc, TId>:
         var groups = await Slicer.SliceAsyncEvents(session, range.Events).ConfigureAwait(false);
 
         return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);
+    }
+
+    public bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor executor)
+    {
+        if (Slicer is ISingleStreamSlicer)
+        {
+            executor = new SingleStreamRebuilder<TDoc, TId>(store, database, this);
+            return true;
+        }
+
+        executor = default;
+        return false;
     }
 
     /// <summary>
@@ -178,7 +195,6 @@ public abstract class CustomProjection<TDoc, TId>:
     /// <param name="range"></param>
     /// <param name="cancellation"></param>
     /// <returns></returns>
-    /// <exception cref="NotSupportedException"></exception>
     public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> GroupEventRange(DocumentStore store,
         IMartenDatabase database,
         EventRange range, CancellationToken cancellation)
@@ -350,6 +366,42 @@ public abstract class CustomProjection<TDoc, TId>:
 
         return slice.Aggregate;
     }
+
+    // TODO -- duplicated with AggregationRuntime, and that's an ick.
+    /// <summary>
+    /// If more than 0 (the default), this is the maximum number of aggregates
+    /// that will be cached in a 2nd level, most recently used cache during async
+    /// projection. Use this to potentially improve async projection throughput
+    /// </summary>
+    public int CacheLimitPerTenant { get; set; } = 0;
+
+    private ImHashMap<Tenant, IAggregateCache<TId, TDoc>> _caches = ImHashMap<Tenant, IAggregateCache<TId, TDoc>>.Empty;
+    private readonly object _cacheLock = new();
+
+    public IAggregateCache<TId, TDoc> CacheFor(Tenant tenant)
+    {
+        if (_caches.TryFind(tenant, out var cache)) return cache;
+
+        lock (_cacheLock)
+        {
+            if (_caches.TryFind(tenant, out cache)) return cache;
+
+            cache = CacheLimitPerTenant == 0
+                ? new NulloAggregateCache<TId, TDoc>()
+                : new RecentlyUsedCache<TId, TDoc> { Limit = CacheLimitPerTenant };
+
+            _caches = _caches.AddOrUpdate(tenant, cache);
+
+            return cache;
+        }
+    }
+
+    public TId IdentityFromEvent(IEvent e)
+    {
+        // TODO -- come back here.
+        throw new NotImplementedException();
+    }
 }
+
 
 
