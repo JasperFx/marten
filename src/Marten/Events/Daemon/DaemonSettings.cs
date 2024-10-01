@@ -45,6 +45,8 @@ public interface IReadOnlyDaemonSettings
 
 public class DaemonSettings: IReadOnlyDaemonSettings
 {
+    public const int RebuildBatchSize = 1000;
+
     /// <summary>
     ///     Register session listeners that will ONLY be applied within the asynchronous daemon updates.
     /// </summary>

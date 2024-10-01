@@ -69,4 +69,11 @@ public interface IReadOnlyEventStoreOptions
     /// aggregation projections
     /// </summary>
     IMessageOutbox MessageOutbox { get; set; }
+
+    /// <summary>
+    /// Opt into some performance optimizations for projection rebuilds for both single stream and
+    /// multi-stream projections. This will result in new table columns and a potential database
+    /// migration. This will be a default in Marten 8.
+    /// </summary>
+    bool UseOptimizedProjectionRebuilds { get; set; }
 }

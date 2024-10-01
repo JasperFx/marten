@@ -272,6 +272,16 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.HardDeleteForDocument(document, tenantId);
     }
 
+    public void SetIdentityFromString(T document, string identityString)
+    {
+        _parent.SetIdentityFromString(document, identityString);
+    }
+
+    public void SetIdentityFromGuid(T document, Guid identityGuid)
+    {
+        _parent.SetIdentityFromGuid(document, identityGuid);
+    }
+
     private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query, IMartenSession session)
     {
         yield return toBasicWhere();

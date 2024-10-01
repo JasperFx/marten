@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
-using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
@@ -151,6 +150,7 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
     private async Task processEventSlices(IAggregationRuntime<TDoc, TId> runtime,
         IDocumentStore store, CancellationToken token)
     {
+        var cache = runtime.CacheFor(Tenant);
         var beingFetched = new List<EventSlice<TDoc, TId>>();
         foreach (var slice in Slices)
         {
@@ -167,14 +167,23 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
                 // Don't use it any farther, it's ready to do its thing
                 Slices.Remove(slice.Id);
             }
+            else if (cache.TryFind(slice.Id, out var aggregate))
+            {
+                slice.Aggregate = aggregate;
+                _builder.Post(slice);
+
+                // Don't use it any farther, it's ready to do its thing
+                Slices.Remove(slice.Id);
+            }
             else
             {
                 beingFetched.Add(slice);
             }
         }
 
-        if (token.IsCancellationRequested)
+        if (token.IsCancellationRequested || !beingFetched.Any())
         {
+            cache.CompactIfNecessary();
             return;
         }
 
@@ -204,6 +213,7 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
             if (dict.TryGetValue(slice.Id, out var aggregate))
             {
                 slice.Aggregate = aggregate;
+                cache.Store(slice.Id, aggregate);
             }
 
             _builder?.Post(slice);

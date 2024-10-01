@@ -152,6 +152,9 @@ public static class Program
                 {
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                     opts.DatabaseSchemaName = "cli";
+                    opts.DisableNpgsqlLogging = true;
+
+                    opts.Events.UseOptimizedProjectionRebuilds = true;
 
                     opts.MultiTenantedWithSingleServer(
                         ConnectionSource.ConnectionString,
@@ -162,7 +165,7 @@ public static class Program
                     // *try* to use pre-generated code at runtime
                     opts.GeneratedCodeMode = TypeLoadMode.Auto;
 
-                    opts.Schema.For<Activity>().AddSubClass<DaemonTests.TestingSupport.Trip>();
+                    //opts.Schema.For<Activity>().AddSubClass<DaemonTests.TestingSupport.Trip>();
 
                     // You have to register all persisted document types ahead of time
                     // RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()
@@ -188,13 +191,13 @@ public static class Program
                         .Add(new SimpleProjection(), ProjectionLifecycle.Inline);
 
                     // This is actually important to register "live" aggregations too for the code generation
-                    opts.Projections.LiveStreamAggregation<Trip>();
+                    //opts.Projections.LiveStreamAggregation<Trip>();
                 }).AddAsyncDaemon(DaemonMode.Solo);
             });
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L28-L95' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L28-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Okay, after all that, there should be a new command line option called `codegen` for your project. Assuming

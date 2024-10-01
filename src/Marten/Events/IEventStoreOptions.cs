@@ -74,6 +74,13 @@ namespace Marten.Events
         public IMessageOutbox MessageOutbox { get; set; }
 
         /// <summary>
+        /// Opt into some performance optimizations for projection rebuilds for both single stream and
+        /// multi-stream projections. This will result in new table columns and a potential database
+        /// migration. This will be a default in Marten 8.
+        /// </summary>
+        public bool UseOptimizedProjectionRebuilds { get; set; }
+
+        /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
         ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
         ///     the event type. It can also be used for the event namespace migration.

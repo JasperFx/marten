@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.RuntimeCompiler;
+using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Storage;
@@ -64,6 +65,20 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
         generateIfNecessary(store);
 
         return buildProjectionObject(store);
+    }
+
+    public bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor executor)
+    {
+        generateIfNecessary(store);
+
+        var projection = buildProjectionObject(store);
+        if (projection is IAggregationRuntime runtime)
+        {
+            return runtime.TryBuildReplayExecutor(store, database, out executor);
+        }
+
+        executor = default;
+        return false;
     }
 
 

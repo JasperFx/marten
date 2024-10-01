@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -46,6 +47,13 @@ public class GroupedProjectionExecution: ISubscriptionExecution
     }
 
     public ShardExecutionMode Mode { get; set; }
+    public bool TryBuildReplayExecutor(out IReplayExecutor executor)
+    {
+        if (_store.Events.UseOptimizedProjectionRebuilds && _source.TryBuildReplayExecutor(_store, _database, out executor)) return true;
+
+        executor = default;
+        return false;
+    }
 
     public string ProjectionShardIdentity { get; }
 
@@ -162,7 +170,7 @@ public class GroupedProjectionExecution: ISubscriptionExecution
             if (Mode == ShardExecutionMode.Continuous)
             {
                 _logger.LogInformation("Shard '{ProjectionShardIdentity}': Executed updates for {Range}",
-                    ProjectionShardIdentity, batch.Range);
+                    ProjectionShardIdentity, group.Range);
             }
         }
         catch (Exception e)
@@ -172,7 +180,7 @@ public class GroupedProjectionExecution: ISubscriptionExecution
                 _logger.LogError(e,
                     "Failure in shard '{ProjectionShardIdentity}' trying to execute an update batch for {Range}",
                     ProjectionShardIdentity,
-                    batch.Range);
+                    group.Range);
                 throw;
             }
         }
@@ -207,8 +215,13 @@ public class GroupedProjectionExecution: ISubscriptionExecution
         ProjectionUpdateBatch batch = default;
         try
         {
-            batch = new ProjectionUpdateBatch(_store.Events, _store.Options.Projections, session,
-                group.Range, group.Cancellation, group.Agent.Mode);
+            batch = new ProjectionUpdateBatch(_store.Options.Projections, session, group.Agent.Mode, group.Cancellation)
+            {
+                ShouldApplyListeners = group.Agent.Mode == ShardExecutionMode.Continuous && group.Range.Events.Any()
+            };
+
+            // Mark the progression
+            batch.Queue.Post(group.Range.BuildProgressionOperation(_store.Events));
 
             await group.ConfigureUpdateBatch(batch).ConfigureAwait(false);
             await batch.WaitForCompletion().ConfigureAwait(false);

@@ -18,6 +18,7 @@ using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
 using Marten.Linq.SqlGeneration.Filters;
 using Marten.Schema;
+using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Storage.Metadata;
@@ -46,6 +47,10 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     private readonly string[] _selectFields;
     private ISqlFragment? _defaultWhere;
     protected Action<T, TId> _setter;
+    protected Action<T, string> _setFromString = (_, _) => throw new NotSupportedException();
+    protected Action<T, Guid> _setFromGuid = (_, _) => throw new NotSupportedException();
+
+
     private readonly DocumentMapping _document;
 
     public DocumentStorage(StorageStyle storageStyle, DocumentMapping document)
@@ -84,6 +89,27 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         UseNumericRevisions = document.UseNumericRevisions;
 
         _setter = LambdaBuilder.Setter<T, TId>(document.IdMember)!;
+        if (typeof(TId) == typeof(Guid))
+        {
+            _setFromGuid = _setter.As<Action<T, Guid>>();
+        }
+        else if (typeof(TId) == typeof(string))
+        {
+            _setFromString = _setter.As<Action<T, string>>();
+        }
+        else if (document.IdStrategy is ValueTypeIdGeneration valueType)
+        {
+            if (valueType.SimpleType == typeof(Guid))
+            {
+                var converter = valueType.CreateConverter<TId, Guid>();
+                _setFromGuid = (doc, guid) => _setter(doc, converter(guid));
+            }
+            else if (valueType.SimpleType == typeof(string))
+            {
+                var converter = valueType.CreateConverter<TId, string>();
+                _setFromString = (doc, s) => _setter(doc, converter(s));
+            }
+        }
 
         DeleteFragment = _mapping.DeleteStyle == DeleteStyle.Remove
             ? new HardDelete(this)
@@ -162,6 +188,16 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     public void SetIdentity(T document, TId identity)
     {
         _setter(document, identity);
+    }
+
+    public void SetIdentityFromString(T document, string identityString)
+    {
+        _setFromString(document, identityString);
+    }
+
+    public void SetIdentityFromGuid(T document, Guid identityGuid)
+    {
+        _setFromGuid(document, identityGuid);
     }
 
 

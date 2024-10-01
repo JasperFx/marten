@@ -112,6 +112,8 @@ public interface IDocumentStorage<T>: IDocumentStorage where T : notnull
     void RemoveDirtyTracker(IMartenSession session, object id);
     IDeletion HardDeleteForDocument(T document, string tenantId);
 
+    void SetIdentityFromString(T document, string identityString);
+    void SetIdentityFromGuid(T document, Guid identityGuid);
 }
 
 public interface IDocumentStorage<T, TId>: IDocumentStorage<T> where T : notnull where TId : notnull

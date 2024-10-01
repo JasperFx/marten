@@ -159,4 +159,11 @@ internal class ScopedProjectionWrapper<TProjection> : IProjection, IProjectionSo
     }
 
     public uint ProjectionVersion { get; set; }
+
+    public bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor executor)
+    {
+        // TODO -- this might still be possible
+        executor = default;
+        return false;
+    }
 }

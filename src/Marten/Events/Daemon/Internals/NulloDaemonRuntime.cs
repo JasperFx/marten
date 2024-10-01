@@ -13,4 +13,11 @@ public class NulloDaemonRuntime: IDaemonRuntime
     }
 
     public ILogger Logger { get; } = NullLogger.Instance;
+
+    public long CurrentHighWaterMark { get; set; }
+
+    public long HighWaterMark()
+    {
+        return CurrentHighWaterMark;
+    }
 }

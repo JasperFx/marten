@@ -50,7 +50,6 @@ public interface IAggregateProjection // THIS NEEDS TO REMAIN PUBLIC
 
     AsyncOptions Options { get; }
 
-
     /// <summary>
     /// Specify that this projection is a non 1 version of the original projection definition to opt
     /// into Marten's parallel blue/green deployment of this projection.
@@ -66,4 +65,12 @@ public interface IAggregateProjection // THIS NEEDS TO REMAIN PUBLIC
     /// <param name="mapping"></param>
     /// <param name="storeOptions"></param>
     void ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions);
+
+    // TODO -- duplicated with AggregationRuntime, and that's an ick.
+    /// <summary>
+    /// If more than 0 (the default), this is the maximum number of aggregates
+    /// that will be cached in a 2nd level, most recently used cache during async
+    /// projection. Use this to potentially improve async projection throughput
+    /// </summary>
+    public int CacheLimitPerTenant { get; set; }
 }

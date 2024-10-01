@@ -109,6 +109,16 @@ public abstract class EventDocumentStorage: IEventStorage
         throw new NotSupportedException();
     }
 
+    public void SetIdentityFromString(IEvent document, string identityString)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void SetIdentityFromGuid(IEvent document, Guid identityGuid)
+    {
+        throw new NotImplementedException();
+    }
+
     public string FromObject { get; }
     public Type SelectedType => typeof(IEvent);
 
