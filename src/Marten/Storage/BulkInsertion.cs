@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -29,8 +28,9 @@ internal class BulkInsertion: IDisposable
     }
 
     public void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000, string upsertCondition = null)
+        int batchSize = 1000, string updateCondition = null)
     {
+        ValidateupdateCondition<T>(mode, updateCondition);
         if (typeof(T) == typeof(object))
         {
             BulkInsertDocuments(documents.OfType<object>(), mode);
@@ -45,7 +45,7 @@ internal class BulkInsertion: IDisposable
 
             try
             {
-                bulkInsertDocuments(documents, batchSize, conn, mode, upsertCondition);
+                bulkInsertDocuments(documents, batchSize, conn, mode, updateCondition);
 
                 tx.Commit();
             }
@@ -61,8 +61,9 @@ internal class BulkInsertion: IDisposable
         Transaction transaction,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly,
         int batchSize = 1000,
-        string upsertCondition = null)
+        string updateCondition = null)
     {
+        ValidateupdateCondition<T>(mode, updateCondition);
         if (typeof(T) == typeof(object))
         {
             BulkInsertDocumentsEnlistTransaction(documents.OfType<object>(), transaction, mode);
@@ -74,16 +75,17 @@ internal class BulkInsertion: IDisposable
             using var conn = _tenant.Database.CreateConnection();
             conn.Open();
             conn.EnlistTransaction(transaction);
-            bulkInsertDocuments(documents, batchSize, conn, mode, upsertCondition);
+            bulkInsertDocuments(documents, batchSize, conn, mode, updateCondition);
         }
     }
 
     public async Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode, int batchSize,
-        string upsertCondition = null, CancellationToken cancellation = default)
+        string updateCondition = null, CancellationToken cancellation = default)
     {
+        ValidateupdateCondition<T>(mode, updateCondition);
         if (typeof(T) == typeof(object))
         {
-            await BulkInsertDocumentsAsync(documents.OfType<object>(), mode, batchSize, upsertCondition, cancellation)
+            await BulkInsertDocumentsAsync(documents.OfType<object>(), mode, batchSize, cancellation)
                 .ConfigureAwait(false);
         }
         else
@@ -96,7 +98,7 @@ internal class BulkInsertion: IDisposable
             var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
             try
             {
-                await bulkInsertDocumentsAsync(documents, batchSize, conn, mode, upsertCondition, cancellation).ConfigureAwait(false);
+                await bulkInsertDocumentsAsync(documents, batchSize, conn, mode, updateCondition, cancellation).ConfigureAwait(false);
 
                 await tx.CommitAsync(cancellation).ConfigureAwait(false);
             }
@@ -109,12 +111,13 @@ internal class BulkInsertion: IDisposable
     }
 
     public async Task BulkInsertEnlistTransactionAsync<T>(IReadOnlyCollection<T> documents, Transaction transaction,
-        BulkInsertMode mode, int batchSize, string upsertCondition = null, CancellationToken cancellation = default)
+        BulkInsertMode mode, int batchSize, string updateCondition = null, CancellationToken cancellation = default)
     {
+        ValidateupdateCondition<T>(mode, updateCondition);
         if (typeof(T) == typeof(object))
         {
             await BulkInsertDocumentsEnlistTransactionAsync(documents.OfType<object>(), transaction, mode, batchSize,
-                upsertCondition, cancellation).ConfigureAwait(false);
+                cancellation).ConfigureAwait(false);
         }
         else
         {
@@ -122,12 +125,12 @@ internal class BulkInsertion: IDisposable
             await using var conn = _tenant.Database.CreateConnection();
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
             conn.EnlistTransaction(transaction);
-            await bulkInsertDocumentsAsync(documents, batchSize, conn, mode, upsertCondition, cancellation).ConfigureAwait(false);
+            await bulkInsertDocumentsAsync(documents, batchSize, conn, mode, updateCondition, cancellation).ConfigureAwait(false);
         }
     }
 
     public void BulkInsertDocuments(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000, string upsertCondition = null)
+        int batchSize = 1000, string updateCondition = null)
     {
         var groups = bulkInserters(documents);
 
@@ -153,7 +156,7 @@ internal class BulkInsertion: IDisposable
         Transaction transaction,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly,
         int batchSize = 1000,
-        string upsertCondition = null)
+        string updateCondition = null)
     {
         var groups = bulkInserters(documents);
         var types = documentTypes(documents);
@@ -187,7 +190,7 @@ internal class BulkInsertion: IDisposable
     }
 
     public async Task BulkInsertDocumentsAsync(IEnumerable<object> documents, BulkInsertMode mode, int batchSize,
-        string upsertCondition = null, CancellationToken cancellation = default)
+        CancellationToken cancellation = default)
     {
         var groups = bulkInserters(documents);
 
@@ -199,7 +202,7 @@ internal class BulkInsertion: IDisposable
         try
         {
             foreach (var group in groups)
-                await group.BulkInsertAsync(batchSize, conn, this, mode, upsertCondition, cancellation).ConfigureAwait(false);
+                await group.BulkInsertAsync(batchSize, conn, this, mode, cancellation).ConfigureAwait(false);
 
             await tx.CommitAsync(cancellation).ConfigureAwait(false);
         }
@@ -215,8 +218,7 @@ internal class BulkInsertion: IDisposable
         Transaction transaction,
         BulkInsertMode mode,
         int batchSize,
-        string upsertCondition = null,
-        CancellationToken cancellation = default
+        CancellationToken cancellation
     )
     {
         var groups = bulkInserters(documents);
@@ -231,14 +233,12 @@ internal class BulkInsertion: IDisposable
         conn.EnlistTransaction(transaction);
 
         foreach (var group in groups)
-            await group.BulkInsertAsync(batchSize, conn, this, mode, upsertCondition, cancellation).ConfigureAwait(false);
+            await group.BulkInsertAsync(batchSize, conn, this, mode, cancellation).ConfigureAwait(false);
     }
 
     private void bulkInsertDocuments<T>(IReadOnlyCollection<T> documents, int batchSize, NpgsqlConnection conn,
-        BulkInsertMode mode, string upsertCondition)
+        BulkInsertMode mode, string updateCondition)
     {
-        ValidateUpsertCondition(mode, upsertCondition);
-
         var provider = _tenant.Database.Providers.StorageFor<T>();
         var loader = provider.BulkLoader!;
 
@@ -280,17 +280,15 @@ internal class BulkInsertion: IDisposable
         }
         else if (mode == BulkInsertMode.OverwriteExisting)
         {
-            var upsert = string.Format(loader.UpsertFromTempTable(), upsertCondition ?? "1 = 1");
+            var upsert = string.Format(loader.UpsertFromTempTable(), updateCondition ?? "1 = 1");
 
             conn.CreateCommand(upsert).ExecuteNonQuery();
         }
     }
 
     private async Task bulkInsertDocumentsAsync<T>(IReadOnlyCollection<T> documents, int batchSize,
-        NpgsqlConnection conn, BulkInsertMode mode, string upsertCondition, CancellationToken cancellation)
+        NpgsqlConnection conn, BulkInsertMode mode, string updateCondition, CancellationToken cancellation)
     {
-        ValidateUpsertCondition(mode, upsertCondition);
-
         var provider = _tenant.Database.Providers.StorageFor<T>();
         var loader = provider.BulkLoader!;
 
@@ -332,18 +330,28 @@ internal class BulkInsertion: IDisposable
         }
         else if (mode == BulkInsertMode.OverwriteExisting)
         {
-            var upsert = string.Format(loader.UpsertFromTempTable(), upsertCondition ?? "1 = 1");
+            var upsert = string.Format(loader.UpsertFromTempTable(), updateCondition ?? "1 = 1");
 
 
             await conn.CreateCommand(upsert).ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
         }
     }
 
-    private static void ValidateUpsertCondition(BulkInsertMode mode, string upsertCondition)
+    private static void ValidateupdateCondition<T>(BulkInsertMode mode, string updateCondition)
     {
-        if (mode != BulkInsertMode.OverwriteExisting && !string.IsNullOrWhiteSpace(upsertCondition))
+        if (updateCondition is null)
         {
-            throw new ArgumentException($"An upsert condition can only be provided when using {BulkInsertMode.OverwriteExisting}", nameof(upsertCondition));
+            return;
+        }
+
+        if (typeof(T) == typeof(object))
+        {
+            throw new ArgumentException($"An update condition can not be used on a collection of <object>, use a collection of a specific document type instead.", nameof(updateCondition));
+        }
+
+        if (mode != BulkInsertMode.OverwriteExisting)
+        {
+            throw new ArgumentException($"An update condition can only be provided when using {BulkInsertMode.OverwriteExisting}", nameof(updateCondition));
         }
     }
 
@@ -376,10 +384,10 @@ internal class BulkInsertion: IDisposable
 
     internal interface IBulkInserter
     {
-        void BulkInsert(int batchSize, NpgsqlConnection connection, BulkInsertion parent, BulkInsertMode mode, string upsertCondition = null);
+        void BulkInsert(int batchSize, NpgsqlConnection connection, BulkInsertion parent, BulkInsertMode mode);
 
         Task BulkInsertAsync(int batchSize, NpgsqlConnection conn, BulkInsertion bulkInsertion, BulkInsertMode mode,
-            string upsertCondition, CancellationToken cancellation);
+            CancellationToken cancellation);
     }
 
     internal class BulkInserter<T>: IBulkInserter
@@ -392,19 +400,18 @@ internal class BulkInsertion: IDisposable
         }
 
         public void BulkInsert(int batchSize, NpgsqlConnection connection, BulkInsertion parent,
-            BulkInsertMode mode, string upsertCondition = null)
+            BulkInsertMode mode)
         {
             parent._tenant.Database.EnsureStorageExists(typeof(T));
-            parent.bulkInsertDocuments(_documents, batchSize, connection, mode, upsertCondition);
+            parent.bulkInsertDocuments(_documents, batchSize, connection, mode, null);
         }
 
         public async Task BulkInsertAsync(int batchSize, NpgsqlConnection conn, BulkInsertion parent,
             BulkInsertMode mode,
-            string upsertCondition,
             CancellationToken cancellation)
         {
             await parent._tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
-            await parent.bulkInsertDocumentsAsync(_documents, batchSize, conn, mode, upsertCondition, cancellation)
+            await parent.bulkInsertDocumentsAsync(_documents, batchSize, conn, mode, null, cancellation)
                 .ConfigureAwait(false);
         }
     }

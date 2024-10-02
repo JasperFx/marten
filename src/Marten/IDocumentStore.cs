@@ -46,7 +46,7 @@ public interface IDocumentStore: IDisposable
     /// <param name="mode"></param>
     /// <param name="batchSize"></param>
     void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000);
+        int batchSize = 1000, string? updateCondition = null);
 
     /// <summary>
     ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
@@ -58,7 +58,7 @@ public interface IDocumentStore: IDisposable
     /// <param name="mode"></param>
     /// <param name="batchSize"></param>
     void BulkInsertEnlistTransaction<T>(IReadOnlyCollection<T> documents, Transaction transaction,
-        BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000);
+        BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000, string? updateCondition = null);
 
     /// <summary>
     ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
@@ -70,7 +70,7 @@ public interface IDocumentStore: IDisposable
     /// <param name="mode"></param>
     /// <param name="batchSize"></param>
     void BulkInsert<T>(string tenantId, IReadOnlyCollection<T> documents,
-        BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000);
+        BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000, string? updateCondition = null);
 
     /// <summary>
     ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
@@ -81,7 +81,7 @@ public interface IDocumentStore: IDisposable
     /// <param name="mode"></param>
     /// <param name="batchSize"></param>
     Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000, CancellationToken cancellation = default);
+        int batchSize = 1000, string? updateCondition = null, CancellationToken cancellation = default);
 
     /// <summary>
     ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
@@ -94,7 +94,7 @@ public interface IDocumentStore: IDisposable
     /// <param name="batchSize"></param>
     Task BulkInsertEnlistTransactionAsync<T>(IReadOnlyCollection<T> documents, Transaction transaction,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
-        CancellationToken cancellation = default);
+        string? updateCondition = null, CancellationToken cancellation = default);
 
     /// <summary>
     ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
@@ -107,7 +107,7 @@ public interface IDocumentStore: IDisposable
     /// <param name="batchSize"></param>
     Task BulkInsertAsync<T>(string tenantId, IReadOnlyCollection<T> documents,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
-        CancellationToken cancellation = default);
+        string? updateCondition = null, CancellationToken cancellation = default);
 
     /// <summary>
     ///     Open a new IDocumentSession with the supplied DocumentTracking.
