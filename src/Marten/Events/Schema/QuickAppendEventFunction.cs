@@ -96,9 +96,9 @@ BEGIN
 		body = bodies[index];
 
 		insert into {databaseSchema}.mt_events
-			(seq_id, id, stream_id, version, data, type, tenant_id, {SchemaConstants.DotNetTypeColumn}, is_archived{metadataColumns})
+			(seq_id, id, stream_id, version, data, type, tenant_id, timestamp, {SchemaConstants.DotNetTypeColumn}, is_archived{metadataColumns})
 		values
-			(seq, event_id, stream, event_version, body, event_type, tenantid, dotnet_types[index], FALSE{metadataValues});
+			(seq, event_id, stream, event_version, body, event_type, tenantid, (now() at time zone 'utc'), dotnet_types[index], FALSE{metadataValues});
 
 		index := index + 1;
 	end loop;

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using JasperFx.CodeGeneration;
@@ -46,6 +47,7 @@ internal static class EventDocumentStorageGenerator
         compiler.ReferenceAssembly(typeof(IMartenSession).Assembly);
         compiler.Compile(assembly);
 
+        Debug.WriteLine(builderType.SourceCode);
 
         return (EventDocumentStorage)Activator.CreateInstance(builderType.CompiledType, options);
     }
@@ -68,6 +70,7 @@ internal static class EventDocumentStorageGenerator
         buildQueryForStreamMethod(options.EventGraph, builderType);
 
         buildUpdateStreamVersion(builderType, assembly, options.EventGraph);
+
         return builderType;
     }
 
@@ -109,23 +112,20 @@ internal static class EventDocumentStorageGenerator
     {
         var operationType = assembly.AddType(UpdateStreamVersionOperationName, typeof(UpdateStreamVersion));
 
-        var sql = $"update {graph.DatabaseSchemaName}.mt_streams set version = ? where id = ? and version = ?";
-        if (graph.TenancyStyle == TenancyStyle.Conjoined)
-        {
-            sql += $" and {TenantIdColumn.Name} = ?";
-        }
-
-        var setter = operationType.AddStringConstant("SQL", sql);
+        var sql = $"update {graph.DatabaseSchemaName}.mt_streams ";
 
         var configureCommand = operationType.MethodFor("ConfigureCommand");
         configureCommand.DerivedVariables.Add(
             new Variable(typeof(StreamAction), nameof(UpdateStreamVersion.Stream)));
 
-        configureCommand.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(SQL);",
-            Use.Type<ICommandBuilder>());
+        configureCommand.Frames.AppendSql(sql);
 
+        configureCommand.Frames.Code($"var parameterBuilder = {{0}}.{nameof(CommandBuilder.CreateGroupedParameterBuilder)}();", Use.Type<ICommandBuilder>());
+
+        configureCommand.Frames.AppendSql("set version = ");
         configureCommand.SetParameterFromMember<StreamAction>(0, x => x.Version);
 
+        configureCommand.Frames.AppendSql(" where id = ");
         if (graph.StreamIdentity == StreamIdentity.AsGuid)
         {
             configureCommand.SetParameterFromMember<StreamAction>(1, x => x.Id);
@@ -135,12 +135,16 @@ internal static class EventDocumentStorageGenerator
             configureCommand.SetParameterFromMember<StreamAction>(1, x => x.Key);
         }
 
+        configureCommand.Frames.AppendSql(" and version = ");
         configureCommand.SetParameterFromMember<StreamAction>(2, x => x.ExpectedVersionOnServer);
 
         if (graph.TenancyStyle == TenancyStyle.Conjoined)
         {
+            configureCommand.Frames.AppendSql($" and {TenantIdColumn.Name} = ");
             new TenantIdColumn().As<IStreamTableColumn>().GenerateAppendCode(configureCommand, 3);
         }
+
+        configureCommand.Frames.AppendSql(" returning version");
 
         builderType.MethodFor(nameof(EventDocumentStorage.UpdateStreamVersion))
             .Frames.Code($"return new {assembly.Namespace}.{UpdateStreamVersionOperationName}({{0}});",
@@ -231,31 +235,26 @@ internal static class EventDocumentStorageGenerator
     private static void buildConfigureCommandMethodForStreamState(EventGraph graph,
         GeneratedType streamQueryHandlerType)
     {
-        var sql =
-            $"select id, version, type, timestamp, created as timestamp, is_archived from {graph.DatabaseSchemaName}.mt_streams where id = ?";
         if (graph.TenancyStyle == TenancyStyle.Conjoined)
         {
             streamQueryHandlerType.AllInjectedFields.Add(new InjectedField(typeof(string), "tenantId"));
-            sql += $" and {TenantIdColumn.Name} = ?";
         }
 
-        var setter = streamQueryHandlerType.AddStringConstant("SQL", sql);
-
         var configureCommand = streamQueryHandlerType.MethodFor("ConfigureCommand");
-        configureCommand.Frames.Call<ICommandBuilder>(x => x.AppendWithParameters(""), call =>
-        {
-            call.Arguments[0] = setter;
-            call.ReturnAction = ReturnAction.Initialize;
-        });
+        var sql =
+            $"select id, version, type, timestamp, created as timestamp, is_archived from {graph.DatabaseSchemaName}.mt_streams where id = ";
+
+        configureCommand.Frames.AppendSql(sql);
 
         var idDbType = graph.StreamIdentity == StreamIdentity.AsGuid ? DbType.Guid : DbType.String;
-        configureCommand.Frames.Code("{0}[0].Value = _streamId;", Use.Type<NpgsqlParameter[]>());
-        configureCommand.Frames.Code("{0}[0].DbType = {1};", Use.Type<NpgsqlParameter[]>(), idDbType);
+        configureCommand.Frames.Code($"var parameter1 = builder.{nameof(CommandBuilder.AppendParameter)}(_streamId);");
+        configureCommand.Frames.Code("parameter1.DbType = {0};", idDbType);
 
         if (graph.TenancyStyle == TenancyStyle.Conjoined)
         {
-            configureCommand.Frames.Code("{0}[1].Value = _tenantId;", Use.Type<NpgsqlParameter[]>());
-            configureCommand.Frames.Code("{0}[1].DbType = {1};", Use.Type<NpgsqlParameter[]>(), DbType.String);
+            configureCommand.Frames.AppendSql($" and {TenantIdColumn.Name} = ");
+            configureCommand.Frames.Code($"var parameter2 = builder.{nameof(CommandBuilder.AppendParameter)}(_tenantId);");
+            configureCommand.Frames.Code("parameter2.DbType = {0};", DbType.String);
         }
     }
 
@@ -286,17 +285,21 @@ internal static class EventDocumentStorageGenerator
         columns.Add(sequence);
 
         var sql =
-            $"insert into {graph.DatabaseSchemaName}.mt_events ({columns.Select(x => x.Name).Join(", ")}) values ({columns.Select(c => c.ValueSql(graph, mode)).Join(", ")})";
+            $"insert into {graph.DatabaseSchemaName}.mt_events ({columns.Select(x => x.Name).Join(", ")}) values (";
 
-        operationType.AddStringConstant("SQL", sql);
+        configure.Frames.AppendSql(sql);
 
-        configure.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(SQL);",
-            Use.Type<ICommandBuilder>());
+        configure.Frames.Code($"var parameterBuilder = {{0}}.{nameof(CommandBuilder.CreateGroupedParameterBuilder)}(',');", Use.Type<ICommandBuilder>());
 
         for (var i = 0; i < columns.Count; i++)
         {
             columns[i].GenerateAppendCode(configure, graph, i, mode);
+            var valueSql = columns[i].ValueSql(graph, mode);
+            if (valueSql != "?")
+                configure.Frames.AppendSql($"{(i > 0 ? "," : string.Empty)}{valueSql}");
         }
+
+        configure.Frames.AppendSql(')');
 
         return operationType;
     }
@@ -306,67 +309,43 @@ internal static class EventDocumentStorageGenerator
         var operationType = assembly.AddType("QuickAppendEventsOperation", typeof(QuickAppendEventsOperationBase));
 
         var table = new EventsTable(graph);
-        var parameterList = "";
 
-
-        var index = 6;
-        int causationIndex = 0;
-        int correlationIndex = 0;
-        int headerIndex = 0;
-        if (table.Columns.OfType<CausationIdColumn>().Any())
-        {
-            parameterList += ", ?";
-            causationIndex = ++index;
-        }
-
-        if (table.Columns.OfType<CorrelationIdColumn>().Any())
-        {
-            parameterList += ", ?";
-            correlationIndex = ++index;
-        }
-
-        if (table.Columns.OfType<HeadersColumn>().Any())
-        {
-            parameterList += ", ?";
-            headerIndex = ++index;
-        }
-
-        var sql =
-            $"select {graph.DatabaseSchemaName}.mt_quick_append_events(?, ?, ?, ?, ?, ?, ?{parameterList})";
-
-        operationType.AddStringConstant("SQL", sql);
+        var sql = $"select {graph.DatabaseSchemaName}.mt_quick_append_events(";
 
         var configure = operationType.MethodFor(nameof(QuickAppendEventsOperationBase.ConfigureCommand));
         configure.DerivedVariables.Add(new Variable(typeof(StreamAction), nameof(QuickAppendEventsOperationBase.Stream)));
 
-        configure.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(SQL);",
-            Use.Type<ICommandBuilder>());
+        configure.Frames.AppendSql(sql);
+
+        configure.Frames.Code($"var parameterBuilder = {{0}}.{nameof(CommandBuilder.CreateGroupedParameterBuilder)}(',');", Use.Type<ICommandBuilder>());
 
         if (graph.StreamIdentity == StreamIdentity.AsGuid)
         {
-            configure.Frames.Code("writeId(parameters);");
+            configure.Frames.Code("writeId(parameterBuilder);");
         }
         else
         {
-            configure.Frames.Code("writeKey(parameters);");
+            configure.Frames.Code("writeKey(parameterBuilder);");
         }
 
-        configure.Frames.Code("writeBasicParameters(parameters, session);");
+        configure.Frames.Code("writeBasicParameters(parameterBuilder, session);");
 
-        if (causationIndex > 0)
+        if (table.Columns.OfType<CausationIdColumn>().Any())
         {
-            configure.Frames.Code($"writeCausationIds({causationIndex}, parameters);");
+            configure.Frames.Code("writeCausationIds(parameterBuilder);");
         }
 
-        if (correlationIndex > 0)
+        if (table.Columns.OfType<CorrelationIdColumn>().Any())
         {
-            configure.Frames.Code($"writeCorrelationIds({correlationIndex}, parameters);");
+            configure.Frames.Code("writeCorrelationIds(parameterBuilder);");
         }
 
-        if (headerIndex > 0)
+        if (table.Columns.OfType<HeadersColumn>().Any())
         {
-            configure.Frames.Code($"writeHeaders({headerIndex}, parameters, session);");
+            configure.Frames.Code("writeHeaders(parameterBuilder, session);");
         }
+
+        configure.Frames.AppendSql(')');
 
         return operationType;
     }
@@ -383,19 +362,22 @@ internal static class EventDocumentStorageGenerator
             .ToArray();
 
         var sql =
-            $"insert into {graph.DatabaseSchemaName}.mt_streams ({columns.Select(x => x.Name).Join(", ")}) values ({columns.Select(_ => "?").Join(", ")})";
-        operationType.AddStringConstant("SQL", sql);
+            $"insert into {graph.DatabaseSchemaName}.mt_streams ({columns.Select(x => x.Name).Join(", ")}) values (";
+
 
         var configureCommand = operationType.MethodFor("ConfigureCommand");
         configureCommand.DerivedVariables.Add(new Variable(typeof(StreamAction), nameof(InsertStreamBase.Stream)));
 
-        configureCommand.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(SQL);",
-            Use.Type<ICommandBuilder>());
+        configureCommand.Frames.AppendSql(sql);
+
+        configureCommand.Frames.Code($"var parameterBuilder = {{0}}.{nameof(CommandBuilder.CreateGroupedParameterBuilder)}(',');", Use.Type<ICommandBuilder>());
 
         for (var i = 0; i < columns.Length; i++)
         {
             columns[i].GenerateAppendCode(configureCommand, i);
         }
+
+        configureCommand.Frames.AppendSql(')');
 
         builderType.MethodFor(nameof(EventDocumentStorage.InsertStream))
             .Frames.ReturnNewGeneratedTypeObject(operationType, "stream");

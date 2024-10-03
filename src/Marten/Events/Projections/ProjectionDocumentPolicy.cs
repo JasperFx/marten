@@ -20,6 +20,8 @@ internal class ProjectionDocumentPolicy : IDocumentPolicy
             mapping.Metadata.Version.Enabled = false;
             mapping.UseNumericRevisions = true;
             mapping.Metadata.Revision.Enabled = true;
+
+            projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
         }
     }
 }

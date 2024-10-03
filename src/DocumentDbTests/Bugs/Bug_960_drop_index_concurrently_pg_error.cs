@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Harness;
 using Weasel.Core;
@@ -21,7 +22,7 @@ public class Bug_960_drop_index_concurrently_pg_error: BugIntegrationContext
     /// Fix for PG error "0A000: DROP INDEX CONCURRENTLY must be first action in transaction"
     /// </summary>
     [Fact]
-    public async void can_work_after_adding_a_new_index_and_dropping_an_existing_one()
+    public async Task can_work_after_adding_a_new_index_and_dropping_an_existing_one()
     {
         // Create store with index on Field 1
         var store1 = SeparateStore(_ =>

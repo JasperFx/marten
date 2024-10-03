@@ -74,7 +74,7 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
 
         return new List<AsyncProjectionShard> { new(this)
         {
-            IncludeArchivedEvents = false,
+            IncludeArchivedEvents = IncludeArchivedEvents,
             EventTypes = IncludedEventTypes,
             StreamType = StreamType
         } };

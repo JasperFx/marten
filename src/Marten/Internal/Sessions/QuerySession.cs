@@ -1,6 +1,8 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Events;
 using Marten.Services;
@@ -84,20 +86,19 @@ public partial class QuerySession: IMartenSession, IQuerySession
     {
         get
         {
-            if (_connection is IAlwaysConnectedLifetime lifetime)
+            switch (_connection)
             {
-                return lifetime.Connection;
-            }
-            else if (_connection is ITransactionStarter starter)
-            {
-                var l = starter.Start();
-                _connection = l;
-                return l.Connection;
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    $"The current lifetime {_connection} is neither a {nameof(IAlwaysConnectedLifetime)} nor a {nameof(ITransactionStarter)}");
+                case IAlwaysConnectedLifetime lifetime:
+                    return lifetime.Connection;
+                case ITransactionStarter starter:
+                {
+                    var l = starter.Start();
+                    _connection = l;
+                    return l.Connection;
+                }
+                default:
+                    throw new InvalidOperationException(
+                        $"The current lifetime {_connection} is neither a {nameof(IAlwaysConnectedLifetime)} nor a {nameof(ITransactionStarter)}");
             }
         }
     }
@@ -112,4 +113,9 @@ public partial class QuerySession: IMartenSession, IQuerySession
     public IDocumentStore DocumentStore => _store;
 
     public IAdvancedSql AdvancedSql => this;
+    public Task<T> QueryByPlanAsync<T>(IQueryPlan<T> plan, CancellationToken token = default)
+    {
+        // This is literally like this *just* to make mocking easier -- even though I don't agree with that often!
+        return plan.Fetch(this, token);
+    }
 }

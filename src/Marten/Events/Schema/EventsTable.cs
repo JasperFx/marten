@@ -34,32 +34,69 @@ internal class EventsTable: Table
 
         if (events.TenancyStyle == TenancyStyle.Conjoined)
         {
-            ForeignKeys.Add(new ForeignKey("fkey_mt_events_stream_id_tenant_id")
+            if (events.UseArchivedStreamPartitioning)
             {
-                ColumnNames = new[] { TenantIdColumn.Name, "stream_id" },
-                LinkedNames = new[] { TenantIdColumn.Name, "id" },
-                LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, "mt_streams")
-            });
+                ForeignKeys.Add(new ForeignKey("fkey_mt_events_stream_id_tenant_id_is_archived")
+                {
+                    ColumnNames = new[] { TenantIdColumn.Name, "stream_id", "is_archived" },
+                    LinkedNames = new[] { TenantIdColumn.Name, "id", "is_archived" },
+                    LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, "mt_streams")
+                });
 
-            Indexes.Add(new IndexDefinition("pk_mt_events_stream_and_version")
+                Indexes.Add(new IndexDefinition("pk_mt_events_stream_and_version")
+                {
+                    IsUnique = true, Columns = new[] { TenantIdColumn.Name, "stream_id", "version", "is_archived" }
+                });
+            }
+            else
             {
-                IsUnique = true, Columns = new[] { TenantIdColumn.Name, "stream_id", "version" }
-            });
+                ForeignKeys.Add(new ForeignKey("fkey_mt_events_stream_id_tenant_id")
+                {
+                    ColumnNames = new[] { TenantIdColumn.Name, "stream_id" },
+                    LinkedNames = new[] { TenantIdColumn.Name, "id" },
+                    LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, "mt_streams")
+                });
+
+                Indexes.Add(new IndexDefinition("pk_mt_events_stream_and_version")
+                {
+                    IsUnique = true, Columns = new[] { TenantIdColumn.Name, "stream_id", "version" }
+                });
+            }
+
+
         }
         else
         {
-            ForeignKeys.Add(new ForeignKey("fkey_mt_events_stream_id")
+            if (events.UseArchivedStreamPartitioning)
             {
-                ColumnNames = new[] { "stream_id" },
-                LinkedNames = new[] { "id" },
-                LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, "mt_streams"),
-                OnDelete = CascadeAction.Cascade
-            });
+                ForeignKeys.Add(new ForeignKey("fkey_mt_events_stream_id_is_archived")
+                {
+                    ColumnNames = new[] { "stream_id", "is_archived" },
+                    LinkedNames = new[] { "id", "is_archived" },
+                    LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, "mt_streams"),
+                    OnDelete = CascadeAction.Cascade
+                });
 
-            Indexes.Add(new IndexDefinition("pk_mt_events_stream_and_version")
+                Indexes.Add(new IndexDefinition("pk_mt_events_stream_and_version")
+                {
+                    IsUnique = true, Columns = new[] { "stream_id", "version", "is_archived" }
+                });
+            }
+            else
             {
-                IsUnique = true, Columns = new[] { "stream_id", "version" }
-            });
+                ForeignKeys.Add(new ForeignKey("fkey_mt_events_stream_id")
+                {
+                    ColumnNames = new[] { "stream_id" },
+                    LinkedNames = new[] { "id" },
+                    LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, "mt_streams"),
+                    OnDelete = CascadeAction.Cascade
+                });
+
+                Indexes.Add(new IndexDefinition("pk_mt_events_stream_and_version")
+                {
+                    IsUnique = true, Columns = new[] { "stream_id", "version" }
+                });
+            }
         }
 
         if (events.EnableUniqueIndexOnEventId)
@@ -70,7 +107,11 @@ internal class EventsTable: Table
             });
         }
 
-        AddColumn<IsArchivedColumn>();
+        var archiving = AddColumn<IsArchivedColumn>();
+        if (events.UseArchivedStreamPartitioning)
+        {
+            archiving.PartitionByListValues().AddPartition("archived", true);
+        }
     }
 
     internal IList<IEventTableColumn> SelectColumns()

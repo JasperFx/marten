@@ -19,6 +19,7 @@
         <PackageReference Include="Lamar" Version="13.0.2" />
         <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.3.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+        <PackageReference Include="StronglyTypedId" Version="1.0.0-beta08" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
@@ -135,6 +136,7 @@
         <Compile Include="..\Marten.Testing\StubDocumentSessionListener.cs">
             <Link>StubDocumentSessionListener.cs</Link>
         </Compile>
+        <Compile Remove="AssemblyInfo.cs" />
     </ItemGroup>
 
     <ItemGroup>
@@ -147,12 +149,6 @@
         <None Update="party.js">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Reference Include="Microsoft.Extensions.Hosting">
-            <HintPath>..\..\..\..\..\..\usr\local\share\dotnet\shared\Microsoft.AspNetCore.App\6.0.21\Microsoft.Extensions.Hosting.dll</HintPath>
-        </Reference>
     </ItemGroup>
 
     <PropertyGroup>

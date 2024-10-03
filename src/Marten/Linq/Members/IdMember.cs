@@ -5,20 +5,13 @@ using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Parsing.Operators;
-using Marten.Linq.SqlGeneration;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;
 
-internal interface IValueTypeMember: IQueryableMember
-{
-    object ConvertFromWrapperArray(object values);
-    ISelectClause BuildSelectClause(string fromObject);
-}
-
-internal class IdMember: IQueryableMember, IComparableMember
+public class IdMember: IQueryableMember, IComparableMember
 {
     private const string _orderDescending = "d.id desc";
 

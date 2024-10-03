@@ -206,7 +206,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     {
         session.ChangeTrackers.RemoveAll(x =>
         {
-            if (x is T doc)
+            if (x.Document is T doc)
             {
                 return Identity(doc).Equals(id);
             }
@@ -360,7 +360,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
             ? new NpgsqlCommand(_loaderSql) {
                 Parameters = {
                     ParameterForId(id),
-                new() { Value = tenant }
+                    new() { Value = tenant }
                 }
             }
             : new NpgsqlCommand(_loaderSql)
@@ -372,12 +372,14 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
             };
     }
 
+    public virtual NpgsqlParameter BuildManyIdParameter(TId[] ids) => new() { Value = ids };
+
     public NpgsqlCommand BuildLoadManyCommand(TId[] ids, string tenant)
     {
         return _mapping.TenancyStyle == TenancyStyle.Conjoined
             ? new NpgsqlCommand(_loadArraySql) {
                 Parameters = {
-                    new() { Value = ids },
+                    BuildManyIdParameter(ids),
                     new() { Value = tenant }
                 }
             }
@@ -385,7 +387,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
             {
                 Parameters =
                 {
-                    new() { Value = ids }
+                    BuildManyIdParameter(ids)
                 }
             };
     }

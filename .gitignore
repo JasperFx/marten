@@ -232,3 +232,8 @@ docs/.vitepress/dist
 docs/.vitepress/cache
 
 src/CommandLineRunner/Internal/*
+
+.nuke/temp
+
+# Local Netlify folder
+.netlify

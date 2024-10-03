@@ -24,6 +24,10 @@ internal class UpsertFunction: Function
 
     public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
     protected readonly string _primaryKeyFields;
+    protected readonly string _versionSourceTable;
+    protected readonly string _versionColumnName;
+    protected readonly string _tenantVersionWhereClause;
+    protected readonly string _andTenantVersionWhereClause;
 
     public UpsertFunction(DocumentMapping mapping, DbObjectName identifier = null, bool disableConcurrency = false):
         base(identifier ?? mapping.UpsertFunction)
@@ -82,11 +86,25 @@ internal class UpsertFunction: Function
             Arguments.Add(new RevisionArgument());
         }
 
+        if (_mapping.UseVersionFromMatchingStream)
+        {
+            _versionSourceTable = $"{_mapping.StoreOptions.Events.DatabaseSchemaName}.mt_streams";
+            _versionColumnName = "version";
+        }
+        else
+        {
+            _versionSourceTable = _tableName.QualifiedName;
+            _versionColumnName = "mt_version";
+        }
+
         if (mapping.TenancyStyle == TenancyStyle.Conjoined)
         {
             Arguments.Add(new TenantIdArgument());
             _tenantWhereClause = $"{_tableName.QualifiedName}.{TenantIdColumn.Name} = {TenantIdArgument.ArgName}";
             _andTenantWhereClause = $" and {_tenantWhereClause}";
+
+            _tenantVersionWhereClause = $"{_versionSourceTable}.{TenantIdColumn.Name} = {TenantIdArgument.ArgName}";
+            _andTenantVersionWhereClause = $" and {_tenantVersionWhereClause}";
         }
 
         _primaryKeyFields = table.Columns.Where(x => x.IsPrimaryKey).Select(x => x.Name).Join(", ");
@@ -163,6 +181,10 @@ internal class UpsertFunction: Function
         string inserts,
         string valueList, string updates)
     {
+        var revisionModification = _mapping.UseVersionFromMatchingStream
+            ? "revision = current_version;"
+            : "revision = current_version + 1;";
+
         if (_mapping.Metadata.Revision.Enabled)
         {
             writer.WriteLine($@"
@@ -174,10 +196,12 @@ DECLARE
   current_version INTEGER;
 BEGIN
 
-if revision = 1 then
-  SELECT mt_version FROM {_tableName.QualifiedName} into current_version WHERE id = docId {_andTenantWhereClause};
+if revision = 0 then
+  SELECT {_versionColumnName} into current_version FROM {_versionSourceTable} WHERE id = docId {_andTenantVersionWhereClause};
   if current_version is not null then
-    revision = current_version + 1;
+    {revisionModification}
+  else
+    revision = 1;
   end if;
 end if;
 
@@ -185,7 +209,7 @@ INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
   ON CONFLICT ({_primaryKeyFields})
   DO UPDATE SET {updates};
 
-  SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId {_andTenantWhereClause};
+  SELECT mt_version into final_version FROM {_tableName.QualifiedName} WHERE id = docId {_andTenantWhereClause};
   RETURN final_version;
 END;
 $function$;

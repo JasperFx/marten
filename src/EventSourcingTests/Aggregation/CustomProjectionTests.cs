@@ -2,11 +2,13 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Metadata;
+using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -16,6 +18,25 @@ namespace EventSourcingTests.Aggregation;
 
 public class CustomProjectionTests
 {
+    [Theory]
+    [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Inline, true)]
+    [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Async, false)]
+    [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Live, false)]
+    [InlineData(true, EventAppendMode.Rich, ProjectionLifecycle.Inline, false)]
+    [InlineData(false, EventAppendMode.Rich, ProjectionLifecycle.Inline, false)]
+    [InlineData(false, EventAppendMode.Quick, ProjectionLifecycle.Inline, false)]
+    public void configure_mapping(bool isSingleGrouper, EventAppendMode appendMode, ProjectionLifecycle lifecycle, bool useVersionFromStream)
+    {
+        var projection = isSingleGrouper ? (IAggregateProjection)new MySingleStreamProjection() : new MyCustomProjection();
+        var mapping = DocumentMapping.For<MyAggregate>();
+        mapping.StoreOptions.Events.AppendMode = appendMode;
+        projection.Lifecycle = lifecycle;
+
+        projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
+
+        mapping.UseVersionFromMatchingStream.ShouldBe(useVersionFromStream);
+    }
+
     [Fact]
     public void default_projection_name_is_type_name()
     {
@@ -241,6 +262,20 @@ public class MyCustomAggregateWithNoSlicer: CustomProjection<CustomAggregate, in
 {
     public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CustomAggregate, int> slice,
         CancellationToken cancellation,
+        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class MySingleStreamProjection: CustomProjection<CustomAggregate, Guid>
+{
+    public MySingleStreamProjection()
+    {
+        AggregateByStream();
+    }
+
+    public override async ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CustomAggregate, Guid> slice, CancellationToken cancellation,
         ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
     {
         throw new NotImplementedException();

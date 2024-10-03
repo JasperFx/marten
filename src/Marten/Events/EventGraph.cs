@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
@@ -28,7 +29,7 @@ namespace Marten.Events;
 public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable
 {
     private readonly Cache<Type, string> _aggregateNameByType =
-        new(type => type.Name.ToTableAlias());
+        new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
 
     private readonly Cache<string, Type> _aggregateTypeByName;
 
@@ -65,6 +66,12 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         _aggregateTypeByName = new Cache<string, Type>(findAggregateType);
     }
 
+    /// <summary>
+    /// Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
+    /// *if* you are also aggressively using event stream archiving
+    /// </summary>
+    public bool UseArchivedStreamPartitioning { get; set; }
+
     internal NpgsqlDbType StreamIdDbType { get; private set; }
 
     internal StoreOptions Options { get; }
@@ -72,6 +79,12 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     internal DbObjectName Table => new PostgresqlObjectName(DatabaseSchemaName, "mt_events");
 
     internal EventMetadataCollection Metadata { get; } = new();
+
+    /// <summary>
+    /// Optional extension point to receive published messages as a side effect from
+    /// aggregation projections
+    /// </summary>
+    public IMessageOutbox MessageOutbox { get; set; } = new NulloMessageOutbox();
 
     /// <summary>
     /// TimeProvider used for event timestamping metadata. Replace for controlling the timestamps
@@ -105,6 +118,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
 
     public bool EnableGlobalProjectionsForConjoinedTenancy { get; set; }
+    public bool UseIdentityMapForInlineAggregates { get; set; }
 
     /// <summary>
     ///     Configure the meta data required to be stored for events. By default meta data fields are disabled

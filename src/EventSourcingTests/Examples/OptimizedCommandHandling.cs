@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Events;
+using Marten.Events.Projections;
+using Microsoft.Extensions.Hosting;
 using NSubstitute;
 
 namespace EventSourcingTests.Examples;
@@ -196,4 +198,33 @@ public class ShipOrderHandler
     }
 
     #endregion
+}
+
+public static class BootstrappingSample
+{
+    public static async Task bootstrap()
+    {
+        #region sample_registering_Order_as_Inline
+
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddMarten(opts =>
+        {
+            opts.Connection("some connection string");
+
+            // The Order aggregate is updated Inline inside the
+            // same transaction as the events being appended
+            opts.Projections.Snapshot<Order>(SnapshotLifecycle.Inline);
+
+            // Opt into an optimization for the inline aggregates
+            // used with FetchForWriting()
+            opts.Projections.UseIdentityMapForInlineAggregates = true;
+        })
+
+        // This is also a performance optimization in Marten to disable the
+        // identity map tracking overall in Marten sessions if you don't
+        // need that tracking at runtime
+        .UseLightweightSessions();
+
+        #endregion
+    }
 }

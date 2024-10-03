@@ -1,10 +1,12 @@
 using System;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Storage;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.Hosting;
 using Xunit;
 using Shouldly;
 
@@ -33,6 +35,62 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         document.ACount.ShouldBe(1);
         document.BCount.ShouldBe(3);
         document.CCount.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task revision_is_updated_after_quick_appending_with_IRevisioned()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
+            opts.Events.AppendMode = EventAppendMode.Quick;
+            opts.Events.UseIdentityMapForInlineAggregates = true;
+        });
+
+        var streamId = Guid.NewGuid();
+
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        stream.Aggregate.ShouldBeNull();
+        stream.CurrentVersion.ShouldBe(0);
+
+        stream.AppendOne(new AEvent());
+        stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
+        stream.AppendMany(new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        var document = await theSession.LoadAsync<SimpleAggregate>(streamId);
+        document.Version.ShouldBe(6);
+    }
+
+    [Fact]
+    public async Task revision_is_updated_after_quick_appending_with_custom_mapped_version()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregate2>(SnapshotLifecycle.Inline).Metadata(m =>
+            {
+                m.Revision.MapTo(x => x.Version);
+            });
+
+            opts.Events.AppendMode = EventAppendMode.Quick;
+            opts.Events.UseIdentityMapForInlineAggregates = true;
+        });
+
+        var streamId = Guid.NewGuid();
+
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregate2>(streamId);
+        stream.Aggregate.ShouldBeNull();
+        stream.CurrentVersion.ShouldBe(0);
+
+        stream.AppendOne(new AEvent());
+        stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
+        stream.AppendMany(new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        var document = await theSession.LoadAsync<SimpleAggregate2>(streamId);
+        document.Version.ShouldBe(6);
     }
 
     [Fact]
@@ -455,6 +513,69 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         {
             await theSession.SaveChangesAsync();
         });
+    }
+
+    public static void using_identity_map_for_inline_aggregates()
+    {
+        #region sample_use_identity_map_for_inline_aggregates
+
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddMarten(opts =>
+            {
+                opts.Connection("some connection string");
+
+                // Force Marten to use the identity map for only the aggregate type
+                // that is the targeted "T" in FetchForWriting<T>() when using
+                // an Inline projection for the "T". Saves on Marten doing an extra
+                // database fetch of the same data you already fetched from FetchForWriting()
+                // when Marten needs to apply the Inline projection as part of SaveChanges()
+                opts.Events.UseIdentityMapForInlineAggregates = true;
+            })
+            // This is non-trivial performance optimization if you never
+            // need identity map mechanics in your commands or query handlers
+            .UseLightweightSessions();
+
+        #endregion
+    }
+
+    [Fact]
+    public async Task silently_turns_on_identity_map_for_inline_aggregates()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
+            opts.Events.UseIdentityMapForInlineAggregates = true;
+        });
+
+        var streamId = Guid.NewGuid();
+
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        stream.Aggregate.ShouldBeNull();
+        stream.CurrentVersion.ShouldBe(0);
+
+        stream.AppendOne(new AEvent());
+        stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
+        stream.AppendMany(new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        using var session = theStore.LightweightSession();
+        var existing = await session.Events.FetchForWriting<SimpleAggregate>(streamId);
+
+        // Should already be using the identity map
+        var loadAgain = await session.LoadAsync<SimpleAggregate>(streamId);
+        loadAgain.ShouldBeTheSameAs(existing.Aggregate);
+
+        // Append to the stream and see that the existing aggregate is changed
+        existing.AppendOne(new AEvent());
+        await session.SaveChangesAsync();
+
+        // 1 from the original version, another we just appended
+        existing.Aggregate.ACount.ShouldBe(2);
+
+        using var query = theStore.QuerySession();
+        var loadedFresh = await query.LoadAsync<SimpleAggregate>(streamId);
+        loadedFresh.ACount.ShouldBe(2);
     }
 
 }

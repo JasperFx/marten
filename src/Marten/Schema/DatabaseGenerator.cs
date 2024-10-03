@@ -128,34 +128,42 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions
         CancellationToken ct = default
     )
     {
-        var cmdText = string.Empty;
 
         if (dropExisting)
         {
-            if (config.KillConnections)
-            {
-                cmdText =
-                    $"SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '{catalog}' AND pid <> pg_backend_pid();";
-            }
-
-            cmdText += $"DROP DATABASE IF EXISTS \"{catalog}\";";
+            await dropCurrentDatabaseAsync(catalog, config, maintenanceDb, ct).ConfigureAwait(false);
         }
 
-        var connection = new NpgsqlConnection(maintenanceDb);
-        await using var _ = connection.ConfigureAwait(false);
-        await using var cmd = connection.CreateCommand(cmdText);
-        await using var __ = cmd.ConfigureAwait(false);
-        cmd.CommandText += $"CREATE DATABASE \"{catalog}\" WITH" + config;
+        await using var connection = new NpgsqlConnection(maintenanceDb);
         await connection.OpenAsync(ct).ConfigureAwait(false);
         try
         {
-            await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            await connection.CreateCommand($"CREATE DATABASE \"{catalog}\" WITH" + config)
+                .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             config.OnDbCreated?.Invoke(connection);
         }
         finally
         {
             await connection.CloseAsync().ConfigureAwait(false);
         }
+    }
+
+    private static async Task dropCurrentDatabaseAsync(string catalog, TenantDatabaseCreationExpressions config,
+        string maintenanceDb, CancellationToken ct)
+    {
+        var cmdText = string.Empty;
+        if (config.KillConnections)
+        {
+            cmdText =
+                $"SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '{catalog}' AND pid <> pg_backend_pid();";
+        }
+
+        cmdText += $"DROP DATABASE IF EXISTS \"{catalog}\";";
+
+        await using var conn = new NpgsqlConnection(maintenanceDb);
+        await conn.OpenAsync(ct).ConfigureAwait(false);
+        await conn.CreateCommand(cmdText).ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        await conn.CloseAsync().ConfigureAwait(false);
     }
 
     private sealed class TenantDatabaseCreationExpressions: ITenantDatabaseCreationExpressions

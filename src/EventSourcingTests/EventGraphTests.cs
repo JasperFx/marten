@@ -2,6 +2,7 @@ using System;
 using EventSourcingTests.Projections;
 using Marten;
 using Marten.Events;
+using Marten.Events.Aggregation;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -24,6 +25,18 @@ public class EventGraphTests
         var mapping = theGraph.EventMappingFor<MonsterSlayed>();
         @event.EventTypeName.ShouldBe(mapping.EventTypeName);
         @event.DotNetTypeName.ShouldBe(mapping.DotNetTypeName);
+    }
+
+    [Fact]
+    public void use_nullo_message_outbox_by_default()
+    {
+        theGraph.MessageOutbox.ShouldBeOfType<NulloMessageOutbox>();
+    }
+
+    [Fact]
+    public void archive_partitioning_is_off_by_default()
+    {
+        theGraph.UseArchivedStreamPartitioning.ShouldBeFalse();
     }
 
     [Fact]
@@ -104,6 +117,12 @@ public class EventGraphTests
         theGraph.AppendMode = EventAppendMode.Rich;
         theGraph.AppendMode.ShouldBe(EventAppendMode.Rich);
         theGraph.EventAppender.ShouldBeOfType<RichEventAppender>();
+    }
+
+    [Fact]
+    public void use_identity_map_for_inline_aggregates_is_false_by_default()
+    {
+        theGraph.UseIdentityMapForInlineAggregates.ShouldBeFalse();
     }
 
     public class HouseRemodeling

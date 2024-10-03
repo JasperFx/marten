@@ -5,7 +5,7 @@ using Marten.Linq.Parsing.Operators;
 
 namespace Marten.Linq.Members;
 
-internal class StringMember: QueryableMember, IComparableMember
+public class StringMember: QueryableMember, IComparableMember
 {
     private readonly string _lowerLocator;
 
@@ -35,6 +35,10 @@ internal class StringMember: QueryableMember, IComparableMember
             nameof(string.ToUpper) => new StringMember(this, Casing.Default, member)
             {
                 RawLocator = $"upper({RawLocator})", TypedLocator = $"upper({RawLocator})"
+            },
+            nameof(string.Trim) => new StringMember(this, Casing.Default, member)
+            {
+                RawLocator = $"trim({RawLocator})", TypedLocator = $"trim({RawLocator})"
             },
             _ => base.FindMember(member)
         };

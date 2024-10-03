@@ -29,7 +29,7 @@ public partial class QuerySession
     public Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new())
     {
         RequestCount++;
-        return _resilience.Execute(static (e, t) => e.Lifetime.ExecuteAsync(e.Command, t), new CommandExecution(command, _connection), token);
+        return _resilience.ExecuteAsync(static (e, t) => new ValueTask<int>(e.Lifetime.ExecuteAsync(e.Command, t)), new CommandExecution(command, _connection), token).AsTask();
     }
 
     public DbDataReader ExecuteReader(NpgsqlCommand command)
@@ -41,7 +41,7 @@ public partial class QuerySession
     public Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default)
     {
         RequestCount++;
-        return _resilience.Execute(static (e, t) => e.Lifetime.ExecuteReaderAsync(e.Command, t), new CommandExecution(command, _connection), token);
+        return _resilience.ExecuteAsync(static (e, t) => new ValueTask<DbDataReader>(e.Lifetime.ExecuteReaderAsync(e.Command, t)), new CommandExecution(command, _connection), token).AsTask();
     }
 
     internal record BatchExecution(NpgsqlBatch Batch, IConnectionLifetime Lifetime);
@@ -55,7 +55,11 @@ public partial class QuerySession
     public Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, CancellationToken token = default)
     {
         RequestCount++;
-        return _resilience.Execute(static (e, t) => e.Lifetime.ExecuteReaderAsync(e.Batch, t), new BatchExecution(batch, _connection), token);
+
+        // This is executing via Polly
+        return _resilience.ExecuteAsync(static (e, t)
+            => new ValueTask<DbDataReader>(e.Lifetime.ExecuteReaderAsync(e.Batch, t)),
+            new BatchExecution(batch, _connection), token).AsTask();
     }
 
     internal T? LoadOne<T>(NpgsqlCommand command, ISelector<T> selector)

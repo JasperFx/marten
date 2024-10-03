@@ -20,8 +20,24 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Weasel.Postgresql.Tables.Indexes;
+using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten.Schema;
+
+public enum PrimaryKeyTenancyOrdering
+{
+    /// <summary>
+    /// This is the normal ordering with tenant id, then id for the primary
+    /// key ordering. This is appropriate for most conjoined tenancy modeling
+    /// </summary>
+    TenantId_Then_Id,
+
+    /// <summary>
+    /// V6 compatible mode. The PK is ordered by id, tenant_id. May be more efficient for querying
+    /// when using partitioning by tenant id
+    /// </summary>
+    Id_Then_TenantId
+}
 
 public interface IDocumentType
 {
@@ -110,8 +126,22 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
         applyAnyMartenAttributes(documentType);
 
+        StoreOptions.applyPostPolicies(this);
+
         _schema = new Lazy<DocumentSchema>(() => new DocumentSchema(this));
+
+        if (DisablePartitioningIfAny)
+        {
+            Partitioning = null;
+        }
     }
+
+    public PrimaryKeyTenancyOrdering PrimaryKeyTenancyOrdering { get; set; } =
+        PrimaryKeyTenancyOrdering.TenantId_Then_Id;
+
+    public bool DisablePartitioningIfAny { get; set; } = false;
+
+    public IPartitionStrategy? Partitioning { get; set; }
 
     public DocumentCodeGen? CodeGen { get; private set; }
 
@@ -122,6 +152,12 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     internal StoreOptions StoreOptions { get; }
 
     internal DocumentSchema Schema => _schema.Value;
+
+    /// <summary>
+    /// This is a workaround for the quick append + inline projection
+    /// issue
+    /// </summary>
+    public bool UseVersionFromMatchingStream { get; set; }
 
     public HiloSettings HiloSettings
     {
@@ -240,6 +276,12 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     IDocumentType IDocumentType.Root => this;
 
     public IReadOnlyList<DuplicatedField> DuplicatedFields => _duplicates;
+
+    /// <summary>
+    /// Setting this to true just means that Weasel should assume that *something* else is
+    /// managing the partitions and that Weasel should not try to manage them at all
+    /// </summary>
+    public bool IgnorePartitions { get; set; }
 
     public bool IsHierarchy()
     {
@@ -570,9 +612,16 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         var referenceMapping =
             referenceType != DocumentType ? StoreOptions.Storage.MappingFor(referenceType) : this;
 
-        var duplicateField = DuplicateField(members);
-
-        var foreignKey = new DocumentForeignKey(duplicateField.ColumnName, this, referenceMapping);
+        DocumentForeignKey foreignKey;
+        if (members.Contains(IdMember))
+        {
+            foreignKey = new DocumentForeignKey("id", this, referenceMapping);
+        }
+        else
+        {
+            var duplicateField = DuplicateField(members);
+            foreignKey = new DocumentForeignKey(duplicateField.ColumnName, this, referenceMapping);
+        }
         ForeignKeys.Add(foreignKey);
 
         return foreignKey;
@@ -597,7 +646,10 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
     public DuplicatedField DuplicateField(string memberName, string pgType = null, bool notNull = false)
     {
-        var member = (QueryableMember)QueryMembers.MemberFor(memberName);
+        var existing = QueryMembers.MemberFor(memberName);
+        if (existing is DuplicatedField f) return f;
+
+        var member = (QueryableMember)existing;
 
         var enumStorage = StoreOptions.Advanced.DuplicatedFieldEnumStorage;
         var dateTimeStorage = StoreOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime;
@@ -727,6 +779,12 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
         var memberType = _idMember.GetMemberType();
         return memberType.IsNullable() ? memberType.GetGenericArguments()[0] : memberType;
+    }
+
+    internal void PartitionByDeleted()
+    {
+        Partitioning = new ListPartitioning { Columns = [SchemaConstants.DeletedColumn] }
+            .AddPartition("deleted", true);
     }
 }
 

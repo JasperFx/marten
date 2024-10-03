@@ -64,13 +64,15 @@ internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifya
 
     public ISelector BuildSelector(IMartenSession session)
     {
+        if (typeof(T) == typeof(TimeSpan)) return new TimeSpanSelector();
+
         return new SerializationSelector<T>(session.Serializer);
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
         ISqlFragment currentStatement)
     {
-        var selector = new SerializationSelector<T>(session.Serializer);
+        var selector = typeof(T) == typeof(TimeSpan) ? (ISelector<T>)new TimeSpanSelector() : new SerializationSelector<T>(session.Serializer);
 
         return LinqQueryParser.BuildHandler<T, TResult>(selector, statement);
     }

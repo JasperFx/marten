@@ -5,17 +5,23 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Marten.Services;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Operations;
 
 // Leave public for codegen!
-public abstract class AppendEventOperationBase: IStorageOperation
+public abstract class AppendEventOperationBase: IStorageOperation, NoDataReturnedCall
 {
     public AppendEventOperationBase(StreamAction stream, IEvent e)
     {
         Stream = stream;
         Event = e;
+
+        if (e.Version == 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(e), "Version cannot be 0");
+        }
     }
 
     public StreamAction Stream { get; }

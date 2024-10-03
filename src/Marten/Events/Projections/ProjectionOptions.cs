@@ -88,6 +88,17 @@ public class ProjectionOptions: DaemonSettings
 
     internal IList<IProjectionSource> All { get; } = new List<IProjectionSource>();
 
+    /// <summary>
+    /// Opt into a performance optimization that directs Marten to always use the identity map for an
+    /// Inline single stream projection's aggregate type when FetchForWriting() is called. Default is false.
+    /// Do not use this if you manually alter the fetched aggregate from FetchForWriting() outside of Marten
+    /// </summary>
+    public bool UseIdentityMapForInlineAggregates
+    {
+        get => _options.Events.UseIdentityMapForInlineAggregates;
+        set => _options.Events.UseIdentityMapForInlineAggregates = value;
+    }
+
     internal bool HasAnyAsyncProjections()
     {
         return All.Any(x => x.Lifecycle == ProjectionLifecycle.Async) || _subscriptions.Any();
@@ -149,8 +160,11 @@ public class ProjectionOptions: DaemonSettings
     {
         if (lifecycle == ProjectionLifecycle.Live)
         {
-            throw new ArgumentOutOfRangeException(nameof(lifecycle),
-                $"{nameof(ProjectionLifecycle.Live)} cannot be used for IProjection");
+            if (!projection.GetType().Closes(typeof(ILiveAggregator<>)))
+            {
+                throw new ArgumentOutOfRangeException(nameof(lifecycle),
+                    $"{nameof(ProjectionLifecycle.Live)} cannot be used for IProjection");
+            }
         }
 
         if (projection is ProjectionBase p)
@@ -321,6 +335,11 @@ public class ProjectionOptions: DaemonSettings
     )
         where TProjection : GeneratedProjection, new()
     {
+        if (lifecycle == ProjectionLifecycle.Live)
+        {
+            throw new InvalidOperationException("The generic overload of Add does not support Live projections, please use the non-generic overload.");
+        }
+
         var projection = new TProjection { Lifecycle = lifecycle };
 
         asyncConfiguration?.Invoke(projection.Options);
@@ -398,6 +417,13 @@ public class ProjectionOptions: DaemonSettings
     {
         if (_liveAggregators.TryFind(typeof(T), out var aggregator))
         {
+            return (ILiveAggregator<T>)aggregator;
+        }
+
+        aggregator = All.OfType<ILiveAggregator<T>>().FirstOrDefault();
+        if (aggregator != null)
+        {
+            _liveAggregators = _liveAggregators.AddOrUpdate(typeof(T), aggregator);
             return (ILiveAggregator<T>)aggregator;
         }
 

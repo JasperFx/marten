@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Parsing;
+using Marten.Linq.SoftDeletes;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
@@ -17,6 +18,7 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Weasel.Postgresql.Tables.Indexes;
+using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten;
 
@@ -110,6 +112,30 @@ public class MartenRegistry
         internal DocumentMappingExpression(DocumentMappingBuilder<T> builder)
         {
             _builder = builder;
+        }
+
+        /// <summary>
+        /// Set up PostgreSQL table partitioning based on the value of a property or member of the document.
+        /// This will create a duplicate field for this member -- or use the duplicated field already definied
+        /// as the column for the PostgreSQL partitioning
+        /// </summary>
+        /// <param name="memberExpression">An expression like "x => x.RegionName" to define the member to partition against</param>
+        /// <param name="partitioning">Configure the PostgreSQL </param>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> PartitionOn(Expression<Func<T, object>> memberExpression,
+            Action<PartitioningExpression> partitioning)
+        {
+            _builder.Alter = m =>
+            {
+                var members = FindMembers.Determine(memberExpression);
+                var field = m.DuplicateField(members);
+                var columnName = field.ColumnName;
+
+                var expression = new PartitioningExpression(m, [columnName]);
+                partitioning(expression);
+            };
+
+            return this;
         }
 
         /// <summary>
@@ -656,6 +682,38 @@ public class MartenRegistry
         }
 
         /// <summary>
+        ///     Directs Marten to apply "soft deletes" to this document type
+        /// </summary>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> SoftDeletedWithPartitioning()
+        {
+            _builder.Alter = m =>
+            {
+                m.DeleteStyle = DeleteStyle.SoftDelete;
+                m.PartitionByDeleted();
+            };
+
+            return this;
+        }
+
+        /// <summary>
+        ///     Mark this document type as soft-deleted, with an index on the is_deleted column
+        /// </summary>
+        /// <param name="configure"></param>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> SoftDeletedWithPartitioningAndIndex(Action<DocumentIndex>? configure = null)
+        {
+            SoftDeleted();
+            _builder.Alter = m =>
+            {
+                m.AddDeletedAtIndex(configure);
+                m.PartitionByDeleted();
+            };
+
+            return this;
+        }
+
+        /// <summary>
         ///     Direct this document type's DDL to be created with the named template
         /// </summary>
         /// <param name="templateName"></param>
@@ -677,6 +735,21 @@ public class MartenRegistry
         }
 
         /// <summary>
+        ///     Marks just this document type as being stored with conjoined multi-tenancy
+        /// </summary>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> MultiTenantedWithPartitioning(Action<PartitioningExpression> configure)
+        {
+            _builder.Alter = m =>
+            {
+                m.TenancyStyle = TenancyStyle.Conjoined;
+                var expression = new PartitioningExpression(m, [TenantIdColumn.Name]);
+                configure(expression);
+            };
+            return this;
+        }
+
+        /// <summary>
         ///     Marks just this document type as being stored with single tenancy style
         /// </summary>
         /// <returns></returns>
@@ -693,6 +766,21 @@ public class MartenRegistry
         public DocumentMappingExpression<T> UseIdentityKey()
         {
             _builder.Alter = m => m.IdStrategy = new IdentityKeyGeneration(m, m.HiloSettings);
+            return this;
+        }
+
+        /// <summary>
+        /// Override any table partitioning policy on just this document type
+        /// </summary>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> DoNotPartition()
+        {
+            _builder.Alter = m =>
+            {
+                m.DisablePartitioningIfAny = true;
+                m.Partitioning = null;
+            };
+
             return this;
         }
 
@@ -843,6 +931,8 @@ public class MartenRegistry
                 }
             }
         }
+
+
     }
 }
 

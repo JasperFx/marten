@@ -14,3 +14,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("EventSourcingTests")]
 [assembly: InternalsVisibleTo("Examples")]
 [assembly: InternalsVisibleTo("PatchingTests")]
+[assembly: InternalsVisibleTo("StressTests")]

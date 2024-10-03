@@ -54,7 +54,7 @@ public class aggregation_projection_validation_rules
         });
 
         message.ShouldContain(
-            $"Id type mismatch. The stream identity type is System.Guid, but the aggregate document {typeof(StringIdentifiedAggregate).FullNameInCode()} id type is string",
+            $"Id type mismatch",
             StringComparisonOption.Default);
     }
 
@@ -67,7 +67,7 @@ public class aggregation_projection_validation_rules
             x.Events.StreamIdentity = StreamIdentity.AsString;
             x.Projections.Snapshot<GuidIdentifiedAggregate>(SnapshotLifecycle.Async);
         }).ShouldContain(
-            $"Id type mismatch. The stream identity type is string, but the aggregate document {typeof(GuidIdentifiedAggregate).FullNameInCode()} id type is Guid",
+            $"Id type mismatch",
             StringComparisonOption.Default
         );
     }

@@ -21,12 +21,13 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
 {
     private readonly List<Type> _documentTypes = new();
     private readonly IList<IBatchQueryItem> _items = new List<IBatchQueryItem>();
-    private readonly QuerySession _parent;
 
     public BatchedQuery(QuerySession parent)
     {
-        _parent = parent;
+        Parent = parent;
     }
+
+    public QuerySession Parent { get; }
 
     public IBatchEvents Events => this;
 
@@ -58,7 +59,7 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
 
     public Task<IReadOnlyList<T>> Query<T>(string sql, params object[] parameters) where T : class
     {
-        var handler = new UserSuppliedQueryHandler<T>(_parent, sql, parameters);
+        var handler = new UserSuppliedQueryHandler<T>(Parent, sql, parameters);
         if (!handler.SqlContainsCustomSelect)
         {
             _documentTypes.Add(typeof(T));
@@ -70,7 +71,7 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
     public IBatchedQueryable<T> Query<T>() where T : class
     {
         _documentTypes.Add(typeof(T));
-        return new BatchedQueryable<T>(this, _parent.Query<T>());
+        return new BatchedQueryable<T>(this, Parent.Query<T>());
     }
 
     public async Task Execute(CancellationToken token = default)
@@ -81,12 +82,12 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
         }
 
         foreach (var type in _documentTypes.Distinct())
-            await _parent.Database.EnsureStorageExistsAsync(type, token).ConfigureAwait(false);
+            await Parent.Database.EnsureStorageExistsAsync(type, token).ConfigureAwait(false);
 
-        var command = _parent.BuildCommand(_items.Select(x => x.Handler));
+        var command = Parent.BuildCommand(_items.Select(x => x.Handler));
 
-        await using var reader = await _parent.ExecuteReaderAsync(command, token).ConfigureAwait(false);
-        await _items[0].ReadAsync(reader, _parent, token).ConfigureAwait(false);
+        await using var reader = await Parent.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+        await _items[0].ReadAsync(reader, Parent, token).ConfigureAwait(false);
 
         var others = _items.Skip(1).ToArray();
 
@@ -99,7 +100,7 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
                 throw new InvalidOperationException("There is no next result to read over.");
             }
 
-            await item.ReadAsync(reader, _parent, token).ConfigureAwait(false);
+            await item.ReadAsync(reader, Parent, token).ConfigureAwait(false);
         }
     }
 
@@ -110,13 +111,13 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
             return;
         }
 
-        foreach (var type in _documentTypes.Distinct()) _parent.Database.EnsureStorageExists(type);
+        foreach (var type in _documentTypes.Distinct()) Parent.Database.EnsureStorageExists(type);
 
-        var command = _parent.BuildCommand(_items.Select(x => x.Handler));
+        var command = Parent.BuildCommand(_items.Select(x => x.Handler));
 
 
-        using var reader = _parent.ExecuteReader(command);
-        _items[0].Read(reader, _parent);
+        using var reader = Parent.ExecuteReader(command);
+        _items[0].Read(reader, Parent);
 
         foreach (var item in _items.Skip(1))
         {
@@ -127,7 +128,7 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
                 throw new InvalidOperationException("There is no next result to read over.");
             }
 
-            item.Read(reader, _parent);
+            item.Read(reader, Parent);
         }
     }
 
@@ -135,8 +136,8 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
     {
         _documentTypes.Add(typeof(TDoc));
         // Smelly downcast, but we'll allow it
-        var source = _parent.DocumentStore.As<DocumentStore>().GetCompiledQuerySourceFor(query, _parent);
-        var handler = (IQueryHandler<TResult>)source.Build(query, _parent);
+        var source = Parent.DocumentStore.As<DocumentStore>().GetCompiledQuerySourceFor(query, Parent);
+        var handler = (IQueryHandler<TResult>)source.Build(query, Parent);
 
         return AddItem(handler);
     }
@@ -145,15 +146,15 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
     public Task<IEvent> Load(Guid id)
     {
         _documentTypes.Add(typeof(IEvent));
-        var handler = new SingleEventQueryHandler(id, _parent.EventStorage());
+        var handler = new SingleEventQueryHandler(id, Parent.EventStorage());
         return AddItem(handler);
     }
 
     public Task<StreamState> FetchStreamState(Guid streamId)
     {
         _documentTypes.Add(typeof(IEvent));
-        var handler = _parent.EventStorage()
-            .QueryForStream(StreamAction.ForReference(streamId, _parent.TenantId));
+        var handler = Parent.EventStorage()
+            .QueryForStream(StreamAction.ForReference(streamId, Parent.TenantId));
 
         return AddItem(handler);
     }
@@ -161,8 +162,8 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
     public Task<StreamState> FetchStreamState(string streamKey)
     {
         _documentTypes.Add(typeof(IEvent));
-        var handler = _parent.EventStorage()
-            .QueryForStream(StreamAction.ForReference(streamKey, _parent.TenantId));
+        var handler = Parent.EventStorage()
+            .QueryForStream(StreamAction.ForReference(streamKey, Parent.TenantId));
 
         return AddItem(handler);
     }
@@ -171,13 +172,13 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
         long fromVersion = 0)
     {
         _documentTypes.Add(typeof(IEvent));
-        var selector = _parent.EventStorage();
+        var selector = Parent.EventStorage();
         var statement = new EventStatement(selector)
         {
             StreamId = streamId,
             Version = version,
             Timestamp = timestamp,
-            TenantId = _parent.TenantId,
+            TenantId = Parent.TenantId,
             FromVersion = fromVersion
         };
 
@@ -189,13 +190,13 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
     public Task<IReadOnlyList<IEvent>> FetchStream(string streamKey, long version = 0, DateTime? timestamp = null, long fromVersion = 0)
     {
         _documentTypes.Add(typeof(IEvent));
-        var selector = _parent.EventStorage();
+        var selector = Parent.EventStorage();
         var statement = new EventStatement(selector)
         {
             StreamKey = streamKey,
             Version = version,
             Timestamp = timestamp,
-            TenantId = _parent.TenantId,
+            TenantId = Parent.TenantId,
             FromVersion = fromVersion
         };
 
@@ -212,10 +213,15 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
         return item.Result;
     }
 
+    public Task<T> QueryByPlan<T>(IBatchQueryPlan<T> plan)
+    {
+        return plan.Fetch(this);
+    }
+
     private Task<T?> load<T, TId>(TId id) where T : class where TId : notnull
     {
         _documentTypes.Add(typeof(T));
-        var storage = _parent.StorageFor<T>();
+        var storage = Parent.StorageFor<T>();
         if (storage is IDocumentStorage<T, TId> s)
         {
             var handler = new LoadByIdHandler<T, TId>(s, id);
@@ -308,7 +314,7 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
 
         private Task<IReadOnlyList<TDoc>> load<TKey>(TKey[] keys)
         {
-            var storage = _parent._parent.StorageFor<TDoc>();
+            var storage = _parent.Parent.StorageFor<TDoc>();
             return _parent.AddItem(new LoadByIdArrayHandler<TDoc, TKey>(storage, keys));
         }
     }

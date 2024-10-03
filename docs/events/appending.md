@@ -1,8 +1,10 @@
 # Appending Events
 
 ::: tip
-Marten V5.4 introduced the new `FetchForWriting()` and `IEventStream` models that streamline the workflow of capturing events against
-an aggregated "write" model.
+For CQRS style command handlers that append events to an existing event stream, the Marten team very
+strongly recommends the [FetchForWriting](/scenarios/command_handler_workflow) API. This API is used underneath
+the Wolverine [Aggregate Handler Workflow](https://wolverinefx.net/guide/durability/marten/event-sourcing.html) that is probably the very simplest possible way to build command handlers
+with Marten event sourcing today.
 :::
 
 With Marten, events are captured and appended to logical "streams" of events. Marten provides
@@ -18,20 +20,54 @@ The event data is persisted to two tables:
 Events can be captured by either starting a new stream or by appending events to an existing stream. In addition, Marten has some tricks up its sleeve for dealing
 with concurrency issues that may result from multiple transactions trying to simultaneously append events to the same stream.
 
-## "Rich" vs "Quick" Appends <Badge type="tip" text="7.21" />
+## "Rich" vs "Quick" Appends <Badge type="tip" text="7.25" />
+
+::: tip
+Long story short, the new "Quick" model appears to provide much better performance and scalability.
+:::
 
 Before diving into starting new event streams or appending events to existing streams, just know that there are two different
 modes of event appending you can use with Marten:
 
-snippet: sample_configuring_event_append_mode
+<!-- snippet: sample_configuring_event_append_mode -->
+<a id='snippet-sample_configuring_event_append_mode'></a>
+```cs
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+    {
+        // This is the default Marten behavior from 4.0 on
+        opts.Events.AppendMode = EventAppendMode.Rich;
+
+        // Lighter weight mode that should result in better
+        // performance, but with a loss of available metadata
+        // within inline projections
+        opts.Events.AppendMode = EventAppendMode.Quick;
+    })
+    .UseNpgsqlDataSource();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/QuickAppend/Examples.cs#L12-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_event_append_mode' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The classic `Rich` mode will append events in a two step process where the local session will first determine all possible
 metadata for the events about to be appended such that inline projections can use event versions and the global event sequence
 numbers at the time that the inline projections are created. 
 
+::: warning
+If you are using `Inline` projections with the "Quick" mode, just be aware that you will not have access to the final
+event sequence or stream version at the time the projections are built. Marten _is_ able to set the stream version into
+a single stream projection document built `Inline`, but that's done on the server side. Just be warned.
+:::
+
 The newer `Quick` mode eschews version and sequence metadata in favor of performing the event append and stream creation
 operations with minimal overhead. The improved performance comes at the cost of not having the `IEvent.Version` and `IEvent.Sequence`
 information available at the time that inline projections are executed.
+
+From initial load testing, the "Quick" mode appears to lead to a 40-50% time reduction Marten's process of appending
+events. Your results will vary of course. Maybe more importantly, the "Quick" mode seems to make a large positive
+in the functioning of the asynchronous projections and subscriptions by preventing the event "skipping" issue that
+can happen with the "Rich" mode when a system becomes slow under heavy loads. Lastly, the Marten team believes that the
+"Quick" mode can alleviate concurrency issues from trying to append events to the same stream without utilizing optimistic
+or exclusive locking on the stream.
 
 If using inline projections for a single stream (`SingleStreamProjection` or _snapshots_) and the `Quick` mode, the Marten team
 highly recommends using the `IRevisioned` interface on your projected aggregate documents so that Marten can "move" the version

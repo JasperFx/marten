@@ -15,15 +15,6 @@ using Xunit.Abstractions;
 
 namespace DocumentDbTests.MultiTenancy;
 
-public class MultiTenancyFixture: StoreFixture
-{
-    public MultiTenancyFixture(): base("multi_tenancy")
-    {
-        Options.Policies.AllDocumentsAreMultiTenanted();
-        Options.Schema.For<User>().UseOptimisticConcurrency(true);
-    }
-}
-
 public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<MultiTenancyFixture>
 {
     private readonly ITestOutputHelper _output;

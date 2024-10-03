@@ -15,6 +15,7 @@ using Marten.Internal.Storage;
 using Marten.Services;
 using Marten.Sessions;
 using Marten.Storage;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace Marten.Events.Aggregation;
@@ -47,7 +48,10 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         Projection = projection;
         Slicer = slicer;
         Storage = storage;
+        Options = store.As<DocumentStore>().Options;
     }
+
+    internal StoreOptions Options { get; }
 
     public IAggregateProjection Projection { get; }
     public IEventSlicer<TDoc, TId> Slicer { get; }
@@ -62,14 +66,27 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         if (Projection.MatchesAnyDeleteType(slice))
         {
             var operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
+
+            await processPossibleSideEffects(session, slice).ConfigureAwait(false);
+
             session.QueueOperation(operation);
             return;
         }
 
         var aggregate = slice.Aggregate;
-        if (slice.Aggregate == null && lifecycle == ProjectionLifecycle.Inline)
+        // do not load if sliced by stream and the stream does not yet exist
+        if (slice.Aggregate == null && lifecycle == ProjectionLifecycle.Inline && (Slicer is not ISingleStreamSlicer || slice.ActionType != StreamActionType.Start))
         {
-            aggregate = await Storage.LoadAsync(slice.Id, session, cancellation).ConfigureAwait(false);
+            if (session.Options.Events.UseIdentityMapForInlineAggregates)
+            {
+                // It's actually important to go in through the front door and use the session so that
+                // the identity map can kick in here
+                aggregate = await session.LoadAsync<TDoc>(slice.Id, cancellation).ConfigureAwait(false);
+            }
+            else
+            {
+                aggregate = await Storage.LoadAsync(slice.Id, session, cancellation).ConfigureAwait(false);
+            }
         }
 
         // Does the aggregate already exist before the events are applied?
@@ -95,10 +112,21 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
             }
         }
 
-        var lastEvent = slice.Events().LastOrDefault();
         if (aggregate != null)
         {
             Storage.SetIdentity(aggregate, slice.Id);
+        }
+
+        if (session is ProjectionDocumentSession pds && pds.Mode == ShardExecutionMode.Continuous)
+        {
+            // Need to set the aggregate in case it didn't exist upfront
+            slice.Aggregate = aggregate;
+            await processPossibleSideEffects(session, slice).ConfigureAwait(false);
+        }
+
+        var lastEvent = slice.Events().LastOrDefault();
+        if (aggregate != null)
+        {
             Versioning.TrySetVersion(aggregate, lastEvent);
 
             Projection.ApplyMetadata(aggregate, lastEvent);
@@ -124,6 +152,33 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         }
 
         session.QueueOperation(storageOperation);
+    }
+
+    private async Task processPossibleSideEffects(DocumentSessionBase session, EventSlice<TDoc, TId> slice)
+    {
+        if (Projection is IAggregateProjectionWithSideEffects<TDoc> sideEffects)
+        {
+            await sideEffects.RaiseSideEffects(session, slice).ConfigureAwait(false);
+
+            if (slice.RaisedEvents != null)
+            {
+                var storage = session.EventStorage();
+                var ops = slice.BuildOperations(Options.EventGraph, session, storage, sideEffects.IsSingleStream());
+                foreach (var op in ops)
+                {
+                    session.QueueOperation(op);
+                }
+            }
+
+            if (slice.PublishedMessages != null)
+            {
+                var batch = await session.CurrentMessageBatch().ConfigureAwait(false);
+                foreach (var message in slice.PublishedMessages)
+                {
+                    await batch.PublishAsync(message).ConfigureAwait(false);
+                }
+            }
+        }
     }
 
     public IAggregateVersioning Versioning { get; set; }

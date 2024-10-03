@@ -2,9 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events;
+using Marten.Events.Aggregation;
+using Marten.Events.Daemon.Internals;
 using Marten.Exceptions;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -40,6 +43,16 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     {
         Concurrency = sessionOptions.ConcurrencyChecks;
         _workTracker = workTracker;
+    }
+
+    internal ValueTask<IMessageBatch> CurrentMessageBatch()
+    {
+        if (_workTracker is ProjectionUpdateBatch batch)
+        {
+            return batch.CurrentMessageBatch(this);
+        }
+
+        throw new InvalidOperationException("This session is not a ProjectionDocumentSession");
     }
 
     internal ITenancy Tenancy => DocumentStore.As<DocumentStore>().Tenancy;
@@ -145,6 +158,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
             {
                 storage.Store(this, entity);
                 var op = storage.Insert(entity, this, TenantId);
+                if (op is IRevisionedOperation r) r.Revision = 1;
                 _workTracker.Add(op);
             }
         }
@@ -365,22 +379,19 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
     private void storeEntity<T>(T entity, IDocumentStorage<T> storage) where T : notnull
     {
-        if (entity is IVersioned versioned)
+        switch (entity)
         {
-            if (versioned.Version != Guid.Empty)
-            {
+            case IVersioned versioned when versioned.Version != Guid.Empty:
                 storage.Store(this, entity, versioned.Version);
                 return;
-            }
+            case IRevisioned revisioned when revisioned.Version != 0:
+                storage.Store(this, entity, revisioned.Version);
+                return;
+            default:
+                // Put it in the identity map -- if necessary
+                storage.Store(this, entity);
+                break;
         }
-        else if (entity is IRevisioned revisioned && revisioned.Version != 0)
-        {
-            storage.Store(this, entity, revisioned.Version);
-            return;
-        }
-
-        // Put it in the identity map -- if necessary
-        storage.Store(this, entity);
     }
 
     public void EjectPatchedTypes(IUnitOfWork changes)

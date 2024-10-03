@@ -18,7 +18,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing;
 
-internal static class LinqInternalExtensions
+public static class LinqInternalExtensions
 {
     // private static Type[] _valueTypes = new Type[]
     // {
@@ -74,6 +74,13 @@ internal static class LinqInternalExtensions
     // Assume there's a separate member for the usage of a member with methods
     // i.e., StringMember.ToLower()
     // Dictionary fields will create a separate "dictionary value field"
+    /// <summary>
+    /// Use to find the correct queryable member for an expression. Example: collectionMember.MemberFor(node.Method.Arguments[0])
+    /// </summary>
+    /// <param name="collection"></param>
+    /// <param name="expression"></param>
+    /// <returns></returns>
+    /// <exception cref="BadLinqExpressionException"></exception>
     public static IQueryableMember MemberFor(this IHasChildrenMembers collection, Expression expression)
     {
         if (expression is ParameterExpression)
@@ -109,6 +116,15 @@ internal static class LinqInternalExtensions
     // Assume there's a separate member for the usage of a member with methods
     // i.e., StringMember.ToLower()
     // Dictionary fields will create a separate "dictionary value field"
+    /// <summary>
+    /// Find the queryable member against a collection using an Expression that represents
+    /// the accessor of that expression
+    /// </summary>
+    /// <param name="collection"></param>
+    /// <param name="expression"></param>
+    /// <param name="invalidExpression"></param>
+    /// <returns></returns>
+    /// <exception cref="BadLinqExpressionException"></exception>
     public static IQueryableMember MemberFor(this IHasChildrenMembers collection, Expression expression,
         string invalidExpression)
     {
@@ -305,7 +321,7 @@ internal static class LinqInternalExtensions
                expression.NodeType == ExpressionType.Lambda;
     }
 
-    internal static ConstantExpression ReduceToConstant(this Expression expression)
+    public static ConstantExpression ReduceToConstant(this Expression expression)
     {
         if (expression is LambdaExpression l)
         {

@@ -50,10 +50,11 @@ internal class EventTableColumn: TableColumn, IEventTableColumn
 
     public virtual void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
-        method.Frames.Code($"parameters[{index}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};",
-            NpgsqlDbType);
         method.Frames.Code(
-            $"parameters[{index}].{nameof(NpgsqlParameter.Value)} = {{0}}.{Member.Name};", Use.Type<IEvent>());
+            $"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder.AppendParameter)}({{0}}.{Member.Name});", Use.Type<IEvent>());
+
+        method.Frames.Code($"parameter{index}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};", NpgsqlDbType);
+
     }
 
     public virtual string ValueSql(EventGraph graph, AppendMode mode)

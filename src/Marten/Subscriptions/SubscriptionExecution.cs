@@ -57,7 +57,7 @@ internal class SubscriptionExecution: ISubscriptionExecution
                 {
                     Tracking = DocumentTracking.IdentityOnly,
                     Tenant = new Tenant(Tenancy.DefaultTenantId, _database)
-                });
+                }, Mode);
 
 
             var listener = await _subscription.ProcessEventsAsync(range, range.Agent, session, _cancellation.Token)

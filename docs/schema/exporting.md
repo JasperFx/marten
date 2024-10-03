@@ -37,17 +37,15 @@ public async Task export_ddl()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ExportingDDL.cs#L9-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_export-ddl' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-As of v0.8, this export will include the Hilo id generation table and all the objects necessary to use the event store functionality if that is enabled.
-
-For the moment, Marten is not directly supporting any kind of database migration strategy. To be honest, we're waiting to see how Marten plays out in production before investing in anything like that.
+For the moment, Marten is not directly supporting any kind of database migration strategy. There are community tools build on top of Marten for managing schema db migration, refer to our [community section](/community/tools-and-libraries.html#sable) for more details.
 
 The code above creates the following SQL script below, with these elements:
 
 1. For each document type, there is a table systematically named `mt_doc_[document type name]` that consists of an id column and a
    JSONB column called "data"
-1. For each document type, there is a function called `mt_upsert_[document type name]` that performs inserts or updates of that document type
-1. You'll see an index named `mt_doc_user_idx_user_name` that is on a duplicated, searchable field for the `User` document (it's configured by attribute)
-1. `mt_hilo` and `mt_get_next_hi` that support Marten's HiLo numeric identifier strategy.
+2. For each document type, there is a function called `mt_upsert_[document type name]` that performs inserts or updates of that document type
+3. You'll see an index named `mt_doc_user_idx_user_name` that is on a duplicated, searchable field for the `User` document (it's configured by attribute)
+4. `mt_hilo` and `mt_get_next_hi` that support Marten's HiLo numeric identifier strategy.
 
 The full DDL exported from above is:
 

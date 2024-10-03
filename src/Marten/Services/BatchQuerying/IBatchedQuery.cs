@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Internal.Sessions;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 
 namespace Marten.Services.BatchQuerying;
 
@@ -60,6 +62,8 @@ public interface IBatchedQuery
     ///     Access to event store specific query mechanisms
     /// </summary>
     IBatchEvents Events { get; }
+
+    QuerySession Parent { get; }
 
     /// <summary>
     ///     Load a single document of Type "T" by id
@@ -136,4 +140,21 @@ public interface IBatchedQuery
     ///     Force the batched query to execute synchronously
     /// </summary>
     void ExecuteSynchronously();
+
+    /// <summary>
+    /// Used internally by Marten. Allows for the usage of any old IQueryHandler<T>
+    /// in a batch
+    /// </summary>
+    /// <param name="handler"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Task<T> AddItem<T>(IQueryHandler<T> handler);
+
+    /// <summary>
+    /// Enroll a query plan with a batch query
+    /// </summary>
+    /// <param name="plan"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Task<T> QueryByPlan<T>(IBatchQueryPlan<T> plan);
 }

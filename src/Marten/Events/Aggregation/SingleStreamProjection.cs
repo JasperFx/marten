@@ -1,9 +1,9 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
+using Marten.Events.Projections;
+using Marten.Internal;
 using Marten.Schema;
 
 namespace Marten.Events.Aggregation;
@@ -18,24 +18,42 @@ public class SingleStreamProjection<T>: GeneratedAggregateProjectionBase<T>
     {
     }
 
-    protected sealed override object buildEventSlicer(StoreOptions documentMapping)
+    public override bool IsSingleStream()
     {
-        Type slicerType = null;
-        if (_aggregateMapping.IdType == typeof(Guid))
-        {
-            slicerType = typeof(ByStreamId<>).MakeGenericType(_aggregateMapping.DocumentType);
-        }
-        else if (_aggregateMapping.IdType != typeof(string))
+        return true;
+    }
+
+    protected sealed override object buildEventSlicer(StoreOptions options)
+    {
+        var isValidIdentity = IsIdTypeValidForStream(_aggregateMapping.IdType, options, out var idType, out var valueType);
+        if (!isValidIdentity)
         {
             throw new ArgumentOutOfRangeException(
                 $"{_aggregateMapping.IdType.FullNameInCode()} is not a supported stream id type for aggregate {_aggregateMapping.DocumentType.FullNameInCode()}");
         }
+
+        if (valueType != null)
+        {
+            var slicerType = idType == typeof(Guid)
+                ? typeof(ByStreamId<,>).MakeGenericType(_aggregateMapping.DocumentType, valueType.OuterType)
+                : typeof(ByStreamKey<,>).MakeGenericType(_aggregateMapping.DocumentType, valueType.OuterType);
+
+            return Activator.CreateInstance(slicerType, valueType)!;
+        }
         else
         {
-            slicerType = typeof(ByStreamKey<>).MakeGenericType(_aggregateMapping.DocumentType);
-        }
+            var slicerType = idType == typeof(Guid)
+                ? typeof(ByStreamId<>).MakeGenericType(_aggregateMapping.DocumentType)
+                : typeof(ByStreamKey<>).MakeGenericType(_aggregateMapping.DocumentType);
 
-        return Activator.CreateInstance(slicerType);
+            return Activator.CreateInstance(slicerType)!;
+        }
+    }
+
+    public override void ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
+    {
+        mapping.UseVersionFromMatchingStream = Lifecycle == ProjectionLifecycle.Inline &&
+                                               storeOptions.Events.AppendMode == EventAppendMode.Quick;
     }
 
     protected sealed override Type baseTypeForAggregationRuntime()
@@ -43,33 +61,32 @@ public class SingleStreamProjection<T>: GeneratedAggregateProjectionBase<T>
         return typeof(AggregationRuntime<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
     }
 
+    internal bool IsIdTypeValidForStream(Type idType, StoreOptions options, out Type expectedType, out ValueTypeInfo? valueType)
+    {
+        valueType = default;
+        expectedType = options.Events.StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
+        if (idType == expectedType) return true;
+
+        valueType = options.TryFindValueType(idType);
+        if (valueType == null) return false;
+
+        return valueType.SimpleType == expectedType;
+    }
 
     protected sealed override IEnumerable<string> validateDocumentIdentity(StoreOptions options,
         DocumentMapping mapping)
     {
-        switch (options.Events.StreamIdentity)
+        var matches = IsIdTypeValidForStream(mapping.IdType, options, out var expectedType, out var valueTypeInfo);
+        if (!matches)
         {
-            case StreamIdentity.AsGuid:
-            {
-                if (mapping.IdType != typeof(Guid))
-                {
-                    yield return
-                        $"Id type mismatch. The stream identity type is System.Guid, but the aggregate document {typeof(T).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
-                }
+            yield return
+                $"Id type mismatch. The stream identity type is {expectedType.NameInCode()} (or a strong typed identifier type that is convertible to {expectedType.NameInCode()}), but the aggregate document {typeof(T).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
+        }
 
-                break;
-            }
-            case StreamIdentity.AsString:
-            {
-                if (mapping.IdType != typeof(string))
-                {
-                    yield return
-                        $"Id type mismatch. The stream identity type is string, but the aggregate document {typeof(T).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
-                }
-
-                break;
-            }
+        if (valueTypeInfo != null && !mapping.IdMember.GetRawMemberType().IsNullable())
+        {
+            yield return
+                $"At this point, Marten requires that identity members for strong typed identifiers be Nullable<T>. Change {mapping.DocumentType.FullNameInCode()}.{mapping.IdMember.Name} to a Nullable for Marten compliance";
         }
     }
 }
-

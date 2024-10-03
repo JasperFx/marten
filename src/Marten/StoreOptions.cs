@@ -20,6 +20,7 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Services;
 using Marten.Services.Json;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Marten.Util;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -30,6 +31,7 @@ using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Connections;
+using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten;
 
@@ -61,6 +63,7 @@ public enum TenantIdStyle
 public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDocumentSchemaResolver
 {
     public const int DefaultTimeout = 5;
+    internal const string? NoConnectionMessage = "No tenancy is configured! Ensure that you provided connection string in `AddMarten` method or called `UseNpgsqlDataSource`";
 
     internal static readonly Func<string, NpgsqlDataSourceBuilder> DefaultNpgsqlDataSourceBuilderFactory =
         connectionString => new NpgsqlDataSourceBuilder(connectionString);
@@ -79,16 +82,19 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     internal readonly List<Action<ISerializer>> SerializationConfigurations = new();
 
-    private readonly IList<IDocumentPolicy> _policies = new List<IDocumentPolicy>
-    {
-        new VersionedPolicy(), new SoftDeletedPolicy(), new TrackedPolicy(), new TenancyPolicy(), new ProjectionDocumentPolicy()
-    };
+    private readonly List<IDocumentPolicy> _policies =
+    [
+        new VersionedPolicy(), new SoftDeletedPolicy(), new TrackedPolicy(), new TenancyPolicy(),
+        new ProjectionDocumentPolicy()
+    ];
+
+    private readonly List<IDocumentPolicy> _postPolicies = new();
 
     /// <summary>
     ///     Register "initial data loads" that will be applied to the DocumentStore when it is
     ///     bootstrapped
     /// </summary>
-    internal readonly IList<IInitialData> InitialData = new List<IInitialData>();
+    internal readonly List<IInitialData> InitialData = new();
 
     /// <summary>
     /// Configure tenant id behavior within this Marten DocumentStore
@@ -98,7 +104,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Add, remove, or reorder global session listeners
     /// </summary>
-    public readonly IList<IDocumentSessionListener> Listeners = new List<IDocumentSessionListener>();
+    public readonly List<IDocumentSessionListener> Listeners = new();
 
     /// <summary>
     /// Used to enable or disable Marten's OpenTelemetry features for just this session.
@@ -391,7 +397,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     public ITenancy Tenancy
     {
         get => (_tenancy ?? throw new InvalidOperationException(
-                "No tenancy is configured! Ensure that you provided connection string in `AddMarten` method or called `UseNpgsqlDataSource`"))
+                NoConnectionMessage))
             .Value;
         set => _tenancy = new Lazy<ITenancy>(() => value);
     }
@@ -399,7 +405,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     private Lazy<ITenancy>? _tenancy;
     private Func<string, NpgsqlDataSourceBuilder> _npgsqlDataSourceBuilderFactory = DefaultNpgsqlDataSourceBuilderFactory;
     private INpgsqlDataSourceFactory _npgsqlDataSourceFactory;
-    private readonly IList<Type> _compiledQueryTypes = new List<Type>();
+    private readonly List<Type> _compiledQueryTypes = new();
     private int _applyChangesLockId = 4004;
     private bool _shouldApplyChangesOnStartup = false;
     private bool _shouldAssertDatabaseMatchesConfigurationOnStartup = false;
@@ -668,15 +674,23 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         foreach (var policy in _policies) policy.Apply(mapping);
     }
 
+    internal void applyPostPolicies(DocumentMapping mapping)
+    {
+        foreach (var policy in _postPolicies)
+        {
+            policy.Apply(mapping);
+        }
+    }
+
     /// <summary>
     ///     Validate that minimal options to initialize a document store have been specified
     /// </summary>
     internal void Validate()
     {
-        if (Tenancy == null)
+        if (_tenancy == null)
         {
             throw new InvalidOperationException(
-                "Tenancy not specified - provide either connection string or connection factory through Connection(..)");
+                NoConnectionMessage);
         }
     }
 
@@ -820,7 +834,74 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         /// <returns></returns>
         public PoliciesExpression AllDocumentsAreMultiTenanted()
         {
-            return ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
+            return ForAllDocuments(mapping =>
+            {
+                if (mapping.DocumentType.HasAttribute<SingleTenantedAttribute>()) return;
+                mapping.TenancyStyle = TenancyStyle.Conjoined;
+            });
+        }
+
+        /// <summary>
+        ///     Unless explicitly marked otherwise, all documents should
+        ///     use conjoined multi-tenancy and opt into using user defined
+        /// PostgreSQL table partitioning
+        /// </summary>
+        /// <param name="configure">Customize the table partitioning on the tenant id</param>
+        /// <returns></returns>
+        public PoliciesExpression AllDocumentsAreMultiTenantedWithPartitioning(Action<PartitioningExpression> configure)
+        {
+            return ForAllDocuments(mapping =>
+            {
+                if (mapping.DocumentType == typeof(DeadLetterEvent)) return;
+                if (mapping.DocumentType.HasAttribute<SingleTenantedAttribute>()) return;
+
+                mapping.PrimaryKeyTenancyOrdering = PrimaryKeyTenancyOrdering.Id_Then_TenantId;
+
+                mapping.TenancyStyle = TenancyStyle.Conjoined;
+                var expression = new PartitioningExpression(mapping, [TenantIdColumn.Name]);
+                configure(expression);
+            });
+        }
+
+        /// <summary>
+        /// Add table partitioning to all document table storage that is configured as using conjoined
+        /// multi-tenancy
+        /// </summary>
+        /// <param name="configure"></param>
+        /// <returns></returns>
+        public PoliciesExpression PartitionMultiTenantedDocuments(Action<PartitioningExpression> configure)
+        {
+            return PostConfiguration(mapping =>
+            {
+                if (mapping.TenancyStyle == TenancyStyle.Single) return;
+
+                var expression = new PartitioningExpression(mapping, [TenantIdColumn.Name]);
+                configure(expression);
+            });
+        }
+
+        /// <summary>
+        /// Use Marten-managed per-tenant table partitions for all multi-tenanted document types.
+        /// The tenant id to partition suffix mapping is controlled by an "mt_tenant_partitions" table
+        /// that Marten will place in your PostgreSQL database
+        /// </summary>
+        /// <param name="schemaName"></param>
+        /// <returns></returns>
+        public PoliciesExpression PartitionMultiTenantedDocumentsUsingMartenManagement(string schemaName)
+        {
+            var policy = new MartenManagedTenantListPartitions(_parent, schemaName);
+
+            _parent.Storage.Add(policy.Partitions);
+
+            _parent._postPolicies.Add(policy);
+
+            return this;
+        }
+
+        internal PoliciesExpression PostConfiguration(Action<DocumentMapping> action)
+        {
+            _parent._postPolicies.Add(new LambdaDocumentPolicy(action));
+            return this;
         }
 
         /// <summary>
@@ -831,6 +912,21 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         public PoliciesExpression AllDocumentsSoftDeleted()
         {
             return ForAllDocuments(_ => _.DeleteStyle = DeleteStyle.SoftDelete);
+        }
+
+        /// <summary>
+        /// Unless explicitly marked otherwise, all document types should
+        /// be soft-deleted and use partitioning based on its deletion status
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public PoliciesExpression AllDocumentsSoftDeletedWithPartitioning()
+        {
+            return ForAllDocuments(_ =>
+            {
+                _.PartitionByDeleted();
+                _.DeleteStyle = DeleteStyle.SoftDelete;
+            });
         }
 
         /// <summary>
@@ -859,6 +955,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
                 x.UseOptimisticConcurrency = true;
             });
         }
+
+
     }
 
     /// <summary>
@@ -899,6 +997,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     IDocumentSchemaResolver IReadOnlyStoreOptions.Schema => this;
 
     string IDocumentSchemaResolver.EventsSchemaName => Events.DatabaseSchemaName;
+    internal MartenManagedTenantListPartitions TenantPartitions { get; set; }
 
     string IDocumentSchemaResolver.For<TDocument>(bool qualified)
     {

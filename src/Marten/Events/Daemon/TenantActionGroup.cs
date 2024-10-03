@@ -34,7 +34,7 @@ internal class TenantActionGroup
             : DocumentTracking.None;
 
         await using var operations = new ProjectionDocumentSession(store, batch,
-            new SessionOptions { Tracking = tracking, Tenant = _tenant });
+            new SessionOptions { Tracking = tracking, Tenant = _tenant }, batch.Mode);
         await projection.ApplyAsync(operations, _actions, cancellationToken).ConfigureAwait(false);
     }
 }

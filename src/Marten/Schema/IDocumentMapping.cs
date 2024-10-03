@@ -17,4 +17,10 @@ internal interface IDocumentMapping
 
     public PropertySearching PropertySearching { get; }
     public DeleteStyle DeleteStyle { get; }
+
+    /// <summary>
+    /// This is a workaround for the quick append + inline projection
+    /// issue
+    /// </summary>
+    bool UseVersionFromMatchingStream { get; set; }
 }

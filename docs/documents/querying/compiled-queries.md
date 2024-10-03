@@ -1,9 +1,13 @@
-# Compiled Queries
+# Compiled Queries and Query Plans
 
-::: tip
-The compiled query support was completely rewritten for Marten V4, and the signature changed somewhat. The new signature depends
-on `IMartenQueryable<T>` instead of `IQueryable<T>`, and most Marten specific Linq usages are available.
-:::
+Marten has two different implementations for the ["Specification" pattern](https://deviq.com/design-patterns/specification-pattern) that
+enable you to encapsulate all the filtering, ordering, and paging for a logically reusable data query into a single class:
+
+1. Compiled queries that help short circuit the LINQ processing with reusable "execution plans" for maximum performance, but
+   are admittedly limited in terms of their ability to handle all possible LINQ queries or basically any dynamic querying whatsoever
+2. Query plans that can support anything that Marten itself can do, just without the magic LINQ query compilation optimization
+
+## Compiled Queries
 
 ::: warning
 Don't use asynchronous Linq operators in the expression body of a compiled query. This will not impact your ability to use compiled queries
@@ -593,4 +597,149 @@ public async Task use_compiled_query_with_statistics()
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L37-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_querystatistics_with_compiled_query' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Query Plans <Badge type="tip" text="7.25" />
+
+::: info
+The query plan concept was created specifically to help a [JasperFx](https://jasperfx.net) client try to eliminate their
+custom repository wrappers around Marten and to better utilize batch querying.
+:::
+
+::: tip
+Batch querying is a great way to improve the performance of your system~~~~
+:::
+
+A query plan is another flavor of "Specification" for Marten that just enables you to bundle up query logic that can
+be reused within your codebase without having to create wrappers around Marten itself. To create a reusable query plan,
+implement the `IQueryPlan<T>` interface where `T` is the type of the result you want. Here's a simplistic sample from
+the tests:
+
+<!-- snippet: sample_color_targets -->
+<a id='snippet-sample_color_targets'></a>
+```cs
+public class ColorTargets: QueryListPlan<Target>
+{
+    public Colors Color { get; }
+
+    public ColorTargets(Colors color)
+    {
+        Color = color;
+    }
+
+    // All we're doing here is just turning around and querying against the session
+    // All the same though, this approach lets you do much more runtime logic
+    // than a compiled query can
+    public override IQueryable<Target> Query(IQuerySession session)
+    {
+        return session.Query<Target>().Where(x => x.Color == Color).OrderBy(x => x.Number);
+    }
+}
+
+// The above is short hand for:
+
+public class LonghandColorTargets: IQueryPlan<IReadOnlyList<Target>>, IBatchQueryPlan<IReadOnlyList<Target>>
+{
+    public Colors Color { get; }
+
+    public LonghandColorTargets(Colors color)
+    {
+        Color = color;
+    }
+
+    public Task<IReadOnlyList<Target>> Fetch(IQuerySession session, CancellationToken token)
+    {
+        return session
+            .Query<Target>()
+            .Where(x => x.Color == Color)
+            .OrderBy(x => x.Number)
+            .ToListAsync(token: token);
+    }
+
+    public Task<IReadOnlyList<Target>> Fetch(IBatchedQuery batch)
+    {
+        return batch
+            .Query<Target>()
+            .Where(x => x.Color == Color)
+            .OrderBy(x => x.Number)
+            .ToList();
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_plans.cs#L78-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_color_targets' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+And then use that like so:
+
+<!-- snippet: sample_using_query_plan -->
+<a id='snippet-sample_using_query_plan'></a>
+```cs
+public static async Task use_query_plan(IQuerySession session, CancellationToken token)
+{
+    var targets = await session
+        .QueryByPlanAsync(new ColorTargets(Colors.Blue), token);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_plans.cs#L132-L140' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_query_plan' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+There is also a similar interface for usage with [batch querying](/documents/querying/batched-queries):
+
+<!-- snippet: sample_IBatchQueryPlan -->
+<a id='snippet-sample_ibatchqueryplan'></a>
+```cs
+/// <summary>
+/// Marten's concept of the "Specification" pattern for reusable
+/// queries within Marten batched queries. Use this for operations that cannot be supported by Marten compiled queries
+/// </summary>
+/// <typeparam name="T"></typeparam>
+public interface IBatchQueryPlan<T>
+{
+    Task<T> Fetch(IBatchedQuery query);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IQueryPlan.cs#L21-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ibatchqueryplan' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+And because we expect this to be very common, there is convenience base class named `QueryListPlan<T>` for querying lists of `T` data that can be used for both querying directly against an `IQuerySession` and for batch querying. The usage within a batched query is shown below from the Marten tests:
+
+<!-- snippet: sample_using_query_plan_in_batch_query -->
+<a id='snippet-sample_using_query_plan_in_batch_query'></a>
+```cs
+[Fact]
+public async Task use_as_batch()
+{
+    await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
+
+    var targets = Target.GenerateRandomData(1000).ToArray();
+    await theStore.BulkInsertDocumentsAsync(targets);
+
+    // Start a batch query
+    var batch = theSession.CreateBatchQuery();
+
+    // Using the ColorTargets plan twice, once for "Blue" and once for "Green" target documents
+    var blueFetcher = batch.QueryByPlan(new ColorTargets(Colors.Blue));
+    var greenFetcher = batch.QueryByPlan(new ColorTargets(Colors.Green));
+
+    // Execute the batch query
+    await batch.Execute();
+
+    // The batched querying in Marten is essentially registering a "future"
+    // for each query, so we'll await each task from above to get at the actual
+    // data returned from batch.Execute() above
+    var blues = await blueFetcher;
+    var greens = await greenFetcher;
+
+    // And the assertion part of our arrange, act, assertion test
+    blues.ShouldNotBeEmpty();
+    greens.ShouldNotBeEmpty();
+
+    var expectedBlues = targets.Where(x => x.Color == Colors.Blue).OrderBy(x => x.Number);
+    var expectedReds = targets.Where(x => x.Color == Colors.Green).OrderBy(x => x.Number);
+
+    blues.Select(x => x.Id).ShouldBe(expectedBlues.Select(x => x.Id));
+    greens.Select(x => x.Id).ShouldBe(expectedReds.Select(x => x.Id));
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_plans.cs#L38-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_query_plan_in_batch_query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

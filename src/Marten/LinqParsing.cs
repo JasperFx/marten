@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core;
+using Marten.Events;
 using Marten.Events.Archiving;
 using Marten.Linq.CreatedAt;
 using Marten.Linq.LastModified;
@@ -70,6 +71,7 @@ public class LinqParsing: IReadOnlyLinqParsing
 
         // event is archived
         new MaybeArchivedMethodCallParser(),
+        new EventTypesAreParser(),
 
         // last modified
         new ModifiedSinceParser(),
@@ -102,7 +104,8 @@ public class LinqParsing: IReadOnlyLinqParsing
     /// </summary>
     public readonly IList<IMethodCallParser> MethodCallParsers = new List<IMethodCallParser>();
 
-    private ImHashMap<int, IMethodCallParser> _methodParsers = ImHashMap<int, IMethodCallParser>.Empty;
+    private ImHashMap<Module, ImHashMap<int, IMethodCallParser>> _methodParsersByModule =
+        ImHashMap<Module, ImHashMap<int, IMethodCallParser>>.Empty;
 
     internal LinqParsing(StoreOptions options)
     {
@@ -134,16 +137,25 @@ public class LinqParsing: IReadOnlyLinqParsing
 
     IReadOnlyList<IMethodCallParser> IReadOnlyLinqParsing.MethodCallParsers => _parsers.ToList();
 
-
     internal IMethodCallParser FindMethodParser(MethodCallExpression expression)
     {
-        if (_methodParsers.TryFind(expression.Method.MetadataToken, out var parser))
+        var module = expression.Method.Module;
+
+        if (!_methodParsersByModule.TryFind(module, out var methodParsers))
+        {
+            methodParsers = ImHashMap<int, IMethodCallParser>.Empty;
+            _methodParsersByModule = _methodParsersByModule.AddOrUpdate(module, methodParsers);
+        }
+
+        if (methodParsers.TryFind(expression.Method.MetadataToken, out var parser))
         {
             return parser;
         }
 
         parser = determineMethodParser(expression);
-        _methodParsers = _methodParsers.AddOrUpdate(expression.Method.MetadataToken, parser);
+
+        _methodParsersByModule = _methodParsersByModule.AddOrUpdate(module, methodParsers.AddOrUpdate(expression.Method.MetadataToken, parser));
+
         return parser;
     }
 

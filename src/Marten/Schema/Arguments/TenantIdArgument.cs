@@ -5,6 +5,7 @@ using JasperFx.CodeGeneration.Model;
 using Marten.Internal.CodeGeneration;
 using Marten.Storage.Metadata;
 using NpgsqlTypes;
+using Weasel.Postgresql;
 
 namespace Marten.Schema.Arguments;
 
@@ -37,8 +38,8 @@ public class TenantIdArgument: UpsertArgument
         Argument parameters,
         DocumentMapping mapping, StoreOptions options)
     {
-        method.Frames.Code("{0}[{1}].Value = _tenantId;", parameters, i);
-        method.Frames.Code("{0}[{1}].NpgsqlDbType = {2};", parameters, i, DbType);
+        method.Frames.Code($"var parameter{{0}} = parameterBuilder.{nameof(IGroupedParameterBuilder.AppendParameter)}(_tenantId);", i);
+        method.Frames.Code("parameter{0}.NpgsqlDbType = {1};", i, DbType);
     }
 
     public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)

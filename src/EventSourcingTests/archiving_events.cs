@@ -6,6 +6,7 @@ using Marten;
 using Marten.Events;
 using Marten.Events.Archiving;
 using Marten.Exceptions;
+using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
@@ -15,11 +16,11 @@ using Xunit.Abstractions;
 
 namespace EventSourcingTests;
 
-public class archiving_events: IntegrationContext
+public class archiving_events: OneOffConfigurationsContext
 {
     private readonly ITestOutputHelper _output;
 
-    public archiving_events(DefaultStoreFixture fixture, ITestOutputHelper output): base(fixture)
+    public archiving_events(ITestOutputHelper output)
     {
         _output = output;
     }
@@ -34,9 +35,13 @@ public class archiving_events: IntegrationContext
 
     #endregion
 
-    [Fact]
-    public async Task archive_stream_by_guid()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task archive_stream_by_guid(bool usePartitioning)
     {
+        StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = usePartitioning);
+
         var stream = Guid.NewGuid();
 
         theSession.Events.StartStream(stream, new AEvent(), new BEvent(), new CEvent());
@@ -48,7 +53,7 @@ public class archiving_events: IntegrationContext
         stream1.IsArchived.ShouldBeFalse();
 
         var isArchived = await theSession.Connection
-            .CreateCommand("select is_archived from mt_events where stream_id = :stream")
+            .CreateCommand($"select is_archived from {SchemaName}.mt_events where stream_id = :stream")
             .With("stream", stream).FetchListAsync<bool>();
 
         // None of the events should be archived
@@ -61,7 +66,50 @@ public class archiving_events: IntegrationContext
         stream2.IsArchived.ShouldBeTrue();
 
         isArchived = await theSession.Connection
-            .CreateCommand("select is_archived from mt_events where stream_id = :stream")
+            .CreateCommand($"select is_archived from {SchemaName}.mt_events where stream_id = :stream")
+            .With("stream", stream).FetchListAsync<bool>();
+
+        // All of the events should be archived
+        isArchived.All(x => x).ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task archive_stream_by_guid_when_tenanted(bool usePartitioning)
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.UseArchivedStreamPartitioning = usePartitioning;
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+        });
+
+        var stream = Guid.NewGuid();
+
+        var session = theStore.LightweightSession("one");
+        session.Events.StartStream(stream, new AEvent(), new BEvent(), new CEvent());
+        await session.SaveChangesAsync();
+
+        session.Logger = new TestOutputMartenLogger(_output);
+
+        var stream1 = await session.Events.FetchStreamStateAsync(stream);
+        stream1.IsArchived.ShouldBeFalse();
+
+        var isArchived = await session.Connection
+            .CreateCommand($"select is_archived from {SchemaName}.mt_events where stream_id = :stream")
+            .With("stream", stream).FetchListAsync<bool>();
+
+        // None of the events should be archived
+        isArchived.All(x => !x).ShouldBeTrue();
+
+        session.Events.ArchiveStream(stream);
+        await session.SaveChangesAsync();
+
+        var stream2 = await session.Events.FetchStreamStateAsync(stream);
+        stream2.IsArchived.ShouldBeTrue();
+
+        isArchived = await session.Connection
+            .CreateCommand($"select is_archived from {SchemaName}.mt_events where stream_id = :stream")
             .With("stream", stream).FetchListAsync<bool>();
 
         // All of the events should be archived
@@ -76,7 +124,7 @@ public class archiving_events: IntegrationContext
         theSession.Events.StartStream(stream, new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
         await theSession.SaveChangesAsync();
 
-        await theSession.Connection.CreateCommand("update mt_events set is_archived = TRUE where version < 2")
+        await theSession.Connection.CreateCommand($"update {SchemaName}.mt_events set is_archived = TRUE where version < 2")
             .ExecuteNonQueryAsync();
 
         var events = await theSession.Events.FetchStreamAsync(stream);
@@ -85,10 +133,16 @@ public class archiving_events: IntegrationContext
 
     }
 
-    [Fact]
-    public async Task archive_stream_by_string()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task archive_stream_by_string(bool usePartitioning)
     {
-        UseStreamIdentity(StreamIdentity.AsString);
+        StoreOptions(opts =>
+        {
+            opts.Events.UseArchivedStreamPartitioning = usePartitioning;
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+        });
 
         var stream = Guid.NewGuid().ToString();
 
@@ -99,7 +153,7 @@ public class archiving_events: IntegrationContext
         stream1.IsArchived.ShouldBeFalse();
 
         var isArchived = await theSession.Connection
-            .CreateCommand("select is_archived from string_events.mt_events where stream_id = :stream")
+            .CreateCommand($"select is_archived from {SchemaName}.mt_events where stream_id = :stream")
             .With("stream", stream).FetchListAsync<bool>();
 
         // None of the events should be archived
@@ -112,16 +166,20 @@ public class archiving_events: IntegrationContext
         stream2.IsArchived.ShouldBeTrue();
 
         isArchived = await theSession.Connection
-            .CreateCommand("select is_archived from string_events.mt_events where stream_id = :stream")
+            .CreateCommand($"select is_archived from {SchemaName}.mt_events where stream_id = :stream")
             .With("stream", stream).FetchListAsync<bool>();
 
         // All of the events should be archived
         isArchived.All(x => x).ShouldBeTrue();
     }
 
-    [Fact]
-    public async Task query_by_events_filters_out_archived_events_by_default()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task query_by_events_filters_out_archived_events_by_default(bool usePartitioning)
     {
+        StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = usePartitioning);
+
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         var stream1 = Guid.NewGuid();
@@ -143,9 +201,13 @@ public class archiving_events: IntegrationContext
         events.All(x => x.StreamId != stream2).ShouldBeTrue();
     }
 
-    [Fact]
-    public async Task query_by_events_and_explicitly_search_for_archived_events()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task query_by_events_and_explicitly_search_for_archived_events(bool usePartitioning)
     {
+        StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = usePartitioning);
+
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         var stream1 = Guid.NewGuid();
@@ -158,10 +220,10 @@ public class archiving_events: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
         theSession.Events.ArchiveStream(stream2);
         await theSession.SaveChangesAsync();
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         #region sample_querying_for_archived_events
 
@@ -176,9 +238,13 @@ public class archiving_events: IntegrationContext
         events.All(x => x.StreamId == stream2).ShouldBeTrue();
     }
 
-    [Fact]
-    public async Task query_by_events_and_explicitly_search_for_maybe_archived_events()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task query_by_events_and_explicitly_search_for_maybe_archived_events(bool usePartitioning)
     {
+        StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = usePartitioning);
+
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         var stream1 = Guid.NewGuid();
@@ -207,9 +273,13 @@ public class archiving_events: IntegrationContext
         events.Count.ShouldBe(9);
     }
 
-    [Fact]
-    public async Task query_by_a_specific_event_filters_out_archived_events_by_default()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task query_by_a_specific_event_filters_out_archived_events_by_default(bool usePartitioning)
     {
+        StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = usePartitioning);
+
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         var stream1 = Guid.NewGuid();
@@ -242,9 +312,13 @@ public class archiving_events: IntegrationContext
         events.All(x => x.Tracker != aEvent2.Tracker).ShouldBeTrue();
     }
 
-    [Fact]
-    public async Task prevent_append_operation_for_archived_stream_on_sync_commit()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task prevent_append_operation_for_archived_stream_on_sync_commit(bool usePartitioning)
     {
+        StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = usePartitioning);
+
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         var streamId = Guid.NewGuid();
@@ -262,9 +336,13 @@ public class archiving_events: IntegrationContext
         thrownException.Message.ShouldBe($"Attempted to append event to archived stream with Id '{streamId}'.");
     }
 
-    [Fact]
-    public async Task prevent_append_operation_for_archived_stream_on_async_commit()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task prevent_append_operation_for_archived_stream_on_async_commit(bool usePartitioning)
     {
+        StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = usePartitioning);
+
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         var streamId = Guid.NewGuid();

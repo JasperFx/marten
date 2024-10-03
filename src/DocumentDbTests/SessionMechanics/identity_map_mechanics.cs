@@ -192,6 +192,25 @@ public class identity_map_mechanics: IntegrationContext
 
     }
 
+    [Fact]
+    public async Task opt_into_identity_map_with_lightweight_sessions()
+    {
+        var target = Target.Random();
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        await using var lightweight = theStore.LightweightSession();
+        lightweight.UseIdentityMapFor<Target>();
+
+        var target1 = await lightweight.LoadAsync<Target>(target.Id);
+        var target2 = await lightweight.LoadAsync<Target>(target.Id);
+        var target3 = await lightweight.LoadAsync<Target>(target.Id);
+
+        target1.ShouldBeTheSameAs(target2);
+        target1.ShouldBeTheSameAs(target3);
+    }
+
     public identity_map_mechanics(DefaultStoreFixture fixture): base(fixture)
     {
     }

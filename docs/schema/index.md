@@ -89,28 +89,42 @@ an `IHostedService` into your system that will run on startup.
 :::
 
 Marten can be configured to create (or drop & create) databases in case they do not exist. This is done via store options, through `StoreOptions.CreateDatabasesForTenants`.
+Note that this functionality is only available by bootstrapping Marten as part of an `IHost` and does not execute by 
+merely building a `DocumentStore`. This change was made in V7 so the database connectivity could run with asynchronous code. You 
+might need to add `Persist Security Info Property=true` to your connection string if there is any issue with PostgreSQL claiming
+that it is missing a password.
 
 <!-- snippet: sample_marten_create_database -->
 <a id='snippet-sample_marten_create_database'></a>
 ```cs
-storeOptions.CreateDatabasesForTenants(c =>
+var maintenanceConnectionString = ConnectionSource.ConnectionString;
+var applicationConnectionString = "";
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(options =>
 {
-    // Specify a db to which to connect in case database needs to be created.
-    // If not specified, defaults to 'postgres' on the connection for a tenant.
-    c.MaintenanceDatabase(cstring);
-    c.ForTenant()
-        .CheckAgainstPgDatabase()
+    // This might be different than the maintenance connection string
+    options.Connection(applicationConnectionString);
 
-        .WithOwner("postgres")
-        .WithEncoding("UTF-8")
-        .ConnectionLimit(-1)
-        .OnDatabaseCreated(_ =>
-        {
-            dbCreated = true;
-        });
+    options.CreateDatabasesForTenants(c =>
+    {
+        // Specify a db to which to connect in case database needs to be created.
+        // If not specified, defaults to 'postgres' on the connection for a tenant.
+        c.MaintenanceDatabase(maintenanceConnectionString);
+        c.ForTenant()
+            .CheckAgainstPgDatabase()
+
+            .WithOwner("postgres")
+            .WithEncoding("UTF-8")
+            .ConnectionLimit(-1);
+    });
 });
+
+using var host = builder.Build();
+
+// NOTE: The new database will only be built upon the call to IHost.StartAsync()
+await host.StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/create_database_Tests.cs#L41-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_create_database' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/create_database_Tests.cs#L21-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_create_database' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Databases are checked for existence upon store initialization. By default, connection attempts are made against the databases specified for tenants. If a connection attempt results in an invalid catalog error (3D000), database creation is triggered. `ITenantDatabaseCreationExpressions.CheckAgainstPgDatabase` can be used to alter this behavior to check for database existence from `pg_database`.

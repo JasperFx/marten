@@ -1,8 +1,10 @@
-# Custom Aggregations
+# Explicit Aggregations
 
-Once in awhile users are hitting use cases or desired functionality for aggregation projections that just don't fit in well to our [`SingleStreamProjection<T>`](/events/projections/aggregate-projections) or [`MultiStreamProjection<TDoc, TId>`](/events/projections/multi-stream-projections) models. Not to worry though, because
-Marten V5.0 introduces the new `CustomAggregation<T>` base type that will let you define aggregation projections with explicit user code while still taking advantage of some of the parallelization
-optimizations that were built for the previous aggregation types running in the [async daemon](/events/projections/async-daemon);
+The original concept for Marten projections was the conventional method model (`Apply()` / `Create()` / `ShouldDelete()` methods), but we
+quickly found out that the workflow generated from these methods just isn't sufficient for many user needs. At the same time,
+other users just prefer explicit code anyway, so Marten provides the `CustomProjection<TDoc, TId>` base class as a way to 
+configure custom projections that use explicit code for the actual work of building projected, aggregate documents from
+raw events.
 
 Alright, let's jump right into an example. Two of the drivers for this feature were for aggregations to document types that were [soft-deleted](/documents/deletes.html#soft-deletes) or aggregations where some events should only apply to the aggregate document if the document already existed. To illustrate this with a contrived example, let's say that we've got these event types:
 
@@ -25,7 +27,7 @@ public class Increment
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L427-L445' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L462-L480' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And a simple aggregate document type like this:
@@ -49,7 +51,7 @@ public class StartAndStopAggregate: ISoftDeleted
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L407-L425' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startandstopaggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L442-L460' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startandstopaggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As you can see, `StartAndStopAggregate` as a `Guid` as its identity and is also [soft-deleted](/documents/deletes.html#soft-deletes) when stored by
@@ -124,7 +126,7 @@ public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Gui
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L447-L515' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L482-L550' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Grouping
@@ -136,3 +138,37 @@ All aggregations in Marten come in two parts:
 
 `CustomAggregate` supports aggregating by the stream identity as shown above. You can also use all the same customizable grouping functionality as
 the older [MultiStreamProjection](/events/projections/multi-stream-projections) subclass.
+
+## Simple Workflows <Badge type="tip" text="7.28" />
+
+The base class can be used for strictly live aggregations. If all you're doing is using this
+mechanism for `Live` aggregation, or have a simple workflow where the aggregate is always
+going to be built strictly from the event data, you can override _only_ the `Apply()` method 
+as shown below:
+
+<!-- snippet: sample_using_simple_explicit_code_for_live_aggregation -->
+<a id='snippet-sample_using_simple_explicit_code_for_live_aggregation'></a>
+```cs
+public class ExplicitCounter: CustomProjection<SimpleAggregate, Guid>
+{
+    public override SimpleAggregate Apply(SimpleAggregate snapshot, IReadOnlyList<IEvent> events)
+    {
+        snapshot ??= new SimpleAggregate();
+        foreach (var e in events.Select(x => x.Data))
+        {
+            if (e is AEvent) snapshot.ACount++;
+            if (e is BEvent) snapshot.BCount++;
+            if (e is CEvent) snapshot.CCount++;
+            if (e is DEvent) snapshot.DCount++;
+        }
+
+        // You have to explicitly return the new value
+        // of the aggregated document no matter what!
+        return snapshot;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/using_explicit_code_for_live_aggregation.cs#L40-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_simple_explicit_code_for_live_aggregation' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Note that this usage is valid for all possible projection lifecycles now (`Live`, `Inline`, and `Async`).

@@ -10,7 +10,7 @@ namespace Marten.Internal.Sessions;
 
 public partial class QuerySession
 {
-    private readonly IProviderGraph _providers;
+    protected readonly IProviderGraph _providers;
 
     private ImHashMap<Type, IDocumentStorage> _byType = ImHashMap<Type, IDocumentStorage>.Empty;
 
@@ -29,6 +29,11 @@ public partial class QuerySession
 
     public IDocumentStorage<T> StorageFor<T>() where T : notnull
     {
+        if (_byType.TryFind(typeof(T), out var storage))
+        {
+            return (IDocumentStorage<T>)storage;
+        }
+
         return selectStorage(_providers.StorageFor<T>());
     }
 
@@ -83,5 +88,21 @@ public partial class QuerySession
         {
             return session.StorageFor<T>();
         }
+    }
+
+    protected void overrideStorage(Type type, IDocumentStorage storage)
+    {
+        _byType = _byType.AddOrUpdate(type, storage);
+    }
+
+    /// <summary>
+    /// In the case of a lightweight session, this will direct Marten to opt into identity map mechanics
+    /// for only the document type T. This is a micro-optimization added for the event sourcing + projections
+    /// support
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public virtual void UseIdentityMapFor<T>()
+    {
+        // Nothing by default
     }
 }

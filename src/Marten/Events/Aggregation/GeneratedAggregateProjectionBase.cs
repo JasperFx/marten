@@ -16,7 +16,7 @@ using Marten.Storage;
 namespace Marten.Events.Aggregation;
 
 public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProjection, IAggregateProjection,
-    ILiveAggregatorSource<T>
+    ILiveAggregatorSource<T>, IAggregateProjectionWithSideEffects<T>
 {
     private readonly Lazy<Type[]> _allEventTypes;
     internal readonly ApplyMethodCollection _applyMethods;
@@ -60,6 +60,20 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
             ProjectionVersion = att.Version;
         }
     }
+
+    /// <summary>
+    /// Use to create "side effects" when running an aggregation (single stream, custom projection, multi-stream)
+    /// asynchronously in a continuous mode (i.e., not in rebuilds)
+    /// </summary>
+    /// <param name="operations"></param>
+    /// <param name="slice"></param>
+    /// <returns></returns>
+    public virtual ValueTask RaiseSideEffects(IDocumentOperations operations, IEventSlice<T> slice)
+    {
+        return new ValueTask();
+    }
+
+    public abstract bool IsSingleStream();
 
     internal IList<Type> DeleteEvents { get; } = new List<Type>();
     internal IList<Type> TransformedEvents { get; } = new List<Type>();
@@ -121,7 +135,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
         _versioning.Override(expression);
     }
 
-    protected abstract object buildEventSlicer(StoreOptions documentMapping);
+    protected abstract object buildEventSlicer(StoreOptions options);
     protected abstract Type baseTypeForAggregationRuntime();
 
     /// <summary>
@@ -150,5 +164,10 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
         var eventTypes = MethodCollection.AllEventTypes(_applyMethods, _createMethods, _shouldDeleteMethods)
             .Concat(DeleteEvents).Concat(TransformedEvents).Distinct().ToArray();
         return eventTypes;
+    }
+
+    public virtual void ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
+    {
+        // nothing
     }
 }

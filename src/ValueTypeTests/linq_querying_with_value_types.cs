@@ -5,6 +5,7 @@ using Marten;
 using Marten.Testing.Harness;
 using Vogen;
 
+
 namespace ValueTypeTests;
 
 public class linq_querying_with_value_types : OneOffConfigurationsContext

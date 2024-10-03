@@ -309,7 +309,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
     [Fact]
     public async Task load_across_multiple_tenants_async()
     {
-        StoreOptions(opts => 
+        StoreOptions(opts =>
         {
             opts.Policies.AllDocumentsAreMultiTenanted();
         });
@@ -541,7 +541,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         {
             theStore.BulkInsertEnlistTransaction(data, Transaction.Current);
             scope.Complete();
-        }           
+        }
 
         using var session = theStore.QuerySession();
         session.Query<Target>().Count().ShouldBe(data.Length);
@@ -554,7 +554,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         {
-            theStore.BulkInsertEnlistTransaction(data, Transaction.Current);                
+            theStore.BulkInsertEnlistTransaction(data, Transaction.Current);
         }
 
         using var session = theStore.QuerySession();
@@ -642,7 +642,23 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         }
     }
 
+    [Fact]
+    public async Task can_bulk_insert_soft_deletable_documents_when_using_overwrite_mode()
+    {
+        StoreOptions(x => x.Schema.For<User>().SoftDeletedWithIndex());
 
+        var doc1 = new User();
+        var doc2 = new User();
+
+        var documents = new object[] { doc1, doc2 };
+
+        await theStore.BulkInsertAsync(documents, BulkInsertMode.OverwriteExisting);
+
+        await using (var querying = theStore.QuerySession())
+        {
+            querying.Query<User>().Count().ShouldBe(2);
+        }
+    }
 
     public Task InitializeAsync()
     {

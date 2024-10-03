@@ -103,6 +103,28 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
         }
     }
 
+    [Fact]
+    public async Task should_get_the_generic_aggregate_type_name_if_exists()
+    {
+        await executeAfterLoadingEvents(e =>
+        {
+            e.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
+            e.StartStream<Letters<Value>>(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent(),
+                new DEvent());
+
+        });
+
+        for (var i = 0; i < 4; i++)
+        {
+            theRange.Events[i].AggregateTypeName.ShouldBeNull();
+        }
+
+        for (var i = 4; i < theRange.Events.Count; i++)
+        {
+            theRange.Events[i].AggregateTypeName.ShouldBe("Letters<Value>");
+        }
+    }
+
 
     [Fact]
     public async Task filter_on_aggregate_type_name_if_exists()
@@ -125,6 +147,26 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
 
     }
 
+    [Fact]
+    public async Task filter_on_generic_aggregate_type_name_if_exists()
+    {
+        theFilters.Add(new AggregateTypeFilter(typeof(Letters<Value>), theStore.Events));
+
+        await executeAfterLoadingEvents(e =>
+        {
+            e.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
+            e.StartStream<Letters<Value>>(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent(),
+                new DEvent());
+
+        });
+
+        theRange.Events.Count.ShouldBe(5);
+        foreach (var @event in theRange.Events)
+        {
+            @event.AggregateTypeName.ShouldBe("Letters<Value>");
+        }
+    }
+
     public Task InitializeAsync()
     {
         return theStore.Advanced.Clean.DeleteAllEventDataAsync();
@@ -143,3 +185,14 @@ public class Letters
     public int CCount { get; set; }
     public int DCount { get; set; }
 }
+
+public class Letters<T>
+    where T : Value
+{
+    public T ACount { get; set; }
+    public T BCount { get; set; }
+    public T CCount { get; set; }
+    public T DCount { get; set; }
+}
+
+public record Value(int Conut);

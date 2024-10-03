@@ -49,7 +49,8 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         }
 
         var invalidMethods =
-            MethodCollection.FindInvalidMethods(GetType(), _applyMethods, _createMethods, _shouldDeleteMethods);
+            MethodCollection.FindInvalidMethods(GetType(), _applyMethods, _createMethods, _shouldDeleteMethods)
+                .Where(x => x.Method.Name != nameof(IAggregateProjectionWithSideEffects<string>.RaiseSideEffects));
 
         if (invalidMethods.Any())
         {

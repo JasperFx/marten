@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections.Generic;
+using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Storage;
@@ -49,4 +50,23 @@ public interface IReadOnlyEventStoreOptions
     IReadOnlyList<IReadOnlyProjectionData> Projections();
 
     IReadOnlyList<IEventType> AllKnownEventTypes();
+
+    /// <summary>
+    /// Opt into a performance optimization that directs Marten to always use the identity map for an
+    /// Inline single stream projection's aggregate type when FetchForWriting() is called. Default is false.
+    /// Do not use this if you manually alter the fetched aggregate from FetchForWriting() outside of Marten
+    /// </summary>
+    bool UseIdentityMapForInlineAggregates { get; set; }
+
+    /// <summary>
+    /// Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
+    /// *if* you are also aggressively using event stream archiving
+    /// </summary>
+    bool UseArchivedStreamPartitioning { get; set; }
+
+    /// <summary>
+    /// Optional extension point to receive published messages as a side effect from
+    /// aggregation projections
+    /// </summary>
+    IMessageOutbox MessageOutbox { get; set; }
 }

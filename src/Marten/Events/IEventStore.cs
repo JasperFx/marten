@@ -341,4 +341,6 @@ public interface IEventStore: IEventOperations, IQueryEventStore
     /// <returns></returns>
     Task WriteExclusivelyToAggregate<T>(string id, Func<IEventStream<T>, Task> writing,
         CancellationToken cancellation = default) where T : class;
+
+
 }

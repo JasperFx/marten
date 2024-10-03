@@ -46,6 +46,7 @@ public record Target
     {
         var target = new Target();
         target.String = _strings[_random.Next(0, 10)];
+        target.PaddedString = " " + target.String + " ";
         target.AnotherString = _otherStrings[_random.Next(0, 10)];
         target.Number = _random.Next();
         target.AnotherNumber = _random.Next();
@@ -94,6 +95,8 @@ public record Target
         target.Double = _random.NextDouble();
         target.Long = _random.Next() * 10000;
 
+        target.HowLong = TimeSpan.FromSeconds(target.Long);
+
         target.Date = DateTime.Today.AddDays(_random.Next(-10000, 10000));
 
         if (value > 15)
@@ -119,6 +122,8 @@ public record Target
 
         return target;
     }
+
+    public string PaddedString { get; set; }
 
     public Target()
     {
@@ -185,6 +190,8 @@ public record Target
     public List<string> StringList { get; set; }
 
     public Guid[] GuidArray { get; set; }
+
+    public TimeSpan HowLong { get; set; }
 }
 
 public class Address

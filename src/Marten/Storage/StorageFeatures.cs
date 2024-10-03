@@ -47,7 +47,7 @@ public class StorageFeatures: IFeatureSchema
     /// <summary>
     ///     Additional Postgresql tables, functions, or sequences to be managed by this DocumentStore
     /// </summary>
-    public IList<ISchemaObject> ExtendedSchemaObjects { get; } = new List<ISchemaObject>();
+    public List<ISchemaObject> ExtendedSchemaObjects { get; } = new();
 
     internal SystemFunctions SystemFunctions { get; }
 
@@ -95,12 +95,15 @@ public class StorageFeatures: IFeatureSchema
         if (_builders.Value.TryFind(type, out var builder))
         {
             var mapping = builder.Build(options);
+            _options.applyPostPolicies(mapping);
             _buildingList.Value.Remove(type);
             return mapping;
         }
 
         _buildingList.Value.Remove(type);
-        return new DocumentMapping(type, options);
+        var m =  new DocumentMapping(type, options);
+        _options.applyPostPolicies(m);
+        return m;
     }
 
     internal void RegisterDocumentType(Type documentType)

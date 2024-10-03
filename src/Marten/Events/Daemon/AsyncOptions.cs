@@ -18,7 +18,7 @@ namespace Marten.Events.Daemon;
 /// </summary>
 public class AsyncOptions
 {
-    private readonly IList<Action<IDocumentOperations>> _actions = new List<Action<IDocumentOperations>>();
+    private readonly List<Action<IDocumentOperations>> _actions = new();
 
     /// <summary>
     ///     The maximum range of events fetched at one time
@@ -36,7 +36,7 @@ public class AsyncOptions
     ///     writes. This is used by Marten to help build out schema objects if the
     ///     async daemon is started before the rest of the application.
     /// </summary>
-    public IList<Type> StorageTypes { get; } = new List<Type>();
+    public List<Type> StorageTypes { get; } = new();
 
     /// <summary>
     /// Enable the identity map mechanics to reuse documents within the session by their identity

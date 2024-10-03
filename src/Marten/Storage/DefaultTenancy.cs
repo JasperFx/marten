@@ -49,7 +49,13 @@ internal class DefaultTenancy: Tenancy, ITenancy
 
     internal void Initialize()
     {
-        Default = new Tenant(DefaultTenantId, new MartenDatabase(Options, _dataSource, Options.StoreName));
+        var martenDatabase = new MartenDatabase(Options, _dataSource, Options.StoreName);
+        if (Options.TenantPartitions != null)
+        {
+            martenDatabase.AddInitializer(Options.TenantPartitions.Partitions);
+        }
+
+        Default = new Tenant(DefaultTenantId, martenDatabase);
     }
 
     public void Dispose()

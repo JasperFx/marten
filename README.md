@@ -10,7 +10,7 @@
 [![Nuget](https://img.shields.io/nuget/dt/marten)](https://www.nuget.org/packages/Marten/)
 
 <div align="center">
-    <img src="https://martendb.io/v3/content/images/banner.png" alt="marten logo" width="70%">
+    <img src="https://github.com/user-attachments/assets/f052d5a7-1f49-4aa7-91f6-cba415988d14" alt="marten logo" width="70%">
 </div>
 
 The Marten library provides .NET developers with the ability to use the proven [PostgreSQL database engine](http://www.postgresql.org/) and its [fantastic JSON support](https://web.archive.org/web/20230127180328/https://www.compose.com/articles/is-postgresql-your-next-json-database/) as a fully fledged [document database](https://en.wikipedia.org/wiki/Document-oriented_database). The Marten team believes that a document database has far reaching benefits for developer productivity over relational databases with or without an ORM tool.
@@ -22,7 +22,7 @@ Access docs [here](https://martendb.io/) and v3.x docs [here](https://martendb.i
 ## Support Plans
 
 <div align="center">
-    <img src="https://www.jasperfx.net/wp-content/uploads/2023/07/logo-alt-min.png" alt="JasperFx logo" width="70%">
+    <img src="https://www.jasperfx.net/logo.png" alt="JasperFx logo" width="70%">
 </div>
 
 While Marten is open source, [JasperFx Software offers paid support and consulting contracts](https://bit.ly/3szhwT2) for Marten.
@@ -160,14 +160,14 @@ Refer to build commands section to look up the commands to open the StoryTeller 
 
 | CI              | .NET | Postgres  |        plv8        | Serializer | 
 |-----------------|:----:|:---------:|:------------------:|:----------:|
-| GitHub Actions  |  6   |   12.8    | :white_check_mark: |    STJ     | 
-| GitHub Actions  |  6   | 15-alpine |        :x:         | Newtonsoft | 
+| GitHub Actions  |  8   |   12.8    | :white_check_mark: |    STJ     | 
+| GitHub Actions  |  8   | 15-alpine |        :x:         | Newtonsoft | 
 | GitHub Actions  |  7   |   12.8    | :white_check_mark: |  JSON.NET  | 
 | GitHub Actions  |  7   |  latest   |        :x:         |    STJ     | 
-| Azure Pipelines |  8   |   12.8    | :white_check_mark: |  JSON.NET  | 
-| Azure Pipelines |  8   |   12.8    | :white_check_mark: |    STJ     | 
-| Azure Pipelines |  8   | 15-alpine |        :x:         |    STJ     | 
-| Azure Pipelines |  8   |  latest   |        :x:         | Newtonsoft | 
+| Azure Pipelines |  6   |   12.8    | :white_check_mark: |  JSON.NET  | 
+| Azure Pipelines |  6   |   12.8    | :white_check_mark: |    STJ     | 
+| Azure Pipelines |  6   | 15-alpine |        :x:         |    STJ     | 
+| Azure Pipelines |  6   |  latest   |        :x:         | Newtonsoft | 
 
 ## Documentation
 

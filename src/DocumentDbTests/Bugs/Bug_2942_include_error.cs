@@ -1,5 +1,5 @@
+#nullable enable
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Harness;
@@ -20,10 +20,8 @@ public class Bug_2942_include_error : BugIntegrationContext
         var id = Guid.NewGuid();
 
         DocumentB? docB = null;
-        var docA = await theSession.Query<DocumentA>().Include<DocumentB>(a => a.Id, b => docB = b).SingleOrDefaultAsync(a => a.Id == THEID);
-
-
-        var docA2 = await theSession.Query<DocumentA>().Include<DocumentB>(a => a.Id, b => docB = b).SingleOrDefaultAsync(a => a.Id == id);
+        await theSession.Query<DocumentA>().Include<DocumentB>(a => a.Id, b => docB = b).SingleOrDefaultAsync(a => a.Id == THEID);
+        await theSession.Query<DocumentA>().Include<DocumentB>(a => a.Id, b => docB = b).SingleOrDefaultAsync(a => a.Id == id);
 
     }
 }

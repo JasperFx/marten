@@ -172,7 +172,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         }
 
         throw new ArgumentOutOfRangeException(nameof(storage),
-            $"Unable to determine a fetch plan for aggregate {typeof(TDoc).FullNameInCode()}");
+            $"Unable to determine a fetch plan for aggregate {typeof(TDoc).FullNameInCode()}. Is there a valid single stream aggregation projection for this type?");
     }
 }
 

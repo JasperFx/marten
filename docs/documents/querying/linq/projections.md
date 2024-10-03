@@ -178,7 +178,7 @@ var results = query.Query<Target>()
     .Take(15)
     .ToList();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/select_many.cs#L387-L395' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-select-many' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/select_many.cs#L389-L397' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-select-many' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A few notes on the `SelectMany()` usage and limitations:

@@ -54,6 +54,7 @@ public class SubClassMapping: IDocumentMapping
 
 
     public DeleteStyle DeleteStyle => Parent.DeleteStyle;
+    public bool UseVersionFromMatchingStream { get; set; }
 
     public MemberInfo IdMember => Parent.IdMember;
 

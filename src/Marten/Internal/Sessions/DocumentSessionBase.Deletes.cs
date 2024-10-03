@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal.Storage;
@@ -26,6 +27,8 @@ public abstract partial class DocumentSessionBase
         _workTracker.Add(deletion);
 
         documentStorage.Eject(this, entity);
+
+        ChangeTrackers.RemoveAll(x => x.Document is T t && documentStorage.IdentityFor(entity).Equals(documentStorage.IdentityFor(t)));
     }
 
     public void Delete<T>(int id) where T : notnull

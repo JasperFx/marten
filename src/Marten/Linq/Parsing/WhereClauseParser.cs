@@ -38,7 +38,25 @@ public class WhereClauseParser: ExpressionVisitor
 
     public override Expression Visit(Expression node)
     {
-        return base.Visit(node);
+        try
+        {
+            return base.Visit(node);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+
+    protected override Expression VisitLambda<T>(Expression<T> node)
+    {
+        return node.Body == null ? null : Visit(node.Body);
+    }
+
+    protected override Expression VisitInvocation(InvocationExpression node)
+    {
+        return node.Expression == null ? null : Visit(node.Expression);
     }
 
     protected override Expression VisitConstant(ConstantExpression node)

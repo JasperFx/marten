@@ -52,50 +52,55 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
         }
     }
 
-    protected void writeId(NpgsqlParameter[] parameters)
+    protected void writeId(IGroupedParameterBuilder builder)
     {
-        parameters[0].NpgsqlDbType = NpgsqlDbType.Uuid;
-        parameters[0].Value = Stream.Id;
+        var param = builder.AppendParameter(Stream.Id);
+        param.NpgsqlDbType = NpgsqlDbType.Uuid;
     }
 
-    protected void writeKey(NpgsqlParameter[] parameters)
+    protected void writeKey(IGroupedParameterBuilder builder)
     {
-        parameters[0].NpgsqlDbType = NpgsqlDbType.Varchar;
-        parameters[0].Value = Stream.Key;
+        var param = builder.AppendParameter(Stream.Key);
+        param.NpgsqlDbType = NpgsqlDbType.Varchar;
     }
 
-    protected void writeBasicParameters(NpgsqlParameter[] parameters, IMartenSession session)
+    protected void writeBasicParameters(IGroupedParameterBuilder builder, IMartenSession session)
     {
-        parameters[1].NpgsqlDbType = NpgsqlDbType.Varchar;
-        parameters[1].Value = Stream.AggregateTypeName.IsEmpty() ? DBNull.Value : Stream.AggregateTypeName;
-        parameters[2].NpgsqlDbType = NpgsqlDbType.Varchar;
-        parameters[2].Value = Stream.TenantId;
-        parameters[3].NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Uuid;
-        parameters[3].Value = Stream.Events.Select(x => x.Id).ToArray();
-        parameters[4].NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
-        parameters[4].Value = Stream.Events.Select(x => x.EventTypeName).ToArray();
-        parameters[5].NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
-        parameters[5].Value = Stream.Events.Select(x => x.DotNetTypeName).ToArray();
-        parameters[6].NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
-        parameters[6].Value = Stream.Events.Select(e => session.Serializer.ToJson(e.Data)).ToArray();
+        var param1 = Stream.AggregateTypeName.IsEmpty() ? builder.AppendParameter<object>(DBNull.Value) :  builder.AppendParameter(Stream.AggregateTypeName);
+        param1.NpgsqlDbType = NpgsqlDbType.Varchar;
+
+        var param2 = builder.AppendParameter(Stream.TenantId);
+        param2.NpgsqlDbType = NpgsqlDbType.Varchar;
+
+        var param3 = builder.AppendParameter(Stream.Events.Select(x => x.Id).ToArray());
+        param3.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Uuid;
+
+        var param4 = builder.AppendParameter(Stream.Events.Select(x => x.EventTypeName).ToArray());
+        param4.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
+
+        var param5 = builder.AppendParameter(Stream.Events.Select(x => x.DotNetTypeName).ToArray());
+        param5.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
+
+        var param6 = builder.AppendParameter(Stream.Events.Select(e => session.Serializer.ToJson(e.Data)).ToArray());
+        param6.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
     }
 
-    protected void writeCausationIds(int index, NpgsqlParameter[] parameters)
+    protected void writeCausationIds(IGroupedParameterBuilder builder)
     {
-        parameters[index].NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
-        parameters[index].Value = Stream.Events.Select(x => x.CausationId).ToArray();
+        var param = builder.AppendParameter(Stream.Events.Select(x => x.CausationId).ToArray());
+        param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
     }
 
-    protected void writeCorrelationIds(int index, NpgsqlParameter[] parameters)
+    protected void writeCorrelationIds(IGroupedParameterBuilder builder)
     {
-        parameters[index].NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
-        parameters[index].Value = Stream.Events.Select(x => x.CorrelationId).ToArray();
+        var param = builder.AppendParameter(Stream.Events.Select(x => x.CorrelationId).ToArray());
+        param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
     }
 
-    protected void writeHeaders(int index, NpgsqlParameter[] parameters, IMartenSession session)
+    protected void writeHeaders(IGroupedParameterBuilder builder, IMartenSession session)
     {
-        parameters[index].NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
-        parameters[index].Value = Stream.Events.Select(x => session.Serializer.ToJson(x.Headers)).ToArray();
+        var param = builder.AppendParameter(Stream.Events.Select(x => session.Serializer.ToJson(x.Headers)).ToArray());
+        param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
     }
 
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)

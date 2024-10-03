@@ -23,11 +23,11 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
@@ -47,8 +47,8 @@
         <PackageReference Include="OpenTelemetry.API" Version="1.8.0" />
         <PackageReference Include="Polly.Core" Version="8.3.1" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" Version="8.0.0" />
-        <PackageReference Include="System.Text.Json" Version="8.0.0" />
-        <PackageReference Include="Weasel.Postgresql" Version="7.4.1" />
+        <PackageReference Include="System.Text.Json" Version="8.0.4" />
+        <PackageReference Include="Weasel.Postgresql" Version="7.11.2" />
     </ItemGroup>
 
     <!--SourceLink specific settings-->

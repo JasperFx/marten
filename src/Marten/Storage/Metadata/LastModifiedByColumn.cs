@@ -75,7 +75,7 @@ internal class LastModifiedByArgument: UpsertArgument
         DocumentMapping mapping, StoreOptions options)
     {
         method.Frames.Code(
-            $"setStringParameter({parameters.Usage}[{i}], {{0}}.{nameof(IMartenSession.LastModifiedBy)});",
+            $"setStringParameter({parameters.Usage}, {{0}}.{nameof(IMartenSession.LastModifiedBy)});",
             Use.Type<IMartenSession>());
     }
 

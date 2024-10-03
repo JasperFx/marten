@@ -430,14 +430,14 @@ public class
     }
 
     [Fact]
-    public void assert_on_max_event_id_on_event_stream_append()
+    public async Task assert_on_max_event_id_on_event_stream_append()
     {
         var id = "Sixteen";
         var started = new QuestStarted();
 
         using var session = theStore.LightweightSession();
         session.Events.StartStream<Quest>(id, started);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
         var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -446,6 +446,6 @@ public class
         // would be 3 after the append operation.
         session.Events.Append(id, 3, joined, departed);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 }

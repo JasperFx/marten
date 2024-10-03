@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Events.Aggregation;
 using Marten.Exceptions;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
@@ -31,6 +32,13 @@ namespace Marten.Events
         bool EnableGlobalProjectionsForConjoinedTenancy { get; set; }
 
         /// <summary>
+        /// Opt into a performance optimization that directs Marten to always use the identity map for an
+        /// Inline single stream projection's aggregate type when FetchForWriting() is called. Default is false.
+        /// Do not use this if you manually alter the fetched aggregate from FetchForWriting() outside of Marten
+        /// </summary>
+        bool UseIdentityMapForInlineAggregates { get; set; }
+
+        /// <summary>
         ///     Override the database schema name for event related tables. By default this
         ///     is the same schema as the document storage
         /// </summary>
@@ -52,6 +60,18 @@ namespace Marten.Events
         public bool EnableUniqueIndexOnEventId { get; set; }
 
         public EventAppendMode AppendMode { get; set; }
+
+        /// <summary>
+        /// Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
+        /// *if* you are also aggressively using event stream archiving
+        /// </summary>
+        public bool UseArchivedStreamPartitioning { get; set; }
+
+        /// <summary>
+        /// Optional extension point to receive published messages as a side effect from
+        /// aggregation projections
+        /// </summary>
+        public IMessageOutbox MessageOutbox { get; set; }
 
         /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
@@ -581,5 +601,7 @@ public static class EventStoreOptionsExtensions
     {
         return options.Upcast(GetEventTypeNameWithSchemaVersion<TOldEvent>(schemaVersion), upcastAsync);
     }
+
+
 
 }

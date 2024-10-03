@@ -24,4 +24,8 @@
         <ProjectReference Include="..\IssueService\IssueService.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="AssemblyInfo.cs" />
+    </ItemGroup>
+
 </Project>

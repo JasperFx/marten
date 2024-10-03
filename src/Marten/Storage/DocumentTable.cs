@@ -28,7 +28,7 @@ internal class DocumentTable: Table
 
         // Per https://github.com/JasperFx/marten/issues/2430 the tenant_id needs to be first in
         // PK
-        if (mapping.TenancyStyle == TenancyStyle.Conjoined)
+        if (mapping.TenancyStyle == TenancyStyle.Conjoined && mapping.PrimaryKeyTenancyOrdering == PrimaryKeyTenancyOrdering.TenantId_Then_Id)
         {
             AddColumn(mapping.Metadata.TenantId).AsPrimaryKey();
 
@@ -36,6 +36,13 @@ internal class DocumentTable: Table
         }
 
         AddColumn(idColumn).AsPrimaryKey();
+
+        if (mapping.TenancyStyle == TenancyStyle.Conjoined && mapping.PrimaryKeyTenancyOrdering == PrimaryKeyTenancyOrdering.Id_Then_TenantId)
+        {
+            AddColumn(mapping.Metadata.TenantId).AsPrimaryKey();
+
+            Indexes.Add(new DocumentIndex(mapping, TenantIdColumn.Name));
+        }
 
         AddColumn<DataColumn>();
 
@@ -65,6 +72,7 @@ internal class DocumentTable: Table
         if (mapping.DeleteStyle == DeleteStyle.SoftDelete)
         {
             AddColumn(_mapping.Metadata.IsSoftDeleted);
+
             Indexes.Add(new DocumentIndex(mapping, SchemaConstants.DeletedColumn));
 
             AddColumn(_mapping.Metadata.SoftDeletedAt);
@@ -72,6 +80,30 @@ internal class DocumentTable: Table
 
         Indexes.AddRange(mapping.Indexes);
         ForeignKeys.AddRange(mapping.ForeignKeys);
+
+        if (mapping.Partitioning != null && !mapping.IgnorePartitions)
+        {
+            if (mapping.Partitioning.Columns.All(HasColumn))
+            {
+                Partitioning = mapping.Partitioning;
+            }
+            else
+            {
+                Console.WriteLine($"Warning: Table {Identifier} is missing columns specified in the Partitioning scheme. This is probably an error in configuration");
+            }
+        }
+
+        // Any column referred to in the partitioning has to be
+        // part of the primary key
+        if (Partitioning != null)
+        {
+            IgnorePartitionsInMigration = mapping.IgnorePartitions;
+            foreach (var columnName in Partitioning.Columns)
+            {
+                var column = ModifyColumn(columnName);
+                column.AsPrimaryKey();
+            }
+        }
     }
 
     public Type DocumentType => _mapping.DocumentType;

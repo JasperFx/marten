@@ -300,6 +300,8 @@ public class select_many : IntegrationContext
             query.Query<Product>().SelectMany(x => x.Tags)
                 .Any().ShouldBeTrue();
 
+            query.Logger = new TestOutputMartenLogger(_output);
+
             query.Query<Target>().SelectMany(x => x.Children)
                 .Any().ShouldBeFalse();
         }

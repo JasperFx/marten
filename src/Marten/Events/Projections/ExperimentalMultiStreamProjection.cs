@@ -26,6 +26,11 @@ public abstract class ExperimentalMultiStreamProjection<TDoc, TId>: GeneratedAgg
     {
     }
 
+    public override bool IsSingleStream()
+    {
+        return false;
+    }
+
     public virtual ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> SliceInlineActions(IQuerySession querySession,
         IEnumerable<StreamAction> streams)
     {

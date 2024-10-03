@@ -4,6 +4,7 @@ using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using Marten.Internal;
 using NpgsqlTypes;
+using Weasel.Postgresql;
 
 namespace Marten.Schema.Arguments;
 
@@ -36,8 +37,7 @@ internal class DocJsonBodyArgument: UpsertArgument
         Argument parameters,
         DocumentMapping mapping, StoreOptions options)
     {
-        method.Frames.Code($"{parameters.Usage}[{i}].NpgsqlDbType = {{0}};", NpgsqlDbType.Jsonb);
-        method.Frames.Code($"{parameters.Usage}[{i}].Value = {{0}}.Serializer.ToJson(_document);",
-            Use.Type<IMartenSession>());
+        method.Frames.Code($"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}({{1}}.Serializer.ToJson(_document));", Use.Type<IGroupedParameterBuilder>(), Use.Type<IMartenSession>());
+        method.Frames.Code($"parameter{i}.NpgsqlDbType = {{0}};", NpgsqlDbType.Jsonb);
     }
 }

@@ -12,7 +12,7 @@ namespace Marten;
 
 public partial class StoreOptions
 {
-    internal IList<Type> CompiledQueryTypes => _compiledQueryTypes;
+    internal List<Type> CompiledQueryTypes => _compiledQueryTypes;
 
     /// <summary>
     ///     Force Marten to create document mappings for type T

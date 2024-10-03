@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Marten.Metadata;
 using Marten.Testing.Harness;
 using Newtonsoft.Json;
@@ -17,7 +18,7 @@ public class advanced_sql_query: IntegrationContext
     }
 
     [Fact]
-    public async void can_query_scalar()
+    public async Task can_query_scalar()
     {
         await using var session = theStore.LightweightSession();
         session.Store(new DocWithMeta { Id = 1, Name = "Max" });
@@ -32,7 +33,7 @@ public class advanced_sql_query: IntegrationContext
     }
 
     [Fact]
-    public async void can_query_multiple_scalars()
+    public async Task can_query_multiple_scalars()
     {
         await using var session = theStore.LightweightSession();
         #region sample_advanced_sql_query_multiple_scalars
@@ -46,7 +47,7 @@ public class advanced_sql_query: IntegrationContext
     }
 
     [Fact]
-    public async void can_query_non_document_classes_from_json()
+    public async Task can_query_non_document_classes_from_json()
     {
         await using var session = theStore.LightweightSession();
         #region sample_advanced_sql_query_json_object
@@ -59,7 +60,7 @@ public class advanced_sql_query: IntegrationContext
     }
 
     [Fact]
-    public async void can_query_documents()
+    public async Task can_query_documents()
     {
         await using var session = theStore.LightweightSession();
         session.Store(new DocWithoutMeta { Id = 1, Name = "Max" });
@@ -77,7 +78,7 @@ public class advanced_sql_query: IntegrationContext
     }
 
     [Fact]
-    public async void can_query_documents_and_will_set_metadata_on_result_documents()
+    public async Task can_query_documents_and_will_set_metadata_on_result_documents()
     {
         await using var session = theStore.LightweightSession();
         session.Store(new DocWithMeta { Id = 1, Name = "Max" });
@@ -94,7 +95,7 @@ public class advanced_sql_query: IntegrationContext
     }
 
     [Fact]
-    public async void can_query_multiple_documents_and_scalar()
+    public async Task can_query_multiple_documents_and_scalar()
     {
         await using var session = theStore.LightweightSession();
         #region sample_advanced_sql_query_related_documents_and_scalar
@@ -138,7 +139,7 @@ public class advanced_sql_query: IntegrationContext
     }
 
     [Fact]
-    public async void can_async_stream_multiple_documents_and_scalar()
+    public async Task can_async_stream_multiple_documents_and_scalar()
     {
         await using var session = theStore.LightweightSession();
         #region sample_advanced_sql_stream_related_documents_and_scalar
