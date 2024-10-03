@@ -45,6 +45,17 @@ public interface IDocumentStore: IDisposable
     /// <param name="documents"></param>
     /// <param name="mode"></param>
     /// <param name="batchSize"></param>
+    /// <param name="updateCondition">
+    ///     Raw sql that is used as the <c>WHERE</c> clause of the <c>ON CONFLICT DO UPDATE</c> statement when configured for <see cref="BulkInsertMode.OverwriteExisting"/>.
+    ///     Use <c>d.</c> to refer to the existing record in the table and <c>excluded.</c> to refer to the conflicting record that was excluded from insertion.
+    ///
+    ///     <para>
+    ///         Example:
+    ///         <code>
+    ///             "d.export_date &lt;= excluded.export_date"
+    ///         </code>
+    ///     </para>
+    /// </param>
     void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
         int batchSize = 1000, string? updateCondition = null);
 
@@ -57,6 +68,17 @@ public interface IDocumentStore: IDisposable
     /// <param name="transaction">an existing transaction</param>
     /// <param name="mode"></param>
     /// <param name="batchSize"></param>
+    /// <param name="updateCondition">
+    ///     Raw sql that is used as the <c>WHERE</c> clause of the <c>ON CONFLICT DO UPDATE</c> statement when configured for <see cref="BulkInsertMode.OverwriteExisting"/>.
+    ///     Use <c>d.</c> to refer to the existing record in the table and <c>excluded.</c> to refer to the conflicting record that was excluded from insertion.
+    ///
+    ///     <para>
+    ///         Example:
+    ///         <code>
+    ///             "d.export_date &lt;= excluded.export_date"
+    ///         </code>
+    ///     </para>
+    /// </param>
     void BulkInsertEnlistTransaction<T>(IReadOnlyCollection<T> documents, Transaction transaction,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000, string? updateCondition = null);
 
@@ -68,6 +90,17 @@ public interface IDocumentStore: IDisposable
     /// <param name="tenantId"></param>
     /// <param name="documents"></param>
     /// <param name="mode"></param>
+    /// <param name="updateCondition">
+    ///     Raw sql that is used as the <c>WHERE</c> clause of the <c>ON CONFLICT DO UPDATE</c> statement when configured for <see cref="BulkInsertMode.OverwriteExisting"/>.
+    ///     Use <c>d.</c> to refer to the existing record in the table and <c>excluded.</c> to refer to the conflicting record that was excluded from insertion.
+    ///
+    ///     <para>
+    ///         Example:
+    ///         <code>
+    ///             "d.export_date &lt;= excluded.export_date"
+    ///         </code>
+    ///     </para>
+    /// </param>
     /// <param name="batchSize"></param>
     void BulkInsert<T>(string tenantId, IReadOnlyCollection<T> documents,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000, string? updateCondition = null);
@@ -80,6 +113,17 @@ public interface IDocumentStore: IDisposable
     /// <param name="documents"></param>
     /// <param name="mode"></param>
     /// <param name="batchSize"></param>
+    /// <param name="updateCondition">
+    ///     Raw sql that is used as the <c>WHERE</c> clause of the <c>ON CONFLICT DO UPDATE</c> statement when configured for <see cref="BulkInsertMode.OverwriteExisting"/>.
+    ///     Use <c>d.</c> to refer to the existing record in the table and <c>excluded.</c> to refer to the conflicting record that was excluded from insertion.
+    ///
+    ///     <para>
+    ///         Example:
+    ///         <code>
+    ///             "d.export_date &lt;= excluded.export_date"
+    ///         </code>
+    ///     </para>
+    /// </param>
     Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
         int batchSize = 1000, string? updateCondition = null, CancellationToken cancellation = default);
 
@@ -92,6 +136,17 @@ public interface IDocumentStore: IDisposable
     /// <param name="transaction">an existing transaction</param>
     /// <param name="mode"></param>
     /// <param name="batchSize"></param>
+    /// <param name="updateCondition">
+    ///     Raw sql that is used as the <c>WHERE</c> clause of the <c>ON CONFLICT DO UPDATE</c> statement when configured for <see cref="BulkInsertMode.OverwriteExisting"/>.
+    ///     Use <c>d.</c> to refer to the existing record in the table and <c>excluded.</c> to refer to the conflicting record that was excluded from insertion.
+    ///
+    ///     <para>
+    ///         Example:
+    ///         <code>
+    ///             "d.export_date &lt;= excluded.export_date"
+    ///         </code>
+    ///     </para>
+    /// </param>
     Task BulkInsertEnlistTransactionAsync<T>(IReadOnlyCollection<T> documents, Transaction transaction,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
         string? updateCondition = null, CancellationToken cancellation = default);
@@ -105,6 +160,17 @@ public interface IDocumentStore: IDisposable
     /// <param name="documents"></param>
     /// <param name="mode"></param>
     /// <param name="batchSize"></param>
+    /// <param name="updateCondition">
+    ///     Raw sql that is used as the <c>WHERE</c> clause of the <c>ON CONFLICT DO UPDATE</c> statement when configured for <see cref="BulkInsertMode.OverwriteExisting"/>.
+    ///     Use <c>d.</c> to refer to the existing record in the table and <c>excluded.</c> to refer to the conflicting record that was excluded from insertion.
+    ///
+    ///     <para>
+    ///         Example:
+    ///         <code>
+    ///             "d.export_date &lt;= excluded.export_date"
+    ///         </code>
+    ///     </para>
+    /// </param>
     Task BulkInsertAsync<T>(string tenantId, IReadOnlyCollection<T> documents,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
         string? updateCondition = null, CancellationToken cancellation = default);

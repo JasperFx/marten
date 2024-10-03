@@ -116,7 +116,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         int batchSize = 1000, string? updateCondition = null)
     {
         var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
-        bulkInsertion.BulkInsert(documents, mode, batchSize);
+        bulkInsertion.BulkInsert(documents, mode, batchSize, updateCondition);
     }
 
     public void BulkInsertEnlistTransaction<T>(IReadOnlyCollection<T> documents,

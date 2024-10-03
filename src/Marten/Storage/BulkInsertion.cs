@@ -280,7 +280,7 @@ internal class BulkInsertion: IDisposable
         }
         else if (mode == BulkInsertMode.OverwriteExisting)
         {
-            var upsert = string.Format(loader.UpsertFromTempTable(), updateCondition ?? "1 = 1");
+            var upsert = string.Format(loader.UpsertFromTempTable(), updateCondition ?? "true");
 
             conn.CreateCommand(upsert).ExecuteNonQuery();
         }
@@ -330,7 +330,7 @@ internal class BulkInsertion: IDisposable
         }
         else if (mode == BulkInsertMode.OverwriteExisting)
         {
-            var upsert = string.Format(loader.UpsertFromTempTable(), updateCondition ?? "1 = 1");
+            var upsert = string.Format(loader.UpsertFromTempTable(), updateCondition ?? "true");
 
 
             await conn.CreateCommand(upsert).ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
