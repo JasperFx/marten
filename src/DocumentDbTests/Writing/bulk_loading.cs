@@ -98,7 +98,17 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
             .Select((t, i) => t with { Number = i < 10 ? 50 : 150, String = "second insert" })
             .ToArray();
 
-        theStore.BulkInsert(data2, BulkInsertMode.OverwriteExisting, updateCondition: "(d.data ->> 'Number')::int <= (excluded.data ->> 'Number')::int");
+        #region sample_BulkInsertWithUpdateCondition
+
+        // perform a bulk insert of `Target` documents
+        // but only overwrite existing if the existing document's "Number"
+        // property is less then the new document's
+        await theStore.BulkInsertAsync(
+            data2,
+            BulkInsertMode.OverwriteExisting,
+            updateCondition: "(d.data ->> 'Number')::int <= (excluded.data ->> 'Number')::int");
+
+        #endregion
 
         using var session = theStore.QuerySession();
         session.Query<Target>().Count().ShouldBe(data1.Length);

@@ -101,7 +101,7 @@ theStore.BulkInsert(data, batchSize: 500);
 // And just checking that the data is actually there;)
 theSession.Query<Target>().Count().ShouldBe(data.Length);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L147-L157' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L146-L156' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The bulk insert is done with a single transaction. For really large document collections, you may need to page the calls to `IDocumentStore.BulkInsert()`.
@@ -126,7 +126,7 @@ await theStore.BulkInsertAsync(data, batchSize: 500);
 // And just checking that the data is actually there;)
 theSession.Query<Target>().Count().ShouldBe(data.Length);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L305-L315' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert_async' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L304-L314' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 By default, bulk insert will fail if there are any duplicate id's between the documents being inserted and the existing database data. You can alter this behavior through the `BulkInsertMode` enumeration as shown below:
@@ -151,7 +151,7 @@ await store.BulkInsertDocumentsAsync(data, BulkInsertMode.InsertsOnly);
 // being loaded
 await store.BulkInsertDocumentsAsync(data, BulkInsertMode.OverwriteExisting);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L384-L403' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_BulkInsertMode_usages' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L383-L402' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_BulkInsertMode_usages' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 When using `BulkInsertMode.OverwriteExisting` it is also possible to pass in a condition to be evaluated when overwriting documents.
@@ -169,7 +169,7 @@ await theStore.BulkInsertAsync(
     BulkInsertMode.OverwriteExisting,
     updateCondition: "(d.data ->> 'Number')::int <= (excluded.data ->> 'Number')::int");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L123-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_BulkInsertWithUpdateCondition' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L101-L111' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_BulkInsertWithUpdateCondition' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The bulk insert feature can also be used with multi-tenanted documents, but in that
@@ -191,5 +191,5 @@ using var store = DocumentStore.For(opts =>
 // If multi-tenanted
 await store.BulkInsertDocumentsAsync("a tenant id", data);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L408-L422' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_MultiTenancyWithBulkInsert' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L407-L421' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_MultiTenancyWithBulkInsert' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
