@@ -116,6 +116,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         // Values were overwritten
         session.Query<Target>().Count(t => t.Number == 100 && t.String == "initial insert").ShouldBe(20);
         session.Query<Target>().Count(t => t.Number == 150 && t.String == "second insert").ShouldBe(10);
+        session.Query<Target>().Count(t => t.Number == 50).ShouldBe(0);
     }
 
     [Fact]
@@ -138,6 +139,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         // Values were overwritten
         (await session.Query<Target>().CountAsync(t => t.Number == 100 && t.String == "initial insert")).ShouldBe(20);
         (await session.Query<Target>().CountAsync(t => t.Number == 150 && t.String == "second insert")).ShouldBe(10);
+        (await session.Query<Target>().Count(t => t.Number == 50)).ShouldBe(0);
     }
 
     [Fact]
