@@ -10,7 +10,7 @@ namespace Marten.Linq.Members.ValueCollections;
 /// This takes the place of the ValueCollectionMember when this member
 /// is used inside of a SelectMany() clause
 /// </summary>
-internal class SelectManyValueCollection: IValueCollectionMember
+public class SelectManyValueCollection: IValueCollectionMember
 {
     private readonly StoreOptions _options;
     private readonly RootMember _root;
