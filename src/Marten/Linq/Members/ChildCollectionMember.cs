@@ -17,7 +17,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;
 
-internal class ChildCollectionMember: QueryableMember, ICollectionMember, IQueryableMemberCollection
+public class ChildCollectionMember: QueryableMember, ICollectionMember, IQueryableMemberCollection
 {
     private readonly IQueryableMember _count;
     private readonly StoreOptions _options;
