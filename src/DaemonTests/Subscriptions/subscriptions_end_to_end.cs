@@ -62,6 +62,9 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
     [Fact]
     public async Task start_subscription_at_sequence_floor()
     {
+        // Just need it reset to nothing
+        StoreOptions(opts => { });
+
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
 
