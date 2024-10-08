@@ -21,7 +21,7 @@ public abstract class TargetSchemaFixture: IDisposable
         }
     }
 
-    protected DocumentStore provisionStore(string schema, Action<StoreOptions> configure = null)
+    internal DocumentStore ProvisionStore(string schema, Action<StoreOptions> configure = null)
     {
         var store = DocumentStore.For(x =>
         {

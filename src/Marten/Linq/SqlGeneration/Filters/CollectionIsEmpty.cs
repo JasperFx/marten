@@ -15,7 +15,9 @@ internal class CollectionIsEmpty: IReversibleWhereFragment
     public CollectionIsEmpty(ICollectionMember member)
     {
         _member = member;
-        _text = $"d.data @? '$ ? (@.{member.MemberName} == null || @.{member.MemberName}.size() == 0)'";
+        // deeply ashamed by the replace here, but it does work.
+        var jsonPath = member.WriteJsonPath().Replace("[*]", "");
+        _text = $"d.data @? '$ ? (@.{jsonPath} == null || @.{jsonPath}.size() == 0)'";
     }
 
     public ISqlFragment Reverse()
