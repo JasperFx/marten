@@ -34,7 +34,7 @@ public class EventProjection_follow_up_operations: DaemonContext
                     { Guid.NewGuid(), nestedEntity }, { Guid.NewGuid(), nestedEntity }
                 }));
 
-        session.Events.Append(Guid.NewGuid(), new SomeOtherEntityWithNestedIdentifierPublished(guid));
+        session.Events.Append(guid, new SomeOtherEntityWithNestedIdentifierPublished(guid));
 
         await session.SaveChangesAsync();
 
