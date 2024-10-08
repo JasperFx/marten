@@ -314,7 +314,7 @@ public class projections_with_IoC_services
                 services.AddMartenStore<ICustomStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "ioc";
+                    opts.DatabaseSchemaName = "ioc3";
                     opts.ApplyChangesLockId = opts.ApplyChangesLockId + 9;
                 }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped, "MyProjection")
                 .ApplyAllDatabaseChangesOnStartup();
@@ -345,7 +345,7 @@ public class projections_with_IoC_services
                 services.AddMartenStore<ICustomStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "ioc";
+                    opts.DatabaseSchemaName = "ioc2";
                     opts.ApplyChangesLockId = opts.ApplyChangesLockId + 10;
                 }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Async, ServiceLifetime.Scoped, "MyProjection")
                     .ApplyAllDatabaseChangesOnStartup();
