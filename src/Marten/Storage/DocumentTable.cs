@@ -81,6 +81,8 @@ internal class DocumentTable: Table
         Indexes.AddRange(mapping.Indexes);
         ForeignKeys.AddRange(mapping.ForeignKeys);
 
+        Partitioning = mapping.Partitioning;
+
         if (mapping.Partitioning != null && !mapping.IgnorePartitions)
         {
             if (mapping.Partitioning.Columns.All(HasColumn))
