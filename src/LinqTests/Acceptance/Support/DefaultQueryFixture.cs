@@ -9,10 +9,10 @@ public class DefaultQueryFixture: TargetSchemaFixture
 {
     public DefaultQueryFixture()
     {
-        Store = provisionStore("linq_querying");
+        Store = ProvisionStore("linq_querying");
 
 
-        DuplicatedFieldStore = provisionStore("duplicate_fields", o =>
+        DuplicatedFieldStore = ProvisionStore("duplicate_fields", o =>
         {
             o.Schema.For<Target>()
                 .Duplicate(x => x.Number)
@@ -25,7 +25,7 @@ public class DefaultQueryFixture: TargetSchemaFixture
                 .Duplicate(x => x.NumberArray);
         });
 
-        SystemTextJsonStore = provisionStore("stj", o =>
+        SystemTextJsonStore = ProvisionStore("stj", o =>
         {
             o.Serializer<SystemTextJsonSerializer>();
         });

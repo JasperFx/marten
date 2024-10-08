@@ -77,6 +77,16 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
         return assertTestCase(description, Fixture.Store);
     }
 
+    [Theory]
+    [MemberData(nameof(GetDescriptions))]
+    public Task run_query_with_camel_casing(string description)
+    {
+        var store = Fixture.ProvisionStore("linq_with_camel_casing",
+            opts => opts.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
+
+        return assertTestCase(description, store);
+    }
+
 
     [Theory]
     [MemberData(nameof(GetDescriptions))]
