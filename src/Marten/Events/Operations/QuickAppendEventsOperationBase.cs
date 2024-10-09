@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Npgsql;
@@ -20,6 +21,8 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
     {
         Stream = stream;
     }
+
+    public EventGraph Events { get; set; }
 
     public StreamAction Stream { get; }
 
@@ -48,6 +51,13 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
             {
                 // Only setting the sequence to aid in tombstone processing
                 Stream.Events[i - 1].Sequence = values[i];
+            }
+
+            if (Events is { UseMandatoryStreamTypeDeclaration: true } && Stream.Events[0].Version == 0)
+            {
+                throw new NonExistentStreamException(Events.StreamIdentity == StreamIdentity.AsGuid
+                    ? Stream.Id
+                    : Stream.Key);
             }
         }
     }
@@ -114,6 +124,13 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
             {
                 // Only setting the sequence to aid in tombstone processing
                 Stream.Events[i - 1].Sequence = values[i];
+            }
+
+            if (Events is { UseMandatoryStreamTypeDeclaration: true } && Stream.Events[0].Version == 0)
+            {
+                throw new NonExistentStreamException(Events.StreamIdentity == StreamIdentity.AsGuid
+                    ? Stream.Id
+                    : Stream.Key);
             }
         }
     }

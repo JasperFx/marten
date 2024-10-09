@@ -440,4 +440,9 @@ public class StreamAction
             DotNetTypeName = mapping.DotNetTypeName
         });
     }
+
+    public bool IsStarting()
+    {
+        return ActionType == StreamActionType.Start || Events.First().Version == 1;
+    }
 }
