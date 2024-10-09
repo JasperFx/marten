@@ -124,3 +124,105 @@ public class ValueTypeSelectClause<TOuter, TInner>: ISelectClause, IScalarSelect
         return $"Data from {FromObject}";
     }
 }
+
+public class ClassValueTypeSelectClause<TOuter, TInner>: ISelectClause, IScalarSelectClause, IModifyableFromObject,
+    ISelector<TOuter>
+{
+    public ClassValueTypeSelectClause(string memberName, Func<TInner, TOuter> converter)
+    {
+        MemberName = memberName;
+        Converter = converter;
+    }
+
+    public Func<TInner, TOuter> Converter { get; }
+
+    public string MemberName { get; set; }
+
+    public ISelectClause CloneToOtherTable(string tableName)
+    {
+        return new ClassValueTypeSelectClause<TOuter, TInner>(MemberName, Converter)
+        {
+            FromObject = tableName, MemberName = MemberName
+        };
+    }
+
+    public void ApplyOperator(string op)
+    {
+        MemberName = $"{op}({MemberName})";
+    }
+
+    public ISelectClause CloneToDouble()
+    {
+        throw new NotSupportedException();
+    }
+
+    public Type SelectedType => typeof(TOuter);
+
+    public string FromObject { get; set; }
+
+    public void Apply(ICommandBuilder sql)
+    {
+        if (MemberName.IsNotEmpty())
+        {
+            sql.Append("select ");
+            sql.Append(MemberName);
+            sql.Append(" as data from ");
+        }
+
+        sql.Append(FromObject);
+        sql.Append(" as d");
+    }
+
+    public string[] SelectFields()
+    {
+        return new[] { MemberName };
+    }
+
+    public ISelector BuildSelector(IMartenSession session)
+    {
+        return this;
+    }
+
+    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
+        ISqlFragment currentStatement)
+    {
+        if (typeof(TResult).CanBeCastTo<IEnumerable<TOuter>>())
+        {
+            return (IQueryHandler<TResult>)new ListQueryHandler<TOuter>(statement, this);
+        }
+
+        return (IQueryHandler<TResult>)new ListQueryHandler<TOuter?>(statement, this);
+    }
+
+    public ISelectClause UseStatistics(QueryStatistics statistics)
+    {
+        return new StatsSelectClause<TOuter>(this, statistics);
+    }
+
+    public TOuter Resolve(DbDataReader reader)
+    {
+        if (reader.IsDBNull(0))
+        {
+            return default(TOuter);
+        }
+
+        var inner = reader.GetFieldValue<TInner>(0);
+        return Converter(inner);
+    }
+
+    public async Task<TOuter> ResolveAsync(DbDataReader reader, CancellationToken token)
+    {
+        if (await reader.IsDBNullAsync(0, token).ConfigureAwait(false))
+        {
+            return default(TOuter);
+        }
+
+        var inner = await reader.GetFieldValueAsync<TInner>(0, token).ConfigureAwait(false);
+        return Converter(inner);
+    }
+
+    public override string ToString()
+    {
+        return $"Data from {FromObject}";
+    }
+}

@@ -23,10 +23,21 @@ public class StringValueTypeMember<T>: StringMember, IValueTypeMember
     {
         _valueSource = valueTypeInfo.ValueAccessor<T, string>();
         var converter = valueTypeInfo.CreateConverter<T, string>();
-        _selector = typeof(ValueTypeSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(
-            TypedLocator, converter,
-            valueTypeInfo.OuterType,
-            typeof(string));
+
+        if (typeof(T).IsClass)
+        {
+            _selector = typeof(ClassValueTypeSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(
+                TypedLocator, converter,
+                valueTypeInfo.OuterType,
+                typeof(string));
+        }
+        else
+        {
+            _selector = typeof(ValueTypeSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(
+                TypedLocator, converter,
+                valueTypeInfo.OuterType,
+                typeof(string));
+        }
     }
 
     public override void PlaceValueInDictionaryForContainment(Dictionary<string, object> dict, ConstantExpression constant)
