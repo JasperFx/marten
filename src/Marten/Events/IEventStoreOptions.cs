@@ -81,6 +81,13 @@ namespace Marten.Events
         public bool UseOptimizedProjectionRebuilds { get; set; }
 
         /// <summary>
+        /// Does Marten require a stream type for any new event streams? This will also
+        /// validate that an event stream already exists as part of appending events. Default in 7.0 is false,
+        /// but this will be true in 8.0
+        /// </summary>
+        public bool UseMandatoryStreamTypeDeclaration { get; set; }
+
+        /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
         ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
         ///     the event type. It can also be used for the event namespace migration.

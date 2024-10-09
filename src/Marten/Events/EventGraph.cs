@@ -74,6 +74,13 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     public bool UseOptimizedProjectionRebuilds { get; set; }
 
     /// <summary>
+    /// Does Marten require a stream type for any new event streams? This will also
+    /// validate that an event stream already exists as part of appending events. Default in 7.0 is false,
+    /// but this will be true in 8.0
+    /// </summary>
+    public bool UseMandatoryStreamTypeDeclaration { get; set; }
+
+    /// <summary>
     /// Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
     /// *if* you are also aggressively using event stream archiving
     /// </summary>

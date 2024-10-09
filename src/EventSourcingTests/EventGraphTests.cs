@@ -20,6 +20,12 @@ public class EventGraphTests
     }
 
     [Fact]
+    public void use_mandatory_stream_type_declaration_is_false()
+    {
+        theGraph.UseMandatoryStreamTypeDeclaration.ShouldBeFalse();
+    }
+
+    [Fact]
     public void build_event()
     {
         var slayed = new MonsterSlayed {Name = "The Gorgon"};
