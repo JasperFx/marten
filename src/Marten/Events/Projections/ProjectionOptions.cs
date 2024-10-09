@@ -436,9 +436,9 @@ public class ProjectionOptions: DaemonSettings
         return (ILiveAggregator<T>)aggregator;
     }
 
-    private SingleStreamProjection<T> tryFindProjectionSourceForAggregateType<T>() where T : class
+    private GeneratedAggregateProjectionBase<T> tryFindProjectionSourceForAggregateType<T>() where T : class
     {
-        var candidate = All.OfType<SingleStreamProjection<T>>().FirstOrDefault();
+        var candidate = All.OfType<GeneratedAggregateProjectionBase<T>>().FirstOrDefault();
         if (candidate != null)
         {
             return candidate;
@@ -449,7 +449,7 @@ public class ProjectionOptions: DaemonSettings
             return new SingleStreamProjection<T>();
         }
 
-        return source as SingleStreamProjection<T>;
+        return source as GeneratedAggregateProjectionBase<T>;
     }
 
     internal void AssertValidity(DocumentStore store)
