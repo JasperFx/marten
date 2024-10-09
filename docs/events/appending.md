@@ -179,7 +179,6 @@ This causes a couple side effects that **force stricter usage of Marten**:
 1. Marten will throw a `StreamTypeMissingException` exception if you call a `StartStream()` overload that doesn't include the stream type
 2. Marten will throw a `NonExistentStreamException` if you try to append events to a stream that does not already exist
 
-
 ## Optimistic Versioned Append
 
 ::: tip
