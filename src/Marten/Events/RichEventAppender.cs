@@ -36,6 +36,13 @@ internal class RichEventAppender: IEventAppender
 
                 if (state == null)
                 {
+                    if (eventGraph.UseMandatoryStreamTypeDeclaration)
+                    {
+                        throw new NonExistentStreamException(eventGraph.StreamIdentity == StreamIdentity.AsGuid
+                            ? stream.Id
+                            : stream.Key);
+                    }
+
                     stream.PrepareEvents(0, eventGraph, sequences, session);
                     session.QueueOperation(storage.InsertStream(stream));
                 }
@@ -98,6 +105,12 @@ internal class RichEventAppender: IEventAppender
             {
                 stream.PrepareEvents(0, eventGraph, sequences, session);
                 session.QueueOperation(storage.InsertStream(stream));
+            }
+            else if (eventGraph.UseMandatoryStreamTypeDeclaration && stream.IsStarting())
+            {
+                throw new NonExistentStreamException(eventGraph.StreamIdentity == StreamIdentity.AsGuid
+                    ? stream.Id
+                    : stream.Key);
             }
 
             foreach (var @event in stream.Events)

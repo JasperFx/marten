@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Operations;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
 
@@ -54,7 +55,9 @@ internal class QuickEventAppender: IEventAppender
                 else
                 {
                     stream.PrepareEvents(0, eventGraph, sequences, session);
-                    session.QueueOperation(storage.QuickAppendEvents(stream));
+                    var quickAppendEvents = (QuickAppendEventsOperationBase)storage.QuickAppendEvents(stream);
+                    quickAppendEvents.Events = eventGraph;
+                    session.QueueOperation(quickAppendEvents);
                 }
             }
         }
