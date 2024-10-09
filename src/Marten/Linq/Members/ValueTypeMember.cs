@@ -33,10 +33,23 @@ public class ValueTypeMember<TOuter, TInner>: SimpleCastMember, IValueTypeMember
     {
         _valueSource = valueTypeInfo.ValueAccessor<TOuter, TInner>();
         var converter = valueTypeInfo.CreateConverter<TOuter, TInner>();
-        _selector = typeof(ValueTypeSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(
-            TypedLocator, converter,
-            valueTypeInfo.OuterType,
-            valueTypeInfo.SimpleType);
+
+        if (typeof(TOuter).IsClass)
+        {
+            _selector = typeof(ClassValueTypeSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(
+                TypedLocator, converter,
+                valueTypeInfo.OuterType,
+                valueTypeInfo.SimpleType);
+        }
+        else
+        {
+            _selector = typeof(ValueTypeSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(
+                TypedLocator, converter,
+                valueTypeInfo.OuterType,
+                valueTypeInfo.SimpleType);
+        }
+
+
     }
 
     public override void PlaceValueInDictionaryForContainment(Dictionary<string, object> dict,
@@ -56,7 +69,8 @@ public class ValueTypeMember<TOuter, TInner>: SimpleCastMember, IValueTypeMember
             return op == "=" ? new IsNullFilter(this) : new IsNotNullFilter(this);
         }
 
-        var value = _valueSource(constant.Value.As<TOuter>());
+        var value = constant.Value is TInner ? (TInner)constant.Value : _valueSource(constant.Value.As<TOuter>());
+
         var def = new CommandParameter(Expression.Constant(value));
         return new MemberComparisonFilter(this, def, op);
     }
