@@ -1,9 +1,12 @@
 using System;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using Marten;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Xunit;
 
@@ -82,5 +85,22 @@ public class mandatory_stream_type_behavior : OneOffConfigurationsContext
         {
             await theSession.SaveChangesAsync();
         });
+    }
+
+    public static void configure_mandatory_stream_type()
+    {
+        #region sample_UseMandatoryStreamTypeDeclaration
+
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddMarten(opts =>
+        {
+            opts.Connection(builder.Configuration.GetConnectionString("marten"));
+
+            // Force users to supply a stream type on StartStream, and disallow
+            // appending events if the stream does not already exist
+            opts.Events.UseMandatoryStreamTypeDeclaration = true;
+        });
+
+        #endregion
     }
 }
