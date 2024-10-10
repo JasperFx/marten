@@ -34,10 +34,10 @@ builder.Services.AddMarten(opts =>
     // caveats
     opts.Events.UseIdentityMapForInlineAggregates = true;
 
-    // Opts into a mode where Marten is able to rebuild single
-    // stream projections faster by building one stream at a time
-    // Does require new table migrations for Marten 7 users though
-    opts.Events.UseOptimizedProjectionRebuilds = true;
+    // Opts into a mode where Marten is able to rebuild single // [!code ++]
+    // stream projections faster by building one stream at a time // [!code ++]
+    // Does require new table migrations for Marten 7 users though // [!code ++]
+    opts.Events.UseOptimizedProjectionRebuilds = true; // [!code ++]
 });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L31-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_event_sourcing' title='Start of snippet'>anchor</a></sup>
