@@ -50,11 +50,24 @@ public class Optimizations
             // caveats
             opts.Events.UseIdentityMapForInlineAggregates = true;
 
-
             // Opts into a mode where Marten is able to rebuild single
             // stream projections faster by building one stream at a time
             // Does require new table migrations for Marten 7 users though
             opts.Events.UseOptimizedProjectionRebuilds = true;
+        });
+
+        #endregion
+
+        #region sample_turn_on_optimizations_for_rebuilding
+
+        builder.Services.AddMarten(opts =>
+        {
+            opts.Connection("some connection string");
+
+            // Opts into a mode where Marten is able to rebuild single // [!code ++]
+            // stream projections faster by building one stream at a time // [!code ++]
+            // Does require new table migrations for Marten 7 users though // [!code ++]
+            opts.Events.UseOptimizedProjectionRebuilds = true; // [!code ++]
         });
 
         #endregion
