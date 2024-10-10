@@ -34,13 +34,13 @@ builder.Services.AddMarten(opts =>
     // caveats
     opts.Events.UseIdentityMapForInlineAggregates = true;
 
-    // Opts into a mode where Marten is able to rebuild single // [!code ++]
-    // stream projections faster by building one stream at a time // [!code ++]
-    // Does require new table migrations for Marten 7 users though // [!code ++]
-    opts.Events.UseOptimizedProjectionRebuilds = true; // [!code ++]
+    // Opts into a mode where Marten is able to rebuild single
+    // stream projections faster by building one stream at a time
+    // Does require new table migrations for Marten 7 users though
+    opts.Events.UseOptimizedProjectionRebuilds = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L31-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_event_sourcing' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L31-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_event_sourcing' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The archived stream option is further described in the section on [Hot/Cold Storage Partitioning](/events/archiving.html#hot-cold-storage-partitioning).
@@ -48,8 +48,10 @@ The archived stream option is further described in the section on [Hot/Cold Stor
 See the ["Rich" vs "Quick" Appends](/events/appending.html#rich-vs-quick-appends) section for more information about the
 applicability and drawbacks of the "Quick" event appending.
 
-Lastly, see [Optimizing FetchForWriting with Inline Aggregates](/scenarios/command_handler_workflow.html#optimizing-fetchforwriting-with-inline-aggregates) for more information
+See [Optimizing FetchForWriting with Inline Aggregates](/scenarios/command_handler_workflow.html#optimizing-fetchforwriting-with-inline-aggregates) for more information
 about the `UseIdentityMapForInlineAggregates` option.
+
+Lastly, check out [Optimized Projection Rebuilds](/events/projections/rebuilding.html#optimized-projection-rebuilds) for information about `UseOptimizedProjectionRebuilds`
 
 ## Caching for Asynchronous Projections
 
