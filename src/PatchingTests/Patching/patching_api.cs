@@ -14,13 +14,17 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql.SqlGeneration;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace PatchingTests.Patching;
 
 public class patching_api: OneOffConfigurationsContext
 {
-    public patching_api()
+    private readonly ITestOutputHelper _testOutputHelper;
+
+    public patching_api(ITestOutputHelper testOutputHelper)
     {
+        _testOutputHelper = testOutputHelper;
         StoreOptions(_ =>
         {
             _.UseDefaultSerialization(EnumStorage.AsString);
@@ -261,6 +265,23 @@ public class patching_api: OneOffConfigurationsContext
         using (var query = theStore.QuerySession())
         {
             query.Load<Target>(target.Id).Float.ShouldBe(13.6F);
+        }
+    }
+
+    [Fact]
+    public void increment_for_decimal()
+    {
+        var target = Target.Random();
+        target.Decimal = 11.2m;
+
+        theSession.Store(target);
+        theSession.Patch<Target>(target.Id).Increment(x => x.Decimal, 2.4m);
+        theSession.SaveChanges();
+        theSession.SaveChanges();
+
+        using (var query = theStore.QuerySession())
+        {
+            query.Load<Target>(target.Id).Decimal.ShouldBe(13.6m);
         }
     }
 
