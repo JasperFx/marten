@@ -20,11 +20,8 @@ namespace PatchingTests.Patching;
 
 public class patching_api: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _testOutputHelper;
-
-    public patching_api(ITestOutputHelper testOutputHelper)
+    public patching_api()
     {
-        _testOutputHelper = testOutputHelper;
         StoreOptions(_ =>
         {
             _.UseDefaultSerialization(EnumStorage.AsString);
