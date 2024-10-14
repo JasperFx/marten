@@ -82,6 +82,15 @@ public interface IPatchExpression<T>
     IPatchExpression<T> Increment(Expression<Func<T, float>> expression, float increment = 1);
 
     /// <summary>
+    /// Increment a single field or property by adding the increment value
+    /// to the persisted value
+    /// </summary>
+    /// <param name="expression"></param>
+    /// <param name="increment"></param>
+    /// <returns></returns>
+    IPatchExpression<T> Increment(Expression<Func<T, decimal>> expression, decimal increment = 1);
+
+    /// <summary>
     /// Append an element to the end of a child collection on the persisted
     /// document
     /// </summary>

@@ -225,6 +225,36 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     }
 
     [Fact]
+    public void increment_decimal_with_default()
+    {
+        _expression.Increment(x => x.Decimal);
+
+        _expression.Patch["path"].ShouldBe("Decimal");
+        _expression.Patch["type"].ShouldBe("increment_float");
+        _expression.Patch["increment"].ShouldBe(1);
+    }
+
+    [Fact]
+    public void increment_decimal_with_default_deep()
+    {
+        _expression.Increment(x => x.Inner.Inner.Decimal);
+
+        _expression.Patch["path"].ShouldBe("Inner.Inner.Decimal");
+        _expression.Patch["type"].ShouldBe("increment_float");
+        _expression.Patch["increment"].ShouldBe(1);
+    }
+
+    [Fact]
+    public void increment_decimal_with_explicit_interval()
+    {
+        _expression.Increment(x => x.Decimal, 5);
+
+        _expression.Patch["path"].ShouldBe("Decimal");
+        _expression.Patch["type"].ShouldBe("increment_float");
+        _expression.Patch["increment"].ShouldBe(5);
+    }
+
+    [Fact]
     public void append_shallow()
     {
         _expression.Append(x => x.NumberArray, 5);

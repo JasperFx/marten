@@ -122,6 +122,17 @@ internal class PatchExpression<T>: IPatchExpression<T>
         _patchSet.Add(new PatchData(Items: patch, false));
         return this;
     }
+
+    public IPatchExpression<T> Increment(Expression<Func<T, decimal>> expression, decimal increment = 1)
+    {
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "increment_float");
+        patch.Add("increment", increment);
+        patch.Add("path", toPath(expression));
+        _patchSet.Add(new PatchData(Items: patch, false));
+        return this;
+    }
+
     //TODO NRT - Annotations are currently inaccurate here due to lack of null guards. Replace with guards in .NET 6+
     public IPatchExpression<T> Append<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element)
     {
