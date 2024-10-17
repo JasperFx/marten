@@ -399,11 +399,14 @@ public async Task update_a_document_smoke_test()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/guid_based_document_operations.cs#L84-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_insert_the_load_by_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: tip
+Marten 7.31.0 "fixed" it so that you don't have to use `Nullable<T>` for the identity member of strong typed identifiers.
+:::
+
 As you might infer -- or not -- there's a couple rules and internal behavior:
 
 * The identity selection is done just the same as the primitive types, Marten is either looking for an `id`/`Id` member, or a member decorated with
   `[Identity]`
-* If Marten is going to assign the identity, you will need to use `Nullable<T>` for the identity member of the document
 * There is a new `IQuerySession.LoadAsync<T>(object id)` overload that was specifically built for strong typed identifiers
 * For `Guid`-wrapped values, Marten is assigning missing identity values based on its sequential `Guid` support
 * For `int` or `long`-wrapped values, Marten is using its HiLo support to define the wrapped values
