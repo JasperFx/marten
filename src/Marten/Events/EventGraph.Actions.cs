@@ -71,7 +71,6 @@ public partial class EventGraph
     internal StreamAction StartStream(DocumentSessionBase session, Guid id, params object[] events)
     {
         EnsureAsGuidStorage(session);
-        if (UseMandatoryStreamTypeDeclaration) throw new StreamTypeMissingException();
 
         if (id == Guid.Empty)
         {
@@ -123,7 +122,6 @@ public partial class EventGraph
     internal StreamAction StartStream(DocumentSessionBase session, string streamKey, params object[] events)
     {
         EnsureAsStringStorage(session);
-        if (UseMandatoryStreamTypeDeclaration) throw new StreamTypeMissingException();
 
         if (streamKey.IsEmpty())
         {
