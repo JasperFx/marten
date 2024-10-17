@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using JasperFx.Core;
 using Marten;
 using Marten.Events;
 using Marten.Exceptions;
@@ -85,6 +86,30 @@ public class mandatory_stream_type_behavior : OneOffConfigurationsContext
         {
             await theSession.SaveChangesAsync();
         });
+    }
+
+    [Fact]
+    public async Task happy_path_usage_with_guid()
+    {
+        StoreOptions(opts => opts.Events.UseMandatoryStreamTypeDeclaration = true);
+
+        theSession.Events.StartStream<MyAggregate>(Guid.NewGuid(), new AEvent());
+
+        await theSession.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task happy_path_usage_with_string()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.UseMandatoryStreamTypeDeclaration = true;
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+        });
+
+        theSession.Events.StartStream<MyAggregate>(Guid.NewGuid().ToString(), new AEvent());
+
+        await theSession.SaveChangesAsync();
     }
 
     public static void configure_mandatory_stream_type()
