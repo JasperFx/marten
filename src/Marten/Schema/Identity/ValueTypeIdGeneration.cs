@@ -66,54 +66,65 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
         method.Frames.Code($"return {{0}}.{mapping.CodeGen.AccessId};", document);
     }
 
+    private string innerValueAccessor(DocumentMapping mapping)
+    {
+        return mapping.IdMember.GetRawMemberType().IsNullable() ? $"{mapping.IdMember.Name}.Value" : mapping.IdMember.Name;
+    }
+
     private void generateStringWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
     {
-        method.Frames.Code($"return {{0}}.{mapping.IdMember.Name}.Value;", document);
+        method.Frames.Code($"return {{0}}.{innerValueAccessor(mapping)};", document);
     }
 
     private void generateLongWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
     {
+        var isDefault = mapping.IdMember.GetRawMemberType().IsNullable() ? $"{mapping.IdMember.Name} == null" : $"{mapping.IdMember.Name}.Value == default";
+
         var database = Use.Type<IMartenDatabase>();
         if (Ctor != null)
         {
             method.Frames.Code(
-                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, new {OuterType.FullNameInCode()}({{1}}.Sequences.SequenceFor({{2}}).NextLong()));",
+                $"if ({{0}}.{isDefault}) _setter({{0}}, new {OuterType.FullNameInCode()}({{1}}.Sequences.SequenceFor({{2}}).NextLong()));",
                 document, database, mapping.DocumentType);
         }
         else
         {
             method.Frames.Code(
-                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, {OuterType.FullNameInCode()}.{Builder.Name}({{1}}.Sequences.SequenceFor({{2}}).NextLong()));",
+                $"if ({{0}}.{isDefault}) _setter({{0}}, {OuterType.FullNameInCode()}.{Builder.Name}({{1}}.Sequences.SequenceFor({{2}}).NextLong()));",
                 document, database, mapping.DocumentType);
         }
     }
 
     private void generateIntWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
     {
+        var isDefault =  mapping.IdMember.GetRawMemberType().IsNullable() ? $"{mapping.IdMember.Name} == null" : $"{mapping.IdMember.Name}.Value == default";
+
         var database = Use.Type<IMartenDatabase>();
         if (Ctor != null)
         {
             method.Frames.Code(
-                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, new {OuterType.FullNameInCode()}({{1}}.Sequences.SequenceFor({{2}}).NextInt()));",
+                $"if ({{0}}.{isDefault}) _setter({{0}}, new {OuterType.FullNameInCode()}({{1}}.Sequences.SequenceFor({{2}}).NextInt()));",
                 document, database, mapping.DocumentType);
         }
         else
         {
             method.Frames.Code(
-                $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, {OuterType.FullNameInCode()}.{Builder.Name}({{1}}.Sequences.SequenceFor({{2}}).NextInt()));",
+                $"if ({{0}}.{isDefault}) _setter({{0}}, {OuterType.FullNameInCode()}.{Builder.Name}({{1}}.Sequences.SequenceFor({{2}}).NextInt()));",
                 document, database, mapping.DocumentType);
         }
     }
 
     private void generateGuidWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
     {
+        var isDefault = mapping.IdMember.GetRawMemberType().IsNullable() ? $"{mapping.IdMember.Name} == null" : $"{mapping.IdMember.Name}.Value == default";
+
         var newGuid = $"{typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid()";
         var create = Ctor == null
             ? $"{OuterType.FullNameInCode()}.{Builder.Name}({newGuid})"
             : $"new {OuterType.FullNameInCode()}({newGuid})";
 
         method.Frames.Code(
-            $"if ({{0}}.{mapping.IdMember.Name} == null) _setter({{0}}, {create});",
+            $"if ({{0}}.{isDefault}) _setter({{0}}, {create});",
             document);
     }
 
@@ -121,7 +132,6 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
     {
         return _selector.CloneToOtherTable(tableName);
     }
-
 
     public static bool IsCandidate(Type idType, out ValueTypeIdGeneration? idGeneration)
     {
@@ -231,15 +241,35 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
     public void WriteBulkWriterCode(GeneratedMethod load, DocumentMapping mapping)
     {
         var dbType = PostgresqlProvider.Instance.ToParameterType(SimpleType);
-        load.Frames.Code($"writer.Write(document.{mapping.IdMember.Name}.Value.{ValueProperty.Name}, {{0}});", dbType);
+
+        if (mapping.IdMember.GetRawMemberType().IsNullable())
+        {
+            load.Frames.Code($"writer.Write(document.{mapping.IdMember.Name}.Value.{ValueProperty.Name}, {{0}});", dbType);
+        }
+        else
+        {
+            load.Frames.Code($"writer.Write(document.{mapping.IdMember.Name}.{ValueProperty.Name}, {{0}});", dbType);
+        }
     }
 
     public void WriteBulkWriterCodeAsync(GeneratedMethod load, DocumentMapping mapping)
     {
         var dbType = PostgresqlProvider.Instance.ToParameterType(SimpleType);
-        load.Frames.Code(
-            $"await writer.WriteAsync(document.{mapping.IdMember.Name}.Value.{ValueProperty.Name}, {{0}}, {{1}});",
-            dbType, Use.Type<CancellationToken>());
+
+        if (mapping.IdMember.GetRawMemberType().IsNullable())
+        {
+            load.Frames.Code(
+                $"await writer.WriteAsync(document.{mapping.IdMember.Name}.Value.{ValueProperty.Name}, {{0}}, {{1}});",
+                dbType, Use.Type<CancellationToken>());
+        }
+        else
+        {
+            load.Frames.Code(
+                $"await writer.WriteAsync(document.{mapping.IdMember.Name}.{ValueProperty.Name}, {{0}}, {{1}});",
+                dbType, Use.Type<CancellationToken>());
+        }
+
+
     }
 }
 
