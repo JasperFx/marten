@@ -104,6 +104,10 @@ public class TripProjection: SingleStreamProjection<Trip>
 
 And register that projection like this:
 
+::: tip
+Remember to start the Async Daemon when using async projections, see [Asynchronous Projections Daemon](/events/projections/async-daemon.html)
+:::
+
 <!-- snippet: sample_registering_an_aggregate_projection -->
 <a id='snippet-sample_registering_an_aggregate_projection'></a>
 ```cs
