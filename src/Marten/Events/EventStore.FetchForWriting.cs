@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
@@ -151,10 +152,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
             return (IAggregateFetchPlan<TDoc, TId>)stored;
         }
 
-        // All the IDocumentStorage types are codegen'd
-        // ReSharper disable once SuspiciousTypeConversion.Global
-        var documentProvider = _store.Options.Providers.StorageFor<TDoc>();
-        var storage = (IDocumentStorage<TDoc, TId>)documentProvider.IdentityMap;
+        var storage = _store.Options.ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking.IdentityOnly);
 
         var plan = determineFetchPlan(storage, _session.Options);
 

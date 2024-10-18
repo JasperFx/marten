@@ -6,6 +6,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;
+using Marten.Internal.Storage;
 using Marten.Linq.Members;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
@@ -15,6 +16,24 @@ namespace Marten;
 
 public partial class StoreOptions
 {
+    internal IDocumentStorage<TDoc, TId> ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking tracking)
+    {
+        var provider = Providers.StorageFor<TDoc>();
+        var raw = provider.Select(tracking);
+
+        if (raw is IDocumentStorage<TDoc, TId> storage) return storage;
+
+        var valueTypeInfo = TryFindValueType(raw.IdType);
+        if (valueTypeInfo == null)
+            throw new InvalidOperationException(
+                $"Invalid identifier type for aggregate {typeof(TDoc).FullNameInCode()}. Id type is {raw.IdType.FullNameInCode()}");
+
+        return typeof(ValueTypeIdentifiedDocumentStorage<,,>).CloseAndBuildAs<IDocumentStorage<TDoc, TId>>(
+            valueTypeInfo, raw, typeof(TDoc), typeof(TId),
+            raw.IdType);
+    }
+
+
     internal IIdGeneration DetermineIdStrategy(Type documentType, MemberInfo idMember)
     {
         var idType = idMember.GetMemberType();

@@ -9,19 +9,6 @@ using Xunit;
 
 namespace EventSourcingTests.Aggregation;
 
-public class strong_typed_identifiers_on_aggregates_must_be_nullable : OneOffConfigurationsContext
-{
-    [Fact]
-    public void should_warn_if_the_id_is_not_nullable()
-    {
-        Should.Throw<InvalidProjectionException>(() =>
-        {
-            StoreOptions(opts => opts.Projections.Snapshot<Payment3>(SnapshotLifecycle.Inline));
-        });
-
-    }
-}
-
 public class Payment3
 {
     [JsonInclude] public PaymentId Id { get; private set; }
