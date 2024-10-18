@@ -59,9 +59,15 @@ or
 at the command line to spin up a Postgresql database withThe default Marten test configuration tries to find this database if no
 PostgreSQL database connection string is explicitly configured following the steps below:
 
+### Native Partial Updates/Patching
+
+Marten supports native patching since v7.x. you can refer to [patching api](https://martendb.io/documents/partial-updates-patching.html) for more details.
+
 ### PLV8
 
-If you'd like to use [Patching Api](https://martendb.io/documents/plv8.html#the-patching-api) you need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
+If you'd like to use [PLV8 Patching Api](https://martendb.io/documents/plv8.html#the-patching-api) you need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
+
+Note that PLV8 patching will be deprecated in future versions and native patching is the drop in replacement for it. You can easily migrate to native patching, refer [here](https://martendb.io/documents/partial-updates-patching.html#patching-api) for more details.
 
 Ensure the following:
 
