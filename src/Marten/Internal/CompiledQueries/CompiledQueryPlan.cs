@@ -19,19 +19,51 @@ namespace Marten.Internal.CompiledQueries;
 
 public class CompiledQueryPlan : ICommandBuilder
 {
-    public Type QueryType { get; }
-    public Type OutputType { get; }
+    /// <summary>
+    /// Placeholder in the compiled query for parameters
+    /// </summary>
     public const string ParameterPlaceholder = "^";
 
-    public List<MemberInfo> InvalidMembers { get; } = new();
-    public List<IQueryMember> QueryMembers { get; } = new();
+    /// <summary>
+    /// The type for which this <see cref="CompiledQueryPlan"/> is constructed
+    /// </summary>
+    public Type QueryType { get; }
+
+    /// <summary>
+    /// The output type that should be produced by this <see cref="CompiledQueryPlan"/>
+    /// </summary>
+    public Type OutputType { get; }
+
+    /// <summary>
+    /// Member of the <see cref="QueryType"/> that holds <see cref="QueryStatistics"/> if any
+    /// </summary>
+    public MemberInfo? StatisticsMember { get; set; }
+
+    /// <summary>
+    /// Members of the <see cref="QueryType"/> that can be used to include additional data
+    /// </summary>
     public List<MemberInfo> IncludeMembers { get; } = new();
+
+    /// <summary>
+    /// Members of the <see cref="QueryType"/> that are invalid as parameters
+    /// </summary>
+    public List<MemberInfo> InvalidMembers { get; } = new();
+
+    /// <summary>
+    /// Members of the <see cref="QueryType"/> that are usable as parameters
+    /// </summary>
+    public List<IQueryMember> QueryMembers { get; } = new();
     internal List<IIncludePlan> IncludePlans { get; } = new();
 
     private readonly List<CommandPlan> _commands = new();
     public IQueryHandler HandlerPrototype { get; set; }
-    public MemberInfo? StatisticsMember { get; set; }
 
+
+    /// <summary>
+    /// Create a new <see cref="CompiledQueryPlan"/> for the given <paramref name="queryType"/> which produces <paramref name="outputType"/> as output.
+    /// </summary>
+    /// <param name="queryType">The type of the query</param>
+    /// <param name="outputType">The produced type</param>
     public CompiledQueryPlan(Type queryType, Type outputType)
     {
         QueryType = queryType;
@@ -42,6 +74,24 @@ public class CompiledQueryPlan : ICommandBuilder
 
     #region finding members on query type
 
+    /// <summary>
+    /// This function's purpose is to sort all the members on the <see cref="QueryType"/> into categories
+    /// </summary>
+    /// <remarks>
+    /// The possible categories are:
+    /// <list type="number">
+    /// <item> Statistic member, only one </item>
+    /// <item> Include members, which can be filled by fetching additional data during the same operation </item>
+    /// <item> Invalid members, which are at this point in time all nullable fields as well as all types for which no
+    ///     <see cref="QueryCompiler.Finders"/> instance exists </item>
+    /// <item> Query members, which are the ones that can actually be used by the compiled query as parameters </item>
+    /// </list>
+    /// </remarks>
+    /// <seealso cref="StatisticsMember"/>
+    /// <seealso cref="IncludeMembers"/>
+    /// <seealso cref="InvalidMembers"/>
+    /// <seealso cref="QueryMembers"/>
+    /// TODO: Possibly throw on duplicate QueryStatistics?
     private void sortMembers()
     {
         var members = findMembers().ToArray();
@@ -92,6 +142,10 @@ public class CompiledQueryPlan : ICommandBuilder
         }
     }
 
+    /// <summary>
+    /// Iterates over all <see langword="public"/> fields and properties on <see cref="QueryType"/>
+    /// </summary>
+    /// <returns>An enumerable that iterates over all fields and properties</returns>
     private IEnumerable<MemberInfo> findMembers()
     {
         foreach (var field in QueryType.GetFields(BindingFlags.Instance | BindingFlags.Public)
@@ -252,7 +306,12 @@ public class CompiledQueryPlan : ICommandBuilder
 
     #endregion
 
-    public QueryStatistics GetStatisticsIfAny(object query)
+    /// <summary>
+    /// Returns the <see cref="StatisticsMember"/>'s content of <paramref name="query"/> if any
+    /// </summary>
+    /// <param name="query">The query instance</param>
+    /// <returns>A <see cref="QueryStatistics"/> instance if the <see cref="QueryType"/> has a <see cref="StatisticsMember"/>, null otherwise </returns>
+    public QueryStatistics? GetStatisticsIfAny(object query)
     {
         if (StatisticsMember is PropertyInfo p)
         {
@@ -267,6 +326,15 @@ public class CompiledQueryPlan : ICommandBuilder
         return null;
     }
 
+    /// <summary>
+    /// Tries to create a template from the <paramref name="query"/>, making sure that all <see cref="QueryMembers"/>
+    /// have unique values
+    /// </summary>
+    /// <param name="query">The query to create a template from</param>
+    /// <typeparam name="TDoc">Document input type to the <see cref="ICompiledQuery{TDoc,TOut}"/></typeparam>
+    /// <typeparam name="TOut">Output type of the <see cref="ICompiledQuery{TDoc,TOut}"/></typeparam>
+    /// <returns>An instance of the same type as <paramref name="query"/> with unique values, can be identical to <paramref name="query"/></returns>
+    /// <exception cref="InvalidCompiledQueryException">Thrown when a template with unique values could not be created</exception>
     public ICompiledQuery<TDoc, TOut> CreateQueryTemplate<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query)
     {
         foreach (var parameter in QueryMembers) parameter.StoreValue(query);
@@ -286,6 +354,13 @@ public class CompiledQueryPlan : ICommandBuilder
         }
     }
 
+    /// <summary>
+    /// Tries to create a unique template instance of <paramref name="type"/>
+    /// </summary>
+    /// <param name="type">The type for which to create a unique template instance</param>
+    /// <returns>A template instance with unique values for <see cref="QueryMembers"/></returns>
+    /// <exception cref="InvalidOperationException">Thrown if an instance of the type cannot be constructed</exception>
+    /// <exception cref="InvalidCompiledQueryException">Thrown if unique values cannot be assigned to the created instance</exception>
     public object TryCreateUniqueTemplate(Type type)
     {
         var constructor = type.GetConstructors().MaxBy(x => x.GetParameters().Count());
@@ -323,6 +398,11 @@ public class CompiledQueryPlan : ICommandBuilder
                                                 type.FullNameInCode());
     }
 
+    /// <summary>
+    /// Checks whether the <paramref name="query"/> has only unique values by applying all <see cref="QueryCompiler.Finders"/>
+    /// </summary>
+    /// <param name="query">The query object to check</param>
+    /// <returns>True if all values are unique, false otherwise</returns>
     private bool areAllMemberValuesUnique(object query)
     {
         return QueryCompiler.Finders.All(x => x.AreValuesUnique(query, this));
