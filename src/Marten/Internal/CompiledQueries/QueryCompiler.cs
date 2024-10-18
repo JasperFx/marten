@@ -141,7 +141,7 @@ internal class QueryCompiler
 
         var plan = new CompiledQueryPlan(query.GetType(), typeof(TOut)){TenantId = session.TenantId};
 
-        assertValidityOfQueryType(plan, query.GetType());
+        assertValidityOfQueryType(plan, query.GetType(), session.Options);
 
         // This *could* throw
         var queryTemplate = plan.CreateQueryTemplate(query);
@@ -211,10 +211,21 @@ internal class QueryCompiler
     }
 
 
-    private static void assertValidityOfQueryType(CompiledQueryPlan plan, Type type)
+    private static void assertValidityOfQueryType(CompiledQueryPlan plan, Type type, StoreOptions options)
     {
         if (plan.InvalidMembers.Any())
         {
+            // Remove any value types here!
+            foreach (var member in plan.InvalidMembers.Where(x => !x.GetRawMemberType().IsNullable()).ToArray())
+            {
+                if (options.TryFindValueType(member.GetMemberType()) != null)
+                {
+                    plan.InvalidMembers.Remove(member);
+                }
+            }
+
+            if (!plan.InvalidMembers.Any()) return;
+
             var members = plan.InvalidMembers.Select(x => $"{x.GetRawMemberType().NameInCode()} {x.Name}")
                 .Join(", ");
             var message = $"Members {members} cannot be used as parameters to a compiled query";
