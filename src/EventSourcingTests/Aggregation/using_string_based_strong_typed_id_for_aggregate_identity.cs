@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events;
+using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Logging;
@@ -45,6 +46,30 @@ public class using_string_based_strong_typed_id_for_aggregate_identity: OneOffCo
         var payment = await theSession.Events.AggregateStreamAsync<Payment2>(id);
 
         payment.Id.Value.Value.ShouldBe(id);
+    }
+
+    [Theory]
+    [InlineData(ProjectionLifecycle.Inline)]
+    [InlineData(ProjectionLifecycle.Async)]
+    [InlineData(ProjectionLifecycle.Live)]
+    public async Task use_fetch_for_writing(ProjectionLifecycle lifecycle)
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.UseSystemTextJsonForSerialization(new JsonSerializerOptions { IncludeFields = true });
+            opts.Projections.Add(new SingleStreamProjection<Payment2>(), lifecycle);
+        });
+
+        var id = Guid.NewGuid().ToString();
+        theSession.Events.StartStream<Payment2>(id, new PaymentCreated(DateTimeOffset.UtcNow),
+            new PaymentVerified(DateTimeOffset.UtcNow));
+
+        await theSession.SaveChangesAsync();
+
+        // This shouldn't blow up
+        var stream = await theSession.Events.FetchForWriting<Payment2>(id);
+        stream.Aggregate.Id.Value.Value.ShouldBe(id);
     }
 
     [Fact]

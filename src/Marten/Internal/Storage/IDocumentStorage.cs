@@ -84,6 +84,24 @@ public class DocumentProvider<T> where T : notnull
     public IDocumentStorage<T> Lightweight { get; }
     public IDocumentStorage<T> IdentityMap { get; }
     public IDocumentStorage<T> DirtyTracking { get; }
+
+    public IDocumentStorage<T> Select(DocumentTracking tracking)
+    {
+        switch (tracking)
+        {
+            case DocumentTracking.None:
+                return Lightweight;
+            case DocumentTracking.QueryOnly:
+                return QueryOnly;
+            case DocumentTracking.DirtyTracking:
+                return DirtyTracking;
+            case DocumentTracking.IdentityOnly:
+                return IdentityMap;
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(tracking));
+        }
+    }
 }
 
 public interface IDocumentStorage<T>: IDocumentStorage where T : notnull

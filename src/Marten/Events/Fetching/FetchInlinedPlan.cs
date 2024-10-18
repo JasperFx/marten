@@ -27,14 +27,14 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
         IDocumentStorage<TDoc, TId> storage = null;
         if (session.Options.Events.UseIdentityMapForInlineAggregates)
         {
-            storage = (IDocumentStorage<TDoc, TId>)session.Options.Providers.StorageFor<TDoc>().IdentityMap;
+            storage = session.Options.ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking.IdentityOnly);
             // Opt into the identity map mechanics for this aggregate type just in case
             // you're using a lightweight session
             session.UseIdentityMapFor<TDoc>();
         }
         else
         {
-            storage = session.StorageFor<TDoc, TId>();
+            storage = session.Options.ResolveCorrectedDocumentStorage<TDoc, TId>(session.TrackingMode);
         }
 
         await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
