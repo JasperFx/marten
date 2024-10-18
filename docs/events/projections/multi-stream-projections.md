@@ -6,7 +6,7 @@ We have replaced the earlier nomenclature of "ViewProjection" and renamed this c
 :::
 
 ::: warning
-**Multi-Stream Projections are registered by default as async.** This is different from Single-Stream Projections. We recommend it as safe default because their processing may be more resource-demanding than single-stream projections. They may need to process more events and update more read models. Still, you can change that setting and register them synchronously if you're aware of that tradeoff.
+**Multi-Stream Projections are registered by default as async.** We recommend it as safe default because under heavy load you can easily have contention between requests that effectively stomps over previous updates and leads to apparent "event skipping" and invalid results. Still, you can change that setting and register them synchronously if you're aware of that tradeoff.
 
 **Registering projection as async means that it requires running the
 [Async Daemon](/events/projections/async-daemon) as hosted service.**
