@@ -83,14 +83,8 @@ public class UniqueIndexTests: OneOffConfigurationsContext
         session.Store(secondDocument);
 
         //3. Unique Exception Was thrown
-        try
-        {
-            session.SaveChanges();
-        }
-        catch (DocumentAlreadyExistsException exception)
-        {
-            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
-        }
+        var exception = Should.Throw<DocumentAlreadyExistsException>(() => session.SaveChanges());
+        ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
     }
 
     [Fact]
@@ -109,14 +103,8 @@ public class UniqueIndexTests: OneOffConfigurationsContext
         session.Store(secondDocument);
 
         //3. Unique Exception Was thrown
-        try
-        {
-            session.SaveChanges();
-        }
-        catch (DocumentAlreadyExistsException exception)
-        {
-            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
-        }
+        var exception = Should.Throw<DocumentAlreadyExistsException>(() => session.SaveChanges());
+        ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
     }
 
     [Fact]
@@ -139,14 +127,8 @@ public class UniqueIndexTests: OneOffConfigurationsContext
         session.Events.Append(secondEvent.UserId, secondEvent);
 
         //3. Unique Exception Was thrown
-        try
-        {
-            session.SaveChanges();
-        }
-        catch (MartenCommandException exception)
-        {
-            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
-        }
+        var exception = Should.Throw<MartenCommandException>(() => session.SaveChanges());
+        ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
     }
 
     [Fact]
@@ -166,13 +148,7 @@ public class UniqueIndexTests: OneOffConfigurationsContext
         session.Events.Append(secondEvent.UserId, secondEvent);
 
         //3. Unique Exception Was thrown
-        try
-        {
-            session.SaveChanges();
-        }
-        catch (DocumentAlreadyExistsException exception)
-        {
-            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
-        }
+        var exception = Should.Throw<DocumentAlreadyExistsException>(() => session.SaveChanges());
+        ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
     }
 }
