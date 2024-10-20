@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using JasperFx.Core;
+using Marten;
 using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Testing.Documents;
@@ -557,7 +558,25 @@ public class query_against_child_collections: OneOffConfigurationsContext
         var testAr = new List<string> { "d", "e" };
 
         theSession.Query<DocWithArrays>().Where(x => x.Strings.Intersect(testAr).Any()).ToArray()
-            .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc3.Id);
+            .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc2.Id, doc3.Id);
+    }
+
+    [Fact]
+    public void query_against_superset_string_arrays_method_issue_3495()
+    {
+        var doc1 = new DocWithArrays { Strings = new[] { "a", "b", "c" } };
+        var doc2 = new DocWithArrays { Strings = new[] { "c", "d", "e" } };
+        var doc3 = new DocWithArrays { Strings = new[] { "d", "e", "f", "g" } };
+
+        theSession.Store(doc1);
+        theSession.Store(doc2);
+        theSession.Store(doc3);
+
+        theSession.SaveChanges();
+        var testAr = new List<string> { "d", "e" };
+
+        theSession.Query<DocWithArrays>().Where(x => x.Strings.IsSupersetOf(testAr)).ToArray()
+            .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc2.Id, doc3.Id);
     }
 
     [Fact]
