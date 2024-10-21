@@ -86,7 +86,7 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
             opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Inline);
         });
 
-        await Exception<ProjectionScenarioException>.ShouldBeThrownByAsync(async () =>
+        await Should.ThrowAsync<ProjectionScenarioException>(async () =>
         {
             await theStore.Advanced.EventProjectionScenario(scenario =>
             {
@@ -121,7 +121,7 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
             opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Inline);
         });
 
-        await Exception<ProjectionScenarioException>.ShouldBeThrownByAsync(async () =>
+        await Should.ThrowAsync<ProjectionScenarioException>(async () =>
         {
             await theStore.Advanced.EventProjectionScenario(scenario =>
             {
@@ -186,7 +186,7 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
             opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Async);
         });
 
-        await Exception<ProjectionScenarioException>.ShouldBeThrownByAsync(async () =>
+        await Should.ThrowAsync<ProjectionScenarioException>(async () =>
         {
             await theStore.Advanced.EventProjectionScenario(scenario =>
             {
@@ -221,7 +221,7 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
             opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Async);
         });
 
-        await Exception<ProjectionScenarioException>.ShouldBeThrownByAsync(async () =>
+        await Should.ThrowAsync<ProjectionScenarioException>(async () =>
         {
             await theStore.Advanced.EventProjectionScenario(scenario =>
             {

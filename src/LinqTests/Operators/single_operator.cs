@@ -60,7 +60,7 @@ public class single_operator : IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidOperationException>(() =>
         {
             theSession.Query<Target>().Where(x => x.Number == 2).Single();
         });
@@ -89,7 +89,7 @@ public class single_operator : IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidOperationException>(() =>
         {
             theSession.Query<Target>().Where(x => x.Number == 2).SingleOrDefault();
         });
@@ -104,7 +104,7 @@ public class single_operator : IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidOperationException>(() =>
         {
             theSession.Query<Target>().Where(x => x.Number == 11).Single();
         });
@@ -158,7 +158,7 @@ public class single_operator : IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        await Exception<InvalidOperationException>.ShouldBeThrownByAsync(async () =>
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
         {
             await theSession.Query<Target>().Where(x => x.Number == 2).SingleAsync();
         });
@@ -186,7 +186,7 @@ public class single_operator : IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        await Exception<InvalidOperationException>.ShouldBeThrownByAsync(async () =>
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
         {
             await theSession.Query<Target>().Where(x => x.Number == 2).SingleOrDefaultAsync();
         });
@@ -201,7 +201,7 @@ public class single_operator : IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        await Exception<InvalidOperationException>.ShouldBeThrownByAsync(async () =>
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
         {
             await theSession.Query<Target>().Where(x => x.Number == 11).SingleAsync();
         });

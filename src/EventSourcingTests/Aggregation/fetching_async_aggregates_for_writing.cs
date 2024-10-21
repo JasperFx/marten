@@ -62,7 +62,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var sameStream = theSession.Events.StartStream(streamId, new AEvent());
-        await Exception<ExistingStreamIdCollisionException>.ShouldBeThrownByAsync(async () =>
+        await Should.ThrowAsync<ExistingStreamIdCollisionException>(async () =>
         {
             await theSession.SaveChangesAsync();
         });

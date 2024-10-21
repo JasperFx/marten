@@ -233,7 +233,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             // Should go through just fine
             await session2.SaveChangesAsync();
 
-            var ex = await Exception<ConcurrencyException>.ShouldBeThrownByAsync(async () =>
+            var ex = await Should.ThrowAsync<ConcurrencyException>(async () =>
             {
                 await session1.SaveChangesAsync();
             });
@@ -474,7 +474,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
                 await other.SaveChangesAsync();
             }
 
-            var ex = await Exception<AggregateException>.ShouldBeThrownByAsync(async () =>
+            var ex = await Should.ThrowAsync<AggregateException>(async () =>
             {
                 await session.SaveChangesAsync();
             });
@@ -589,7 +589,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             // Some random version that won't match
             session.UpdateExpectedVersion(doc1, Guid.NewGuid());
 
-            await Exception<ConcurrencyException>.ShouldBeThrownByAsync(async () =>
+            await Should.ThrowAsync<ConcurrencyException>(async () =>
             {
                 await session.SaveChangesAsync();
             });
@@ -797,7 +797,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             // Should go through just fine
             await session2.SaveChangesAsync();
 
-            var ex = await Exception<ConcurrencyException>.ShouldBeThrownByAsync(async () =>
+            var ex = await Should.ThrowAsync<ConcurrencyException>(async () =>
             {
                 await session1.SaveChangesAsync();
             });

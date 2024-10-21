@@ -34,7 +34,7 @@ public class assigning_versions_to_documents : OneOffConfigurationsContext
     [Fact]
     public void wrong_version_member()
     {
-        Exception<ArgumentOutOfRangeException>.ShouldBeThrownBy(() =>
+        Should.Throw<ArgumentOutOfRangeException>(() =>
         {
             DocumentMapping.For<WrongVersionTypedDoc>();
         });

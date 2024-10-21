@@ -169,7 +169,7 @@ public class identity_map_mechanics: IntegrationContext
         var session = OpenSession(tracking);
         session.Store(user1);
 
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() => session.Store(user2))
+        Should.Throw<InvalidOperationException>(() => session.Store(user2))
             .Message.ShouldBe("Document 'Marten.Testing.Documents.User' with same Id already added to the session.");
     }
 

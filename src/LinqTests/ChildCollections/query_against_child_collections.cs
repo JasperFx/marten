@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using Marten;
 using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Testing.Documents;
@@ -410,16 +411,16 @@ public class query_against_child_collections: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void query_array_with_Intersect_should_blow_up()
+    public async Task query_array_with_Intersect_should_blow_up()
     {
-        buildAuthorData();
+        await buildAuthorData();
 
-        Exception<BadLinqExpressionException>.ShouldBeThrownBy(() =>
+        await Should.ThrowAsync<BadLinqExpressionException>(async () =>
         {
-            var res = theSession.Query<Article>()
+            var res = await theSession.Query<Article>()
                 .Where(x => x.AuthorArray.Any(s => favAuthors.Intersect(new Guid[] { Guid.NewGuid() }).Any()))
                 .OrderBy(x => x.Long)
-                .ToList();
+                .ToListAsync();
         });
     }
 

@@ -15,7 +15,7 @@ public class duplicate_document_type_alias_detection : OneOffConfigurationsConte
     {
         theStore.Options.Providers.StorageFor<User>().ShouldNotBeNull();
 
-        Exception<AmbiguousDocumentTypeAliasesException>.ShouldBeThrownBy(() =>
+        Should.Throw<AmbiguousDocumentTypeAliasesException>(() =>
         {
             theStore.Options.Providers.StorageFor<User2>().ShouldNotBeNull();
         });

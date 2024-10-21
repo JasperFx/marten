@@ -1,6 +1,7 @@
 using System;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
+using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -24,7 +25,7 @@ public class Bug_953_too_long_index_names: BugIntegrationContext
             _.NameDataLength = 64;
         });
 
-        Exception<PostgresqlIdentifierTooLongException>.ShouldBeThrownBy(() =>
+        Should.Throw<PostgresqlIdentifierTooLongException>(() =>
         {
             theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(LongEnoughNameToCauseIdTruncation));
         });

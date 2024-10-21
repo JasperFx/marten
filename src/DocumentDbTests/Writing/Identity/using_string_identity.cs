@@ -45,7 +45,7 @@ public class using_string_identity : IntegrationContext
     {
         var account = new Account {Id = null};
 
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidOperationException>(() =>
         {
             theSession.Store(account);
         });
@@ -57,7 +57,7 @@ public class using_string_identity : IntegrationContext
     {
         var account = new Account { Id = string.Empty };
 
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidOperationException>(() =>
         {
             theSession.Store(account);
         });
