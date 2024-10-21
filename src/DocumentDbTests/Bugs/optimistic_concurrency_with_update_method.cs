@@ -123,7 +123,7 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
 
             session2.Update(doc2);
 
-            var ex = await Exception<ConcurrencyException>.ShouldBeThrownByAsync(async () =>
+            var ex = await Should.ThrowAsync<ConcurrencyException>(async () =>
             {
                 await session2.SaveChangesAsync();
             });

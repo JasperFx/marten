@@ -14,48 +14,6 @@ using Weasel.Core;
 
 namespace Marten.Testing.Harness
 {
-
-    [Obsolete("Use Shouldly instead. Just no reason to have this any longer")]
-    public static class Exception<T> where T : Exception
-    {
-
-        public static T ShouldBeThrownBy(Action action)
-        {
-            T exception = null;
-
-            try
-            {
-                action();
-            }
-            catch (Exception e)
-            {
-                exception = e.ShouldBeOfType<T>();
-            }
-
-            exception.ShouldNotBeNull("An exception was expected, but not thrown by the given action.");
-
-            return exception;
-        }
-
-        public static async Task<T> ShouldBeThrownByAsync(Func<Task> action)
-        {
-            T exception = null;
-
-            try
-            {
-                await action();
-            }
-            catch (Exception e)
-            {
-                exception = e.ShouldBeOfType<T>();
-            }
-
-            exception.ShouldNotBeNull("An exception was expected, but not thrown by the given action.");
-
-            return exception;
-        }
-    }
-
     public delegate void MethodThatThrows();
 
     public static class SpecificationExtensions

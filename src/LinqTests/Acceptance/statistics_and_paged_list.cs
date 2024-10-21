@@ -295,7 +295,7 @@ public class statistics_and_paged_list: IntegrationContext
         var pageSize = 10;
 
         var ex =
-            await Exception<ArgumentOutOfRangeException>.ShouldBeThrownByAsync(
+            await Should.ThrowAsync<ArgumentOutOfRangeException>(
                 async () => await toPagedList(theSession.Query<Target>(), pageNumber, pageSize));
         SpecificationExtensions.ShouldContain(ex.Message, "pageNumber = 0. PageNumber cannot be below 1.");
     }
@@ -310,7 +310,7 @@ public class statistics_and_paged_list: IntegrationContext
         var pageSize = 0;
 
         var ex =
-            await Exception<ArgumentOutOfRangeException>.ShouldBeThrownByAsync(
+            await Should.ThrowAsync<ArgumentOutOfRangeException>(
                 async () =>  await toPagedList(theSession.Query<Target>(), pageNumber, pageSize));
         SpecificationExtensions.ShouldContain(ex.Message, $"pageSize = 0. PageSize cannot be below 1.");
     }
@@ -523,7 +523,7 @@ public class statistics_and_paged_list: IntegrationContext
     [Fact]
     public void try_to_use_in_compiled_query()
     {
-        Exception<BadLinqExpressionException>.ShouldBeThrownBy(() =>
+        Should.Throw<BadLinqExpressionException>(() =>
         {
             var data = theSession.Query(new TargetPage(1, 10));
         });

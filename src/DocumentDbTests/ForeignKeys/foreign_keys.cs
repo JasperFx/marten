@@ -340,7 +340,7 @@ public class foreign_keys: OneOffConfigurationsContext
     [Fact]
     public void throws_exception_on_cyclic_dependency()
     {
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidOperationException>(() =>
         {
             StoreOptions(_ =>
             {

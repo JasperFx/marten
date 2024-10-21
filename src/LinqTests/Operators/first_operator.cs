@@ -89,7 +89,7 @@ public class first_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidOperationException>(() =>
         {
             theSession.Query<Target>().Where(x => x.Number == 11).First();
         });
@@ -199,7 +199,7 @@ public class first_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        await Exception<InvalidOperationException>.ShouldBeThrownByAsync(async () =>
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
         {
             await theSession.Query<Target>().Where(x => x.Number == 11).FirstAsync();
         });

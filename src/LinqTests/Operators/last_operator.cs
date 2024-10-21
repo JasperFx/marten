@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Shouldly;
 
 namespace LinqTests.Operators;
 
@@ -17,10 +18,9 @@ public class last_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidOperationException>(() =>
         {
-            theSession.Query<Target>().Last(x => x.Number == 3)
-                .ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theSession.Query<Target>().Last(x => x.Number == 3));
         });
     }
 
@@ -33,10 +33,9 @@ public class last_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidOperationException>(() =>
         {
-            theSession.Query<Target>().Last(x => x.Number == 3)
-                .ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theSession.Query<Target>().Last(x => x.Number == 3));
         });
     }
 

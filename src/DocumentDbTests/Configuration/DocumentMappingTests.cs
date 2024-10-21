@@ -533,7 +533,7 @@ public class DocumentMappingTests
     [Fact]
     public void trying_to_replace_the_hilo_settings_when_not_using_hilo_for_the_sequence_throws()
     {
-        Exception<InvalidOperationException>.ShouldBeThrownBy(
+        Should.Throw<InvalidOperationException>(
             () => { DocumentMapping.For<StringId>().HiloSettings = new HiloSettings(); });
     }
 
@@ -622,7 +622,7 @@ public class DocumentMappingTests
     [Fact]
     public void trying_to_index_deleted_at_when_not_soft_deleted_document_throws()
     {
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() => DocumentMapping.For<IntId>().AddDeletedAtIndex());
+        Should.Throw<InvalidOperationException>(() => DocumentMapping.For<IntId>().AddDeletedAtIndex());
     }
 
     [Fact]

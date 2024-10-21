@@ -120,7 +120,7 @@ public class CustomProjectionTests
     [Fact]
     public void assert_invalid_with_no_slicer()
     {
-        Exception<InvalidProjectionException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidProjectionException>(() =>
         {
             new MyCustomAggregateWithNoSlicer().AssembleAndAssertValidity();
         });
@@ -132,7 +132,7 @@ public class CustomProjectionTests
         var projection = new MyCustomAggregateWithNoSlicer();
         projection.AggregateEvents(x => { });
 
-        Exception<InvalidProjectionException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidProjectionException>(() =>
         {
             new MyCustomAggregateWithNoSlicer().AssembleAndAssertValidity();
         });
@@ -152,7 +152,7 @@ public class CustomProjectionTests
     {
         var wrong = new EmptyCustomProjection<User, int>();
 
-        Exception<InvalidProjectionException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidProjectionException>(() =>
         {
             wrong.AggregateByStream();
         });

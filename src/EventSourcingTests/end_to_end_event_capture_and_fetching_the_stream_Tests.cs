@@ -649,10 +649,9 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests: OneOffConfi
     {
         var store = InitStore(tenancyStyle);
 
-        var id = Guid.NewGuid();
-
         await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
+            var id = Guid.NewGuid();
             var immutableEvent = new ImmutableEvent(id, "some-name");
 
             using (var session = store.LightweightSession(tenantId))
@@ -663,7 +662,7 @@ public class end_to_end_event_capture_and_fetching_the_stream_Tests: OneOffConfi
 
             using (var session = store.LightweightSession(tenantId))
             {
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count.ShouldBe(1);
                 var @event = streamEvents.ElementAt(0).Data.ShouldBeOfType<ImmutableEvent>();

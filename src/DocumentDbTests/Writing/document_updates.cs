@@ -54,7 +54,7 @@ public class document_updates: IntegrationContext
         var target = Target.Random();
 
         await using var session = theStore.LightweightSession();
-        await Exception<NonExistentDocumentException>.ShouldBeThrownByAsync(async () =>
+        await Should.ThrowAsync<NonExistentDocumentException>(async () =>
         {
             session.Update(target);
             await session.SaveChangesAsync();

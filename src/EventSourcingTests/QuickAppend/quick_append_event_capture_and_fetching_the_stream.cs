@@ -633,7 +633,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
             using (var session = store.LightweightSession(tenantId))
             {
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count.ShouldBe(1);
                 var @event = streamEvents.ElementAt(0).Data.ShouldBeOfType<ImmutableEvent>();

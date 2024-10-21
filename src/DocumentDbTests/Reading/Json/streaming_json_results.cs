@@ -337,7 +337,7 @@ public class streaming_json_results : IntegrationContext
         };
         theSession.Store(user1,user2);
         await theSession.SaveChangesAsync();
-        var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(async () => await theSession.Query<SimpleUser>().Where(x => x.Number != 5).ToJsonFirst());
+        var ex = await Should.ThrowAsync<InvalidOperationException>(async () => await theSession.Query<SimpleUser>().Where(x => x.Number != 5).ToJsonFirst());
         ex.Message.ShouldBe("Sequence contains no elements");
     }
 
@@ -421,7 +421,7 @@ public class streaming_json_results : IntegrationContext
         };
         theSession.Store(user1,user2);
         await theSession.SaveChangesAsync();
-        var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() =>
+        var ex = await Should.ThrowAsync<InvalidOperationException>(() =>
             theSession.Query<SimpleUser>().Where(x => x.Number != 5).ToJsonFirst());
         ex.Message.ShouldBe("Sequence contains no elements");
     }
@@ -694,7 +694,7 @@ public class streaming_json_results : IntegrationContext
         };
         theSession.Store(user1, user2);
         await theSession.SaveChangesAsync();
-        var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(async () => await theSession.Query<SimpleUser>().Where(x => x.Number != 5).ToJsonSingle());
+        var ex = await Should.ThrowAsync<InvalidOperationException>(async () => await theSession.Query<SimpleUser>().Where(x => x.Number != 5).ToJsonSingle());
         ex.Message.ShouldBe("Sequence contains no elements");
     }
 
@@ -717,7 +717,7 @@ public class streaming_json_results : IntegrationContext
         };
         theSession.Store(user1, user2);
         await theSession.SaveChangesAsync();
-        var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(async () => await theSession.Query<SimpleUser>().Where(x => x.Number == 5).ToJsonSingle());
+        var ex = await Should.ThrowAsync<InvalidOperationException>(async () => await theSession.Query<SimpleUser>().Where(x => x.Number == 5).ToJsonSingle());
         ex.Message.ShouldBe("Sequence contains more than one element");
     }
 
@@ -780,7 +780,7 @@ public class streaming_json_results : IntegrationContext
         };
         theSession.Store(user1, user2);
         await theSession.SaveChangesAsync();
-        var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() =>
+        var ex = await Should.ThrowAsync<InvalidOperationException>(() =>
             theSession.Query<SimpleUser>().Where(x => x.Number != 5).ToJsonSingle());
         ex.Message.ShouldBe("Sequence contains no elements");
     }
@@ -804,7 +804,7 @@ public class streaming_json_results : IntegrationContext
         };
         theSession.Store(user1, user2);
         await theSession.SaveChangesAsync();
-        var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() =>
+        var ex = await Should.ThrowAsync<InvalidOperationException>(() =>
             theSession.Query<SimpleUser>().Where(x => x.Number == 5).ToJsonSingle());
         ex.Message.ShouldBe("Sequence contains more than one element");
     }
@@ -936,7 +936,7 @@ public class streaming_json_results : IntegrationContext
         };
         theSession.Store(user1, user2);
         await theSession.SaveChangesAsync();
-        var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(async () => await theSession.Query<SimpleUser>().Where(x => x.Number == 5).ToJsonSingleOrDefault());
+        var ex = await Should.ThrowAsync<InvalidOperationException>(async () => await theSession.Query<SimpleUser>().Where(x => x.Number == 5).ToJsonSingleOrDefault());
         ex.Message.ShouldBe("Sequence contains more than one element");
     }
 
