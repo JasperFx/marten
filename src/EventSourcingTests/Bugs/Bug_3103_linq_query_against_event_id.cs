@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
 namespace EventSourcingTests.Bugs;

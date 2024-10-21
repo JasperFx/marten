@@ -32,7 +32,7 @@ public class Bug_1994_insert_update_on_same_object_in_transaction: BugIntegratio
 
 
         session1.PendingChanges.InsertsFor<User>()
-            .Single().ShouldBeTheSameAs(user1);
+            .Single().ShouldBeSameAs(user1);
 
         session1.PendingChanges.AllChangedFor<User>()
             .Contains(user1).ShouldBeTrue();

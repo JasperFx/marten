@@ -525,7 +525,7 @@ public class full_text_index: OneOffConfigurationsContext
         var index = table.IndexFor("mt_doc_target_idx_fts");
         index.ShouldNotBeNull();
 
-        index.ToDDL(table).ShouldContain("to_tsvector", StringComparisonOption.Default);
+        index.ToDDL(table).ShouldContain("to_tsvector");
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -942,18 +942,18 @@ public static class FullTextIndexTestsExtension
 
         ddl.ShouldNotBeNull();
 
-        SpecificationExtensions.ShouldContain(ddl, $"CREATE INDEX {indexName}");
-        SpecificationExtensions.ShouldContain(ddl, $"ON {tableName}");
-        SpecificationExtensions.ShouldContain(ddl, $"to_tsvector('{regConfig}',{dataConfig})");
+        ddl.ShouldContain($"CREATE INDEX {indexName}");
+        ddl.ShouldContain($"ON {tableName}");
+        ddl.ShouldContain($"to_tsvector('{regConfig}',{dataConfig})");
 
         if (regConfig != null)
         {
-            SpecificationExtensions.ShouldContain(ddl, regConfig);
+            ddl.ShouldContain(regConfig);
         }
 
         if (dataConfig != null)
         {
-            SpecificationExtensions.ShouldContain(ddl, dataConfig);
+            ddl.ShouldContain(dataConfig);
         }
     }
 }

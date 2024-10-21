@@ -54,8 +54,7 @@ public class aggregation_projection_validation_rules
         });
 
         message.ShouldContain(
-            $"Id type mismatch",
-            StringComparisonOption.Default);
+            $"Id type mismatch");
     }
 
 
@@ -66,10 +65,7 @@ public class aggregation_projection_validation_rules
         {
             x.Events.StreamIdentity = StreamIdentity.AsString;
             x.Projections.Snapshot<GuidIdentifiedAggregate>(SnapshotLifecycle.Async);
-        }).ShouldContain(
-            $"Id type mismatch",
-            StringComparisonOption.Default
-        );
+        }).ShouldContain("Id type mismatch");
     }
 
     [Fact]
@@ -80,8 +76,7 @@ public class aggregation_projection_validation_rules
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Projections.Snapshot<GuidIdentifiedAggregate>(SnapshotLifecycle.Async);
         }).ShouldContain(
-            $"Tenancy storage style mismatch between the events (Conjoined) and the aggregate type {typeof(GuidIdentifiedAggregate).FullNameInCode()} (Single)",
-            StringComparisonOption.Default);
+            $"Tenancy storage style mismatch between the events (Conjoined) and the aggregate type {typeof(GuidIdentifiedAggregate).FullNameInCode()} (Single)");
     }
 
     [Fact]
@@ -109,8 +104,7 @@ public class aggregation_projection_validation_rules
             opts.Projections.Snapshot<GuidIdentifiedAggregate>(SnapshotLifecycle.Async);
             opts.Schema.For<GuidIdentifiedAggregate>().MultiTenanted();
         }).ShouldContain(
-            $"Tenancy storage style mismatch between the events (Single) and the aggregate type {typeof(GuidIdentifiedAggregate).FullNameInCode()} (Conjoined)",
-            StringComparisonOption.Default);
+            $"Tenancy storage style mismatch between the events (Single) and the aggregate type {typeof(GuidIdentifiedAggregate).FullNameInCode()} (Conjoined)");
     }
 
     [Fact]
@@ -171,8 +165,7 @@ public class aggregation_projection_validation_rules
         var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
 
         ex.Message.ShouldContain(
-            "Unrecognized method name 'DoStuff'. Either mark with [MartenIgnore] or use one of 'Apply', 'Create', 'ShouldDelete'",
-            StringComparisonOption.NormalizeWhitespaces);
+            "Unrecognized method name 'DoStuff'. Either mark with [MartenIgnore] or use one of 'Apply', 'Create', 'ShouldDelete'");
     }
 
     [Fact]

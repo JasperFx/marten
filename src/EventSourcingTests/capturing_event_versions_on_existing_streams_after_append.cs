@@ -77,7 +77,7 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
             events.Select(x => x.Version)
                 .ShouldHaveTheSameElementsAs(1, 2);
 
-            events.Each(x => SpecificationExtensions.ShouldBeGreaterThan(x.Sequence, 0L));
+            events.Each(x => x.Sequence.ShouldBeGreaterThan(0L));
 
             events.Select(x => x.Sequence).Distinct().Count().ShouldBe(2);
         }
@@ -159,7 +159,7 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
             events.Select(x => x.Version)
                 .ShouldHaveTheSameElementsAs(5, 6);
 
-            events.Each(x => SpecificationExtensions.ShouldBeGreaterThan(x.Sequence, 0L));
+            events.Each(x => x.Sequence.ShouldBeGreaterThan(0L));
 
             events.Select(x => x.Sequence).Distinct().Count().ShouldBe(2);
         }

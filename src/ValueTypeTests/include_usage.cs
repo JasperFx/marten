@@ -25,7 +25,7 @@ public class include_usage : IAsyncDisposable
         theStore = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed";
+            opts.DatabaseSchemaName = "strong_typed24";
 
             opts.ApplicationAssembly = GetType().Assembly;
             opts.GeneratedCodeMode = TypeLoadMode.Auto;

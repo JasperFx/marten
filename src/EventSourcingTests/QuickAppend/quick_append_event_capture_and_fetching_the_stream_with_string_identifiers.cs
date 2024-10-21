@@ -245,7 +245,7 @@ public class
             await session.SaveChangesAsync();
 
             var party = await session.Events.AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId);
-            SpecificationExtensions.ShouldNotBeNull(party);
+            party.ShouldNotBeNull();
         }
     }
 
@@ -273,7 +273,7 @@ public class
             await session.SaveChangesAsync();
 
             var party = await session.Events.AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId);
-            SpecificationExtensions.ShouldNotBeNull(party);
+            party.ShouldNotBeNull();
         }
     }
 

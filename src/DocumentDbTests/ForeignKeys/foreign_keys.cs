@@ -146,8 +146,8 @@ public class foreign_keys: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            SpecificationExtensions.ShouldBeNull(query.Load<Issue>(issue.Id));
-            SpecificationExtensions.ShouldNotBeNull(query.Load<User>(user.Id));
+            query.Load<Issue>(issue.Id).ShouldBeNull();
+            query.Load<User>(user.Id).ShouldNotBeNull();
         }
     }
 
@@ -174,8 +174,8 @@ public class foreign_keys: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            SpecificationExtensions.ShouldBeNull(query.Load<Issue>(issue.Id));
-            SpecificationExtensions.ShouldBeNull(query.Load<User>(user.Id));
+            query.Load<Issue>(issue.Id).ShouldBeNull();
+            query.Load<User>(user.Id).ShouldBeNull();
         }
     }
 
@@ -205,8 +205,8 @@ public class foreign_keys: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            SpecificationExtensions.ShouldNotBeNull(query.Load<Issue>(issue.Id));
-            SpecificationExtensions.ShouldNotBeNull(query.Load<User>(user.Id));
+            query.Load<Issue>(issue.Id).ShouldNotBeNull();
+            query.Load<User>(user.Id).ShouldNotBeNull();
         }
     }
 
@@ -228,9 +228,7 @@ public class foreign_keys: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var documentFromDb = query.Load<Issue>(issue.Id);
-
-            SpecificationExtensions.ShouldNotBeNull(documentFromDb);
+            query.Load<Issue>(issue.Id).ShouldNotBeNull();
         }
     }
 

@@ -185,7 +185,7 @@ public class
         using (var session = theStore.LightweightSession())
         {
             var party = session.Load<QuestPartyWithStringIdentifier>(questId);
-            SpecificationExtensions.ShouldNotBeNull(party);
+            party.ShouldNotBeNull();
         }
 
         var newStore = new DocumentStore(theStore.Options);
@@ -248,7 +248,7 @@ public class
             await session.SaveChangesAsync();
 
             var party = await session.Events.AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId);
-            SpecificationExtensions.ShouldNotBeNull(party);
+            party.ShouldNotBeNull();
         }
     }
 
@@ -276,7 +276,7 @@ public class
             await session.SaveChangesAsync();
 
             var party = await session.Events.AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId);
-            SpecificationExtensions.ShouldNotBeNull(party);
+            party.ShouldNotBeNull();
         }
     }
 

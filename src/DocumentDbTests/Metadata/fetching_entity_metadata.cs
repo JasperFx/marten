@@ -138,7 +138,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
             var metadata = session.MetadataFor(shop);
             metadata.ShouldNotBeNull();
 
-            metadata.CreatedAt.ShouldNotBeNull();
+            metadata.CreatedAt.ShouldNotBe(default);
         }
     }
 
@@ -161,6 +161,6 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
         await using var query = theStore.QuerySession();
         var metadata = await query.MetadataForAsync(shop);
 
-        metadata.CreatedAt.ShouldNotBeNull();
+        metadata.CreatedAt.ShouldNotBe(default);
     }
 }

@@ -148,7 +148,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         theSession.Query<Target>().Count().ShouldBe(data.Length);
 
-        SpecificationExtensions.ShouldNotBeNull(theSession.Load<Target>(data[0].Id));
+        theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
 
         var count = theSession.Connection.CreateCommand()
             .Sql($"select count(*) from {SchemaName}.mt_doc_target where mt_last_modified is null")
@@ -168,7 +168,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         theSession.Query<Target>().Count().ShouldBe(data.Length);
 
-        SpecificationExtensions.ShouldNotBeNull(theSession.Load<Target>(data[0].Id));
+        theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
     }
 
     [Fact]

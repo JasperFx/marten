@@ -452,8 +452,8 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     [Fact]
     public void duplicate_property_no_target()
     {
-        SpecificationExtensions.ShouldContain(Assert.Throws<ArgumentException>(() => _expression.Duplicate(x => x.String))
-            .Message, "At least one destination must be given");
+        var ex = Should.Throw<ArgumentException>(() => _expression.Duplicate(x => x.String));
+        ex.Message.ShouldContain("At least one destination must be given");
     }
 
     [Fact]

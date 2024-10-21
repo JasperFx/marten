@@ -1,5 +1,6 @@
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Shouldly;
 
 namespace Marten.Testing.Examples;
 
@@ -14,7 +15,7 @@ public class IdentityMapTests: IntegrationContext
         // Open a document session with the identity map
         using var session = theStore.IdentitySession();
         session.Load<User>(user.Id)
-            .ShouldBeTheSameAs(session.Load<User>(user.Id));
+            .ShouldBeSameAs(session.Load<User>(user.Id));
         #endregion
     }
 

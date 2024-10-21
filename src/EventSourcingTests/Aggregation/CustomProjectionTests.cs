@@ -54,13 +54,13 @@ public class CustomProjectionTests
         var cache2 = projection.CacheFor(tenant2);
         var cache3 = projection.CacheFor(tenant3);
 
-        projection.CacheFor(tenant1).ShouldBeTheSameAs(cache1);
-        projection.CacheFor(tenant2).ShouldBeTheSameAs(cache2);
-        projection.CacheFor(tenant3).ShouldBeTheSameAs(cache3);
+        projection.CacheFor(tenant1).ShouldBeSameAs(cache1);
+        projection.CacheFor(tenant2).ShouldBeSameAs(cache2);
+        projection.CacheFor(tenant3).ShouldBeSameAs(cache3);
 
-        cache1.ShouldNotBeTheSameAs(cache2);
-        cache1.ShouldNotBeTheSameAs(cache3);
-        cache2.ShouldNotBeTheSameAs(cache3);
+        cache1.ShouldNotBeSameAs(cache2);
+        cache1.ShouldNotBeSameAs(cache3);
+        cache2.ShouldNotBeSameAs(cache3);
     }
 
     [Fact]

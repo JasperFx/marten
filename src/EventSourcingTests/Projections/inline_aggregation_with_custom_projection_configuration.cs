@@ -4,6 +4,7 @@ using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using NSubstitute;
+using Shouldly;
 using Xunit;
 
 namespace EventSourcingTests.Projections;

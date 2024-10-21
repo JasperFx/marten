@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Testing.Harness;
+using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;

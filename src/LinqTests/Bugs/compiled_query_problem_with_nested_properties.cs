@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using Marten.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Shouldly;
 
 namespace LinqTests.Bugs;
 

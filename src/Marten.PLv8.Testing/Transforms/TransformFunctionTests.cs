@@ -48,7 +48,7 @@ public class TransformFunctionTests : OneOffConfigurationsContext
         var lines = File.ReadAllText(file);
 
         lines.ShouldContain(
-            "CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc JSONB) RETURNS JSONB AS $$", Case.Insensitive);
+            "CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc JSONB) RETURNS JSONB AS $$");
     }
 
 
@@ -95,7 +95,7 @@ public class TransformFunctionTests : OneOffConfigurationsContext
 
         func.Name.ShouldBe("get_fullname");
 
-        SpecificationExtensions.ShouldContain(func.Body, "module.exports");
+        func.Body.ShouldContain("module.exports");
 
         func.Identifier.Name.ShouldBe("mt_transform_get_fullname");
     }
@@ -108,7 +108,7 @@ public class TransformFunctionTests : OneOffConfigurationsContext
 
         func.Name.ShouldBe("get_fullname");
 
-        SpecificationExtensions.ShouldContain(func.Body, "module.exports");
+        func.Body.ShouldContain("module.exports");
 
         func.Identifier.Name.ShouldBe("mt_transform_get_fullname");
     }

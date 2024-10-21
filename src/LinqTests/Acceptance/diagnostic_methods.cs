@@ -35,10 +35,10 @@ public class diagnostic_methods: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var plan = theSession.Query<SimpleUser>().Explain();
-        SpecificationExtensions.ShouldNotBeNull(plan);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.PlanWidth, 0);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.PlanRows, 0);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.TotalCost, 0m);
+        plan.ShouldNotBeNull();
+        plan.PlanWidth.ShouldBeGreaterThan(0);
+        plan.PlanRows.ShouldBeGreaterThan(0);
+        plan.TotalCost.ShouldBeGreaterThan(0m);
     }
 
     [Fact]
@@ -62,10 +62,10 @@ public class diagnostic_methods: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var plan = theSession.Query<SimpleUser>().Where(u => u.Number > 5).Explain();
-        SpecificationExtensions.ShouldNotBeNull(plan);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.PlanWidth, 0);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.PlanRows, 0);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.TotalCost, 0m);
+        plan.ShouldNotBeNull();
+        plan.PlanWidth.ShouldBeGreaterThan(0);
+        plan.PlanRows.ShouldBeGreaterThan(0);
+        plan.TotalCost.ShouldBeGreaterThan(0m);
     }
 
     [Fact]
@@ -99,10 +99,10 @@ public class diagnostic_methods: OneOffConfigurationsContext
                     .Timing()
                     .Verbose();
             });
-        SpecificationExtensions.ShouldNotBeNull(plan);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.ActualTotalTime, 0m);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.PlanningTime, 0m);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.ExecutionTime, 0m);
+        plan.ShouldNotBeNull();
+        plan.ActualTotalTime.ShouldBeGreaterThan(0m);
+        plan.PlanningTime.ShouldBeGreaterThan(0m);
+        plan.ExecutionTime.ShouldBeGreaterThan(0m);
         plan.SortKey.ShouldContain("(((d.data ->> 'Number'::text))::integer)");
         plan.Plans.ShouldNotBeEmpty();
     }

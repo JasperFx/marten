@@ -85,7 +85,7 @@ public class compiled_queries: IntegrationContext
 
         var plan = theStore.Diagnostics.ExplainPlan(query);
 
-        SpecificationExtensions.ShouldNotBeNull(plan);
+        plan.ShouldNotBeNull();
     }
 
     [Theory]
@@ -104,7 +104,7 @@ public class compiled_queries: IntegrationContext
     public void a_single_item_compiled_query_with_fields()
     {
         var user = theSession.Query(new UserByUsernameWithFields { UserName = "myusername" });
-        SpecificationExtensions.ShouldNotBeNull(user);
+        user.ShouldNotBeNull();
         var differentUser = theSession.Query(new UserByUsernameWithFields { UserName = "jdm" });
         differentUser.UserName.ShouldBe("jdm");
     }
@@ -133,13 +133,13 @@ public class compiled_queries: IntegrationContext
         {
             Username = "jdm", FirstName = "Jeremy", LastName = "Miller"
         });
-        SpecificationExtensions.ShouldNotBeNull(user);
+        user.ShouldNotBeNull();
         user.UserName.ShouldBe("jdm");
         user = theSession.Query(new FindUserByAllTheThings
         {
             Username = "shadetreedev", FirstName = "Jeremy", LastName = "Miller"
         });
-        SpecificationExtensions.ShouldNotBeNull(user);
+        user.ShouldNotBeNull();
         user.UserName.ShouldBe("shadetreedev");
     }
 
@@ -147,7 +147,7 @@ public class compiled_queries: IntegrationContext
     public async Task a_single_item_compiled_query_async()
     {
         var user = await theSession.QueryAsync(new UserByUsername { UserName = "myusername" });
-        SpecificationExtensions.ShouldNotBeNull(user);
+        user.ShouldNotBeNull();
         var differentUser = await theSession.QueryAsync(new UserByUsername { UserName = "jdm" });
         differentUser.UserName.ShouldBe("jdm");
     }
@@ -299,8 +299,8 @@ public class compiled_queries: IntegrationContext
     {
         // Really just a smoke test now
 
-        (await theSession.QueryAsync(new CompiledQuery1 { StringValue = "foo" })).ShouldNotBeNull();
-        (await theSession.QueryAsync(new CompiledQuery2())).ShouldNotBeNull();
+        await theSession.QueryAsync(new CompiledQuery1 { StringValue = "foo" });
+        await theSession.QueryAsync(new CompiledQuery2());
     }
 
     [Fact]

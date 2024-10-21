@@ -347,15 +347,15 @@ public class query_against_child_collections: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void query_string_list_intersects_array()
+    public async Task query_string_list_intersects_array()
     {
-        buildAuthorData();
+        await buildAuthorData();
 
         var interests = new[] { "health", "astrology" };
-        var res = theSession.Query<Article>()
+        var res = await theSession.Query<Article>()
             .Where(x => x.CategoryList.Any(s => interests.Contains(s)))
             .OrderBy(x => x.Long)
-            .ToList();
+            .ToListAsync();
 
         res.Count.ShouldBe(2);
         res[0].Long.ShouldBe(1);
@@ -363,15 +363,15 @@ public class query_against_child_collections: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void query_nested_string_array_intersects_array()
+    public async Task query_nested_string_array_intersects_array()
     {
-        buildAuthorData();
+        await buildAuthorData();
 
         var interests = new[] { "nested" };
-        var res = theSession.Query<Article>()
+        var res = await theSession.Query<Article>()
             .Where(x => x.ReferencedArticle.CategoryArray.Any(s => interests.Contains(s)))
             .OrderBy(x => x.Long)
-            .ToList();
+            .ToListAsync();
 
         res.Count.ShouldBe(1);
         res[0].Long.ShouldBe(6);
@@ -394,14 +394,14 @@ public class query_against_child_collections: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void query_guid_array_intersects_array()
+    public async Task query_guid_array_intersects_array()
     {
-        buildAuthorData();
+        await buildAuthorData();
 
-        var res = theSession.Query<Article>()
+        var res = await theSession.Query<Article>()
             .Where(x => x.AuthorArray.Any(s => favAuthors.Contains(s)))
             .OrderBy(x => x.Long)
-            .ToList();
+            .ToListAsync();
 
         res.Count.ShouldBe(4);
         res[0].Long.ShouldBe(1);

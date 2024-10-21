@@ -2,16 +2,16 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using JasperFx.Core;
-using Lamar;
 using JasperFx.CodeGeneration;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Lamar;
 using Marten;
-using Marten.Events.Daemon;
 using Marten.Events.Daemon.Coordination;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Internal;
 using Marten.Services;
+using Marten.Testing;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,7 +21,7 @@ using Weasel.Core;
 using Weasel.Core.Migrations;
 using Xunit;
 
-namespace CoreTests;
+namespace StressTests;
 
 public class using_multiple_document_stores_in_same_host : IDisposable
 {
@@ -47,7 +47,7 @@ public class using_multiple_document_stores_in_same_host : IDisposable
             });
 
             // Just to prove that this doesn't blow up, see GH-2892
-            services.AddKeyedSingleton<IMartenSessionLogger>("blue", new StoreOptionsTests.RecordingLogger());
+            services.AddKeyedSingleton<IMartenSessionLogger>("blue", new RecordingLogger());
 
             services.AddMartenStore<ISecondStore>(services =>
             {
@@ -128,10 +128,14 @@ public class additional_document_store_registration_and_optimized_artifact_workf
     {
         using var container = Container.For(services =>
         {
-            services.AddMarten(ConnectionSource.ConnectionString);
+            services.AddMarten(opts =>
+            {
+                opts.Connection(ConnectionSource.ConnectionString);
+            });
 
             services.AddMartenStore<IFirstStore>(opts =>
             {
+                opts.ApplyChangesLockId += 17;
                 opts.Connection(ConnectionSource.ConnectionString);
                 opts.DatabaseSchemaName = "first_store";
             });
@@ -370,8 +374,10 @@ public class additional_document_store_registration_and_optimized_artifact_workf
             x.AddLogging();
             x.AddMartenStore<IFirstStore>(opts =>
                 {
+                    opts.ApplyChangesLockId += 19;
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.RegisterDocumentType<User>();
+                    opts.DatabaseSchemaName = "first_store";
                 })
                 .ApplyAllDatabaseChangesOnStartup();
         });

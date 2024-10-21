@@ -74,12 +74,12 @@ public class persist_and_load_for_hierarchy_Tests: end_to_end_document_hierarchy
         session.Store(admin1);
         await session.SaveChangesAsync();
 
-        session.Load<User>(admin1.Id).ShouldBeTheSameAs(admin1);
-        session.Load<AdminUser>(admin1.Id).ShouldBeTheSameAs(admin1);
+        session.Load<User>(admin1.Id).ShouldBeSameAs(admin1);
+        session.Load<AdminUser>(admin1.Id).ShouldBeSameAs(admin1);
 
         using var query = theStore.QuerySession();
-        query.Load<AdminUser>(admin1.Id).ShouldNotBeTheSameAs(admin1).ShouldNotBeNull();
-        query.Load<User>(admin1.Id).ShouldNotBeTheSameAs(admin1).ShouldNotBeNull();
+        query.Load<AdminUser>(admin1.Id).ShouldNotBeNull().ShouldNotBeSameAs(admin1);
+        query.Load<User>(admin1.Id).ShouldNotBeNull().ShouldNotBeSameAs(admin1);
     }
 
     [Fact]
@@ -89,14 +89,13 @@ public class persist_and_load_for_hierarchy_Tests: end_to_end_document_hierarchy
         session.Store(admin1);
         await session.SaveChangesAsync();
 
-        (await session.LoadAsync<User>(admin1.Id)).ShouldBeTheSameAs(admin1);
-        (await session.LoadAsync<AdminUser>(admin1.Id)).ShouldBeTheSameAs(admin1);
+        (await session.LoadAsync<User>(admin1.Id)).ShouldBeSameAs(admin1);
+        (await session.LoadAsync<AdminUser>(admin1.Id)).ShouldBeSameAs(admin1);
 
         await using var query = theStore.QuerySession();
-        (await query.LoadAsync<AdminUser>(admin1.Id)).ShouldNotBeTheSameAs(admin1)
-            .ShouldNotBeNull();
-        (await query.LoadAsync<User>(admin1.Id)).ShouldNotBeTheSameAs(admin1)
-            .ShouldNotBeNull();
+        (await query.LoadAsync<AdminUser>(admin1.Id)).ShouldNotBeNull().ShouldNotBeSameAs(admin1)
+            ;
+        (await query.LoadAsync<User>(admin1.Id)).ShouldNotBeNull().ShouldNotBeSameAs(admin1);
     }
 
     [Fact]
@@ -106,9 +105,9 @@ public class persist_and_load_for_hierarchy_Tests: end_to_end_document_hierarchy
         session.Store(user1);
         await session.SaveChangesAsync();
 
-        session.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
+        session.Load<User>(user1.Id).ShouldBeSameAs(user1);
 
         using var query = theStore.QuerySession();
-        query.Load<User>(user1.Id).ShouldNotBeTheSameAs(user1).ShouldNotBeNull();
+        query.Load<User>(user1.Id).ShouldNotBeNull().ShouldNotBeSameAs(user1);
     }
 }

@@ -189,7 +189,7 @@ public class patching_api: OneOffConfigurationsContext
             var result = query.Load<Target>(target.Id);
 
             result.StringField.ShouldBe(target.String);
-            SpecificationExtensions.ShouldNotBeNull(result.Inner);
+            result.Inner.ShouldNotBeNull();
             result.Inner.String.ShouldBe(target.String);
             result.Inner.AnotherString.ShouldBe(target.String);
         }
@@ -582,7 +582,7 @@ public class patching_api: OneOffConfigurationsContext
         {
             var target2 = query.Load<Target>(target.Id);
             target2.AnotherString.ShouldBe("Foo");
-            SpecificationExtensions.ShouldBeNull(target2.String);
+            target2.String.ShouldBeNull();
         }
     }
 
@@ -604,7 +604,7 @@ public class patching_api: OneOffConfigurationsContext
         {
             var target2 = query.Load<Target>(target.Id);
             target2.Inner.AnotherString.ShouldBe("Foo");
-            SpecificationExtensions.ShouldBeNull(target2.Inner.String);
+            target2.Inner.String.ShouldBeNull();
         }
     }
 
@@ -721,7 +721,7 @@ public class patching_api: OneOffConfigurationsContext
         {
             var result = query.Load<Target>(target.Id);
 
-            SpecificationExtensions.ShouldBeNull(result.String);
+            result.String.ShouldBeNull();
         }
     }
 
@@ -741,7 +741,7 @@ public class patching_api: OneOffConfigurationsContext
         {
             var result = query.Load<Target>(target.Id);
 
-            SpecificationExtensions.ShouldBeNull(result.Inner.String);
+            result.Inner.String.ShouldBeNull();
         }
     }
 
@@ -761,7 +761,7 @@ public class patching_api: OneOffConfigurationsContext
         {
             var result = query.Load<Target>(target.Id);
 
-            SpecificationExtensions.ShouldBeNull(result.Inner);
+            result.Inner.ShouldBeNull();
         }
     }
 

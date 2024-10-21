@@ -7,6 +7,7 @@ using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Storage;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
 namespace DaemonTests.Bugs;

@@ -18,7 +18,7 @@ public class int_based_document_operations : IAsyncLifetime
         theStore = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed";
+            opts.DatabaseSchemaName = "strong_typed6";
         });
 
         theSession = theStore.LightweightSession();

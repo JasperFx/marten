@@ -10,6 +10,7 @@ using Marten;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Sessions;
+using Marten.Testing;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
@@ -152,7 +153,12 @@ public class MartenServiceCollectionExtensionsTests
             // The normal Marten configuration
             services.AddMarten(opts =>
                 {
+                    // This helps isolate a test, not something you need to do
+                    // in normal usage
+                    opts.ApplyChangesLockId += 18;
+
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "apply_changes";
                     opts.RegisterDocumentType<User>();
                 })
 
@@ -186,6 +192,7 @@ public class MartenServiceCollectionExtensionsTests
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.RegisterDocumentType<User>();
+                    opts.DatabaseSchemaName = "startup";
                 })
                 .AssertDatabaseMatchesConfigurationOnStartup();
         });
@@ -486,6 +493,6 @@ public class MartenServiceCollectionExtensionsTests
         container.GetInstance<IDocumentSession>().ShouldNotBeNull();
         container.GetInstance<IQuerySession>().ShouldNotBeNull();
 
-        container.GetInstance<IDatabaseSource>().ShouldBeTheSameAs(store.As<DocumentStore>().Tenancy);
+        container.GetInstance<IDatabaseSource>().ShouldBeSameAs(store.As<DocumentStore>().Tenancy);
     }
 }

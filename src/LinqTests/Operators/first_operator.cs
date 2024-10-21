@@ -25,7 +25,7 @@ public class first_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        SpecificationExtensions.ShouldNotBeNull(theSession.Query<Target>().First(x => x.Number == 3));
+        theSession.Query<Target>().First(x => x.Number == 3).ShouldNotBeNull();
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public class first_operator: IntegrationContext
         await theSession.SaveChangesAsync();
 
         var target = await theSession.Query<Target>().FirstAsync(x => x.Number == 3);
-        SpecificationExtensions.ShouldNotBeNull(target);
+        target.ShouldNotBeNull();
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class first_operator: IntegrationContext
         await theSession.SaveChangesAsync();
 
         var target = await theSession.Query<Target>().FirstOrDefaultAsync(x => x.Number == 3);
-        SpecificationExtensions.ShouldNotBeNull(target);
+        target.ShouldNotBeNull();
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public class first_operator: IntegrationContext
         await theSession.SaveChangesAsync();
 
         var target = await theSession.Query<Target>().FirstOrDefaultAsync(x => x.Number == 11);
-        SpecificationExtensions.ShouldBeNull(target);
+        target.ShouldBeNull();
     }
 
     [Fact]

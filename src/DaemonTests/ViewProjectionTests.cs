@@ -54,7 +54,7 @@ public class ViewProjectionTests: DaemonContext
 
                 for (var i = 0; i < travel.Data.Stops.Count; i++)
                 {
-                    events.ElementAt(index + i + 1).Data.ShouldBeTheSameAs(travel.Data.Stops[i]);
+                    events.ElementAt(index + i + 1).Data.ShouldBeSameAs(travel.Data.Stops[i]);
                 }
             }
         }

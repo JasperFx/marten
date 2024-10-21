@@ -2,6 +2,7 @@ using System;
 using Marten.Schema.Identity;
 using Marten.Testing.Harness;
 using Xunit;
+using Shouldly;
 
 namespace DocumentDbTests.Bugs;
 
@@ -21,7 +22,7 @@ public class Bug_393_issue_with_identity_map: IntegrationContext
 
         details = session.Load<RouteDetails>(routeId); // this was always null
 
-        details.ShouldBeTheSameAs(routeDetails);
+        details.ShouldBeSameAs(routeDetails);
     }
 
     public Bug_393_issue_with_identity_map(DefaultStoreFixture fixture): base(fixture)
@@ -45,7 +46,7 @@ public class Bug_393_issue_with_dirty_tracking_identity_map: IntegrationContext
 
         details = session.Load<RouteDetails>(routeId);
 
-        details.ShouldBeTheSameAs(routeDetails);
+        details.ShouldBeSameAs(routeDetails);
     }
 
     public Bug_393_issue_with_dirty_tracking_identity_map(DefaultStoreFixture fixture): base(fixture)

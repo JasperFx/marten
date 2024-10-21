@@ -149,10 +149,10 @@ public class end_to_end_query_with_include: IntegrationContext
             .Where(x => x.Tags.Contains("DIY"))
             .Single();
 
-        SpecificationExtensions.ShouldNotBeNull(included);
+        included.ShouldNotBeNull();
         included.Id.ShouldBe(user.Id);
 
-        SpecificationExtensions.ShouldNotBeNull(issue2);
+        issue2.ShouldNotBeNull();
     }
 
     [Fact]
@@ -172,10 +172,10 @@ public class end_to_end_query_with_include: IntegrationContext
             .Include<User>(x => x.AssigneeId, x => included = x)
             .Single(x => x.Tags.Any<string>(t => t == "DIY"));
 
-        SpecificationExtensions.ShouldNotBeNull(included);
+        included.ShouldNotBeNull();
         included.Id.ShouldBe(user.Id);
 
-        SpecificationExtensions.ShouldNotBeNull(issue2);
+        issue2.ShouldNotBeNull();
     }
 
     [Fact]
@@ -197,10 +197,10 @@ public class end_to_end_query_with_include: IntegrationContext
             .Where(x => x.Tags.Any(t => t == "DIY"))
             .Single();
 
-        SpecificationExtensions.ShouldNotBeNull(included);
+        included.ShouldNotBeNull();
         included.Id.ShouldBe(user.Id);
 
-        SpecificationExtensions.ShouldNotBeNull(issue2);
+        issue2.ShouldNotBeNull();
     }
 
     [Fact]

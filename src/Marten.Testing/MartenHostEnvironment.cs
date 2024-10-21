@@ -3,7 +3,7 @@ using JasperFx.Core;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 
-namespace CoreTests;
+namespace Marten.Testing;
 
 internal class MartenHostEnvironment : IHostEnvironment
 {

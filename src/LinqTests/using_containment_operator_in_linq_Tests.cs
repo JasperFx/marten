@@ -27,8 +27,7 @@ public class using_containment_operator_in_linq_Tests: OneOffConfigurationsConte
         var actual = session.Query<Target>().Where(x => x.Date == targets.ElementAt(2).Date)
             .ToArray();
 
-        SpecificationExtensions.ShouldBeGreaterThan(actual.Length, 0);
-
+        actual.Length.ShouldBeGreaterThan(0);
 
         actual.ShouldContain(targets.ElementAt(2));
     }
@@ -91,7 +90,7 @@ public class using_containment_operator_in_linq_with_camel_casing_Tests: OneOffC
         var actual = session.Query<Target>().Where(x => x.Date == targets.ElementAt(2).Date)
             .ToArray();
 
-        SpecificationExtensions.ShouldBeGreaterThan(actual.Length, 0);
+        actual.Length.ShouldBeGreaterThan(0);
 
         actual.ShouldContain(targets.ElementAt(2));
     }

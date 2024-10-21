@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
+using Shouldly;
 
 namespace LinqTests.Bugs;
 
@@ -51,14 +52,14 @@ public class Bug_276_Query_by_abstract_type_in_hierarchy: BugIntegrationContext
             session.Store(activity);
             await session.SaveChangesAsync();
 
-            session.Load<Activity>(activity.Id).ShouldBeTheSameAs(activity);
-            session.Load<StatusActivity>(activity.Id).ShouldBeTheSameAs(activity);
+            session.Load<Activity>(activity.Id).ShouldBeSameAs(activity);
+            session.Load<StatusActivity>(activity.Id).ShouldBeSameAs(activity);
         }
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<Activity>(activity.Id).ShouldNotBeTheSameAs(activity).ShouldNotBeNull();
-            session.Load<StatusActivity>(activity.Id).ShouldNotBeTheSameAs(activity).ShouldNotBeNull();
+            session.Load<Activity>(activity.Id).ShouldNotBeNull().ShouldNotBeSameAs(activity);
+            session.Load<StatusActivity>(activity.Id).ShouldNotBeNull().ShouldNotBeSameAs(activity);
         }
     }
 }

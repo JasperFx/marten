@@ -12,12 +12,8 @@ using Xunit;
 
 namespace DocumentDbTests.Reading;
 
-public class query_plans : IntegrationContext
+public class query_plans : OneOffConfigurationsContext
 {
-    public query_plans(DefaultStoreFixture fixture) : base(fixture)
-    {
-    }
-
     [Fact]
     public async Task query_by_query_plan()
     {

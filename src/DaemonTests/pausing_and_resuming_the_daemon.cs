@@ -8,6 +8,7 @@ using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
+using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 

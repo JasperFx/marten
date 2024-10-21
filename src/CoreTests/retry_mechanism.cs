@@ -14,15 +14,13 @@ using Xunit;
 
 namespace CoreTests;
 
-public class retry_mechanism : IntegrationContext
+public class retry_mechanism : OneOffConfigurationsContext
 {
-    public retry_mechanism(DefaultStoreFixture fixture) : base(fixture)
-    {
-    }
-
     [Fact]
     public async Task can_successfully_retry()
     {
+        StoreOptions(opts => opts.DatabaseSchemaName = "retries");
+
         var sometimesFailingOperation1 = new SometimesFailingOperation();
         theSession.QueueOperation(sometimesFailingOperation1);
 
@@ -35,6 +33,8 @@ public class retry_mechanism : IntegrationContext
     [Fact]
     public async Task can_successfully_retry_sync()
     {
+        StoreOptions(opts => opts.DatabaseSchemaName = "retries");
+
         var sometimesFailingOperation1 = new SometimesFailingOperation();
         theSession.QueueOperation(sometimesFailingOperation1);
 

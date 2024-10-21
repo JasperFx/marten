@@ -124,14 +124,14 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
     {
         await using (var red = theStore.QuerySession("Red"))
         {
-            SpecificationExtensions.ShouldNotBeNull(await red.LoadAsync<Target>(targetRed1.Id));
-            SpecificationExtensions.ShouldBeNull(await red.LoadAsync<Target>(targetBlue1.Id));
+            (await red.LoadAsync<Target>(targetRed1.Id)).ShouldNotBeNull();
+            (await red.LoadAsync<Target>(targetBlue1.Id)).ShouldBeNull();
         }
 
         await using (var blue = theStore.QuerySession("Blue"))
         {
-            SpecificationExtensions.ShouldNotBeNull(await blue.LoadAsync<Target>(targetBlue1.Id));
-            SpecificationExtensions.ShouldBeNull(await blue.LoadAsync<Target>(targetRed1.Id));
+            (await blue.LoadAsync<Target>(targetBlue1.Id)).ShouldNotBeNull();
+            (await blue.LoadAsync<Target>(targetRed1.Id)).ShouldBeNull();
         }
     }
 
@@ -256,8 +256,8 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
 
         await batch.Execute();
 
-        SpecificationExtensions.ShouldNotBeNull(await foundRed);
-        SpecificationExtensions.ShouldBeNull(await notFoundGreen);
+        (await foundRed).ShouldNotBeNull();
+        (await notFoundGreen).ShouldBeNull();
 
         var found = await queryForReds;
 

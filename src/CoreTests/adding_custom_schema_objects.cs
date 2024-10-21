@@ -37,7 +37,7 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
         var feature = theStore.Options.Storage.AllActiveFeatures(theStore.Storage.Database)
             .OfType<StorageFeatures>().Single().As<IFeatureSchema>();
 
-        feature.Objects.Single().ShouldBeTheSameAs(table);
+        feature.Objects.Single().ShouldBeSameAs(table);
     }
 
     [Fact]

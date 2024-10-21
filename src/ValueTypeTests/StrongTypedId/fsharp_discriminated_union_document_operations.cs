@@ -83,7 +83,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
 
         // Marten sees that there is no existing identity,
         // so it assigns a new identity
-        SpecificationExtensions.ShouldNotBeNull(order.Id);
+        order.Id.ShouldNotBeNull();
     }
 
     [Fact]
@@ -199,7 +199,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
         theSession.Delete<FSharpTypes.Order>(order.Id);
         await theSession.SaveChangesAsync();
 
-        SpecificationExtensions.ShouldBeNull((await theSession.LoadAsync<FSharpTypes.Order>(order.Id)));
+        (await theSession.LoadAsync<FSharpTypes.Order>(order.Id)).ShouldBeNull();
     }
 
     [Fact]
@@ -213,7 +213,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
         theSession.Delete(order);
         await theSession.SaveChangesAsync();
 
-        SpecificationExtensions.ShouldBeNull((await theSession.LoadAsync<FSharpTypes.Order>(order.Id)));
+        (await theSession.LoadAsync<FSharpTypes.Order>(order.Id)).ShouldBeNull();
     }
 
 

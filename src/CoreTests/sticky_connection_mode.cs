@@ -20,7 +20,7 @@ public class sticky_connection_mode : OneOffConfigurationsContext
         var target = Target.Random();
 
         theSession.Store(target);
-        theSession.Connection.ShouldBeTheSameAs(connection);
+        theSession.Connection.ShouldBeSameAs(connection);
 
         await theSession.SaveChangesAsync();
     }

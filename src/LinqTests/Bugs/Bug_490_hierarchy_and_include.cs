@@ -72,7 +72,8 @@ public class Bug_490_hierarchy_and_include: BugIntegrationContext
             session.Query<Activity>()
                 .Include(a => a.AccountId, accounts)
                 .ToList()
-                .ShouldNotBeTheSameAs(activity).ShouldNotBeNull();
+                .ShouldNotBeNull()
+                .ShouldNotBeSameAs(activity);
 
             accounts.First().Id.ShouldBe(1);
         }
@@ -105,7 +106,8 @@ public class Bug_490_hierarchy_and_include: BugIntegrationContext
             (await session.Query<Activity>()
                     .Include(a => a.AccountId, accounts)
                     .ToListAsync())
-                .ShouldNotBeTheSameAs(activity).ShouldNotBeNull();
+                .ShouldNotBeNull()
+                .ShouldNotBeSameAs(activity);
 
             accounts.First().Id.ShouldBe(1);
         }

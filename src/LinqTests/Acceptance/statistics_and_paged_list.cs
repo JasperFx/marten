@@ -117,7 +117,7 @@ public class statistics_and_paged_list: IntegrationContext
     public async Task can_get_the_total_from_a_compiled_query_running_in_a_batch()
     {
         var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
-        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+        count.ShouldBeGreaterThan(0);
 
         var query = new TargetPaginationQuery(2, 5);
 
@@ -137,7 +137,7 @@ public class statistics_and_paged_list: IntegrationContext
     public void can_get_the_total_from_a_compiled_query_running_in_a_batch_sync()
     {
         var count = theSession.Query<Target>().Count(x => x.Number > 10);
-        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+        count.ShouldBeGreaterThan(0);
 
         var query = new TargetPaginationQuery(2, 5);
 
@@ -157,7 +157,7 @@ public class statistics_and_paged_list: IntegrationContext
     public async Task can_get_the_total_in_batch_query()
     {
         var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
-        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+        count.ShouldBeGreaterThan(0);
 
         QueryStatistics stats = null;
 
@@ -177,7 +177,7 @@ public class statistics_and_paged_list: IntegrationContext
     public void can_get_the_total_in_batch_query_sync()
     {
         var count = theSession.Query<Target>().Count(x => x.Number > 10);
-        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+        count.ShouldBeGreaterThan(0);
 
         QueryStatistics stats = null;
 
@@ -198,7 +198,7 @@ public class statistics_and_paged_list: IntegrationContext
     public void can_get_the_total_in_results()
     {
         var count = theSession.Query<Target>().Count(x => x.Number > 10);
-        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+        count.ShouldBeGreaterThan(0);
 
         // We're going to use stats as an output
         // parameter to the call below, so we
@@ -225,7 +225,7 @@ public class statistics_and_paged_list: IntegrationContext
     public async Task can_get_the_total_in_results_async()
     {
         var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
-        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+        count.ShouldBeGreaterThan(0);
 
         QueryStatistics stats = null;
 
@@ -297,7 +297,7 @@ public class statistics_and_paged_list: IntegrationContext
         var ex =
             await Should.ThrowAsync<ArgumentOutOfRangeException>(
                 async () => await toPagedList(theSession.Query<Target>(), pageNumber, pageSize));
-        SpecificationExtensions.ShouldContain(ex.Message, "pageNumber = 0. PageNumber cannot be below 1.");
+        ex.Message.ShouldContain("pageNumber = 0. PageNumber cannot be below 1.");
     }
 
     [Theory]
@@ -312,7 +312,7 @@ public class statistics_and_paged_list: IntegrationContext
         var ex =
             await Should.ThrowAsync<ArgumentOutOfRangeException>(
                 async () =>  await toPagedList(theSession.Query<Target>(), pageNumber, pageSize));
-        SpecificationExtensions.ShouldContain(ex.Message, $"pageSize = 0. PageSize cannot be below 1.");
+        ex.Message.ShouldContain($"pageSize = 0. PageSize cannot be below 1.");
     }
 
     [Theory]

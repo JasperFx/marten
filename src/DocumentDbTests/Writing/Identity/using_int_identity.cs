@@ -18,9 +18,9 @@ public class using_int_identity : IntegrationContext
         await theSession.SaveChangesAsync();
 
         using var session = theStore.LightweightSession();
-        SpecificationExtensions.ShouldNotBeNull(session.Load<IntDoc>(456));
+        session.Load<IntDoc>(456).ShouldNotBeNull();
 
-        SpecificationExtensions.ShouldBeNull(session.Load<IntDoc>(222));
+        session.Load<IntDoc>(222).ShouldBeNull();
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public class using_int_identity : IntegrationContext
 
         theSession.Store(doc);
 
-        SpecificationExtensions.ShouldBeGreaterThan(doc.Id, 0);
+        doc.Id.ShouldBeGreaterThan(0);
 
         var doc2 = new IntDoc {Id = 0};
         theSession.Store(doc2);
@@ -56,7 +56,7 @@ public class using_int_identity : IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            SpecificationExtensions.ShouldBeNull(session.Load<IntDoc>(IntDoc.Id));
+            session.Load<IntDoc>(IntDoc.Id).ShouldBeNull();
         }
     }
 

@@ -107,11 +107,11 @@ public class create_database_Tests : IDisposable
     {
         var user1 = new User { FirstName = "User" };
         var dbCreated = false;
-        using var store = DocumentStore.For(_ =>
+        using var store = DocumentStore.For(opts =>
         {
-            _.AutoCreateSchemaObjects = AutoCreate.All;
-            _.Connection(ConnectionSource.ConnectionString);
-            _.CreateDatabasesForTenants(c =>
+            opts.AutoCreateSchemaObjects = AutoCreate.All;
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.CreateDatabasesForTenants(c =>
             {
                 c.MaintenanceDatabase(ConnectionSource.ConnectionString);
                 c.ForTenant()

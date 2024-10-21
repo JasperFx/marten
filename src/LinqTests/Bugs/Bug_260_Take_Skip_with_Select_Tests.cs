@@ -22,7 +22,7 @@ public class Bug_260_Take_Skip_with_Select_Tests: IntegrationContext
 
         var cmd = queryable.ToCommand(FetchType.FetchMany);
 
-        SpecificationExtensions.ShouldContain(cmd.CommandText, "LIMIT :p1");
+        cmd.CommandText.ShouldContain("LIMIT :p1");
 
         cmd.Parameters["p1"].Value.ShouldBe(10);
 

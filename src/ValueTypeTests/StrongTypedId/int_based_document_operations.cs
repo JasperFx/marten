@@ -19,7 +19,7 @@ public class int_based_document_operations : IAsyncLifetime
         theStore = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed";
+            opts.DatabaseSchemaName = "strong_typed2";
         });
 
         theSession = theStore.LightweightSession();
@@ -287,7 +287,7 @@ public class int_based_document_operations_with_non_nullable_id : IAsyncLifetime
         theStore = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed";
+            opts.DatabaseSchemaName = "strong_typed20";
         });
 
         theSession = theStore.LightweightSession();
@@ -312,8 +312,8 @@ public class int_based_document_operations_with_non_nullable_id : IAsyncLifetime
         var order = new Order3();
         theSession.Store(order);
 
-        order.Id.ShouldNotBeNull();
-        ShouldBeTestExtensions.ShouldNotBe(order.Id.Value, 0);
+        order.Id.ShouldNotBe(default);
+        order.Id.Value.ShouldNotBe(0);
     }
 
     [Fact]
