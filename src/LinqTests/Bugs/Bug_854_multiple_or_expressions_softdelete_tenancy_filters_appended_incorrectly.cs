@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 
@@ -38,7 +39,7 @@ public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended
     }
 
     [Fact]
-    public void query_where_with_multiple_or_expresions_against_soft_Deletes()
+    public async Task query_where_with_multiple_or_expresions_against_soft_Deletes()
     {
         StoreOptions(_ => _.Schema.For<SoftDeletedItem>().SoftDeleted());
 
@@ -51,7 +52,7 @@ public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended
         using (var session = theStore.LightweightSession())
         {
             session.Store(item1, item2, item3);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())

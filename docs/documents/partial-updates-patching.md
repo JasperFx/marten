@@ -37,7 +37,7 @@ To apply a patch to all documents matching a given criteria, use the following s
 // Change every Target document where the Color is Blue
 theSession.Patch<Target>(x => x.Color == Colors.Blue).Set(x => x.Number, 2);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L102-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_set_an_immediate_property_by_where_clause' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L103-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_set_an_immediate_property_by_where_clause' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Set a single Property/Field
@@ -49,16 +49,16 @@ shown below:
 <a id='snippet-sample_patching_set_an_immediate_property_by_id'></a>
 ```cs
 [Fact]
-public void set_an_immediate_property_by_id()
+public async Task set_an_immediate_property_by_id()
 {
     var target = Target.Random(true);
     target.Number = 5;
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Set(x => x.Number, 10);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -66,7 +66,7 @@ public void set_an_immediate_property_by_id()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L30-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_set_an_immediate_property_by_id' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L31-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_set_an_immediate_property_by_id' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Set a new Property/Field
@@ -79,14 +79,14 @@ To initialize a new property on existing documents:
 const string where = "(data ->> 'UpdatedAt') is null";
 theSession.Query<Target>(where).Count.ShouldBe(3);
 theSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
-theSession.SaveChanges();
+await theSession.SaveChangesAsync();
 
 using (var query = theStore.QuerySession())
 {
     query.Query<Target>(where).Count.ShouldBe(0);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L58-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_initialise_a_new_property_by_expression' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L59-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_initialise_a_new_property_by_expression' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Duplicate an existing Property/Field
@@ -99,10 +99,10 @@ To copy an existing value to a new location:
 var target = Target.Random();
 target.AnotherString = null;
 theSession.Store(target);
-theSession.SaveChanges();
+await theSession.SaveChangesAsync();
 
 theSession.Patch<Target>(target.Id).Duplicate(t => t.String, t => t.AnotherString);
-theSession.SaveChanges();
+await theSession.SaveChangesAsync();
 
 using (var query = theStore.QuerySession())
 {
@@ -110,7 +110,7 @@ using (var query = theStore.QuerySession())
     result.AnotherString.ShouldBe(target.String);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L126-L140' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_duplicate_to_new_field' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L127-L141' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_duplicate_to_new_field' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The same value can be copied to multiple new locations:
@@ -123,7 +123,7 @@ theSession.Patch<Target>(target.Id).Duplicate(t => t.String,
     t => t.Inner.String,
     t => t.Inner.AnotherString);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L152-L157' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_duplicate_to_multiple_new_fields' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L153-L158' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_duplicate_to_multiple_new_fields' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The new locations need not exist in the persisted document, null or absent parents will be initialized
@@ -136,16 +136,16 @@ To increment a persisted value in the persisted document, use this operation:
 <a id='snippet-sample_patching_increment_for_int'></a>
 ```cs
 [Fact]
-public void increment_for_int()
+public async Task increment_for_int()
 {
     var target = Target.Random();
     target.Number = 6;
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Increment(x => x.Number);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -153,7 +153,7 @@ public void increment_for_int()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L171-L190' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_increment_for_int' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L172-L191' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_increment_for_int' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 By default, the `Patch.Increment()` operation will add 1 to the existing value. You can optionally override the increment:
@@ -162,16 +162,16 @@ By default, the `Patch.Increment()` operation will add 1 to the existing value. 
 <a id='snippet-sample_patching_increment_for_int_with_explicit_increment'></a>
 ```cs
 [Fact]
-public void increment_for_int_with_explicit_increment()
+public async Task increment_for_int_with_explicit_increment()
 {
     var target = Target.Random();
     target.Number = 6;
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Increment(x => x.Number, 3);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -179,7 +179,7 @@ public void increment_for_int_with_explicit_increment()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L192-L211' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_increment_for_int_with_explicit_increment' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L193-L212' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_increment_for_int_with_explicit_increment' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Append Element to a Child Collection
@@ -194,7 +194,7 @@ The `Patch.Append()` operation adds a new item to the end of a child collection:
 <a id='snippet-sample_patching_append_complex_element'></a>
 ```cs
 [Fact]
-public void append_complex_element()
+public async Task append_complex_element()
 {
     var target = Target.Random(true);
     var initialCount = target.Children.Length;
@@ -202,10 +202,10 @@ public void append_complex_element()
     var child = Target.Random();
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Append(x => x.Children, child);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -216,7 +216,7 @@ public void append_complex_element()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L314-L338' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_append_complex_element' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L332-L356' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_append_complex_element' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Patch.AppendIfNotExists()` operation will treat the child collection as a set rather than a list and only append the element if it does not already exist within the collection
@@ -233,7 +233,7 @@ being 0 so that a new item would be inserted at the beginning of the child colle
 <a id='snippet-sample_patching_insert_first_complex_element'></a>
 ```cs
 [Fact]
-public void insert_first_complex_element()
+public async Task insert_first_complex_element()
 {
     var target = Target.Random(true);
     var initialCount = target.Children.Length;
@@ -241,10 +241,10 @@ public void insert_first_complex_element()
     var child = Target.Random();
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Insert(x => x.Children, child);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -255,7 +255,7 @@ public void insert_first_complex_element()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L470-L494' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_insert_first_complex_element' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L488-L512' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_insert_first_complex_element' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Patch.InsertIfNotExists()` operation will only insert the element if the element at the designated index does not already exist.
@@ -268,7 +268,7 @@ The `Patch.Remove()` operation removes the given item from a child collection:
 <a id='snippet-sample_patching_remove_primitive_element'></a>
 ```cs
 [Fact]
-public void remove_primitive_element()
+public async Task remove_primitive_element()
 {
     var random = new Random();
     var target = Target.Random();
@@ -280,10 +280,10 @@ public void remove_primitive_element()
     var child = target.NumberArray[random.Next(0, initialCount)];
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -294,7 +294,7 @@ public void remove_primitive_element()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L586-L615' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_remove_primitive_element' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L604-L633' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_remove_primitive_element' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Removing complex items can also be accomplished, matching is performed on all fields:
@@ -303,7 +303,7 @@ Removing complex items can also be accomplished, matching is performed on all fi
 <a id='snippet-sample_patching_remove_complex_element'></a>
 ```cs
 [Fact]
-public void remove_complex_element()
+public async Task remove_complex_element()
 {
     var target = Target.Random(true);
     var initialCount = target.Children.Length;
@@ -312,10 +312,10 @@ public void remove_complex_element()
     var child = target.Children[random.Next(0, initialCount)];
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Remove(x => x.Children, child);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -326,7 +326,7 @@ public void remove_complex_element()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L655-L680' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_remove_complex_element' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L673-L698' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_remove_complex_element' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To remove reoccurring values from a collection specify `RemoveAction.RemoveAll`:
@@ -335,7 +335,7 @@ To remove reoccurring values from a collection specify `RemoveAction.RemoveAll`:
 <a id='snippet-sample_patching_remove_repeated_primitive_element'></a>
 ```cs
 [Fact]
-public void remove_repeated_primitive_elements()
+public async Task remove_repeated_primitive_elements()
 {
     var random = new Random();
     var target = Target.Random();
@@ -354,10 +354,10 @@ public void remove_repeated_primitive_elements()
     }
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child, RemoveAction.RemoveAll);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -368,7 +368,7 @@ public void remove_repeated_primitive_elements()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L617-L653' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_remove_repeated_primitive_element' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L635-L671' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_remove_repeated_primitive_element' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Rename a Property/Field
@@ -381,17 +381,17 @@ old name to the new name.
 <a id='snippet-sample_patching_rename_deep_prop'></a>
 ```cs
 [Fact]
-public void rename_deep_prop()
+public async Task rename_deep_prop()
 {
     var target = Target.Random(true);
     target.Inner.String = "Foo";
     target.Inner.AnotherString = "Bar";
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Rename("String", x => x.Inner.AnotherString);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -401,7 +401,7 @@ public void rename_deep_prop()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L562-L584' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_rename_deep_prop' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L580-L602' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_rename_deep_prop' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Renaming can be used on nested values.
@@ -418,7 +418,7 @@ To delete a redundant property no longer available on the class use the string o
 ```cs
 theSession.Patch<Target>(target.Id).Delete("String");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L689-L691' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_delete_redundant_property' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L707-L709' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_delete_redundant_property' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To delete a redundant property nested on a child class specify a location lambda:
@@ -428,7 +428,7 @@ To delete a redundant property nested on a child class specify a location lambda
 ```cs
 theSession.Patch<Target>(target.Id).Delete("String", t => t.Inner);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L709-L711' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_delete_redundant_nested_property' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L727-L729' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_delete_redundant_nested_property' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A current property may be erased simply with a lambda:
@@ -438,7 +438,7 @@ A current property may be erased simply with a lambda:
 ```cs
 theSession.Patch<Target>(target.Id).Delete(t => t.Inner);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L729-L731' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_delete_existing_property' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L747-L749' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_delete_existing_property' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Many documents may be patched using a where expressions:
@@ -449,14 +449,14 @@ Many documents may be patched using a where expressions:
 const string where = "(data ->> 'String') is not null";
 theSession.Query<Target>(where).Count.ShouldBe(15);
 theSession.Patch<Target>(new WhereFragment(where)).Delete("String");
-theSession.SaveChanges();
+await theSession.SaveChangesAsync();
 
 using (var query = theStore.QuerySession())
 {
     query.Query<Target>(where).Count(t => t.String != null).ShouldBe(0);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L751-L761' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_delete_property_from_many_documents' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L769-L779' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_delete_property_from_many_documents' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Multi-field patching/chaining patch operations
@@ -465,18 +465,18 @@ using (var query = theStore.QuerySession())
 <a id='snippet-sample_patching_multiple_fields'></a>
 ```cs
 [Fact]
-public void able_to_chain_patch_operations()
+public async Task able_to_chain_patch_operations()
 {
     var target = Target.Random(true);
     target.Number = 5;
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id)
         .Set(x => x.Number, 10)
         .Increment(x => x.Number, 10);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -484,5 +484,5 @@ public void able_to_chain_patch_operations()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L892-L914' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_multiple_fields' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L910-L932' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_patching_multiple_fields' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

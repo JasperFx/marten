@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Schema.Indexing.Unique;
@@ -45,7 +46,7 @@ public class UniqueIndexMultiTenantTests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void given_two_documents_for_different_tenants_succeeds_using_attribute()
+    public async Task given_two_documents_for_different_tenants_succeeds_using_attribute()
     {
         var store = StoreOptions(_ =>
         {
@@ -58,13 +59,13 @@ public class UniqueIndexMultiTenantTests: OneOffConfigurationsContext
 
         using var session = store.LightweightSession();
         session.Store(new UniqueCodePerTenant { Code = "ABC" });
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Store(new UniqueCodePerTenant { Code = "ABC" });
 
         try
         {
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
         catch (DocumentAlreadyExistsException exception)
         {
@@ -73,7 +74,7 @@ public class UniqueIndexMultiTenantTests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void
+    public async Task
         given_two_documents_with_the_same_value_for_unique_field_with_single_property_for_different_tenants_succeeds_using_computed_index()
     {
         var store = StoreOptions(_ =>
@@ -89,13 +90,13 @@ public class UniqueIndexMultiTenantTests: OneOffConfigurationsContext
         using (var session = store.LightweightSession())
         {
             session.Store(new Project { Name = "Project A" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             session.Store(new Project { Name = "Project A" });
 
             try
             {
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
             catch (DocumentAlreadyExistsException exception)
             {
@@ -107,19 +108,19 @@ public class UniqueIndexMultiTenantTests: OneOffConfigurationsContext
         using (var session = store.LightweightSession("abc"))
         {
             session.Store(new Project { Name = "Project A" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         //as can tenant def, but only once within the tenant
         using (var session = store.LightweightSession("def"))
         {
             session.Store(new Project { Name = "Project A" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
             session.Store(new Project { Name = "Project A" });
 
             try
             {
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
             catch (DocumentAlreadyExistsException exception)
             {
@@ -129,7 +130,7 @@ public class UniqueIndexMultiTenantTests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void
+    public async Task
         given_two_documents_with_the_same_value_for_unique_field_with_single_property_for_different_tenants_succeeds_using_duplicated_field()
     {
         var store = StoreOptions(_ =>
@@ -146,13 +147,13 @@ public class UniqueIndexMultiTenantTests: OneOffConfigurationsContext
         using (var session = store.LightweightSession())
         {
             session.Store(new ProjectUsingDuplicateField { Name = "Project A" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             session.Store(new ProjectUsingDuplicateField { Name = "Project A" });
 
             try
             {
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
             catch (DocumentAlreadyExistsException exception)
             {
@@ -164,19 +165,19 @@ public class UniqueIndexMultiTenantTests: OneOffConfigurationsContext
         using (var session = store.LightweightSession("abc"))
         {
             session.Store(new ProjectUsingDuplicateField { Name = "Project A" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         //as can tenant def, but only once within the tenant
         using (var session = store.LightweightSession("def"))
         {
             session.Store(new ProjectUsingDuplicateField { Name = "Project A" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
             session.Store(new ProjectUsingDuplicateField { Name = "Project A" });
 
             try
             {
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
             catch (DocumentAlreadyExistsException exception)
             {

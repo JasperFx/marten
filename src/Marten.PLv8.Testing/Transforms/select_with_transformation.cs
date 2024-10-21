@@ -16,9 +16,9 @@ public class select_with_transformation: OneOffConfigurationsContext
 {
     public select_with_transformation()
     {
-        StoreOptions(_ =>
+        StoreOptions(opts =>
         {
-            _.UseJavascriptTransformsAndPatching(x => x.LoadFile("get_fullname.js"));
+            opts.UseJavascriptTransformsAndPatching(x => x.LoadFile("get_fullname.js"));
         });
     }
 
@@ -26,13 +26,13 @@ public class select_with_transformation: OneOffConfigurationsContext
     #region sample_using_transform_to_json
 
     [Fact]
-    public void can_select_a_string_field_in_compiled_query()
+    public async Task can_select_a_string_field_in_compiled_query()
     {
         var user = new User { FirstName = "Eric", LastName = "Berry" };
 
         using var session = theStore.LightweightSession();
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var name = session.Query<User>().Select(x => x.FirstName)
             .Single();

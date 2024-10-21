@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Testing.Harness;
 using Xunit;
@@ -8,7 +9,7 @@ namespace DocumentDbTests.Bugs;
 public class Bug_673_multiple_version_assertions: IntegrationContext
 {
     [Fact]
-    public void replaces_the_max_version_assertion()
+    public async Task replaces_the_max_version_assertion()
     {
         var streamId = Guid.NewGuid();
 
@@ -16,7 +17,7 @@ public class Bug_673_multiple_version_assertions: IntegrationContext
         {
             session.Events.Append(streamId, new WhateverEvent(), new WhateverEvent());
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
@@ -28,12 +29,12 @@ public class Bug_673_multiple_version_assertions: IntegrationContext
             // ... do some more stuff
             expectedVersion += 1;
             session.Events.Append(streamId, expectedVersion, new WhateverEvent());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
     }
 
     [Fact]
-    public void replaces_the_max_version_assertion_for_string_identity()
+    public async Task replaces_the_max_version_assertion_for_string_identity()
     {
         UseStreamIdentity(StreamIdentity.AsString);
         var streamId = Guid.NewGuid().ToString();
@@ -42,7 +43,7 @@ public class Bug_673_multiple_version_assertions: IntegrationContext
         {
             session.Events.Append(streamId, new WhateverEvent(), new WhateverEvent());
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
@@ -54,7 +55,7 @@ public class Bug_673_multiple_version_assertions: IntegrationContext
             // ... do some more stuff
             expectedVersion += 1;
             session.Events.Append(streamId, expectedVersion, new WhateverEvent());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
     }
 

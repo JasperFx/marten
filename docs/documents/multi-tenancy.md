@@ -18,7 +18,7 @@ using (var session = theStore.LightweightSession("tenant1"))
 {
     session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
     session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = new string[0] });
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L65-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write' title='Start of snippet'>anchor</a></sup>
@@ -29,7 +29,7 @@ using (var session = theStore.LightweightSession("tenant1"))
 {
     session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
     session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = new string[0] });
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L112-L122' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-1' title='Start of snippet'>anchor</a></sup>
@@ -40,10 +40,10 @@ using (var session = store.LightweightSession("tenant1"))
 {
     session.Store(new User { UserName = "Bill" });
     session.Store(new User { UserName = "Lindsey" });
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L55-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L56-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As with storing, the load operations respect tenancy of the session.
@@ -61,7 +61,7 @@ using (var query = store.QuerySession("tenant1"))
         .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L75-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L76-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Lastly, unlike reading operations, `IDocumentSession.Store` offers an overload to explicitly pass in a tenant identifier, bypassing any tenancy associated with the session. Similar overload for tenancy exists for `IDocumentStore.BulkInsert`.
@@ -140,7 +140,7 @@ using (var session = store.QuerySession())
     session.Query<Target>().Count(x => x.TenantIsOneOf("Red")).ShouldBe(11);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy_with_partitioning.cs#L268-L335' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy_with_partitioning.cs#L276-L343' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample-1'></a>
 ```cs
 using var store = DocumentStore.For(opts =>
@@ -208,7 +208,7 @@ using (var session = store.QuerySession())
     session.Query<Target>().Count(x => x.TenantIsOneOf("Red")).ShouldBe(11);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L249-L316' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L259-L326' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In some cases, You may want to disable using the default tenant for storing documents, set `StoreOptions.DefaultTenantUsageEnabled` to `false`. With this option disabled, Tenant (non-default tenant) should be passed via method argument or `SessionOptions` when creating a session using document store. Marten will throw an exception `DefaultTenantUsageDisabledException` if a session is created using default tenant.
@@ -230,7 +230,7 @@ using (var query = store.QuerySession("tenant1"))
         .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L75-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L76-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten will automatically filter the LINQ query for the current tenant _if the current document type is tenanted_. However, if
@@ -244,14 +244,14 @@ filter:
 var actual = await query.Query<Target>().Where(x => x.TenantIsOneOf("Green", "Red") && x.Flag)
     .OrderBy(x => x.Id).Select(x => x.Id).ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy_with_partitioning.cs#L412-L418' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenant_is_one_of' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy_with_partitioning.cs#L420-L426' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenant_is_one_of' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_tenant_is_one_of-1'></a>
 ```cs
 // query data for a selected list of tenants
 var actual = await query.Query<Target>().Where(x => x.TenantIsOneOf("Green", "Red") && x.Flag)
     .OrderBy(x => x.Id).Select(x => x.Id).ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L393-L399' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenant_is_one_of-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L403-L409' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenant_is_one_of-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or the `AnyTenant()` filter:
@@ -263,14 +263,14 @@ Or the `AnyTenant()` filter:
 var actual = query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
     .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy_with_partitioning.cs#L357-L363' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any_tenant' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy_with_partitioning.cs#L365-L371' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any_tenant' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_any_tenant-1'></a>
 ```cs
 // query data across all tenants
 var actual = query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
     .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L338-L344' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any_tenant-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L348-L354' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any_tenant-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Configuring Tenancy
@@ -330,7 +330,7 @@ storeOptions.Policies.AllDocumentsAreMultiTenantedWithPartitioning(x =>
     x.ByExternallyManagedRangePartitions();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L112-L143' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-through-policy_with_partitioning' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L113-L144' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-through-policy_with_partitioning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To enable partitioning for a specific document type, use this option:
@@ -348,7 +348,7 @@ var store = DocumentStore.For(opts =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L193-L205' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_partitioning_on_single_table' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L194-L206' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_partitioning_on_single_table' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And lastly, if you need to use a mix of tenanted and global document types, but still want to use a consistent 
@@ -376,7 +376,7 @@ var store = DocumentStore.For(opts =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L210-L231' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multi_tenancy_partitioning_policy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L211-L232' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multi_tenancy_partitioning_policy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Tenancy Through Policies
@@ -390,7 +390,7 @@ storeOptions.Policies.AllDocumentsAreMultiTenanted();
 // Shorthand for
 // storeOptions.Policies.ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L44-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-through-policy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L45-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-through-policy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Tenancy At Document Level & Policy Overrides

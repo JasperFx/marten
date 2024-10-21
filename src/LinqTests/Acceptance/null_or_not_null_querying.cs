@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Linq;
 using Marten.Linq.Parsing;
@@ -18,7 +19,7 @@ public class multi_level_is_null_querying : IntegrationContext
     }
 
     [Fact]
-    public void CanQueryNullNotNullAtArbitraryDepth()
+    public async Task CanQueryNullNotNullAtArbitraryDepth()
     {
         var user = new UserNested
         {
@@ -33,7 +34,7 @@ public class multi_level_is_null_querying : IntegrationContext
 
         theSession.Store(user);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var s = theStore.QuerySession())
         {

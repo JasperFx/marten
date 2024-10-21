@@ -209,7 +209,7 @@ public class string_filtering: IntegrationContext
     }
 
     [Fact]
-    public void can_search_case_insensitive()
+    public async Task can_search_case_insensitive()
     {
         var user1 = new User { UserName = "Abc" };
         var user2 = new User { UserName = "DeF" };
@@ -217,7 +217,7 @@ public class string_filtering: IntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(user1, user2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -236,14 +236,14 @@ public class string_filtering: IntegrationContext
     }
 
     [Fact]
-    public void can_search_case_insensitive_with_StringComparison()
+    public async Task can_search_case_insensitive_with_StringComparison()
     {
         var user = new User { UserName = "TEST_USER" };
 
         using (var session = theStore.LightweightSession())
         {
             session.Store(user);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -254,14 +254,14 @@ public class string_filtering: IntegrationContext
     }
 
     [Fact]
-    public void can_search_string_with_back_slash_case_insensitive_with_StringComparison()
+    public async Task can_search_string_with_back_slash_case_insensitive_with_StringComparison()
     {
         var user = new User { UserName = @"DOMAIN\TEST_USER" };
 
         using (var session = theStore.LightweightSession())
         {
             session.Store(user);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())

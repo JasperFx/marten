@@ -15,7 +15,7 @@ using Weasel.Core;
 namespace Marten.Testing.Harness
 {
 
-
+    [Obsolete("Use Shouldly instead. Just no reason to have this any longer")]
     public static class Exception<T> where T : Exception
     {
 

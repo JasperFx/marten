@@ -18,14 +18,14 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
     }
 
     [Fact]
-    public void string_equality_equals_operator_should_be_symmetric()
+    public async Task string_equality_equals_operator_should_be_symmetric()
     {
         var random = Target.Random();
         var theString = random.String;
         using (var session = theStore.LightweightSession())
         {
             session.Insert(random);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())

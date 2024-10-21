@@ -271,12 +271,12 @@ We urge caution about this functionality because it requires a search against th
 <a id='snippet-sample_query-against-event-data'></a>
 ```cs
 [Fact]
-public void can_query_against_event_type()
+public async Task can_query_against_event_type()
 {
     theSession.Events.StartStream<Quest>(joined1, departed1);
     theSession.Events.StartStream<Quest>(joined2, departed2);
 
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
     theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()

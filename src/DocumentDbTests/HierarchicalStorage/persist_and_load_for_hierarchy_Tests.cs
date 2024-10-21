@@ -10,15 +10,15 @@ namespace DocumentDbTests.HierarchicalStorage;
 public class persist_and_load_for_hierarchy_Tests: end_to_end_document_hierarchy_usage_Tests
 {
     [Fact]
-    public void persist_and_delete_subclass()
+    public async Task persist_and_delete_subclass()
     {
         using var session = theStore.IdentitySession();
         session.Store(admin1);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Delete(admin1);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Load<User>(admin1.Id).ShouldBeNull();
         session.Load<AdminUser>(admin1.Id).ShouldBeNull();
@@ -26,53 +26,53 @@ public class persist_and_load_for_hierarchy_Tests: end_to_end_document_hierarchy
 
 
     [Fact]
-    public void persist_and_delete_subclass_2()
+    public async Task persist_and_delete_subclass_2()
     {
         using var session = theStore.IdentitySession();
         session.Store(admin1);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Delete<AdminUser>(admin1.Id);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Load<User>(admin1.Id).ShouldBeNull();
         session.Load<AdminUser>(admin1.Id).ShouldBeNull();
     }
 
     [Fact]
-    public void persist_and_delete_top()
+    public async Task persist_and_delete_top()
     {
         using var session = theStore.IdentitySession();
         session.Store(user1);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Delete<User>(user1.Id);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Load<User>(user1.Id).ShouldBeNull();
     }
 
     [Fact]
-    public void persist_and_delete_top_2()
+    public async Task persist_and_delete_top_2()
     {
         using var session = theStore.IdentitySession();
         session.Store(user1);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Delete(user1);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Load<User>(user1.Id).ShouldBeNull();
     }
 
 
     [Fact]
-    public void persist_and_load_subclass()
+    public async Task persist_and_load_subclass()
     {
         using var session = theStore.IdentitySession();
         session.Store(admin1);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Load<User>(admin1.Id).ShouldBeTheSameAs(admin1);
         session.Load<AdminUser>(admin1.Id).ShouldBeTheSameAs(admin1);
@@ -87,7 +87,7 @@ public class persist_and_load_for_hierarchy_Tests: end_to_end_document_hierarchy
     {
         await using var session = theStore.IdentitySession();
         session.Store(admin1);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         (await session.LoadAsync<User>(admin1.Id)).ShouldBeTheSameAs(admin1);
         (await session.LoadAsync<AdminUser>(admin1.Id)).ShouldBeTheSameAs(admin1);
@@ -100,11 +100,11 @@ public class persist_and_load_for_hierarchy_Tests: end_to_end_document_hierarchy
     }
 
     [Fact]
-    public void persist_and_load_top_level()
+    public async Task persist_and_load_top_level()
     {
         using var session = theStore.IdentitySession();
         session.Store(user1);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
 

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Internal.Sessions;
 using Marten.Linq;
 
 namespace Marten.Events;
@@ -18,6 +19,7 @@ public interface IQueryEventStore
     /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
     /// <param name="fromVersion">If set, queries for events on or from this version</param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     IReadOnlyList<IEvent> FetchStream(Guid streamId, long version = 0, DateTimeOffset? timestamp = null,
         long fromVersion = 0);
 
@@ -40,6 +42,7 @@ public interface IQueryEventStore
     /// <param name="version">If set, queries for events up to and including this version</param>
     /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     IReadOnlyList<IEvent> FetchStream(string streamKey, long version = 0, DateTimeOffset? timestamp = null,
         long fromVersion = 0);
 
@@ -52,6 +55,7 @@ public interface IQueryEventStore
     /// <param name="fromVersion">If set, queries for events on or from this version</param>
     /// <param name="token"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, long version = 0, DateTimeOffset? timestamp = null,
         long fromVersion = 0, CancellationToken token = default);
 
@@ -65,6 +69,7 @@ public interface IQueryEventStore
     /// <param name="fromVersion">If set, queries for events on or from this version</param>
     /// <param name="state">Instance of T to apply events to</param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     T? AggregateStream<T>(Guid streamId, long version = 0, DateTimeOffset? timestamp = null, T? state = null,
         long fromVersion = 0) where T : class;
 
@@ -91,6 +96,7 @@ public interface IQueryEventStore
     /// <param name="timestamp"></param>
     /// <param name="state">Instance of T to apply events to</param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     T? AggregateStream<T>(string streamKey, long version = 0, DateTimeOffset? timestamp = null, T? state = null,
         long fromVersion = 0) where T : class;
 
@@ -127,6 +133,7 @@ public interface IQueryEventStore
     /// <typeparam name="T"></typeparam>
     /// <param name="id"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     IEvent<T>? Load<T>(Guid id) where T : class;
 
     /// <summary>
@@ -143,6 +150,7 @@ public interface IQueryEventStore
     /// </summary>
     /// <param name="id"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     IEvent? Load(Guid id);
 
     /// <summary>
@@ -158,6 +166,7 @@ public interface IQueryEventStore
     /// </summary>
     /// <param name="streamId"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     StreamState? FetchStreamState(Guid streamId);
 
     /// <summary>
@@ -173,6 +182,7 @@ public interface IQueryEventStore
     /// </summary>
     /// <param name="streamKey"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     StreamState? FetchStreamState(string streamKey);
 
     /// <summary>

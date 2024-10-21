@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Marten.Linq.SqlGeneration;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -193,7 +194,7 @@ public class UnitOfWork_PendingChanges_Functionality_Tests : IntegrationContext
     }
 
     [Fact]
-    public void pending_with_dirty_checks()
+    public async Task pending_with_dirty_checks()
     {
         var user1 = new User();
         var user2 = new User();
@@ -201,7 +202,7 @@ public class UnitOfWork_PendingChanges_Functionality_Tests : IntegrationContext
         using (var session1 = theStore.LightweightSession())
         {
             session1.Store(user1, user2);
-            session1.SaveChanges();
+            await session1.SaveChangesAsync();
         }
 
         using (var session2 = theStore.DirtyTrackedSession())

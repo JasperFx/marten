@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -9,12 +10,12 @@ namespace DocumentDbTests.Writing.Identity;
 public class using_int_identity : IntegrationContext
 {
     [Fact]
-    public void persist_and_load()
+    public async Task persist_and_load()
     {
         var IntDoc = new IntDoc { Id = 456 };
 
         theSession.Store(IntDoc);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var session = theStore.LightweightSession();
         SpecificationExtensions.ShouldNotBeNull(session.Load<IntDoc>(456));
@@ -40,17 +41,17 @@ public class using_int_identity : IntegrationContext
     }
 
     [Fact]
-    public void persist_and_delete()
+    public async Task persist_and_delete()
     {
         var IntDoc = new IntDoc { Id = 567 };
 
         theSession.Store(IntDoc);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var session = theStore.LightweightSession())
         {
             session.Delete<IntDoc>(IntDoc.Id);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -60,14 +61,14 @@ public class using_int_identity : IntegrationContext
     }
 
     [Fact]
-    public void load_by_array_of_ids()
+    public async Task load_by_array_of_ids()
     {
         theSession.Store(new IntDoc { Id = 3 });
         theSession.Store(new IntDoc { Id = 4 });
         theSession.Store(new IntDoc { Id = 5 });
         theSession.Store(new IntDoc { Id = 6 });
         theSession.Store(new IntDoc { Id = 7 });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var session = theStore.QuerySession();
         session.LoadMany<IntDoc>(4, 5, 6).Count().ShouldBe(3);

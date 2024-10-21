@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -23,7 +24,7 @@ public class get_committed_events_from_listener_Tests : OneOffConfigurationsCont
     }
 
     [Fact]
-    public void get_correct_events_from_single_stream()
+    public async Task get_correct_events_from_single_stream()
     {
         var id = Guid.NewGuid();
         var started = new QuestStarted();
@@ -31,7 +32,7 @@ public class get_committed_events_from_listener_Tests : OneOffConfigurationsCont
         using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream<Quest>(id, started);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             var events = listener.LastCommit
                 .GetEvents()
@@ -48,7 +49,7 @@ public class get_committed_events_from_listener_Tests : OneOffConfigurationsCont
 
             session.Events.Append(id, joined, departed);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             var events = listener.LastCommit
                 .GetEvents()
@@ -61,7 +62,7 @@ public class get_committed_events_from_listener_Tests : OneOffConfigurationsCont
     }
 
     [Fact]
-    public void get_correct_events_across_multiple_stream()
+    public async Task get_correct_events_across_multiple_stream()
     {
 
         var id1 = Guid.NewGuid();
@@ -71,7 +72,7 @@ public class get_committed_events_from_listener_Tests : OneOffConfigurationsCont
         {
             session.Events.StartStream<Quest>(id1, new QuestStarted { Id = id1 });
             session.Events.StartStream<Quest>(id2, new QuestStarted { Id = id2 });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             var events = listener.LastCommit
                 .GetEvents()
@@ -94,7 +95,7 @@ public class get_committed_events_from_listener_Tests : OneOffConfigurationsCont
                 new MembersJoined { Members = new string[] { "Riker" } },
                 new MembersDeparted { Members = new[] { "Kirk" } });
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             var events = listener.LastCommit
                 .GetEvents()

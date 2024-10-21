@@ -15,7 +15,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
     private readonly ITestOutputHelper _output;
 
     [Fact]
-    public void should_check_max_event_id_on_append()
+    public async Task should_check_max_event_id_on_append()
     {
         var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
         var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -23,7 +23,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
         var stream = theSession.Events.StartStream<Quest>(joined).Id;
         theSession.Events.Append(stream, 2, departed);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var state = theSession.Events.FetchStreamState(stream);
 
@@ -32,13 +32,13 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
     }
 
     [Fact]
-    public void should_not_append_events_when_unexpected_max_version()
+    public async Task should_not_append_events_when_unexpected_max_version()
     {
         var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
         var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
         var stream = theSession.Events.StartStream<Quest>(joined).Id;
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.Append(stream, 2, departed);
 
@@ -48,14 +48,14 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
             var departed3 = new MembersDeparted { Members = new[] { "Perrin" } };
 
             session.Events.Append(stream, joined3, departed3);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
-        Assert.Throws<EventStreamUnexpectedMaxEventIdException>(() => theSession.SaveChanges());
+        await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(() => theSession.SaveChangesAsync());
 
         using (var session = theStore.LightweightSession())
         {
-            var state = session.Events.FetchStreamState(stream);
+            var state = await session.Events.FetchStreamStateAsync(stream);
 
             state.Id.ShouldBe(stream);
             state.Version.ShouldBe(3);
@@ -63,7 +63,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
     }
 
     [Fact]
-    public void should_check_max_event_id_on_append_with_string_identifier()
+    public async Task should_check_max_event_id_on_append_with_string_identifier()
     {
         UseStreamIdentity(StreamIdentity.AsString);
 
@@ -75,7 +75,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
         theSession.Events.Append(stream, joined);
         theSession.Events.Append(stream, 2, departed);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var state = theSession.Events.FetchStreamState(stream);
 
@@ -84,7 +84,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
     }
 
     [Fact]
-    public void should_not_append_events_when_unexpected_max_version_with_string_identifier()
+    public async Task should_not_append_events_when_unexpected_max_version_with_string_identifier()
     {
         UseStreamIdentity(StreamIdentity.AsString);
 
@@ -93,7 +93,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
 
         var stream = "Another";
         theSession.Events.Append(stream, joined);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.Append(stream, 2, departed);
 
@@ -103,14 +103,14 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
             var departed3 = new MembersDeparted { Members = new[] { "Perrin" } };
 
             session.Events.Append(stream, joined3, departed3);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
-        Assert.Throws<EventStreamUnexpectedMaxEventIdException>(() => theSession.SaveChanges());
+        await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(() => theSession.SaveChangesAsync());
 
         using (var session = theStore.LightweightSession())
         {
-            var state = session.Events.FetchStreamState(stream);
+            var state = await session.Events.FetchStreamStateAsync(stream);
 
             state.Key.ShouldBe(stream);
             state.Version.ShouldBe(3);

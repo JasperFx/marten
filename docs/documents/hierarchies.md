@@ -33,7 +33,7 @@ using (var session = store.QuerySession())
     session.Query<SuperUser>().ToList();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L64-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure-hierarchy-of-types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L74-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure-hierarchy-of-types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 With the configuration above, you can now query by `User` and get `AdminUser` and `SuperUser` documents as part of the results,
@@ -153,27 +153,27 @@ Now you can query the "complex" hierarchy in the following ways:
 <a id='snippet-sample_query-subclass-hierarchy'></a>
 ```cs
 [Fact]
-public void get_all_subclasses_of_a_subclass()
+public async Task get_all_subclasses_of_a_subclass()
 {
     var smurf = new Smurf {Ability = "Follow the herd"};
     var papa = new PapaSmurf {Ability = "Lead"};
     var brainy = new BrainySmurf {Ability = "Invent"};
     theSession.Store(smurf, papa, brainy);
 
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Query<Smurf>().Count().ShouldBe(3);
 }
 
 [Fact]
-public void get_all_subclasses_of_a_subclass2()
+public async Task get_all_subclasses_of_a_subclass2()
 {
     var smurf = new Smurf {Ability = "Follow the herd"};
     var papa = new PapaSmurf {Ability = "Lead"};
     var brainy = new BrainySmurf {Ability = "Invent"};
     theSession.Store(smurf, papa, brainy);
 
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Logger = new TestOutputMartenLogger(_output);
 
@@ -181,20 +181,20 @@ public void get_all_subclasses_of_a_subclass2()
 }
 
 [Fact]
-public void get_all_subclasses_of_a_subclass_with_where()
+public async Task get_all_subclasses_of_a_subclass_with_where()
 {
     var smurf = new Smurf {Ability = "Follow the herd"};
     var papa = new PapaSmurf {Ability = "Lead"};
     var brainy = new BrainySmurf {Ability = "Invent"};
     theSession.Store(smurf, papa, brainy);
 
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
 }
 
 [Fact]
-public void get_all_subclasses_of_a_subclass_with_where_with_camel_casing()
+public async Task get_all_subclasses_of_a_subclass_with_where_with_camel_casing()
 {
     StoreOptions(_ =>
     {
@@ -221,13 +221,13 @@ public void get_all_subclasses_of_a_subclass_with_where_with_camel_casing()
     var brainy = new BrainySmurf {Ability = "Invent"};
     theSession.Store(smurf, papa, brainy);
 
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
 }
 
 [Fact]
-public void get_all_subclasses_of_an_interface()
+public async Task get_all_subclasses_of_an_interface()
 {
     var smurf = new Smurf {Ability = "Follow the herd"};
     var papa = new PapaSmurf {Ability = "Lead"};
@@ -235,7 +235,7 @@ public void get_all_subclasses_of_an_interface()
     var brainy = new BrainySmurf {Ability = "Invent"};
     theSession.Store(smurf, papa, brainy, papy);
 
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Query<IPapaSmurf>().Count().ShouldBe(3);
 }

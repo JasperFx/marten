@@ -16,7 +16,7 @@ public class Bug_339_async_cache_problem: IntegrationContext
         await using (var session1 = theStore.LightweightSession())
         {
             session1.Store(user1);
-            session1.SaveChanges();
+            await session1.SaveChangesAsync();
         }
 
         await using (var session2 = theStore.DirtyTrackedSession())

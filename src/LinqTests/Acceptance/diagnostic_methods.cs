@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Linq;
 using Marten.Testing.Documents;
@@ -14,7 +15,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
     private readonly ITestOutputHelper _output;
 
     [Fact]
-    public void retrieves_query_plan()
+    public async Task retrieves_query_plan()
     {
         var user1 = new SimpleUser
         {
@@ -31,7 +32,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
             Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
         };
         theSession.Store(user1, user2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var plan = theSession.Query<SimpleUser>().Explain();
         SpecificationExtensions.ShouldNotBeNull(plan);
@@ -41,7 +42,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void retrieves_query_plan_with_where()
+    public async Task retrieves_query_plan_with_where()
     {
         var user1 = new SimpleUser
         {
@@ -58,7 +59,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
             Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
         };
         theSession.Store(user1, user2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var plan = theSession.Query<SimpleUser>().Where(u => u.Number > 5).Explain();
         SpecificationExtensions.ShouldNotBeNull(plan);
@@ -68,7 +69,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void retrieves_query_plan_with_where_and_all_options_enabled()
+    public async Task retrieves_query_plan_with_where_and_all_options_enabled()
     {
         var user1 = new SimpleUser
         {
@@ -85,7 +86,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
             Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
         };
         theSession.Store(user1, user2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var plan = theSession.Query<SimpleUser>().Where(u => u.Number > 5)
             .OrderBy(x => x.Number)

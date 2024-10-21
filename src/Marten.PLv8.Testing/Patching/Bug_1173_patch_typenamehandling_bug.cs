@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Marten.PLv8.Patching;
 using Marten.Services;
 using Marten.Testing.Harness;
@@ -21,20 +22,21 @@ public class PatchTypeB
 public class Bug_1173_patch_typenamehandling_bug: BugIntegrationContext
 {
     [Fact]
-    public void can_support_typenamehandling()
+    public async Task can_support_typenamehandling()
     {
-        using var store = SeparateStore(_ =>
+        using var store = SeparateStore(opts =>
         {
             var serializer = new JsonNetSerializer();
             serializer.Customize(config =>
             {
                 config.TypeNameHandling = Newtonsoft.Json.TypeNameHandling.Objects;
             });
-            _.Serializer(serializer);
-            _.AutoCreateSchemaObjects = AutoCreate.All;
+            opts.Serializer(serializer);
+            opts.AutoCreateSchemaObjects = AutoCreate.All;
 
-            _.UseJavascriptTransformsAndPatching();
+            opts.UseJavascriptTransformsAndPatching();
         });
+
         using (var session = store.LightweightSession())
         {
             var obj = new PatchTypeA
@@ -48,8 +50,9 @@ public class Bug_1173_patch_typenamehandling_bug: BugIntegrationContext
             };
 
             session.Store(obj);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
+
         using (var session = store.LightweightSession())
         {
             var newObj = new PatchTypeB
@@ -58,12 +61,12 @@ public class Bug_1173_patch_typenamehandling_bug: BugIntegrationContext
             };
 
             session.Patch<PatchTypeA>("1").Set(set => set.TypeB, newObj);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = store.LightweightSession())
         {
-            var result = session.Json.FindById<PatchTypeA>("1");
+            var result = await session.Json.FindByIdAsync<PatchTypeA>("1");
             var expected = "{\"Id\": \"1\", \"$type\": \"Marten.PLv8.Testing.Patching.PatchTypeA, Marten.PLv8.Testing\", \"TypeB\": {\"Name\": \"test2\", \"$type\": \"Marten.PLv8.Testing.Patching.PatchTypeB, Marten.PLv8.Testing\"}}";
             Assert.Equal(expected, result);
         }

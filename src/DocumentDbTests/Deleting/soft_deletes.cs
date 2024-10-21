@@ -96,12 +96,12 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     }
 
     [Fact]
-    public void initial_state_of_deleted_columns()
+    public async Task initial_state_of_deleted_columns()
     {
         using var session = theStore.LightweightSession();
         var user = new User();
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         userIsNotMarkedAsDeleted(session, user.Id);
     }
@@ -131,29 +131,29 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     }
 
     [Fact]
-    public void soft_delete_a_document_row_state()
+    public async Task soft_delete_a_document_row_state()
     {
         using var session = theStore.LightweightSession();
         var user = new User();
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Delete(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         userIsMarkedAsDeleted(session, user.Id);
     }
 
     [Fact]
-    public void hard_delete_a_document_row_state()
+    public async Task hard_delete_a_document_row_state()
     {
         using var session = theStore.LightweightSession();
         var user = new User();
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.HardDelete(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         assertDocumentIsHardDeleted<User>(session, user.Id);
     }
@@ -180,43 +180,43 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     }
 
     [Fact]
-    public void hard_delete_a_document_row_state_int()
+    public async Task hard_delete_a_document_row_state_int()
     {
         using var session = theStore.LightweightSession();
         var doc = new IntDoc();
         session.Store(doc);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.HardDelete<IntDoc>(doc.Id);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         assertDocumentIsHardDeleted<IntDoc>(session, doc.Id);
     }
 
     [Fact]
-    public void hard_delete_a_document_row_state_long()
+    public async Task hard_delete_a_document_row_state_long()
     {
         using var session = theStore.LightweightSession();
         var doc = new LongDoc();
         session.Store(doc);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.HardDelete<LongDoc>(doc.Id);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         assertDocumentIsHardDeleted<LongDoc>(session, doc.Id);
     }
 
     [Fact]
-    public void hard_delete_a_document_row_state_string()
+    public async Task hard_delete_a_document_row_state_string()
     {
         using var session = theStore.LightweightSession();
         var doc = new StringDoc{Id = Guid.NewGuid().ToString()};
         session.Store(doc);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.HardDelete<StringDoc>(doc.Id);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         assertDocumentIsHardDeleted<StringDoc>(session, doc.Id);
     }
@@ -235,7 +235,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     }
 
     [Fact]
-    public void soft_delete_a_document_by_where_row_state()
+    public async Task soft_delete_a_document_by_where_row_state()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -243,10 +243,10 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         userIsNotMarkedAsDeleted(session, user1.Id);
         userIsMarkedAsDeleted(session, user2.Id);
@@ -254,7 +254,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     }
 
     [Fact]
-    public void un_delete_a_document_by_where_row_state()
+    public async Task un_delete_a_document_by_where_row_state()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -264,17 +264,17 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         session.Logger = new TestOutputMartenLogger(_output);
 
         session.Store(user1, user2, user3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         userIsNotMarkedAsDeleted(session, user1.Id);
         userIsMarkedAsDeleted(session, user2.Id);
         userIsMarkedAsDeleted(session, user3.Id);
 
         session.UndoDeleteWhere<User>(x => x.UserName == "bar");
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         userIsNotMarkedAsDeleted(session, user1.Id);
         userIsNotMarkedAsDeleted(session, user2.Id);
@@ -283,7 +283,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
     #region sample_query_soft_deleted_docs
     [Fact]
-    public void query_soft_deleted_docs()
+    public async Task query_soft_deleted_docs()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -292,11 +292,11 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // Deleting 'bar' and 'baz'
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause, deleted docs should be filtered out
         session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -311,7 +311,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
     #region sample_query_maybe_soft_deleted_docs
     [Fact]
-    public void query_maybe_soft_deleted_docs()
+    public async Task query_maybe_soft_deleted_docs()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -320,10 +320,10 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause, all documents are returned
         session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -341,7 +341,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
     #region sample_query_is_soft_deleted_docs
     [Fact]
-    public void query_is_soft_deleted_docs()
+    public async Task query_is_soft_deleted_docs()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -350,10 +350,10 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause
         session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -371,7 +371,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
     #region sample_query_soft_deleted_since
     [Fact]
-    public void query_is_soft_deleted_since_docs()
+    public async Task query_is_soft_deleted_since_docs()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -380,14 +380,14 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Delete(user3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var epoch = session.MetadataFor(user3).DeletedAt;
         session.Delete(user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Query<User>().Where(x => x.DeletedSince(epoch.Value)).Select(x => x.UserName)
             .ToList().ShouldHaveTheSameElementsAs("jack");
@@ -396,7 +396,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     #endregion
 
     [Fact]
-    public void query_is_soft_deleted_before_docs()
+    public async Task query_is_soft_deleted_before_docs()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -405,13 +405,13 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Delete(user3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Delete(user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var epoch = session.MetadataFor(user4).DeletedAt;
 
@@ -420,7 +420,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     }
 
     [Fact]
-    public void top_level_of_hierarchy()
+    public async Task top_level_of_hierarchy()
     {
 
 
@@ -431,10 +431,10 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause
         session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -446,7 +446,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     }
 
     [Fact]
-    public void sub_level_of_hierarchy()
+    public async Task sub_level_of_hierarchy()
     {
 
         var user1 = new SuperUser { UserName = "foo" };
@@ -457,10 +457,10 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
         using var session = theStore.LightweightSession();
         session.StoreObjects(new User[] { user1, user2, user3, user4, user5 });
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<SuperUser>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause
         session.Query<SuperUser>().OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -472,7 +472,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     }
 
     [Fact]
-    public void sub_level_of_hierarchy_maybe_deleted()
+    public async Task sub_level_of_hierarchy_maybe_deleted()
     {
 
         var user1 = new SuperUser { UserName = "foo" };
@@ -483,10 +483,10 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
         using var session = theStore.LightweightSession();
         session.StoreObjects(new User[] { user1, user2, user3, user4, user5 });
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<SuperUser>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause
         session.Query<SuperUser>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -500,7 +500,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     }
 
     [Fact]
-    public void sub_level_of_hierarchy_is_deleted()
+    public async Task sub_level_of_hierarchy_is_deleted()
     {
 
         var user1 = new SuperUser { UserName = "foo" };
@@ -511,10 +511,10 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
         using var session = theStore.LightweightSession();
         session.StoreObjects(new User[] { user1, user2, user3, user4, user5 });
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<SuperUser>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause
         session.Query<SuperUser>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -528,7 +528,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
     }
 
     [Fact]
-    public void soft_deleted_documents_work_with_linq_include()
+    public async Task soft_deleted_documents_work_with_linq_include()
     {
         using var session = theStore.LightweightSession();
 
@@ -538,9 +538,9 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         session.Store(file1);
         var file2 = new File() { UserId = user.Id };
         session.Store(file2);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
         session.Delete(file2);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var users = new List<User>();
         var files = session.Query<File>().Include(u => u.UserId, users).ToList();
@@ -786,12 +786,12 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
     }
 
     [Fact]
-    public void initial_state_of_deleted_columns()
+    public async Task initial_state_of_deleted_columns()
     {
         using var session = theStore.LightweightSession();
         var user = new User();
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         userIsNotMarkedAsDeleted(session, user.Id);
     }
@@ -821,29 +821,29 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
     }
 
     [Fact]
-    public void soft_delete_a_document_row_state()
+    public async Task soft_delete_a_document_row_state()
     {
         using var session = theStore.LightweightSession();
         var user = new User();
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Delete(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         userIsMarkedAsDeleted(session, user.Id);
     }
 
     [Fact]
-    public void hard_delete_a_document_row_state()
+    public async Task hard_delete_a_document_row_state()
     {
         using var session = theStore.LightweightSession();
         var user = new User();
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.HardDelete(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         assertDocumentIsHardDeleted<User>(session, user.Id);
     }
@@ -870,43 +870,43 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
     }
 
     [Fact]
-    public void hard_delete_a_document_row_state_int()
+    public async Task hard_delete_a_document_row_state_int()
     {
         using var session = theStore.LightweightSession();
         var doc = new IntDoc();
         session.Store(doc);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.HardDelete<IntDoc>(doc.Id);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         assertDocumentIsHardDeleted<IntDoc>(session, doc.Id);
     }
 
     [Fact]
-    public void hard_delete_a_document_row_state_long()
+    public async Task hard_delete_a_document_row_state_long()
     {
         using var session = theStore.LightweightSession();
         var doc = new LongDoc();
         session.Store(doc);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.HardDelete<LongDoc>(doc.Id);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         assertDocumentIsHardDeleted<LongDoc>(session, doc.Id);
     }
 
     [Fact]
-    public void hard_delete_a_document_row_state_string()
+    public async Task hard_delete_a_document_row_state_string()
     {
         using var session = theStore.LightweightSession();
         var doc = new StringDoc{Id = Guid.NewGuid().ToString()};
         session.Store(doc);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.HardDelete<StringDoc>(doc.Id);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         assertDocumentIsHardDeleted<StringDoc>(session, doc.Id);
     }
@@ -925,7 +925,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
     }
 
     [Fact]
-    public void soft_delete_a_document_by_where_row_state()
+    public async Task soft_delete_a_document_by_where_row_state()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -933,10 +933,10 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         userIsNotMarkedAsDeleted(session, user1.Id);
         userIsMarkedAsDeleted(session, user2.Id);
@@ -944,7 +944,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
     }
 
     [Fact]
-    public void un_delete_a_document_by_where_row_state()
+    public async Task un_delete_a_document_by_where_row_state()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -954,17 +954,17 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         session.Logger = new TestOutputMartenLogger(_output);
 
         session.Store(user1, user2, user3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         userIsNotMarkedAsDeleted(session, user1.Id);
         userIsMarkedAsDeleted(session, user2.Id);
         userIsMarkedAsDeleted(session, user3.Id);
 
         session.UndoDeleteWhere<User>(x => x.UserName == "bar");
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         userIsNotMarkedAsDeleted(session, user1.Id);
         userIsNotMarkedAsDeleted(session, user2.Id);
@@ -973,7 +973,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
 
     #region sample_query_soft_deleted_docs
     [Fact]
-    public void query_soft_deleted_docs()
+    public async Task query_soft_deleted_docs()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -982,11 +982,11 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // Deleting 'bar' and 'baz'
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause, deleted docs should be filtered out
         session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -1001,7 +1001,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
 
     #region sample_query_maybe_soft_deleted_docs
     [Fact]
-    public void query_maybe_soft_deleted_docs()
+    public async Task query_maybe_soft_deleted_docs()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -1010,10 +1010,10 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause, all documents are returned
         session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -1031,7 +1031,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
 
     #region sample_query_is_soft_deleted_docs
     [Fact]
-    public void query_is_soft_deleted_docs()
+    public async Task query_is_soft_deleted_docs()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -1040,10 +1040,10 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause
         session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -1061,7 +1061,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
 
     #region sample_query_soft_deleted_since
     [Fact]
-    public void query_is_soft_deleted_since_docs()
+    public async Task query_is_soft_deleted_since_docs()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -1070,14 +1070,14 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Delete(user3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var epoch = session.MetadataFor(user3).DeletedAt;
         session.Delete(user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Query<User>().Where(x => x.DeletedSince(epoch.Value)).Select(x => x.UserName)
             .ToList().ShouldHaveTheSameElementsAs("jack");
@@ -1086,7 +1086,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
     #endregion
 
     [Fact]
-    public void query_is_soft_deleted_before_docs()
+    public async Task query_is_soft_deleted_before_docs()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -1095,13 +1095,13 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Delete(user3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Delete(user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var epoch = session.MetadataFor(user4).DeletedAt;
 
@@ -1110,7 +1110,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
     }
 
     [Fact]
-    public void top_level_of_hierarchy()
+    public async Task top_level_of_hierarchy()
     {
 
 
@@ -1121,10 +1121,10 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause
         session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -1136,7 +1136,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
     }
 
     [Fact]
-    public void sub_level_of_hierarchy()
+    public async Task sub_level_of_hierarchy()
     {
 
         var user1 = new SuperUser { UserName = "foo" };
@@ -1147,10 +1147,10 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
 
         using var session = theStore.LightweightSession();
         session.StoreObjects(new User[] { user1, user2, user3, user4, user5 });
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<SuperUser>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause
         session.Query<SuperUser>().OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -1162,7 +1162,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
     }
 
     [Fact]
-    public void sub_level_of_hierarchy_maybe_deleted()
+    public async Task sub_level_of_hierarchy_maybe_deleted()
     {
 
         var user1 = new SuperUser { UserName = "foo" };
@@ -1173,10 +1173,10 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
 
         using var session = theStore.LightweightSession();
         session.StoreObjects(new User[] { user1, user2, user3, user4, user5 });
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<SuperUser>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause
         session.Query<SuperUser>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -1190,7 +1190,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
     }
 
     [Fact]
-    public void sub_level_of_hierarchy_is_deleted()
+    public async Task sub_level_of_hierarchy_is_deleted()
     {
 
         var user1 = new SuperUser { UserName = "foo" };
@@ -1201,10 +1201,10 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
 
         using var session = theStore.LightweightSession();
         session.StoreObjects(new User[] { user1, user2, user3, user4, user5 });
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.DeleteWhere<SuperUser>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause
         session.Query<SuperUser>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -1218,7 +1218,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
     }
 
     [Fact]
-    public void soft_deleted_documents_work_with_linq_include()
+    public async Task soft_deleted_documents_work_with_linq_include()
     {
         using var session = theStore.LightweightSession();
 
@@ -1228,9 +1228,9 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         session.Store(file1);
         var file2 = new File() { UserId = user.Id };
         session.Store(file2);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
         session.Delete(file2);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var users = new List<User>();
         var files = session.Query<File>().Include(u => u.UserId, users).ToList();

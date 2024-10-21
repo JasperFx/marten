@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -19,7 +20,7 @@ public class Bug_3096_include_where_select : IntegrationContext
     }
 
     [Fact]
-    public void include_to_dictionary_with_where_and_projection()
+    public async Task include_to_dictionary_with_where_and_projection()
     {
         var user1 = new User();
         var user2 = new User();
@@ -31,7 +32,7 @@ public class Bug_3096_include_where_select : IntegrationContext
         using var session = theStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         query.Logger = new TestOutputMartenLogger(_output);

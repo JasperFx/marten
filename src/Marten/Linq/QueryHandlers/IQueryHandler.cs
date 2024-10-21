@@ -1,9 +1,11 @@
 #nullable enable
+using System;
 using System.Data.Common;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
+using Marten.Internal.Sessions;
 using Weasel.Postgresql;
 
 namespace Marten.Linq.QueryHandlers;
@@ -15,6 +17,7 @@ public interface IQueryHandler
 
 public interface IQueryHandler<T>: IQueryHandler
 {
+    [Obsolete(QuerySession.SynchronousRemoval)]
     T Handle(DbDataReader reader, IMartenSession session);
 
     Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token);

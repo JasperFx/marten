@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 
@@ -8,7 +9,7 @@ namespace LinqTests.Acceptance;
 public class date_type_usage : OneOffConfigurationsContext
 {
     [Fact]
-    public void query()
+    public async Task query()
     {
         theSession.Store(new Target{Number = 1, DateOffset = DateTimeOffset.UtcNow.AddMinutes(30)});
         theSession.Store(new Target{Number = 2, DateOffset = DateTimeOffset.UtcNow.AddDays(1)});
@@ -16,7 +17,7 @@ public class date_type_usage : OneOffConfigurationsContext
         theSession.Store(new Target{Number = 4, DateOffset = DateTimeOffset.UtcNow.AddHours(-2)});
         theSession.Store(new Target{Number = 5, DateOffset = DateTimeOffset.UtcNow.AddHours(-3)});
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().Where(x => x.DateOffset > DateTimeOffset.UtcNow).ToArray()
             .Select(x => x.Number)
@@ -24,7 +25,7 @@ public class date_type_usage : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_index_against_datetime_offset()
+    public async Task can_index_against_datetime_offset()
     {
         StoreOptions(_ =>
         {
@@ -37,7 +38,7 @@ public class date_type_usage : OneOffConfigurationsContext
         theSession.Store(new Target { Number = 4, DateOffset = DateTimeOffset.UtcNow.AddHours(-2) });
         theSession.Store(new Target { Number = 5, DateOffset = DateTimeOffset.UtcNow.AddHours(-3) });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
 
         theSession.Query<Target>().Where(x => x.DateOffset > DateTimeOffset.UtcNow).OrderBy(x => x.DateOffset).ToArray()
@@ -46,7 +47,7 @@ public class date_type_usage : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_select_DateTimeOffset_and_will_return_localtime()
+    public async Task can_select_DateTimeOffset_and_will_return_localtime()
     {
         var document = Target.Random();
         document.DateOffset = DateTimeOffset.UtcNow;
@@ -54,7 +55,7 @@ public class date_type_usage : OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Insert(document);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())

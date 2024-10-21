@@ -12,7 +12,7 @@ namespace EventSourcingTests;
 public class delete_single_event_stream: OneOffConfigurationsContext
 {
     [Fact]
-    public void delete_stream_by_guid_id()
+    public async Task delete_stream_by_guid_id()
     {
 
         var stream1 = Guid.NewGuid();
@@ -30,7 +30,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
             session.Events.Append(stream2, joined2, departed2);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         theStore.Advanced.Clean.DeleteSingleEventStream(stream1);
@@ -43,7 +43,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void delete_stream_by_guid_id_conjoined_tenancy()
+    public async Task delete_stream_by_guid_id_conjoined_tenancy()
     {
         StoreOptions(opts => opts.Events.TenancyStyle = TenancyStyle.Conjoined);
 
@@ -62,7 +62,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
             session.Events.Append(stream2, joined2, departed2);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         theStore.Advanced.Clean.DeleteSingleEventStream(stream1, "one");
@@ -138,7 +138,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void delete_stream_by_string_key()
+    public async Task delete_stream_by_string_key()
     {
         StoreOptions(_ =>
         {
@@ -160,7 +160,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
             session.Events.Append(stream2, joined2, departed2);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         theStore.Advanced.Clean.DeleteSingleEventStream(stream1);
@@ -173,7 +173,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void delete_stream_by_string_key_multi_tenanted()
+    public async Task delete_stream_by_string_key_multi_tenanted()
     {
         StoreOptions(_ =>
         {
@@ -196,7 +196,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
             session.Events.Append(stream2, joined2, departed2);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         theStore.Advanced.Clean.DeleteSingleEventStream(stream1, "one");

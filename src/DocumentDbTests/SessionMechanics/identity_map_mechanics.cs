@@ -13,12 +13,12 @@ public class identity_map_mechanics: IntegrationContext
 {
     [Theory]
     [SessionTypes]
-    public void when_loading_then_the_document_should_be_returned(DocumentTracking tracking)
+    public async Task when_loading_then_the_document_should_be_returned(DocumentTracking tracking)
     {
         var user = new User { FirstName = "Tim", LastName = "Cools" };
         var session = OpenSession(tracking);
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var identitySession = theStore.IdentitySession();
         var first = identitySession.Load<User>(user.Id);
@@ -29,12 +29,12 @@ public class identity_map_mechanics: IntegrationContext
 
     [Theory]
     [SessionTypes]
-    public void when_loading_by_ids_then_the_same_document_should_be_returned(DocumentTracking tracking)
+    public async Task when_loading_by_ids_then_the_same_document_should_be_returned(DocumentTracking tracking)
     {
         var user = new User { FirstName = "Tim", LastName = "Cools" };
         var session = OpenSession(tracking);
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var identitySession = theStore.IdentitySession();
         var first = identitySession.Load<User>(user.Id);
@@ -45,7 +45,7 @@ public class identity_map_mechanics: IntegrationContext
     }
 
     [Fact]
-    public void when_querying_and_modifying_multiple_documents_should_track_and_persist()
+    public async Task when_querying_and_modifying_multiple_documents_should_track_and_persist()
     {
         var user1 = new User { FirstName = "James", LastName = "Worthy 1" };
         var user2 = new User { FirstName = "James", LastName = "Worthy 2" };
@@ -54,7 +54,7 @@ public class identity_map_mechanics: IntegrationContext
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using (var session2 = theStore.DirtyTrackedSession())
         {
@@ -65,7 +65,7 @@ public class identity_map_mechanics: IntegrationContext
                 user.LastName += " - updated";
             }
 
-            session2.SaveChanges();
+            await session2.SaveChangesAsync();
         }
 
         using (var session2 = theStore.IdentitySession())
@@ -78,7 +78,7 @@ public class identity_map_mechanics: IntegrationContext
     }
 
     [Fact]
-    public void when_querying_and_modifying_multiple_documents_should_track_and_persist_dirty()
+    public async Task when_querying_and_modifying_multiple_documents_should_track_and_persist_dirty()
     {
         var user1 = new User { FirstName = "James", LastName = "Worthy 1" };
         var user2 = new User { FirstName = "James", LastName = "Worthy 2" };
@@ -89,7 +89,7 @@ public class identity_map_mechanics: IntegrationContext
         session.Store(user2);
         session.Store(user3);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using (var session2 = theStore.DirtyTrackedSession())
         {
@@ -100,7 +100,7 @@ public class identity_map_mechanics: IntegrationContext
                 user.LastName += " - updated";
             }
 
-            session2.SaveChanges();
+            await session2.SaveChangesAsync();
         }
 
         using (var session2 = theStore.IdentitySession())

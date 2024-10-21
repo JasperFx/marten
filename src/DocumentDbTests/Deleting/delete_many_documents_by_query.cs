@@ -15,7 +15,7 @@ public class delete_many_documents_by_query : IntegrationContext
     private readonly ITestOutputHelper _output;
 
     [Fact]
-    public void can_delete_by_query()
+    public async Task can_delete_by_query()
     {
         var targets = Target.GenerateRandomData(50).ToArray();
         for (var i = 0; i < 15; i++)
@@ -30,7 +30,7 @@ public class delete_many_documents_by_query : IntegrationContext
         #region sample_DeleteWhere
         theSession.DeleteWhere<Target>(x => x.Double == 578);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
         #endregion
 
         theSession.Query<Target>().Count().ShouldBe(50 - initialCount);
@@ -61,7 +61,7 @@ public class delete_many_documents_by_query : IntegrationContext
     }
 
     [Fact]
-    public void can_delete_by_query_with_complex_where_clauses()
+    public async Task can_delete_by_query_with_complex_where_clauses()
     {
         var targets = Target.GenerateRandomData(50).ToArray();
         for (var i = 0; i < 15; i++)
@@ -75,7 +75,7 @@ public class delete_many_documents_by_query : IntegrationContext
 
         theSession.DeleteWhere<Target>(x => x.Double == 578 && x.Number == current.Id);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().Count(x => x.Double == 578 && x.Number == current.Id)
             .ShouldBe(0);
@@ -85,7 +85,7 @@ public class delete_many_documents_by_query : IntegrationContext
 
 
     [Fact]
-    public void in_a_mix_with_other_commands()
+    public async Task in_a_mix_with_other_commands()
     {
         var targets = Target.GenerateRandomData(50).ToArray();
         for (var i = 0; i < 15; i++)
@@ -99,7 +99,7 @@ public class delete_many_documents_by_query : IntegrationContext
 
         theSession.Store(new User(), new User(), new User());
         theSession.DeleteWhere<Target>(x => x.Double == 578);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().Count().ShouldBe(50 - initialCount);
 
@@ -116,7 +116,7 @@ public class delete_many_documents_by_query : IntegrationContext
     }
 
     [Fact]
-    public void can_delete_by_query_multiple()
+    public async Task can_delete_by_query_multiple()
     {
         var targets = new[] { new FailureInLife { Id = 1, What = 2 } };
 
@@ -126,7 +126,7 @@ public class delete_many_documents_by_query : IntegrationContext
 
         theSession.DeleteWhere<FailureInLife>(x => x.Id == id && x.What == what);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<FailureInLife>().Count().ShouldBe(0);
 

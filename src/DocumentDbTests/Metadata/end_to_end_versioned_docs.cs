@@ -12,7 +12,7 @@ namespace DocumentDbTests.Metadata;
 public class end_to_end_versioned_docs: IntegrationContext
 {
     [Fact]
-    public void save_initial_version_of_the_doc_and_see_the_initial_version_assigned()
+    public async Task save_initial_version_of_the_doc_and_see_the_initial_version_assigned()
     {
         var doc = new AttVersionedDoc();
 
@@ -21,7 +21,7 @@ public class end_to_end_versioned_docs: IntegrationContext
 
         session.VersionFor(doc).ShouldBeNull();
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.VersionFor(doc).ShouldNotBeNull();
         doc.Version.ShouldNotBe(Guid.Empty);
@@ -46,7 +46,7 @@ public class end_to_end_versioned_docs: IntegrationContext
     }
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void overwrite_behavior()
+    public async Task overwrite_behavior()
     {
         var originalVerion = Guid.Empty;
         var doc = new AttVersionedDoc();
@@ -56,7 +56,7 @@ public class end_to_end_versioned_docs: IntegrationContext
 
             session.VersionFor(doc).ShouldBeNull();
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             originalVerion = doc.Version;
         }
@@ -81,11 +81,11 @@ public class end_to_end_versioned_docs: IntegrationContext
             session2.Store(doc2);
 
             // save via session1
-            session1.SaveChanges();
+            await session1.SaveChangesAsync();
             doc1.Version.ShouldNotBe(originalVerion);
 
             // overwrite successfully w/ session2
-            session2.SaveChanges();
+            await session2.SaveChangesAsync();
             doc2.Version.ShouldNotBe(originalVerion);
             doc2.Version.ShouldNotBe(doc1.Version);
         }
@@ -97,7 +97,7 @@ public class end_to_end_versioned_docs: IntegrationContext
     }
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void overwrite_behavior_with_props()
+    public async Task overwrite_behavior_with_props()
     {
         var originalVerion = Guid.Empty;
         var doc = new PropVersionedDoc();
@@ -107,7 +107,7 @@ public class end_to_end_versioned_docs: IntegrationContext
 
             session.VersionFor(doc).ShouldBeNull();
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             originalVerion = doc.Version;
         }
@@ -132,11 +132,11 @@ public class end_to_end_versioned_docs: IntegrationContext
             session2.Store(doc2);
 
             // save via session1
-            session1.SaveChanges();
+            await session1.SaveChangesAsync();
             doc1.Version.ShouldNotBe(originalVerion);
 
             // overwrite successfully w/ session2
-            session2.SaveChanges();
+            await session2.SaveChangesAsync();
             doc2.Version.ShouldNotBe(originalVerion);
             doc2.Version.ShouldNotBe(doc1.Version);
         }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
@@ -40,7 +41,7 @@ public class CombGuidIdGenerationTests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void When_documents_are_stored_after_each_other_then_the_first_id_should_be_less_than_the_second()
+    public async Task When_documents_are_stored_after_each_other_then_the_first_id_should_be_less_than_the_second()
     {
         StoreOptions(options =>
         {
@@ -58,11 +59,11 @@ public class CombGuidIdGenerationTests: OneOffConfigurationsContext
         });
 
 
-        StoreUser(theStore, "User1");
+        await StoreUser(theStore, "User1");
         Thread.Sleep(4); //we need some time inbetween to ensure the timepart of the CombGuid is different
-        StoreUser(theStore, "User2");
+        await StoreUser(theStore, "User2");
         Thread.Sleep(4);
-        StoreUser(theStore, "User3");
+        await StoreUser(theStore, "User3");
 
         var users = GetUsers(theStore);
 
@@ -119,10 +120,10 @@ public class CombGuidIdGenerationTests: OneOffConfigurationsContext
         return session.Query<UserWithGuid>().ToArray();
     }
 
-    private static void StoreUser(IDocumentStore documentStore, string lastName)
+    private static async Task StoreUser(IDocumentStore documentStore, string lastName)
     {
         using var session = documentStore.IdentitySession();
         session.Store(new UserWithGuid { LastName = lastName });
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 }

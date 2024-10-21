@@ -15,7 +15,7 @@ using Xunit.Abstractions;
 
 namespace DocumentDbTests.MultiTenancy;
 
-public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsContext
+public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsContext, IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
     private readonly Target[] _greens = Target.GenerateRandomData(100).ToArray();
@@ -39,18 +39,26 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
                     .AddPartition("blue", "Blue");
             });
         });
+    }
 
+    public async Task InitializeAsync()
+    {
         using (var session = theStore.LightweightSession("Red"))
         {
             session.Store(targetRed1, targetRed2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession("Blue"))
         {
             session.Store(targetBlue1, targetBlue2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
     }
 
     [Fact]
@@ -217,11 +225,11 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
     }
 
     [Fact]
-    public void can_upsert_in_multi_tenancy()
+    public async Task can_upsert_in_multi_tenancy()
     {
         using var session = theStore.LightweightSession("123");
         session.Store(Target.GenerateRandomData(10).ToArray());
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 
     [Fact]
@@ -464,7 +472,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
     }
 
     [Fact]
-    public void will_not_cross_the_streams()
+    public async Task will_not_cross_the_streams()
     {
         var user = new User { UserName = "Me" };
         user.Id = Guid.NewGuid();
@@ -472,7 +480,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
         using (var red = theStore.LightweightSession("Red"))
         {
             red.Store(user);
-            red.SaveChanges();
+            await red.SaveChangesAsync();
         }
 
         using (var green = theStore.LightweightSession("Green"))
@@ -481,7 +489,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
 
             // Nothing should happen here
             green.Store(greenUser);
-            green.SaveChanges();
+            await green.SaveChangesAsync();
         }
 
         // Still got the original data
@@ -553,7 +561,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
 
 
     [Fact]
-    public void write_to_tenant_with_explicitly_overridden_tenant()
+    public async Task write_to_tenant_with_explicitly_overridden_tenant()
     {
         var reds = Target.GenerateRandomData(50).ToArray();
         var greens = Target.GenerateRandomData(75).ToArray();
@@ -567,7 +575,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
             session.ForTenant("Green").Store(greens);
             session.ForTenant("Blue").Store(blues);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var red = theStore.QuerySession("Red"))

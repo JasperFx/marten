@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Weasel.Core;
 using Xunit;
@@ -25,7 +26,7 @@ public class Bug_1069_using_generic_event_types_because_why_not: BugIntegrationC
     }
 
     [Fact]
-    public void try_to_save_then_load_events()
+    public async Task try_to_save_then_load_events()
     {
         var streamId = Guid.NewGuid();
         var event1 = new Envelope<Created> { Value = new Created { Id = Guid.NewGuid() } };
@@ -34,19 +35,19 @@ public class Bug_1069_using_generic_event_types_because_why_not: BugIntegrationC
         using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream(streamId, event1, event2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
         {
-            var events = session.Events.FetchStream(streamId);
+            var events = await session.Events.FetchStreamAsync(streamId);
             events.Select(x => x.Data.GetType())
                 .ShouldHaveTheSameElementsAs(typeof(Envelope<Created>), typeof(Envelope<Updated>));
         }
     }
 
     [Fact]
-    public void try_to_save_then_load_events_across_stores()
+    public async Task try_to_save_then_load_events_across_stores()
     {
         var streamId = Guid.NewGuid();
         var event1 = new Envelope<Created> { Value = new Created { Id = Guid.NewGuid() } };
@@ -55,7 +56,7 @@ public class Bug_1069_using_generic_event_types_because_why_not: BugIntegrationC
         using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream(streamId, event1, event2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         var store2 = SeparateStore(_ =>

@@ -4,6 +4,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Linq.CreatedAt;
 using Weasel.Postgresql.Tables;
 using Xunit;
@@ -31,7 +32,7 @@ public class created_timestamp_queries: OneOffConfigurationsContext
 
 
     [Fact]
-    public void query_created_before_docs()
+    public async Task query_created_before_docs()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -40,10 +41,10 @@ public class created_timestamp_queries: OneOffConfigurationsContext
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Store(user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var metadata = session.MetadataFor(user4);
         metadata.ShouldNotBeNull();
@@ -67,7 +68,7 @@ public class created_timestamp_queries: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void query_created_since_docs()
+    public async Task query_created_since_docs()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -76,14 +77,14 @@ public class created_timestamp_queries: OneOffConfigurationsContext
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var metadata = session.MetadataFor(user2);
         metadata.ShouldNotBeNull();
 
         var epoch = metadata.CreatedAt;
         session.Store(user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause
         session.Query<User>()

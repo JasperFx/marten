@@ -44,22 +44,22 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
     }
 
     [Fact]
-    public void try_to_insert_event_with_string_identifiers()
+    public async Task try_to_insert_event_with_string_identifiers()
     {
         using (var session = theStore.LightweightSession())
         {
             session.Events.Append("First", new MembersJoined(), new MembersJoined());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
     }
 
     [Fact]
-    public void try_to_insert_event_with_string_identifiers_non_typed()
+    public async Task try_to_insert_event_with_string_identifiers_non_typed()
     {
         using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream("First", new MembersJoined(), new MembersJoined());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
@@ -69,12 +69,12 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
     }
 
     [Fact]
-    public void fetch_state()
+    public async Task fetch_state()
     {
         using (var session = theStore.LightweightSession())
         {
             session.Events.Append("First", new MembersJoined(), new MembersJoined());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())

@@ -57,16 +57,16 @@ public class patching_api: OneOffConfigurationsContext
     #region sample_plv8_set_an_immediate_property_by_id
 
     [Fact]
-    public void set_an_immediate_property_by_id()
+    public async Task set_an_immediate_property_by_id()
     {
         var target = Target.Random(true);
         target.Number = 5;
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Set(x => x.Number, 10);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -77,16 +77,16 @@ public class patching_api: OneOffConfigurationsContext
     #endregion
 
     [Fact]
-    public void initialise_a_new_property_by_expression()
+    public async Task initialise_a_new_property_by_expression()
     {
         theSession.Store(Target.Random(), Target.Random(), Target.Random());
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         #region sample_plv8_initialise_a_new_property_by_expression
         const string where = "(data ->> 'UpdatedAt') is null";
         theSession.Query<Target>(where).Count.ShouldBe(3);
         theSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -96,16 +96,16 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void set_a_deep_property_by_id()
+    public async Task set_a_deep_property_by_id()
     {
         var target = Target.Random(true);
         target.Inner.Number = 5;
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Set(x => x.Inner.Number, 10);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -114,7 +114,7 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void set_an_immediate_property_by_where_clause()
+    public async Task set_an_immediate_property_by_where_clause()
     {
         var target1 = new Target { Color = Colors.Blue, Number = 1 };
         var target2 = new Target { Color = Colors.Blue, Number = 1 };
@@ -124,14 +124,14 @@ public class patching_api: OneOffConfigurationsContext
         var target6 = new Target { Color = Colors.Red, Number = 1 };
 
         theSession.Store(target1, target2, target3, target4, target5, target6);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         #region sample_plv8_set_an_immediate_property_by_where_clause
         // Change every Target document where the Color is Blue
         theSession.Patch<Target>(x => x.Color == Colors.Blue).Set(x => x.Number, 2);
         #endregion
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -148,16 +148,16 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void duplicate_to_new_field()
+    public async Task duplicate_to_new_field()
     {
         #region sample_plv8_duplicate_to_new_field
         var target = Target.Random();
         target.AnotherString = null;
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Duplicate(t => t.String, t => t.AnotherString);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -168,13 +168,13 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void duplicate_to_multiple_new_fields()
+    public async Task duplicate_to_multiple_new_fields()
     {
         var target = Target.Random();
         target.StringField = null;
         target.Inner = null;
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         #region sample_plv8_duplicate_to_multiple_new_fields
         theSession.Patch<Target>(target.Id).Duplicate(t => t.String,
@@ -182,7 +182,7 @@ public class patching_api: OneOffConfigurationsContext
             t => t.Inner.String,
             t => t.Inner.AnotherString);
         #endregion
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -197,16 +197,16 @@ public class patching_api: OneOffConfigurationsContext
 
     #region sample_plv8_increment_for_int
     [Fact]
-    public void increment_for_int()
+    public async Task increment_for_int()
     {
         var target = Target.Random();
         target.Number = 6;
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Increment(x => x.Number);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -218,16 +218,16 @@ public class patching_api: OneOffConfigurationsContext
 
     #region sample_plv8_increment_for_int_with_explicit_increment
     [Fact]
-    public void increment_for_int_with_explicit_increment()
+    public async Task increment_for_int_with_explicit_increment()
     {
         var target = Target.Random();
         target.Number = 6;
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Increment(x => x.Number, 3);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -238,16 +238,16 @@ public class patching_api: OneOffConfigurationsContext
     #endregion
 
     [Fact]
-    public void increment_for_long()
+    public async Task increment_for_long()
     {
         var target = Target.Random();
         target.Long = 13;
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Increment(x => x.Long);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -256,16 +256,16 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void increment_for_double()
+    public async Task increment_for_double()
     {
         var target = Target.Random();
         target.Double = 11.2;
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Increment(x => x.Double, 2.4);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -274,16 +274,16 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void increment_for_float()
+    public async Task increment_for_float()
     {
         var target = Target.Random();
         target.Float = 11.2F;
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Increment(x => x.Float, 2.4F);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -292,16 +292,16 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void append_to_a_primitive_array()
+    public async Task append_to_a_primitive_array()
     {
         var target = Target.Random();
         target.NumberArray = new[] { 1, 2, 3 };
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Append(x => x.NumberArray, 4);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -311,16 +311,16 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void append_if_not_exists_to_a_primitive_array()
+    public async Task append_if_not_exists_to_a_primitive_array()
     {
         var target = Target.Random();
         target.NumberArray = new[] { 1, 2, 3 };
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.NumberArray, 3);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -329,7 +329,7 @@ public class patching_api: OneOffConfigurationsContext
         }
 
         theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.NumberArray, 4);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -340,7 +340,7 @@ public class patching_api: OneOffConfigurationsContext
 
     #region sample_plv8_append_complex_element
     [Fact]
-    public void append_complex_element()
+    public async Task append_complex_element()
     {
         var target = Target.Random(true);
         var initialCount = target.Children.Length;
@@ -348,10 +348,10 @@ public class patching_api: OneOffConfigurationsContext
         var child = Target.Random();
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Append(x => x.Children, child);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -365,7 +365,7 @@ public class patching_api: OneOffConfigurationsContext
     #endregion
 
     [Fact]
-    public void append_if_not_exists_complex_element()
+    public async Task append_if_not_exists_complex_element()
     {
         var target = Target.Random(true);
         var initialCount = target.Children.Length;
@@ -374,11 +374,11 @@ public class patching_api: OneOffConfigurationsContext
         var child2 = Target.Random();
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
         theSession.Patch<Target>(target.Id).Append(x => x.Children, child);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
         theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.Children, child);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -389,7 +389,7 @@ public class patching_api: OneOffConfigurationsContext
         }
 
         theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.Children, child2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -401,16 +401,16 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void insert_first_to_a_primitive_array()
+    public async Task insert_first_to_a_primitive_array()
     {
         var target = Target.Random();
         target.NumberArray = new[] { 1, 2, 3 };
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Insert(x => x.NumberArray, 4);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -420,16 +420,16 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void insert_if_not_exists_first_to_a_primitive_array()
+    public async Task insert_if_not_exists_first_to_a_primitive_array()
     {
         var target = Target.Random();
         target.NumberArray = new[] { 1, 2, 3 };
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 1);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -438,7 +438,7 @@ public class patching_api: OneOffConfigurationsContext
         }
 
         theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 4);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -448,16 +448,16 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void insert_first_to_a_primitive_array_at_a_certain_position()
+    public async Task insert_first_to_a_primitive_array_at_a_certain_position()
     {
         var target = Target.Random();
         target.NumberArray = new[] { 1, 2, 3 };
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Insert(x => x.NumberArray, 4, 2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -467,16 +467,16 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void insert_if_not_exists_first_to_a_primitive_array_at_a_certain_position()
+    public async Task insert_if_not_exists_first_to_a_primitive_array_at_a_certain_position()
     {
         var target = Target.Random();
         target.NumberArray = new[] { 1, 2, 3 };
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 3, 2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -485,7 +485,7 @@ public class patching_api: OneOffConfigurationsContext
         }
 
         theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.NumberArray, 4, 2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -496,7 +496,7 @@ public class patching_api: OneOffConfigurationsContext
 
     #region sample_plv8_insert_first_complex_element
     [Fact]
-    public void insert_first_complex_element()
+    public async Task insert_first_complex_element()
     {
         var target = Target.Random(true);
         var initialCount = target.Children.Length;
@@ -504,10 +504,10 @@ public class patching_api: OneOffConfigurationsContext
         var child = Target.Random();
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Insert(x => x.Children, child);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -521,7 +521,7 @@ public class patching_api: OneOffConfigurationsContext
     #endregion
 
     [Fact]
-    public void insert_if_not_exists_first_complex_element()
+    public async Task insert_if_not_exists_first_complex_element()
     {
         var target = Target.Random(true);
         var initialCount = target.Children.Length;
@@ -529,10 +529,10 @@ public class patching_api: OneOffConfigurationsContext
         var child = Target.Random();
         var child2 = Target.Random();
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Insert(x => x.Children, child);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -543,7 +543,7 @@ public class patching_api: OneOffConfigurationsContext
         }
 
         theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.Children, child);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -554,7 +554,7 @@ public class patching_api: OneOffConfigurationsContext
         }
 
         theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.Children, child2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -566,17 +566,17 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void rename_shallow_prop()
+    public async Task rename_shallow_prop()
     {
         var target = Target.Random(true);
         target.String = "Foo";
         target.AnotherString = "Bar";
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Rename("String", x => x.AnotherString);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -588,17 +588,17 @@ public class patching_api: OneOffConfigurationsContext
 
     #region sample_plv8_rename_deep_prop
     [Fact]
-    public void rename_deep_prop()
+    public async Task rename_deep_prop()
     {
         var target = Target.Random(true);
         target.Inner.String = "Foo";
         target.Inner.AnotherString = "Bar";
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Rename("String", x => x.Inner.AnotherString);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -612,7 +612,7 @@ public class patching_api: OneOffConfigurationsContext
 
     #region sample_plv8_remove_primitive_element
     [Fact]
-    public void remove_primitive_element()
+    public async Task remove_primitive_element()
     {
         var target = Target.Random();
         target.NumberArray = new[] { Random.Shared.Next(0, 10), Random.Shared.Next(0, 10), Random.Shared.Next(0, 10) };
@@ -624,10 +624,10 @@ public class patching_api: OneOffConfigurationsContext
         var child = target.NumberArray[Random.Shared.Next(0, initialCount)];
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -642,7 +642,7 @@ public class patching_api: OneOffConfigurationsContext
 
     #region sample_plv8_remove_repeated_primitive_element
     [Fact]
-    public void remove_repeated_primitive_elements()
+    public async Task remove_repeated_primitive_elements()
     {
         var random = new Random();
         var target = Target.Random();
@@ -662,10 +662,10 @@ public class patching_api: OneOffConfigurationsContext
         }
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child, RemoveAction.RemoveAll);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -680,7 +680,7 @@ public class patching_api: OneOffConfigurationsContext
 
     #region sample_plv8_remove_complex_element
     [Fact]
-    public void remove_complex_element()
+    public async Task remove_complex_element()
     {
         var target = Target.Random(true);
         var initialCount = target.Children.Length;
@@ -689,10 +689,10 @@ public class patching_api: OneOffConfigurationsContext
         var child = target.Children[random.Next(0, initialCount)];
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Patch<Target>(target.Id).Remove(x => x.Children, child);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -706,16 +706,16 @@ public class patching_api: OneOffConfigurationsContext
     #endregion
 
     [Fact]
-    public void delete_redundant_property()
+    public async Task delete_redundant_property()
     {
         var target = Target.Random();
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         #region sample_plv8_delete_redundant_property
         theSession.Patch<Target>(target.Id).Delete("String");
         #endregion
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -726,16 +726,16 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void delete_redundant_nested_property()
+    public async Task delete_redundant_nested_property()
     {
         var target = Target.Random(true);
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         #region sample_plv8_delete_redundant_nested_property
         theSession.Patch<Target>(target.Id).Delete("String", t => t.Inner);
         #endregion
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -746,16 +746,16 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void delete_existing_property()
+    public async Task delete_existing_property()
     {
         var target = Target.Random(true);
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         #region sample_plv8_delete_existing_property
         theSession.Patch<Target>(target.Id).Delete(t => t.Inner);
         #endregion
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -766,19 +766,19 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void delete_property_from_many_documents()
+    public async Task delete_property_from_many_documents()
     {
         for (var i = 0; i < 15; i++)
         {
             theSession.Store(Target.Random());
         }
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         #region sample_plv8_delete_property_from_many_documents
         const string where = "(data ->> 'String') is not null";
         theSession.Query<Target>(where).Count.ShouldBe(15);
         theSession.Patch<Target>(new WhereFragment(where)).Delete("String");
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
         {
@@ -832,7 +832,7 @@ public class patching_api: OneOffConfigurationsContext
         count.ShouldBe(1);
     }
 
-    public void SampleSetup()
+    public async Task SampleSetup()
     {
         #region sample_plv8_registering_custom_projection
 

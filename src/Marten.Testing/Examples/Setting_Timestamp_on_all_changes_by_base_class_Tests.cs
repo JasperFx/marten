@@ -12,7 +12,7 @@ namespace Marten.Testing.Examples;
 public class Setting_Timestamp_on_all_changes_by_base_class_Tests
 {
     [Fact]
-    public void demonstration()
+    public async Task demonstration()
     {
         using (var store = DocumentStore.For(_ =>
                {
@@ -32,7 +32,7 @@ public class Setting_Timestamp_on_all_changes_by_base_class_Tests
                 session.Store(doc2s);
                 session.Store(doc3s);
 
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             doc1s.Each(x => x.Timestamp.ShouldNotBeNull());

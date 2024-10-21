@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Marten.Services.Json;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -12,7 +13,7 @@ public class distinct_operator : IntegrationContext
     private readonly ITestOutputHelper _output;
 
     [Fact]
-    public void get_distinct_number()
+    public async Task get_distinct_number()
     {
         theSession.Store(new Target {Number = 1});
         theSession.Store(new Target {Number = 1});
@@ -21,7 +22,7 @@ public class distinct_operator : IntegrationContext
         theSession.Store(new Target {Number = 3});
         theSession.Store(new Target {Number = 3});
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Logger = new TestOutputMartenLogger(_output);
         var queryable = theSession.Query<Target>().Select(x => x.Number).Distinct();
@@ -31,7 +32,7 @@ public class distinct_operator : IntegrationContext
 
     #region sample_get_distinct_numbers
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void get_distinct_numbers()
+    public async Task get_distinct_numbers()
     {
         theSession.Store(new Target {Number = 1, Decimal = 1.0M});
         theSession.Store(new Target {Number = 1, Decimal = 2.0M});
@@ -40,7 +41,7 @@ public class distinct_operator : IntegrationContext
         theSession.Store(new Target {Number = 2, Decimal = 2.0M});
         theSession.Store(new Target {Number = 2, Decimal = 1.0M});
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var queryable = theSession.Query<Target>().Select(x => new
         {
@@ -54,7 +55,7 @@ public class distinct_operator : IntegrationContext
 
     #region sample_get_distinct_strings
     [Fact]
-    public void get_distinct_string()
+    public async Task get_distinct_string()
     {
         theSession.Store(new Target {String = "one"});
         theSession.Store(new Target {String = "one"});
@@ -63,7 +64,7 @@ public class distinct_operator : IntegrationContext
         theSession.Store(new Target {String = "three"});
         theSession.Store(new Target {String = "three"});
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var queryable = theSession.Query<Target>().Select(x => x.String).Distinct();
 
@@ -73,7 +74,7 @@ public class distinct_operator : IntegrationContext
     #endregion
 
     [Fact]
-    public void get_distinct_strings()
+    public async Task get_distinct_strings()
     {
         theSession.Store(new Target {String = "one", AnotherString = "one"});
         theSession.Store(new Target {String = "one", AnotherString = "two"});
@@ -82,7 +83,7 @@ public class distinct_operator : IntegrationContext
         theSession.Store(new Target {String = "two", AnotherString = "two"});
         theSession.Store(new Target {String = "two", AnotherString = "two"});
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Logger = new TestOutputMartenLogger(_output);
         var queryable = theSession.Query<Target>().Select(x => new

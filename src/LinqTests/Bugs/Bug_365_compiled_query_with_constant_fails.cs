@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -62,9 +63,9 @@ public class Bug_365_compiled_query_with_constant_fails: BugIntegrationContext
     }
 
     [Fact]
-    public void Index_was_outside_the_bounds_of_the_array()
+    public async Task Index_was_outside_the_bounds_of_the_array()
     {
-        AddRoutes(30);
+        await AddRoutes(30);
 
         var from = DateTime.Today.AddDays(5);
 
@@ -77,7 +78,7 @@ public class Bug_365_compiled_query_with_constant_fails: BugIntegrationContext
         }
     }
 
-    private void AddRoutes(int number)
+    private async Task AddRoutes(int number)
     {
         using var session = theStore.LightweightSession();
         for (var index = 0; index < number; index++)
@@ -91,6 +92,6 @@ public class Bug_365_compiled_query_with_constant_fails: BugIntegrationContext
             session.Store(route);
         }
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 }

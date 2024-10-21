@@ -10,13 +10,13 @@ namespace LinqTests.Operators;
 public class count_operator: IntegrationContext
 {
     [Fact]
-    public void count_without_any_where()
+    public async Task count_without_any_where()
     {
         theSession.Store(new Target { Number = 1 });
         theSession.Store(new Target { Number = 2 });
         theSession.Store(new Target { Number = 3 });
         theSession.Store(new Target { Number = 4 });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().Count().ShouldBe(4);
     }
@@ -34,19 +34,19 @@ public class count_operator: IntegrationContext
     }
 
     [Fact]
-    public void long_count_without_any_where()
+    public async Task long_count_without_any_where()
     {
         theSession.Store(new Target { Number = 1 });
         theSession.Store(new Target { Number = 2 });
         theSession.Store(new Target { Number = 3 });
         theSession.Store(new Target { Number = 4 });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().LongCount().ShouldBe(4);
     }
 
     [Fact]
-    public void count_matching_properties_within_type()
+    public async Task count_matching_properties_within_type()
     {
         var t1 = new Target();
         t1.OtherGuid = t1.Id;
@@ -57,12 +57,12 @@ public class count_operator: IntegrationContext
         theSession.Store(t2);
         theSession.Store(new Target());
         theSession.Store(new Target());
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
         theSession.Query<Target>().Count(x => x.Id == x.OtherGuid).ShouldBe(2);
     }
 
     [Fact]
-    public void count_matching_properties_within_type_notequals()
+    public async Task count_matching_properties_within_type_notequals()
     {
         var t1 = new Target();
         t1.OtherGuid = t1.Id;
@@ -73,7 +73,7 @@ public class count_operator: IntegrationContext
         theSession.Store(t2);
         theSession.Store(new Target());
         theSession.Store(new Target());
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
         theSession.Query<Target>().Count(x => x.Id != x.OtherGuid).ShouldBe(2);
     }
 
@@ -96,7 +96,7 @@ public class count_operator: IntegrationContext
     }
 
     [Fact]
-    public void long_count_with_a_where_clause()
+    public async Task long_count_with_a_where_clause()
     {
         // theSession is an IDocumentSession in this test
         theSession.Store(new Target { Number = 1 });
@@ -105,14 +105,14 @@ public class count_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         theSession.Store(new Target { Number = 5 });
         theSession.Store(new Target { Number = 6 });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().LongCount(x => x.Number > 3).ShouldBe(3);
     }
 
     [Fact]
     #region sample_using_count
-    public void count_with_a_where_clause()
+    public async Task count_with_a_where_clause()
     {
         // theSession is an IDocumentSession in this test
         theSession.Store(new Target { Number = 1 });
@@ -121,7 +121,7 @@ public class count_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         theSession.Store(new Target { Number = 5 });
         theSession.Store(new Target { Number = 6 });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().Count(x => x.Number > 3).ShouldBe(3);
     }

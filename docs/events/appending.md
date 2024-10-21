@@ -136,7 +136,7 @@ var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
 session.Events.Append(id, joined, departed);
 
-session.SaveChanges();
+await session.SaveChangesAsync();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L582-L591' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -171,7 +171,7 @@ builder.Services.AddMarten(opts =>
     opts.Events.UseMandatoryStreamTypeDeclaration = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/mandatory_stream_type_behavior.cs#L92-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usemandatorystreamtypedeclaration' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/mandatory_stream_type_behavior.cs#L117-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usemandatorystreamtypedeclaration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This causes a couple side effects that **force stricter usage of Marten**:

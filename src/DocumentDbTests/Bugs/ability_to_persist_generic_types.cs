@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -18,14 +19,14 @@ public class TypeB { }
 public class ability_to_persist_generic_types: BugIntegrationContext
 {
     [Fact]
-    public void can_persist_and_load_generic_types()
+    public async Task can_persist_and_load_generic_types()
     {
         var doc1A = new GenericTypeToPersist<TypeA>();
         var doc1B = new GenericTypeToPersist<TypeB>();
 
         theSession.Store(doc1A);
         theSession.Store(doc1B);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var doc2A = theSession.Load<GenericTypeToPersist<TypeA>>(doc1A.Id);
         var doc2B = theSession.Load<GenericTypeToPersist<TypeA>>(doc2A.Id);
@@ -41,12 +42,12 @@ public class ability_to_persist_generic_types: BugIntegrationContext
 public class ability_to_persist_nested_generic_types: BugIntegrationContext
 {
     [Fact]
-    public void can_persist_and_load_generic_types()
+    public async Task can_persist_and_load_generic_types()
     {
         var doc1 = new NestedGenericTypeToPersist<TypeA>();
 
         theSession.Store(doc1);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var doc2 = theSession.Load<NestedGenericTypeToPersist<TypeA>>(doc1.Id);
         doc2.ShouldNotBeNull();

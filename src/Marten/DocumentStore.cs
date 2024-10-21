@@ -113,6 +113,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
 
     public AdvancedOperations Advanced { get; }
 
+    [Obsolete(Marten.Internal.Sessions.QuerySession.SynchronousRemoval)]
     public void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
         int batchSize = 1000)
     {
@@ -120,6 +121,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         bulkInsertion.BulkInsert(documents, mode, batchSize);
     }
 
+    [Obsolete(Marten.Internal.Sessions.QuerySession.SynchronousRemoval)]
     public void BulkInsertEnlistTransaction<T>(IReadOnlyCollection<T> documents,
         Transaction transaction, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
         int batchSize = 1000)
@@ -128,6 +130,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         bulkInsertion.BulkInsertEnlistTransaction(documents, transaction, mode, batchSize);
     }
 
+    [Obsolete(Marten.Internal.Sessions.QuerySession.SynchronousRemoval)]
     public void BulkInsertDocuments(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
         int batchSize = 1000)
     {
@@ -135,6 +138,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         bulkInsertion.BulkInsertDocuments(documents, mode, batchSize);
     }
 
+    [Obsolete(Marten.Internal.Sessions.QuerySession.SynchronousRemoval)]
     public void BulkInsert<T>(string tenantId, IReadOnlyCollection<T> documents,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly,
         int batchSize = 1000)
@@ -143,6 +147,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         bulkInsertion.BulkInsert(documents, mode, batchSize);
     }
 
+    [Obsolete(Marten.Internal.Sessions.QuerySession.SynchronousRemoval)]
     public void BulkInsertDocuments(string tenantId, IEnumerable<object> documents,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly,
         int batchSize = 1000)

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -8,7 +9,7 @@ using Xunit;
 
 namespace DocumentDbTests.SessionMechanics;
 
-public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
+public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext, IAsyncLifetime
 {
     private readonly Company _company;
 
@@ -44,18 +45,27 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
         _user1Issue1 = new Issue { AssigneeId = _userWithIssues.Id };
         _user1Issue2 = new Issue { AssigneeId = _userWithIssues.Id };
 
+    }
+
+    public async Task InitializeAsync()
+    {
         using var session = theStore.LightweightSession("Bug_1229");
         session.Store(_company);
         session.Store(_userNoIssues, _userWithIssues);
         session.Store(_user1Issue1, _user1Issue2);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
     }
 
     [Fact]
-    public void unrelated_inserts_ordered_correctly()
+    public async Task unrelated_inserts_ordered_correctly()
     {
-        RunTest(s =>
+        await RunTest(s =>
             {
                 s.Insert(new Company());
                 s.Insert(new User());
@@ -68,9 +78,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void unrelated_updates_ordered_correctly()
+    public async Task unrelated_updates_ordered_correctly()
     {
-        RunTest(s =>
+        await RunTest(s =>
             {
                 _company.Name = "Something else";
                 _user1Issue1.Tags = new[] { "new tag" };
@@ -87,9 +97,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void related_inserts_ordered_correctly()
+    public async Task related_inserts_ordered_correctly()
     {
-        RunTest(s =>
+        await RunTest(s =>
             {
                 var newUser = new User();
 
@@ -103,9 +113,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void related_upserts_ordered_correctly()
+    public async Task related_upserts_ordered_correctly()
     {
-        RunTest(s =>
+        await RunTest(s =>
             {
                 var newUser = new User();
 
@@ -119,9 +129,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void related_inserts_ordered_incorrectly()
+    public async Task related_inserts_ordered_incorrectly()
     {
-        RunTest(s =>
+        await RunTest(s =>
             {
                 var newUser = new User();
 
@@ -135,9 +145,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void related_inserts_on_subclass_fk_in_ordered_incorrectly()
+    public async Task related_inserts_on_subclass_fk_in_ordered_incorrectly()
     {
-        RunTest(s =>
+        await RunTest(s =>
             {
                 var newUser = new AdminUser();
 
@@ -151,9 +161,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void related_inserts_on_subclass_fk_out_ordered_incorrectly()
+    public async Task related_inserts_on_subclass_fk_out_ordered_incorrectly()
     {
-        RunTest(s =>
+        await RunTest(s =>
             {
                 var newUser = new AdminUser();
 
@@ -167,9 +177,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void unrelated_deletes()
+    public async Task unrelated_deletes()
     {
-        RunTest(s =>
+        await RunTest(s =>
             {
                 s.Delete(_company);
                 s.Delete(_userNoIssues);
@@ -182,9 +192,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void related_deletes_ordered_correctly()
+    public async Task related_deletes_ordered_correctly()
     {
-        RunTest(s =>
+        await RunTest(s =>
             {
                 s.Delete(_company);
                 s.Delete(_user1Issue1);
@@ -198,9 +208,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void related_deletes_ordered_incorrectly()
+    public async Task related_deletes_ordered_incorrectly()
     {
-        RunTest(s =>
+        await RunTest(s =>
             {
                 s.Delete(_company);
                 s.Delete(_user1Issue1);
@@ -214,9 +224,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void related_deletes_and_unrelated_inserts_ordered_incorrectly()
+    public async Task related_deletes_and_unrelated_inserts_ordered_incorrectly()
     {
-        RunTest(s =>
+        await RunTest(s =>
             {
                 s.Insert(new Company());
                 s.Insert(new User());
@@ -232,9 +242,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void related_deletes_and_unrelated_inserts_ordered_correctly()
+    public async Task related_deletes_and_unrelated_inserts_ordered_correctly()
     {
-        RunTest(s =>
+        await RunTest(s =>
             {
                 s.Insert(new Company());
                 s.Insert(new User());
@@ -250,9 +260,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void related_deletes_and_related_inserts_ordered_incorrectly()
+    public async Task related_deletes_and_related_inserts_ordered_incorrectly()
     {
-        RunTest(s =>
+        await RunTest(s =>
             {
                 var newUser = new User();
 
@@ -271,9 +281,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void related_deletes_and_related_upserts_ordered_incorrectly()
+    public async Task related_deletes_and_related_upserts_ordered_incorrectly()
     {
-        RunTest(s =>
+        await RunTest(s =>
             {
                 var newUser = new User();
 
@@ -292,9 +302,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void upsert_followed_by_delete_should_order_correctly()
+    public async Task upsert_followed_by_delete_should_order_correctly()
     {
-        RunTest(s =>
+        await RunTest(s =>
             {
                 var newUser = new User();
                 s.Store(newUser);
@@ -306,7 +316,7 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
         );
     }
 
-    private void RunTest(
+    private async Task RunTest(
         Action<IDocumentSession> act,
         int expectedCompanyCount,
         int expectedUserCount,
@@ -316,7 +326,7 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext
         {
             act(s);
 
-            s.SaveChanges();
+            await s.SaveChangesAsync();
         }
 
         using (var s = theStore.QuerySession("Bug_1229"))

@@ -13,14 +13,14 @@ Marten supports the ability to run include queries that make a single database c
 <a id='snippet-sample_simple_include'></a>
 ```cs
 [Fact]
-public void simple_include_for_a_single_document()
+public async Task simple_include_for_a_single_document()
 {
     var user = new User();
     var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
     using var session = theStore.IdentitySession();
     session.Store<object>(user, issue);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     using var query = theStore.QuerySession();
     query.Logger = new TestOutputMartenLogger(_output);
@@ -54,7 +54,7 @@ Instead of a List, you could also use a Dictionary with a key type corresponding
 <a id='snippet-sample_dictionary_include'></a>
 ```cs
 [Fact]
-public void include_to_dictionary()
+public async Task include_to_dictionary()
 {
     var user1 = new User();
     var user2 = new User();
@@ -66,7 +66,7 @@ public void include_to_dictionary()
     using var session = theStore.IdentitySession();
     session.Store(user1, user2);
     session.Store(issue1, issue2, issue3);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     using var query = theStore.QuerySession();
     var dict = new Dictionary<Guid, User>();
@@ -121,7 +121,7 @@ Marten also allows you to chain multiple `Include()` calls:
 <a id='snippet-sample_multiple_include'></a>
 ```cs
 [Fact]
-public void multiple_includes()
+public async Task multiple_includes()
 {
     var assignee = new User{FirstName = "Assignee"};
     var reporter = new User{FirstName = "Reporter"};
@@ -131,7 +131,7 @@ public void multiple_includes()
     using var session = theStore.IdentitySession();
     session.Store(assignee, reporter);
     session.Store(issue1);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     using var query = theStore.QuerySession();
     User assignee2 = null;
@@ -160,14 +160,14 @@ By default, documents are included based on a value that maps to the related doc
 <a id='snippet-sample_include_using_custom_map'></a>
 ```cs
 [Fact]
-public void include_using_custom_map()
+public async Task include_using_custom_map()
 {
     var classroom = new Classroom(Id: Guid.NewGuid(), RoomCode: "Classroom-1A");
     var user = new SchoolUser(Id: Guid.NewGuid(), Name: "Student #1", HomeRoom: "Classroom-1A");
 
     using var session = theStore.IdentitySession();
     session.Store<object>(classroom, user);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     using var query = theStore.QuerySession();
     Classroom? included = null;
@@ -191,7 +191,7 @@ By joining on a value other than the document id, this opens up the possibility 
 <a id='snippet-sample_dictionary_list_include'></a>
 ```cs
 [Fact]
-public void include_to_dictionary_list()
+public async Task include_to_dictionary_list()
 {
     var class1 = new Classroom(Id: Guid.NewGuid(), RoomCode: "Classroom-1A");
     var class2 = new Classroom(Id: Guid.NewGuid(), RoomCode: "Classroom-2B");
@@ -203,7 +203,7 @@ public void include_to_dictionary_list()
     using var session = theStore.IdentitySession();
     session.Store(class1, class2);
     session.Store(user1, user2, user3);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     using var query = theStore.QuerySession();
     var dict = new Dictionary<string, IList<SchoolUser>>();

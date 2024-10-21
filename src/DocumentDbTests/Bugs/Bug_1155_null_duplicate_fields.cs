@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -11,12 +12,12 @@ namespace DocumentDbTests.Bugs;
 public class Bug_1155_null_duplicate_fields: BugIntegrationContext
 {
     [Fact]
-    public void when_enum_is_null_due_to_nullable_type()
+    public async Task when_enum_is_null_due_to_nullable_type()
     {
-        StoreOptions(_ =>
+        StoreOptions(opts =>
         {
-            _.Serializer(new JsonNetSerializer { EnumStorage = EnumStorage.AsInteger });
-            _.Schema.For<Target>().Duplicate(t => t.NullableColor);
+            opts.Serializer(new JsonNetSerializer { EnumStorage = EnumStorage.AsInteger });
+            opts.Schema.For<Target>().Duplicate(t => t.NullableColor);
         });
 
         using (var session = theStore.LightweightSession())
@@ -27,7 +28,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
                 NullableColor = null
             });
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -40,12 +41,12 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
     }
 
     [Fact]
-    public void when_enum_is_null_due_to_nesting()
+    public async Task when_enum_is_null_due_to_nesting()
     {
-        StoreOptions(_ =>
+        StoreOptions(opts =>
         {
-            _.Serializer(new JsonNetSerializer { EnumStorage = EnumStorage.AsInteger });
-            _.Schema.For<Target>().Duplicate(t => t.Inner.Color);
+            opts.Serializer(new JsonNetSerializer { EnumStorage = EnumStorage.AsInteger });
+            opts.Schema.For<Target>().Duplicate(t => t.Inner.Color);
         });
 
         using (var session = theStore.LightweightSession())
@@ -56,7 +57,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
                 Inner = null
             });
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -69,7 +70,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
     }
 
     [Fact]
-    public void when_string_enum_is_null_due_to_nullable_type()
+    public async Task when_string_enum_is_null_due_to_nullable_type()
     {
         StoreOptions(_ =>
         {
@@ -85,7 +86,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
                 NullableColor = null
             });
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -98,7 +99,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
     }
 
     [Fact]
-    public void when_string_enum_is_null_due_to_nesting()
+    public async Task when_string_enum_is_null_due_to_nesting()
     {
         StoreOptions(_ =>
         {
@@ -114,7 +115,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
                 Inner = null
             });
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -127,7 +128,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
     }
 
     [Fact]
-    public void when_field_is_not_null_due_to_nesting()
+    public async Task when_field_is_not_null_due_to_nesting()
     {
         StoreOptions(_ => _.Schema.For<Target>().Duplicate(t => t.Inner.Number));
 
@@ -139,7 +140,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
                 Inner = new Target { Number = 2 }
             });
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -152,7 +153,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
     }
 
     [Fact]
-    public void when_field_is_null_due_to_nesting()
+    public async Task when_field_is_null_due_to_nesting()
     {
         StoreOptions(_ => _.Schema.For<Target>().Duplicate(t => t.Inner.Number));
 
@@ -164,7 +165,7 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
                 Inner = null
             });
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -177,11 +178,11 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
     }
 
     [Fact]
-    public void when_bulk_inserting_and_field_is_null_due_to_nesting()
+    public async Task when_bulk_inserting_and_field_is_null_due_to_nesting()
     {
         StoreOptions(_ => _.Schema.For<Target>().Duplicate(t => t.Inner.Number));
 
-        theStore.BulkInsertDocuments(new[]
+        await theStore.BulkInsertDocumentsAsync(new[]
         {
             new Target
             {

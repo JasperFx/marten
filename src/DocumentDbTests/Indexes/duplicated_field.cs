@@ -28,7 +28,7 @@ public class duplicated_field: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_insert_document_with_duplicated_field_with_DuplicatedFieldEnumStorage_set_to_string()
+    public async Task can_insert_document_with_duplicated_field_with_DuplicatedFieldEnumStorage_set_to_string()
     {
         StoreOptions(options =>
         {
@@ -44,7 +44,7 @@ public class duplicated_field: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Insert(document);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -57,7 +57,7 @@ public class duplicated_field: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_insert_document_with_duplicated_field_with_not_null_constraint()
+    public async Task can_insert_document_with_duplicated_field_with_not_null_constraint()
     {
         StoreOptions(options =>
         {
@@ -77,7 +77,7 @@ public class duplicated_field: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Insert(document);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -91,7 +91,7 @@ public class duplicated_field: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_insert_document_with_duplicated_field_with_null_constraint()
+    public async Task can_insert_document_with_duplicated_field_with_null_constraint()
     {
         StoreOptions(options =>
         {
@@ -110,7 +110,7 @@ public class duplicated_field: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Insert(document);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -208,7 +208,7 @@ public class duplicated_field: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void duplicate_and_search_off_of_deep_accessor_by_number()
+    public async Task duplicate_and_search_off_of_deep_accessor_by_number()
     {
         var targets = Target.GenerateRandomData(10).ToArray();
         StoreOptions(_ =>
@@ -217,7 +217,7 @@ public class duplicated_field: OneOffConfigurationsContext
         });
 
         targets.Each(x => theSession.Store(x));
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var thirdTarget = targets.ElementAt(2);
 
@@ -227,7 +227,7 @@ public class duplicated_field: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void duplicate_and_search_off_of_deep_accessor_by_enum()
+    public async Task duplicate_and_search_off_of_deep_accessor_by_enum()
     {
         var targets = Target.GenerateRandomData(10).ToArray();
         StoreOptions(_ =>
@@ -236,7 +236,7 @@ public class duplicated_field: OneOffConfigurationsContext
         });
 
         targets.Each(x => theSession.Store(x));
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var thirdTarget = targets.ElementAt(2);
 
@@ -246,7 +246,7 @@ public class duplicated_field: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void duplicate_and_search_off_of_deep_accessor_by_date()
+    public async Task duplicate_and_search_off_of_deep_accessor_by_date()
     {
         var targets = Target.GenerateRandomData(10).ToArray();
         StoreOptions(_ =>
@@ -255,7 +255,7 @@ public class duplicated_field: OneOffConfigurationsContext
         });
 
         targets.Each(x => theSession.Store(x));
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var thirdTarget = targets.ElementAt(2);
 

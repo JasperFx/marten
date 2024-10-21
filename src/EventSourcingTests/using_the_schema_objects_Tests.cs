@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using EventSourcingTests.Projections;
 using Marten;
 using Marten.Testing.Harness;
@@ -11,7 +12,7 @@ namespace EventSourcingTests;
 public class using_the_schema_objects_Tests : OneOffConfigurationsContext
 {
     [Fact]
-    public void can_build_schema_with_auto_create_none()
+    public async Task can_build_schema_with_auto_create_none()
     {
         var id = Guid.NewGuid();
 
@@ -25,7 +26,7 @@ public class using_the_schema_objects_Tests : OneOffConfigurationsContext
             {
                 session.Events.StartStream<Quest>(id, new QuestStarted { Name = "Destroy the Orb" },
                     new MonsterSlayed { Name = "Troll" }, new MonsterSlayed { Name = "Dragon" });
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
         }
 

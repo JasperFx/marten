@@ -103,7 +103,7 @@ public class create_database_Tests : IDisposable
     }
 
     [Fact]
-    public void can_use_existing_database_without_calling_into_create()
+    public async Task can_use_existing_database_without_calling_into_create()
     {
         var user1 = new User { FirstName = "User" };
         var dbCreated = false;
@@ -128,7 +128,7 @@ public class create_database_Tests : IDisposable
 
         using var session = store.LightweightSession();
         session.Store(user1);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         Assert.False(dbCreated);
     }

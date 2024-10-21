@@ -41,17 +41,17 @@ public class using_long_identity : IntegrationContext
     }
 
     [Fact]
-    public void persist_and_delete()
+    public async Task persist_and_delete()
     {
         var LongDoc = new LongDoc { Id = 567 };
 
         theSession.Store(LongDoc);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var session = theStore.LightweightSession())
         {
             session.Delete<LongDoc>((int) LongDoc.Id);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -61,14 +61,14 @@ public class using_long_identity : IntegrationContext
     }
 
     [Fact]
-    public void load_by_array_of_ids()
+    public async Task load_by_array_of_ids()
     {
         theSession.Store(new LongDoc{Id = 3});
         theSession.Store(new LongDoc{Id = 4});
         theSession.Store(new LongDoc{Id = 5});
         theSession.Store(new LongDoc{Id = 6});
         theSession.Store(new LongDoc{Id = 7});
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var session = theStore.QuerySession();
         session.LoadMany<LongDoc>(4, 5, 6).Count().ShouldBe(3);

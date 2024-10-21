@@ -24,12 +24,12 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
 
     #region sample_query-against-event-data
     [Fact]
-    public void can_query_against_event_type()
+    public async Task can_query_against_event_type()
     {
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
@@ -43,14 +43,14 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
     #endregion
 
     [Fact]
-    public void can_query_against_event_type_with_camel_casing()
+    public async Task can_query_against_event_type_with_camel_casing()
     {
         StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
@@ -78,14 +78,14 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_query_against_event_type_with_snake_casing()
+    public async Task can_query_against_event_type_with_snake_casing()
     {
         StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
@@ -104,7 +104,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
 
 
     [Fact]
-    public void can_query_against_event_type_with_different_schema_name_with_camel_casing()
+    public async Task can_query_against_event_type_with_different_schema_name_with_camel_casing()
     {
         StoreOptions(_ =>
         {
@@ -124,7 +124,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
@@ -136,12 +136,12 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_fetch_all_events()
+    public async Task can_fetch_all_events()
     {
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var results = theSession.Events.QueryAllRawEvents().ToList();
 
@@ -160,14 +160,14 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
     #endregion
 
     [Fact]
-    public void can_fetch_all_events_after_now()
+    public async Task can_fetch_all_events_after_now()
     {
         var now = DateTimeOffset.UtcNow;
 
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var past = now.AddSeconds(-1);
 
@@ -177,12 +177,12 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_fetch_all_events_before_now()
+    public async Task can_fetch_all_events_before_now()
     {
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var dbNow = (DateTime)theSession.Connection.CreateCommand().Sql("select now();").ExecuteScalar();
         var now = new DateTimeOffset(dbNow).AddSeconds(5);
@@ -196,36 +196,36 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_fetch_events_by_sequence()
+    public async Task can_fetch_events_by_sequence()
     {
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.QueryAllRawEvents()
             .Count(x => x.Sequence <= 2).ShouldBe(2);
     }
 
     [Fact]
-    public void can_fetch_by_version()
+    public async Task can_fetch_by_version()
     {
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.QueryAllRawEvents()
             .Count(x => x.Version == 1).ShouldBe(2);
     }
 
     [Fact]
-    public void can_search_by_stream()
+    public async Task can_search_by_stream()
     {
         var stream1 = theSession.Events.StartStream<Quest>(joined1, departed1).Id;
         var stream2 = theSession.Events.StartStream<Quest>(joined2, departed2).Id;
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.QueryAllRawEvents()
             .Count(x => x.StreamId == stream1).ShouldBe(2);

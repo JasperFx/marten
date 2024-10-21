@@ -40,20 +40,20 @@ public class end_to_end_document_hierarchy_usage_Tests: OneOffConfigurationsCont
             });
     }
 
-    protected void loadData()
+    protected async Task loadData()
     {
         theSession.Store(user1, user2, admin1, admin2, super1, super2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
     }
 
 
-    protected IDocumentSession identitySessionWithData()
+    protected async Task<IDocumentSession> identitySessionWithData()
     {
         var session = theStore.IdentitySession();
         session.Store(user1, user2, admin1, admin2, super1, super2);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
         return session;
     }
 }

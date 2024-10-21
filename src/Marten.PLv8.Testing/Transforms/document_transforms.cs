@@ -112,18 +112,18 @@ public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixtu
     }
 
     [Fact]
-    public void transform_all_documents_in_session()
+    public async Task transform_all_documents_in_session()
     {
         var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };
         var user2 = new User { FirstName = "Corey", LastName = "Kaylor" };
         var user3 = new User { FirstName = "Tim", LastName = "Cools" };
 
-        theStore.BulkInsert(new User[] { user1, user2, user3 });
+        await theStore.BulkInsertAsync(new User[] { user1, user2, user3 });
 
         using (var session = theStore.LightweightSession())
         {
             session.Transform(x => x.All<User>("default_username"));
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
@@ -180,18 +180,18 @@ public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixtu
     }
 
     [Fact]
-    public void transform_a_single_document_in_session()
+    public async Task transform_a_single_document_in_session()
     {
         var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };
         var user2 = new User { FirstName = "Corey", LastName = "Kaylor", UserName = "user2" };
         var user3 = new User { FirstName = "Tim", LastName = "Cools", UserName = "user3" };
 
-        theStore.BulkInsert(new[] { user1, user2, user3 });
+        await theStore.BulkInsertAsync(new[] { user1, user2, user3 });
 
         using (var session = theStore.LightweightSession())
         {
             session.Transform(x => x.Document<User>("default_username", user1.Id));
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -226,18 +226,18 @@ public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixtu
     }
 
     [Fact]
-    public void transform_with_where_clause_in_session()
+    public async Task transform_with_where_clause_in_session()
     {
         var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };
         var user2 = new User { FirstName = "Corey", LastName = "Kaylor", UserName = "user2" };
         var user3 = new User { FirstName = "Tim", LastName = "Cools", UserName = "user3" };
 
-        theStore.BulkInsert(new User[] { user1, user2, user3 });
+        await theStore.BulkInsertAsync(new User[] { user1, user2, user3 });
 
         using (var session = theStore.LightweightSession())
         {
             session.Transform(x => x.Where<User>("default_username", x => x.FirstName == user1.FirstName));
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())

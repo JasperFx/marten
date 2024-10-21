@@ -80,14 +80,14 @@ public class end_to_end_query_with_include: IntegrationContext
     #region sample_simple_include
 
     [Fact]
-    public void simple_include_for_a_single_document()
+    public async Task simple_include_for_a_single_document()
     {
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         query.Logger = new TestOutputMartenLogger(_output);
@@ -107,14 +107,14 @@ public class end_to_end_query_with_include: IntegrationContext
     #endregion
 
     [Fact]
-    public void include_with_containment_where_for_a_single_document()
+    public async Task include_with_containment_where_for_a_single_document()
     {
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         User included = null;
@@ -131,7 +131,7 @@ public class end_to_end_query_with_include: IntegrationContext
 
 
     [Fact]
-    public void include_with_containment_where_for_a_single_document_with_camel_casing()
+    public async Task include_with_containment_where_for_a_single_document_with_camel_casing()
     {
         StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 
@@ -140,7 +140,7 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         User included = null;
@@ -156,14 +156,14 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void include_with_any_containment_where_for_a_single_document()
+    public async Task include_with_any_containment_where_for_a_single_document()
     {
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         User included = null;
@@ -179,7 +179,7 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void include_with_any_containment_where_for_a_single_document_with_camel_casing_2()
+    public async Task include_with_any_containment_where_for_a_single_document_with_camel_casing_2()
     {
         StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase));
 
@@ -188,7 +188,7 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         User included = null;
@@ -204,7 +204,7 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void include_with_any_containment_where_for_a_single_document_with_snake_casing_2()
+    public async Task include_with_any_containment_where_for_a_single_document_with_snake_casing_2()
     {
         StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString, Casing.SnakeCase));
 
@@ -213,7 +213,7 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         User included = null;
@@ -229,7 +229,7 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void include_with_any_containment_where_for_a_single_document_with_camel_casing()
+    public async Task include_with_any_containment_where_for_a_single_document_with_camel_casing()
     {
         StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 
@@ -238,7 +238,7 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         User included = null;
@@ -254,7 +254,7 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void include_with_any_containment_where_for_a_single_document_with_snake_casing()
+    public async Task include_with_any_containment_where_for_a_single_document_with_snake_casing()
     {
         StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.SnakeCase));
 
@@ -263,7 +263,7 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         User included = null;
@@ -279,7 +279,7 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void include_with_any_array_containment_where_for_a_single_document()
+    public async Task include_with_any_array_containment_where_for_a_single_document()
     {
         var user = new User();
         var issue1 = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
@@ -291,7 +291,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var session = theStore.IdentitySession();
         session.Store(user);
         session.Store(issue1, issue2, issue3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         var users = new List<User>();
@@ -309,14 +309,14 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void include_with_generic_type()
+    public async Task include_with_generic_type()
     {
         var user = new UserWithInterface { Id = Guid.NewGuid(), UserName = "Jens" };
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         IncludeGeneric<UserWithInterface>(user);
     }
@@ -337,13 +337,13 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void simple_include_for_a_single_document_using_outer_join()
+    public async Task simple_include_for_a_single_document_using_outer_join()
     {
         var issue = new Issue { AssigneeId = null, Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store(issue);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         User included = null;
@@ -358,7 +358,7 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void include_to_list()
+    public async Task include_to_list()
     {
         var user1 = new User { FirstName = "Travis", LastName = "Kelce" };
         var user2 = new User { FirstName = "Tyrann", LastName = "Mathieu" };
@@ -370,7 +370,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var session = theStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         var list = new List<User>();
@@ -384,7 +384,7 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void include_to_list_using_inner_join()
+    public async Task include_to_list_using_inner_join()
     {
         var user1 = new User();
         var user2 = new User();
@@ -397,7 +397,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var session = theStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3, issue4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         var list = new List<User>();
@@ -416,7 +416,7 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void include_to_list_using_outer_join()
+    public async Task include_to_list_using_outer_join()
     {
         var user1 = new User();
         var user2 = new User();
@@ -429,7 +429,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var session = theStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3, issue4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         var list = new List<User>();
@@ -446,7 +446,7 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void include_is_running_through_identitymap()
+    public async Task include_is_running_through_identitymap()
     {
         var user1 = new User();
         var user2 = new User();
@@ -458,7 +458,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var session = theStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // This will only work with a non-NulloIdentityMap
         using var query = theStore.IdentitySession();
@@ -473,7 +473,7 @@ public class end_to_end_query_with_include: IntegrationContext
     #region sample_dictionary_include
 
     [Fact]
-    public void include_to_dictionary()
+    public async Task include_to_dictionary()
     {
         var user1 = new User();
         var user2 = new User();
@@ -485,7 +485,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var session = theStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         var dict = new Dictionary<Guid, User>();
@@ -500,7 +500,7 @@ public class end_to_end_query_with_include: IntegrationContext
     #endregion
 
     [Fact]
-    public void include_to_dictionary_with_select()
+    public async Task include_to_dictionary_with_select()
     {
         var user1 = new User();
         var user2 = new User();
@@ -515,7 +515,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var session = theStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         var dict = new Dictionary<Guid, User>();
@@ -536,7 +536,7 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void include_to_dictionary_using_inner_join()
+    public async Task include_to_dictionary_using_inner_join()
     {
         var user1 = new User();
         var user2 = new User();
@@ -549,7 +549,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var session = theStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3, issue4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         var dict = new Dictionary<Guid, User>();
@@ -567,7 +567,7 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void include_to_dictionary_using_outer_join()
+    public async Task include_to_dictionary_using_outer_join()
     {
         var user1 = new User();
         var user2 = new User();
@@ -580,7 +580,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var session = theStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3, issue4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         var dict = new Dictionary<Guid, User>();
@@ -730,7 +730,7 @@ public class end_to_end_query_with_include: IntegrationContext
     #region sample_multiple_include
 
     [Fact]
-    public void multiple_includes()
+    public async Task multiple_includes()
     {
         var assignee = new User{FirstName = "Assignee"};
         var reporter = new User{FirstName = "Reporter"};
@@ -740,7 +740,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var session = theStore.IdentitySession();
         session.Store(assignee, reporter);
         session.Store(issue1);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         User assignee2 = null;
@@ -761,7 +761,7 @@ public class end_to_end_query_with_include: IntegrationContext
     #endregion
 
     [Fact]
-    public void include_many_to_list()
+    public async Task include_many_to_list()
     {
         var user1 = new User { };
         var user2 = new User { };
@@ -780,7 +780,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(group1, group2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -805,14 +805,14 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void Bug_1751_Include_with_select()
+    public async Task Bug_1751_Include_with_select()
     {
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         User included = null;
@@ -873,14 +873,14 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void Bug_1752_simple_include_for_a_single_document()
+    public async Task Bug_1752_simple_include_for_a_single_document()
     {
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         User included = null;
@@ -894,7 +894,7 @@ public class end_to_end_query_with_include: IntegrationContext
     }
 
     [Fact]
-    public void include_many_to_list_with_empty_parent_collection()
+    public async Task include_many_to_list_with_empty_parent_collection()
     {
         var user1 = new User();
         var user2 = new User();
@@ -908,7 +908,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(group1, group2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -935,14 +935,14 @@ public class end_to_end_query_with_include: IntegrationContext
     #region sample_include_using_custom_map
 
     [Fact]
-    public void include_using_custom_map()
+    public async Task include_using_custom_map()
     {
         var classroom = new Classroom(Id: Guid.NewGuid(), RoomCode: "Classroom-1A");
         var user = new SchoolUser(Id: Guid.NewGuid(), Name: "Student #1", HomeRoom: "Classroom-1A");
 
         using var session = theStore.IdentitySession();
         session.Store<object>(classroom, user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         Classroom? included = null;
@@ -962,7 +962,7 @@ public class end_to_end_query_with_include: IntegrationContext
     #region sample_dictionary_list_include
 
     [Fact]
-    public void include_to_dictionary_list()
+    public async Task include_to_dictionary_list()
     {
         var class1 = new Classroom(Id: Guid.NewGuid(), RoomCode: "Classroom-1A");
         var class2 = new Classroom(Id: Guid.NewGuid(), RoomCode: "Classroom-2B");
@@ -974,7 +974,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var session = theStore.IdentitySession();
         session.Store(class1, class2);
         session.Store(user1, user2, user3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         var dict = new Dictionary<string, IList<SchoolUser>>();

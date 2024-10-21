@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -20,12 +21,12 @@ public class inline_aggregation_with_subclass: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_create_subclass_projection()
+    public async Task can_create_subclass_projection()
     {
         var description = "FooDescription";
 
         var streamId = theSession.Events.StartStream(new FooACreated { Description = description }).Id;
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var fooInstance = theSession.Query<FooA>().Single(x => x.Id == streamId);
 
@@ -34,12 +35,12 @@ public class inline_aggregation_with_subclass: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_query_subclass_root()
+    public async Task can_query_subclass_root()
     {
         var description = "FooDescription";
 
         var streamId = theSession.Events.StartStream(new FooACreated { Description = description }).Id;
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var fooInstance = theSession.Query<FooBase>().Single(x => x.Id == streamId);
 

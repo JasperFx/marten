@@ -21,14 +21,14 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
 
     #region sample_resolving_metadata
     [Fact]
-    public void hit_returns_values()
+    public async Task hit_returns_values()
     {
         var shop = new CoffeeShop();
 
         using (var session = theStore.LightweightSession())
         {
             session.Store(shop);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -81,14 +81,14 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void created_timestamp_metadata_returns_default()
+    public async Task created_timestamp_metadata_returns_default()
     {
         var shop = new CoffeeShop();
 
         using (var session = theStore.LightweightSession())
         {
             session.Store(shop);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -118,7 +118,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void created_timestamp_metadata_returns_timestamp()
+    public async Task created_timestamp_metadata_returns_timestamp()
     {
         StoreOptions(_ =>
         {
@@ -130,7 +130,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(shop);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())

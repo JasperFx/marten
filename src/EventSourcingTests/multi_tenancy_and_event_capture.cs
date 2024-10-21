@@ -82,7 +82,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
     [Theory]
     [MemberData(nameof(TenancyStyles))]
-    public void capture_events_for_a_tenant(TenancyStyle tenancyStyle)
+    public async Task capture_events_for_a_tenant(TenancyStyle tenancyStyle)
     {
         InitStore(tenancyStyle);
 
@@ -90,7 +90,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession("Green"))
         {
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession("Green"))
@@ -128,7 +128,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
     [Theory]
     [MemberData(nameof(TenancyStyles))]
-    public void capture_events_for_a_tenant_with_string_identifier(TenancyStyle tenancyStyle)
+    public async Task capture_events_for_a_tenant_with_string_identifier(TenancyStyle tenancyStyle)
     {
         InitStore(tenancyStyle, StreamIdentity.AsString);
 
@@ -136,7 +136,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession("Green"))
         {
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession("Green"))
@@ -174,7 +174,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
     [Theory]
     [MemberData(nameof(TenancyStyles))]
-    public void append_to_events_a_second_time_with_same_tenant_id(TenancyStyle tenancyStyle)
+    public async Task append_to_events_a_second_time_with_same_tenant_id(TenancyStyle tenancyStyle)
     {
         InitStore(tenancyStyle);
 
@@ -183,14 +183,14 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         {
             session.Logger = new TestOutputMartenLogger(_output);
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession("Green"))
         {
             session.Logger = new TestOutputMartenLogger(_output);
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession("Green"))
@@ -205,7 +205,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
 
     [Fact]
-    public void try_to_append_across_tenants_with_tenancy_style_conjoined()
+    public async Task try_to_append_across_tenants_with_tenancy_style_conjoined()
     {
         InitStore(TenancyStyle.Conjoined);
 
@@ -213,21 +213,21 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession("Green"))
         {
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
-        Should.NotThrow(() =>
+        await Should.NotThrowAsync(async () =>
         {
             using (var session = theStore.LightweightSession("Red"))
             {
                 session.Events.Append(stream, new MembersJoined(), new MembersJoined());
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
         });
     }
 
     [Fact]
-    public void tenanted_session_should_not_see_other_tenants_events()
+    public async Task tenanted_session_should_not_see_other_tenants_events()
     {
         InitStore(TenancyStyle.Conjoined);
 
@@ -236,13 +236,13 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession("Green"))
         {
             session.Events.Append(Guid.NewGuid(), new MembersJoined());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession("Red"))
         {
             session.Events.Append(Guid.NewGuid(), new MembersJoined());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession("Green"))
@@ -345,7 +345,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
     [Theory]
     [MemberData(nameof(WillParameterizeTenantId))]
-    public void will_parameterize_tenant_id_when_checking_stream_version(StreamIdentity streamIdentity, Func<DocumentStore, IDocumentSession> LightweightSession, Action<IDocumentSession> startStream, Action<IDocumentSession> append)
+    public async Task will_parameterize_tenant_id_when_checking_stream_version(StreamIdentity streamIdentity, Func<DocumentStore, IDocumentSession> LightweightSession, Action<IDocumentSession> startStream, Action<IDocumentSession> append)
     {
         InitStore(TenancyStyle.Conjoined, streamIdentity);
         theStore.Advanced.Clean.DeleteAllEventData();
@@ -354,25 +354,25 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         using (var session = LightweightSession(theStore))
         {
             startStream(session);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = LightweightSession(theStore))
         {
             append(session);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession("Red"))
         {
             startStream(session);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession("Red"))
         {
             append(session);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
     }
 }

@@ -19,11 +19,11 @@ public class aggregateTo_linq_operator_tests: DestructiveIntegrationContext
     private readonly MembersDeparted _departed2 = new() { Members = new[] {"Moiraine"} };
 
     [Fact]
-    public void can_aggregate_events_to_aggregate_type_synchronously()
+    public async Task can_aggregate_events_to_aggregate_type_synchronously()
     {
         theSession.Events.StartStream<Quest>(_joined1, _departed1);
         theSession.Events.StartStream<Quest>(_joined2, _departed2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var events = theSession.Events.QueryAllRawEvents().ToList();
 
@@ -58,12 +58,12 @@ public class aggregateTo_linq_operator_tests: DestructiveIntegrationContext
     }
 
     [Fact]
-    public void can_aggregate_with_initial_state_synchronously()
+    public async Task can_aggregate_with_initial_state_synchronously()
     {
         var initialParty = new QuestParty { Members = new List<string> { "Lan" } };
         theSession.Events.StartStream<Quest>(_joined1, _departed1);
         theSession.Events.StartStream<Quest>(_joined2, _departed2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var questParty = theSession.Events.QueryAllRawEvents().AggregateTo(initialParty);
 

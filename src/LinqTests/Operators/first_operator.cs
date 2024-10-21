@@ -17,31 +17,31 @@ public class first_operator: IntegrationContext
 
 
     [Fact]
-    public void first_hit_with_only_one_document()
+    public async Task first_hit_with_only_one_document()
     {
         theSession.Store(new Target { Number = 1 });
         theSession.Store(new Target { Number = 2 });
         theSession.Store(new Target { Number = 3 });
         theSession.Store(new Target { Number = 4 });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         SpecificationExtensions.ShouldNotBeNull(theSession.Query<Target>().First(x => x.Number == 3));
     }
 
     [Fact]
-    public void first_or_default_hit_with_only_one_document()
+    public async Task first_or_default_hit_with_only_one_document()
     {
         theSession.Store(new Target { Number = 1 });
         theSession.Store(new Target { Number = 2 });
         theSession.Store(new Target { Number = 3 });
         theSession.Store(new Target { Number = 4 });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().FirstOrDefault(x => x.Number == 3).ShouldNotBeNull();
     }
 
     [Fact]
-    public void first_or_default_miss()
+    public async Task first_or_default_miss()
     {
         theSession.Logger = new TestOutputMartenLogger(_output);
 
@@ -49,45 +49,45 @@ public class first_operator: IntegrationContext
         theSession.Store(new Target { Number = 2 });
         theSession.Store(new Target { Number = 3 });
         theSession.Store(new Target { Number = 4 });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().FirstOrDefault(x => x.Number == 11).ShouldBeNull();
     }
 
     [Fact]
-    public void first_correct_hit_with_more_than_one_match()
+    public async Task first_correct_hit_with_more_than_one_match()
     {
         theSession.Store(new Target { Number = 1 });
         theSession.Store(new Target { Number = 2, Flag = true });
         theSession.Store(new Target { Number = 2 });
         theSession.Store(new Target { Number = 4 });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().Where(x => x.Number == 2).First().Flag
             .ShouldBeTrue();
     }
 
     [Fact]
-    public void first_or_default_correct_hit_with_more_than_one_match()
+    public async Task first_or_default_correct_hit_with_more_than_one_match()
     {
         theSession.Store(new Target { Number = 1 });
         theSession.Store(new Target { Number = 2, Flag = true });
         theSession.Store(new Target { Number = 2 });
         theSession.Store(new Target { Number = 4 });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().Where(x => x.Number == 2).First().Flag
             .ShouldBeTrue();
     }
 
     [Fact]
-    public void first_miss()
+    public async Task first_miss()
     {
         theSession.Store(new Target { Number = 1 });
         theSession.Store(new Target { Number = 2 });
         theSession.Store(new Target { Number = 3 });
         theSession.Store(new Target { Number = 4 });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
         {

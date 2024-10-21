@@ -249,7 +249,7 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void use_inline_synchronous()
+    public async Task use_inline_synchronous()
     {
         StoreOptions(opts => opts.Projections.Add(new MyCustomProjection(), ProjectionLifecycle.Inline));
 
@@ -268,7 +268,7 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
         appendCustomEvent(1, 'a');
         appendCustomEvent(1, 'a');
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Load<CustomAggregate>(1)
             .ShouldBe(new CustomAggregate

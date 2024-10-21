@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
 
@@ -8,7 +9,7 @@ namespace LinqTests.Operators;
 public class negation_operator : IntegrationContext
 {
     [Fact]
-    public void negating_predicate_with_an_and_operator_results_in_a_correct_query()
+    public async Task negating_predicate_with_an_and_operator_results_in_a_correct_query()
     {
         var player1 = new Player {Name = "Tony", Level = 10};
         var player2 = new Player {Name = "Mark", Level = 20};
@@ -16,7 +17,7 @@ public class negation_operator : IntegrationContext
         var player4 = new Player {Name = "Leeroy", Level = 20};
 
         theSession.Store(player1, player2, player3, player4);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
 
@@ -28,7 +29,7 @@ public class negation_operator : IntegrationContext
     }
 
     [Fact]
-    public void negating_predicate_with_an_or_operator_results_in_a_correct_query()
+    public async Task negating_predicate_with_an_or_operator_results_in_a_correct_query()
     {
         var player1 = new Player { Name = "Tony", Level = 10};
         var player2 = new Player { Name = "Mark", Level = 20};
@@ -36,7 +37,7 @@ public class negation_operator : IntegrationContext
         var player4 = new Player { Name = "Leeroy", Level = 20};
 
         theSession.Store(player1, player2, player3, player4);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
 

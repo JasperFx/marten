@@ -42,12 +42,12 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
     }
 
     [Fact]
-    public void can_insert_with_optimistic_concurrency_95()
+    public async Task can_insert_with_optimistic_concurrency_95()
     {
         using var session = theStore.LightweightSession();
         var coffeeShop = new CoffeeShop();
         session.Store(coffeeShop);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         SpecificationExtensions.ShouldNotBeNull(session.Load<CoffeeShop>(coffeeShop.Id));
     }
@@ -64,24 +64,24 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
     }
 
     [Fact]
-    public void can_store_same_document_multiple_times_with_optimistic_concurrency()
+    public async Task can_store_same_document_multiple_times_with_optimistic_concurrency()
     {
         var doc1 = new CoffeeShop();
         using var session = theStore.LightweightSession();
         session.Store(doc1);
         session.Store(doc1);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 
     [Fact]
-    public void can_update_with_optimistic_concurrency_95()
+    public async Task can_update_with_optimistic_concurrency_95()
     {
         var doc1 = new CoffeeShop();
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
@@ -90,7 +90,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             doc2.Name = "Mozart's";
 
             session.Store(doc2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -126,13 +126,13 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
     #region sample_update_with_stale_version_standard
     [Fact]
-    public void update_with_stale_version_standard()
+    public async Task update_with_stale_version_standard()
     {
         var doc1 = new CoffeeShop();
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         var session1 = theStore.DirtyTrackedSession();
@@ -147,11 +147,11 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             session2Copy.Name = "Dominican Joe's";
 
             // Should go through just fine
-            session2.SaveChanges();
+            await session2.SaveChangesAsync();
 
-            var ex = Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
+            var ex = await Should.ThrowAsync<ConcurrencyException>(async () =>
             {
-                session1.SaveChanges();
+                await session1.SaveChangesAsync();
             });
 
             ex.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(Shop).FullName} #{doc1.Id}");
@@ -162,22 +162,20 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             session2.Dispose();
         }
 
-        using (var query = theStore.QuerySession())
-        {
-            query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Dominican Joe's");
-        }
+        await using var query = theStore.QuerySession();
+        query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Dominican Joe's");
     }
 
     #endregion
 
     [Fact]
-    public void overwrite_with_stale_version_standard()
+    public async Task overwrite_with_stale_version_standard()
     {
         var doc1 = new CoffeeShop();
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
         #region sample_sample-override-optimistic-concurrency
         var session1 = theStore.DirtyTrackedSession(new SessionOptions
@@ -197,9 +195,9 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             session2Copy.Name = "Dominican Joe's";
 
             // Should go through just fine
-            session2.SaveChanges();
+            await session2.SaveChangesAsync();
 
-            session1.SaveChanges();
+            await session1.SaveChangesAsync();
         }
         finally
         {
@@ -207,10 +205,8 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             session2.Dispose();
         }
 
-        using (var query = theStore.QuerySession())
-        {
-            query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Mozart's");
-        }
+        await using var query = theStore.QuerySession();
+        query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Mozart's");
     }
 
     [Fact]
@@ -257,13 +253,13 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
     }
 
     [Fact]
-    public void update_with_stale_version_standard_sync()
+    public async Task update_with_stale_version_standard_sync()
     {
         var doc1 = new CoffeeShop();
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         var session1 = theStore.DirtyTrackedSession();
@@ -278,11 +274,11 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             session2Copy.Name = "Dominican Joe's";
 
             // Should go through just fine
-            session2.SaveChanges();
+            await session2.SaveChangesAsync();
 
-            var ex = Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
+            var ex = await Should.ThrowAsync<ConcurrencyException>(async () =>
             {
-                session1.SaveChanges();
+                await session1.SaveChangesAsync();
             });
 
             ex.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(Shop).FullName} #{doc1.Id}");
@@ -293,20 +289,18 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             session2.Dispose();
         }
 
-        using (var query = theStore.QuerySession())
-        {
-            query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Dominican Joe's");
-        }
+        await using var query = theStore.QuerySession();
+        query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Dominican Joe's");
     }
 
     [Fact]
-    public void can_do_multiple_updates_in_a_row_standard()
+    public async Task can_do_multiple_updates_in_a_row_standard()
     {
         var doc1 = new CoffeeShop();
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.DirtyTrackedSession())
@@ -314,11 +308,11 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             var doc2 = session.Load<CoffeeShop>(doc1.Id);
             doc2.Name = "Mozart's";
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             doc2.Name = "Cafe Medici";
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -356,7 +350,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
     }
 
     [Fact]
-    public void update_multiple_docs_at_a_time_happy_path()
+    public async Task update_multiple_docs_at_a_time_happy_path()
     {
         var doc1 = new CoffeeShop();
         var doc2 = new CoffeeShop();
@@ -364,7 +358,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc1, doc2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.DirtyTrackedSession())
@@ -375,7 +369,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             var doc22 = session.Load<CoffeeShop>(doc2.Id);
             doc22.Name = "Dominican Joe's";
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -416,7 +410,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
     }
 
     [Fact]
-    public void update_multiple_docs_at_a_time_sad_path()
+    public async Task update_multiple_docs_at_a_time_sad_path()
     {
         var doc1 = new CoffeeShop();
         var doc2 = new CoffeeShop();
@@ -424,7 +418,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc1, doc2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.DirtyTrackedSession())
@@ -440,12 +434,12 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
                 other.Load<CoffeeShop>(doc1.Id).Name = "Genuine Joe's";
                 other.Load<CoffeeShop>(doc2.Id).Name = "Cafe Medici";
 
-                other.SaveChanges();
+                await other.SaveChangesAsync();
             }
 
-            var ex = Exception<AggregateException>.ShouldBeThrownBy(() =>
+            var ex = await Should.ThrowAsync<AggregateException>(async () =>
             {
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             });
 
             ex.InnerExceptions.OfType<ConcurrencyException>().Count().ShouldBe(2);
@@ -491,13 +485,13 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
     #region sample_store_with_the_right_version
     [Fact]
-    public void store_with_the_right_version()
+    public async Task store_with_the_right_version()
     {
         var doc1 = new CoffeeShop();
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         DocumentMetadata metadata;
@@ -511,7 +505,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             doc1.Name = "Mozart's";
             session.UpdateExpectedVersion(doc1, metadata.CurrentVersion);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -555,13 +549,13 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
     }
 
     [Fact]
-    public void store_with_the_right_version_sad_path()
+    public async Task store_with_the_right_version_sad_path()
     {
         var doc1 = new CoffeeShop();
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
@@ -571,9 +565,9 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             // Some random version that won't match
             session.UpdateExpectedVersion(doc1, Guid.NewGuid());
 
-            Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
+            await Should.ThrowAsync<ConcurrencyException>(async () =>
             {
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             });
         }
     }
@@ -629,7 +623,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
     }
 
     [Fact]
-    public void can_update_and_delete_related_documents_synchronous()
+    public async Task can_update_and_delete_related_documents_synchronous()
     {
         var emp1 = new CoffeeShopEmployee();
         var doc1 = new CoffeeShop();
@@ -639,7 +633,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         {
             session.Store(emp1);
             session.Store(doc1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.DirtyTrackedSession())
@@ -650,27 +644,27 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             doc.Employees.Remove(emp.Id);
             session.Delete(emp);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
     }
 
     [Fact]
-    public void Bug_669_can_store_and_update_same_document_with_optimistic_concurrency_and_dirty_tracking()
+    public async Task Bug_669_can_store_and_update_same_document_with_optimistic_concurrency_and_dirty_tracking()
     {
         var doc1 = new CoffeeShop();
         using var session = theStore.DirtyTrackedSession();
         session.Store(doc1);
         doc1.Name = "New Name";
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 
     [Fact]
-    public void can_insert_with_optimistic_concurrency()
+    public async Task can_insert_with_optimistic_concurrency()
     {
         using var session = theStore.LightweightSession();
         var coffeeShop = new CoffeeShop();
         session.Store(coffeeShop);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Load<CoffeeShop>(coffeeShop.Id).ShouldNotBeNull();
     }
@@ -687,13 +681,13 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
     }
 
     [Fact]
-    public void can_update_with_optimistic_concurrency()
+    public async Task can_update_with_optimistic_concurrency()
     {
         var doc1 = new CoffeeShop();
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
@@ -702,7 +696,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             doc2.Name = "Mozart's";
 
             session.Store(doc2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -737,13 +731,13 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
     }
 
     [Fact]
-    public void update_with_stale_version()
+    public async Task update_with_stale_version()
     {
         var doc1 = new CoffeeShop();
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         var session1 = theStore.DirtyTrackedSession();
@@ -758,13 +752,12 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
             session2Copy.Name = "Dominican Joe's";
 
             // Should go through just fine
-            session2.SaveChanges();
+            await session2.SaveChangesAsync();
 
-            var ex = Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
+            var ex = await Should.ThrowAsync<ConcurrencyException>(async () =>
             {
-                session1.SaveChanges();
+                await session1.SaveChangesAsync();
             });
-
 
             ex.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(Shop).FullName} #{doc1.Id}");
         }

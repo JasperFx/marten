@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -34,7 +35,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void use_simple_synchronous_project_methods()
+    public async Task use_simple_synchronous_project_methods()
     {
         UseProjection<SimpleProjection>();
 
@@ -42,7 +43,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
         theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
             new UserCreated { UserName = "two" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
 
@@ -51,7 +52,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
             .ShouldHaveTheSameElementsAs("one", "two");
 
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         query.Query<User>()
             .OrderBy(x => x.UserName)
@@ -61,7 +62,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void use_simple_synchronous_project_methods_with_inline_lambdas()
+    public async Task use_simple_synchronous_project_methods_with_inline_lambdas()
     {
         UseProjection<LambdaProjection>();
 
@@ -69,7 +70,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
         theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
             new UserCreated { UserName = "two" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
 
@@ -78,7 +79,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
             .ShouldHaveTheSameElementsAs("one", "two");
 
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         query.Query<User>()
             .OrderBy(x => x.UserName)
@@ -88,7 +89,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void synchronous_create_method()
+    public async Task synchronous_create_method()
     {
         UseProjection<SimpleCreatorProjection>();
 
@@ -96,7 +97,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
         theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
             new UserCreated { UserName = "two" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
 
@@ -105,7 +106,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
             .ShouldHaveTheSameElementsAs("one", "two");
 
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         query.Query<User>()
             .OrderBy(x => x.UserName)
@@ -115,7 +116,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void use_event_metadata()
+    public async Task use_event_metadata()
     {
         UseProjection<SimpleTransformProjectionUsingMetadata>();
 
@@ -123,11 +124,11 @@ public class EventProjectionTests: OneOffConfigurationsContext
         theSession.Events.Append(stream, new UserCreated { UserName = "one" },
             new UserCreated { UserName = "two" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
     }
 
     [Fact]
-    public void use_event_metadata_with_string_stream_identity()
+    public async Task use_event_metadata_with_string_stream_identity()
     {
         StoreOptions(x =>
         {
@@ -139,14 +140,14 @@ public class EventProjectionTests: OneOffConfigurationsContext
         theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
             new UserCreated { UserName = "two" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.Append(stream, new UserCreated { UserName = "three" });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
     }
 
     [Fact]
-    public void synchronous_with_transform_method()
+    public async Task synchronous_with_transform_method()
     {
         UseProjection<SimpleTransformProjection>();
 
@@ -154,7 +155,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
         theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
             new UserCreated { UserName = "two" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
 
@@ -163,7 +164,7 @@ public class EventProjectionTests: OneOffConfigurationsContext
             .ShouldHaveTheSameElementsAs("one", "two");
 
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         query.Query<User>()
             .OrderBy(x => x.UserName)

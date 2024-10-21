@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Linq.MatchesSql;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -11,7 +12,7 @@ namespace LinqTests.Acceptance;
 public class matches_sql_queries: IntegrationContext
 {
     [Fact]
-    public void query_using_matches_sql()
+    public async Task query_using_matches_sql()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -20,7 +21,7 @@ public class matches_sql_queries: IntegrationContext
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause
         session.Query<User>().Where(x => x.MatchesSql("d.data ->> 'UserName' = ? or d.data ->> 'UserName' = ?", "baz", "jack")).OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -35,7 +36,7 @@ public class matches_sql_queries: IntegrationContext
     }
 
     [Fact]
-    public void query_using_where_fragment()
+    public async Task query_using_where_fragment()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -44,7 +45,7 @@ public class matches_sql_queries: IntegrationContext
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var whereFragment = CompoundWhereFragment.And();
         whereFragment.Add(new WhereFragment("d.data ->> 'UserName' != ?", "baz"));

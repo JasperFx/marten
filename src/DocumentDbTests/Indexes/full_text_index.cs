@@ -195,7 +195,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void using_full_text_query_through_query_session()
+    public async Task using_full_text_query_through_query_session()
     {
         #region sample_using_full_text_query_through_query_session
 
@@ -217,7 +217,7 @@ public class full_text_index: OneOffConfigurationsContext
             session.Store(new User { FirstName = "Max", LastName = "Miller", UserName = "mmiller" });
             session.Store(new User { FirstName = "Frank", LastName = "Zombo", UserName = "fzombo" });
             session.Store(new User { FirstName = "Somebody", LastName = "Somewher", UserName = "somebody" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             result = session.Search<User>("somebody");
         }
@@ -230,7 +230,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void search_in_query_sample()
+    public async Task search_in_query_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
@@ -240,7 +240,7 @@ public class full_text_index: OneOffConfigurationsContext
         {
             session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -259,7 +259,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void plain_text_search_in_query_sample()
+    public async Task plain_text_search_in_query_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
@@ -269,7 +269,7 @@ public class full_text_index: OneOffConfigurationsContext
         {
             session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -288,7 +288,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void phrase_search_in_query_sample()
+    public async Task phrase_search_in_query_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
@@ -298,7 +298,7 @@ public class full_text_index: OneOffConfigurationsContext
         {
             session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -317,7 +317,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "11.0")]
-    public void web_search_in_query_sample()
+    public async Task web_search_in_query_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
@@ -327,7 +327,7 @@ public class full_text_index: OneOffConfigurationsContext
         {
             session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -346,7 +346,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void text_search_combined_with_other_query_sample()
+    public async Task text_search_combined_with_other_query_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
@@ -357,7 +357,7 @@ public class full_text_index: OneOffConfigurationsContext
             session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter", Category = "LifeStyle" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "somefilter", Category = "Other" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter", Category = "LifeStyle" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -377,7 +377,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void text_search_with_non_default_regConfig_sample()
+    public async Task text_search_with_non_default_regConfig_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
@@ -387,7 +387,7 @@ public class full_text_index: OneOffConfigurationsContext
         {
             session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "somefilter" });
             session.Store(new BlogPost { Id = expectedId, ItalianText = "somefilter" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -418,7 +418,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void should_search_with_store_options_with_multipleIndexes()
+    public async Task should_search_with_store_options_with_multipleIndexes()
     {
         const string frenchRegConfig = "french";
         const string italianRegConfig = "italian";
@@ -436,7 +436,7 @@ public class full_text_index: OneOffConfigurationsContext
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller", UserName = "jmiller" });
         session.Store(new User { FirstName = "Max", LastName = "Miller", UserName = "mmiller" });
         session.Store(new User { FirstName = "Somebody", LastName = "Somewher", UserName = "somebody" });
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var italianResults = session.Search<User>(searchFilter, italianRegConfig);
 
@@ -452,7 +452,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void should_search_by_tenant_with_tenancy_conjoined()
+    public async Task should_search_by_tenant_with_tenancy_conjoined()
     {
         StoreOptions(_ =>
         {
@@ -471,7 +471,7 @@ public class full_text_index: OneOffConfigurationsContext
             using var session = theStore.LightweightSession(tenant);
             session.Store(new User { FirstName = searchFilter, LastName = "Miller", UserName = "lmiller" });
             session.Store(new User { FirstName = "Frank", LastName = "Zombo", UserName = "fzombo" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         foreach (var tenant in tenants)
@@ -485,7 +485,7 @@ public class full_text_index: OneOffConfigurationsContext
         }
     }
 
-    private void SearchShouldBeSuccessfulFor(Action<StoreOptions> configure)
+    private async Task SearchShouldBeSuccessfulFor(Action<StoreOptions> configure)
     {
         StoreOptions(configure);
 
@@ -498,7 +498,7 @@ public class full_text_index: OneOffConfigurationsContext
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller", UserName = "jmiller" });
         session.Store(new User { FirstName = "Max", LastName = "Miller", UserName = "mmiller" });
         session.Store(new User { FirstName = "Somebody", LastName = "Somewher", UserName = "somebody" });
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var results = session.Search<User>(searchFilter);
 

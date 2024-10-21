@@ -46,7 +46,7 @@ namespace EventSourcingTests.Bugs
         }
 
         [Fact]
-        public void should_be_able_to_handle_multiple_event_streams_in_one_session_sync()
+        public async Task should_be_able_to_handle_multiple_event_streams_in_one_session_sync()
         {
             using var documentStore = SeparateStore(x =>
             {
@@ -69,7 +69,7 @@ namespace EventSourcingTests.Bugs
             }
 
             session.Events.Append("original", new DataImportFinishedEvent {ImportCount = importCount});
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             using var querySession = documentStore.QuerySession();
             var importAggregate = querySession.Load<DataImportAggregate>(importStream.Key);

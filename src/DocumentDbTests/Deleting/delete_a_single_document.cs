@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -14,40 +15,38 @@ public sealed class delete_a_single_document: IntegrationContext
 
     [Theory]
     [SessionTypes]
-    public void persist_and_delete_a_document_by_entity(DocumentTracking tracking)
+    public async Task persist_and_delete_a_document_by_entity(DocumentTracking tracking)
     {
         using var session = OpenSession(tracking);
 
         var user = new User { FirstName = "Mychal", LastName = "Thompson" };
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
 
         using (var session2 = theStore.LightweightSession())
         {
             session2.Delete(user);
-            session2.SaveChanges();
+            await session2.SaveChangesAsync();
         }
 
-        using (var querySession = theStore.QuerySession())
-        {
-            querySession.Load<User>(user.Id).ShouldBeNull();
-        }
+        await using var querySession = theStore.QuerySession();
+        querySession.Load<User>(user.Id).ShouldBeNull();
     }
 
     [Fact]
-    public void persist_and_delete_a_document_by_id()
+    public async Task persist_and_delete_a_document_by_id()
     {
         using var session = theStore.LightweightSession();
 
         var user = new User { FirstName = "Mychal", LastName = "Thompson" };
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using (var session2 = theStore.LightweightSession())
         {
             session2.Delete<User>(user.Id);
-            session2.SaveChanges();
+            await session2.SaveChangesAsync();
         }
 
         using (var querySession = theStore.QuerySession())
@@ -57,18 +56,18 @@ public sealed class delete_a_single_document: IntegrationContext
     }
 
     [Fact]
-    public void persist_and_delete_by_id_documents_with_the_same_id()
+    public async Task persist_and_delete_by_id_documents_with_the_same_id()
     {
         var id = Guid.NewGuid();
         using (var session = theStore.LightweightSession())
         {
             var user = new User { Id = id, FirstName = "Mychal", LastName = "Thompson" };
             session.Store(user);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             var target = new Target { Id = id };
             session.Store(target);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
@@ -76,7 +75,7 @@ public sealed class delete_a_single_document: IntegrationContext
             session.Delete<User>(id);
             session.Delete<Target>(id);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())

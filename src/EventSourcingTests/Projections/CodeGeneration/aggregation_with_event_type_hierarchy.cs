@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -24,7 +25,7 @@ public class aggregation_with_event_type_hierarchy: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void inline_snapshot_can_project_with_base_types()
+    public async Task inline_snapshot_can_project_with_base_types()
     {
         var id = Guid.NewGuid();
 
@@ -35,7 +36,7 @@ public class aggregation_with_event_type_hierarchy: OneOffConfigurationsContext
             new SomethingUpdated(id)
         );
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var something = theSession.Load<Something>(id);
 
@@ -44,20 +45,20 @@ public class aggregation_with_event_type_hierarchy: OneOffConfigurationsContext
         something.AddedCount.ShouldBe(1);
 
         theSession.Events.Append(id, new SomethingManuallySynched(id));
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         something = theSession.Load<Something>(id);
         something.Value.ShouldBe(SomethingManuallySynched.DefaultValue);
 
         theSession.Events.Append(id, new SomethingAutoSynched(id));
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         something = theSession.Load<Something>(id);
         something.Value.ShouldBe(SomethingAutoSynched.DefaultValue);
     }
 
     [Fact]
-    public void inline_snapshot_can_project_with_interface()
+    public async Task inline_snapshot_can_project_with_interface()
     {
         var id = Guid.NewGuid();
 
@@ -69,7 +70,7 @@ public class aggregation_with_event_type_hierarchy: OneOffConfigurationsContext
             new SomethingUnmappedEvent(id)
         );
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var something = theSession.Load<Something>(id);
 

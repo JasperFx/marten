@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;
@@ -28,7 +29,7 @@ public class MultiTenancy
     }
 
     [Fact]
-    public void use_multiple_tenants()
+    public async Task use_multiple_tenants()
     {
         // Set up a basic DocumentStore with multi-tenancy
         // via a tenant_id column
@@ -59,7 +60,7 @@ public class MultiTenancy
         {
             session.Store(new User { UserName = "Bill" });
             session.Store(new User { UserName = "Lindsey" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         #endregion
@@ -69,7 +70,7 @@ public class MultiTenancy
         {
             session.Store(new User { UserName = "Jill" });
             session.Store(new User { UserName = "Frank" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         #region sample_tenancy-scoping-session-read
@@ -96,7 +97,7 @@ public class MultiTenancy
     }
 
     [Fact]
-    public void use_multiple_tenants_with_partitioning()
+    public async Task use_multiple_tenants_with_partitioning()
     {
         // Set up a basic DocumentStore with multi-tenancy
         // via a tenant_id column
@@ -152,7 +153,7 @@ public class MultiTenancy
         {
             session.Store(new User { UserName = "Bill" });
             session.Store(new User { UserName = "Lindsey" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         #endregion
@@ -162,7 +163,7 @@ public class MultiTenancy
         {
             session.Store(new User { UserName = "Jill" });
             session.Store(new User { UserName = "Frank" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         #region sample_tenancy-scoping-session-read_with_partitioning

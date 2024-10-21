@@ -14,7 +14,7 @@ public class document_updates: IntegrationContext
 
 
     [Fact]
-    public void can_update_existing_documents()
+    public async Task can_update_existing_documents()
     {
         var targets = Target.GenerateRandomData(99).ToArray();
         theStore.BulkInsert(targets);
@@ -24,7 +24,7 @@ public class document_updates: IntegrationContext
         {
             targets[0].Double = theNewNumber;
             session.Update(targets[0]);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -35,15 +35,16 @@ public class document_updates: IntegrationContext
     }
 
     [Fact]
-    public void update_sad_path()
+    public async Task update_sad_path()
     {
         var target = Target.Random();
 
         using var session = theStore.LightweightSession();
-        Exception<NonExistentDocumentException>.ShouldBeThrownBy(() =>
+
+        await Should.ThrowAsync<NonExistentDocumentException>(async () =>
         {
             session.Update(target);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         });
     }
 

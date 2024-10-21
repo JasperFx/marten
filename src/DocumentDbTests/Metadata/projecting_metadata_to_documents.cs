@@ -53,7 +53,7 @@ namespace DocumentDbTests.Metadata
         }
 
         [Fact]
-        public void doc_has_projected_data_after_storage()
+        public async Task doc_has_projected_data_after_storage()
         {
             StoreOptions(c =>
             {
@@ -67,7 +67,7 @@ namespace DocumentDbTests.Metadata
             {
                 session.Store(doc);
                 session.MetadataFor(doc).ShouldBeNull();
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.LightweightSession())
@@ -78,7 +78,7 @@ namespace DocumentDbTests.Metadata
         }
 
         [Fact]
-        public void doc_metadata_is_read_only_on_store()
+        public async Task doc_metadata_is_read_only_on_store()
         {
             var doc = new DocWithAttributeMeta();
 
@@ -88,7 +88,7 @@ namespace DocumentDbTests.Metadata
                 doc.Version = Guid.Empty;
                 session.Store(doc);
                 session.MetadataFor(doc).ShouldBeNull();
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.LightweightSession())
@@ -105,7 +105,7 @@ namespace DocumentDbTests.Metadata
 
 
         [Fact]
-        public void doc_metadata_is_mapped_for_query_includes()
+        public async Task doc_metadata_is_mapped_for_query_includes()
         {
             StoreOptions(c =>
             {
@@ -122,7 +122,7 @@ namespace DocumentDbTests.Metadata
                 session.Store(doc);
                 session.MetadataFor(include).ShouldBeNull();
                 session.MetadataFor(doc).ShouldBeNull();
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.LightweightSession())
@@ -138,7 +138,7 @@ namespace DocumentDbTests.Metadata
         }
 
         [Fact]
-        public void doc_metadata_is_updated_for_user_supplied_query()
+        public async Task doc_metadata_is_updated_for_user_supplied_query()
         {
             StoreOptions(c =>
             {
@@ -152,7 +152,7 @@ namespace DocumentDbTests.Metadata
             {
                 session.Store(doc);
                 session.MetadataFor(doc).ShouldBeNull();
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.LightweightSession())
@@ -162,7 +162,7 @@ namespace DocumentDbTests.Metadata
                 ShouldBeTestExtensions.ShouldNotBe(userQuery.LastModified, DateTimeOffset.MinValue);
                 lastMod = userQuery.LastModified;
                 session.Store(userQuery);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.LightweightSession())
@@ -234,7 +234,7 @@ namespace DocumentDbTests.Metadata
             (DateTime.UtcNow - loaded.LastModified.ToUniversalTime()).ShouldBeLessThan<TimeSpan>(TimeSpan.FromMinutes(1));
         }
 
-        public void doc_metadata_is_mapped_for_doc_hierarchies()
+        public async Task doc_metadata_is_mapped_for_doc_hierarchies()
         {
             StoreOptions(c =>
             {
@@ -259,7 +259,7 @@ namespace DocumentDbTests.Metadata
                 var emerald = new EmeraldGreenDocWithMeta { Description = "emerald doc" };
 
                 session.Store(doc, red, green, blue, emerald);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.IdentitySession())
@@ -276,7 +276,7 @@ namespace DocumentDbTests.Metadata
                 ShouldBeStringTestExtensions.ShouldBe(redDocs.First().DocType, "red_doc_with_meta");
                 session.Delete(redDocs.First());
 
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
         }
 

@@ -214,6 +214,7 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
         return MartenProvider.ExecuteAsync<double>(Expression, token, SingleValueMode.Average);
     }
 
+    [Obsolete(QuerySession.SynchronousRemoval)]
     public QueryPlan Explain(FetchType fetchType = FetchType.FetchMany,
         Action<IConfigureExplainExpressions>? configureExplain = null)
     {
