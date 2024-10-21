@@ -222,7 +222,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
 
         (await firstUser).UserName.ShouldBe("A2");
         (await firstAdmin).UserName.ShouldBe("A3");
-        SpecificationExtensions.ShouldBeNull((await noneUser));
+        (await noneUser).ShouldBeNull();
     }
 
     [Fact]
@@ -240,7 +240,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
 
         (await tamba).FirstName.ShouldBe("Tamba");
         (await justin).FirstName.ShouldBe("Justin");
-        SpecificationExtensions.ShouldBeNull((await noneUser));
+        (await noneUser).ShouldBeNull();
     }
 
 
@@ -353,8 +353,8 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
 
         await batch.Execute();
 
-        SpecificationExtensions.ShouldNotBeNull((await task1).ShouldBeOfType<Target>());
-        SpecificationExtensions.ShouldNotBeNull((await task3).ShouldBeOfType<Target>());
+        (await task1).ShouldBeOfType<Target>();
+        (await task3).ShouldBeOfType<Target>();
     }
 
     [Fact]
@@ -468,9 +468,9 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
 
         (await toList).ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
         (await first).ShouldBe("Derrick");
-        SpecificationExtensions.ShouldBeNull((await firstOrDefault));
+        (await firstOrDefault).ShouldBeNull();
         (await single).ShouldBe("Tamba");
-        SpecificationExtensions.ShouldBeNull((await singleOrDefault));
+        (await singleOrDefault).ShouldBeNull();
     }
 
     [Fact]
@@ -500,9 +500,9 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
         (await toList).Select(x => x.Name)
             .ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
         (await first).Name.ShouldBe("Derrick");
-        SpecificationExtensions.ShouldBeNull((await firstOrDefault));
+        (await firstOrDefault).ShouldBeNull();
         (await single).Name.ShouldBe("Tamba");
-        SpecificationExtensions.ShouldBeNull((await singleOrDefault));
+        (await singleOrDefault).ShouldBeNull();
     }
 
 
@@ -538,9 +538,9 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
         (await toList).Select(x => x.Name)
             .ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
         (await first).Name.ShouldBe("Derrick");
-        SpecificationExtensions.ShouldBeNull((await firstOrDefault));
+        (await firstOrDefault).ShouldBeNull();
         (await single).Name.ShouldBe("Tamba");
-        SpecificationExtensions.ShouldBeNull((await singleOrDefault));
+        (await singleOrDefault).ShouldBeNull();
     }
 
 

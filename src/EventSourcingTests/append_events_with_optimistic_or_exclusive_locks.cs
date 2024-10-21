@@ -120,8 +120,7 @@ public class append_events_with_optimistic_or_exclusive_locks
                     await session.SaveChangesAsync();
                 });
 
-                ex.Message.ShouldContain(MartenCommandException.MaybeLockedRowsMessage,
-                    StringComparisonOption.Default);
+                ex.Message.ShouldContain(MartenCommandException.MaybeLockedRowsMessage);
             }
         }
 
@@ -247,8 +246,7 @@ public class append_events_with_optimistic_or_exclusive_locks
                     await session.SaveChangesAsync();
                 });
 
-                ex.Message.ShouldContain(MartenCommandException.MaybeLockedRowsMessage,
-                    StringComparisonOption.Default);
+                ex.Message.ShouldContain(MartenCommandException.MaybeLockedRowsMessage);
             }
         }
 

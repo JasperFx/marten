@@ -73,8 +73,8 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
             .Take(3)
             .ToCommand().CommandText;
 
-        sql.ShouldNotContain("d.data ->> 'EventTypeName' = :p1", StringComparisonOption.Default);
-        sql.ShouldNotContain("d.data ->> 'DotNetTypeName' = :p2", StringComparisonOption.Default);
+        sql.ShouldNotContain("d.data ->> 'EventTypeName' = :p1");
+        sql.ShouldNotContain("d.data ->> 'DotNetTypeName' = :p2");
     }
 
     [Fact]

@@ -23,7 +23,7 @@ public class single_operator : IntegrationContext
         theSession.Store(new Target{Number = 4});
         await theSession.SaveChangesAsync();
 
-        SpecificationExtensions.ShouldNotBeNull(theSession.Query<Target>().Single(x => x.Number == 3));
+        theSession.Query<Target>().Single(x => x.Number == 3).ShouldNotBeNull();
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public class single_operator : IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        SpecificationExtensions.ShouldNotBeNull(theSession.Query<Target>().SingleOrDefault(x => x.Number == 3));
+        theSession.Query<Target>().SingleOrDefault(x => x.Number == 3).ShouldNotBeNull();
     }
     #endregion
 
@@ -48,7 +48,7 @@ public class single_operator : IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        SpecificationExtensions.ShouldBeNull(theSession.Query<Target>().SingleOrDefault(x => x.Number == 11));
+        theSession.Query<Target>().SingleOrDefault(x => x.Number == 11).ShouldBeNull();
     }
 
     [Fact]

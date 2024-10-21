@@ -5,6 +5,7 @@ using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 

@@ -2,6 +2,7 @@ using System.Linq;
 using Marten.Services.Json;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Shouldly;
 
 namespace LinqTests.Bugs;
 

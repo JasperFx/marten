@@ -207,8 +207,8 @@ public class identity_map_mechanics: IntegrationContext
         var target2 = await lightweight.LoadAsync<Target>(target.Id);
         var target3 = await lightweight.LoadAsync<Target>(target.Id);
 
-        target1.ShouldBeTheSameAs(target2);
-        target1.ShouldBeTheSameAs(target3);
+        target1.ShouldBeSameAs(target2);
+        target1.ShouldBeSameAs(target3);
     }
 
     public identity_map_mechanics(DefaultStoreFixture fixture): base(fixture)

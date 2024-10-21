@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
+using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
 

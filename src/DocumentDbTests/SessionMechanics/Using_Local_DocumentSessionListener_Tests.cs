@@ -38,11 +38,11 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
 
                 await session.SaveChangesAsync();
 
-                stub1.SaveChangesSession.ShouldBeTheSameAs(session);
-                stub1.AfterCommitSession.ShouldBeTheSameAs(session);
+                stub1.SaveChangesSession.ShouldBeSameAs(session);
+                stub1.AfterCommitSession.ShouldBeSameAs(session);
 
-                stub2.SaveChangesSession.ShouldBeTheSameAs(session);
-                stub2.AfterCommitSession.ShouldBeTheSameAs(session);
+                stub2.SaveChangesSession.ShouldBeSameAs(session);
+                stub2.AfterCommitSession.ShouldBeSameAs(session);
             }
         }
     }
@@ -68,11 +68,11 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
 
             await session.SaveChangesAsync();
 
-            stub1.SaveChangesSession.ShouldBeTheSameAs(session);
-            stub1.AfterCommitSession.ShouldBeTheSameAs(session);
+            stub1.SaveChangesSession.ShouldBeSameAs(session);
+            stub1.AfterCommitSession.ShouldBeSameAs(session);
 
-            stub2.SaveChangesSession.ShouldBeTheSameAs(session);
-            stub2.AfterCommitSession.ShouldBeTheSameAs(session);
+            stub2.SaveChangesSession.ShouldBeSameAs(session);
+            stub2.AfterCommitSession.ShouldBeSameAs(session);
         }
     }
 

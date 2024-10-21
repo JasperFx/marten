@@ -203,7 +203,7 @@ public class select_many : IntegrationContext
                 .Where(p => p.Tags.Length == 1)
                 .SelectMany(x => x.Tags);
             var ex = await Record.ExceptionAsync(() => queryable.CountAsync());
-            SpecificationExtensions.ShouldBeNull(ex);
+            ex.ShouldBeNull();
         }
     }
 
@@ -213,7 +213,7 @@ public class select_many : IntegrationContext
         var targets = Target.GenerateRandomData(10).ToArray();
         var expectedCount = targets.SelectMany(x => x.Children).Count();
 
-        SpecificationExtensions.ShouldBeGreaterThan(expectedCount, 0);
+        expectedCount.ShouldBeGreaterThan(0);
 
         using (var session = theStore.LightweightSession())
         {

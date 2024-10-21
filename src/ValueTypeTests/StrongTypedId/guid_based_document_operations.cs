@@ -22,7 +22,7 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
         theStore = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed";
+            opts.DatabaseSchemaName = "strong_typed1";
 
             opts.ApplicationAssembly = GetType().Assembly;
             opts.GeneratedCodeMode = TypeLoadMode.Auto;
@@ -309,7 +309,7 @@ public class guid_id_document_operations_with_non_nullable_identifier : IDisposa
         theStore = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed";
+            opts.DatabaseSchemaName = "strong_typed21";
 
             opts.ApplicationAssembly = GetType().Assembly;
             opts.GeneratedCodeMode = TypeLoadMode.Auto;
@@ -344,7 +344,7 @@ public class guid_id_document_operations_with_non_nullable_identifier : IDisposa
 
         // Marten sees that there is no existing identity,
         // so it assigns a new identity
-        invoice.Id.ShouldNotBeNull();
+        invoice.Id.ShouldNotBe(default);
         invoice.Id.Value.ShouldNotBe(Guid.Empty);
     }
 

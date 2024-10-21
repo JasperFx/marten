@@ -52,7 +52,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
         var streamId = Guid.NewGuid();
 
         var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
-        SpecificationExtensions.ShouldBeNull(stream.Aggregate);
+        stream.Aggregate.ShouldBeNull();
         stream.CurrentVersion.ShouldBe(0);
 
         stream.AppendOne(new AEvent());
@@ -86,7 +86,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
 
         var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
 
-        SpecificationExtensions.ShouldNotBeNull(stream.Aggregate);
+        stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
         var document = stream.Aggregate;
@@ -115,7 +115,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
-        SpecificationExtensions.ShouldNotBeNull(stream.Aggregate);
+        stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
         var document = stream.Aggregate;
@@ -139,7 +139,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
         var streamId = Guid.NewGuid().ToString();
 
         var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
-        SpecificationExtensions.ShouldBeNull(stream.Aggregate);
+        stream.Aggregate.ShouldBeNull();
         stream.CurrentVersion.ShouldBe(0);
 
         stream.AppendOne(new AEvent());
@@ -171,7 +171,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
-        SpecificationExtensions.ShouldNotBeNull(stream.Aggregate);
+        stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
         var document = stream.Aggregate;
@@ -201,7 +201,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
-        SpecificationExtensions.ShouldNotBeNull(stream.Aggregate);
+        stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
         var document = stream.Aggregate;
@@ -278,7 +278,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var stream = await theSession.Events.FetchForExclusiveWriting<SimpleAggregateAsString>(streamId);
-        SpecificationExtensions.ShouldNotBeNull(stream.Aggregate);
+        stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
         var document = stream.Aggregate;
@@ -335,7 +335,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId, 6);
-        SpecificationExtensions.ShouldNotBeNull(stream.Aggregate);
+        stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
         stream.AppendOne(new EEvent());

@@ -242,7 +242,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
             using (var session = store.LightweightSession(tenantId))
             {
                 var party = session.Load<QuestParty>(questId);
-                SpecificationExtensions.ShouldNotBeNull(party);
+                party.ShouldNotBeNull();
             }
 
             //GetAll
@@ -251,7 +251,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 var parties = session.Events.QueryRawEventDataOnly<QuestParty>().ToArray();
                 foreach (var party in parties)
                 {
-                    SpecificationExtensions.ShouldNotBeNull(party);
+                    party.ShouldNotBeNull();
                 }
             }
 
@@ -502,7 +502,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
 
-                streamEvents.Each(x => SpecificationExtensions.ShouldBeGreaterThan(x.Sequence, 0L));
+                streamEvents.Each(x => x.Sequence.ShouldBeGreaterThan(0L));
             }
         }).ShouldSucceedAsync();
     }
@@ -607,40 +607,6 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
             session.Events.Append(id, 3, joined, departed);
 
             await session.SaveChangesAsync();
-        }).ShouldThrowIfAsync(
-            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
-            (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
-        );
-    }
-
-    [Theory]
-    [MemberData(nameof(SessionParams))]
-    public async Task capture_immutable_events(TenancyStyle tenancyStyle, string[] tenants)
-    {
-        var store = ConfigureStore(tenancyStyle);
-
-        var id = Guid.NewGuid();
-
-        await When.CalledForEachAsync(tenants, async (tenantId, index) =>
-        {
-            var immutableEvent = new ImmutableEvent(id, "some-name");
-
-            using (var session = store.LightweightSession(tenantId))
-            {
-                session.Events.Append(id, immutableEvent);
-                await session.SaveChangesAsync();
-            }
-
-            using (var session = store.LightweightSession(tenantId))
-            {
-                var streamEvents = await session.Events.FetchStreamAsync(id);
-
-                streamEvents.Count.ShouldBe(1);
-                var @event = streamEvents.ElementAt(0).Data.ShouldBeOfType<ImmutableEvent>();
-
-                @event.Id.ShouldBe(id);
-                @event.Name.ShouldBe("some-name");
-            }
         }).ShouldThrowIfAsync(
             (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
             (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))

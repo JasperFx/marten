@@ -564,7 +564,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         // Should already be using the identity map
         var loadAgain = await session.LoadAsync<SimpleAggregate>(streamId);
-        loadAgain.ShouldBeTheSameAs(existing.Aggregate);
+        loadAgain.ShouldBeSameAs(existing.Aggregate);
 
         // Append to the stream and see that the existing aggregate is changed
         existing.AppendOne(new AEvent());

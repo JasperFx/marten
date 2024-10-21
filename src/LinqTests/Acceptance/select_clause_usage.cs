@@ -201,8 +201,8 @@ public class select_clause_usage: IntegrationContext
 
         users.Each(x =>
         {
-            SpecificationExtensions.ShouldNotBeNull(x.First);
-            SpecificationExtensions.ShouldNotBeNull(x.Last);
+            x.First.ShouldNotBeNull();
+            x.Last.ShouldNotBeNull();
         });
     }
 
@@ -223,8 +223,8 @@ public class select_clause_usage: IntegrationContext
 
         users.Each(x =>
         {
-            SpecificationExtensions.ShouldNotBeNull(x.First);
-            SpecificationExtensions.ShouldNotBeNull(x.Last);
+            x.First.ShouldNotBeNull();
+            x.Last.ShouldNotBeNull();
         });
     }
 
@@ -255,8 +255,8 @@ public class select_clause_usage: IntegrationContext
 
         users.Each(x =>
         {
-            SpecificationExtensions.ShouldNotBeNull(x.FirstName);
-            SpecificationExtensions.ShouldNotBeNull(x.LastName);
+            x.FirstName.ShouldNotBeNull();
+            x.LastName.ShouldNotBeNull();
         });
     }
 
@@ -278,9 +278,9 @@ public class select_clause_usage: IntegrationContext
 
         users.Each(x =>
         {
-            SpecificationExtensions.ShouldNotBeNull(x.FirstName);
-            SpecificationExtensions.ShouldNotBeNull(x.LastName);
-            SpecificationExtensions.ShouldBeGreaterThan(x.YearsOld, 0);
+            x.FirstName.ShouldNotBeNull();
+            x.LastName.ShouldNotBeNull();
+            x.YearsOld.ShouldBeGreaterThan(0);
         });
     }
 

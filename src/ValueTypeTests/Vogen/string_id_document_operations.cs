@@ -20,7 +20,7 @@ public class string_id_document_operations : IDisposable, IAsyncDisposable
         theStore = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed";
+            opts.DatabaseSchemaName = "strong_typed8";
 
             opts.ApplicationAssembly = GetType().Assembly;
             opts.GeneratedCodeMode = TypeLoadMode.Auto;

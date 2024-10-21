@@ -51,7 +51,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         var database = Substitute.For<IMartenDatabase>();
         var options = SessionOptions.ForDatabase(database);
 
-        options.Tenant?.Database.ShouldBeTheSameAs(database);
+        options.Tenant?.Database.ShouldBeSameAs(database);
         options.Tenant?.TenantId.ShouldBe(Tenancy.DefaultTenantId);
         options.OwnsConnection.ShouldBeTrue();
         options.OwnsTransactionLifecycle.ShouldBeTrue();

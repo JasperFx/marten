@@ -169,7 +169,7 @@ public class query_by_sql: IntegrationContext
                     new { FirstName = "Jeremy", LastName = "Miller" })
                 .Single();
 
-        SpecificationExtensions.ShouldNotBeNull(user);
+        user.ShouldNotBeNull();
     }
 
     #endregion

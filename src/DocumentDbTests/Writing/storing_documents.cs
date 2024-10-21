@@ -119,7 +119,7 @@ public class storing_documents: IntegrationContext
         using var session = theStore.IdentitySession();
         var user = new UserFromBaseDocument();
         session.Store(user);
-        session.Load<UserFromBaseDocument>(user.Id).ShouldBeTheSameAs(user);
+        session.Load<UserFromBaseDocument>(user.Id).ShouldBeSameAs(user);
     }
 
     [Theory]

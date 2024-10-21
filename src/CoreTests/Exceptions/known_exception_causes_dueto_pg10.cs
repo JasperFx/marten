@@ -20,7 +20,7 @@ public class known_exception_causes_dueto_pg10: IntegrationContext
         });
 
         e.Reason.ShouldBe(NotSupportedReason.WebStyleSearchNeedsAtLeastPostgresVersion11);
-        SpecificationExtensions.ShouldContain(e.Message, KnownNotSupportedExceptionCause.WebStyleSearch.Description);
+        e.Message.ShouldContain(KnownNotSupportedExceptionCause.WebStyleSearch.Description);
     }
 
     public known_exception_causes_dueto_pg10(DefaultStoreFixture fixture) : base(fixture)

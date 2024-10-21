@@ -25,7 +25,7 @@ public class RecentlyUsedCacheTests
         foreach (var item in items)
         {
             theCache.TryFind(item.Id, out var found).ShouldBeTrue();
-            found.ShouldBeTheSameAs(item);
+            found.ShouldBeSameAs(item);
         }
     }
 

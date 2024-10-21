@@ -20,7 +20,7 @@ public class last_operator: IntegrationContext
 
         Should.Throw<InvalidOperationException>(() =>
         {
-            SpecificationExtensions.ShouldNotBeNull(theSession.Query<Target>().Last(x => x.Number == 3));
+            theSession.Query<Target>().Last(x => x.Number == 3).ShouldNotBeNull();
         });
     }
 
@@ -35,7 +35,7 @@ public class last_operator: IntegrationContext
 
         Should.Throw<InvalidOperationException>(() =>
         {
-            SpecificationExtensions.ShouldNotBeNull(theSession.Query<Target>().Last(x => x.Number == 3));
+            theSession.Query<Target>().Last(x => x.Number == 3).ShouldNotBeNull();
         });
     }
 

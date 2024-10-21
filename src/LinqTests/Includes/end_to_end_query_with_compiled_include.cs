@@ -32,10 +32,10 @@ public class end_to_end_query_with_compiled_include_Tests: IntegrationContext
         var issueQuery = new IssueByTitleWithAssignee { Title = issue.Title };
         var issue2 = query.Query(issueQuery);
 
-        SpecificationExtensions.ShouldNotBeNull(issueQuery.Included);
+        issueQuery.Included.ShouldNotBeNull();
         issueQuery.Included.Single().Id.ShouldBe(user.Id);
 
-        SpecificationExtensions.ShouldNotBeNull(issue2);
+        issue2.ShouldNotBeNull();
     }
 
     public class IssueByTitleWithAssignee: ICompiledQuery<Issue>

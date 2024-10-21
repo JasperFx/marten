@@ -21,8 +21,8 @@ public class ejecting_documents : IntegrationContext
             session.Store(target1, target2);
 
             // Both documents are in the identity map
-            session.Load<Target>(target1.Id).ShouldBeTheSameAs(target1);
-            session.Load<Target>(target2.Id).ShouldBeTheSameAs(target2);
+            session.Load<Target>(target1.Id).ShouldBeSameAs(target1);
+            session.Load<Target>(target2.Id).ShouldBeSameAs(target2);
 
             // Eject the 2nd document
             session.Eject(target2);
@@ -52,8 +52,8 @@ public class ejecting_documents : IntegrationContext
         {
             session.Store(target1, target2);
 
-            session.Load<Target>(target1.Id).ShouldBeTheSameAs(target1);
-            session.Load<Target>(target2.Id).ShouldBeTheSameAs(target2);
+            session.Load<Target>(target1.Id).ShouldBeSameAs(target1);
+            session.Load<Target>(target2.Id).ShouldBeSameAs(target2);
 
             session.Eject(target2);
 
@@ -71,8 +71,8 @@ public class ejecting_documents : IntegrationContext
         {
             session.Store(target1, target2);
 
-            session.Load<Target>(target1.Id).ShouldBeTheSameAs(target1);
-            session.Load<Target>(target2.Id).ShouldBeTheSameAs(target2);
+            session.Load<Target>(target1.Id).ShouldBeSameAs(target1);
+            session.Load<Target>(target2.Id).ShouldBeSameAs(target2);
 
             session.Eject(target2);
 
@@ -158,10 +158,10 @@ public class ejecting_documents : IntegrationContext
         session.Store(target1, target2);
         session.Store(user1, user2);
 
-        session.Load<Target>(target1.Id).ShouldBeTheSameAs(target1);
-        session.Load<Target>(target2.Id).ShouldBeTheSameAs(target2);
-        session.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
-        session.Load<User>(user2.Id).ShouldBeTheSameAs(user2);
+        session.Load<Target>(target1.Id).ShouldBeSameAs(target1);
+        session.Load<Target>(target2.Id).ShouldBeSameAs(target2);
+        session.Load<User>(user1.Id).ShouldBeSameAs(user1);
+        session.Load<User>(user2.Id).ShouldBeSameAs(user2);
 
         session.EjectAllOfType(typeof(Target));
 
@@ -172,8 +172,8 @@ public class ejecting_documents : IntegrationContext
 
         session.Load<Target>(target1.Id).ShouldBeNull();
         session.Load<Target>(target2.Id).ShouldBeNull();
-        session.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
-        session.Load<User>(user2.Id).ShouldBeTheSameAs(user2);
+        session.Load<User>(user1.Id).ShouldBeSameAs(user1);
+        session.Load<User>(user2.Id).ShouldBeSameAs(user2);
     }
 
     [Fact]
@@ -188,10 +188,10 @@ public class ejecting_documents : IntegrationContext
         session.Store(target1, target2);
         session.Store(user1, user2);
 
-        session.Load<Target>(target1.Id).ShouldBeTheSameAs(target1);
-        session.Load<Target>(target2.Id).ShouldBeTheSameAs(target2);
-        session.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
-        session.Load<User>(user2.Id).ShouldBeTheSameAs(user2);
+        session.Load<Target>(target1.Id).ShouldBeSameAs(target1);
+        session.Load<Target>(target2.Id).ShouldBeSameAs(target2);
+        session.Load<User>(user1.Id).ShouldBeSameAs(user1);
+        session.Load<User>(user2.Id).ShouldBeSameAs(user2);
 
         session.EjectAllOfType(typeof(Target));
 
@@ -200,8 +200,8 @@ public class ejecting_documents : IntegrationContext
 
         session.Load<Target>(target1.Id).ShouldBeNull();
         session.Load<Target>(target2.Id).ShouldBeNull();
-        session.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
-        session.Load<User>(user2.Id).ShouldBeTheSameAs(user2);
+        session.Load<User>(user1.Id).ShouldBeSameAs(user1);
+        session.Load<User>(user2.Id).ShouldBeSameAs(user2);
     }
 
     [Fact]

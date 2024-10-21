@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
 namespace DaemonTests;

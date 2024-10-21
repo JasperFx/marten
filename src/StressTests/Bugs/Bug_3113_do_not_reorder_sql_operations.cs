@@ -1,7 +1,3 @@
-using Marten.Schema;
-
-namespace EventSourcingTests.Bugs;
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,10 +5,13 @@ using System.Threading.Tasks;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
+using Marten.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Postgresql.Tables;
 using Xunit;
+
+namespace StressTests.Bugs;
 
 public sealed class Bug_3113_do_not_reorder_sql_operations : BugIntegrationContext
 {

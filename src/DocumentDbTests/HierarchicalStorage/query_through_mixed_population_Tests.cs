@@ -38,9 +38,9 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     {
         using var session = await identitySessionWithData();
         var users = session.Query<User>().OrderBy(x => x.FirstName).ToArray();
-        users[0].ShouldBeTheSameAs(admin1);
-        users[1].ShouldBeTheSameAs(super1);
-        users[5].ShouldBeTheSameAs(user2);
+        users[0].ShouldBeSameAs(admin1);
+        users[1].ShouldBeSameAs(super1);
+        users[5].ShouldBeSameAs(user2);
     }
 
     [Fact]

@@ -56,10 +56,10 @@ public class Bug_3083_concurrent_type_generation: BugIntegrationContext
 
         await Task.WhenAll(tasks);
 
-        graph.StorageFor<SomeDocument>().ShouldBeTheSameAs(documentProvider1);
-        graph.StorageFor<OtherDocument>().ShouldBeTheSameAs(documentProvider2);
-        graph.StorageFor<ThirdDocument>().ShouldBeTheSameAs(documentProvider3);
-        graph.StorageFor<ForthDocument>().ShouldBeTheSameAs(documentProvider4);
+        graph.StorageFor<SomeDocument>().ShouldBeSameAs(documentProvider1);
+        graph.StorageFor<OtherDocument>().ShouldBeSameAs(documentProvider2);
+        graph.StorageFor<ThirdDocument>().ShouldBeSameAs(documentProvider3);
+        graph.StorageFor<ForthDocument>().ShouldBeSameAs(documentProvider4);
     }
 
     public class MockDocumentProvider<T>: DocumentProvider<T> where T : notnull

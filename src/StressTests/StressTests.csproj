@@ -29,6 +29,15 @@
         <PackageReference Include="Shouldly" Version="4.2.1" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Include="..\Marten.Testing\MartenHostEnvironment.cs">
+        <Link>MartenHostEnvironment.cs</Link>
+      </Compile>
+      <Compile Include="..\Marten.Testing\RecordingLogger.cs">
+        <Link>RecordingLogger.cs</Link>
+      </Compile>
+    </ItemGroup>
+
     <PropertyGroup>
         <NoWarn>xUnit1013</NoWarn>
     </PropertyGroup>

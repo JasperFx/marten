@@ -19,7 +19,7 @@ public class long_based_document_operations : IAsyncLifetime
         theStore = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed";
+            opts.DatabaseSchemaName = "strong_typed3";
         });
 
         theSession = theStore.LightweightSession();
@@ -290,7 +290,7 @@ public class long_based_document_operations_with_non_nullable_id : IAsyncLifetim
         theStore = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed";
+            opts.DatabaseSchemaName = "strong_typed22";
         });
 
         theSession = theStore.LightweightSession();
@@ -316,7 +316,7 @@ public class long_based_document_operations_with_non_nullable_id : IAsyncLifetim
 
         theSession.Store(issue);
 
-        issue.Id.ShouldNotBeNull();
+        issue.Id.ShouldNotBe(default);
         issue.Id.Value.ShouldNotBe(0);
     }
 

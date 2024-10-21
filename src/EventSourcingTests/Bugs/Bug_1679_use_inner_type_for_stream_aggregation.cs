@@ -5,6 +5,7 @@ using Marten;
 using Marten.Events;
 using Marten.Schema;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
 namespace EventSourcingTests.Bugs;

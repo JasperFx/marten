@@ -30,7 +30,7 @@ public class using_long_identity : IntegrationContext
 
         theSession.Store(doc);
 
-        SpecificationExtensions.ShouldBeGreaterThan(doc.Id, 0L);
+        doc.Id.ShouldBeGreaterThan(0L);
 
         var doc2 = new LongDoc { Id = 0 };
         theSession.Store(doc2);
@@ -56,7 +56,7 @@ public class using_long_identity : IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            SpecificationExtensions.ShouldBeNull(session.Load<LongDoc>(LongDoc.Id));
+            session.Load<LongDoc>(LongDoc.Id).ShouldBeNull();
         }
     }
 

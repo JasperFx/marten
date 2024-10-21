@@ -51,7 +51,7 @@ public class duplicated_field: OneOffConfigurationsContext
         {
             var documentFromDb = query.Load<Target>(document.Id);
 
-            SpecificationExtensions.ShouldNotBeNull(documentFromDb);
+            documentFromDb.ShouldNotBeNull();
             documentFromDb.Color.ShouldBe(document.Color);
         }
     }
@@ -84,7 +84,7 @@ public class duplicated_field: OneOffConfigurationsContext
         {
             var documentFromDb = query.Load<NonNullableDuplicateFieldTestDoc>(document.Id);
 
-            SpecificationExtensions.ShouldNotBeNull(documentFromDb);
+            documentFromDb.ShouldNotBeNull();
             documentFromDb.NonNullableDuplicateField.ShouldBe(document.NonNullableDuplicateField);
             documentFromDb.NonNullableDuplicateFieldViaAttribute.ShouldBe(document.NonNullableDuplicateFieldViaAttribute);
         }
@@ -117,10 +117,10 @@ public class duplicated_field: OneOffConfigurationsContext
         {
             var documentFromDb = query.Load<NullableDuplicateFieldTestDoc>(document.Id);
 
-            SpecificationExtensions.ShouldNotBeNull(documentFromDb);
-            SpecificationExtensions.ShouldBeNull(documentFromDb.NullableDuplicateField);
-            SpecificationExtensions.ShouldBeNull(documentFromDb.NullableDateTimeDuplicateFieldViaAttribute);
-            SpecificationExtensions.ShouldBeNull(documentFromDb.NullableIntDuplicateFieldViaAttribute);
+            documentFromDb.ShouldNotBeNull();
+            documentFromDb.NullableDuplicateField.ShouldBeNull();
+            documentFromDb.NullableDateTimeDuplicateFieldViaAttribute.ShouldBeNull();
+            documentFromDb.NullableIntDuplicateFieldViaAttribute.ShouldBeNull();
         }
     }
 

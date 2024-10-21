@@ -49,7 +49,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         session.Store(coffeeShop);
         await session.SaveChangesAsync();
 
-        SpecificationExtensions.ShouldNotBeNull(session.Load<CoffeeShop>(coffeeShop.Id));
+        session.Load<CoffeeShop>(coffeeShop.Id).ShouldNotBeNull();
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         session.Store(coffeeShop);
         await session.SaveChangesAsync();
 
-        SpecificationExtensions.ShouldNotBeNull((await session.LoadAsync<CoffeeShop>(coffeeShop.Id)));
+        (await session.LoadAsync<CoffeeShop>(coffeeShop.Id)).ShouldNotBeNull();
     }
 
     [Fact]

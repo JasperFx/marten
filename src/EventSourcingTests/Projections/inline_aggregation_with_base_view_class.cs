@@ -61,7 +61,7 @@ public class inline_aggregation_with_base_view_class: OneOffConfigurationsContex
     {
         var loadedView = theSession.Load<T>(streamId);
 
-        loadedView.ShouldNotBeNull();
+        loadedView.ShouldNotBe(default);
         loadedView.Id.ShouldBe(streamId);
         loadedView.Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
 

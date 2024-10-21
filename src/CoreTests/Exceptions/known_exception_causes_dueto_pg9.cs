@@ -20,7 +20,7 @@ public class known_exception_causes_dueto_pg9: IntegrationContext
         });
 
         e.Reason.ShouldBe(NotSupportedReason.FullTextSearchNeedsAtLeastPostgresVersion10);
-        SpecificationExtensions.ShouldContain(e.Message, KnownNotSupportedExceptionCause.ToTsvectorOnJsonb.Description);
+        e.Message.ShouldContain(KnownNotSupportedExceptionCause.ToTsvectorOnJsonb.Description);
     }
 
     [PgVersionTargetedFact(MaximumVersion = "10.0")]
@@ -31,7 +31,8 @@ public class known_exception_causes_dueto_pg9: IntegrationContext
             using var session = theStore.QuerySession();
             session.Query<User>("to_tsvector(?)", 0).ToList();
         });
-        SpecificationExtensions.ShouldNotBeOfType<MartenCommandNotSupportedException>(e);
+
+        e.ShouldNotBeOfType<MartenCommandNotSupportedException>();
     }
 
     public known_exception_causes_dueto_pg9(DefaultStoreFixture fixture) : base(fixture)

@@ -6,7 +6,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace CoreTests.Bugs;
+namespace StressTests.Bugs;
 
 public class Bug616Account
 {

@@ -104,7 +104,7 @@ public class projection_progression_operations : OneOffConfigurationsContext
             await theSession.SaveChangesAsync();
         });
 
-        ex.Message.ShouldContain("four", StringComparisonOption.Default);
+        ex.Message.ShouldContain("four");
 
         // Just verifying that the real progress didn't change
         var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("four"));

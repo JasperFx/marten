@@ -13,7 +13,7 @@ public class assigning_versions_to_documents : OneOffConfigurationsContext
     [Fact]
     public void no_version_member_by_default()
     {
-        SpecificationExtensions.ShouldBeNull(DocumentMapping.For<User>().Metadata.Version.Member);
+        DocumentMapping.For<User>().Metadata.Version.Member.ShouldBeNull();
     }
 
     [Fact]

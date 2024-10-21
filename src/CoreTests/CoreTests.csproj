@@ -114,6 +114,12 @@
         <Compile Include="..\Marten.Testing\Harness\TestsSettings.cs">
             <Link>Harness\TestsSettings.cs</Link>
         </Compile>
+        <Compile Include="..\Marten.Testing\MartenHostEnvironment.cs">
+          <Link>MartenHostEnvironment.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\RecordingLogger.cs">
+          <Link>RecordingLogger.cs</Link>
+        </Compile>
         <Compile Include="..\Marten.Testing\SchemaMigrationExtensions.cs">
             <Link>SchemaMigrationExtensions.cs</Link>
         </Compile>

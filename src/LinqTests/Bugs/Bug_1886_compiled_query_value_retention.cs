@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Testing.Harness;
+using Shouldly;
 
 namespace LinqTests.Bugs;
 

@@ -78,7 +78,7 @@ public class EventGraphTests
         theGraph.AddEventType(typeof(MembersJoined));
         theGraph.AddEventType(typeof(MembersDeparted));
 
-        theGraph.EventMappingFor<IssueAssigned>().ShouldBeTheSameAs(theGraph.EventMappingFor<IssueAssigned>());
+        theGraph.EventMappingFor<IssueAssigned>().ShouldBeSameAs(theGraph.EventMappingFor<IssueAssigned>());
     }
 
     [Fact]
