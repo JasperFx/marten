@@ -14,7 +14,7 @@ using Xunit.Abstractions;
 
 namespace DocumentDbTests.Reading.BatchedQuerying;
 
-public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
+public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
     private readonly Target target1 = Target.Random();
@@ -46,6 +46,11 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     public batched_querying_acceptance_Tests(ITestOutputHelper output)
     {
         _output = output;
+
+    }
+
+    public async Task InitializeAsync()
+    {
         StoreOptions(_ =>
         {
             _.Schema.For<User>().AddSubClass(typeof(AdminUser)).AddSubClass(typeof(SuperUser))
@@ -56,7 +61,12 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
         session.Store(target1, target2, target3);
         session.Store(user1, user2, admin1, admin2, super1, super2);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
     }
 
     public void sample_config()

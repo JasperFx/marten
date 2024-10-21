@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Internal.Sessions;
 using Marten.Services;
 
 namespace Marten;
@@ -56,6 +57,7 @@ public interface IDocumentSession: IDocumentOperations
     /// <summary>
     ///     Saves all the pending changes and deletions to the server in a single Postgresql transaction.
     /// </summary>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     void SaveChanges();
 
     /// <summary>

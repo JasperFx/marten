@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Services;
 using Marten.Testing.Harness;
@@ -24,7 +25,7 @@ public class Bug_964_optimistic_concurrency_with_subclass: BugIntegrationContext
     }
 
     [Fact]
-    public void should_not_throw_a_ConcurrencyException()
+    public async Task should_not_throw_a_ConcurrencyException()
     {
         CloudStorageMinio minio1 = new CloudStorageMinio()
         {
@@ -39,19 +40,19 @@ public class Bug_964_optimistic_concurrency_with_subclass: BugIntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Insert(minio1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
         {
             session.UpdateExpectedVersion(minio1, minio1.Version);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
     }
 
     [Fact]
-    public void should_Throw_ConcurrencyException()
+    public async Task should_Throw_ConcurrencyException()
     {
         CloudStorageMinio minio1 = new CloudStorageMinio()
         {
@@ -66,7 +67,7 @@ public class Bug_964_optimistic_concurrency_with_subclass: BugIntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Insert(minio1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
@@ -91,9 +92,9 @@ public class Bug_964_optimistic_concurrency_with_subclass: BugIntegrationContext
 
             // It throws ConcurrencyException because there is only one
             // exception
-            Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
+            await Should.ThrowAsync<ConcurrencyException>(async () =>
             {
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             });
         }
     }

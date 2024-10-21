@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Xunit;
@@ -9,12 +10,12 @@ namespace DocumentDbTests.Bugs;
 public class ability_to_persist_nested_types_Tests: BugIntegrationContext
 {
     [Fact]
-    public void can_persist_and_load_nested_types()
+    public async Task can_persist_and_load_nested_types()
     {
         var doc1 = new MyDocument();
 
         theSession.Store(doc1);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var doc2 = theSession.Load<MyDocument>(doc1.Id);
         doc2.ShouldNotBeNull();

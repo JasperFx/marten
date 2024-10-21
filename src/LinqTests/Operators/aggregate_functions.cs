@@ -12,14 +12,14 @@ public class aggregate_functions : IntegrationContext
 {
     #region sample_using_max
     [Fact]
-    public void get_max()
+    public async Task get_max()
     {
         theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
         theSession.Store(new Target { Color = Colors.Red, Number = 42 });
         theSession.Store(new Target { Color = Colors.Green, Number = 3 });
         theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
         var maxNumber = theSession.Query<Target>().Max(t => t.Number);
         maxNumber.ShouldBe(42);
     }
@@ -40,14 +40,14 @@ public class aggregate_functions : IntegrationContext
 
     #region sample_using_min
     [Fact]
-    public void get_min()
+    public async Task get_min()
     {
         theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
         theSession.Store(new Target { Color = Colors.Red, Number = 2 });
         theSession.Store(new Target { Color = Colors.Green, Number = -5 });
         theSession.Store(new Target { Color = Colors.Blue, Number = 42 });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
         var minNumber = theSession.Query<Target>().Min(t => t.Number);
         minNumber.ShouldBe(-5);
     }
@@ -68,14 +68,14 @@ public class aggregate_functions : IntegrationContext
 
     #region sample_using_average
     [Fact]
-    public void get_average()
+    public async Task get_average()
     {
         theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
         theSession.Store(new Target { Color = Colors.Red, Number = 2 });
         theSession.Store(new Target { Color = Colors.Green, Number = -5 });
         theSession.Store(new Target { Color = Colors.Blue, Number = 42 });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
         var average = theSession.Query<Target>().Average(t => t.Number);
         average.ShouldBe(10);
     }
@@ -95,26 +95,26 @@ public class aggregate_functions : IntegrationContext
     }
 
     [Fact]
-    public void sum_without_any_where()
+    public async Task sum_without_any_where()
     {
         theSession.Store(new Target { Number = 1 });
         theSession.Store(new Target { Number = 2 });
         theSession.Store(new Target { Number = 3 });
         theSession.Store(new Target { Number = 4 });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var result = theSession.Query<Target>().Sum(x => x.Number);
         result.ShouldBe(10);
     }
 
     [Fact]
-    public void sum_with_nullable()
+    public async Task sum_with_nullable()
     {
         theSession.Store(new Target { NullableNumber = 1 });
         theSession.Store(new Target { NullableNumber = 2 });
         theSession.Store(new Target { NullableNumber = 3 });
         theSession.Store(new Target { NullableNumber = 4 });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var result = theSession.Query<Target>().Sum(x => x.NullableNumber);
         result.ShouldBe(10);
@@ -149,14 +149,14 @@ public class aggregate_functions : IntegrationContext
 
         #region sample_using_sum
     [Fact]
-    public void get_sum_of_integers()
+    public async Task get_sum_of_integers()
     {
         theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
         theSession.Store(new Target { Color = Colors.Red, Number = 2 });
         theSession.Store(new Target { Color = Colors.Green, Number = 3 });
         theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
         theSession.Query<Target>().Sum(x => x.Number)
             .ShouldBe(10);
     }
@@ -164,13 +164,13 @@ public class aggregate_functions : IntegrationContext
     #endregion
 
     [Fact]
-    public void get_sum_of_decimals()
+    public async Task get_sum_of_decimals()
     {
         theSession.Store(new Target { Color = Colors.Blue, Decimal = 1.1m });
         theSession.Store(new Target { Color = Colors.Red, Decimal = 2.2m });
         theSession.Store(new Target { Color = Colors.Green, Decimal = 3.3m });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
         theSession.Query<Target>().Sum(x => x.Decimal)
             .ShouldBe(6.6m);
     }
@@ -183,14 +183,14 @@ public class aggregate_functions : IntegrationContext
     }
 
     [Fact]
-    public void get_sum_of_integers_with_where()
+    public async Task get_sum_of_integers_with_where()
     {
         theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
         theSession.Store(new Target { Color = Colors.Red, Number = 2 });
         theSession.Store(new Target { Color = Colors.Green, Number = 3 });
         theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
         theSession.Query<Target>().Where(x => x.Number < 4).Sum(x => x.Number)
             .ShouldBe(6);
     }
@@ -211,7 +211,7 @@ public class aggregate_functions : IntegrationContext
     [Theory]
     [InlineData(EnumStorage.AsString)]
     [InlineData(EnumStorage.AsInteger)]
-    public void get_sum_of_integers_with_where_with_nullable_enum(EnumStorage enumStorage)
+    public async Task get_sum_of_integers_with_where_with_nullable_enum(EnumStorage enumStorage)
     {
         StoreOptions(o => o.UseDefaultSerialization(enumStorage));
 
@@ -220,7 +220,7 @@ public class aggregate_functions : IntegrationContext
         theSession.Store(new Target { NullableColor = Colors.Green, Number = 3 });
         theSession.Store(new Target { NullableColor = null, Number = 4 });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
         theSession.Query<Target>()
             .Where(x => x.NullableColor != null)
             .Sum(x => x.Number)

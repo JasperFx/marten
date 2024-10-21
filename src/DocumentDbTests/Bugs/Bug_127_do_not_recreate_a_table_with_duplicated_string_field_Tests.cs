@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -12,7 +13,7 @@ namespace DocumentDbTests.Bugs;
 public class Bug_127_do_not_recreate_a_table_with_duplicated_string_field_Tests : BugIntegrationContext
 {
     [Fact]
-    public void does_not_recreate_the_table()
+    public async Task does_not_recreate_the_table()
     {
         var store1 = SeparateStore(_ =>
         {
@@ -27,7 +28,7 @@ public class Bug_127_do_not_recreate_a_table_with_duplicated_string_field_Tests 
             session1.Store(new Team { Name = "Spurs" });
             session1.Store(new Team { Name = "Thunder" });
 
-            session1.SaveChanges();
+            await session1.SaveChangesAsync();
 
             session1.Query<Team>().Count().ShouldBe(3);
         }

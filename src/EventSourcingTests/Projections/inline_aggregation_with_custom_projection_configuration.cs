@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -23,7 +24,7 @@ public class inline_aggregation_with_custom_projection_configuration : OneOffCon
     }
 
     [Fact]
-    public void does_delete_document_upon_deleted_event()
+    public async Task does_delete_document_upon_deleted_event()
     {
         StoreOptions(_ =>
         {
@@ -35,14 +36,14 @@ public class inline_aggregation_with_custom_projection_configuration : OneOffCon
 
         var todoId = Guid.NewGuid();
         theSession.Events.StartStream<TodoAggregate>(todoId, new TodoCreated(todoId, "Write code"));
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         // Make sure the document has been created
         theSession.Load<TodoAggregate>(todoId).ShouldNotBeNull();
 
         // Append the delete
         theSession.Events.Append(todoId, new TodoDeleted(todoId));
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         // Make sure the document now has been deleted
         theSession.Load<TodoAggregate>(todoId).ShouldBeNull();

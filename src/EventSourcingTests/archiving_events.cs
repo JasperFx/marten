@@ -329,10 +329,11 @@ public class archiving_events: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         theSession.Events.Append(streamId, new BEvent());
-        var thrownException = Should.Throw<InvalidStreamOperationException>( () =>
+        var thrownException = await Should.ThrowAsync<InvalidStreamOperationException>( async () =>
         {
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
         });
+
         thrownException.Message.ShouldBe($"Attempted to append event to archived stream with Id '{streamId}'.");
     }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -24,7 +25,7 @@ public class Bug_484_Contains_on_IList_of_string: BugIntegrationContext
     }
 
     [Fact]
-    public void can_do_contains_against_IList()
+    public async Task can_do_contains_against_IList()
     {
         var doc1 = new DocWithLists {Names = new List<string> {"Jeremy", "Josh", "Corey"}};
         var doc2 = new DocWithLists {Names = new List<string> {"Jeremy", "Lindsey", "Max"}};
@@ -32,7 +33,7 @@ public class Bug_484_Contains_on_IList_of_string: BugIntegrationContext
 
         using var session = theStore.LightweightSession();
         session.Store(doc1, doc2, doc3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var ids = session.Query<DocWithLists>().Where(x => x.Names.Contains("Jeremy")).Select(x => x.Id)
             .ToList();
@@ -43,7 +44,7 @@ public class Bug_484_Contains_on_IList_of_string: BugIntegrationContext
     }
 
     [Fact]
-    public void can_do_contains_against_IList_with_camel_casing()
+    public async Task can_do_contains_against_IList_with_camel_casing()
     {
         StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 
@@ -53,7 +54,7 @@ public class Bug_484_Contains_on_IList_of_string: BugIntegrationContext
 
         using var session = theStore.LightweightSession();
         session.Store(doc1, doc2, doc3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var ids = session.Query<DocWithLists>().Where(x => x.Names.Contains("Jeremy")).Select(x => x.Id)
             .ToList();

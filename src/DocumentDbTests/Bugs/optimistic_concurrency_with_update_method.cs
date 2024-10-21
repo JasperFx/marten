@@ -25,13 +25,13 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
     }
 
     [Fact]
-    public void can_update_with_optimistic_concurrency()
+    public async Task can_update_with_optimistic_concurrency()
     {
         var doc1 = new CoffeeShop();
         using (var session1 = theStore.LightweightSession())
         {
             session1.Insert(doc1);
-            session1.SaveChanges();
+            await session1.SaveChangesAsync();
         }
 
         using (var session2 = theStore.LightweightSession())
@@ -40,7 +40,7 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
             doc2.Name = "Mozart's";
 
             session2.Update(doc2);
-            session2.SaveChanges();
+            await session2.SaveChangesAsync();
         }
 
         using (var session3 = theStore.QuerySession())
@@ -75,13 +75,13 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
     }
 
     [Fact]
-    public void update_with_stale_version_throws_exception()
+    public async Task update_with_stale_version_throws_exception()
     {
         var doc1 = new CoffeeShop();
         using (var session1 = theStore.LightweightSession())
         {
             session1.Insert(doc1);
-            session1.SaveChanges();
+            await session1.SaveChangesAsync();
         }
 
         using (var session2 = theStore.LightweightSession())
@@ -94,9 +94,9 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
 
             session2.Update(doc2);
 
-            var ex = Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
+            var ex = await Should.ThrowAsync<ConcurrencyException>(async () =>
             {
-                session2.SaveChanges();
+                await session2.SaveChangesAsync();
             });
 
             ex.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(CoffeeShop).FullName} #{doc1.Id}");

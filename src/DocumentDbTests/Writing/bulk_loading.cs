@@ -265,7 +265,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
     [Fact]
     public async Task load_across_multiple_tenants_async()
     {
-        StoreOptions(opts => 
+        StoreOptions(opts =>
         {
             opts.Policies.AllDocumentsAreMultiTenanted();
         });
@@ -402,7 +402,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
     }
 
     [Fact]
-    public void store_multiple_types_of_documents_at_one_time()
+    public async Task store_multiple_types_of_documents_at_one_time()
     {
         var user1 = new User();
         var user2 = new User();
@@ -412,7 +412,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         var company2 = new Company();
 
         theSession.Store<object>(user1, user2, issue1, issue2, company1, company2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var querying = theStore.QuerySession())
         {
@@ -423,7 +423,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
     }
 
     [Fact]
-    public void store_multiple_types_of_documents_at_one_time_by_StoreObjects()
+    public async Task store_multiple_types_of_documents_at_one_time_by_StoreObjects()
     {
         var user1 = new User();
         var user2 = new User();
@@ -434,7 +434,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         var documents = new object[] { user1, user2, issue1, issue2, company1, company2};
         theSession.StoreObjects(documents);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var querying = theStore.QuerySession())
         {
@@ -497,7 +497,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         {
             theStore.BulkInsertEnlistTransaction(data, Transaction.Current);
             scope.Complete();
-        }           
+        }
 
         using var session = theStore.QuerySession();
         session.Query<Target>().Count().ShouldBe(data.Length);
@@ -510,7 +510,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         {
-            theStore.BulkInsertEnlistTransaction(data, Transaction.Current);                
+            theStore.BulkInsertEnlistTransaction(data, Transaction.Current);
         }
 
         using var session = theStore.QuerySession();

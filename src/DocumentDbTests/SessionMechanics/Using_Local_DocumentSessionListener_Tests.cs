@@ -14,7 +14,7 @@ namespace DocumentDbTests.SessionMechanics;
 public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsContext
 {
     [Fact]
-    public void call_listener_events_on_synchronous_session_saves()
+    public async Task call_listener_events_on_synchronous_session_saves()
     {
         #region sample_registering-a-document-session-listener
 
@@ -36,7 +36,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
             {
                 session.Store(new User(), new User());
 
-                session.SaveChanges();
+                await session.SaveChangesAsync();
 
                 stub1.SaveChangesSession.ShouldBeTheSameAs(session);
                 stub1.AfterCommitSession.ShouldBeTheSameAs(session);
@@ -137,7 +137,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
     }
 
     [Fact]
-    public void call_listener_events_on_document_load()
+    public async Task call_listener_events_on_document_load()
     {
         var stub1 = new StubDocumentSessionListener();
         var stub2 = new StubDocumentSessionListener();
@@ -156,7 +156,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
             using (var session = store.LightweightSession())
             {
                 session.StoreObjects(new[] { user1, user2 });
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
@@ -170,7 +170,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
     }
 
     [Fact]
-    public void call_listener_events_on_document_query()
+    public async Task call_listener_events_on_document_query()
     {
         var stub1 = new StubDocumentSessionListener();
         var stub2 = new StubDocumentSessionListener();
@@ -189,7 +189,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
             using (var session = store.LightweightSession())
             {
                 session.StoreObjects(new[] { user1, user2 });
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
@@ -270,7 +270,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
     }
 
     [Fact]
-    public void call_listener_events_on_document_load_and_dirty_tracking_session()
+    public async Task call_listener_events_on_document_load_and_dirty_tracking_session()
     {
         var stub1 = new StubDocumentSessionListener();
         var stub2 = new StubDocumentSessionListener();
@@ -289,7 +289,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
             using (var session = store.LightweightSession())
             {
                 session.StoreObjects(new[] { user1, user2 });
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = store.DirtyTrackedSession(new SessionOptions { Listeners = { stub1, stub2 } }))
@@ -303,7 +303,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
     }
 
     [Fact]
-    public void call_listener_events_on_document_query_and_dirty_tracking_session()
+    public async Task call_listener_events_on_document_query_and_dirty_tracking_session()
     {
         var stub1 = new StubDocumentSessionListener();
         var stub2 = new StubDocumentSessionListener();
@@ -322,7 +322,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
             using (var session = store.LightweightSession())
             {
                 session.StoreObjects(new[] { user1, user2 });
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = store.DirtyTrackedSession(new SessionOptions { Listeners = { stub1, stub2 } }))

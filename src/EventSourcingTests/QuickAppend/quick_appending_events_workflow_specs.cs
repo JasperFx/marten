@@ -34,7 +34,7 @@ public class quick_appending_events_workflow_specs
     public quick_appending_events_workflow_specs(ITestOutputHelper output)
     {
         _output = output;
-        
+
     }
 
     public class EventMetadataChecker : DocumentSessionListenerBase
@@ -58,28 +58,13 @@ public class quick_appending_events_workflow_specs
     public async Task can_fetch_stream_async(TestCase @case)
     {
         await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
-        @case.StartNewStream(new TestOutputMartenLogger(_output));
+        await @case.StartNewStream(new TestOutputMartenLogger(_output));
         await using var query = @case.Store.QuerySession();
 
         var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
         var handler = builder.QueryForStream(@case.ToEventStream());
 
         var state = await query.As<QuerySession>().ExecuteHandlerAsync(handler, CancellationToken.None);
-        state.ShouldNotBeNull();
-    }
-
-    [Theory]
-    [MemberData(nameof(Data))]
-    public void can_fetch_stream_sync(TestCase @case)
-    {
-        @case.Store.Advanced.Clean.CompletelyRemoveAll();
-        @case.StartNewStream();
-        using var query = @case.Store.QuerySession();
-
-        var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
-        var handler = builder.QueryForStream(@case.ToEventStream());
-
-        var state = query.As<QuerySession>().ExecuteHandler(handler);
         state.ShouldNotBeNull();
     }
 
@@ -105,8 +90,8 @@ public class quick_appending_events_workflow_specs
     [MemberData(nameof(Data))]
     public async Task can_update_the_version_of_an_existing_stream_happy_path(TestCase @case)
     {
-        @case.Store.Advanced.Clean.CompletelyRemoveAll();
-        var stream = @case.StartNewStream(new TestOutputMartenLogger(_output));
+        await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
+        var stream = await @case.StartNewStream(new TestOutputMartenLogger(_output));
 
         stream.ExpectedVersionOnServer = 4;
         stream.Version = 10;
@@ -130,8 +115,8 @@ public class quick_appending_events_workflow_specs
     [MemberData(nameof(Data))]
     public async Task can_update_the_version_of_an_existing_stream_sad_path(TestCase @case)
     {
-        @case.Store.Advanced.Clean.CompletelyRemoveAll();
-        var stream = @case.StartNewStream();
+        await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
+        var stream = await @case.StartNewStream();
 
         stream.ExpectedVersionOnServer = 3; // it's actually 4, so this should fail
         stream.Version = 10;
@@ -301,7 +286,7 @@ public class quick_appending_events_workflow_specs
 
         internal DocumentStore Store => _store.Value;
 
-        public StreamAction StartNewStream(IMartenSessionLogger logger = null)
+        public async Task<StreamAction> StartNewStream(IMartenSessionLogger logger = null)
         {
             var events = new object[] {new AEvent(), new BEvent(), new CEvent(), new DEvent()};
             using var session = Store.Events.TenancyStyle == TenancyStyle.Conjoined
@@ -318,7 +303,7 @@ public class quick_appending_events_workflow_specs
             if (Store.Events.StreamIdentity == StreamIdentity.AsGuid)
             {
                 session.Events.StartStream(StreamId, events);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
 
                 var stream = StreamAction.Append(Store.Events, StreamId);
                 stream.Version = 4;
@@ -329,7 +314,7 @@ public class quick_appending_events_workflow_specs
             else
             {
                 session.Events.StartStream(StreamId.ToString(), events);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
 
                 var stream = StreamAction.Start(Store.Events, StreamId.ToString(), new AEvent());
                 stream.Version = 4;

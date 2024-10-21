@@ -175,7 +175,7 @@ using (var session = theStore.IdentitySession())
     // Now that 2nd document is no longer in the identity map
     session.Load<Target>(target2.Id).ShouldBeNull();
 
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 }
 
 using (var session = theStore.QuerySession())
@@ -185,7 +185,7 @@ using (var session = theStore.QuerySession())
     session.Load<Target>(target2.Id).ShouldBeNull();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_documents.cs#L14-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_a_document' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_documents.cs#L15-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_a_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Ejecting all pending changes from a Session

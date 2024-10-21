@@ -997,7 +997,7 @@ public class streaming_json_results : IntegrationContext
         theSession.Store(new User { FirstName = "Sam" });
         theSession.Store(new User { FirstName = "Tom" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         // Postgres sticks some extra spaces into the JSON string
 

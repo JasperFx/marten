@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 
 namespace LinqTests.Bugs;
@@ -6,7 +7,7 @@ namespace LinqTests.Bugs;
 public class Bug_899_operations_out_of_order_when_types_use_inheritance: BugIntegrationContext
 {
     [Fact]
-    public void performs_soft_delete_then_store_operations_in_order()
+    public async Task performs_soft_delete_then_store_operations_in_order()
     {
         // Test failure bomb
         if (DateTime.Today < new DateTime(2023, 9, 5)) return;
@@ -29,7 +30,7 @@ public class Bug_899_operations_out_of_order_when_types_use_inheritance: BugInte
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
@@ -41,7 +42,7 @@ public class Bug_899_operations_out_of_order_when_types_use_inheritance: BugInte
             doc.Name = "Skimbleshanks";
             session.Store(doc);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
     }
 

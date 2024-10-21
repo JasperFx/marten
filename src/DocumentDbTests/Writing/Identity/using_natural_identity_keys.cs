@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Schema;
@@ -33,14 +34,14 @@ public class using_natural_identity_keys: IntegrationContext
     }
 
     [Fact]
-    public void can_persist_with_natural_key()
+    public async Task can_persist_with_natural_key()
     {
         var doc = new NonStandardDoc { Name = "somebody" };
 
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())

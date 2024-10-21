@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
@@ -32,7 +33,7 @@ public class CustomIdGeneration : IIdGeneration
 public class CustomKeyGenerationTests : OneOffConfigurationsContext
 {
     [Fact]
-    public void When_a_custom_id_generation_is_used()
+    public async Task When_a_custom_id_generation_is_used()
     {
         StoreOptions(options =>
         {
@@ -51,7 +52,7 @@ public class CustomKeyGenerationTests : OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(new UserWithString { LastName = "last" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session1 = theStore.QuerySession())

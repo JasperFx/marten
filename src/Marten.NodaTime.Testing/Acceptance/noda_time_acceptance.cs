@@ -86,43 +86,38 @@ public class noda_time_acceptance: OneOffConfigurationsContext
     [Theory]
     [InlineData(SerializerType.SystemTextJson)]
     [InlineData(SerializerType.Newtonsoft)]
-    public void can_insert_document(SerializerType serializerType)
+    public async Task can_insert_document(SerializerType serializerType)
     {
-        StoreOptions(_ =>
+        StoreOptions(opts =>
         {
-            _.UseDefaultSerialization(serializerType: serializerType);
-            _.UseNodaTime();
+            opts.UseDefaultSerialization(serializerType: serializerType);
+            opts.UseNodaTime();
         });
 
         var testDoc = TargetWithDates.Generate();
 
-        using (var session = theStore.LightweightSession())
-        {
-            session.Insert(testDoc);
-            session.SaveChanges();
-        }
+        await using var session = theStore.LightweightSession();
+        session.Insert(testDoc);
+        await session.SaveChangesAsync();
 
-        using (var query = theStore.QuerySession())
-        {
-            var docFromDb = query.Query<TargetWithDates>().FirstOrDefault(d => d.Id == testDoc.Id);
+        await using var query = theStore.QuerySession();
+        var docFromDb = query.Query<TargetWithDates>().FirstOrDefault(d => d.Id == testDoc.Id);
 
-            docFromDb.ShouldNotBeNull();
-            docFromDb.Equals(testDoc).ShouldBeTrue();
-        }
-
+        docFromDb.ShouldNotBeNull();
+        docFromDb.Equals(testDoc).ShouldBeTrue();
     }
 
     [Theory]
     [InlineData(SerializerType.SystemTextJson)]
     [InlineData(SerializerType.Newtonsoft)]
-    public void can_query_document_with_noda_time_types(SerializerType serializerType)
+    public async Task can_query_document_with_noda_time_types(SerializerType serializerType)
     {
-        StoreOptions(_ =>
+        StoreOptions(opts =>
         {
-            _.UseDefaultSerialization(serializerType: serializerType);
-            _.UseNodaTime();
-            _.DatabaseSchemaName = "NodaTime";
-            _.Schema.For<TargetWithDates>()
+            opts.UseDefaultSerialization(serializerType: serializerType);
+            opts.UseNodaTime();
+            opts.DatabaseSchemaName = "NodaTime";
+            opts.Schema.For<TargetWithDates>()
                 .Duplicate(x => x.NullableLocalDate);
         }, true);
 
@@ -133,62 +128,58 @@ public class noda_time_acceptance: OneOffConfigurationsContext
         var instantUTC = Instant.FromDateTimeUtc(dateTime.ToUniversalTime());
         var testDoc = TargetWithDates.Generate(dateTime);
 
-        using (var session = theStore.LightweightSession())
+        await using var session = theStore.LightweightSession();
+        session.Insert(testDoc);
+        await session.SaveChangesAsync();
+
+        await using var query = theStore.QuerySession();
+        var results = new List<TargetWithDates>
         {
-            session.Insert(testDoc);
-            session.SaveChanges();
-        }
+            // LocalDate
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDate == localDateTime.Date),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDate < localDateTime.Date.PlusDays(1)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDate <= localDateTime.Date.PlusDays(1)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDate > localDateTime.Date.PlusDays(-1)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDate >= localDateTime.Date.PlusDays(-1)),
 
-        using (var query = theStore.QuerySession())
-        {
-            var results = new List<TargetWithDates>
-            {
-                // LocalDate
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDate == localDateTime.Date),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDate < localDateTime.Date.PlusDays(1)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDate <= localDateTime.Date.PlusDays(1)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDate > localDateTime.Date.PlusDays(-1)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDate >= localDateTime.Date.PlusDays(-1)),
+            //// Nullable LocalDate
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDate == localDateTime.Date),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDate < localDateTime.Date.PlusDays(1)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDate <= localDateTime.Date.PlusDays(1)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDate > localDateTime.Date.PlusDays(-1)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDate >= localDateTime.Date.PlusDays(-1)),
 
-                //// Nullable LocalDate
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDate == localDateTime.Date),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDate < localDateTime.Date.PlusDays(1)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDate <= localDateTime.Date.PlusDays(1)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDate > localDateTime.Date.PlusDays(-1)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDate >= localDateTime.Date.PlusDays(-1)),
+            //// LocalDateTime
+            //query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime == localDateTime),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime < localDateTime.PlusSeconds(1)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime <= localDateTime.PlusSeconds(1)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime > localDateTime.PlusSeconds(-1)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime >= localDateTime.PlusSeconds(-1)),
 
-                //// LocalDateTime
-                //query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime == localDateTime),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime < localDateTime.PlusSeconds(1)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime <= localDateTime.PlusSeconds(1)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime > localDateTime.PlusSeconds(-1)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime >= localDateTime.PlusSeconds(-1)),
+            //// Nullable LocalDateTime
+            //query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime == localDateTime),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime < localDateTime.PlusSeconds(1)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime <= localDateTime.PlusSeconds(1)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime > localDateTime.PlusSeconds(-1)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime >= localDateTime.PlusSeconds(-1)),
 
-                //// Nullable LocalDateTime
-                //query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime == localDateTime),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime < localDateTime.PlusSeconds(1)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime <= localDateTime.PlusSeconds(1)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime > localDateTime.PlusSeconds(-1)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime >= localDateTime.PlusSeconds(-1)),
+            //// Instant UTC
+            //query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC == instantUTC),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC < instantUTC.PlusTicks(1000)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC <= instantUTC.PlusTicks(1000)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC > instantUTC.PlusTicks(-1000)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC >= instantUTC.PlusTicks(-1000)),
 
-                //// Instant UTC
-                //query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC == instantUTC),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC < instantUTC.PlusTicks(1000)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC <= instantUTC.PlusTicks(1000)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC > instantUTC.PlusTicks(-1000)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC >= instantUTC.PlusTicks(-1000)),
+            // Nullable Instant UTC
+            //query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC == instantUTC),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC < instantUTC.PlusTicks(1000)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC <= instantUTC.PlusTicks(1000)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC > instantUTC.PlusTicks(-1000)),
+            query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC >= instantUTC.PlusTicks(-1000))
 
-                // Nullable Instant UTC
-                //query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC == instantUTC),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC < instantUTC.PlusTicks(1000)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC <= instantUTC.PlusTicks(1000)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC > instantUTC.PlusTicks(-1000)),
-                query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC >= instantUTC.PlusTicks(-1000))
+        };
 
-            };
-
-            results.ToArray().ShouldAllBe(x => x.Equals(testDoc));
-        }
+        results.ToArray().ShouldAllBe(x => x.Equals(testDoc));
     }
 
     [Theory]
@@ -196,10 +187,10 @@ public class noda_time_acceptance: OneOffConfigurationsContext
     [InlineData(SerializerType.Newtonsoft)]
     public async Task can_append_and_query_events(SerializerType serializerType)
     {
-        StoreOptions(_ =>
+        StoreOptions(opts =>
         {
-            _.UseDefaultSerialization(serializerType: serializerType);
-            _.UseNodaTime();
+            opts.UseDefaultSerialization(serializerType: serializerType);
+            opts.UseNodaTime();
         }, true);
 
         var startDate = DateTime.UtcNow;
@@ -224,7 +215,7 @@ public class noda_time_acceptance: OneOffConfigurationsContext
     [Theory]
     [InlineData(SerializerType.SystemTextJson)]
     [InlineData(SerializerType.Newtonsoft)]
-    public void bug_1276_can_select_instant(SerializerType serializerType)
+    public async Task bug_1276_can_select_instant(SerializerType serializerType)
     {
         return; // TODO -- FIX THIS
 
@@ -237,7 +228,7 @@ public class noda_time_acceptance: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Insert(testDoc);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())

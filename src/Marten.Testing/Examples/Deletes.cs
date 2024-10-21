@@ -77,17 +77,17 @@ public class Deletes
     #endregion
 
     #region sample_deletes
-    public void delete_documents(IDocumentSession session)
+    public async Task delete_documents(IDocumentSession session)
     {
         var user = new User();
 
         session.Delete(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // OR
 
         session.Delete(user.Id);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 
     #endregion

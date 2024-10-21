@@ -33,12 +33,12 @@ public class retry_mechanism : IntegrationContext
     }
 
     [Fact]
-    public void can_successfully_retry_sync()
+    public async Task can_successfully_retry_sync()
     {
         var sometimesFailingOperation1 = new SometimesFailingOperation();
         theSession.QueueOperation(sometimesFailingOperation1);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         // Only succeeds on the 3rd try
         sometimesFailingOperation1.Usage.ShouldBe(2);

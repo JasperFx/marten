@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -8,7 +9,7 @@ namespace LinqTests.Operators;
 public class is_empty_operator : IntegrationContext
 {
     [Fact]
-    public void use_is_empty()
+    public async Task use_is_empty()
     {
         var doc1 = Target.Random(false);
         var doc2 = Target.Random(true);
@@ -20,7 +21,7 @@ public class is_empty_operator : IntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc1, doc2, doc3, doc4);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())

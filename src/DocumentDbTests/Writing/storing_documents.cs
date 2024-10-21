@@ -21,14 +21,14 @@ public class storing_documents: IntegrationContext
     [Theory]
     [InlineData(DocumentTracking.IdentityOnly)]
     [InlineData(DocumentTracking.None)]
-    public void store_a_document(DocumentTracking tracking)
+    public async Task store_a_document(DocumentTracking tracking)
     {
         using var session = OpenSession(tracking);
 
         var user = new User { FirstName = "James", LastName = "Worthy" };
 
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var session3 = theStore.LightweightSession();
         var user3 = session3.Load<User>(user.Id);
@@ -39,13 +39,13 @@ public class storing_documents: IntegrationContext
     [Theory]
     [InlineData(DocumentTracking.IdentityOnly)]
     [InlineData(DocumentTracking.None)]
-    public void store_and_update_a_document_then_document_should_not_be_updated(DocumentTracking tracking)
+    public async Task store_and_update_a_document_then_document_should_not_be_updated(DocumentTracking tracking)
     {
         var user = new User { FirstName = "James", LastName = "Worthy" };
 
         using var session = OpenSession(tracking);
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using (var session2 = theStore.LightweightSession())
         {
@@ -55,7 +55,7 @@ public class storing_documents: IntegrationContext
             user2.FirstName = "Jens";
             user2.LastName = "Pettersson";
 
-            session2.SaveChanges();
+            await session2.SaveChangesAsync();
         }
 
         using (var session3 = theStore.LightweightSession())
@@ -69,7 +69,7 @@ public class storing_documents: IntegrationContext
     [Theory]
     [InlineData(DocumentTracking.IdentityOnly)]
     [InlineData(DocumentTracking.None)]
-    public void store_and_update_a_document_in_same_session_then_document_should_not_be_updated(
+    public async Task store_and_update_a_document_in_same_session_then_document_should_not_be_updated(
         DocumentTracking tracking)
     {
         using var session = OpenSession(tracking);
@@ -77,11 +77,11 @@ public class storing_documents: IntegrationContext
         var user = new User { FirstName = "James", LastName = "Worthy" };
 
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         user.FirstName = "Jens";
         user.LastName = "Pettersson";
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var session3 = theStore.QuerySession();
         var user3 = session3.Load<User>(user.Id);
@@ -92,7 +92,7 @@ public class storing_documents: IntegrationContext
     [Theory]
     [InlineData(DocumentTracking.IdentityOnly)]
     [InlineData(DocumentTracking.None)]
-    public void store_reload_and_update_a_document_in_same_session_then_document_should_not_be_updated(
+    public async Task store_reload_and_update_a_document_in_same_session_then_document_should_not_be_updated(
         DocumentTracking tracking)
     {
         using var session = OpenSession(tracking);
@@ -100,12 +100,12 @@ public class storing_documents: IntegrationContext
         var user = new User { FirstName = "James", LastName = "Worthy" };
 
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var user2 = session.Load<User>(user.Id);
         user2.FirstName = "Jens";
         user2.LastName = "Pettersson";
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var querySession = theStore.QuerySession();
         var user3 = querySession.Load<User>(user.Id);
@@ -124,14 +124,14 @@ public class storing_documents: IntegrationContext
 
     [Theory]
     [SessionTypes]
-    public void persist_a_single_document(DocumentTracking tracking)
+    public async Task persist_a_single_document(DocumentTracking tracking)
     {
         using var session = OpenSession(tracking);
         var user = new User { FirstName = "Magic", LastName = "Johnson" };
 
         session.Store(user);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var conn = theStore.Tenancy.Default.Database.CreateConnection();
         conn.Open();
@@ -148,7 +148,7 @@ public class storing_documents: IntegrationContext
 
     [Theory]
     [SessionTypes]
-    public void persist_and_reload_a_document(DocumentTracking tracking)
+    public async Task persist_and_reload_a_document(DocumentTracking tracking)
     {
         using var session = OpenSession(tracking);
 
@@ -156,7 +156,7 @@ public class storing_documents: IntegrationContext
 
         // session is Marten's IDocumentSession service
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var session2 = theStore.LightweightSession();
         session2.ShouldNotBeSameAs(session);
@@ -200,7 +200,7 @@ public class storing_documents: IntegrationContext
 
     [Theory]
     [SessionTypes]
-    public void load_by_id_array(DocumentTracking tracking)
+    public async Task load_by_id_array(DocumentTracking tracking)
     {
         using var session = OpenSession(tracking);
 
@@ -215,7 +215,7 @@ public class storing_documents: IntegrationContext
         session.Store(user3);
         session.Store(user4);
         session.Store(user5);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var querySession = theStore.QuerySession();
         var users = querySession.LoadMany<User>(user2.Id, user3.Id, user4.Id);

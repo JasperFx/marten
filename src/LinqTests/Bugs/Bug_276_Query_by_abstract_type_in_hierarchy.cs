@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 
 namespace LinqTests.Bugs;
@@ -37,7 +38,7 @@ public class Bug_276_Query_by_abstract_type_in_hierarchy: BugIntegrationContext
     }
 
     [Fact]
-    public void persist_and_load_subclass_with_abstract_parent()
+    public async Task persist_and_load_subclass_with_abstract_parent()
     {
         var activity = new StatusActivity()
         {
@@ -48,7 +49,7 @@ public class Bug_276_Query_by_abstract_type_in_hierarchy: BugIntegrationContext
         using (var session = theStore.IdentitySession())
         {
             session.Store(activity);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             session.Load<Activity>(activity.Id).ShouldBeTheSameAs(activity);
             session.Load<StatusActivity>(activity.Id).ShouldBeTheSameAs(activity);

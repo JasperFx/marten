@@ -57,7 +57,7 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
     }
 
     [Fact]
-    public void running_synchronously()
+    public async Task running_synchronously()
     {
         var logger = new RecordingSessionLogger();
 
@@ -71,7 +71,7 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
             session.Events.StartStream<Quest>(streamId, joined, departed);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             var events = logger.LastCommit.GetEvents().ToArray();
             events.Select(x => x.Version)
@@ -90,7 +90,7 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
             var departed2 = new MembersDeparted { Members = new[] { "Perrin" } };
 
             session.Events.Append(streamId, joined2, departed2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             logger.LastCommit.GetEvents().Select(x => x.Version)
                 .ShouldHaveTheSameElementsAs(3, 4);
@@ -104,7 +104,7 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
             var departed3 = new MembersDeparted { Members = new[] { "Perrin" } };
 
             session.Events.Append(streamId, joined3, departed3);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             logger.LastCommit.GetEvents().Select(x => x.Version)
                 .ShouldHaveTheSameElementsAs(5, 6);

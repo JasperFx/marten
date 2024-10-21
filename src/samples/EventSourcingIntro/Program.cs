@@ -131,9 +131,9 @@ public class WarehouseProductHandler
         this.documentStore = documentStore;
     }
 
-    public void ShipProduct(int quantity)
+    public async Task ShipProduct(int quantity)
     {
-        using var session = documentStore.LightweightSession();
+        await using var session = documentStore.LightweightSession();
 
         var warehouseProduct = session.Events.AggregateStream<WarehouseProductWriteModel>(id);
 
@@ -143,18 +143,18 @@ public class WarehouseProductHandler
         }
 
         session.Events.Append(id, new ProductShipped(id, quantity, DateTime.UtcNow));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 
-    public void ReceiveProduct(int quantity)
+    public async Task ReceiveProduct(int quantity)
     {
         using var session = documentStore.LightweightSession();
 
         session.Events.Append(id, new ProductReceived(id, quantity, DateTime.UtcNow));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 
-    public void AdjustInventory(int quantity, string reason)
+    public async Task AdjustInventory(int quantity, string reason)
     {
         using var session = documentStore.LightweightSession();
 
@@ -166,7 +166,7 @@ public class WarehouseProductHandler
         }
 
         session.Events.Append(id, new InventoryAdjusted(id, quantity, reason, DateTime.UtcNow));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 }
 

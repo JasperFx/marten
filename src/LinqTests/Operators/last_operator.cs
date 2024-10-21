@@ -9,13 +9,13 @@ namespace LinqTests.Operators;
 public class last_operator: IntegrationContext
 {
     [Fact]
-    public void last_throws_an_exception()
+    public async Task last_throws_an_exception()
     {
         theSession.Store(new Target { Number = 1 });
         theSession.Store(new Target { Number = 2 });
         theSession.Store(new Target { Number = 3 });
         theSession.Store(new Target { Number = 4 });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
         {
@@ -25,13 +25,13 @@ public class last_operator: IntegrationContext
     }
 
     [Fact]
-    public void last_or_default_throws_an_exception()
+    public async Task last_or_default_throws_an_exception()
     {
         theSession.Store(new Target { Number = 1 });
         theSession.Store(new Target { Number = 2 });
         theSession.Store(new Target { Number = 3 });
         theSession.Store(new Target { Number = 4 });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
         {

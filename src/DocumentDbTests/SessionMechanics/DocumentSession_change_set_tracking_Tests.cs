@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Linq.SqlGeneration;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -11,7 +12,7 @@ namespace DocumentDbTests.SessionMechanics;
 public class DocumentSession_change_set_tracking_Tests : IntegrationContext
 {
     [Fact]
-    public void categorize_changes_inserts_and_deletions()
+    public async Task categorize_changes_inserts_and_deletions()
     {
         var logger = new RecordingLogger();
         theSession.Logger = logger;
@@ -42,7 +43,7 @@ public class DocumentSession_change_set_tracking_Tests : IntegrationContext
 
 
         logger.LastCommit.ShouldBeNull();
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         // Everything should be cleared out
         theSession.PendingChanges.Updates().Any().ShouldBeFalse();
@@ -55,7 +56,7 @@ public class DocumentSession_change_set_tracking_Tests : IntegrationContext
         logger.LastCommit.Deleted.OfType<Deletion>().Select(x => (Guid)x.Id).ShouldHaveTheSameElementsAs(id1, id2);
 
         theSession.Store(new Target());
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         logger.Commits.Count().ShouldBe(2);
         logger.LastCommit.Updated.Count().ShouldBe(1);

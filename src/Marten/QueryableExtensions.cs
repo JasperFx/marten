@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.Includes;
 using Marten.Services.BatchQuerying;

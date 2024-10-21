@@ -36,6 +36,7 @@ public static class StoreOptionsExtensions
     /// </summary>
     /// <param name="store"></param>
     /// <param name="apply"></param>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     public static void Transform(this IDocumentStore store, Action<IDocumentTransforms> apply)
     {
         var s = store.As<DocumentStore>();
@@ -58,6 +59,7 @@ public static class StoreOptionsExtensions
     /// </summary>
     /// <param name="operations"></param>
     /// <param name="apply"></param>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     public static void Transform(this IDocumentOperations operations, Action<IDocumentTransforms> apply)
     {
         var session = operations.As<DocumentSessionBase>();
@@ -97,6 +99,7 @@ public static class StoreOptionsExtensions
     /// <param name="store"></param>
     /// <param name="tenantIdOrDatabaseName"></param>
     /// <param name="apply"></param>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     public static void Transform(this IDocumentStore store, string tenantId, Action<IDocumentTransforms> apply)
     {
         var s = store.As<DocumentStore>();

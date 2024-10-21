@@ -11,13 +11,13 @@ namespace EventSourcingTests;
 public class no_prior_registration_of_the_event_types: OneOffConfigurationsContext
 {
     [Fact]
-    public void can_fetch_sync_with_guids()
+    public async Task can_fetch_sync_with_guids()
     {
         var stream = Guid.NewGuid();
         using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream(stream, new MembersJoined(), new MembersDeparted());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         // Needs to be an isolated, separate document store to the same db
@@ -33,7 +33,7 @@ public class no_prior_registration_of_the_event_types: OneOffConfigurationsConte
     }
 
     [Fact]
-    public void can_fetch_sync_with_strings()
+    public async Task can_fetch_sync_with_strings()
     {
         StoreOptions(opts => opts.Events.StreamIdentity = StreamIdentity.AsString);
 
@@ -41,7 +41,7 @@ public class no_prior_registration_of_the_event_types: OneOffConfigurationsConte
         using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream(stream, new MembersJoined(), new MembersDeparted());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         // Needs to be an isolated, separate document store to the same db

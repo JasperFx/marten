@@ -60,7 +60,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
     }
 
     [Fact]
-    public void will_isolate_tenants_when_using_any_and_tenants_use_unique_ids()
+    public async Task will_isolate_tenants_when_using_any_and_tenants_use_unique_ids()
     {
         #region sample_tenancy-scoping-session-write
 
@@ -69,7 +69,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         {
             session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
             session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = new string[0] });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         #endregion sample_tenancy-scoping-session-write
@@ -79,7 +79,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         {
             session.Store(new User { Id = "u3", UserName = "Frank", Roles = new string[0] });
             session.Store(new User { Id = "u4", UserName = "Jill", Roles = new[] { "admin", "user" } });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         // When you query for data from the "tenant1" tenant,
@@ -107,7 +107,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
     }
 
     [Fact]
-    public void can_query_with_AnyTenant()
+    public async Task can_query_with_AnyTenant()
     {
         #region sample_tenancy-scoping-session-write
 
@@ -116,7 +116,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         {
             session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
             session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = new string[0] });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         #endregion sample_tenancy-scoping-session-write
@@ -126,7 +126,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         {
             session.Store(new User { Id = "u3", UserName = "Frank", Roles = new string[0] });
             session.Store(new User { Id = "u4", UserName = "Jill", Roles = new[] { "admin", "user" } });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         // When you query for data from the "tenant1" tenant,

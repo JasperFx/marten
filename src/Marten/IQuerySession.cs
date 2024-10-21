@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services.BatchQuerying;
@@ -77,6 +78,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <typeparam name="T"></typeparam>
     /// <param name="id"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     T? Load<T>(string id) where T : notnull;
 
     /// <summary>
@@ -103,6 +105,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <typeparam name="T"></typeparam>
     /// <param name="id"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     T? Load<T>(int id) where T : notnull;
 
     /// <summary>
@@ -111,6 +114,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <typeparam name="T"></typeparam>
     /// <param name="id"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     T? Load<T>(long id) where T : notnull;
 
     /// <summary>
@@ -119,6 +123,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <typeparam name="T"></typeparam>
     /// <param name="id"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     T? Load<T>(Guid id) where T : notnull;
 
     /// <summary>
@@ -320,6 +325,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <typeparam name="TOut">The output</typeparam>
     /// <param name="query">The instance of a compiled query</param>
     /// <returns>A single item query result</returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     TOut Query<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query);
 
     /// <summary>
@@ -381,6 +387,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     IReadOnlyList<T> LoadMany<T>(params string[] ids) where T : notnull;
 
     /// <summary>
@@ -388,6 +395,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     IReadOnlyList<T> LoadMany<T>(IEnumerable<string> ids) where T : notnull;
 
     /// <summary>
@@ -395,6 +403,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     IReadOnlyList<T> LoadMany<T>(params Guid[] ids) where T : notnull;
 
     /// <summary>
@@ -402,6 +411,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     IReadOnlyList<T> LoadMany<T>(IEnumerable<Guid> ids) where T : notnull;
 
     /// <summary>
@@ -409,6 +419,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     IReadOnlyList<T> LoadMany<T>(params int[] ids) where T : notnull;
 
     /// <summary>
@@ -416,6 +427,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     IReadOnlyList<T> LoadMany<T>(IEnumerable<int> ids) where T : notnull;
 
     /// <summary>
@@ -423,6 +435,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     IReadOnlyList<T> LoadMany<T>(params long[] ids) where T : notnull;
 
     /// <summary>
@@ -430,6 +443,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     IReadOnlyList<T> LoadMany<T>(IEnumerable<long> ids) where T : notnull;
 
     /// <summary>
@@ -564,6 +578,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     IReadOnlyList<TDoc> Search<TDoc>(string queryText, string regConfig = FullTextIndexDefinition.DefaultRegConfig);
 
     /// <summary>
@@ -682,6 +697,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="entity"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     DocumentMetadata? MetadataFor<T>(T entity) where T : notnull;
 
     /// <summary>
@@ -706,6 +722,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="cmd"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     int Execute(NpgsqlCommand cmd);
 
     /// <summary>
@@ -721,6 +738,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="command"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     DbDataReader ExecuteReader(NpgsqlCommand command);
 
     /// <summary>

@@ -12,12 +12,12 @@ namespace DocumentDbTests.Writing;
 public class document_inserts: IntegrationContext
 {
     [Fact]
-    public void can_insert_all_new_documents()
+    public async Task can_insert_all_new_documents()
     {
         using (var session = theStore.LightweightSession())
         {
             session.Insert(Target.GenerateRandomData(99).ToArray());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -48,14 +48,14 @@ public class document_inserts: IntegrationContext
     }
 
     [Fact]
-    public void can_insert_records()
+    public async Task can_insert_records()
     {
         var docs = new RecordDocument(Guid.NewGuid(), Guid.NewGuid().ToString());
 
         using (var session = theStore.LightweightSession())
         {
             session.Store(docs);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -68,7 +68,7 @@ public class document_inserts: IntegrationContext
 
 
     [Fact]
-    public void insert_sad_path()
+    public async Task insert_sad_path()
     {
         var target = Target.Random();
 
@@ -77,17 +77,17 @@ public class document_inserts: IntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Insert(target);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         #endregion
 
         using (var session = theStore.LightweightSession())
         {
-            Exception<DocumentAlreadyExistsException>.ShouldBeThrownBy(() =>
+            await Should.ThrowAsync<DocumentAlreadyExistsException>(async () =>
             {
                 session.Insert(target);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             });
         }
     }

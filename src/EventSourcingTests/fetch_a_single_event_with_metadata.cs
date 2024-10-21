@@ -24,7 +24,7 @@ public class fetch_a_single_event_with_metadata: IntegrationContext
         new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
 
     [Fact]
-    public void fetch_with_metadata_synchronously()
+    public async Task fetch_with_metadata_synchronously()
     {
         StoreOptions(x =>
         {
@@ -40,7 +40,7 @@ public class fetch_a_single_event_with_metadata: IntegrationContext
 
         var streamId = theSession.Events
             .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var events = theSession.Events.FetchStream(streamId);
         events.Count.ShouldBe(5);
@@ -78,11 +78,11 @@ public class fetch_a_single_event_with_metadata: IntegrationContext
     }
 
     [Fact]
-    public void fetch_synchronously()
+    public async Task fetch_synchronously()
     {
         var streamId = theSession.Events
             .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var events = theSession.Events.FetchStream(streamId);
 

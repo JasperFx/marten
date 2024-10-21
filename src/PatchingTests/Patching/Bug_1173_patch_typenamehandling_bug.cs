@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Marten.Patching;
 using Marten.Services;
 using Marten.Testing.Harness;
@@ -20,7 +21,7 @@ public class PatchTypeB
 public class Bug_1173_patch_typenamehandling_bug: BugIntegrationContext
 {
     [Fact]
-    public void can_support_typenamehandling()
+    public async Task can_support_typenamehandling()
     {
         using var store = SeparateStore(_ =>
         {
@@ -48,7 +49,7 @@ public class Bug_1173_patch_typenamehandling_bug: BugIntegrationContext
             };
 
             session.Store(obj);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
         using (var session = store.LightweightSession())
         {
@@ -58,7 +59,7 @@ public class Bug_1173_patch_typenamehandling_bug: BugIntegrationContext
             };
 
             session.Patch<PatchTypeA>("1").Set(set => set.TypeB, newObj);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = store.LightweightSession())

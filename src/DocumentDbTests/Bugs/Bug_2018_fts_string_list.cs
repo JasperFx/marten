@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Xunit;
 
@@ -30,7 +31,7 @@ public class Bug_2018_fts_string_list: BugIntegrationContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void can_do_index_with_full_text_search()
+    public async Task can_do_index_with_full_text_search()
     {
         using var session = theStore.LightweightSession();
         session.Store(new BugFullTextSearchFields()
@@ -45,6 +46,6 @@ public class Bug_2018_fts_string_list: BugIntegrationContext
             },
         });
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 }

@@ -497,18 +497,18 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     }
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void can_append_with_sub_types_in_collection()
+    public async Task can_append_with_sub_types_in_collection()
     {
         var group = new ItemGroup();
         theSession.Store(group);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var session = theStore.LightweightSession())
         {
             session.Patch<ItemGroup>(group.Id).Append(x => x.Items, new Item{Name = "One"});
             session.Patch<ItemGroup>(group.Id).Append(x => x.Items, new ColoredItem{Name = "Two", Color = "Blue"});
             session.Patch<ItemGroup>(group.Id).Append(x => x.Items, new NumberedItem(){Name = "Three", Number = 3});
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -523,18 +523,18 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     }
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void can_append_if_not_exists_with_sub_types_in_collection()
+    public async Task can_append_if_not_exists_with_sub_types_in_collection()
     {
         var group = new ItemGroup();
         theSession.Store(group);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var session = theStore.LightweightSession())
         {
             session.Patch<ItemGroup>(group.Id).AppendIfNotExists(x => x.Items, new Item{Name = "One"});
             session.Patch<ItemGroup>(group.Id).AppendIfNotExists(x => x.Items, new ColoredItem{Name = "Two", Color = "Blue"});
             session.Patch<ItemGroup>(group.Id).AppendIfNotExists(x => x.Items, new NumberedItem(){Name = "Three", Number = 3});
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -549,19 +549,19 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     }
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void can_insert_if_not_exists_with_sub_types_in_collection()
+    public async Task can_insert_if_not_exists_with_sub_types_in_collection()
     {
         var group = new ItemGroup
         {
             Items = new List<Item>{new Item{Name = "regular"}}
         };
         theSession.Store(group);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var session = theStore.LightweightSession())
         {
             session.Patch<ItemGroup>(group.Id).Insert(x => x.Items, new ColoredItem{Name = "Two", Color = "Blue"});
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -575,7 +575,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
 
 
     [Fact]
-    public void save_large_bundle_of_operations()
+    public async Task save_large_bundle_of_operations()
     {
         var id1 = Guid.NewGuid();
         var id2 = Guid.NewGuid();
@@ -633,24 +633,24 @@ public class PatchExpressionTests : OneOffConfigurationsContext
             session.Patch<TestModel1>(x => x.ObjectId == id1 && x.DefinitionId == 1)
                 .Set(x => x.Mode, 1);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
     }
 #nullable enable
     [Fact]
-    public void can_patch_nullable_field()
+    public async Task can_patch_nullable_field()
     {
         var model = new TestModel7();
         var nullModel = new TestModel7() { NullableObjectId = Guid.NewGuid()};
         theSession.Store(model, nullModel);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var id = Guid.NewGuid();
         using (var session = theStore.LightweightSession())
         {
             session.Patch<TestModel7>(model.Id).Set(x => x.NullableObjectId, id);
             session.Patch<TestModel7>(nullModel.Id).Set(x => x.NullableObjectId, null);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())

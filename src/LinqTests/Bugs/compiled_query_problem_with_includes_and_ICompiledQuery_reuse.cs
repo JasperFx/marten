@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Linq;
 using Marten.Testing.Documents;
@@ -40,7 +41,7 @@ public class compiled_query_problem_with_includes_and_ICompiledQuery_reuse: Inte
     }
 
     [Fact]
-    public void can_get_includes_with_compiled_queries()
+    public async Task can_get_includes_with_compiled_queries()
     {
         var user1 = new User();
         var user2 = new User();
@@ -51,7 +52,7 @@ public class compiled_query_problem_with_includes_and_ICompiledQuery_reuse: Inte
 
         theSession.Store(user1, user2);
         theSession.Store(issue1, issue2, issue3);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         // Issue first query
         using (var session = theStore.QuerySession())
@@ -84,7 +85,7 @@ public class compiled_query_problem_with_includes_and_ICompiledQuery_reuse: Inte
     }
 
     [Fact]
-    public void can_get_includes_with_multiple_instances_of_same_compiled_query_in_a_session()
+    public async Task can_get_includes_with_multiple_instances_of_same_compiled_query_in_a_session()
     {
         var user1 = new User();
         var user2 = new User();
@@ -95,7 +96,7 @@ public class compiled_query_problem_with_includes_and_ICompiledQuery_reuse: Inte
 
         theSession.Store(user1, user2);
         theSession.Store(issue1, issue2, issue3);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var session = theStore.QuerySession();
 

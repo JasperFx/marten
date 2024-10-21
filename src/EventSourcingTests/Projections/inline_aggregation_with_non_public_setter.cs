@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -9,26 +10,34 @@ using Xunit;
 
 namespace EventSourcingTests.Projections;
 
-public class inline_aggregation_with_non_public_setter: OneOffConfigurationsContext
+public class inline_aggregation_with_non_public_setter: OneOffConfigurationsContext, IAsyncLifetime
 {
     private readonly MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
     private readonly MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
-    private readonly Guid streamId;
+    private Guid streamId;
 
     public inline_aggregation_with_non_public_setter()
     {
-        StoreOptions(_ =>
+        StoreOptions(opts =>
         {
-            _.AutoCreateSchemaObjects = AutoCreate.All;
-            _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
-            _.Projections.Snapshot<QuestMonstersWithPrivateIdSetter>(SnapshotLifecycle.Inline);
-            _.Projections.Snapshot<QuestMonstersWithProtectedIdSetter>(SnapshotLifecycle.Inline);
+            opts.AutoCreateSchemaObjects = AutoCreate.All;
+            opts.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
+            opts.Projections.Snapshot<QuestMonstersWithPrivateIdSetter>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<QuestMonstersWithProtectedIdSetter>(SnapshotLifecycle.Inline);
         });
+    }
 
+    public async Task InitializeAsync()
+    {
         streamId = theSession.Events
             .StartStream<QuestMonstersWithBaseClass>(slayed1, slayed2).Id;
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
     }
 
     [Fact]

@@ -37,7 +37,7 @@ public class fetching_stream_state_before_aggregator_is_registered: IntegrationC
     }
 
     [Fact]
-    public void other_try()
+    public async Task other_try()
     {
         var store = DocumentStore.For(_ =>
         {
@@ -49,7 +49,7 @@ public class fetching_stream_state_before_aggregator_is_registered: IntegrationC
         {
             var aid = Guid.Parse("1442cbbb-a49a-497e-9ee8-715ed2833bf8");
             session.Events.StartStream<FooAggregate>(aid, new FooEvent());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         var store2 = DocumentStore.For(_ =>

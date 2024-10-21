@@ -89,16 +89,16 @@ shown below:
 <a id='snippet-sample_plv8_set_an_immediate_property_by_id'></a>
 ```cs
 [Fact]
-public void set_an_immediate_property_by_id()
+public async Task set_an_immediate_property_by_id()
 {
     var target = Target.Random(true);
     target.Number = 5;
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Set(x => x.Number, 10);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -119,7 +119,7 @@ To initialize a new property on existing documents:
 const string where = "(data ->> 'UpdatedAt') is null";
 theSession.Query<Target>(where).Count.ShouldBe(3);
 theSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
-theSession.SaveChanges();
+await theSession.SaveChangesAsync();
 
 using (var query = theStore.QuerySession())
 {
@@ -139,10 +139,10 @@ To copy an existing value to a new location:
 var target = Target.Random();
 target.AnotherString = null;
 theSession.Store(target);
-theSession.SaveChanges();
+await theSession.SaveChangesAsync();
 
 theSession.Patch<Target>(target.Id).Duplicate(t => t.String, t => t.AnotherString);
-theSession.SaveChanges();
+await theSession.SaveChangesAsync();
 
 using (var query = theStore.QuerySession())
 {
@@ -176,16 +176,16 @@ To increment a persisted value in the persisted document, use this operation:
 <a id='snippet-sample_plv8_increment_for_int'></a>
 ```cs
 [Fact]
-public void increment_for_int()
+public async Task increment_for_int()
 {
     var target = Target.Random();
     target.Number = 6;
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Increment(x => x.Number);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -202,16 +202,16 @@ By default, the `Patch.Increment()` operation will add 1 to the existing value. 
 <a id='snippet-sample_plv8_increment_for_int_with_explicit_increment'></a>
 ```cs
 [Fact]
-public void increment_for_int_with_explicit_increment()
+public async Task increment_for_int_with_explicit_increment()
 {
     var target = Target.Random();
     target.Number = 6;
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Increment(x => x.Number, 3);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -234,7 +234,7 @@ The `Patch.Append()` operation adds a new item to the end of a child collection:
 <a id='snippet-sample_plv8_append_complex_element'></a>
 ```cs
 [Fact]
-public void append_complex_element()
+public async Task append_complex_element()
 {
     var target = Target.Random(true);
     var initialCount = target.Children.Length;
@@ -242,10 +242,10 @@ public void append_complex_element()
     var child = Target.Random();
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Append(x => x.Children, child);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -273,7 +273,7 @@ being 0 so that a new item would be inserted at the beginning of the child colle
 <a id='snippet-sample_plv8_insert_first_complex_element'></a>
 ```cs
 [Fact]
-public void insert_first_complex_element()
+public async Task insert_first_complex_element()
 {
     var target = Target.Random(true);
     var initialCount = target.Children.Length;
@@ -281,10 +281,10 @@ public void insert_first_complex_element()
     var child = Target.Random();
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Insert(x => x.Children, child);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -308,7 +308,7 @@ The `Patch.Remove()` operation removes the given item from a child collection:
 <a id='snippet-sample_plv8_remove_primitive_element'></a>
 ```cs
 [Fact]
-public void remove_primitive_element()
+public async Task remove_primitive_element()
 {
     var target = Target.Random();
     target.NumberArray = new[] { Random.Shared.Next(0, 10), Random.Shared.Next(0, 10), Random.Shared.Next(0, 10) };
@@ -319,10 +319,10 @@ public void remove_primitive_element()
     var child = target.NumberArray[Random.Shared.Next(0, initialCount)];
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -342,7 +342,7 @@ Removing complex items can also be accomplished, matching is performed on all fi
 <a id='snippet-sample_plv8_remove_complex_element'></a>
 ```cs
 [Fact]
-public void remove_complex_element()
+public async Task remove_complex_element()
 {
     var target = Target.Random(true);
     var initialCount = target.Children.Length;
@@ -351,10 +351,10 @@ public void remove_complex_element()
     var child = target.Children[random.Next(0, initialCount)];
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Remove(x => x.Children, child);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -374,7 +374,7 @@ To remove reoccurring values from a collection specify `RemoveAction.RemoveAll`:
 <a id='snippet-sample_plv8_remove_repeated_primitive_element'></a>
 ```cs
 [Fact]
-public void remove_repeated_primitive_elements()
+public async Task remove_repeated_primitive_elements()
 {
     var random = new Random();
     var target = Target.Random();
@@ -393,10 +393,10 @@ public void remove_repeated_primitive_elements()
     }
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, child, RemoveAction.RemoveAll);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -420,17 +420,17 @@ old name to the new name.
 <a id='snippet-sample_plv8_rename_deep_prop'></a>
 ```cs
 [Fact]
-public void rename_deep_prop()
+public async Task rename_deep_prop()
 {
     var target = Target.Random(true);
     target.Inner.String = "Foo";
     target.Inner.AnotherString = "Bar";
 
     theSession.Store(target);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Patch<Target>(target.Id).Rename("String", x => x.Inner.AnotherString);
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     using (var query = theStore.QuerySession())
     {
@@ -488,7 +488,7 @@ Many documents may be patched using a where expressions:
 const string where = "(data ->> 'String') is not null";
 theSession.Query<Target>(where).Count.ShouldBe(15);
 theSession.Patch<Target>(new WhereFragment(where)).Delete("String");
-theSession.SaveChanges();
+await theSession.SaveChangesAsync();
 
 using (var query = theStore.QuerySession())
 {
@@ -589,13 +589,13 @@ of Linq queries. If you only care about the transformed JSON, you use this synta
 <a id='snippet-sample_using_transform_to_json'></a>
 ```cs
 [Fact]
-public void can_select_a_string_field_in_compiled_query()
+public async Task can_select_a_string_field_in_compiled_query()
 {
     var user = new User { FirstName = "Eric", LastName = "Berry" };
 
     using var session = theStore.LightweightSession();
     session.Store(user);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     var name = session.Query<User>().Select(x => x.FirstName)
         .Single();

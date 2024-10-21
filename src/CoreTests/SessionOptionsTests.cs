@@ -219,7 +219,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void session_with_custom_connection_reusable_after_saveChanges()
+    public async Task session_with_custom_connection_reusable_after_saveChanges()
     {
         var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
@@ -237,8 +237,8 @@ public class SessionOptionsTests: OneOffConfigurationsContext
 
         using var session = documentStore.LightweightSession(options);
         session.Store(testObject);
-        session.SaveChanges();
-        session.Load<FryGuy>(testObject.Id).ShouldNotBeNull();
+        await session.SaveChangesAsync();
+        (await session.LoadAsync<FryGuy>(testObject.Id)).ShouldNotBeNull();
     }
 
     [Fact]

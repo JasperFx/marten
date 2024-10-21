@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -10,7 +11,7 @@ namespace EventSourcingTests.Bugs;
 public class CodeGenIEventIssue: BugIntegrationContext
 {
     [Fact]
-    public void TestAggregation()
+    public async Task TestAggregation()
     {
         var store = StoreOptions(_ =>
         {
@@ -19,11 +20,11 @@ public class CodeGenIEventIssue: BugIntegrationContext
 
         using var session = store.LightweightSession();
         session.Events.Append(Guid.NewGuid(), new FooCreated { Id = Guid.NewGuid() });
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 
     [Fact]
-    public void TestRecordAggregation()
+    public async Task TestRecordAggregation()
     {
         var store = StoreOptions(_ =>
         {
@@ -35,7 +36,7 @@ public class CodeGenIEventIssue: BugIntegrationContext
         session.Events.Append(id, new RecordLogCreated(id));
         session.Events.Append(id, new RecordLogUpdated(id));
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 }
 

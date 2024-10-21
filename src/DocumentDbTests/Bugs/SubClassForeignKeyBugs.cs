@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Xunit;
 
@@ -40,13 +41,13 @@ public class SubClassForeignKeyBugs: BugIntegrationContext
     }
 
     [Fact]
-    public void ForeignKeyEntitiesToSubClassesShouldBeInsertedFirst()
+    public async Task ForeignKeyEntitiesToSubClassesShouldBeInsertedFirst()
     {
         using (var session = theStore.LightweightSession())
         {
             var department = new Department { Id = 37 };
             session.Store(department);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
         using (var session = theStore.LightweightSession())
         {
@@ -57,12 +58,12 @@ public class SubClassForeignKeyBugs: BugIntegrationContext
             var address = new Address { ParentId = 222, Id = 42 };
             session.Store(address);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
     }
 
     [Fact]
-    public void ForeignKeysOnSubClassesShouldInsertedFirst()
+    public async Task ForeignKeysOnSubClassesShouldInsertedFirst()
     {
         using var session = theStore.LightweightSession();
         var department = new Department { Id = 1 };
@@ -71,6 +72,6 @@ public class SubClassForeignKeyBugs: BugIntegrationContext
         var employee = new Employee { Id = 2, DepartmentId = 1 };
         session.Store(employee);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 }

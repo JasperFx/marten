@@ -71,14 +71,14 @@ public class sub_class_hierarchies: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void get_all_subclasses_of_a_subclass()
+    public async Task get_all_subclasses_of_a_subclass()
     {
         var smurf = new Smurf {Ability = "Follow the herd"};
         var papa = new PapaSmurf {Ability = "Lead"};
         var brainy = new BrainySmurf {Ability = "Invent"};
         theSession.Store(smurf, papa, brainy);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Smurf>().Count().ShouldBe(3);
     }
@@ -116,7 +116,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
     #endregion
 
     [Fact]
-    public void get_all_subclasses_of_an_interface_and_instantiate_them()
+    public async Task get_all_subclasses_of_an_interface_and_instantiate_them()
     {
         var smurf = new Smurf {Ability = "Follow the herd"};
         var papa = new PapaSmurf {Ability = "Lead"};
@@ -124,7 +124,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
         var brainy = new BrainySmurf {Ability = "Invent"};
         theSession.Store(smurf, papa, brainy, papy);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var list = theSession.Query<IPapaSmurf>().ToList();
         list.Count().ShouldBe(3);
@@ -150,27 +150,27 @@ public class query_with_inheritance: OneOffConfigurationsContext
     #region sample_query-subclass-hierarchy
 
     [Fact]
-    public void get_all_subclasses_of_a_subclass()
+    public async Task get_all_subclasses_of_a_subclass()
     {
         var smurf = new Smurf {Ability = "Follow the herd"};
         var papa = new PapaSmurf {Ability = "Lead"};
         var brainy = new BrainySmurf {Ability = "Invent"};
         theSession.Store(smurf, papa, brainy);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Smurf>().Count().ShouldBe(3);
     }
 
     [Fact]
-    public void get_all_subclasses_of_a_subclass2()
+    public async Task get_all_subclasses_of_a_subclass2()
     {
         var smurf = new Smurf {Ability = "Follow the herd"};
         var papa = new PapaSmurf {Ability = "Lead"};
         var brainy = new BrainySmurf {Ability = "Invent"};
         theSession.Store(smurf, papa, brainy);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Logger = new TestOutputMartenLogger(_output);
 
@@ -178,20 +178,20 @@ public class query_with_inheritance: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void get_all_subclasses_of_a_subclass_with_where()
+    public async Task get_all_subclasses_of_a_subclass_with_where()
     {
         var smurf = new Smurf {Ability = "Follow the herd"};
         var papa = new PapaSmurf {Ability = "Lead"};
         var brainy = new BrainySmurf {Ability = "Invent"};
         theSession.Store(smurf, papa, brainy);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
     }
 
     [Fact]
-    public void get_all_subclasses_of_a_subclass_with_where_with_camel_casing()
+    public async Task get_all_subclasses_of_a_subclass_with_where_with_camel_casing()
     {
         StoreOptions(_ =>
         {
@@ -219,14 +219,14 @@ public class query_with_inheritance: OneOffConfigurationsContext
         var brainy = new BrainySmurf {Ability = "Invent"};
         theSession.Store(smurf, papa, brainy);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
     }
 
 
     [Fact]
-    public void get_all_subclasses_of_an_interface()
+    public async Task get_all_subclasses_of_an_interface()
     {
         var smurf = new Smurf {Ability = "Follow the herd"};
         var papa = new PapaSmurf {Ability = "Lead"};
@@ -234,7 +234,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
         var brainy = new BrainySmurf {Ability = "Invent"};
         theSession.Store(smurf, papa, brainy, papy);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<IPapaSmurf>().Count().ShouldBe(3);
     }

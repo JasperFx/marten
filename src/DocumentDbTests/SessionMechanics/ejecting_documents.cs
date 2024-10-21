@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;
@@ -9,7 +10,7 @@ namespace DocumentDbTests.SessionMechanics;
 public class ejecting_documents : IntegrationContext
 {
     [Fact]
-    public void demonstrate_eject()
+    public async Task demonstrate_eject()
     {
         #region sample_ejecting_a_document
         var target1 = Target.Random();
@@ -29,7 +30,7 @@ public class ejecting_documents : IntegrationContext
             // Now that 2nd document is no longer in the identity map
             session.Load<Target>(target2.Id).ShouldBeNull();
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -80,7 +81,7 @@ public class ejecting_documents : IntegrationContext
     }
 
     [Fact]
-    public void eject_a_document_clears_it_from_the_unit_of_work_regular()
+    public async Task eject_a_document_clears_it_from_the_unit_of_work_regular()
     {
         var target1 = Target.Random();
         var target2 = Target.Random();
@@ -91,7 +92,7 @@ public class ejecting_documents : IntegrationContext
 
             session.Eject(target2);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -102,7 +103,7 @@ public class ejecting_documents : IntegrationContext
     }
 
     [Fact]
-    public void eject_a_document_clears_it_from_the_unit_of_work_dirty()
+    public async Task eject_a_document_clears_it_from_the_unit_of_work_dirty()
     {
         var target1 = Target.Random();
         var target2 = Target.Random();
@@ -113,7 +114,7 @@ public class ejecting_documents : IntegrationContext
 
             session.Eject(target2);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -124,7 +125,7 @@ public class ejecting_documents : IntegrationContext
     }
 
     [Fact]
-    public void eject_a_document_clears_it_from_the_unit_of_work_lightweight()
+    public async Task eject_a_document_clears_it_from_the_unit_of_work_lightweight()
     {
         var target1 = Target.Random();
         var target2 = Target.Random();
@@ -135,7 +136,7 @@ public class ejecting_documents : IntegrationContext
 
             session.Eject(target2);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -146,7 +147,7 @@ public class ejecting_documents : IntegrationContext
     }
 
     [Fact]
-    public void eject_a_document_type_clears_it_from_the_identity_map_regular()
+    public async Task eject_a_document_type_clears_it_from_the_identity_map_regular()
     {
         var target1 = Target.Random();
         var target2 = Target.Random();
@@ -167,7 +168,7 @@ public class ejecting_documents : IntegrationContext
         session.PendingChanges.OperationsFor<User>().Any().ShouldBeTrue();
         session.PendingChanges.OperationsFor<Target>().Any().ShouldBeFalse();
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Load<Target>(target1.Id).ShouldBeNull();
         session.Load<Target>(target2.Id).ShouldBeNull();
@@ -204,7 +205,7 @@ public class ejecting_documents : IntegrationContext
     }
 
     [Fact]
-    public void eject_a_document_type_clears_it_from_the_unit_of_work_regular()
+    public async Task eject_a_document_type_clears_it_from_the_unit_of_work_regular()
     {
         var target1 = Target.Random();
         var target2 = Target.Random();
@@ -220,7 +221,7 @@ public class ejecting_documents : IntegrationContext
 
             session.EjectAllOfType(typeof(Target));
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -232,7 +233,7 @@ public class ejecting_documents : IntegrationContext
     }
 
     [Fact]
-    public void eject_a_document_type_clears_updates_from_the_unit_of_work_regular()
+    public async Task eject_a_document_type_clears_updates_from_the_unit_of_work_regular()
     {
         var target1 = new Target { Number = 1 };
         var target2 = new Target { Number = 2 };
@@ -244,7 +245,7 @@ public class ejecting_documents : IntegrationContext
             session.Store(target1, target2);
             session.Store(user1, user2);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.IdentitySession())
@@ -260,7 +261,7 @@ public class ejecting_documents : IntegrationContext
 
             session.EjectAllOfType(typeof(Target));
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -273,7 +274,7 @@ public class ejecting_documents : IntegrationContext
     }
 
     [Fact]
-    public void eject_a_document_type_clears_it_from_the_unit_of_work_dirty()
+    public async Task eject_a_document_type_clears_it_from_the_unit_of_work_dirty()
     {
         var target1 = Target.Random();
         var target2 = Target.Random();
@@ -289,7 +290,7 @@ public class ejecting_documents : IntegrationContext
 
             session.EjectAllOfType(typeof(Target));
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -301,7 +302,7 @@ public class ejecting_documents : IntegrationContext
     }
 
     [Fact]
-    public void eject_a_document_type_clears_updates_from_the_unit_of_work_dirty()
+    public async Task eject_a_document_type_clears_updates_from_the_unit_of_work_dirty()
     {
         var target1 = new Target { Number = 1 };
         var target2 = new Target { Number = 2 };
@@ -313,7 +314,7 @@ public class ejecting_documents : IntegrationContext
             session.Store(target1, target2);
             session.Store(user1, user2);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.DirtyTrackedSession())
@@ -326,7 +327,7 @@ public class ejecting_documents : IntegrationContext
 
             session.EjectAllOfType(typeof(Target));
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -339,7 +340,7 @@ public class ejecting_documents : IntegrationContext
     }
 
     [Fact]
-    public void eject_a_document_type_clears_it_from_the_unit_of_work_lightweight()
+    public async Task eject_a_document_type_clears_it_from_the_unit_of_work_lightweight()
     {
         var target1 = Target.Random();
         var target2 = Target.Random();
@@ -355,7 +356,7 @@ public class ejecting_documents : IntegrationContext
 
             session.EjectAllOfType(typeof(Target));
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -367,7 +368,7 @@ public class ejecting_documents : IntegrationContext
     }
 
     [Fact]
-    public void eject_a_document_type_clears_updates_from_the_unit_of_work_lightweight()
+    public async Task eject_a_document_type_clears_updates_from_the_unit_of_work_lightweight()
     {
         var target1 = new Target { Number = 1 };
         var target2 = new Target { Number = 2 };
@@ -379,7 +380,7 @@ public class ejecting_documents : IntegrationContext
             session.Store(target1, target2);
             session.Store(user1, user2);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
@@ -395,7 +396,7 @@ public class ejecting_documents : IntegrationContext
 
             session.EjectAllOfType(typeof(Target));
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())

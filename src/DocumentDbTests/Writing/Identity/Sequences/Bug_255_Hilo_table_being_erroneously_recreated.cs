@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten;
 using Marten.Testing.Documents;
@@ -13,7 +14,7 @@ namespace DocumentDbTests.Writing.Identity.Sequences;
 public class Bug_255_Hilo_table_being_erroneously_recreated : BugIntegrationContext
 {
     [Fact]
-    public void only_generated_once_default_connection_string_schema()
+    public async Task only_generated_once_default_connection_string_schema()
     {
         var logger = new DdlLogger();
 
@@ -23,7 +24,7 @@ public class Bug_255_Hilo_table_being_erroneously_recreated : BugIntegrationCont
         });
 
         theSession.Store(new IntDoc());
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
 
         using (var store2 = SeparateStore(_ =>
@@ -34,7 +35,7 @@ public class Bug_255_Hilo_table_being_erroneously_recreated : BugIntegrationCont
             using (var session = store2.LightweightSession())
             {
                 session.Store(new IntDoc());
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
         }
 

@@ -237,16 +237,16 @@ public class statistics_and_paged_list: IntegrationContext
         stats.TotalResults.ShouldBe(count);
     }
 
-        private void BuildUpDocumentWithZeroRecords()
+     private async Task BuildUpDocumentWithZeroRecords()
     {
         var doc = new PaginationTestDocument();
         doc.Id = "test";
 
         theSession.Store(doc);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Delete<PaginationTestDocument>(doc);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
     }
 
     [Fact]
@@ -491,7 +491,7 @@ public class statistics_and_paged_list: IntegrationContext
         // Test failure bomb
         if (DateTime.Today < new DateTime(2023, 9, 5)) return;
 
-        BuildUpDocumentWithZeroRecords();
+        await BuildUpDocumentWithZeroRecords();
 
         var pageNumber = 1;
 

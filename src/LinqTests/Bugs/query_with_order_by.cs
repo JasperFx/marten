@@ -15,9 +15,9 @@ public class query_with_order_by: IntegrationContext
     }
 
     [Fact]
-    public void query_with_order_by_for_string_property_with_comparer()
+    public async Task query_with_order_by_for_string_property_with_comparer()
     {
-        CreateTestData();
+        await CreateTestData();
 
         RunTest(StringComparer.InvariantCultureIgnoreCase, true);
         RunTest(StringComparer.OrdinalIgnoreCase, true);
@@ -50,9 +50,9 @@ public class query_with_order_by: IntegrationContext
     }
 
     [Fact]
-    public void query_with_order_by_descending_for_string_property_with_comparer()
+    public async Task query_with_order_by_descending_for_string_property_with_comparer()
     {
-        CreateTestData();
+        await CreateTestData();
 
         RunTest(StringComparer.InvariantCultureIgnoreCase, true);
         RunTest(StringComparer.OrdinalIgnoreCase, true);
@@ -137,9 +137,9 @@ public class query_with_order_by: IntegrationContext
     }
 
     [Fact]
-    public void query_with_then_by_descending_for_string_property_with_comparer()
+    public async Task query_with_then_by_descending_for_string_property_with_comparer()
     {
-        CreateTestData(true);
+        await CreateTestData(true);
 
         RunTest(StringComparer.InvariantCultureIgnoreCase, true);
         RunTest(StringComparer.OrdinalIgnoreCase, true);
@@ -176,7 +176,7 @@ public class query_with_order_by: IntegrationContext
         }
     }
 
-    private void CreateTestData(bool createTargetsWithNumberTwo = false)
+    private async Task CreateTestData(bool createTargetsWithNumberTwo = false)
     {
         theSession.Store(new Target
         {
@@ -217,6 +217,6 @@ public class query_with_order_by: IntegrationContext
             });
         }
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
     }
 }

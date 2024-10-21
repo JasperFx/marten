@@ -8,14 +8,14 @@ When you wish to retrieve an IEnumerable of a certain document property for exam
 <a id='snippet-sample_one_field_projection'></a>
 ```cs
 [Fact]
-public void use_select_in_query_for_one_field()
+public async Task use_select_in_query_for_one_field()
 {
     theSession.Store(new User { FirstName = "Hank" });
     theSession.Store(new User { FirstName = "Bill" });
     theSession.Store(new User { FirstName = "Sam" });
     theSession.Store(new User { FirstName = "Tom" });
 
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName)
         .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
@@ -30,14 +30,14 @@ When you wish to retrieve certain properties and transform them into another typ
 <a id='snippet-sample_other_type_projection'></a>
 ```cs
 [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-public void use_select_with_multiple_fields_to_other_type()
+public async Task use_select_with_multiple_fields_to_other_type()
 {
     theSession.Store(new User { FirstName = "Hank", LastName = "Aaron" });
     theSession.Store(new User { FirstName = "Bill", LastName = "Laimbeer" });
     theSession.Store(new User { FirstName = "Sam", LastName = "Mitchell" });
     theSession.Store(new User { FirstName = "Tom", LastName = "Chambers" });
 
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     var users = theSession.Query<User>().Select(x => new User2 { First = x.FirstName, Last = x.LastName }).ToList();
 
@@ -59,14 +59,14 @@ When you wish to retrieve certain properties and transform them into an anonymou
 <a id='snippet-sample_anonymous_type_projection'></a>
 ```cs
 [Fact]
-public void use_select_to_transform_to_an_anonymous_type()
+public async Task use_select_to_transform_to_an_anonymous_type()
 {
     theSession.Store(new User { FirstName = "Hank" });
     theSession.Store(new User { FirstName = "Bill" });
     theSession.Store(new User { FirstName = "Sam" });
     theSession.Store(new User { FirstName = "Tom" });
 
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new { Name = x.FirstName })
         .ToArray()
@@ -107,14 +107,14 @@ After calling Select, you'd be able to chain other linq methods such as `First()
 <a id='snippet-sample_get_first_projection'></a>
 ```cs
 [Fact]
-public void use_select_to_another_type_with_first()
+public async Task use_select_to_another_type_with_first()
 {
     theSession.Store(new User { FirstName = "Hank" });
     theSession.Store(new User { FirstName = "Bill" });
     theSession.Store(new User { FirstName = "Sam" });
     theSession.Store(new User { FirstName = "Tom" });
 
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName })
         .FirstOrDefault()
@@ -138,7 +138,7 @@ Marten has the ability to use the `SelectMany()` operator to issue queries again
 <a id='snippet-sample_can_do_simple_select_many_against_simple_array'></a>
 ```cs
 [Fact]
-public void can_do_simple_select_many_against_simple_array()
+public async Task can_do_simple_select_many_against_simple_array()
 {
     var product1 = new Product {Tags = new[] {"a", "b", "c"}};
     var product2 = new Product {Tags = new[] {"b", "c", "d"}};
@@ -147,7 +147,7 @@ public void can_do_simple_select_many_against_simple_array()
     using (var session = theStore.LightweightSession())
     {
         session.Store(product1, product2, product3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 
     using (var query = theStore.QuerySession())

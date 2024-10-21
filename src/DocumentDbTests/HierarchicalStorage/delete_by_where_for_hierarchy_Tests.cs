@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -10,12 +11,12 @@ namespace DocumentDbTests.HierarchicalStorage;
 public class delete_by_where_for_hierarchy_Tests: end_to_end_document_hierarchy_usage_Tests
 {
     [Fact]
-    public void can_delete_all_subclass()
+    public async Task can_delete_all_subclass()
     {
-        loadData();
+        await loadData();
 
         theSession.DeleteWhere<SuperUser>(x => true);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<SuperUser>().Count().ShouldBe(0);
         theSession.Query<AdminUser>().Count().ShouldBe(2);
@@ -23,12 +24,12 @@ public class delete_by_where_for_hierarchy_Tests: end_to_end_document_hierarchy_
     }
 
     [Fact]
-    public void can_delete_by_subclass()
+    public async Task can_delete_by_subclass()
     {
-        loadData();
+        await loadData();
 
         theSession.DeleteWhere<SuperUser>(x => x.FirstName.StartsWith("D"));
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<SuperUser>().Count().ShouldBe(1);
         theSession.Query<AdminUser>().Count().ShouldBe(2);
@@ -36,12 +37,12 @@ public class delete_by_where_for_hierarchy_Tests: end_to_end_document_hierarchy_
     }
 
     [Fact]
-    public void can_delete_by_the_hierarchy()
+    public async Task can_delete_by_the_hierarchy()
     {
-        loadData();
+        await loadData();
 
         theSession.DeleteWhere<User>(x => x.FirstName.StartsWith("D"));
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         // Should delete one SuperUser and one AdminUser
         theSession.Query<SuperUser>().Count().ShouldBe(1);

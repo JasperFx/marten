@@ -11,12 +11,12 @@ namespace DocumentDbTests.Writing.Identity;
 public class using_string_identity : IntegrationContext
 {
     [Fact]
-    public void persist_and_load()
+    public async Task persist_and_load()
     {
         var account = new Account{Id = "email@server.com"};
 
         theSession.Store(account);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var session = theStore.QuerySession();
         session.Load<Account>("email@server.com").ShouldNotBeNull();
@@ -64,17 +64,17 @@ public class using_string_identity : IntegrationContext
     }
 
     [Fact]
-    public void persist_and_delete()
+    public async Task persist_and_delete()
     {
         var account = new Account { Id = "email@server.com" };
 
         theSession.Store(account);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var session = theStore.LightweightSession())
         {
             session.Delete<Account>(account.Id);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -84,7 +84,7 @@ public class using_string_identity : IntegrationContext
     }
 
     [Fact]
-    public void load_by_array_of_ids()
+    public async Task load_by_array_of_ids()
     {
         theSession.Store(new Account { Id = "A" });
         theSession.Store(new Account { Id = "B" });
@@ -92,7 +92,7 @@ public class using_string_identity : IntegrationContext
         theSession.Store(new Account { Id = "D" });
         theSession.Store(new Account { Id = "E" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var session = theStore.QuerySession();
         session.LoadMany<Account>("A", "B", "E").Count().ShouldBe(3);

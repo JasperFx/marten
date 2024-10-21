@@ -20,7 +20,7 @@ public class Bug_1247_query_with_include_and_document_hierarchy_Tests: end_to_en
     }
 
     // [Fact] flaky in CI
-    public void include_to_list_using_outer_join()
+    public async Task include_to_list_using_outer_join()
     {
         var user1 = new User();
         var user2 = new User();
@@ -33,7 +33,7 @@ public class Bug_1247_query_with_include_and_document_hierarchy_Tests: end_to_en
         using var session = theStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3, issue4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         query.Logger = new TestOutputMartenLogger(_output);

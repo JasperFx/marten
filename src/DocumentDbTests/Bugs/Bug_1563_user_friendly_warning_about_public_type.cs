@@ -1,7 +1,9 @@
 using System;
+using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Schema;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
 namespace DocumentDbTests.Bugs;
@@ -15,18 +17,18 @@ public class Bug_1563_user_friendly_warning_about_public_type: BugIntegrationCon
     }
 
     [Fact]
-    public void good_error_on_non_public_type()
+    public async Task good_error_on_non_public_type()
     {
         var expectedMessage =
             $"Requested document type '{typeof(InternalDoc).FullNameInCode()}' must be scoped as 'public'";
 
-        var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+        var ex = await Should.ThrowAsync<InvalidOperationException>(async () =>
         {
             var doc = new InternalDoc();
             theSession.Store(doc);
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
         });
 
-        ex.Message.ShouldContain(expectedMessage);
+        ex.Message.ShouldContain(expectedMessage, Case.Insensitive);
     }
 }

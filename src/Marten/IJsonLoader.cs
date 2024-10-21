@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Internal.Sessions;
 
 namespace Marten;
 
@@ -14,6 +15,7 @@ public interface IJsonLoader
     /// <typeparam name="T"></typeparam>
     /// <param name="id"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     string? FindById<T>(string id) where T : class;
 
     /// <summary>
@@ -22,6 +24,7 @@ public interface IJsonLoader
     /// <typeparam name="T"></typeparam>
     /// <param name="id"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     string? FindById<T>(int id) where T : class;
 
     /// <summary>
@@ -30,6 +33,7 @@ public interface IJsonLoader
     /// <typeparam name="T"></typeparam>
     /// <param name="id"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     string? FindById<T>(long id) where T : class;
 
     /// <summary>
@@ -38,6 +42,7 @@ public interface IJsonLoader
     /// <typeparam name="T"></typeparam>
     /// <param name="id"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     string? FindById<T>(Guid id) where T : class;
 
     /// <summary>
