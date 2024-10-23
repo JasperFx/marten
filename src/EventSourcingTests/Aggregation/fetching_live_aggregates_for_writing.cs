@@ -1,9 +1,16 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Events;
+using Marten.Events.Aggregation;
+using Marten.Events.CodeGeneration;
+using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Metadata;
 using Marten.Testing.Harness;
+using NSubstitute;
 using Shouldly;
 using Xunit;
 
@@ -345,6 +352,26 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         });
     }
 
+    [Fact]
+    public async Task warn_if_trying_to_fetch_multi_stream_projection()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new TotalsProjection(), ProjectionLifecycle.Async);
+        });
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
+        {
+            await theSession.Events.FetchForWriting<Totals>(streamId);
+        });
+    }
+
 }
 
 public class SimpleAggregate : IRevisioned
@@ -464,4 +491,42 @@ public class SimpleAggregateAsString
     {
         ECount++;
     }
+}
+
+public class Totals
+{
+    public Guid Id { get; set; }
+    public int Count { get; set; }
+}
+
+public class TotalsProjection: MultiStreamProjection<Totals, Guid>, IEventSlicer<Totals, Guid>
+{
+    public TotalsProjection()
+    {
+        CustomGrouping(this);
+    }
+
+    [MartenIgnore]
+    public async ValueTask<IReadOnlyList<EventSlice<Totals, Guid>>> SliceInlineActions(IQuerySession querySession, IEnumerable<StreamAction> streams)
+    {
+        throw new NotImplementedException();
+    }
+
+    [MartenIgnore]
+    public ValueTask<IReadOnlyList<TenantSliceGroup<Totals, Guid>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
+    {
+        var group = new TenantSliceGroup<Totals, Guid>(querySession, querySession.TenantId);
+
+        group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is AEvent));
+        group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is BEvent));
+        group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is CEvent));
+        group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is DEvent));
+
+        return new ValueTask<IReadOnlyList<TenantSliceGroup<Totals, Guid>>>([group]);
+    }
+
+    public void Apply(AEvent e, Totals totals) => totals.Count++;
+    public void Apply(BEvent e, Totals totals) => totals.Count++;
+    public void Apply(CEvent e, Totals totals) => totals.Count++;
+    public void Apply(DEvent e, Totals totals) => totals.Count++;
 }
