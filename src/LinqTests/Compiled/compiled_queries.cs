@@ -88,6 +88,16 @@ public class compiled_queries: IntegrationContext
         plan.ShouldNotBeNull();
     }
 
+    [Fact]
+    public async Task can_explain_the_plan_for_a_compiled_query_async()
+    {
+        var query = new UserByUsername { UserName = "hank" };
+
+        var plan = await theStore.Diagnostics.ExplainPlanAsync(query);
+
+        plan.ShouldNotBeNull();
+    }
+
     [Theory]
     [SessionTypes]
     public void a_single_item_compiled_query(DocumentTracking tracking)

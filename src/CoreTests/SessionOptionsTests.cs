@@ -149,7 +149,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void default_timeout_should_be_npgsql_default_ie_30()
+    public async Task default_timeout_should_be_npgsql_default_ie_30()
     {
         // TODO -- do this without the Preview command. Check against the session itself
         StoreOptions(opts =>
@@ -162,7 +162,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         var options = new SessionOptions();
 
         using var query = theStore.QuerySession(options);
-        var cmd = query.Query<FryGuy>().Explain();
+        var cmd = await query.Query<FryGuy>().ExplainAsync();
         Assert.Equal(30, cmd.Command.CommandTimeout);
     }
 

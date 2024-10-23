@@ -1,5 +1,7 @@
 #nullable enable
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Internal.Sessions;
 using Marten.Linq;
 using Npgsql;
@@ -48,6 +50,7 @@ public class Diagnostics: IDiagnostics
     /// <typeparam name="TReturn"></typeparam>
     /// <param name="query"></param>
     /// <returns></returns>
+    [Obsolete(QuerySession.SynchronousRemoval)]
     public QueryPlan ExplainPlan<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query)
     {
         var cmd = PreviewCommand(query);
@@ -55,6 +58,22 @@ public class Diagnostics: IDiagnostics
         using var conn = _store.Tenancy.Default.Database.CreateConnection();
         conn.Open();
         return conn.ExplainQuery(_store.Serializer, cmd)!;
+    }
+
+    /// <summary>
+    ///     Find the Postgresql EXPLAIN PLAN for this compiled query
+    /// </summary>
+    /// <typeparam name="TDoc"></typeparam>
+    /// <typeparam name="TReturn"></typeparam>
+    /// <param name="query"></param>
+    /// <returns></returns>
+    public async Task<QueryPlan?> ExplainPlanAsync<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query, CancellationToken token = default)
+    {
+        var cmd = PreviewCommand(query);
+
+        using var conn = _store.Tenancy.Default.Database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        return await conn.ExplainQueryAsync(_store.Serializer, cmd, token: token).ConfigureAwait(false);
     }
 
     /// <summary>
