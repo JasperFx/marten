@@ -3,6 +3,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
+using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
@@ -23,6 +25,21 @@ internal class AsyncFetchPlanner: IFetchPlanner
     {
         if (options.Projections.TryFindAggregate(typeof(TDoc), out var projection))
         {
+            if (projection is MultiStreamProjection<TDoc, TId>)
+            {
+                throw new InvalidOperationException(
+                    $"The aggregate type {typeof(TDoc).FullNameInCode()} is the subject of a multi-stream projection and cannot be used with FetchForWriting");
+            }
+
+            if (projection is CustomProjection<TDoc, TId> custom)
+            {
+                if (!(custom.Slicer is ISingleStreamSlicer))
+                {
+                    throw new InvalidOperationException(
+                        $"The aggregate type {typeof(TDoc).FullNameInCode()} is the subject of a multi-stream projection and cannot be used with FetchForWriting");
+                }
+            }
+
             if (projection.Lifecycle == ProjectionLifecycle.Async)
             {
                 var mapping = options.Storage.FindMapping(typeof(TDoc)) as DocumentMapping;
