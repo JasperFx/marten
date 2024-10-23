@@ -25,7 +25,7 @@ public class DefaultQueryFixture: TargetSchemaFixture
                 .Duplicate(x => x.NumberArray);
         });
 
-        SystemTextJsonStore = ProvisionStore("stj", o =>
+        SystemTextJsonStore = ProvisionStore("stj_linq", o =>
         {
             o.Serializer<SystemTextJsonSerializer>();
         });
