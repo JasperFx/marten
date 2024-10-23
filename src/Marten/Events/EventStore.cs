@@ -2,6 +2,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Protected;
 using Marten.Internal.Sessions;
 using Marten.Storage;
 
@@ -16,5 +17,11 @@ internal partial class EventStore: QueryEventStore, IEventStore
     {
         _session = session;
         _store = store;
+    }
+
+    public void OverwriteEvent(IEvent e)
+    {
+        var op = new OverwriteEventOperation(_store.Events, e);
+        _session.QueueOperation(op);
     }
 }
