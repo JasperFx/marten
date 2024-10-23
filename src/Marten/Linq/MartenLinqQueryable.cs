@@ -227,6 +227,18 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
         return conn.ExplainQuery(Session.Serializer, command, configureExplain)!;
     }
 
+    public async Task<QueryPlan> ExplainAsync(FetchType fetchType = FetchType.FetchMany,
+        CancellationToken token = default, Action<IConfigureExplainExpressions>? configureExplain = null)
+    {
+        var command = ToPreviewCommand(fetchType);
+
+        await using var conn = Session.Database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        command.Connection = conn;
+        command.CommandTimeout = Session._connection.CommandTimeout;
+        return (await conn.ExplainQueryAsync(Session.Serializer, command, configureExplain, token).ConfigureAwait(false))!;
+    }
+
     public IMartenQueryable<T> Stats(out QueryStatistics stats)
     {
         Statistics = new QueryStatistics();
