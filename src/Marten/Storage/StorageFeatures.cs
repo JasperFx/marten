@@ -264,6 +264,8 @@ public class StorageFeatures: IFeatureSchema
     {
         SystemFunctions.AddSystemFunction(_options, "mt_immutable_timestamp", "text");
         SystemFunctions.AddSystemFunction(_options, "mt_immutable_timestamptz", "text");
+        SystemFunctions.AddSystemFunction(_options, "mt_immutable_time", "text");
+        SystemFunctions.AddSystemFunction(_options, "mt_immutable_date", "text");
         SystemFunctions.AddSystemFunction(_options, "mt_grams_vector", "text");
         SystemFunctions.AddSystemFunction(_options, "mt_grams_query", "text");
         SystemFunctions.AddSystemFunction(_options, "mt_grams_array", "text");
