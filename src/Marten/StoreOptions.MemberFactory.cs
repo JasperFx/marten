@@ -79,6 +79,16 @@ public partial class StoreOptions
             return new DateTimeOffsetMember(this, parent, casing, member);
         }
 
+        if (memberType == typeof(DateOnly))
+        {
+            return new DateOnlyMember(this, parent, casing, member);
+        }
+
+        if (memberType == typeof(TimeOnly))
+        {
+            return new TimeOnlyMember(this, parent, casing, member);
+        }
+
         if (isEnumerable(memberType))
         {
             Type elementType = null;
