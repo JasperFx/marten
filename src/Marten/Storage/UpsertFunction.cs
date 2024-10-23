@@ -196,12 +196,19 @@ DECLARE
   current_version INTEGER;
 BEGIN
 
+SELECT {_versionColumnName} into current_version FROM {_versionSourceTable} WHERE id = docId {_andTenantVersionWhereClause};
 if revision = 0 then
-  SELECT {_versionColumnName} into current_version FROM {_versionSourceTable} WHERE id = docId {_andTenantVersionWhereClause};
+
   if current_version is not null then
     {revisionModification}
   else
     revision = 1;
+  end if;
+else
+  if current_version is not null then
+    if current_version >= revision then
+      return 0;
+    end if;
   end if;
 end if;
 
