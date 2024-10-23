@@ -11,6 +11,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
+using Weasel.Core;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -572,6 +573,8 @@ public class numeric_revisioning: OneOffConfigurationsContext
 
         doc2.Name = "Different";
         session.UpdateRevision(doc2, 2);
+
+        session.Logger = new TestOutputMartenLogger(_output);
         await session.SaveChangesAsync();
     }
 
@@ -606,6 +609,75 @@ public class numeric_revisioning: OneOffConfigurationsContext
         session.UpdateRevision(doc2, 2);
         await session.SaveChangesAsync();
     }
+
+
+
+    [Fact]
+    public async Task optimistic_concurrency_failure_with_update_revision_when_revision_number_equal_in_new_doc_and_db()
+    {
+        StoreOptions(opts =>
+        {
+            opts.GeneratedCodeMode = TypeLoadMode.Auto;
+            opts.GeneratedCodeOutputPath = AppContext.BaseDirectory.ParentDirectory().ParentDirectory()
+                .ParentDirectory().AppendPath("Internal", "Generated");
+        });
+
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        doc1.Name = "Bill";
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        doc1.Name = "Dru";
+        doc1.Version = 3;
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong" };
+        theSession.UpdateRevision(doc2, doc1.Version + 1);
+        await theSession.SaveChangesAsync();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        await Should.ThrowAsync<ConcurrencyException>(async () =>
+        {
+            theSession.UpdateRevision(doc2, doc1.Version + 1);
+            await theSession.SaveChangesAsync();
+        });
+    }
+
+    [Fact]
+    public async Task optimistic_concurrency_failure_with_update_revision_when_revision_number_equal_in_the_same_doc_and_db()
+    {
+        var doc1 = new RevisionedDoc { Name = "Tim" };
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        doc1.Name = "Bill";
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        doc1.Name = "Dru";
+        doc1.Version = 3;
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong" };
+        theSession.UpdateRevision(doc2, doc1.Version + 1);
+        await theSession.SaveChangesAsync();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        await Should.ThrowAsync<ConcurrencyException>(async () =>
+        {
+            theSession.UpdateRevision(doc1, doc1.Version + 1);
+            await theSession.SaveChangesAsync();
+        });
+    }
+
+
 
 }
 

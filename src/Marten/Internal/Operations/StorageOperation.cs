@@ -131,9 +131,14 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         if (reader.Read())
         {
             var revision = reader.GetFieldValue<int>(0);
+            if (revision == 0)
+            {
+                exceptions.Add(new ConcurrencyException(typeof(T), _id));
+                return false;
+            }
             if (Revision != 0) // don't care about zero or 1
             {
-                if (revision > Revision)
+                if (revision >= Revision)
                 {
                     exceptions.Add(new ConcurrencyException(typeof(T), _id));
                     success = false;
@@ -158,6 +163,11 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         if (await reader.ReadAsync(token).ConfigureAwait(false))
         {
             var revision = await reader.GetFieldValueAsync<int>(0, token).ConfigureAwait(false);
+            if (revision == 0)
+            {
+                exceptions.Add(new ConcurrencyException(typeof(T), _id));
+                return false;
+            }
             if (Revision != 0) // don't care about zero or 1
             {
                 if (revision > Revision)
