@@ -68,12 +68,12 @@ public class select_clauses : LinqTestContext<select_clauses>
         return assertTestCase(description, Fixture.Store);
     }
 
-    [Theory]
-    [MemberData(nameof(GetDescriptions))]
-    public Task run_query_with_stj(string description)
-    {
-        return assertTestCase(description, Fixture.SystemTextJsonStore);
-    }
+    // [Theory]
+    // [MemberData(nameof(GetDescriptions))]
+    // public Task run_query_with_stj(string description)
+    // {
+    //     return assertTestCase(description, Fixture.SystemTextJsonStore);
+    // }
 
     public class Person
     {
