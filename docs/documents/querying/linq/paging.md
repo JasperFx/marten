@@ -43,7 +43,7 @@ If you want to create you own paged queries, just use the `Take()` and `Skip()` 
 public void can_get_the_total_in_results()
 {
     var count = theSession.Query<Target>().Count(x => x.Number > 10);
-    SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+    count.ShouldBeGreaterThan(0);
 
     // We're going to use stats as an output
     // parameter to the call below, so we

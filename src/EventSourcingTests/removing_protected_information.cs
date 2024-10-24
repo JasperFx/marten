@@ -1,11 +1,14 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx.Core;
 using Marten;
 using Marten.Events;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Xunit;
 
@@ -349,6 +352,89 @@ public interface IAccountEvent
 public class AccountChanged: IAccountEvent
 {
     public string Name { get; set; }
+}
+
+public static class DocumentationSamples
+{
+    public static void define_masking_rules()
+    {
+        #region sample_defining_masking_rules
+
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddMarten(opts =>
+        {
+            opts.Connection(builder.Configuration.GetConnectionString("marten"));
+
+            // By a single, concrete type
+            opts.Events.AddMaskingRuleForProtectedInformation<AccountChanged>(x =>
+            {
+                // I'm only masking a single property here, but you could do as much as you want
+                x.Name = "****";
+            });
+
+            // Maybe you have an interface that multiple event types implement that would help
+            // make these rules easier by applying to any event type that implements this interface
+            opts.Events.AddMaskingRuleForProtectedInformation<IAccountEvent>(x => x.Name = "****");
+
+            // Little fancier
+            opts.Events.AddMaskingRuleForProtectedInformation<MembersJoined>(x =>
+            {
+                for (int i = 0; i < x.Members.Length; i++)
+                {
+                    x.Members[i] = "*****";
+                }
+            });
+        });
+
+        #endregion
+    }
+
+    #region sample_apply_masking_to_a_single_stream
+
+    public static Task apply_masking_to_streams(IDocumentStore store, Guid streamId, CancellationToken token)
+    {
+        return store
+            .Advanced
+            .ApplyEventDataMasking()
+            .IncludeStream(streamId)
+
+            // You can add or modify event metadata headers as well
+            // BUT, you'll of course need event header tracking to be enabled
+            .AddHeader("masked", DateTimeOffset.UtcNow)
+
+            .ApplyAsync(token);
+    }
+
+    #endregion
+
+    #region sample_apply_masking_by_filter
+
+    public static Task apply_masking_by_filter(IDocumentStore store, Guid[] streamIds)
+    {
+        return store.Advanced.ApplyEventDataMasking()
+            .IncludeEvents(e => e.EventTypesAre(typeof(QuestStarted)) && e.StreamId.IsOneOf(streamIds))
+            .ApplyAsync();
+    }
+
+    #endregion
+
+    #region sample_apply_masking_with_multi_tenancy
+
+    public static Task apply_masking_by_tenant(IDocumentStore store, string tenantId, Guid streamId)
+    {
+        return store
+            .Advanced
+            .ApplyEventDataMasking()
+            .IncludeStream(streamId)
+
+            // Specify the tenant id, and it doesn't matter
+            // in what order this appears in
+            .ForTenant(tenantId)
+
+            .ApplyAsync();
+    }
+
+    #endregion
 }
 
 

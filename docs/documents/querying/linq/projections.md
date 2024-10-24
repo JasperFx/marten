@@ -45,8 +45,8 @@ public async Task use_select_with_multiple_fields_to_other_type()
 
     users.Each(x =>
     {
-        SpecificationExtensions.ShouldNotBeNull(x.First);
-        SpecificationExtensions.ShouldNotBeNull(x.Last);
+        x.First.ShouldNotBeNull();
+        x.Last.ShouldNotBeNull();
     });
 }
 ```

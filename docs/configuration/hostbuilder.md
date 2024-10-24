@@ -129,7 +129,7 @@ services.AddMarten()
     .UseLightweightSessions()
     .UseNpgsqlDataSource();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L292-L300' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L299-L307' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you're on .NET 8 (and above), you can also use a dedicated [keyed registration](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-8#keyed-di-services). This can be useful for scenarios where you need more than one data source registered:
@@ -145,7 +145,7 @@ services.AddMarten()
     .UseLightweightSessions()
     .UseNpgsqlDataSource(dataSourceKey);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L343-L353' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource_keyed' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L350-L360' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource_keyed' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Using a Multi-Host Data Source <Badge type="tip" text="7.11" />
@@ -167,7 +167,7 @@ services.AddMarten(x =>
     .UseLightweightSessions()
     .UseNpgsqlDataSource();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L314-L326' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasourcemultihost' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L321-L333' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasourcemultihost' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning

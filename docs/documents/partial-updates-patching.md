@@ -397,7 +397,7 @@ public async Task rename_deep_prop()
     {
         var target2 = query.Load<Target>(target.Id);
         target2.Inner.AnotherString.ShouldBe("Foo");
-        SpecificationExtensions.ShouldBeNull(target2.Inner.String);
+        target2.Inner.String.ShouldBeNull();
     }
 }
 ```
