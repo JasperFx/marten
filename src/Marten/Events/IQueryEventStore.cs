@@ -55,7 +55,6 @@ public interface IQueryEventStore
     /// <param name="fromVersion">If set, queries for events on or from this version</param>
     /// <param name="token"></param>
     /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
     Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, long version = 0, DateTimeOffset? timestamp = null,
         long fromVersion = 0, CancellationToken token = default);
 
