@@ -111,9 +111,3 @@ Here's a couple more facts you might need to know:
 * The masking rules can only be done at configuration time (as of right now)
 * You can apply multiple masking rules for certain event types, and all will be applied when you use the masking API
 * The masking has absolutely no impact on event archiving or projected data -- unless you rebuild the projection data after applying the data masking of course
-
-
-
-
-
-
