@@ -8,6 +8,7 @@ using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Projections;
+using Marten.Events.Protected;
 using Marten.Events.TestSupport;
 using Marten.Schema;
 using Marten.Storage;
@@ -273,4 +274,11 @@ public class AdvancedOperations
             tenantIdToPartitionMapping,
             token).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Configure and execute a batch masking of protected data for a subset of the events
+    /// in the event store
+    /// </summary>
+    /// <returns></returns>
+    public IEventDataMasking ApplyEventDataMasking() => new EventDataMasking(_store);
 }

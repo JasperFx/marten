@@ -342,6 +342,15 @@ namespace Marten.Events
         /// <param name="upcasters">Upcaster type transforming ("upcasting") event JSON payload from one schema to another.</param>
         /// <returns>Event store options, to allow fluent definition</returns>
         IEventStoreOptions Upcast<TUpcaster>() where TUpcaster : IEventUpcaster, new();
+
+        /// <summary>
+        /// Register a policy for how to remove or mask protected information
+        /// for an event type "T" or series of event types that can be cast
+        /// to "T"
+        /// </summary>
+        /// <param name="action"></param>
+        /// <typeparam name="T"></typeparam>
+        void AddMaskingRuleForProtectedInformation<T>(Action<T> action);
     }
 }
 

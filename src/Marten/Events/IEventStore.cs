@@ -342,5 +342,10 @@ public interface IEventStore: IEventOperations, IQueryEventStore
     Task WriteExclusivelyToAggregate<T>(string id, Func<IEventStream<T>, Task> writing,
         CancellationToken cancellation = default) where T : class;
 
-
+    /// <summary>
+    /// Advanced usage! If you have some need to overwrite the data or headers of an existing event,
+    /// this registers an operation with the current session to do so
+    /// </summary>
+    /// <param name="e"></param>
+    void OverwriteEvent(IEvent e);
 }
