@@ -195,7 +195,11 @@ const config: UserConfig<DefaultTheme.Config> = {
             {
               text: 'Multitenancy',
               link: '/events/multitenancy'
-            },
+            }, 
+              {
+                  text: 'Removing Protected Information',
+                  link: '/events/protection'
+              },
             {
               text: 'Aggregates, events and repositories',
               link: '/scenarios/aggregates-events-repositories'
