@@ -13,7 +13,7 @@ using Weasel.Postgresql;
 namespace Marten.Events.Operations;
 
 // Leave public for codegen!
-public abstract class InsertStreamBase: IStorageOperation, IExceptionTransform, NoDataReturnedCall
+public abstract class InsertStreamBase: IStorageOperation, IExceptionTransform//, NoDataReturnedCall
 {
     public InsertStreamBase(StreamAction stream)
     {
