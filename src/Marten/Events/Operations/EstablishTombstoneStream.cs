@@ -31,13 +31,19 @@ internal class EstablishTombstoneStream: IStorageOperation
     public EstablishTombstoneStream(EventGraph events, string sessionTenantId)
     {
         _sessionTenantId = sessionTenantId;
-        var pkFields = events.TenancyStyle == TenancyStyle.Conjoined
-            ? "id, tenant_id"
-            : "id";
+        var pkFields = "id";
+        if (events.TenancyStyle == TenancyStyle.Conjoined)
+        {
+            pkFields += ", tenant_id";
+        }
+        if (events.UseArchivedStreamPartitioning)
+        {
+            pkFields += ", is_archived";
+        }
 
         _sql = $@"
-insert into {events.DatabaseSchemaName}.mt_streams (id, tenant_id, version)
-values (?, ?, 0)
+insert into {events.DatabaseSchemaName}.mt_streams (id, tenant_id, version, is_archived)
+values (?, ?, 0, false)
 ON CONFLICT ({pkFields})
 DO NOTHING
 ";
