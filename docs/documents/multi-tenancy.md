@@ -446,7 +446,7 @@ builder.Services.AddMarten(opts =>
     opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L151-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_marten_managed_tenant_partitioning' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L189-L206' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_marten_managed_tenant_partitioning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The tenant to partition name mapping will be stored in a table created by Marten called `mt_tenant_partitions` with
@@ -467,7 +467,7 @@ await theStore
     // with the named tenant ids
     .AddMartenManagedTenantsAsync(CancellationToken.None, "a1", "a2", "a3");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L57-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add_managed_tenants_at_runtime' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L58-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add_managed_tenants_at_runtime' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The API above will try to add any missing table partitions to all known document types. There is also a separate overload
@@ -492,7 +492,7 @@ public class DocThatShouldBeExempted1
     public Guid Id { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L222-L230' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_donotpartitionattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L260-L268' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_donotpartitionattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 or exempt a single document type through the fluent interface:
@@ -502,7 +502,7 @@ or exempt a single document type through the fluent interface:
 ```cs
 opts.Schema.For<DocThatShouldBeExempted2>().DoNotPartition();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L207-L211' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_exempt_from_partitioning_through_fluent_interface' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L245-L249' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_exempt_from_partitioning_through_fluent_interface' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Implementation Details
