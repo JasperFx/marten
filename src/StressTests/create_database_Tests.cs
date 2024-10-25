@@ -9,9 +9,8 @@ using Npgsql;
 using Shouldly;
 using Weasel.Core;
 using Xunit;
-using Xunit.Sdk;
 
-namespace CoreTests;
+namespace StressTests;
 
 [Collection("multi-tenancy")]
 public class create_database_Tests : IDisposable
