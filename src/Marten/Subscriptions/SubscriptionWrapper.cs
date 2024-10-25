@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,6 +34,19 @@ internal class ScopedSubscriptionServiceWrapper<T>: SubscriptionBase where T : I
     {
         _provider = provider;
         SubscriptionName = typeof(T).Name;
+
+        if (typeof(T).CanBeCastTo<SubscriptionBase>())
+        {
+            using var scope = _provider.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var subscription = sp.GetRequiredService<T>().As<SubscriptionBase>();
+            IncludedEventTypes.AddRange(subscription.IncludedEventTypes);
+            StreamType = subscription.StreamType;
+            IncludeArchivedEvents = subscription.IncludeArchivedEvents;
+        }
+
+
     }
 
     public override async Task<IChangeListener> ProcessEventsAsync(EventRange page, ISubscriptionController controller,
