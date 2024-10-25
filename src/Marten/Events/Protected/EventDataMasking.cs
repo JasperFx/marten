@@ -125,12 +125,4 @@ public interface IEventDataMasking
     /// <param name="value"></param>
     /// <returns></returns>
     IEventDataMasking AddHeader(string key, object value);
-
-    /// <summary>
-    /// Actually execute and apply data protection masking to all the events
-    /// matching the criteria specified by this expression
-    /// </summary>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task ApplyAsync(CancellationToken token = default);
 }
