@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten;
+using Marten.Metadata;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
@@ -72,6 +73,43 @@ public class marten_managed_tenant_id_partitioning: OneOffConfigurationsContext,
         var userTable = await theStore.Storage.Database.ExistingTableFor(typeof(User));
         assertTableHasTenantPartitions(userTable, "a1", "a2", "a3");
 
+    }
+
+
+
+    [Fact]
+    public async Task should_not_build_storage_for_live_aggregations()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
+
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+
+            opts.Schema.For<Target>();
+            opts.Schema.For<User>();
+
+            opts.Projections.LiveStreamAggregation<SimpleAggregate>();
+        }, true);
+
+        var streamId = theSession.Events.StartStream<SimpleAggregate>(new AEvent(), new BEvent()).Id;
+        await theSession.SaveChangesAsync();
+
+        var aggregate = theSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
+        aggregate.ShouldNotBeNull();
+
+        await theStore
+            .Advanced
+            // This is ensuring that there are tenant id partitions for all multi-tenanted documents
+            // with the named tenant ids
+            .AddMartenManagedTenantsAsync(CancellationToken.None, "a1", "a2", "a3");
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        // Seeing if the table for SimpleAggregate exists, and it should *not*
+        var table = await theStore.Storage.Database.ExistingTableFor(typeof(SimpleAggregate));
+        table.ShouldBeNull();
     }
 
     [Fact]
@@ -233,4 +271,49 @@ public class DocThatShouldBeExempted2
 {
     public Guid Id { get; set; }
 }
+
+public class SimpleAggregate : IRevisioned
+{
+    // This will be the aggregate version
+    public int Version { get; set; }
+
+    public Guid Id { get; set; }
+
+    public int ACount { get; set; }
+    public int BCount { get; set; }
+    public int CCount { get; set; }
+    public int DCount { get; set; }
+    public int ECount { get; set; }
+
+    public void Apply(AEvent _)
+    {
+        ACount++;
+    }
+
+    public void Apply(BEvent _)
+    {
+        BCount++;
+    }
+
+    public void Apply(CEvent _)
+    {
+        CCount++;
+    }
+
+    public void Apply(DEvent _)
+    {
+        DCount++;
+    }
+
+    public void Apply(EEvent _)
+    {
+        ECount++;
+    }
+}
+
+public class BEvent{}
+public class CEvent{}
+public class DEvent{}
+public class EEvent{}
+
 
