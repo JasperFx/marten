@@ -37,6 +37,28 @@ public class EventDataMasking : IEventDataMasking
         return this;
     }
 
+    public IEventDataMasking IncludeStream(Guid streamId, Func<IEvent, bool> filter)
+    {
+        _sources.Add(async (s, t) =>
+        {
+            var raw = await s.Events.FetchStreamAsync(streamId, token: t).ConfigureAwait(false);
+            return raw.Where(filter).ToList();
+        });
+
+        return this;
+    }
+
+    public IEventDataMasking IncludeStream(string streamKey, Func<IEvent, bool> filter)
+    {
+        _sources.Add(async (s, t) =>
+        {
+            var raw = await s.Events.FetchStreamAsync(streamKey, token: t).ConfigureAwait(false);
+            return raw.Where(filter).ToList();
+        });
+
+        return this;
+    }
+
     public IEventDataMasking IncludeEvents(Expression<Func<IEvent, bool>> filter)
     {
         _sources.Add((s, t) => s.Events.QueryAllRawEvents().Where(filter).ToListAsync(t));
@@ -107,6 +129,22 @@ public interface IEventDataMasking
     /// <param name="streamKey"></param>
     /// <returns></returns>
     IEventDataMasking IncludeStream(string streamKey);
+
+    /// <summary>
+    /// Apply data protection masking to this event stream
+    /// </summary>
+    /// <param name="streamId"></param>
+    /// <param name="filter">Further filter events within the stream to more finely target events for masking</param>
+    /// <returns></returns>
+    IEventDataMasking IncludeStream(Guid streamId, Func<IEvent, bool> filter);
+
+    /// <summary>
+    /// Apply data protection masking to this event stream
+    /// </summary>
+    /// <param name="streamKey"></param>
+    /// <param name="filter">Further filter events within the stream to more finely target events for masking</param>
+    /// <returns></returns>
+    IEventDataMasking IncludeStream(string streamKey, Func<IEvent, bool> filter);
 
     /// <summary>
     /// Apply data protection masking to events matching
