@@ -241,3 +241,36 @@ in the event store sequence due to failed transactions. Marten V4 introduced sup
 event sequence numbers that failed in a Marten transaction. This is done strictly to improve the functioning of the [async daemon](/events/projections/async-daemon) that looks for gaps in the event sequence to "know" how
 far it's safe to process asynchronous projections. If you see event rows in your database of type "tombstone", it's representative of failed transactions (maybe from optimistic concurrency violations,
 transient network issues, timeouts, etc.).
+
+Where this is not _yet_ formal support in Marten's API surface for deleting "tombstone" events, it is 
+perfectly safe to delete tombstone events from your database:
+
+* At any time if you do not use any asynchronous projections and do not use the async daemon at runtime
+* Where the `seq_id` column value is less than the "high water mark" of the async daemon. You can find the "high water mark"
+  value from the `mt_event_progression` table or through this API call:
+
+<!-- snippet: sample_DaemonDiagnostics -->
+<a id='snippet-sample_daemondiagnostics'></a>
+```cs
+public static async Task ShowDaemonDiagnostics(IDocumentStore store)
+{
+    // This will tell you the current progress of each known projection shard
+    // according to the latest recorded mark in the database
+    var allProgress = await store.Advanced.AllProjectionProgress();
+    foreach (var state in allProgress)
+    {
+        Console.WriteLine($"{state.ShardName} is at {state.Sequence}");
+    }
+
+    // This will allow you to retrieve some basic statistics about the event store
+    var stats = await store.Advanced.FetchEventStoreStatistics();
+    Console.WriteLine($"The event store highest sequence is {stats.EventSequenceNumber}");
+
+    // This will let you fetch the current shard state of a single projection shard,
+    // but in this case we're looking for the daemon high water mark
+    var daemonHighWaterMark = await store.Advanced.ProjectionProgressFor(new ShardName(ShardState.HighWaterMark));
+    Console.WriteLine($"The daemon high water sequence mark is {daemonHighWaterMark}");
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L111-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemondiagnostics' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->

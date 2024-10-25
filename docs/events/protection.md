@@ -38,7 +38,7 @@ builder.Services.AddMarten(opts =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/removing_protected_information.cs#L361-L389' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_defining_masking_rules' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/removing_protected_information.cs#L367-L395' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_defining_masking_rules' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 That's strictly a configuration time effort. Next, you can apply the masking on demand to any subset of events with 
@@ -51,17 +51,17 @@ public static Task apply_masking_to_streams(IDocumentStore store, Guid streamId,
 {
     return store
         .Advanced
-        .ApplyEventDataMasking()
-        .IncludeStream(streamId)
+        .ApplyEventDataMasking(x =>
+        {
+            x.IncludeStream(streamId);
 
-        // You can add or modify event metadata headers as well
-        // BUT, you'll of course need event header tracking to be enabled
-        .AddHeader("masked", DateTimeOffset.UtcNow)
-
-        .ApplyAsync(token);
+            // You can add or modify event metadata headers as well
+            // BUT, you'll of course need event header tracking to be enabled
+            x.AddHeader("masked", DateTimeOffset.UtcNow);
+        }, token);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/removing_protected_information.cs#L392-L408' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_masking_to_a_single_stream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/removing_protected_information.cs#L398-L414' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_masking_to_a_single_stream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
@@ -76,12 +76,13 @@ To apply the event data masking across streams on an arbitrary grouping, you can
 ```cs
 public static Task apply_masking_by_filter(IDocumentStore store, Guid[] streamIds)
 {
-    return store.Advanced.ApplyEventDataMasking()
-        .IncludeEvents(e => e.EventTypesAre(typeof(QuestStarted)) && e.StreamId.IsOneOf(streamIds))
-        .ApplyAsync();
+    return store.Advanced.ApplyEventDataMasking(x =>
+        {
+            x.IncludeEvents(e => e.EventTypesAre(typeof(QuestStarted)) && e.StreamId.IsOneOf(streamIds));
+        });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/removing_protected_information.cs#L410-L419' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_masking_by_filter' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/removing_protected_information.cs#L416-L426' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_masking_by_filter' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Finally, if you are using multi-tenancy, you can specify the tenant id as part of the same fluent interface:
@@ -93,17 +94,17 @@ public static Task apply_masking_by_tenant(IDocumentStore store, string tenantId
 {
     return store
         .Advanced
-        .ApplyEventDataMasking()
-        .IncludeStream(streamId)
+        .ApplyEventDataMasking(x =>
+        {
+            x.IncludeStream(streamId);
 
-        // Specify the tenant id, and it doesn't matter
-        // in what order this appears in
-        .ForTenant(tenantId)
-
-        .ApplyAsync();
+            // Specify the tenant id, and it doesn't matter
+            // in what order this appears in
+            x.ForTenant(tenantId);
+        });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/removing_protected_information.cs#L421-L437' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_masking_with_multi_tenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/removing_protected_information.cs#L428-L444' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_masking_with_multi_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Here's a couple more facts you might need to know:
