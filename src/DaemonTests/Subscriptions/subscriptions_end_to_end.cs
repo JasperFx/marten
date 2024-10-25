@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EventSourcingTests.Aggregation;
 using JasperFx.Core;
 using Lamar.IoC.Instances;
 using Marten;
@@ -15,6 +16,7 @@ using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
+using NSubstitute;
 using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
@@ -445,6 +447,53 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
         progress.ShouldBeGreaterThanOrEqualTo(16);
 
         await store.Advanced.Clean.DeleteAllEventDataAsync();
+    }
+
+    [Fact]
+    public void subscription_wrapper_copies_the_filters_from_subscription_base()
+    {
+        var services = new ServiceCollection();
+        services.AddScoped<FilteredSubscription>();
+
+        var provider = services.BuildServiceProvider();
+
+        var wrapper = new ScopedSubscriptionServiceWrapper<FilteredSubscription>(provider);
+
+        wrapper.IncludeArchivedEvents.ShouldBeTrue();
+        wrapper.IncludedEventTypes.Count.ShouldBe(2);
+        wrapper.IncludedEventTypes.ShouldContain(typeof(AEvent));
+        wrapper.IncludedEventTypes.ShouldContain(typeof(BEvent));
+    }
+}
+
+public class FilteredSubscription: SubscriptionBase, IDisposable
+{
+    public FilteredSubscription()
+    {
+        IncludeType<AEvent>();
+        IncludeType<BEvent>();
+        StreamType = typeof(SimpleAggregate);
+        IncludeArchivedEvents = true;
+    }
+
+    public override Task<IChangeListener> ProcessEventsAsync(EventRange page, ISubscriptionController controller, IDocumentOperations operations,
+        CancellationToken cancellationToken)
+    {
+        return Task.FromResult(Substitute.For<IChangeListener>());
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            // TODO release managed resources here
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }
 
