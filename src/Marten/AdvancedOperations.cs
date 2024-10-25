@@ -280,5 +280,10 @@ public class AdvancedOperations
     /// in the event store
     /// </summary>
     /// <returns></returns>
-    public IEventDataMasking ApplyEventDataMasking() => new EventDataMasking(_store);
+    public Task ApplyEventDataMasking(Action<IEventDataMasking> configure, CancellationToken token = default)
+    {
+        var masking = new EventDataMasking(_store);
+        configure(masking);
+        return masking.ApplyAsync(token);
+    }
 }

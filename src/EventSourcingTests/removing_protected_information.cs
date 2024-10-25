@@ -75,11 +75,12 @@ public class removing_protected_information : OneOffConfigurationsContext
         var streamId2 = theSession.Events.StartStream<Quest>(new QuestStarted{Name = "Find the Eye of the World"}, new MembersJoined(1, "Fal Dara", "Rand", "Perrin", "Mat")).Id;
         await theSession.SaveChangesAsync();
 
-        await theStore.Advanced.ApplyEventDataMasking()
-            .IncludeStream(streamId)
-            .AddHeader("color", "green")
-            .AddHeader("opid", 1)
-            .ApplyAsync();
+        await theStore.Advanced.ApplyEventDataMasking(x =>
+        {
+            x.IncludeStream(streamId)
+                .AddHeader("color", "green")
+                .AddHeader("opid", 1);
+        });
 
         // Should apply to this stream
         var events = await theSession.Events.FetchStreamAsync(streamId);
@@ -128,11 +129,12 @@ public class removing_protected_information : OneOffConfigurationsContext
         var streamId2 = theSession.Events.StartStream<Quest>(new QuestStarted{Name = "Find the Eye of the World"}, new MembersJoined(1, "Fal Dara", "Rand", "Perrin", "Mat")).Id;
         await theSession.SaveChangesAsync();
 
-        await theStore.Advanced.ApplyEventDataMasking()
-            .IncludeStream(streamId)
-            .AddHeader("color", "green")
-            .AddHeader("opid", 1)
-            .ApplyAsync();
+        await theStore.Advanced.ApplyEventDataMasking(x =>
+            {
+                x.IncludeStream(streamId)
+                    .AddHeader("color", "green")
+                    .AddHeader("opid", 1);
+            });
 
         // Should apply to this stream
         var events = await theSession.Events.FetchStreamAsync(streamId);
@@ -187,12 +189,14 @@ public class removing_protected_information : OneOffConfigurationsContext
         var streamId2 = theSession.Events.StartStream<Quest>(new QuestStarted{Name = "Find the Eye of the World"}, new MembersJoined(1, "Fal Dara", "Rand", "Perrin", "Mat")).Id;
         await theSession.SaveChangesAsync();
 
-        await theStore.Advanced.ApplyEventDataMasking()
-            .IncludeStream(streamId)
-            .IncludeStream(streamId2)
-            .AddHeader("color", "green")
-            .AddHeader("opid", 1)
-            .ApplyAsync();
+        await theStore.Advanced.ApplyEventDataMasking(x =>
+        {
+            x
+                .IncludeStream(streamId)
+                .IncludeStream(streamId2)
+                .AddHeader("color", "green")
+                .AddHeader("opid", 1);
+        });
 
         // Should apply to this stream
         var events = await theSession.Events.FetchStreamAsync(streamId);
@@ -247,11 +251,12 @@ public class removing_protected_information : OneOffConfigurationsContext
         var streamId2 = theSession.Events.StartStream<Quest>(new QuestStarted{Name = "Find the Eye of the World"}, new MembersJoined(1, "Fal Dara", "Rand", "Perrin", "Mat")).Id;
         await theSession.SaveChangesAsync();
 
-        await theStore.Advanced.ApplyEventDataMasking()
-            .IncludeEvents(e => e.EventTypesAre(typeof(QuestStarted)))
-            .AddHeader("color", "green")
-            .AddHeader("opid", 1)
-            .ApplyAsync();
+        await theStore.Advanced.ApplyEventDataMasking(x =>
+            {
+                x.IncludeEvents(e => e.EventTypesAre(typeof(QuestStarted)))
+                    .AddHeader("color", "green")
+                    .AddHeader("opid", 1);
+            });
 
         // Should apply to this stream
         var events = await theSession.Events.FetchStreamAsync(streamId);
@@ -307,12 +312,13 @@ public class removing_protected_information : OneOffConfigurationsContext
         theSession.Events.StartStream<Quest>(streamId2, new QuestStarted{Name = "Find the Eye of the World"}, new MembersJoined(1, "Fal Dara", "Rand", "Perrin", "Mat"));
         await theSession.SaveChangesAsync();
 
-        await theStore.Advanced.ApplyEventDataMasking()
-            .IncludeStream(streamId)
-            .IncludeStream(streamId2)
-            .AddHeader("color", "green")
-            .AddHeader("opid", 1)
-            .ApplyAsync();
+        await theStore.Advanced.ApplyEventDataMasking(x =>
+            {
+                x.IncludeStream(streamId)
+                    .IncludeStream(streamId2)
+                    .AddHeader("color", "green")
+                    .AddHeader("opid", 1);
+            });
 
         // Should apply to this stream
         var events = await theSession.Events.FetchStreamAsync(streamId);
@@ -395,14 +401,14 @@ public static class DocumentationSamples
     {
         return store
             .Advanced
-            .ApplyEventDataMasking()
-            .IncludeStream(streamId)
+            .ApplyEventDataMasking(x =>
+            {
+                x.IncludeStream(streamId);
 
-            // You can add or modify event metadata headers as well
-            // BUT, you'll of course need event header tracking to be enabled
-            .AddHeader("masked", DateTimeOffset.UtcNow)
-
-            .ApplyAsync(token);
+                // You can add or modify event metadata headers as well
+                // BUT, you'll of course need event header tracking to be enabled
+                x.AddHeader("masked", DateTimeOffset.UtcNow);
+            }, token);
     }
 
     #endregion
@@ -411,9 +417,10 @@ public static class DocumentationSamples
 
     public static Task apply_masking_by_filter(IDocumentStore store, Guid[] streamIds)
     {
-        return store.Advanced.ApplyEventDataMasking()
-            .IncludeEvents(e => e.EventTypesAre(typeof(QuestStarted)) && e.StreamId.IsOneOf(streamIds))
-            .ApplyAsync();
+        return store.Advanced.ApplyEventDataMasking(x =>
+            {
+                x.IncludeEvents(e => e.EventTypesAre(typeof(QuestStarted)) && e.StreamId.IsOneOf(streamIds));
+            });
     }
 
     #endregion
@@ -424,14 +431,14 @@ public static class DocumentationSamples
     {
         return store
             .Advanced
-            .ApplyEventDataMasking()
-            .IncludeStream(streamId)
+            .ApplyEventDataMasking(x =>
+            {
+                x.IncludeStream(streamId);
 
-            // Specify the tenant id, and it doesn't matter
-            // in what order this appears in
-            .ForTenant(tenantId)
-
-            .ApplyAsync();
+                // Specify the tenant id, and it doesn't matter
+                // in what order this appears in
+                x.ForTenant(tenantId);
+            });
     }
 
     #endregion

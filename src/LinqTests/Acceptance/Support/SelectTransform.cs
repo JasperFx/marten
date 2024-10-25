@@ -23,8 +23,8 @@ public class SelectTransform<T>: LinqTestCase
 
     public override async Task Compare(IQuerySession session, Target[] documents, TestOutputMartenLogger logger)
     {
-        var target = documents.FirstOrDefault(x => x.StringArray?.Length > 0 && x.NumberArray?.Length > 0 && x.Inner != null);
-        var expected = documents.Select(_selector.CompileFast()).Take(1).Single();
+        var target = documents.OrderBy(x => x.Id).FirstOrDefault(x => x.StringArray?.Length > 0 && x.NumberArray?.Length > 0 && x.Inner != null);
+        var expected = documents.Where(x => x.Id == target.Id).Select(_selector.CompileFast()).Take(1).Single();
 
         var actual = await session.Query<Target>().Where(x => x.Id == target.Id).Select(_selector).SingleAsync();
 
