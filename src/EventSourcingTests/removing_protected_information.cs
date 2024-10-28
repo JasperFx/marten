@@ -345,7 +345,100 @@ public class removing_protected_information : OneOffConfigurationsContext
             .Single().Name.ShouldBe("*****");
     }
 
+    [Fact]
+    public async Task end_to_end_masking_by_guid_identified_stream_and_filter_within_stream()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.AddMaskingRuleForProtectedInformation<QuestStarted>(x => x.Name = "*****");
+            opts.Events.AddMaskingRuleForProtectedInformation<MembersJoined>(x =>
+            {
+                for (int i = 0; i < x.Members.Length; i++)
+                {
+                    x.Members[i] = "*****";
+                }
+            });
+            opts.Events.MetadataConfig.HeadersEnabled = true;
+        });
 
+        theSession.SetHeader("color", "blue");
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<Quest>(streamId, new QuestStarted{Name = "Find Gandalf"}, new MembersJoined(1, "Hobbiton", "Frodo", "Sam"), new MembersJoined(3, "Brandybuck", "Merry", "Pippin"));
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(streamId, new MembersDeparted { Members = new string[] { "Frodo" } });
+        await theSession.SaveChangesAsync();
+
+        await theStore.Advanced.ApplyEventDataMasking(x =>
+        {
+            x
+                .IncludeStream(streamId, e => e.Data is MembersJoined { Location: "Hobbiton" })
+                .AddHeader("color", "green")
+                .AddHeader("opid", 1);
+        });
+
+        var events = await theSession.Events.FetchStreamAsync(streamId);
+
+        // Should have matched and been masked
+        var hobbiton = events.OfType<Event<MembersJoined>>().Single(x => x.Data.Location == "Hobbiton");
+        hobbiton.Headers["color"].ShouldBe("green");
+        hobbiton.Data.Members.All(x => x == "*****").ShouldBeTrue();
+
+
+        // Should NOT have been matched or masked
+        var brandybuck = events.OfType<Event<MembersJoined>>().Single(x => x.Data.Location == "Brandybuck");
+        brandybuck.Headers["color"].ShouldBe("blue");
+        brandybuck.Data.Members.All(x => x != "*****").ShouldBeTrue();
+    }
+
+        [Fact]
+    public async Task end_to_end_masking_by_string_identified_stream_and_filter_within_stream()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Events.AddMaskingRuleForProtectedInformation<QuestStarted>(x => x.Name = "*****");
+            opts.Events.AddMaskingRuleForProtectedInformation<MembersJoined>(x =>
+            {
+                for (int i = 0; i < x.Members.Length; i++)
+                {
+                    x.Members[i] = "*****";
+                }
+            });
+            opts.Events.MetadataConfig.HeadersEnabled = true;
+        });
+
+        theSession.SetHeader("color", "blue");
+
+        var streamId = Guid.NewGuid().ToString();
+        theSession.Events.StartStream<Quest>(streamId, new QuestStarted{Name = "Find Gandalf"}, new MembersJoined(1, "Hobbiton", "Frodo", "Sam"), new MembersJoined(3, "Brandybuck", "Merry", "Pippin"));
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(streamId, new MembersDeparted { Members = new string[] { "Frodo" } });
+        await theSession.SaveChangesAsync();
+
+        await theStore.Advanced.ApplyEventDataMasking(x =>
+        {
+            x
+                .IncludeStream(streamId, e => e.Data is MembersJoined { Location: "Hobbiton" })
+                .AddHeader("color", "green")
+                .AddHeader("opid", 1);
+        });
+
+        var events = await theSession.Events.FetchStreamAsync(streamId);
+
+        // Should have matched and been masked
+        var hobbiton = events.OfType<Event<MembersJoined>>().Single(x => x.Data.Location == "Hobbiton");
+        hobbiton.Headers["color"].ShouldBe("green");
+        hobbiton.Data.Members.All(x => x == "*****").ShouldBeTrue();
+
+
+        // Should NOT have been matched or masked
+        var brandybuck = events.OfType<Event<MembersJoined>>().Single(x => x.Data.Location == "Brandybuck");
+        brandybuck.Headers["color"].ShouldBe("blue");
+        brandybuck.Data.Members.All(x => x != "*****").ShouldBeTrue();
+    }
 }
 
 
@@ -412,6 +505,26 @@ public static class DocumentationSamples
     }
 
     #endregion
+
+    #region sample_apply_masking_to_a_single_stream_and_filter
+
+    public static Task apply_masking_to_streams_and_filter(IDocumentStore store, Guid streamId, CancellationToken token)
+    {
+        return store
+            .Advanced
+            .ApplyEventDataMasking(x =>
+            {
+                // Mask selected events within a single stream by a user defined criteria
+                x.IncludeStream(streamId, e => e.EventTypesAre(typeof(MembersJoined), typeof(MembersDeparted)));
+
+                // You can add or modify event metadata headers as well
+                // BUT, you'll of course need event header tracking to be enabled
+                x.AddHeader("masked", DateTimeOffset.UtcNow);
+            }, token);
+    }
+
+    #endregion
+
 
     #region sample_apply_masking_by_filter
 
