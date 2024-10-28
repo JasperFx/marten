@@ -16,14 +16,14 @@ using Xunit.Abstractions;
 
 namespace EventSourcingTests;
 
-public class end_to_end_event_capture_and_fetching_the_stream_Tests: OneOffConfigurationsContext
+public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurationsContext
 {
     private readonly ITestOutputHelper _output;
     private static readonly string[] SameTenants = { "tenant", "tenant" };
     private static readonly string[] DifferentTenants = { "tenant", "differentTenant" };
     private static readonly string[] DefaultTenant = { Tenancy.DefaultTenantId };
 
-    public end_to_end_event_capture_and_fetching_the_stream_Tests(ITestOutputHelper output)
+    public end_to_end_event_capture_and_fetching_the_stream(ITestOutputHelper output)
     {
         _output = output;
     }

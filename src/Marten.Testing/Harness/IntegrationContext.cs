@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using JasperFx.CodeGeneration;
 using Marten.Events;
 using Marten.Internal.CodeGeneration;
 using Weasel.Core;
@@ -52,6 +53,23 @@ namespace Marten.Testing.Harness
         public IntegrationContext(DefaultStoreFixture fixture)
         {
             _fixture = fixture;
+        }
+
+        /// <summary>
+        /// Build a unique document store with the same configuration as the basic,
+        /// Guid-identified store from IntegrationContext
+        /// </summary>
+        /// <returns></returns>
+        protected IDocumentStore SeparateStore()
+        {
+            return DocumentStore.For(opts =>
+            {
+                opts.Connection(ConnectionSource.ConnectionString);
+                opts.AutoCreateSchemaObjects = AutoCreate.All;
+
+                opts.GeneratedCodeMode = TypeLoadMode.Auto;
+                opts.ApplicationAssembly = GetType().Assembly;
+            });
         }
 
         /// <summary>

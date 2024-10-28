@@ -2,8 +2,10 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using EventSourcingTests.FetchForWriting;
 using Marten;
 using Marten.Events;
+using Marten.Events.Archiving;
 using Marten.Testing.Harness;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Shouldly;
@@ -257,6 +259,53 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
         }
     }
 
+    [Fact] // was GH-2777
+    public async Task querying_with_linq_against_events_and_event_has_id_property()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Logger(new TestOutputMartenLogger(_output));
+        }, true);
+
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.Append("a", new DummyEvent("a"));
+
+            await session.SaveChangesAsync();
+        }
+
+        await using (var session = theStore.QuerySession())
+        {
+            var ids = await session.Events.QueryRawEventDataOnly<DummyEvent>()
+                .Select(d => d.Id)          // This causes the operation to fail
+                .ToListAsync();
+        }
+    }
+
+    [Fact] // was GH-2848
+    public async Task can_make_the_query_with_distinct_and_count()
+    {
+        await theSession.Events.QueryAllRawEvents()
+            .Where(x => x.MaybeArchived())
+            .Select(x => x.StreamKey)
+            .Distinct()
+            .CountAsync();
+    }
+
+    [Fact]
+    public void generate_proper_sql_with_querying_against_event_id()
+    {
+        var eventsIds = new[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
+        var command = theSession.Events.QueryAllRawEvents()
+            .Where(e => e.Id.In(eventsIds))
+            .Where(e => e.AnyTenant())
+            .ToCommand();
+
+        command.CommandText.ShouldContain("d.id = ANY(:p0)");
+        command.CommandText.ShouldNotContain("CAST(d.data ->> 'Id' as uuid)");
+    }
+
     /*
      * MORE!!!
      * Async everything
@@ -267,3 +316,5 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
         theStore.Advanced.Clean.DeleteAllEventData();
     }
 }
+
+public record DummyEvent(string Id);

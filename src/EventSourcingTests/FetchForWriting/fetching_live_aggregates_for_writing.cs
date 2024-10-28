@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EventSourcingTests.Aggregation;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -9,12 +10,12 @@ using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Metadata;
+using Marten.Schema.Identity;
 using Marten.Testing.Harness;
-using NSubstitute;
 using Shouldly;
 using Xunit;
 
-namespace EventSourcingTests.Aggregation;
+namespace EventSourcingTests.FetchForWriting;
 
 public class fetching_live_aggregates_for_writing: IntegrationContext
 {
@@ -372,6 +373,86 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         });
     }
 
+    [Fact]
+    public async Task work_correctly_with_multiple_calls()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.LiveStreamAggregation<SomeProjection>();
+            opts.Projections.LiveStreamAggregation<SomeOtherProjection>();
+        });
+
+        var streamId = CombGuidIdGeneration.NewGuid();
+        theSession.Events.StartStream(streamId, new EventA(), new EventA(), new EventA());
+        await theSession.SaveChangesAsync();
+// stream version is now 3
+
+        var otherSession = theStore.LightweightSession();
+        var firstProjection = await otherSession.Events.FetchForWriting<SomeProjection>(streamId);
+
+        firstProjection.StartingVersion.ShouldBe(3);
+        firstProjection.Aggregate.ShouldNotBeNull();
+        firstProjection.Aggregate.Version.ShouldBe(3);
+
+// in another session, append more events
+
+        theSession.Events.Append(streamId, new EventA(), new EventA());
+        await theSession.SaveChangesAsync();
+// stream version is now 5
+
+        var secondProjection = await otherSession.Events.FetchForWriting<SomeOtherProjection>(streamId);
+        secondProjection.Aggregate.ShouldNotBeNull();
+        secondProjection.Aggregate.Version.ShouldBe(5);
+
+// attempt to append
+        otherSession.Events.Append(streamId, new EventA());
+
+// should fail with concurrency error
+// because current version of the stream (5) is ahead of the first optimistic lock (3)
+        await otherSession.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task work_correctly_for_multiple_calls_with_identity_map()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.LiveStreamAggregation<SomeProjection>();
+            opts.Projections.LiveStreamAggregation<SomeOtherProjection>();
+        });
+
+        using var session = theStore.IdentitySession();
+
+        var streamId = CombGuidIdGeneration.NewGuid();
+        session.Events.StartStream(streamId, new EventA(), new EventA(), new EventA());
+        await session.SaveChangesAsync();
+// stream version is now 3
+
+        var otherSession = theStore.LightweightSession();
+        var firstProjection = await otherSession.Events.FetchForWriting<SomeProjection>(streamId);
+
+        firstProjection.StartingVersion.ShouldBe(3);
+        firstProjection.Aggregate.ShouldNotBeNull();
+        firstProjection.Aggregate.Version.ShouldBe(3);
+
+// in another session, append more events
+
+        session.Events.Append(streamId, new EventA(), new EventA());
+        await session.SaveChangesAsync();
+// stream version is now 5
+
+        var secondProjection = await otherSession.Events.FetchForWriting<SomeOtherProjection>(streamId);
+        secondProjection.Aggregate.ShouldNotBeNull();
+        secondProjection.Aggregate.Version.ShouldBe(5);
+
+// attempt to append
+        otherSession.Events.Append(streamId, new EventA());
+
+// should fail with concurrency error
+// because current version of the stream (5) is ahead of the first optimistic lock (3)
+        await otherSession.SaveChangesAsync();
+    }
+
 }
 
 public class SimpleAggregate : IRevisioned
@@ -529,4 +610,20 @@ public class TotalsProjection: MultiStreamProjection<Totals, Guid>, IEventSlicer
     public void Apply(BEvent e, Totals totals) => totals.Count++;
     public void Apply(CEvent e, Totals totals) => totals.Count++;
     public void Apply(DEvent e, Totals totals) => totals.Count++;
+}
+
+public class SomeProjection : IRevisioned
+{
+    public Guid Id { get; set; }
+    public int A { get; set; }
+    public void Apply(EventA e) => A++;
+    public int Version { get; set; }
+}
+
+public class SomeOtherProjection : IRevisioned
+{
+    public Guid Id { get; set; }
+    public int A { get; set; }
+    public void Apply(EventA e) => A++;
+    public int Version { get; set; }
 }
