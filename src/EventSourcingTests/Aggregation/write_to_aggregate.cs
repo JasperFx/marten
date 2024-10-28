@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using EventSourcingTests.FetchForWriting;
 using Marten.Events;
 using Marten.Testing.Harness;
 using Xunit;

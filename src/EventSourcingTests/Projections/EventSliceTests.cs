@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using EventSourcingTests.Aggregation;
+using EventSourcingTests.FetchForWriting;
 using JasperFx.Core.Reflection;
 using Marten.Events.Projections;
 using Marten.Storage;

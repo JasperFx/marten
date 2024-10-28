@@ -1,16 +1,19 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using EventSourcingTests.Aggregation;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Exceptions;
+using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace EventSourcingTests.Aggregation;
+namespace EventSourcingTests.FetchForWriting;
 
 public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
 {
@@ -537,4 +540,48 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
 
         stream.Aggregate.BCount.ShouldBe(6);
     }
+
+    [Fact]
+    public async Task override_the_optimistic_concurrency_on_projected_document()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Projections.Snapshot<TestProjection>(SnapshotLifecycle.Async);
+        });
+
+        var streamKey = Guid.NewGuid().ToString();
+
+        theSession.Events.StartStream(streamKey, new NamedEvent("foo"), new EventB());
+        await theSession.SaveChangesAsync();
+
+        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.RebuildProjectionAsync<TestProjection>(CancellationToken.None);
+
+        var result = await theSession.Events.FetchForWriting<TestProjection>(streamKey);
+
+        Assert.Equal(2, result.CurrentVersion);
+        Assert.Equal(2, result.StartingVersion);
+        Assert.NotNull(result.Aggregate);
+        Assert.Equal(streamKey, result.Aggregate.StreamKey);
+        // TODO: There is a weird bug here where ~25% of the time this is set to null. Seems to happen intermittently across all frameworks. No idea why.
+        Assert.Equal("foo", result.Aggregate.Name);
+    }
+
 }
+
+public record NamedEvent(string Name);
+
+public record TestProjection
+{
+    [Identity]
+    public string StreamKey { get; set; } = null!;
+
+    public string Name { get; set; } = null!;
+
+    public static TestProjection Create(NamedEvent @event) => new()
+    {
+        Name = @event.Name
+    };
+}
+

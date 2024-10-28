@@ -238,5 +238,33 @@ public class fetching_stream_state_string_id: IntegrationContext
 
         events.Count.ShouldBe(2);
     }
+
+    [Fact]
+    public async Task call_fetch_stream_state_on_new_stream()
+    {
+        UseStreamIdentity(StreamIdentity.AsGuid);
+
+        Guid id;
+
+        await using (var session = theStore.LightweightSession())
+        {
+            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+            id = session.Events.StartStream<Quest>(joined, departed).Id;
+            await session.SaveChangesAsync();
+        }
+
+        using (var store2 = SeparateStore())
+        {
+            await using (var session = store2.LightweightSession())
+            {
+                var state = await session.Events.FetchStreamStateAsync(id);
+                state.Version.ShouldBe(2);
+            }
+        }
+    }
+
+
 }
 
