@@ -11,6 +11,10 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
 {
     private const string ExpectedMessage =
         "duplicate key value violates unique constraint \"pk_mt_events_stream_and_version\"";
+
+    private const string ExpectedMessageForArchivedStreamParitioning =
+        "duplicate key value violates unique constraint \"mt_events_default_stream_id_version_is_archived_idx\"";
+
     private const string DetailsRedactedMessage = "Detail redacted as it may contain sensitive data. " +
         "Specify 'Include Error Detail' in the connection string to include this information.";
 
@@ -69,6 +73,6 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
     {
         return e is PostgresException pe
             && pe.SqlState == PostgresErrorCodes.UniqueViolation
-            && pe.Message.Contains(ExpectedMessage);
+            && (pe.Message.Contains(ExpectedMessage) || pe.Message.Contains(ExpectedMessageForArchivedStreamParitioning));
     }
 }
