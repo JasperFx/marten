@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Linq;
+using Marten.Pagination;
 using Marten.Testing.Harness;
 using Vogen;
 
@@ -69,6 +70,27 @@ public class linq_querying_with_value_types : OneOffConfigurationsContext
             .Where(x => x.Upper == UpperLimit.From(10))
             .Select(x => x.Id)
             .ToListAsync();
+
+        ordered.ShouldHaveTheSameElementsAs(doc4.Id);
+    }
+
+    [Fact]
+    public async Task store_several_and_query_by_with_paging()
+    {
+        var doc1 = new LimitedDoc { Lower = LowerLimit.From(1), Upper = UpperLimit.From(20) };
+        var doc2 = new LimitedDoc { Lower = LowerLimit.From(5), Upper = UpperLimit.From(25) };
+        var doc3 = new LimitedDoc { Lower = LowerLimit.From(4), Upper = UpperLimit.From(15) };
+        var doc4 = new LimitedDoc { Lower = LowerLimit.From(3), Upper = UpperLimit.From(10) };
+
+        theSession.Store(doc1, doc2, doc3, doc4);
+        await theSession.SaveChangesAsync();
+
+        var ordered = await theSession
+            .Query<LimitedDoc>()
+            .OrderBy(x => x.Lower)
+            .Where(x => x.Upper == UpperLimit.From(10))
+            .Select(x => x.Id)
+            .ToPagedListAsync(1, 10);
 
         ordered.ShouldHaveTheSameElementsAs(doc4.Id);
     }
