@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using EventSourcingTests.FetchForWriting;
 using JasperFx.Core;
 using Marten;
 using Marten.Events;
@@ -86,6 +87,38 @@ public class mandatory_stream_type_behavior : OneOffConfigurationsContext
         {
             await theSession.SaveChangesAsync();
         });
+    }
+
+    [Theory]
+    [InlineData(EventAppendMode.Rich, StreamIdentity.AsGuid)]
+    [InlineData(EventAppendMode.Rich, StreamIdentity.AsString)]
+    [InlineData(EventAppendMode.Quick, StreamIdentity.AsGuid)]
+    [InlineData(EventAppendMode.Quick, StreamIdentity.AsString)]
+    public async Task happy_path_append_event_after_the_stream_exists(EventAppendMode mode, StreamIdentity identity)
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.AppendMode = mode;
+            opts.Events.StreamIdentity = identity;
+            opts.Events.UseMandatoryStreamTypeDeclaration = true;
+        });
+
+        if (identity == StreamIdentity.AsGuid)
+        {
+            var streamId = Guid.NewGuid();
+            theSession.Events.StartStream<SimpleAggregate>(streamId, new BEvent());
+            await theSession.SaveChangesAsync();
+            theSession.Events.Append(streamId, new AEvent());
+            await theSession.SaveChangesAsync();
+        }
+        else
+        {
+            var streamId = Guid.NewGuid().ToString();
+            theSession.Events.StartStream<SimpleAggregate>(streamId, new BEvent());
+            await theSession.SaveChangesAsync();
+            theSession.Events.Append(streamId, new AEvent());
+            await theSession.SaveChangesAsync();
+        }
     }
 
     [Fact]
