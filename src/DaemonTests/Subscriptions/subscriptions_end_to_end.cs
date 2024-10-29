@@ -498,6 +498,37 @@ public class FilteredSubscription: SubscriptionBase, IDisposable
     }
 }
 
+public class FilteredSubscription2: SubscriptionBase, IAsyncDisposable
+{
+    public FilteredSubscription2()
+    {
+        IncludeType<AEvent>();
+        IncludeType<BEvent>();
+        StreamType = typeof(SimpleAggregate);
+        IncludeArchivedEvents = true;
+    }
+
+    public override Task<IChangeListener> ProcessEventsAsync(EventRange page, ISubscriptionController controller, IDocumentOperations operations,
+        CancellationToken cancellationToken)
+    {
+        return Task.FromResult(Substitute.For<IChangeListener>());
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            // TODO release managed resources here
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+}
+
 public class SimpleSubscription: ISubscription
 {
     public static int InstanceCounter = 0;
