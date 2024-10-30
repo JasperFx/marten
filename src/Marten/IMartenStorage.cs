@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Storage;
 using Weasel.Core;
 

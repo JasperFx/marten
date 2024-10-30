@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Storage;
 using Npgsql;
 using Weasel.Core;

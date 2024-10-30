@@ -1,11 +1,11 @@
 using System.Diagnostics;
+using JasperFx.CommandLine;
 using Marten;
-using Oakton;
 using Spectre.Console;
 
 namespace EventAppenderPerfTester;
 
-public class TestCommand: OaktonAsyncCommand<TestInput>
+public class TestCommand: JasperFxAsyncCommand<TestInput>
 {
     public override async Task<bool> Execute(TestInput input)
     {

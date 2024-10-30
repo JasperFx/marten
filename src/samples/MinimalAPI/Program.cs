@@ -1,10 +1,10 @@
 using Marten;
 using DaemonTests;
 using DaemonTests.TestingSupport;
+using JasperFx;
 using Marten.Events.Projections;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Oakton;
 
 #region sample_using_WebApplication_1
 
@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Easiest to just do this right after creating builder
 // Must be done before calling builder.Build() at least
-builder.Host.ApplyOaktonExtensions();
+builder.Host.ApplyJasperFxExtensions();
 
 #endregion
 
@@ -50,8 +50,9 @@ app.MapControllers();
 
 #region sample_using_WebApplication_2
 
-// Instead of App.Run(), use the app.RunOaktonCommands(args)
+// Instead of App.Run(), use this syntax
 // as the last line of your Program.cs file
-return await app.RunOaktonCommands(args);
+// to get extended command line options
+return await app.RunJasperFxCommands(args);
 
 #endregion

@@ -5,16 +5,15 @@ using EventSourcingTests.Aggregation;
 using JasperFx.CodeGeneration;
 using Marten;
 using DaemonTests.TestingSupport;
+using JasperFx.CommandLine;
 using Marten.Testing.Documents;
-using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
-using Oakton;
 using Shouldly;
 using Spectre.Console;
 
 namespace CommandLineRunner;
 
-public class TestCommand : OaktonAsyncCommand<NetCoreInput>
+public class TestCommand : JasperFxAsyncCommand<NetCoreInput>
 {
     public override async Task<bool> Execute(NetCoreInput input)
     {

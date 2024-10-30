@@ -1,14 +1,13 @@
 using System.Threading.Tasks;
-using JasperFx.Core;
-using Lamar;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
+using Lamar;
 using Marten;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
-using Weasel.Core;
 using Xunit;
 
 namespace CoreTests;
@@ -33,7 +32,6 @@ public class using_optimized_artifact_workflow
 
         rules.GeneratedNamespace.ShouldBe("Marten.Generated");
         rules.SourceCodeWritingEnabled.ShouldBeTrue();
-
     }
 
     public static async Task bootstrapping_example()

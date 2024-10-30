@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Documents;

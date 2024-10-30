@@ -1,8 +1,8 @@
-using Oakton;
+using JasperFx.CommandLine;
 
 namespace Marten.CommandLine.Commands;
 
 [Description("Assert that the existing database matches the current Marten configuration", Name = "marten-assert")]
-public class AssertCommand: Weasel.CommandLine.AssertCommand
+public class AssertCommand: Weasel.Core.CommandLine.AssertCommand
 {
 }

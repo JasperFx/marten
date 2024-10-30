@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using JasperFx;
 using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

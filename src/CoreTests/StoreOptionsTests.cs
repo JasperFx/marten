@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Text.Json;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using Marten;
 using Marten.Services;

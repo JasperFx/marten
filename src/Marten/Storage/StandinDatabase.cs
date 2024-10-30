@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Internal;

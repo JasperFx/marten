@@ -1,9 +1,10 @@
-using Oakton;
+
+using JasperFx.CommandLine;
 
 namespace Marten.CommandLine.Commands;
 
 [Description("Dumps the entire DDL for the configured Marten database", Name = "marten-dump")]
-public class DumpCommand: Weasel.CommandLine.DumpCommand
+public class DumpCommand: Weasel.Core.CommandLine.DumpCommand
 {
     public DumpCommand()
     {

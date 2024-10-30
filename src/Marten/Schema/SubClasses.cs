@@ -52,7 +52,7 @@ public class SubClasses: IEnumerable<SubClassMapping>
         if (!subclassType.CanBeCastTo(_parent.DocumentType))
         {
             throw new ArgumentOutOfRangeException(nameof(subclassType),
-                $"Type '{subclassType.GetFullName()}' cannot be cast to '{_parent.DocumentType.GetFullName()}'");
+                $"Type '{subclassType.FullNameInCode()}' cannot be cast to '{_parent.DocumentType.FullNameInCode()}'");
         }
     }
 

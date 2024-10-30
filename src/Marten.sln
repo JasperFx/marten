@@ -109,6 +109,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventAppenderPerfTester", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StressTests", "StressTests\StressTests.csproj", "{C9D33381-3AD3-4005-B854-F04F10EA837F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JasperFx", "..\..\jasperfx\src\JasperFx\JasperFx.csproj", "{CD491F22-1EE5-4304-B593-664624A83260}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weasel.Core", "..\..\weasel\src\Weasel.Core\Weasel.Core.csproj", "{A902D1A2-8BF1-4A55-BCB0-7EF277A841A2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weasel.Postgresql", "..\..\weasel\src\Weasel.Postgresql\Weasel.Postgresql.csproj", "{A47F2A28-274B-4076-A1C4-C5E78DA2C020}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JasperFx.RuntimeCompiler", "..\..\jasperfx\src\JasperFx.RuntimeCompiler\JasperFx.RuntimeCompiler.csproj", "{8671DBA5-F809-4F97-87DB-4AD1837B19CC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lamar", "..\..\lamar\src\Lamar\Lamar.csproj", "{B98ACD32-7BDF-44A9-AA0D-4159FEAF473F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lamar.Microsoft.DependencyInjection", "..\..\lamar\src\Lamar.Microsoft.DependencyInjection\Lamar.Microsoft.DependencyInjection.csproj", "{85FAA7A6-9FC3-4A77-A12D-924890F00446}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -259,6 +271,30 @@ Global
 		{C9D33381-3AD3-4005-B854-F04F10EA837F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C9D33381-3AD3-4005-B854-F04F10EA837F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C9D33381-3AD3-4005-B854-F04F10EA837F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD491F22-1EE5-4304-B593-664624A83260}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD491F22-1EE5-4304-B593-664624A83260}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD491F22-1EE5-4304-B593-664624A83260}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD491F22-1EE5-4304-B593-664624A83260}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A902D1A2-8BF1-4A55-BCB0-7EF277A841A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A902D1A2-8BF1-4A55-BCB0-7EF277A841A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A902D1A2-8BF1-4A55-BCB0-7EF277A841A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A902D1A2-8BF1-4A55-BCB0-7EF277A841A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A47F2A28-274B-4076-A1C4-C5E78DA2C020}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A47F2A28-274B-4076-A1C4-C5E78DA2C020}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A47F2A28-274B-4076-A1C4-C5E78DA2C020}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A47F2A28-274B-4076-A1C4-C5E78DA2C020}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8671DBA5-F809-4F97-87DB-4AD1837B19CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8671DBA5-F809-4F97-87DB-4AD1837B19CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8671DBA5-F809-4F97-87DB-4AD1837B19CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8671DBA5-F809-4F97-87DB-4AD1837B19CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B98ACD32-7BDF-44A9-AA0D-4159FEAF473F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B98ACD32-7BDF-44A9-AA0D-4159FEAF473F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B98ACD32-7BDF-44A9-AA0D-4159FEAF473F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B98ACD32-7BDF-44A9-AA0D-4159FEAF473F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85FAA7A6-9FC3-4A77-A12D-924890F00446}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85FAA7A6-9FC3-4A77-A12D-924890F00446}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85FAA7A6-9FC3-4A77-A12D-924890F00446}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85FAA7A6-9FC3-4A77-A12D-924890F00446}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

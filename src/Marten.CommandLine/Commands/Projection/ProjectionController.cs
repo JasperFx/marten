@@ -7,7 +7,6 @@ using JasperFx.Core;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Storage;
-using Oakton.Internal.Conversion;
 using Spectre.Console;
 
 namespace Marten.CommandLine.Commands.Projection;

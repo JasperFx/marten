@@ -1,9 +1,9 @@
-﻿using Marten;
+﻿using JasperFx;
+using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
-using Oakton;
 
 #region sample_disabling_npgsql_logging
 
@@ -26,5 +26,5 @@ builder.ConfigureServices(services =>
 
 #endregion
 
-return await builder.RunOaktonCommands(args);
+return await builder.RunJasperFxCommands(args);
 

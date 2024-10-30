@@ -1,7 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+<<<<<<< HEAD
         <TargetFrameworks>net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
+=======
+        <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
+>>>>>>> e6d343ae3 (First cut at putting JasperFx underneath Marten)
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 

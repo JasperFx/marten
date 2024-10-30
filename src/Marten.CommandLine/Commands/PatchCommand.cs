@@ -1,11 +1,12 @@
-using Oakton;
+
+using JasperFx.CommandLine;
 
 namespace Marten.CommandLine.Commands;
 
 [Description(
     "Evaluates the current configuration against the database and writes a patch and drop file if there are any differences", Name = "marten-patch"
 )]
-public class PatchCommand: Weasel.CommandLine.PatchCommand
+public class PatchCommand: Weasel.Core.CommandLine.PatchCommand
 {
     public PatchCommand()
     {

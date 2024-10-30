@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using CoreTests.Diagnostics;
+using JasperFx;
 using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Events;

@@ -2,7 +2,11 @@
 
     <PropertyGroup>
         <Description>Command line tooling for Marten</Description>
+<<<<<<< HEAD
         <TargetFrameworks>net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
+=======
+        <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
+>>>>>>> e6d343ae3 (First cut at putting JasperFx underneath Marten)
         <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
         <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
         <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
@@ -33,10 +37,14 @@
     </PropertyGroup>
 
     <ItemGroup>
+<<<<<<< HEAD
         <PackageReference Include="JasperFx.CodeGeneration.Commands" Version="3.7.1" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
         <PackageReference Include="Oakton" Version="6.3.0" />
         <PackageReference Include="Weasel.CommandLine" Version="7.12.1" />
+=======
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+>>>>>>> e6d343ae3 (First cut at putting JasperFx underneath Marten)
     </ItemGroup>
     <Import Project="../../Analysis.Build.props"/>
 </Project>

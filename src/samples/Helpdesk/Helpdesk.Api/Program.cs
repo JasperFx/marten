@@ -8,6 +8,7 @@ using Helpdesk.Api.Incidents.GetCustomerIncidentsSummary;
 using Helpdesk.Api.Incidents.GetIncidentDetails;
 using Helpdesk.Api.Incidents.GetIncidentHistory;
 using Helpdesk.Api.Incidents.GetIncidentShortInfo;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using Marten;
 using Marten.AspNetCore;
@@ -18,7 +19,6 @@ using Marten.Schema.Identity;
 using Marten.Services.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Oakton;
 using Weasel.Core;
 using static Microsoft.AspNetCore.Http.TypedResults;
 using static Helpdesk.Api.Incidents.IncidentService;
@@ -75,7 +75,7 @@ builder.Services
         o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
     .AddSignalR();
 
-builder.Host.ApplyOaktonExtensions();
+builder.Host.ApplyJasperFxExtensions();
 
 var app = builder.Build();
 
@@ -244,7 +244,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("ClientPermission");
 app.MapHub<IncidentsHub>("/hubs/incidents");
 
-return await app.RunOaktonCommands(args);
+return await app.RunJasperFxCommands(args);
 
 public class IncidentsHub: Hub
 {

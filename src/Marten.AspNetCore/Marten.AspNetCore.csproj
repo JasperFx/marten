@@ -23,10 +23,6 @@
         <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     </ItemGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="6.0.25"/>
-    </ItemGroup>
-
     <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
         <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="7.0.14"/>
     </ItemGroup>

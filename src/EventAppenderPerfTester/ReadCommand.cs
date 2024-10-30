@@ -1,8 +1,8 @@
-using Oakton;
+using JasperFx.CommandLine;
 
 namespace EventAppenderPerfTester;
 
-public class ReadCommand : OaktonAsyncCommand<NetCoreInput>
+public class ReadCommand : JasperFxAsyncCommand<NetCoreInput>
 {
     public override async Task<bool> Execute(NetCoreInput input)
     {

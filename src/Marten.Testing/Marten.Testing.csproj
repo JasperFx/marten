@@ -1,6 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+<<<<<<< HEAD
         <TargetFrameworks>net7.0;net8.0;net9.0</TargetFrameworks>
+=======
+        <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
+>>>>>>> e6d343ae3 (First cut at putting JasperFx underneath Marten)
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     </PropertyGroup>
@@ -15,6 +19,7 @@
         <None Include="App.config" />
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="..\..\..\lamar\src\Lamar\Lamar.csproj" />
         <ProjectReference Include="..\Marten\Marten.csproj" />
         <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
         <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
@@ -23,7 +28,10 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="8.0.0" />
         <PackageReference Include="Jil" Version="3.0.0-alpha2" />
+<<<<<<< HEAD
         <PackageReference Include="Lamar" Version="14.0.1" />
+=======
+>>>>>>> e6d343ae3 (First cut at putting JasperFx underneath Marten)
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
             <PrivateAssets>all</PrivateAssets>

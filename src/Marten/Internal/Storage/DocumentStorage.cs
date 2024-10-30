@@ -157,7 +157,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     {
         try
         {
-            var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
+            var sql = $"truncate {TableName.QualifiedName} cascade";
             database.RunSql(sql);
         }
         catch (PostgresException e)
@@ -171,7 +171,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     public async Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
     {
-        var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
+        var sql = $"truncate {TableName.QualifiedName} cascade";
         try
         {
             await database.RunSqlAsync(sql, ct).ConfigureAwait(false);
