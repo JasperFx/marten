@@ -46,7 +46,7 @@ public class quick_appending_events_workflow_specs
             {
 
                 @event.TenantId.ShouldNotBeNull();
-                @event.Timestamp.ShouldNotBe(DateTime.MinValue);
+                @event.Timestamp.ShouldNotBe(DateTimeOffset.MinValue);
             }
 
             return Task.CompletedTask;
