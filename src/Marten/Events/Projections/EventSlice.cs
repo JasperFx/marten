@@ -229,7 +229,7 @@ public class EventSlice<TDoc, TId>: IEventSlice, IComparer<IEvent>, IEventSlice<
             e.EventTypeName = mapping.EventTypeName;
             e.TenantId = Tenant.TenantId;
             e.Timestamp = now;
-            e.Id = Guid.NewGuid();
+            // Dont assign e.Id so StreamAction.Append can auto assign a CombGuid
         }
 
         if (eventGraph.StreamIdentity == StreamIdentity.AsGuid)
