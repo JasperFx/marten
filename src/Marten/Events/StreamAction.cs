@@ -114,17 +114,11 @@ public class StreamAction
 
     internal StreamAction AddEvents(IReadOnlyList<IEvent> events)
     {
-        _events.AddRange(events);
+        _events.EnsureCapacity(_events.Count + events.Count);
 
         foreach (var @event in events)
         {
-            if (@event.Id == Guid.Empty)
-            {
-                @event.Id = CombGuidIdGeneration.NewGuid();
-            }
-
-            @event.StreamId = Id;
-            @event.StreamKey = Key;
+            AddEvent(@event);
         }
 
         return this;
@@ -132,6 +126,11 @@ public class StreamAction
 
     internal StreamAction AddEvent(IEvent @event)
     {
+        if (@event.Id == Guid.Empty)
+        {
+            @event.Id = CombGuidIdGeneration.NewGuid();
+        }
+
         @event.StreamId = Id;
         @event.StreamKey = Key;
 
