@@ -82,7 +82,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
         session.Insert(doc);
         await session.SaveChangesAsync();
 
-        var loaded = session.Load<UnconventionallyVersionedDoc>(doc.Id);
+        var loaded = await session.LoadAsync<UnconventionallyVersionedDoc>(doc.Id);
         loaded.UnconventionalVersion.ShouldBe(1);
 
         doc.Name = "New Name";
@@ -90,7 +90,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
         session.Store(doc);
         await session.SaveChangesAsync();
 
-        loaded = session.Load<UnconventionallyVersionedDoc>(doc.Id);
+        loaded = await session.LoadAsync<UnconventionallyVersionedDoc>(doc.Id);
         loaded.UnconventionalVersion.ShouldBe(2);
     }
 
@@ -330,7 +330,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
         theSession.Insert(doc);
         await theSession.SaveChangesAsync();
 
-        var loaded = theSession.Load<RevisionedDoc>(doc.Id);
+        var loaded = await theSession.LoadAsync<RevisionedDoc>(doc.Id);
         loaded.Version.ShouldBe(1);
 
         doc.Version.ShouldBe(1);
@@ -343,26 +343,26 @@ public class numeric_revisioning: OneOffConfigurationsContext
         theSession.Insert(doc);
         await theSession.SaveChangesAsync();
 
-        var metadata = theSession.MetadataFor(doc);
+        var metadata = await theSession.MetadataForAsync(doc);
         metadata.CurrentRevision.ShouldBe(1);
     }
 
     [Fact]
-    public void bulk_inserts_sync()
+    public async Task bulk_inserts_sync()
     {
         var doc1 = new RevisionedDoc { Name = "Tim" };
         var doc2 = new RevisionedDoc { Name = "Molly" };
         var doc3 = new RevisionedDoc { Name = "JD" };
 
-        theStore.BulkInsertDocuments(new[] { doc1, doc2, doc3 });
+        await theStore.BulkInsertDocumentsAsync(new[] { doc1, doc2, doc3 });
 
-        (theSession.MetadataFor(doc1)).CurrentRevision.ShouldBe(1);
-        (theSession.MetadataFor(doc2)).CurrentRevision.ShouldBe(1);
-        (theSession.MetadataFor(doc3)).CurrentRevision.ShouldBe(1);
+        (await theSession.MetadataForAsync(doc1)).CurrentRevision.ShouldBe(1);
+        (await theSession.MetadataForAsync(doc2)).CurrentRevision.ShouldBe(1);
+        (await theSession.MetadataForAsync(doc3)).CurrentRevision.ShouldBe(1);
 
-        (theSession.Load<RevisionedDoc>(doc1.Id)).ShouldNotBeNull();
-        (theSession.Load<RevisionedDoc>(doc2.Id)).ShouldNotBeNull();
-        (theSession.Load<RevisionedDoc>(doc3.Id)).ShouldNotBeNull();
+        (await theSession.LoadAsync<RevisionedDoc>(doc1.Id)).ShouldNotBeNull();
+        (await theSession.LoadAsync<RevisionedDoc>(doc2.Id)).ShouldNotBeNull();
+        (await theSession.LoadAsync<RevisionedDoc>(doc3.Id)).ShouldNotBeNull();
     }
 
     [Fact]
@@ -372,8 +372,8 @@ public class numeric_revisioning: OneOffConfigurationsContext
         theSession.Store(doc1);
         await theSession.SaveChangesAsync();
 
-        (theSession.MetadataFor(doc1)).CurrentRevision.ShouldBe(1);
-        (theSession.Load<RevisionedDoc>(doc1.Id)).Version.ShouldBe(1);
+        (await theSession.MetadataForAsync(doc1)).CurrentRevision.ShouldBe(1);
+        (await theSession.LoadAsync<RevisionedDoc>(doc1.Id)).Version.ShouldBe(1);
     }
 
     [Fact]
@@ -388,7 +388,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
         theSession.Store(new RevisionedDoc{Id = doc1.Id, Name = "Brad"});
         await theSession.SaveChangesAsync();
 
-        (theSession.Load<RevisionedDoc>(doc1.Id)).Name.ShouldBe("Brad");
+        (await theSession.LoadAsync<RevisionedDoc>(doc1.Id)).Name.ShouldBe("Brad");
     }
 
     [Fact]
@@ -440,7 +440,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
         theSession.TryUpdateRevision(doc2, 2);
         await theSession.SaveChangesAsync();
 
-        (theSession.Load<RevisionedDoc>(doc1.Id)).Name.ShouldBe("Tron");
+        (await theSession.LoadAsync<RevisionedDoc>(doc1.Id)).Name.ShouldBe("Tron");
     }
 
     [Fact]
@@ -471,12 +471,12 @@ public class numeric_revisioning: OneOffConfigurationsContext
         theSession.Update(doc2);
         await theSession.SaveChangesAsync();
 
-        var doc3 = theSession.Load<RevisionedDoc>(doc1.Id);
+        var doc3 = await theSession.LoadAsync<RevisionedDoc>(doc1.Id);
         doc2.Version = 0;
         doc3.Name.ShouldBe("Last");
         doc3.Version.ShouldBe(5);
 
-        (theSession.MetadataFor(doc1)).CurrentRevision.ShouldBe(5);
+        (await theSession.MetadataForAsync(doc1)).CurrentRevision.ShouldBe(5);
     }
 
     [Fact]
@@ -498,8 +498,8 @@ public class numeric_revisioning: OneOffConfigurationsContext
         theSession.UpdateRevision(doc2, 10);
         await theSession.SaveChangesAsync();
 
-        (theSession.Load<RevisionedDoc>(doc1.Id)).Name.ShouldBe("Tron");
-        (theSession.MetadataFor(doc2)).CurrentRevision.ShouldBe(10);
+        (await theSession.LoadAsync<RevisionedDoc>(doc1.Id)).Name.ShouldBe("Tron");
+        (await theSession.MetadataForAsync(doc2)).CurrentRevision.ShouldBe(10);
     }
 
     [Fact]
@@ -536,7 +536,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
         session2.Store(doc2);
         await session2.SaveChangesAsync();
 
-        var doc3 = session2.Load<RevisionedDoc>(doc1.Id);
+        var doc3 = await session2.LoadAsync<RevisionedDoc>(doc1.Id);
         doc3.Name.ShouldBe("Last");
         doc3.Version.ShouldBe(5);
 

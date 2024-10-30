@@ -13,5 +13,4 @@ internal interface IBatchQueryItem
 
     Task ReadAsync(DbDataReader reader, IMartenSession session, CancellationToken token);
 
-    void Read(DbDataReader reader, IMartenSession session);
 }

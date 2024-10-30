@@ -66,14 +66,14 @@ namespace DocumentDbTests.Metadata
             using (var session = theStore.LightweightSession())
             {
                 session.Store(doc);
-                session.MetadataFor(doc).ShouldBeNull();
+                (await session.MetadataForAsync(doc)).ShouldBeNull();
                 await session.SaveChangesAsync();
             }
 
             using (var session = theStore.LightweightSession())
             {
-                var loaded = session.Load<DocWithMeta>(doc.Id);
-                ShouldBeTestExtensions.ShouldNotBe(loaded.LastModified, DateTimeOffset.MinValue);
+                var loaded = await session.LoadAsync<DocWithMeta>(doc.Id);
+                loaded.LastModified.ShouldNotBe(DateTimeOffset.MinValue);
             }
         }
 
@@ -87,13 +87,13 @@ namespace DocumentDbTests.Metadata
                 doc.LastModified = DateTime.UtcNow.AddYears(-1);
                 doc.Version = Guid.Empty;
                 session.Store(doc);
-                session.MetadataFor(doc).ShouldBeNull();
+                (await session.MetadataForAsync(doc)).ShouldBeNull();
                 await session.SaveChangesAsync();
             }
 
             using (var session = theStore.LightweightSession())
             {
-                var loaded = session.Load<DocWithAttributeMeta>(doc.Id);
+                var loaded = await session.LoadAsync<DocWithAttributeMeta>(doc.Id);
                 loaded.DocType.ShouldBeNull();
                 loaded.TenantId.ShouldBeNull();
                 (DateTime.UtcNow - loaded.LastModified.ToUniversalTime()).ShouldBeLessThan(TimeSpan.FromMinutes(1));
@@ -120,8 +120,8 @@ namespace DocumentDbTests.Metadata
                 session.Store(include);
                 doc.IncludedDocId = include.Id;
                 session.Store(doc);
-                session.MetadataFor(include).ShouldBeNull();
-                session.MetadataFor(doc).ShouldBeNull();
+                (await session.MetadataForAsync(include)).ShouldBeNull();
+                (await session.MetadataForAsync(doc)).ShouldBeNull();
                 await session.SaveChangesAsync();
             }
 
@@ -151,7 +151,7 @@ namespace DocumentDbTests.Metadata
             using (var session = theStore.LightweightSession())
             {
                 session.Store(doc);
-                session.MetadataFor(doc).ShouldBeNull();
+                (await session.MetadataForAsync(doc)).ShouldBeNull();
                 await session.SaveChangesAsync();
             }
 
@@ -159,7 +159,7 @@ namespace DocumentDbTests.Metadata
             {
                 var userQuery = session.Query<DocWithMeta>($"where data ->> 'Id' = '{doc.Id.ToString()}'").Single();
                 userQuery.Description = "updated via a user SQL query";
-                ShouldBeTestExtensions.ShouldNotBe(userQuery.LastModified, DateTimeOffset.MinValue);
+                userQuery.LastModified.ShouldNotBe(DateTimeOffset.MinValue);
                 lastMod = userQuery.LastModified;
                 session.Store(userQuery);
                 await session.SaveChangesAsync();
@@ -281,7 +281,7 @@ namespace DocumentDbTests.Metadata
         }
 
         [Fact]
-        public void versions_are_assigned_during_bulk_inserts_as_field()
+        public async Task versions_are_assigned_during_bulk_inserts_as_field()
         {
             var docs = new AttVersionedDoc[100];
             for (var i = 0; i < docs.Length; i++)
@@ -289,7 +289,7 @@ namespace DocumentDbTests.Metadata
                 docs[i] = new AttVersionedDoc();
             }
 
-            theStore.BulkInsert(docs);
+            await theStore.BulkInsertAsync(docs);
 
             foreach (var doc in docs)
             {
@@ -301,7 +301,7 @@ namespace DocumentDbTests.Metadata
         }
 
         [Fact]
-        public void versions_are_assigned_during_bulk_inserts_as_prop()
+        public async Task versions_are_assigned_during_bulk_inserts_as_prop()
         {
             var docs = new PropVersionedDoc[100];
             for (int i = 0; i < docs.Length; i++)
@@ -309,7 +309,7 @@ namespace DocumentDbTests.Metadata
                 docs[i] = new PropVersionedDoc();
             }
 
-            theStore.BulkInsert(docs);
+            await theStore.BulkInsertAsync(docs);
 
             foreach (var doc in docs)
             {

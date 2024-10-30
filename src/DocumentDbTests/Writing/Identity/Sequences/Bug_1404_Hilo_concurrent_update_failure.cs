@@ -8,18 +8,18 @@ namespace DocumentDbTests.Writing.Identity.Sequences;
 
 public class Bug_1404_Hilo_concurrent_update_failure : BugIntegrationContext
 {
-    private void Hammertime()
+    private Task Hammertime()
     {
         var store = SeparateStore(opts =>
         {
             opts.Advanced.HiloSequenceDefaults.MaxLo = 5;
         });
 
-        store.BulkInsert( TargetIntId.GenerateRandomData(100).ToArray());
+        return store.BulkInsertAsync( TargetIntId.GenerateRandomData(100).ToArray());
     }
 
     [Fact]
-    public void generate_hilo_in_highly_concurrent_scenarios()
+    public async Task generate_hilo_in_highly_concurrent_scenarios()
     {
         // ensure we create required DB objects since the concurrent
         // test could potentially create the same DB objects at the same time
@@ -28,7 +28,7 @@ public class Bug_1404_Hilo_concurrent_update_failure : BugIntegrationContext
             opts.Advanced.HiloSequenceDefaults.MaxLo = 5;
         });
 
-        store.BulkInsert( TargetIntId.GenerateRandomData(100).ToArray());
+        await store.BulkInsertAsync( TargetIntId.GenerateRandomData(100).ToArray());
 
         Task.WaitAll(Task.Run(Hammertime), Task.Run(Hammertime), Task.Run(Hammertime),
             Task.Run(Hammertime));

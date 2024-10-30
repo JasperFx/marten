@@ -100,7 +100,6 @@ public partial class QuerySession
         return await handler.HandleAsync(reader, this, token).ConfigureAwait(false);
     }
 
-    [Obsolete(QuerySession.SynchronousRemoval)]
     public T ExecuteHandler<T>(IQueryHandler<T> handler)
     {
         var batch = this.BuildCommand(handler);

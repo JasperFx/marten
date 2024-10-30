@@ -188,18 +188,6 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.DeleteForId(id, tenant);
     }
 
-    public T Load(TId id, IMartenSession session)
-    {
-        var doc = _parent.Load(id, session);
-
-        if (doc is T x)
-        {
-            return x;
-        }
-
-        return default;
-    }
-
     public async Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
     {
         var doc = await _parent.LoadAsync(id, session, token).ConfigureAwait(false);

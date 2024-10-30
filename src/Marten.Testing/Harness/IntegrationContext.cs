@@ -89,7 +89,7 @@ namespace Marten.Testing.Harness
             else
             {
                 _store = _fixture.StringStreamIdentifiers.Value;
-                _store.Advanced.Clean.DeleteAllEventData();
+                _store.Advanced.Clean.DeleteAllEventDataAsync().GetAwaiter().GetResult();
             }
         }
 
@@ -125,7 +125,7 @@ namespace Marten.Testing.Harness
             _store = new DocumentStore(options);
             Disposables.Add(_store);
 
-            _store.Advanced.Clean.CompletelyRemoveAll();
+            _store.Advanced.Clean.CompletelyRemoveAllAsync().GetAwaiter().GetResult();
 
             return options.DatabaseSchemaName;
         }

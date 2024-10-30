@@ -17,7 +17,6 @@ public interface IQueryHandler
 
 public interface IQueryHandler<T>: IQueryHandler
 {
-    [Obsolete(QuerySession.SynchronousRemoval)]
     T Handle(DbDataReader reader, IMartenSession session);
 
     Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token);

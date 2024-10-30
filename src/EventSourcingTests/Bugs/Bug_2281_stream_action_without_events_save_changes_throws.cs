@@ -40,10 +40,10 @@ namespace EventSourcingTests.Bugs
 
             await using (var session = documentStore.LightweightSession())
             {
-                var entityOne = session.Load<TestEntity>(entityOneId);
+                var entityOne = await session.LoadAsync<TestEntity>(entityOneId);
                 entityOne.Status.ShouldBe(1);
 
-                var entityTwo = session.Load<TestEntity>(entityTwoId);
+                var entityTwo = await session.LoadAsync<TestEntity>(entityTwoId);
                 entityTwo.Status.ShouldBe(2);
             }
         }
@@ -72,10 +72,10 @@ namespace EventSourcingTests.Bugs
 
             await using (var session = documentStore.LightweightSession())
             {
-                var entityOne = session.Load<TestEntity>(entityOneId);
+                var entityOne = await session.LoadAsync<TestEntity>(entityOneId);
                 entityOne.Status.ShouldBe(2);
 
-                var entityTwo = session.Load<TestEntity>(entityTwoId);
+                var entityTwo = await session.LoadAsync<TestEntity>(entityTwoId);
                 entityTwo.Status.ShouldBe(2);
             }
         }

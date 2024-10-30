@@ -33,7 +33,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
             await session.SaveChangesAsync();
         }
 
-        theStore.Advanced.Clean.DeleteSingleEventStream(stream1);
+        await theStore.Advanced.Clean.DeleteSingleEventStreamAsync(stream1);
 
         using (var session = theStore.LightweightSession())
         {
@@ -65,7 +65,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
             await session.SaveChangesAsync();
         }
 
-        theStore.Advanced.Clean.DeleteSingleEventStream(stream1, "one");
+        await theStore.Advanced.Clean.DeleteSingleEventStreamAsync(stream1, "one");
 
         using (var session = theStore.LightweightSession())
         {
@@ -163,7 +163,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
             await session.SaveChangesAsync();
         }
 
-        theStore.Advanced.Clean.DeleteSingleEventStream(stream1);
+        await theStore.Advanced.Clean.DeleteSingleEventStreamAsync(stream1);
 
         using (var session = theStore.LightweightSession())
         {
@@ -199,7 +199,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
             await session.SaveChangesAsync();
         }
 
-        theStore.Advanced.Clean.DeleteSingleEventStream(stream1, "one");
+        await theStore.Advanced.Clean.DeleteSingleEventStreamAsync(stream1, "one");
 
         using (var session = theStore.LightweightSession())
         {

@@ -145,8 +145,6 @@ public interface IDocumentStorage<T, TId>: IDocumentStorage<T> where T : notnull
 
     IDeletion DeleteForId(TId id, string tenantId);
 
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    T? Load(TId id, IMartenSession session);
     Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);
 
     IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session);

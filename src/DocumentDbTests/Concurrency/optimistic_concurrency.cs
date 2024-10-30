@@ -49,7 +49,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         session.Store(coffeeShop);
         await session.SaveChangesAsync();
 
-        session.Load<CoffeeShop>(coffeeShop.Id).ShouldNotBeNull();
+        (await session.LoadAsync<CoffeeShop>(coffeeShop.Id)).ShouldNotBeNull();
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
         using (var session = theStore.LightweightSession())
         {
-            var doc2 = session.Load<CoffeeShop>(doc1.Id);
+            var doc2 = await session.LoadAsync<CoffeeShop>(doc1.Id);
             doc2.Name = "Mozart's";
 
             session.Store(doc2);
@@ -95,7 +95,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Mozart's");
+           (await session.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Mozart's");
         }
     }
 
@@ -138,8 +138,8 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         var session1 = theStore.DirtyTrackedSession();
         var session2 = theStore.DirtyTrackedSession();
 
-        var session1Copy = session1.Load<CoffeeShop>(doc1.Id);
-        var session2Copy = session2.Load<CoffeeShop>(doc1.Id);
+        var session1Copy = await session1.LoadAsync<CoffeeShop>(doc1.Id);
+        var session2Copy = await session2.LoadAsync<CoffeeShop>(doc1.Id);
 
         try
         {
@@ -163,7 +163,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         }
 
         await using var query = theStore.QuerySession();
-        query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Dominican Joe's");
+        (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Dominican Joe's");
     }
 
     #endregion
@@ -186,8 +186,8 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
         var session2 = theStore.DirtyTrackedSession();
 
-        var session1Copy = session1.Load<CoffeeShop>(doc1.Id);
-        var session2Copy = session2.Load<CoffeeShop>(doc1.Id);
+        var session1Copy = await session1.LoadAsync<CoffeeShop>(doc1.Id);
+        var session2Copy = await session2.LoadAsync<CoffeeShop>(doc1.Id);
 
         try
         {
@@ -206,7 +206,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         }
 
         await using var query = theStore.QuerySession();
-        query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Mozart's");
+        (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Mozart's");
     }
 
     [Fact]
@@ -265,8 +265,8 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         var session1 = theStore.DirtyTrackedSession();
         var session2 = theStore.DirtyTrackedSession();
 
-        var session1Copy = session1.Load<CoffeeShop>(doc1.Id);
-        var session2Copy = session2.Load<CoffeeShop>(doc1.Id);
+        var session1Copy = await session1.LoadAsync<CoffeeShop>(doc1.Id);
+        var session2Copy = await session2.LoadAsync<CoffeeShop>(doc1.Id);
 
         try
         {
@@ -290,7 +290,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         }
 
         await using var query = theStore.QuerySession();
-        query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Dominican Joe's");
+        (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Dominican Joe's");
     }
 
     [Fact]
@@ -305,7 +305,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
         using (var session = theStore.DirtyTrackedSession())
         {
-            var doc2 = session.Load<CoffeeShop>(doc1.Id);
+            var doc2 = await session.LoadAsync<CoffeeShop>(doc1.Id);
             doc2.Name = "Mozart's";
 
             await session.SaveChangesAsync();
@@ -317,7 +317,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Cafe Medici");
+            (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Cafe Medici");
         }
     }
 
@@ -363,10 +363,10 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
         using (var session = theStore.DirtyTrackedSession())
         {
-            var doc12 = session.Load<CoffeeShop>(doc1.Id);
+            var doc12 = await session.LoadAsync<CoffeeShop>(doc1.Id);
             doc12.Name = "Mozart's";
 
-            var doc22 = session.Load<CoffeeShop>(doc2.Id);
+            var doc22 = await session.LoadAsync<CoffeeShop>(doc2.Id);
             doc22.Name = "Dominican Joe's";
 
             await session.SaveChangesAsync();
@@ -374,8 +374,8 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Mozart's");
-            query.Load<CoffeeShop>(doc2.Id).Name.ShouldBe("Dominican Joe's");
+            (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Mozart's");
+            (await query.LoadAsync<CoffeeShop>(doc2.Id)).Name.ShouldBe("Dominican Joe's");
         }
     }
 
@@ -423,16 +423,16 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
         using (var session = theStore.DirtyTrackedSession())
         {
-            var doc12 = session.Load<CoffeeShop>(doc1.Id);
+            var doc12 = await session.LoadAsync<CoffeeShop>(doc1.Id);
             doc12.Name = "Mozart's";
 
-            var doc22 = session.Load<CoffeeShop>(doc2.Id);
+            var doc22 = await session.LoadAsync<CoffeeShop>(doc2.Id);
             doc22.Name = "Dominican Joe's";
 
             using (var other = theStore.DirtyTrackedSession())
             {
-                other.Load<CoffeeShop>(doc1.Id).Name = "Genuine Joe's";
-                other.Load<CoffeeShop>(doc2.Id).Name = "Cafe Medici";
+                (await other.LoadAsync<CoffeeShop>(doc1.Id)).Name = "Genuine Joe's";
+                (await other.LoadAsync<CoffeeShop>(doc2.Id)).Name = "Cafe Medici";
 
                 await other.SaveChangesAsync();
             }
@@ -497,7 +497,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         DocumentMetadata metadata;
         using (var session = theStore.QuerySession())
         {
-            metadata = session.MetadataFor(doc1);
+            metadata = await session.MetadataForAsync(doc1);
         }
 
         using (var session = theStore.LightweightSession())
@@ -510,7 +510,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<CoffeeShop>(doc1.Id).Name
+            (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name
                 .ShouldBe("Mozart's");
         }
     }
@@ -612,8 +612,8 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
         await using (var session = theStore.DirtyTrackedSession())
         {
-            var emp = session.Load<CoffeeShopEmployee>(emp1.Id);
-            var doc = session.Load<CoffeeShop>(doc1.Id);
+            var emp = await session.LoadAsync<CoffeeShopEmployee>(emp1.Id);
+            var doc = await session.LoadAsync<CoffeeShop>(doc1.Id);
 
             doc.Employees.Remove(emp.Id);
             session.Delete(emp);
@@ -638,8 +638,8 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
         using (var session = theStore.DirtyTrackedSession())
         {
-            var emp = session.Load<CoffeeShopEmployee>(emp1.Id);
-            var doc = session.Load<CoffeeShop>(doc1.Id);
+            var emp = await session.LoadAsync<CoffeeShopEmployee>(emp1.Id);
+            var doc = await session.LoadAsync<CoffeeShop>(doc1.Id);
 
             doc.Employees.Remove(emp.Id);
             session.Delete(emp);
@@ -666,7 +666,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         session.Store(coffeeShop);
         await session.SaveChangesAsync();
 
-        session.Load<CoffeeShop>(coffeeShop.Id).ShouldNotBeNull();
+        (await session.LoadAsync<CoffeeShop>(coffeeShop.Id)).ShouldNotBeNull();
     }
 
     [Fact]
@@ -692,7 +692,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
         using (var session = theStore.LightweightSession())
         {
-            var doc2 = session.Load<Shop>(doc1.Id).As<CoffeeShop>();
+            var doc2 = (await session.LoadAsync<Shop>(doc1.Id)).As<CoffeeShop>();
             doc2.Name = "Mozart's";
 
             session.Store(doc2);
@@ -701,7 +701,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Mozart's");
+            (await session.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Mozart's");
         }
     }
 
@@ -743,8 +743,8 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
         var session1 = theStore.DirtyTrackedSession();
         var session2 = theStore.DirtyTrackedSession();
 
-        var session1Copy = session1.Load<CoffeeShop>(doc1.Id);
-        var session2Copy = session2.Load<CoffeeShop>(doc1.Id);
+        var session1Copy = await session1.LoadAsync<CoffeeShop>(doc1.Id);
+        var session2Copy = await session2.LoadAsync<CoffeeShop>(doc1.Id);
 
         try
         {
@@ -769,7 +769,7 @@ public class optimistic_concurrency: StoreContext<OptimisticConcurrencyStoreFixt
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Dominican Joe's");
+            (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Dominican Joe's");
         }
     }
 

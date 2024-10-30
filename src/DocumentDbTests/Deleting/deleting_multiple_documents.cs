@@ -32,7 +32,7 @@ public class deleting_multiple_documents: IntegrationContext
 
         using (var documentSession = theStore.LightweightSession())
         {
-            var user = documentSession.Load<User>(user1.Id);
+            var user = await documentSession.LoadAsync<User>(user1.Id);
             user.FirstName = "Max";
 
             documentSession.Store(user);
@@ -44,10 +44,10 @@ public class deleting_multiple_documents: IntegrationContext
 
         using (var querySession = theStore.QuerySession())
         {
-            querySession.Load<User>(user1.Id).FirstName.ShouldBe("Max");
-            querySession.Load<Company>(company1.Id).Name.ShouldBe("Widgets, inc.");
-            querySession.Load<Company>(company2.Id).ShouldBeNull();
-            querySession.Load<Company>(company3.Id).Name.ShouldBe("SmallCo");
+            (await querySession.LoadAsync<User>(user1.Id)).FirstName.ShouldBe("Max");
+            (await querySession.LoadAsync<Company>(company1.Id)).Name.ShouldBe("Widgets, inc.");
+            (await querySession.LoadAsync<Company>(company2.Id)).ShouldBeNull();
+            (await querySession.LoadAsync<Company>(company3.Id)).Name.ShouldBe("SmallCo");
         }
     }
 
@@ -81,10 +81,10 @@ public class deleting_multiple_documents: IntegrationContext
         using (var querySession = theStore.QuerySession())
         {
             // Assert the deleted documents no longer exist
-            querySession.Load<User>(user1.Id).ShouldBeNull();
-            querySession.Load<Company>(company1.Id).ShouldBeNull();
+            (await querySession.LoadAsync<User>(user1.Id)).ShouldBeNull();
+            (await querySession.LoadAsync<Company>(company1.Id)).ShouldBeNull();
 
-            querySession.Load<Issue>(issue1.Id).Title.ShouldBe("Running low on coffee");
+            (await querySession.LoadAsync<Issue>(issue1.Id)).Title.ShouldBe("Running low on coffee");
         }
     }
 

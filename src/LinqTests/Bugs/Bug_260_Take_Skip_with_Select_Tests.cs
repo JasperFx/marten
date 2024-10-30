@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Linq;
 using Marten.Testing.Documents;
@@ -10,10 +11,10 @@ namespace LinqTests.Bugs;
 public class Bug_260_Take_Skip_with_Select_Tests: IntegrationContext
 {
     [Fact]
-    public void return_the_correct_number_of_results()
+    public async Task return_the_correct_number_of_results()
     {
         var targets = Target.GenerateRandomData(100);
-        theStore.BulkInsert(targets.ToArray());
+        await theStore.BulkInsertAsync(targets.ToArray());
 
         var queryable = theSession.Query<Target>()
             .Skip(10)

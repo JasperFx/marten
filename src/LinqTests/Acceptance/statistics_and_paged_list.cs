@@ -78,14 +78,14 @@ public class statistics_and_paged_list: IntegrationContext
     #endregion
 
     [Fact]
-    public void can_get_the_total_from_a_compiled_query()
+    public async Task can_get_the_total_from_a_compiled_query()
     {
         var count = theSession.Query<Target>().Count(x => x.Number > 10);
         count.ShouldBeGreaterThan(0);
 
         var query = new TargetPaginationQuery(2, 5);
-        var list = theSession
-            .Query(query)
+        var list = (await theSession
+            .QueryAsync(query))
             .ToList();
 
         list.Any().ShouldBeTrue();
@@ -134,7 +134,7 @@ public class statistics_and_paged_list: IntegrationContext
     }
 
     [Fact]
-    public void can_get_the_total_from_a_compiled_query_running_in_a_batch_sync()
+    public async Task can_get_the_total_from_a_compiled_query_running_in_a_batch_sync()
     {
         var count = theSession.Query<Target>().Count(x => x.Number > 10);
         count.ShouldBeGreaterThan(0);
@@ -145,9 +145,9 @@ public class statistics_and_paged_list: IntegrationContext
 
         var targets = batch.Query(query);
 
-        batch.ExecuteSynchronously();
+        await batch.Execute();
 
-        targets.Result
+        (await targets)
             .Any().ShouldBeTrue();
 
         query.Stats.TotalResults.ShouldBe(count);
@@ -174,7 +174,7 @@ public class statistics_and_paged_list: IntegrationContext
     }
 
     [Fact]
-    public void can_get_the_total_in_batch_query_sync()
+    public async Task can_get_the_total_in_batch_query_sync()
     {
         var count = theSession.Query<Target>().Count(x => x.Number > 10);
         count.ShouldBeGreaterThan(0);
@@ -186,9 +186,9 @@ public class statistics_and_paged_list: IntegrationContext
         var list = batch.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
             .ToList();
 
-        batch.ExecuteSynchronously();
+        await batch.Execute();
 
-        list.Result.Any().ShouldBeTrue();
+        (await list).Any().ShouldBeTrue();
 
         stats.TotalResults.ShouldBe(count);
     }
@@ -521,11 +521,11 @@ public class statistics_and_paged_list: IntegrationContext
     }
 
     [Fact]
-    public void try_to_use_in_compiled_query()
+    public async Task try_to_use_in_compiled_query()
     {
-        Should.Throw<BadLinqExpressionException>(() =>
+        await Should.ThrowAsync<BadLinqExpressionException>(async () =>
         {
-            var data = theSession.Query(new TargetPage(1, 10));
+            var data = await theSession.QueryAsync(new TargetPage(1, 10));
         });
     }
 

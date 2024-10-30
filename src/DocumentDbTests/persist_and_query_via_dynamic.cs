@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Services.Json;
 using Marten.Testing.Harness;
@@ -17,7 +18,7 @@ public class persist_and_query_via_dynamic: IntegrationContext
     #endregion
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void CanPersistAndQueryDynamic()
+    public async Task CanPersistAndQueryDynamic()
     {
         #region sample_sample-scenarios-dynamic-records
         // Our documents with non-uniform structure
@@ -36,7 +37,7 @@ public class persist_and_query_via_dynamic: IntegrationContext
         var docs = records.Select(x => new TemperatureData {Values = x}).ToArray();
 
         // Persist our records
-        theStore.BulkInsertDocuments(docs);
+        await theStore.BulkInsertDocumentsAsync(docs);
 
         using var session = theStore.QuerySession();
         // Read back the data for "aisle-1"

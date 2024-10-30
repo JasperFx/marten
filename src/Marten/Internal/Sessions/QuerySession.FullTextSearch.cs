@@ -10,12 +10,6 @@ namespace Marten.Internal.Sessions;
 
 public partial class QuerySession
 {
-    public IReadOnlyList<TDoc> Search<TDoc>(string searchTerm,
-        string regConfig = FullTextIndexDefinition.DefaultRegConfig)
-    {
-        return Query<TDoc>().Where(d => d.Search(searchTerm, regConfig)).ToList();
-    }
-
     public Task<IReadOnlyList<TDoc>> SearchAsync<TDoc>(string searchTerm,
         string regConfig = FullTextIndexDefinition.DefaultRegConfig, CancellationToken token = default)
     {

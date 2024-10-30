@@ -55,12 +55,6 @@ public interface IDocumentSession: IDocumentOperations
     string? LastModifiedBy { get; set; }
 
     /// <summary>
-    ///     Saves all the pending changes and deletions to the server in a single Postgresql transaction.
-    /// </summary>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    void SaveChanges();
-
-    /// <summary>
     ///     Asynchronously saves all the pending changes and deletions to the server in a single Postgresql transaction
     /// </summary>
     /// <param name="token"></param>

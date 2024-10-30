@@ -134,7 +134,6 @@ internal class MartenLinqQueryProvider: IQueryProvider
         return default;
     }
 
-    [Obsolete(QuerySession.SynchronousRemoval)]
     public T? ExecuteHandler<T>(IQueryHandler<T> handler)
     {
         try

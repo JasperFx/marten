@@ -12,11 +12,21 @@ using Xunit;
 
 namespace EventSourcingTests.Projections;
 
-public class EventProjectionTests: OneOffConfigurationsContext
+public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
 {
     public EventProjectionTests()
     {
-        theStore.Advanced.Clean.DeleteDocumentsByType(typeof(User));
+
+    }
+
+    public async Task InitializeAsync()
+    {
+        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(User));
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
     }
 
     protected void UseProjection<T>() where T : EventProjection, new()

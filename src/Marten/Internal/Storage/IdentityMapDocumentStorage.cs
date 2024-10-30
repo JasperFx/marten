@@ -167,26 +167,6 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         return list;
     }
 
-    public sealed override T Load(TId id, IMartenSession session)
-    {
-        if (session.ItemMap.TryGetValue(typeof(T), out var items))
-        {
-            if (items is Dictionary<TId, T> d)
-            {
-                if (d.TryGetValue(id, out var item))
-                {
-                    return item;
-                }
-            }
-            else
-            {
-                throw new DocumentIdTypeMismatchException(typeof(T), typeof(TId));
-            }
-        }
-
-        return load(id, session);
-    }
-
     public sealed override Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
     {
         if (session.ItemMap.TryGetValue(typeof(T), out var items))

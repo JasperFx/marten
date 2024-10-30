@@ -50,16 +50,25 @@ public class SoftDeletedDocument: ISoftDeleted
     public DateTimeOffset? DeletedAt { get; set; }
 }
 
-public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftDeletedFixture>
+public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftDeletedFixture>, IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
 
     public soft_deletes(SoftDeletedFixture fixture, ITestOutputHelper output): base(fixture)
     {
         _output = output;
-        theStore.Advanced.Clean.DeleteAllDocuments();
+
     }
 
+    public async Task InitializeAsync()
+    {
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
+    }
 
 
     [Fact]
@@ -385,7 +394,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         session.Delete(user3);
         await session.SaveChangesAsync();
 
-        var epoch = session.MetadataFor(user3).DeletedAt;
+        var epoch = (await session.MetadataForAsync(user3)).DeletedAt;
         session.Delete(user4);
         await session.SaveChangesAsync();
 
@@ -413,7 +422,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         session.Delete(user4);
         await session.SaveChangesAsync();
 
-        var epoch = session.MetadataFor(user4).DeletedAt;
+        var epoch = (await session.MetadataForAsync(user4)).DeletedAt;
 
         session.Query<User>().Where(x => x.DeletedBefore(epoch.Value)).Select(x => x.UserName)
             .ToList().ShouldHaveTheSameElementsAs("baz");
@@ -1075,7 +1084,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         session.Delete(user3);
         await session.SaveChangesAsync();
 
-        var epoch = session.MetadataFor(user3).DeletedAt;
+        var epoch = (await session.MetadataForAsync(user3)).DeletedAt;
         session.Delete(user4);
         await session.SaveChangesAsync();
 
@@ -1103,7 +1112,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         session.Delete(user4);
         await session.SaveChangesAsync();
 
-        var epoch = session.MetadataFor(user4).DeletedAt;
+        var epoch = (await session.MetadataForAsync(user4)).DeletedAt;
 
         session.Query<User>().Where(x => x.DeletedBefore(epoch.Value)).Select(x => x.UserName)
             .ToList().ShouldHaveTheSameElementsAs("baz");

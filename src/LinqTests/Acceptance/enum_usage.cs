@@ -153,7 +153,7 @@ public class enum_usage : OneOffConfigurationsContext
 
 
     [Fact]
-    public void use_enum_values_with_jil_that_are_duplicated_with_bulk_import()
+    public async Task use_enum_values_with_jil_that_are_duplicated_with_bulk_import()
     {
         StoreOptions(_ =>
         {
@@ -171,7 +171,7 @@ public class enum_usage : OneOffConfigurationsContext
             new Target {Color = Colors.Blue, Number = 7}
         };
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
@@ -179,7 +179,7 @@ public class enum_usage : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void use_enum_values_with_newtonsoft_that_are_duplicated_with_bulk_import()
+    public async Task use_enum_values_with_newtonsoft_that_are_duplicated_with_bulk_import()
     {
         StoreOptions(_ =>
         {
@@ -198,7 +198,7 @@ public class enum_usage : OneOffConfigurationsContext
             new Target {Color = Colors.Blue, Number = 7}
         };
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)

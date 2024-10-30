@@ -117,7 +117,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
             _.Events.AddEventType(typeof(MembersDeparted));
         });
 
-        theStore.Advanced.Clean.DeleteAllEventData();
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
 
         theStore.StorageFeatures.FindMapping(typeof(MembersDeparted))
@@ -313,7 +313,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
     public querying_event_data_with_linq(ITestOutputHelper output)
     {
         _output = output;
-        theStore.Advanced.Clean.DeleteAllEventData();
+        theStore.Advanced.Clean.DeleteAllEventDataAsync().GetAwaiter().GetResult();
     }
 }
 

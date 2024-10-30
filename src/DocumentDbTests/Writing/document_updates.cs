@@ -17,7 +17,7 @@ public class document_updates: IntegrationContext
     public async Task can_update_existing_documents()
     {
         var targets = Target.GenerateRandomData(99).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var theNewNumber = 54321;
         using (var session = theStore.LightweightSession())
@@ -29,7 +29,7 @@ public class document_updates: IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(targets[0].Id)
+            (await query.LoadAsync<Target>(targets[0].Id))
                 .Double.ShouldBe(theNewNumber);
         }
     }

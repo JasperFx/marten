@@ -198,8 +198,8 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
             using (var session = store.LightweightSession(tenantId))
             {
-                var liveAggregate = session.Events.AggregateStream<QuestParty>(questId);
-                var inlinedAggregate = session.Load<QuestParty>(questId);
+                var liveAggregate = await session.Events.AggregateStreamAsync<QuestParty>(questId);
+                var inlinedAggregate = await session.LoadAsync<QuestParty>(questId);
                 liveAggregate.Id.ShouldBe(inlinedAggregate.Id);
                 inlinedAggregate.ToString().ShouldBe(liveAggregate.ToString());
             }
@@ -232,33 +232,33 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
             using (var session = store.LightweightSession(tenantId))
             {
                 // questId is the id of the stream
-                var party = session.Events.AggregateStream<QuestParty>(questId);
+                var party = await session.Events.AggregateStreamAsync<QuestParty>(questId);
 
                 party.Id.ShouldBe(questId);
                 party.ShouldNotBeNull();
 
-                var party_at_version_3 = session.Events
-                    .AggregateStream<QuestParty>(questId, 3);
+                var party_at_version_3 = await session.Events
+                    .AggregateStreamAsync<QuestParty>(questId, 3);
 
                 party_at_version_3.ShouldNotBeNull();
 
-                var party_yesterday = session.Events
-                    .AggregateStream<QuestParty>(questId, timestamp: DateTimeOffset.UtcNow.AddDays(-1));
+                var party_yesterday = await session.Events
+                    .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTimeOffset.UtcNow.AddDays(-1));
                 party_yesterday.ShouldBeNull();
             }
 
             using (var session = store.LightweightSession(tenantId))
             {
-                var party = session.Load<QuestParty>(questId);
+                var party = await session.LoadAsync<QuestParty>(questId);
                 party.Id.ShouldBe(questId);
             }
 
             var newStore = InitStore(tenancyStyle, false);
 
             //Inline is working
-            using (var session = store.LightweightSession(tenantId))
+            using (var session = newStore.LightweightSession(tenantId))
             {
-                var party = session.Load<QuestParty>(questId);
+                var party = await session.LoadAsync<QuestParty>(questId);
                 party.ShouldNotBeNull();
             }
 
@@ -276,15 +276,15 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
             using (var session = store.LightweightSession(tenantId))
             {
                 // questId is the id of the stream
-                var party = session.Events.AggregateStream<QuestParty>(questId); //Here we get NPE
+                var party = await session.Events.AggregateStreamAsync<QuestParty>(questId); //Here we get NPE
                 party.Id.ShouldBe(questId);
 
-                var party_at_version_3 = session.Events
-                    .AggregateStream<QuestParty>(questId, 3);
+                var party_at_version_3 = await session.Events
+                    .AggregateStreamAsync<QuestParty>(questId, 3);
                 party_at_version_3.Id.ShouldBe(questId);
 
-                var party_yesterday = session.Events
-                    .AggregateStream<QuestParty>(questId, timestamp: DateTimeOffset.UtcNow.AddDays(-1));
+                var party_yesterday = await session.Events
+                    .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTimeOffset.UtcNow.AddDays(-1));
                 party_yesterday.ShouldBeNull();
             }
         }).ShouldThrowIfAsync(
@@ -317,7 +317,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
                 session.Events.StartStream<Quest>(questId, started, joined1);
                 await session.SaveChangesAsync();
 
-                var party = session.Events.AggregateStream<QuestParty>(questId);
+                var party = await session.Events.AggregateStreamAsync<QuestParty>(questId);
                 party.Id.ShouldBe(questId);
             }
         }).ShouldThrowIfAsync(
@@ -381,7 +381,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
                 #endregion
 
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -412,7 +412,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
                 await session.SaveChangesAsync();
 
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -452,7 +452,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
                 await session.SaveChangesAsync();
 
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count().ShouldBe(3);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<QuestStarted>();
@@ -485,7 +485,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
                 var id = session.Events.StartStream<Quest>(joined, departed).Id;
                 await session.SaveChangesAsync();
 
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -515,7 +515,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
                 session.Events.StartStream<Quest>(id, joined, departed);
                 await session.SaveChangesAsync();
 
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -548,7 +548,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
                 await session.SaveChangesAsync();
 
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -591,7 +591,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
                 #endregion
 
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count().ShouldBe(3);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<QuestStarted>();

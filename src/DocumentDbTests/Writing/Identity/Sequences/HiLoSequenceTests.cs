@@ -40,12 +40,17 @@ public class AdvanceToNextHi : IEnumerable<object[]>
 public class HiloSequenceTests : IntegrationContext
 {
 
-    private readonly HiloSequence theSequence;
-    private readonly Tenant theTenant;
+    private HiloSequence theSequence;
+    private Tenant theTenant;
 
     public HiloSequenceTests(DefaultStoreFixture fixture) : base(fixture)
     {
-        theStore.Advanced.Clean.CompletelyRemoveAll();
+
+    }
+
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
         theTenant = theStore.Tenancy.Default;
 

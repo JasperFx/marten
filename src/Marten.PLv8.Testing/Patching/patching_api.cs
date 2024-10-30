@@ -71,7 +71,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).Number.ShouldBe(10);
+            (await query.LoadAsync<Target>(target.Id)).Number.ShouldBe(10);
         }
     }
 
@@ -110,7 +110,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).Inner.Number.ShouldBe(10);
+            (await query.LoadAsync<Target>(target.Id)).Inner.Number.ShouldBe(10);
         }
     }
 
@@ -137,14 +137,14 @@ public class patching_api: OneOffConfigurationsContext
         using (var query = theStore.QuerySession())
         {
             // These should have been updated
-            query.Load<Target>(target1.Id).Number.ShouldBe(2);
-            query.Load<Target>(target2.Id).Number.ShouldBe(2);
-            query.Load<Target>(target3.Id).Number.ShouldBe(2);
+            (await query.LoadAsync<Target>(target1.Id)).Number.ShouldBe(2);
+            (await query.LoadAsync<Target>(target2.Id)).Number.ShouldBe(2);
+            (await query.LoadAsync<Target>(target3.Id)).Number.ShouldBe(2);
 
             // These should not because they didn't match the where clause
-            query.Load<Target>(target4.Id).Number.ShouldBe(1);
-            query.Load<Target>(target5.Id).Number.ShouldBe(1);
-            query.Load<Target>(target6.Id).Number.ShouldBe(1);
+            (await query.LoadAsync<Target>(target4.Id)).Number.ShouldBe(1);
+            (await query.LoadAsync<Target>(target5.Id)).Number.ShouldBe(1);
+            (await query.LoadAsync<Target>(target6.Id)).Number.ShouldBe(1);
         }
     }
 
@@ -162,7 +162,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var result = query.Load<Target>(target.Id);
+            var result = await query.LoadAsync<Target>(target.Id);
             result.AnotherString.ShouldBe(target.String);
         }
         #endregion
@@ -187,7 +187,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var result = query.Load<Target>(target.Id);
+            var result = await query.LoadAsync<Target>(target.Id);
 
             result.StringField.ShouldBe(target.String);
             result.Inner.ShouldNotBeNull();
@@ -211,7 +211,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).Number.ShouldBe(7);
+            (await query.LoadAsync<Target>(target.Id)).Number.ShouldBe(7);
         }
     }
 
@@ -232,7 +232,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).Number.ShouldBe(9);
+            (await query.LoadAsync<Target>(target.Id)).Number.ShouldBe(9);
         }
     }
 
@@ -252,7 +252,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).Long.ShouldBe(14);
+            (await query.LoadAsync<Target>(target.Id)).Long.ShouldBe(14);
         }
     }
 
@@ -270,7 +270,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).Double.ShouldBe(13.6);
+            (await query.LoadAsync<Target>(target.Id)).Double.ShouldBe(13.6);
         }
     }
 
@@ -288,7 +288,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).Float.ShouldBe(13.6F);
+            (await query.LoadAsync<Target>(target.Id)).Float.ShouldBe(13.6F);
         }
     }
 
@@ -306,7 +306,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).NumberArray
+            (await query.LoadAsync<Target>(target.Id)).NumberArray
                 .ShouldHaveTheSameElementsAs(1, 2, 3, 4);
         }
     }
@@ -325,7 +325,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).NumberArray
+            (await query.LoadAsync<Target>(target.Id)).NumberArray
                 .ShouldHaveTheSameElementsAs(1, 2, 3);
         }
 
@@ -334,7 +334,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).NumberArray
+            (await query.LoadAsync<Target>(target.Id)).NumberArray
                 .ShouldHaveTheSameElementsAs(1, 2, 3, 4);
         }
     }
@@ -356,7 +356,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var target2 = query.Load<Target>(target.Id);
+            var target2 = await query.LoadAsync<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount + 1);
 
             target2.Children.Last().Id.ShouldBe(child.Id);
@@ -383,7 +383,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var target2 = query.Load<Target>(target.Id);
+            var target2 = await query.LoadAsync<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount + 1);
 
             target2.Children.Last().Id.ShouldBe(child.Id);
@@ -394,7 +394,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var target2 = query.Load<Target>(target.Id);
+            var target2 = await query.LoadAsync<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount + 2);
 
             target2.Children.Last().Id.ShouldBe(child2.Id);
@@ -415,7 +415,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).NumberArray
+            (await query.LoadAsync<Target>(target.Id)).NumberArray
                 .ShouldHaveTheSameElementsAs(4, 1, 2, 3);
         }
     }
@@ -434,7 +434,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).NumberArray
+            (await query.LoadAsync<Target>(target.Id)).NumberArray
                 .ShouldHaveTheSameElementsAs(1, 2, 3);
         }
 
@@ -443,7 +443,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).NumberArray
+            (await query.LoadAsync<Target>(target.Id)).NumberArray
                 .ShouldHaveTheSameElementsAs(4, 1, 2, 3);
         }
     }
@@ -462,7 +462,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).NumberArray
+            (await query.LoadAsync<Target>(target.Id)).NumberArray
                 .ShouldHaveTheSameElementsAs(1, 2, 4, 3);
         }
     }
@@ -481,7 +481,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).NumberArray
+            (await query.LoadAsync<Target>(target.Id)).NumberArray
                 .ShouldHaveTheSameElementsAs(1, 2, 3);
         }
 
@@ -490,7 +490,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(target.Id).NumberArray
+            (await query.LoadAsync<Target>(target.Id)).NumberArray
                 .ShouldHaveTheSameElementsAs(1, 2, 4, 3);
         }
     }
@@ -512,7 +512,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var target2 = query.Load<Target>(target.Id);
+            var target2 = await query.LoadAsync<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount + 1);
 
             target2.Children.First().Id.ShouldBe(child.Id);
@@ -537,7 +537,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var target2 = query.Load<Target>(target.Id);
+            var target2 = await query.LoadAsync<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount + 1);
 
             target2.Children.First().Id.ShouldBe(child.Id);
@@ -548,7 +548,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var target2 = query.Load<Target>(target.Id);
+            var target2 = await query.LoadAsync<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount + 1);
 
             target2.Children.First().Id.ShouldBe(child.Id);
@@ -559,7 +559,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var target2 = query.Load<Target>(target.Id);
+            var target2 = await query.LoadAsync<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount + 2);
 
             target2.Children.First().Id.ShouldBe(child2.Id);
@@ -581,7 +581,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var target2 = query.Load<Target>(target.Id);
+            var target2 = await query.LoadAsync<Target>(target.Id);
             target2.AnotherString.ShouldBe("Foo");
             target2.String.ShouldBeNull();
         }
@@ -603,7 +603,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var target2 = query.Load<Target>(target.Id);
+            var target2 = await query.LoadAsync<Target>(target.Id);
             target2.Inner.AnotherString.ShouldBe("Foo");
             target2.Inner.String.ShouldBeNull();
         }
@@ -632,7 +632,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var target2 = query.Load<Target>(target.Id);
+            var target2 = await query.LoadAsync<Target>(target.Id);
             target2.NumberArray.Length.ShouldBe(initialCount - 1);
 
             target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.ExceptFirst(child));
@@ -670,7 +670,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var target2 = query.Load<Target>(target.Id);
+            var target2 = await query.LoadAsync<Target>(target.Id);
             target2.NumberArray.Length.ShouldBe(initialCount - occurances);
 
             target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.Except(new[] { child }));
@@ -697,7 +697,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var target2 = query.Load<Target>(target.Id);
+            var target2 = await query.LoadAsync<Target>(target.Id);
             target2.Children.Length.ShouldBe(initialCount - 1);
 
             target2.Children.ShouldNotContain(t => t.Id == child.Id);
@@ -720,7 +720,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var result = query.Load<Target>(target.Id);
+            var result = await query.LoadAsync<Target>(target.Id);
 
             result.String.ShouldBeNull();
         }
@@ -740,7 +740,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var result = query.Load<Target>(target.Id);
+            var result = await query.LoadAsync<Target>(target.Id);
 
             result.Inner.String.ShouldBeNull();
         }
@@ -760,7 +760,7 @@ public class patching_api: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var result = query.Load<Target>(target.Id);
+            var result = await query.LoadAsync<Target>(target.Id);
 
             result.Inner.ShouldBeNull();
         }

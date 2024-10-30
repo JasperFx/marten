@@ -42,20 +42,20 @@ public class inline_aggregation_with_non_public_setter: OneOffConfigurationsCont
     }
 
     [Fact]
-    public void run_inline_aggregation_with_private_id_setter()
+    public Task run_inline_aggregation_with_private_id_setter()
     {
-        VerifyProjection<QuestMonstersWithPrivateIdSetter>();
+        return VerifyProjection<QuestMonstersWithPrivateIdSetter>();
     }
 
     [Fact]
-    public void run_inline_aggregation_with_protected_id_setter()
+    public Task run_inline_aggregation_with_protected_id_setter()
     {
-        VerifyProjection<QuestMonstersWithProtectedIdSetter>();
+        return VerifyProjection<QuestMonstersWithProtectedIdSetter>();
     }
 
-    private void VerifyProjection<T>() where T : IMonstersView
+    private async Task VerifyProjection<T>() where T : IMonstersView
     {
-        var loadedView = theSession.Load<T>(streamId);
+        var loadedView = await theSession.LoadAsync<T>(streamId);
 
         loadedView.Id.ShouldBe(streamId);
         loadedView.Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");

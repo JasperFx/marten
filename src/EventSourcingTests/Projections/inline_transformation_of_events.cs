@@ -77,11 +77,11 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
 
         monsterEvents.Length.ShouldBe(2); // precondition
 
-        monsterEvents.Each(e =>
+        foreach (var e in monsterEvents)
         {
-            var doc = theSession.Load<MonsterDefeated>(e.Id);
+            var doc = await theSession.LoadAsync<MonsterDefeated>(e.Id);
             doc.Monster.ShouldBe(e.Data.Name);
-        });
+        }
     }
 
     [Fact]
@@ -103,11 +103,11 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
 
         monsterEvents.Length.ShouldBe(2); // precondition
 
-        monsterEvents.Each(e =>
+        foreach (var e in monsterEvents)
         {
-            var doc = theSession.Load<MonsterDefeated>(e.Id);
+            var doc = await theSession.LoadAsync<MonsterDefeated>(e.Id);
             doc.Monster.ShouldBe(e.Data.Name);
-        });
+        }
     }
 
     [Fact]

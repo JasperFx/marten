@@ -65,7 +65,7 @@ public class Bug_1173_patch_typenamehandling_bug: BugIntegrationContext
 
         using (var session = store.LightweightSession())
         {
-            var result = session.Json.FindById<PatchTypeA>("1");
+            var result = await session.Json.FindByIdAsync<PatchTypeA>("1");
             var expected = "{\"Id\": \"1\", \"$type\": \"PatchingTests.Patching.PatchTypeA, PatchingTests\", \"TypeB\": {\"Name\": \"test2\", \"$type\": \"PatchingTests.Patching.PatchTypeB, PatchingTests\"}}";
             Assert.Equal(expected, result);
         }

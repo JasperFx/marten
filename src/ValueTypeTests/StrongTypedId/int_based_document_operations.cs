@@ -74,7 +74,7 @@ public class int_based_document_operations : IAsyncLifetime
     }
 
     [Fact]
-    public void bulk_writing_sync()
+    public async Task bulk_writing_sync()
     {
         Order2[] invoices = [
             new Order2{Name = Guid.NewGuid().ToString()},
@@ -84,7 +84,7 @@ public class int_based_document_operations : IAsyncLifetime
             new Order2{Name = Guid.NewGuid().ToString()}
         ];
 
-        theStore.BulkInsertDocuments(invoices);
+        await theStore.BulkInsertDocumentsAsync(invoices);
     }
 
     [Fact]
@@ -342,7 +342,7 @@ public class int_based_document_operations_with_non_nullable_id : IAsyncLifetime
     }
 
     [Fact]
-    public void bulk_writing_sync()
+    public async Task bulk_writing_sync()
     {
         Order3[] invoices = [
             new Order3{Name = Guid.NewGuid().ToString()},
@@ -352,7 +352,7 @@ public class int_based_document_operations_with_non_nullable_id : IAsyncLifetime
             new Order3{Name = Guid.NewGuid().ToString()}
         ];
 
-        theStore.BulkInsertDocuments(invoices);
+        await theStore.BulkInsertDocumentsAsync(invoices);
     }
 
     [Fact]

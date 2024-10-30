@@ -52,14 +52,14 @@ public class Bug_276_Query_by_abstract_type_in_hierarchy: BugIntegrationContext
             session.Store(activity);
             await session.SaveChangesAsync();
 
-            session.Load<Activity>(activity.Id).ShouldBeSameAs(activity);
-            session.Load<StatusActivity>(activity.Id).ShouldBeSameAs(activity);
+            (await session.LoadAsync<Activity>(activity.Id)).ShouldBeSameAs(activity);
+            (await session.LoadAsync<StatusActivity>(activity.Id)).ShouldBeSameAs(activity);
         }
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<Activity>(activity.Id).ShouldNotBeNull().ShouldNotBeSameAs(activity);
-            session.Load<StatusActivity>(activity.Id).ShouldNotBeNull().ShouldNotBeSameAs(activity);
+            (await session.LoadAsync<Activity>(activity.Id)).ShouldNotBeNull().ShouldNotBeSameAs(activity);
+            (await session.LoadAsync<StatusActivity>(activity.Id)).ShouldNotBeNull().ShouldNotBeSameAs(activity);
         }
     }
 }

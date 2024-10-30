@@ -58,7 +58,7 @@ public class compiled_query_problem_with_includes_and_ICompiledQuery_reuse: Inte
         using (var session = theStore.QuerySession())
         {
             var query = new IssueWithUsers();
-            var issues = session.Query(query).ToArray();
+            var issues = await session.QueryAsync(query);
 
             query.Users.Count.ShouldBe(2);
             issues.Count().ShouldBe(3);
@@ -71,7 +71,7 @@ public class compiled_query_problem_with_includes_and_ICompiledQuery_reuse: Inte
         using (var session = theStore.QuerySession())
         {
             var query = new IssueWithUsers();
-            var issues = session.Query(query).ToArray();
+            var issues = await session.QueryAsync(query);
 
             // Should populate this instance of IssueWithUsers
             query.Users.ShouldNotBeNull();
@@ -101,7 +101,7 @@ public class compiled_query_problem_with_includes_and_ICompiledQuery_reuse: Inte
         using var session = theStore.QuerySession();
 
         var issuesWithUsersQry1 = new IssueWithUsersAndParam { UserId = user1.Id};
-        var issues1 = session.Query(issuesWithUsersQry1).ToArray();
+        var issues1 = await session.QueryAsync(issuesWithUsersQry1);
         issuesWithUsersQry1.Users.Count.ShouldBe(1);
         issues1.Count().ShouldBe(1);
         issuesWithUsersQry1.Users.Any(x => x.Id == user1.Id).ShouldBeTrue();
@@ -109,7 +109,7 @@ public class compiled_query_problem_with_includes_and_ICompiledQuery_reuse: Inte
 
         // query using another instance of compiled query `IssueWithUsers`
         var issuesWithUsersQry2 = new IssueWithUsersAndParam { UserId = user2.Id};
-        var issues2 = session.Query(issuesWithUsersQry2).ToArray();
+        var issues2 = await session.QueryAsync(issuesWithUsersQry2);
         issuesWithUsersQry2.Users.Count.ShouldBe(1);
         issues2.Count().ShouldBe(2);
         issuesWithUsersQry2.Users.Any(x => x.Id == user2.Id).ShouldBeTrue();

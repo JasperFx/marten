@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;
@@ -5,14 +6,13 @@ using Xunit.Abstractions;
 
 namespace LinqTests.Acceptance.Support;
 
-public class DefaultQueryFixture: TargetSchemaFixture
+public class DefaultQueryFixture: TargetSchemaFixture, IAsyncLifetime
 {
-    public DefaultQueryFixture()
+    public async Task InitializeAsync()
     {
-        Store = ProvisionStore("linq_querying");
+        Store = await ProvisionStore("linq_querying");
 
-
-        DuplicatedFieldStore = ProvisionStore("duplicate_fields", o =>
+        DuplicatedFieldStore = await ProvisionStore("duplicate_fields", o =>
         {
             o.Schema.For<Target>()
                 .Duplicate(x => x.Number)
@@ -25,10 +25,15 @@ public class DefaultQueryFixture: TargetSchemaFixture
                 .Duplicate(x => x.NumberArray);
         });
 
-        SystemTextJsonStore = ProvisionStore("stj_linq", o =>
+        SystemTextJsonStore = await ProvisionStore("stj_linq", o =>
         {
             o.Serializer<SystemTextJsonSerializer>();
         });
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
     }
 
     public DocumentStore SystemTextJsonStore { get; set; }

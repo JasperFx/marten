@@ -79,16 +79,6 @@ public class compiled_queries: IntegrationContext
     }
 
     [Fact]
-    public void can_explain_the_plan_for_a_compiled_query()
-    {
-        var query = new UserByUsername { UserName = "hank" };
-
-        var plan = theStore.Diagnostics.ExplainPlan(query);
-
-        plan.ShouldNotBeNull();
-    }
-
-    [Fact]
     public async Task can_explain_the_plan_for_a_compiled_query_async()
     {
         var query = new UserByUsername { UserName = "hank" };
@@ -100,32 +90,32 @@ public class compiled_queries: IntegrationContext
 
     [Theory]
     [SessionTypes]
-    public void a_single_item_compiled_query(DocumentTracking tracking)
+    public async Task a_single_item_compiled_query(DocumentTracking tracking)
     {
         using var session = OpenSession(tracking);
 
-        var user = theSession.Query(new UserByUsername { UserName = "myusername" });
+        var user = await theSession.QueryAsync(new UserByUsername { UserName = "myusername" });
         user.ShouldNotBeNull();
-        var differentUser = theSession.Query(new UserByUsername { UserName = "jdm" });
+        var differentUser = await theSession.QueryAsync(new UserByUsername { UserName = "jdm" });
         differentUser.UserName.ShouldBe("jdm");
     }
 
     [Fact]
-    public void a_single_item_compiled_query_with_fields()
+    public async Task a_single_item_compiled_query_with_fields()
     {
-        var user = theSession.Query(new UserByUsernameWithFields { UserName = "myusername" });
+        var user = await theSession.QueryAsync(new UserByUsernameWithFields { UserName = "myusername" });
         user.ShouldNotBeNull();
-        var differentUser = theSession.Query(new UserByUsernameWithFields { UserName = "jdm" });
+        var differentUser = await theSession.QueryAsync(new UserByUsernameWithFields { UserName = "jdm" });
         differentUser.UserName.ShouldBe("jdm");
     }
 
     [Fact]
-    public void a_single_item_compiled_query_SingleOrDefault()
+    public async Task a_single_item_compiled_query_SingleOrDefault()
     {
-        var user = theSession.Query(new UserByUsernameSingleOrDefault() { UserName = "myusername" });
+        var user = await theSession.QueryAsync(new UserByUsernameSingleOrDefault() { UserName = "myusername" });
         user.ShouldNotBeNull();
 
-        theSession.Query(new UserByUsernameSingleOrDefault() { UserName = "nonexistent" }).ShouldBeNull();
+        (await theSession.QueryAsync(new UserByUsernameSingleOrDefault() { UserName = "nonexistent" })).ShouldBeNull();
     }
 
     [Fact]
@@ -137,15 +127,15 @@ public class compiled_queries: IntegrationContext
     }
 
     [Fact]
-    public void several_parameters_for_compiled_query()
+    public async Task several_parameters_for_compiled_query()
     {
-        var user = theSession.Query(new FindUserByAllTheThings
+        var user = await theSession.QueryAsync(new FindUserByAllTheThings
         {
             Username = "jdm", FirstName = "Jeremy", LastName = "Miller"
         });
         user.ShouldNotBeNull();
         user.UserName.ShouldBe("jdm");
-        user = theSession.Query(new FindUserByAllTheThings
+        user = await theSession.QueryAsync(new FindUserByAllTheThings
         {
             Username = "shadetreedev", FirstName = "Jeremy", LastName = "Miller"
         });
@@ -209,37 +199,37 @@ public class compiled_queries: IntegrationContext
     }
 
     [Fact]
-    public void a_list_query_compiled()
+    public async Task a_list_query_compiled()
     {
-        var users = theSession.Query(new UsersByFirstName { FirstName = "Jeremy" }).ToList();
-        users.Count.ShouldBe(2);
+        var users = await theSession.QueryAsync(new UsersByFirstName { FirstName = "Jeremy" });
+        users.Count().ShouldBe(2);
         users.ElementAt(0).UserName.ShouldBe("jdm");
         users.ElementAt(1).UserName.ShouldBe("shadetreedev");
-        var differentUsers = theSession.Query(new UsersByFirstName { FirstName = "Jeremy" });
+        var differentUsers = await theSession.QueryAsync(new UsersByFirstName { FirstName = "Jeremy" });
         differentUsers.Count().ShouldBe(2);
     }
 
     [Fact]
-    public void a_list_query_with_fields_compiled_from_QuerySession()
+    public async Task a_list_query_with_fields_compiled_from_QuerySession()
     {
         using var query = theStore.QuerySession();
 
-        var users = query.Query(new UsersByFirstNameWithFields { FirstName = "Jeremy" }).ToList();
-        users.Count.ShouldBe(2);
+        var users = await query.QueryAsync(new UsersByFirstNameWithFields { FirstName = "Jeremy" });
+        users.Count().ShouldBe(2);
         users.ElementAt(0).UserName.ShouldBe("jdm");
         users.ElementAt(1).UserName.ShouldBe("shadetreedev");
-        var differentUsers = theSession.Query(new UsersByFirstNameWithFields { FirstName = "Jeremy" });
+        var differentUsers = await theSession.QueryAsync(new UsersByFirstNameWithFields { FirstName = "Jeremy" });
         differentUsers.Count().ShouldBe(2);
     }
 
     [Fact]
-    public void a_list_query_with_fields_compiled_2()
+    public async Task a_list_query_with_fields_compiled_2()
     {
-        var users = theSession.Query(new UsersByFirstNameWithFields { FirstName = "Jeremy" }).ToList();
-        users.Count.ShouldBe(2);
+        var users = await theSession.QueryAsync(new UsersByFirstNameWithFields { FirstName = "Jeremy" });
+        users.Count().ShouldBe(2);
         users.ElementAt(0).UserName.ShouldBe("jdm");
         users.ElementAt(1).UserName.ShouldBe("shadetreedev");
-        var differentUsers = theSession.Query(new UsersByFirstNameWithFields { FirstName = "Jeremy" });
+        var differentUsers = await theSession.QueryAsync(new UsersByFirstNameWithFields { FirstName = "Jeremy" });
         differentUsers.Count().ShouldBe(2);
     }
 
@@ -285,21 +275,21 @@ public class compiled_queries: IntegrationContext
     }
 
     [Fact]
-    public void count_query_compiled()
+    public async Task count_query_compiled()
     {
-        var userCount = theSession.Query(new UserCountByFirstName { FirstName = "Jeremy" });
+        var userCount = await theSession.QueryAsync(new UserCountByFirstName { FirstName = "Jeremy" });
         userCount.ShouldBe(2);
-        userCount = theSession.Query(new UserCountByFirstName { FirstName = "Corey" });
+        userCount = await theSession.QueryAsync(new UserCountByFirstName { FirstName = "Corey" });
         userCount.ShouldBe(1);
     }
 
     [Fact]
-    public void projection_query_compiled()
+    public async Task projection_query_compiled()
     {
-        var user = theSession.Query(new UserProjectionToLoginPayload { UserName = "jdm" });
+        var user = await theSession.QueryAsync(new UserProjectionToLoginPayload { UserName = "jdm" });
         user.ShouldNotBeNull();
         user.Username.ShouldBe("jdm");
-        user = theSession.Query(new UserProjectionToLoginPayload { UserName = "shadetreedev" });
+        user = await theSession.QueryAsync(new UserProjectionToLoginPayload { UserName = "shadetreedev" });
         user.ShouldNotBeNull();
         user.Username.ShouldBe("shadetreedev");
     }
@@ -334,7 +324,7 @@ public class compiled_queries: IntegrationContext
         asyncR2.ShouldBeTrue();
 
         var q = new TestQuery() { Age = 6 };
-        var queryAsync = theSession.Query(q); // theSession.QueryAsync(q, default) will fail also!
+        var queryAsync = await theSession.QueryAsync(q); // theSession.QueryAsync(q, default) will fail also!
         queryAsync.ShouldBeFalse();
     }
 
@@ -349,7 +339,7 @@ public class compiled_queries: IntegrationContext
         await theSession.SaveChangesAsync();
 
         await using var query = theStore.QuerySession();
-        var actual = query.Query(new GuidContainsQuery { Guid = guid });
+        var actual = await query.QueryAsync(new GuidContainsQuery { Guid = guid });
 
         Assert.Contains(guid, actual.GuidList);
     }

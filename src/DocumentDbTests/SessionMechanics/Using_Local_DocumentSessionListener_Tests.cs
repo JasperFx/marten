@@ -31,7 +31,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
             #endregion
 
         {
-            store.Advanced.Clean.CompletelyRemoveAll();
+            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
@@ -78,62 +78,59 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
     }
 
     [Fact]
-    public void call_listener_events_on_document_store()
+    public async Task call_listener_events_on_document_store()
     {
         var stub1 = new StubDocumentSessionListener();
         var stub2 = new StubDocumentSessionListener();
 
-        using (var store = SeparateStore(_ =>
-               {
-                   _.Connection(ConnectionSource.ConnectionString);
-                   _.AutoCreateSchemaObjects = AutoCreate.All;
-               }))
+        await using var store = SeparateStore(opts =>
         {
-            store.Advanced.Clean.CompletelyRemoveAll();
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.AutoCreateSchemaObjects = AutoCreate.All;
+        });
 
-            using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
-            {
-                var user1 = new User { Id = Guid.NewGuid() };
-                var user2 = new User { Id = Guid.NewGuid() };
+        await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
-                session.Store(user1, user2);
+        using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
+        {
+            var user1 = new User { Id = Guid.NewGuid() };
+            var user2 = new User { Id = Guid.NewGuid() };
 
-                stub1.StoredDocuments.ShouldContainKeyAndValue(user1.Id, user1);
-                stub1.StoredDocuments.ShouldContainKeyAndValue(user2.Id, user2);
+            session.Store(user1, user2);
 
-                stub2.StoredDocuments.ShouldContainKeyAndValue(user1.Id, user1);
-                stub2.StoredDocuments.ShouldContainKeyAndValue(user2.Id, user2);
-            }
+            stub1.StoredDocuments.ShouldContainKeyAndValue(user1.Id, user1);
+            stub1.StoredDocuments.ShouldContainKeyAndValue(user2.Id, user2);
+
+            stub2.StoredDocuments.ShouldContainKeyAndValue(user1.Id, user1);
+            stub2.StoredDocuments.ShouldContainKeyAndValue(user2.Id, user2);
         }
     }
 
     [Fact]
-    public void call_listener_events_on_document_store_objects()
+    public async Task call_listener_events_on_document_store_objects()
     {
         var stub1 = new StubDocumentSessionListener();
         var stub2 = new StubDocumentSessionListener();
 
-        using (var store = SeparateStore(_ =>
-               {
-                   _.Connection(ConnectionSource.ConnectionString);
-                   _.AutoCreateSchemaObjects = AutoCreate.All;
-               }))
+        using var store = SeparateStore(_ =>
         {
-            store.Advanced.Clean.CompletelyRemoveAll();
+            _.Connection(ConnectionSource.ConnectionString);
+            _.AutoCreateSchemaObjects = AutoCreate.All;
+        });
+        await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
-            using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
-            {
-                var user1 = new User { Id = Guid.NewGuid() };
-                var user2 = new User { Id = Guid.NewGuid() };
+        using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
+        {
+            var user1 = new User { Id = Guid.NewGuid() };
+            var user2 = new User { Id = Guid.NewGuid() };
 
-                session.StoreObjects(new[] { user1, user2 });
+            session.StoreObjects(new[] { user1, user2 });
 
-                stub1.StoredDocuments.ShouldContainKeyAndValue(user1.Id, user1);
-                stub1.StoredDocuments.ShouldContainKeyAndValue(user2.Id, user2);
+            stub1.StoredDocuments.ShouldContainKeyAndValue(user1.Id, user1);
+            stub1.StoredDocuments.ShouldContainKeyAndValue(user2.Id, user2);
 
-                stub2.StoredDocuments.ShouldContainKeyAndValue(user1.Id, user1);
-                stub2.StoredDocuments.ShouldContainKeyAndValue(user2.Id, user2);
-            }
+            stub2.StoredDocuments.ShouldContainKeyAndValue(user1.Id, user1);
+            stub2.StoredDocuments.ShouldContainKeyAndValue(user2.Id, user2);
         }
     }
 
@@ -149,7 +146,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
                    _.AutoCreateSchemaObjects = AutoCreate.All;
                }))
         {
-            store.Advanced.Clean.CompletelyRemoveAll();
+            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
@@ -162,7 +159,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
 
             using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
-                var user = session.Load<User>(user1.Id);
+                var user = await session.LoadAsync<User>(user1.Id);
 
                 stub1.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, user);
                 stub2.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, user);
@@ -182,7 +179,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
                    _.AutoCreateSchemaObjects = AutoCreate.All;
                }))
         {
-            store.Advanced.Clean.CompletelyRemoveAll();
+            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
@@ -211,7 +208,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
     }
 
     [Fact]
-    public void call_listener_events_on_document_store_and_dirty_tracking_session()
+    public async Task call_listener_events_on_document_store_and_dirty_tracking_session()
     {
         var stub1 = new StubDocumentSessionListener();
         var stub2 = new StubDocumentSessionListener();
@@ -222,7 +219,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
                    _.AutoCreateSchemaObjects = AutoCreate.All;
                }))
         {
-            store.Advanced.Clean.CompletelyRemoveAll();
+            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             using (var session = store.DirtyTrackedSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
@@ -241,7 +238,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
     }
 
     [Fact]
-    public void call_listener_events_on_document_store_objects_and_dirty_tracking_session()
+    public async Task call_listener_events_on_document_store_objects_and_dirty_tracking_session()
     {
         var stub1 = new StubDocumentSessionListener();
         var stub2 = new StubDocumentSessionListener();
@@ -252,7 +249,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
                    _.AutoCreateSchemaObjects = AutoCreate.All;
                }))
         {
-            store.Advanced.Clean.CompletelyRemoveAll();
+            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             using (var session = store.DirtyTrackedSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
@@ -282,7 +279,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
                    _.AutoCreateSchemaObjects = AutoCreate.All;
                }))
         {
-            store.Advanced.Clean.CompletelyRemoveAll();
+            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
@@ -295,7 +292,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
 
             using (var session = store.DirtyTrackedSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
-                var user = session.Load<User>(user1.Id);
+                var user = await session.LoadAsync<User>(user1.Id);
 
                 stub1.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, user);
                 stub2.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, user);
@@ -315,7 +312,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
                    _.AutoCreateSchemaObjects = AutoCreate.All;
                }))
         {
-            store.Advanced.Clean.CompletelyRemoveAll();
+            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };

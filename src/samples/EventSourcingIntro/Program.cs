@@ -135,7 +135,7 @@ public class WarehouseProductHandler
     {
         await using var session = documentStore.LightweightSession();
 
-        var warehouseProduct = session.Events.AggregateStream<WarehouseProductWriteModel>(id);
+        var warehouseProduct = await session.Events.AggregateStreamAsync<WarehouseProductWriteModel>(id);
 
         if (quantity > warehouseProduct?.QuantityOnHand)
         {
@@ -158,7 +158,7 @@ public class WarehouseProductHandler
     {
         using var session = documentStore.LightweightSession();
 
-        var warehouseProduct = session.Events.AggregateStream<WarehouseProductWriteModel>(id);
+        var warehouseProduct = await session.Events.AggregateStreamAsync<WarehouseProductWriteModel>(id);
 
         if (warehouseProduct?.QuantityOnHand + quantity < 0)
         {

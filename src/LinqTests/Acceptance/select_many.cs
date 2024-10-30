@@ -310,7 +310,7 @@ public class select_many : IntegrationContext
     [Fact]
     public async Task select_many_with_any_async()
     {
-        theStore.Advanced.Clean.DeleteDocumentsByType(typeof(Target));
+        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
 
         var product1 = new Product {Tags = new[] {"a", "b", "c"}};
         var product2 = new Product {Tags = new[] {"b", "c", "d"}};
@@ -338,10 +338,10 @@ public class select_many : IntegrationContext
 
 
     [Fact]
-    public void select_many_with_chained_where()
+    public async Task select_many_with_chained_where()
     {
         var targets = Target.GenerateRandomData(1000).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         using var query = theStore.QuerySession();
         var expected = targets.SelectMany(x => x.Children).Where(x => x.Flag).Select(x => x.Id).OrderBy(x => x).ToList();
@@ -353,10 +353,10 @@ public class select_many : IntegrationContext
     }
 
     [Fact]
-    public void select_many_with_chained_where_and_order()
+    public async Task select_many_with_chained_where_and_order()
     {
         var targets = Target.GenerateRandomData(1000).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         using var query = theStore.QuerySession();
         var expected = targets.SelectMany(x => x.Children).Where(x => x.Flag).Select(x => x.Id).OrderBy(x => x).ToList();
@@ -368,10 +368,10 @@ public class select_many : IntegrationContext
     }
 
     [Fact]
-    public void select_many_with_chained_where_and_order_and_skip_and_take()
+    public async Task select_many_with_chained_where_and_order_and_skip_and_take()
     {
         var targets = Target.GenerateRandomData(1000).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         using var query = theStore.QuerySession();
         var expected = targets
@@ -402,10 +402,10 @@ public class select_many : IntegrationContext
 
 
     [Fact]
-    public void select_many_with_stats()
+    public async Task select_many_with_stats()
     {
         var targets = Target.GenerateRandomData(1000).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         using var query = theStore.LightweightSession();
         QueryStatistics stats;
@@ -426,13 +426,13 @@ public class select_many : IntegrationContext
     }
 
     [Fact]
-    public void select_many_with_includes()
+    public async Task select_many_with_includes()
     {
         var user1 = new User();
         var user2 = new User();
         var user3 = new User();
 
-        theStore.BulkInsert(new [] {user1, user2, user3});
+        await theStore.BulkInsertAsync(new [] {user1, user2, user3});
 
         var targets = Target.GenerateRandomData(1000).ToArray();
 
@@ -449,7 +449,7 @@ public class select_many : IntegrationContext
             }
         }
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         using var query = theStore.LightweightSession();
         var dict = new Dictionary<Guid, User>();
@@ -508,10 +508,10 @@ public class select_many : IntegrationContext
     }
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void select_many_with_select_transformation()
+    public async Task select_many_with_select_transformation()
     {
         var targets = Target.GenerateRandomData(100).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         using var query = theStore.QuerySession();
         var actual = query.Query<Target>()

@@ -73,15 +73,6 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     string TenantId { get; }
 
     /// <summary>
-    ///     Find or load a single document of type T by a string id
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="id"></param>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    T? Load<T>(string id) where T : notnull;
-
-    /// <summary>
     ///     Asynchronously find or load a single document of type T by a string id
     /// </summary>
     /// <typeparam name="T"></typeparam>
@@ -98,33 +89,6 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <param name="token"></param>
     /// <returns></returns>
     Task<T?> LoadAsync<T>(object id, CancellationToken token = default) where T : notnull;
-
-    /// <summary>
-    ///     Load or find a single document of type T with either a numeric or Guid id
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="id"></param>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    T? Load<T>(int id) where T : notnull;
-
-    /// <summary>
-    ///     Load or find a single document of type T with either a numeric or Guid id
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="id"></param>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    T? Load<T>(long id) where T : notnull;
-
-    /// <summary>
-    ///     Load or find a single document of type T with either a numeric or Guid id
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="id"></param>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    T? Load<T>(Guid id) where T : notnull;
 
     /// <summary>
     ///     Asynchronously load or find a single document of type T with either a numeric or Guid id
@@ -319,16 +283,6 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     IBatchedQuery CreateBatchQuery();
 
     /// <summary>
-    ///     A query that is compiled so a copy of the DbCommand can be used directly in subsequent requests.
-    /// </summary>
-    /// <typeparam name="TDoc">The document</typeparam>
-    /// <typeparam name="TOut">The output</typeparam>
-    /// <param name="query">The instance of a compiled query</param>
-    /// <returns>A single item query result</returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    TOut Query<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query);
-
-    /// <summary>
     ///     An async query that is compiled so a copy of the DbCommand can be used directly in subsequent requests.
     /// </summary>
     /// <typeparam name="TDoc">The document</typeparam>
@@ -381,70 +335,6 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <typeparam name="TOut"></typeparam>
     /// <returns></returns>
     Task<string> ToJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default);
-
-    /// <summary>
-    ///     Load or find multiple documents by id
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    IReadOnlyList<T> LoadMany<T>(params string[] ids) where T : notnull;
-
-    /// <summary>
-    ///     Load or find multiple documents by id
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    IReadOnlyList<T> LoadMany<T>(IEnumerable<string> ids) where T : notnull;
-
-    /// <summary>
-    ///     Load or find multiple documents by id
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    IReadOnlyList<T> LoadMany<T>(params Guid[] ids) where T : notnull;
-
-    /// <summary>
-    ///     Load or find multiple documents by id
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    IReadOnlyList<T> LoadMany<T>(IEnumerable<Guid> ids) where T : notnull;
-
-    /// <summary>
-    ///     Load or find multiple documents by id
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    IReadOnlyList<T> LoadMany<T>(params int[] ids) where T : notnull;
-
-    /// <summary>
-    ///     Load or find multiple documents by id
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    IReadOnlyList<T> LoadMany<T>(IEnumerable<int> ids) where T : notnull;
-
-    /// <summary>
-    ///     Load or find multiple documents by id
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    IReadOnlyList<T> LoadMany<T>(params long[] ids) where T : notnull;
-
-    /// <summary>
-    ///     Load or find multiple documents by id
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    IReadOnlyList<T> LoadMany<T>(IEnumerable<long> ids) where T : notnull;
 
     /// <summary>
     ///     Load or find multiple documents by id
@@ -568,20 +458,6 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     Guid? VersionFor<TDoc>(TDoc entity) where TDoc : notnull;
 
     /// <summary>
-    ///     Performs a full text search against <typeparamref name="TDoc" />
-    /// </summary>
-    /// <param name="queryText">The text to search for.  May contain lexeme patterns used by PostgreSQL for full text searching</param>
-    /// <param name="regConfig">
-    ///     The dictionary config passed to the 'to_tsquery' function, must match the config parameter used
-    ///     by <seealso cref="DocumentMapping.AddFullTextIndex(string)" />
-    /// </param>
-    /// <remarks>
-    ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
-    /// </remarks>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    IReadOnlyList<TDoc> Search<TDoc>(string queryText, string regConfig = FullTextIndexDefinition.DefaultRegConfig);
-
-    /// <summary>
     ///     Performs an asynchronous full text search against <typeparamref name="TDoc" />
     /// </summary>
     /// <param name="queryText">The text to search for.  May contain lexeme patterns used by PostgreSQL for full text searching</param>
@@ -691,15 +567,6 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     Task<IReadOnlyList<TDoc>> WebStyleSearchAsync<TDoc>(string searchTerm,
         string regConfig = FullTextIndexDefinition.DefaultRegConfig, CancellationToken token = default);
 
-
-    /// <summary>
-    ///     Fetch the entity version and last modified time from the database
-    /// </summary>
-    /// <param name="entity"></param>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    DocumentMetadata? MetadataFor<T>(T entity) where T : notnull;
-
     /// <summary>
     ///     Fetch the entity version and last modified time from the database
     /// </summary>
@@ -722,7 +589,6 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="cmd"></param>
     /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
     int Execute(NpgsqlCommand cmd);
 
     /// <summary>
@@ -738,7 +604,6 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="command"></param>
     /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
     DbDataReader ExecuteReader(NpgsqlCommand command);
 
     /// <summary>

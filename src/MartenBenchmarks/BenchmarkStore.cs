@@ -19,7 +19,7 @@ public static class BenchmarkStore
             _.Events.AddEventType(typeof(Commit));
         });
 
-        Store.Advanced.Clean.CompletelyRemoveAll();
+        Store.Advanced.Clean.CompletelyRemoveAllAsync().GetAwaiter().GetResult();
         Store.Storage.ApplyAllConfiguredChangesToDatabaseAsync().GetAwaiter().GetResult();
     }
 }

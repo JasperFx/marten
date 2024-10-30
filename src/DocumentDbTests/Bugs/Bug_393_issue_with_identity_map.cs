@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Schema.Identity;
 using Marten.Testing.Harness;
 using Xunit;
@@ -9,18 +10,18 @@ namespace DocumentDbTests.Bugs;
 public class Bug_393_issue_with_identity_map: IntegrationContext
 {
     [Fact]
-    public void load_non_existing_with_a_store_should_return_new_added_document()
+    public async Task load_non_existing_with_a_store_should_return_new_added_document()
     {
         var routeId = CombGuidIdGeneration.NewGuid();
 
         using var session = theStore.IdentitySession();
-        var details = session.Load<RouteDetails>(routeId);
+        var details = await session.LoadAsync<RouteDetails>(routeId);
         details.ShouldBeNull();
 
         var routeDetails = new RouteDetails { Id = routeId };
         session.Store(routeDetails);
 
-        details = session.Load<RouteDetails>(routeId); // this was always null
+        details = await session.LoadAsync<RouteDetails>(routeId); // this was always null
 
         details.ShouldBeSameAs(routeDetails);
     }
@@ -33,18 +34,18 @@ public class Bug_393_issue_with_identity_map: IntegrationContext
 public class Bug_393_issue_with_dirty_tracking_identity_map: IntegrationContext
 {
     [Fact]
-    public void load_non_existing_with_a_store_should_return_new_added_document()
+    public async Task load_non_existing_with_a_store_should_return_new_added_document()
     {
         var routeId = CombGuidIdGeneration.NewGuid();
 
         using var session = theStore.DirtyTrackedSession();
-        var details = session.Load<RouteDetails>(routeId);
+        var details = await session.LoadAsync<RouteDetails>(routeId);
         details.ShouldBeNull();
 
         var routeDetails = new RouteDetails { Id = routeId };
         session.Store(routeDetails);
 
-        details = session.Load<RouteDetails>(routeId);
+        details = await session.LoadAsync<RouteDetails>(routeId);
 
         details.ShouldBeSameAs(routeDetails);
     }

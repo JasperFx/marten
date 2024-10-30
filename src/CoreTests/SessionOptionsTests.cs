@@ -168,19 +168,19 @@ public class SessionOptionsTests: OneOffConfigurationsContext
 
 
     [Fact]
-    public void can_define_custom_timeout()
+    public async Task can_define_custom_timeout()
     {
         // TODO -- do this without the Preview command. Check against the session itself
         var options = new SessionOptions { Timeout = 15 };
 
         using var query = theStore.QuerySession(options);
-        var cmd = query.Query<FryGuy>().Explain();
+        var cmd = await query.Query<FryGuy>().ExplainAsync();
 
         Assert.Equal(15, cmd.Command.CommandTimeout);
     }
 
     [Fact]
-    public void can_define_custom_timeout_via_pgcstring()
+    public async Task can_define_custom_timeout_via_pgcstring()
     {
         var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
@@ -192,14 +192,13 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         });
 
         using var query = documentStore.LightweightSession();
-        var cmd = query.Query<FryGuy>().Explain();
+        var cmd = await query.Query<FryGuy>().ExplainAsync();
         Assert.Equal(1, cmd.Command.CommandTimeout);
         Assert.Equal(1, query.Connection?.CommandTimeout);
     }
 
     [Fact]
-    [Obsolete("Obsolete")]
-    public void can_override_pgcstring_timeout_in_sessionoptions()
+    public async Task can_override_pgcstring_timeout_in_sessionoptions()
     {
         var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
@@ -213,7 +212,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         var options = new SessionOptions { Timeout = 60 };
 
         using var query = documentStore.QuerySession(options);
-        var cmd = query.Query<FryGuy>().Explain();
+        var cmd = await query.Query<FryGuy>().ExplainAsync();
         Assert.Equal(60, cmd.Command.CommandTimeout);
         Assert.Equal(1, query.Connection?.CommandTimeout);
     }

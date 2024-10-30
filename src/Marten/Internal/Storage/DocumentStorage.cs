@@ -349,7 +349,6 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         return _defaultWhere;
     }
 
-    public abstract T? Load(TId id, IMartenSession session);
     public abstract Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);
 
     public abstract IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session);

@@ -17,7 +17,7 @@ public class projection_progression_operations : OneOffConfigurationsContext
 {
     public projection_progression_operations()
     {
-        theStore.Advanced.Clean.DeleteAllEventData();
+        theStore.Advanced.Clean.DeleteAllEventDataAsync().GetAwaiter().GetResult();
         theStore.EnsureStorageExists(typeof(IEvent));
     }
 

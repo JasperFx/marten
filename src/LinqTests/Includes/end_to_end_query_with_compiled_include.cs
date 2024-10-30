@@ -30,7 +30,7 @@ public class end_to_end_query_with_compiled_include_Tests: IntegrationContext
 
         using var query = theStore.QuerySession();
         var issueQuery = new IssueByTitleWithAssignee { Title = issue.Title };
-        var issue2 = query.Query(issueQuery);
+        var issue2 = await query.QueryAsync(issueQuery);
 
         issueQuery.Included.ShouldNotBeNull();
         issueQuery.Included.Single().Id.ShouldBe(user.Id);
@@ -86,7 +86,7 @@ public class end_to_end_query_with_compiled_include_Tests: IntegrationContext
         var compiledQuery = new IssueWithUsers();
 
         querySession.Logger = new TestOutputMartenLogger(_output);
-        var issues = querySession.Query(compiledQuery).ToArray();
+        var issues = await querySession.QueryAsync(compiledQuery);
 
         compiledQuery.Users.Count.ShouldBe(2);
         issues.Count().ShouldBe(3);
@@ -129,7 +129,7 @@ public class end_to_end_query_with_compiled_include_Tests: IntegrationContext
         using var querySession = theStore.QuerySession();
         var compiledQuery = new IssueWithUsersById();
 
-        var issues = querySession.Query(compiledQuery).ToArray();
+        var issues = await querySession.QueryAsync(compiledQuery);
 
         issues.ShouldNotBeEmpty();
 

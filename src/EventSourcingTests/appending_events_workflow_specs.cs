@@ -291,7 +291,7 @@ public class appending_events_workflow_specs
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                 });
 
-                store.Advanced.Clean.CompletelyRemoveAll();
+                store.Advanced.Clean.CompletelyRemoveAllAsync().GetAwaiter().GetResult();
 
                 return store;
             });

@@ -201,22 +201,6 @@ public abstract class FlexibleDocumentMetadataContext : OneOffConfigurationsCont
     protected abstract void MetadataIs(MartenRegistry.DocumentMappingExpression<MetadataTarget>.MetadataConfig metadata);
 
     [Fact]
-    public void can_bulk_insert()
-    {
-        var docs = new MetadataTarget[]
-        {
-            new MetadataTarget(),
-            new MetadataTarget(),
-            new MetadataTarget(),
-            new MetadataTarget(),
-            new MetadataTarget(),
-            new MetadataTarget()
-        };
-
-        theStore.BulkInsert(docs);
-    }
-
-    [Fact]
     public async Task can_bulk_insert_async()
     {
         var docs = new MetadataTarget[]

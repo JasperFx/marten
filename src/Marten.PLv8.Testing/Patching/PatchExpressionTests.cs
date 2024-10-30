@@ -51,13 +51,13 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     public async Task Patch_And_Load_Should_Return_Non_Stale_Result()
     {
         var id = Guid.NewGuid();
-        await using (var sess = theStore.LightweightSession())
+        await using (var session = theStore.LightweightSession())
         {
-            sess.Store(new Model() { Id = id, Name = "foo" });
-            sess.Patch<Model>(id).Set(x => x.Name, "bar");
-            await sess.SaveChangesAsync();
-            sess.Query<Model>().Where(x => x.Id == id).Select(x => x.Name).Single().ShouldBe("bar");
-            sess.Load<Model>(id).Name.ShouldBe("bar");
+            session.Store(new Model() { Id = id, Name = "foo" });
+            session.Patch<Model>(id).Set(x => x.Name, "bar");
+            await session.SaveChangesAsync();
+            session.Query<Model>().Where(x => x.Id == id).Select(x => x.Name).Single().ShouldBe("bar");
+            (await session.LoadAsync<Model>(id)).Name.ShouldBe("bar");
         }
     }
 
@@ -523,7 +523,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var group2 = query.Load<ItemGroup>(group.Id);
+            var group2 = await query.LoadAsync<ItemGroup>(group.Id);
 
             group2.Items.Count.ShouldBe(3);
             group2.Items[0].ShouldBeOfType<Item>();
@@ -550,7 +550,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var group2 = query.Load<ItemGroup>(group.Id);
+            var group2 = await query.LoadAsync<ItemGroup>(group.Id);
 
             group2.Items.Count.ShouldBe(2);
             group2.Items[0].ShouldBeOfType<ColoredItem>();
@@ -639,10 +639,10 @@ public class PatchExpressionTests : OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var model1 = query.Load<TestModel7>(model.Id);
+            var model1 = await query.LoadAsync<TestModel7>(model.Id);
             model1!.NullableObjectId.ShouldBe(id);
 
-            var model2 = query.Load<TestModel7>(nullModel.Id);
+            var model2 = await query.LoadAsync<TestModel7>(nullModel.Id);
             Assert.Null(model2!.NullableObjectId);
         }
     }

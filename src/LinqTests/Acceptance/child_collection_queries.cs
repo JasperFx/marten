@@ -79,12 +79,12 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
 
     [Theory]
     [MemberData(nameof(GetDescriptions))]
-    public Task run_query_with_camel_casing(string description)
+    public async Task run_query_with_camel_casing(string description)
     {
-        var store = Fixture.ProvisionStore("linq_with_camel_casing",
+        var store = await Fixture.ProvisionStore("linq_with_camel_casing",
             opts => opts.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
 
-        return assertTestCase(description, store);
+        await assertTestCase(description, store);
     }
 
 

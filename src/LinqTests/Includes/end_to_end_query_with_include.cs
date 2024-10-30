@@ -466,8 +466,8 @@ public class end_to_end_query_with_include: IntegrationContext
 
         query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
 
-        query.Load<User>(user1.Id).ShouldBeSameAs(dict[user1.Id]);
-        query.Load<User>(user2.Id).ShouldBeSameAs(dict[user2.Id]);
+        (await query.LoadAsync<User>(user1.Id)).ShouldBeSameAs(dict[user1.Id]);
+        (await query.LoadAsync<User>(user2.Id)).ShouldBeSameAs(dict[user2.Id]);
     }
 
     #region sample_dictionary_include
@@ -771,7 +771,7 @@ public class end_to_end_query_with_include: IntegrationContext
         var user6 = new User { };
         var user7 = new User { };
 
-        theStore.BulkInsert(new User[] { user1, user2, user3, user4, user5, user6, user7 });
+        await theStore.BulkInsertAsync(new User[] { user1, user2, user3, user4, user5, user6, user7 });
 
         var group1 = new Group { Name = "Odds", Users = new[] { user1.Id, user3.Id, user5.Id, user7.Id } };
 
@@ -900,7 +900,7 @@ public class end_to_end_query_with_include: IntegrationContext
         var user2 = new User();
         var user3 = new User();
 
-        theStore.BulkInsert(new[] { user1, user2, user3 });
+        await theStore.BulkInsertAsync(new[] { user1, user2, user3 });
 
         var group1 = new Group { Name = "Users", Users = new[] { user1.Id, user2.Id, user3.Id } };
         var group2 = new Group { Name = "Empty", Users = new Guid[0] };

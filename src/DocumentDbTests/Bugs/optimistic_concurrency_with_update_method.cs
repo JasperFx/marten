@@ -36,7 +36,7 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
 
         using (var session2 = theStore.LightweightSession())
         {
-            var doc2 = session2.Load<CoffeeShop>(doc1.Id);
+            var doc2 = await session2.LoadAsync<CoffeeShop>(doc1.Id);
             doc2.Name = "Mozart's";
 
             session2.Update(doc2);
@@ -45,7 +45,7 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
 
         using (var session3 = theStore.QuerySession())
         {
-            session3.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Mozart's");
+            (await session3.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Mozart's");
         }
     }
 
@@ -86,7 +86,7 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
 
         using (var session2 = theStore.LightweightSession())
         {
-            var doc2 = session2.Load<CoffeeShop>(doc1.Id);
+            var doc2 = await session2.LoadAsync<CoffeeShop>(doc1.Id);
             doc2.Name = "Mozart's";
 
             // Some random version that won't match
@@ -115,7 +115,7 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
 
         await using (var session2 = theStore.LightweightSession())
         {
-            var doc2 = session2.Load<CoffeeShop>(doc1.Id);
+            var doc2 = await session2.LoadAsync<CoffeeShop>(doc1.Id);
             doc2.Name = "Mozart's";
 
             // Some random version that won't match
@@ -144,7 +144,7 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
 
         await using (var session2 = theStore.OpenSession(new SessionOptions{ConcurrencyChecks = ConcurrencyChecks.Disabled}))
         {
-            var doc2 = session2.Load<CoffeeShop>(doc1.Id);
+            var doc2 = await session2.LoadAsync<CoffeeShop>(doc1.Id);
             doc2.Name = "Mozart's";
 
             // Some random version that won't match

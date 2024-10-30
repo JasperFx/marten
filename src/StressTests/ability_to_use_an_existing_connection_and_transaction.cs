@@ -59,7 +59,7 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
     }
 
     [Fact]
-    public void can_query_sync_with_session_enlisted_in_transaction_scope()
+    public async Task can_query_sync_with_session_enlisted_in_transaction_scope()
     {
         using var scope = new TransactionScope();
         using var session = theStore.LightweightSession(SessionOptions.ForCurrentTransaction());
@@ -69,7 +69,7 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
         var targetFromQuery = session.Query<Target>().Single(x => x.Id == aTarget.Id);
         targetFromQuery.Id.ShouldBe(aTarget.Id);
 
-        var targetFromLoad = session.Load<Target>(aTarget.Id);
+        var targetFromLoad = await session.LoadAsync<Target>(aTarget.Id);
         targetFromLoad.Id.ShouldBe(aTarget.Id);
 
         scope.Complete();

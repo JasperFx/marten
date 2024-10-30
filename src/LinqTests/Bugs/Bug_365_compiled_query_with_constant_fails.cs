@@ -71,7 +71,7 @@ public class Bug_365_compiled_query_with_constant_fails: BugIntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            var routes = session.Query(new RoutesPlannedAfter(from)).ToList();
+            var routes = (await session.QueryAsync(new RoutesPlannedAfter(from))).ToList();
             var all = session.Query<Route>();
 
             routes.Count.ShouldBe(all.Count(route => route.Status == RouteStatus.Planned && route.Date > from));

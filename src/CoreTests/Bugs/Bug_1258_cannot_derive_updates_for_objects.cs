@@ -184,7 +184,7 @@ public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
 
         await using (var session = theStore.QuerySession())
         {
-            session.Load<UserWithCustomType>(guyWithCustomType1.Id).CustomType.ShouldBe("test_cust_type");
+            (await session.LoadAsync<UserWithCustomType>(guyWithCustomType1.Id)).CustomType.ShouldBe("test_cust_type");
         }
 
         await using (var query = theStore.QuerySession())

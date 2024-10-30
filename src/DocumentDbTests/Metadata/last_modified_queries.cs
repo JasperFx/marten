@@ -61,7 +61,7 @@ public class last_modified_queries: IntegrationContext
         session.Store(user1, user2, user3, user4);
         await session.SaveChangesAsync();
 
-        var metadata = session.MetadataFor(user4);
+        var metadata = await session.MetadataForAsync(user4);
         metadata.ShouldNotBeNull();
 
         var epoch = metadata.LastModified;
@@ -96,7 +96,7 @@ public class last_modified_queries: IntegrationContext
         session.Store(user3, user4);
         await session.SaveChangesAsync();
 
-        var metadata = session.MetadataFor(user4);
+        var metadata = await session.MetadataForAsync(user4);
         metadata.ShouldNotBeNull();
 
         var epoch = metadata.LastModified;

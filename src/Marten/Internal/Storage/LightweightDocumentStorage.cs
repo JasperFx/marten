@@ -92,12 +92,6 @@ public abstract class LightweightDocumentStorage<T, TId>: DocumentStorage<T, TId
         return list;
     }
 
-    public sealed override T Load(TId id, IMartenSession session)
-    {
-        return load(id, session);
-    }
-
-
     public sealed override Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
     {
         return loadAsync(id, session, token);

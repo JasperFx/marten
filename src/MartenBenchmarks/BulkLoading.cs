@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Marten.Testing;
 using Marten.Testing.Documents;
@@ -12,15 +13,15 @@ public class BulkLoading
     public static Target[] Docs = Target.GenerateRandomData(1000).ToArray();
 
     [GlobalSetup]
-    public void Setup()
+    public async Task Setup()
     {
-        BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsByType(typeof(Target));
+        await BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
     }
 
     [Benchmark]
-    public void BulkInsertDocuments()
+    public async Task BulkInsertDocuments()
     {
-        BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsByType(typeof(Target));
-        BenchmarkStore.Store.BulkInsert(Docs);
+        await BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
+        await BenchmarkStore.Store.BulkInsertAsync(Docs);
     }
 }

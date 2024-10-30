@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Marten.Testing;
 using Marten.Testing.Documents;
@@ -12,16 +13,16 @@ public class DocumentActions
     public static Target[] Docs = Target.GenerateRandomData(100).ToArray();
 
     [GlobalSetup]
-    public void Setup()
+    public async Task Setup()
     {
-        BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsByType(typeof(Target));
+        await BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
     }
 
     [Benchmark]
-    public void InsertDocuments()
+    public async Task InsertDocuments()
     {
         using var session = BenchmarkStore.Store.LightweightSession();
         session.Store(Docs);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 }

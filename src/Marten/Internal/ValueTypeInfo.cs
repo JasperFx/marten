@@ -231,9 +231,6 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public IDeletion DeleteForId(TSimple id, string tenantId)
         => _inner.DeleteForId(_converter(id), tenantId);
 
-    public TDoc Load(TSimple id, IMartenSession session)
-        => _inner.Load(_converter(id), session);
-
     public Task<TDoc> LoadAsync(TSimple id, IMartenSession session, CancellationToken token)
         => _inner.LoadAsync(_converter(id), session, token);
 

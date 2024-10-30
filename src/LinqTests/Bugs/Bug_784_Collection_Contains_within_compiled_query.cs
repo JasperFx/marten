@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -15,7 +16,7 @@ public class Bug_784_Collection_Contains_within_compiled_query : IntegrationCont
     private readonly ITestOutputHelper _output;
 
     [Fact]
-    public void do_not_blow_up_with_exceptions()
+    public async Task do_not_blow_up_with_exceptions()
     {
         // Test failure bomb
         if (DateTime.Today < new DateTime(2023, 9, 12)) return;
@@ -29,8 +30,7 @@ public class Bug_784_Collection_Contains_within_compiled_query : IntegrationCont
         targets[20].NumberArray = new[] {5, 6, 7};
         targets[20].Flag = true;
 
-
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         using (var query = theStore.QuerySession())
         {
@@ -41,7 +41,7 @@ public class Bug_784_Collection_Contains_within_compiled_query : IntegrationCont
             expected.Any(x => x.Id == targets[5].Id).ShouldBeTrue();
             expected.Any(x => x.Id == targets[20].Id).ShouldBeTrue();
 
-            var actuals = query.Query(new FunnyTargetQuery{Number = 5}).ToArray();
+            var actuals = await query.QueryAsync(new FunnyTargetQuery{Number = 5});
 
             actuals.OrderBy(x => x.Id).Select(x => x.Id)
                 .ShouldHaveTheSameElementsAs(expected.OrderBy(x => x.Id).Select(x => x.Id));

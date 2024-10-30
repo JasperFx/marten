@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -9,6 +10,7 @@ using Shouldly;
 
 namespace LinqTests.Operators;
 
+// TODO -- move this all to where_clauses
 public class is_one_of_operator: IntegrationContext
 {
     public static TheoryData<Func<int[], Expression<Func<Target, bool>>>> SupportedIsOneOfWithIntArray =
@@ -97,23 +99,23 @@ public class is_one_of_operator: IntegrationContext
 
     [Theory]
     [MemberData(nameof(SupportedIsOneOfWithIntArray))]
-    public void can_query_against_integers(Func<int[], Expression<Func<Target, bool>>> isOneOf) =>
+    public Task can_query_against_integers(Func<int[], Expression<Func<Target, bool>>> isOneOf) =>
         can_query_against_array(isOneOf, x => x.Number);
 
     [Theory]
     [MemberData(nameof(SupportedIsOneOfWithGuidArray))]
-    public void can_query_against_guids(Func<Guid[], Expression<Func<Target, bool>>> isOneOf) =>
+    public Task can_query_against_guids(Func<Guid[], Expression<Func<Target, bool>>> isOneOf) =>
         can_query_against_array(isOneOf, x => x.OtherGuid);
 
     [Theory]
     [MemberData(nameof(SupportedIsOneOfWithStringArray))]
-    public void can_query_against_strings(Func<string[], Expression<Func<Target, bool>>> isOneOf) =>
+    public Task can_query_against_strings(Func<string[], Expression<Func<Target, bool>>> isOneOf) =>
         can_query_against_array(isOneOf, x => x.String);
 
-    private void can_query_against_array<T>(Func<T[], Expression<Func<Target, bool>>> isOneOf, Func<Target, T> select)
+    private async Task can_query_against_array<T>(Func<T[], Expression<Func<Target, bool>>> isOneOf, Func<Target, T> select)
     {
         var targets = Target.GenerateRandomData(100).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var validValues = targets.Select(select).Distinct().Take(3).ToArray();
 
@@ -133,27 +135,27 @@ public class is_one_of_operator: IntegrationContext
 
     [Theory]
     [MemberData(nameof(SupportedNotIsOneOfWithIntArray))]
-    public void can_query_against_integers_with_not_operator(Func<int[], Expression<Func<Target, bool>>> notIsOneOf)
+    public Task can_query_against_integers_with_not_operator(Func<int[], Expression<Func<Target, bool>>> notIsOneOf)
         => can_query_against_array_with_not_operator(notIsOneOf, x => x.Number);
 
     [Theory]
     [MemberData(nameof(SupportedNotIsOneOfWithGuidArray))]
-    public void can_query_against_guids_with_not_operator(Func<Guid[], Expression<Func<Target, bool>>> notIsOneOf)
+    public Task can_query_against_guids_with_not_operator(Func<Guid[], Expression<Func<Target, bool>>> notIsOneOf)
         => can_query_against_array_with_not_operator(notIsOneOf, x => x.OtherGuid);
 
 
     [Theory]
     [MemberData(nameof(SupportedNotIsOneOfWithStringArray))]
-    public void can_query_against_strings_with_not_operator(Func<string[], Expression<Func<Target, bool>>> notIsOneOf)
+    public Task can_query_against_strings_with_not_operator(Func<string[], Expression<Func<Target, bool>>> notIsOneOf)
         => can_query_against_array_with_not_operator(notIsOneOf, x => x.String);
 
-    private void can_query_against_array_with_not_operator<T>(
+    private async Task can_query_against_array_with_not_operator<T>(
         Func<T[], Expression<Func<Target, bool>>> notIsOneOf,
         Func<Target, T> select
     )
     {
         var targets = Target.GenerateRandomData(100).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var validValues = targets.Select(select).Distinct().Take(3).ToArray();
 
@@ -171,23 +173,23 @@ public class is_one_of_operator: IntegrationContext
 
     [Theory]
     [MemberData(nameof(SupportedIsOneOfWithIntList))]
-    public void can_query_against_integers_list(Func<List<int>, Expression<Func<Target, bool>>> isOneOf)
+    public Task can_query_against_integers_list(Func<List<int>, Expression<Func<Target, bool>>> isOneOf)
         => can_query_against_list(isOneOf, x => x.Number);
 
     [Theory]
     [MemberData(nameof(SupportedIsOneOfWithGuidList))]
-    public void can_query_against_guids_list(Func<List<Guid>, Expression<Func<Target, bool>>> isOneOf)
+    public Task can_query_against_guids_list(Func<List<Guid>, Expression<Func<Target, bool>>> isOneOf)
         => can_query_against_list(isOneOf, x => x.OtherGuid);
 
     [Theory]
     [MemberData(nameof(SupportedIsOneOfWithStringList))]
-    public void can_query_against_strings_list(Func<List<string>, Expression<Func<Target, bool>>> isOneOf)
+    public Task can_query_against_strings_list(Func<List<string>, Expression<Func<Target, bool>>> isOneOf)
         => can_query_against_list(isOneOf, x => x.String);
 
-    private void can_query_against_list<T>(Func<List<T>, Expression<Func<Target, bool>>> isOneOf, Func<Target, T> select)
+    private async Task can_query_against_list<T>(Func<List<T>, Expression<Func<Target, bool>>> isOneOf, Func<Target, T> select)
     {
         var targets = Target.GenerateRandomData(100).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var validValues = targets.Select(select).Distinct().Take(3).ToList();
 
@@ -207,29 +209,29 @@ public class is_one_of_operator: IntegrationContext
 
     [Theory]
     [MemberData(nameof(SupportedNotIsOneOfWithIntList))]
-    public void can_query_against_integers_with_not_operator_list(
+    public Task can_query_against_integers_with_not_operator_list(
         Func<List<int>, Expression<Func<Target, bool>>> notIsOneOf) =>
         can_query_against_list_with_not_operator(notIsOneOf, x => x.Number);
 
     [Theory]
     [MemberData(nameof(SupportedNotIsOneOfWithGuidList))]
-    public void can_query_against_guids_with_not_operator_list(
+    public Task can_query_against_guids_with_not_operator_list(
         Func<List<Guid>, Expression<Func<Target, bool>>> notIsOneOf) =>
         can_query_against_list_with_not_operator(notIsOneOf, x => x.OtherGuid);
 
     [Theory]
     [MemberData(nameof(SupportedNotIsOneOfWithStringList))]
-    public void can_query_against_strings_with_not_operator_list(
+    public Task can_query_against_strings_with_not_operator_list(
         Func<List<string>, Expression<Func<Target, bool>>> notIsOneOf) =>
         can_query_against_list_with_not_operator(notIsOneOf, x => x.String);
 
-    private void can_query_against_list_with_not_operator<T>(
+    private async Task can_query_against_list_with_not_operator<T>(
         Func<List<T>, Expression<Func<Target, bool>>> notIsOneOf,
         Func<Target, T> select
     )
     {
         var targets = Target.GenerateRandomData(100).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var validValues = targets.Select(select).Distinct().Take(3).ToList();
 

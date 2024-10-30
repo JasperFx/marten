@@ -20,7 +20,7 @@ public class Bug_654_document_session_delete_Tests: IntegrationContext
         session.Delete<Issue>(issue.Id);
         await session.SaveChangesAsync();
 
-        var loadedIssue = session.Load<Issue>(issue.Id);
+        var loadedIssue = await session.LoadAsync<Issue>(issue.Id);
         loadedIssue.ShouldBeNull();
     }
 

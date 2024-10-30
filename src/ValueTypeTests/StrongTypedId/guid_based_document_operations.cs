@@ -262,7 +262,7 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
     }
 
     [Fact]
-    public void bulk_writing_sync()
+    public async Task bulk_writing_sync()
     {
         Invoice2[] invoices = [
             new Invoice2{Name = Guid.NewGuid().ToString()},
@@ -272,7 +272,7 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
             new Invoice2{Name = Guid.NewGuid().ToString()}
         ];
 
-        theStore.BulkInsertDocuments(invoices);
+        await theStore.BulkInsertDocumentsAsync(invoices);
     }
 }
 
@@ -549,7 +549,7 @@ public class guid_id_document_operations_with_non_nullable_identifier : IDisposa
     }
 
     [Fact]
-    public void bulk_writing_sync()
+    public async Task bulk_writing_sync()
     {
         Invoice3[] invoices = [
             new Invoice3{Name = Guid.NewGuid().ToString()},
@@ -559,7 +559,7 @@ public class guid_id_document_operations_with_non_nullable_identifier : IDisposa
             new Invoice3{Name = Guid.NewGuid().ToString()}
         ];
 
-        theStore.BulkInsertDocuments(invoices);
+        await theStore.BulkInsertDocumentsAsync(invoices);
     }
 
 }

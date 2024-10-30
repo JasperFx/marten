@@ -112,6 +112,6 @@ public class aggregateTo_linq_operator_tests: DestructiveIntegrationContext
 
     public aggregateTo_linq_operator_tests(DefaultStoreFixture fixture): base(fixture)
     {
-        theStore.Advanced.Clean.DeleteAllEventData();
+        theStore.Advanced.Clean.DeleteAllEventDataAsync().GetAwaiter().GetResult();
     }
 }

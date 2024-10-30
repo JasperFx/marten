@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Marten.Testing.Harness
@@ -10,13 +11,18 @@ namespace Marten.Testing.Harness
     {
         public DestructiveIntegrationContext(DefaultStoreFixture fixture) : base(fixture)
         {
-            theStore.Advanced.Clean.CompletelyRemoveAll();
+
+        }
+
+        protected override async Task fixtureSetup()
+        {
+            await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
         }
 
         public override void Dispose()
         {
             base.Dispose();
-            theStore.Advanced.Clean.CompletelyRemoveAll();
+            theStore.Advanced.Clean.CompletelyRemoveAllAsync().GetAwaiter().GetResult();
 
 
         }

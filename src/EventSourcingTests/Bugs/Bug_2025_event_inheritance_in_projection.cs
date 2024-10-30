@@ -32,7 +32,7 @@ public class Bug_2025_event_inheritance_in_projection : IntegrationContext
         theSession.Events.StartStream(@created.Id, created);
         await theSession.SaveChangesAsync();
 
-        var user = theSession.Events.AggregateStream<Identity>(@created.Id);
+        var user = await theSession.Events.AggregateStreamAsync<Identity>(@created.Id);
         user.FirstName.ShouldBe("Nancy");
     }
     public record IdentityAdded(string NameIdentifier, string FirstName, string LastName);

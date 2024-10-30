@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -9,7 +10,7 @@ namespace DocumentDbTests.Bugs;
 public class Bug_980_bulk_insert_with_subclass: BugIntegrationContext
 {
     [Fact]
-    public void can_do_a_bulk_insert_against_the_parent()
+    public async Task can_do_a_bulk_insert_against_the_parent()
     {
         StoreOptions(_ =>
         {
@@ -25,7 +26,7 @@ public class Bug_980_bulk_insert_with_subclass: BugIntegrationContext
             new SuperUser { UserName = "myergen" }
         };
 
-        theStore.BulkInsert(users);
+        await theStore.BulkInsertAsync(users);
 
         using (var query = theStore.LightweightSession())
         {
@@ -35,7 +36,7 @@ public class Bug_980_bulk_insert_with_subclass: BugIntegrationContext
     }
 
     [Fact]
-    public void can_do_a_bulk_insert_against_the_child_type()
+    public async Task can_do_a_bulk_insert_against_the_child_type()
     {
         StoreOptions(_ =>
         {
@@ -52,7 +53,7 @@ public class Bug_980_bulk_insert_with_subclass: BugIntegrationContext
             new SuperUser { UserName = "more" }
         };
 
-        theStore.BulkInsert(users);
+        await theStore.BulkInsertAsync(users);
 
         using (var query = theStore.LightweightSession())
         {

@@ -23,7 +23,7 @@ public class delete_many_documents_by_query : IntegrationContext
             targets[i].Double = 578;
         }
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var initialCount = theSession.Query<Target>().Count(x => x.Double == 578);
 
@@ -69,7 +69,7 @@ public class delete_many_documents_by_query : IntegrationContext
             targets[i].Double = 578;
         }
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var current = new IntDoc {Id = 5};
 
@@ -93,7 +93,7 @@ public class delete_many_documents_by_query : IntegrationContext
             targets[i].Double = 578;
         }
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var initialCount = theSession.Query<Target>().Count(x => x.Double == 578);
 
@@ -120,7 +120,7 @@ public class delete_many_documents_by_query : IntegrationContext
     {
         var targets = new[] { new FailureInLife { Id = 1, What = 2 } };
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
         var id = 1;
         var what = 2;
 

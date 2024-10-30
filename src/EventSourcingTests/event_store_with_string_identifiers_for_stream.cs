@@ -64,7 +64,7 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
 
         using (var session = theStore.LightweightSession())
         {
-            session.Events.FetchStream("First").Count.ShouldBe(2);
+            (await session.Events.FetchStreamAsync("First")).Count.ShouldBe(2);
         }
     }
 
@@ -79,7 +79,7 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
 
         using (var session = theStore.LightweightSession())
         {
-            var state = session.Events.FetchStreamState("First");
+            var state = await session.Events.FetchStreamStateAsync("First");
             state.Key.ShouldBe("First");
             state.Version.ShouldBe(2);
         }

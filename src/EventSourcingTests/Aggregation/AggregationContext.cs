@@ -7,16 +7,22 @@ using JasperFx.CodeGeneration;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Testing.Harness;
+using Xunit;
 
 namespace EventSourcingTests.Aggregation;
 
-public class AggregationContext : IntegrationContext
+public class AggregationContext : IntegrationContext, IAsyncLifetime
 {
     protected SingleStreamProjection<MyAggregate> _projection;
 
     public AggregationContext(DefaultStoreFixture fixture) : base(fixture)
     {
-        theStore.Advanced.Clean.DeleteDocumentsByType(typeof(MyAggregate));
+
+    }
+
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(MyAggregate));
     }
 
     public void UsingDefinition<T>() where T : SingleStreamProjection<MyAggregate>, new()

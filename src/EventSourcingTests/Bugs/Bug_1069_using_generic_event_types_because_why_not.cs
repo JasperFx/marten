@@ -67,7 +67,7 @@ public class Bug_1069_using_generic_event_types_because_why_not: BugIntegrationC
 
         using (var session = store2.LightweightSession())
         {
-            var events = session.Events.FetchStream(streamId);
+            var events = await session.Events.FetchStreamAsync(streamId);
             events.Select(x => x.Data.GetType())
                 .ShouldHaveTheSameElementsAs(typeof(Envelope<Created>), typeof(Envelope<Updated>));
         }

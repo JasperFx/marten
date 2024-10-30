@@ -80,7 +80,7 @@ public class multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<Mul
 
         using (var red = theStore.QuerySession("Red"))
         {
-            var final = red.Load<User>(user.Id);
+            var final = await red.LoadAsync<User>(user.Id);
             final.FirstName.ShouldBe("Jeremy");
         }
     }
@@ -105,7 +105,7 @@ public class multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<Mul
 
         using (var red = theStore.QuerySession("Red"))
         {
-            var final = red.Load<User>(user.Id);
+            var final = await red.LoadAsync<User>(user.Id);
             final.FirstName.ShouldBe("Jeremy");
         }
     }

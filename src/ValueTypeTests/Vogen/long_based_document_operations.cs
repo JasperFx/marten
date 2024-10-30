@@ -207,7 +207,7 @@ public class long_based_document_operations : IAsyncLifetime
     }
 
     [Fact]
-    public void bulk_writing_sync()
+    public async Task bulk_writing_sync()
     {
         Issue[] invoices = [
             new Issue{Name = Guid.NewGuid().ToString()},
@@ -217,7 +217,7 @@ public class long_based_document_operations : IAsyncLifetime
             new Issue{Name = Guid.NewGuid().ToString()}
         ];
 
-        theStore.BulkInsertDocuments(invoices);
+        await theStore.BulkInsertDocumentsAsync(invoices);
     }
 
     [Fact]

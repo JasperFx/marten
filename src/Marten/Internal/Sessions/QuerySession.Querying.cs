@@ -83,15 +83,6 @@ public partial class QuerySession
         return new BatchedQuery(this);
     }
 
-    public TOut Query<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query)
-    {
-        var source = _store.GetCompiledQuerySourceFor(query, this);
-        Database.EnsureStorageExists(typeof(TDoc));
-        var handler = (IQueryHandler<TOut>)source.Build(query, this);
-
-        return ExecuteHandler(handler);
-    }
-
     public async Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default)
     {
         var source = _store.GetCompiledQuerySourceFor(query, this);

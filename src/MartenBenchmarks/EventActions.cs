@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using BenchmarkDotNet.Attributes;
 using Marten.Testing.CodeTracker;
@@ -37,11 +38,11 @@ public class EventActions
     }
 
     [Benchmark]
-    public void AppendEvents()
+    public async Task AppendEvents()
     {
         var events = AllProjects.SelectMany(x => x.Value.Events).Take(1000).Cast<object>().ToArray();
         using var session = BenchmarkStore.Store.LightweightSession();
         session.Events.Append(Guid.NewGuid(), events);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 }

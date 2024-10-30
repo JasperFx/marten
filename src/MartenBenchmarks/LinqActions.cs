@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using BenchmarkDotNet.Attributes;
 using Marten;
@@ -15,14 +16,14 @@ namespace MartenBenchmarks;
 public class LinqActions
 {
     [GlobalSetup]
-    public void Setup()
+    public async Task Setup()
     {
         var docs = Target.GenerateRandomData(500).ToArray();
         docs.Skip(100).Each(x => x.Color = Colors.Green);
         docs.Take(100).Each(x => x.Color = Colors.Blue);
 
-        BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsByType(typeof(Target));
-        BenchmarkStore.Store.BulkInsert(docs);
+        await BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
+        await BenchmarkStore.Store.BulkInsertAsync(docs);
     }
 
     [Benchmark]
@@ -43,10 +44,10 @@ public class LinqActions
     }
 
     [Benchmark]
-    public void CompiledQueries()
+    public async Task CompiledQueries()
     {
         using var query = BenchmarkStore.Store.QuerySession();
-        var docs = query.Query(new BlueTargets());
+        var docs = await query.QueryAsync(new BlueTargets());
     }
 }
 

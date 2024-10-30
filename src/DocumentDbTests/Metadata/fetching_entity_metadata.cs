@@ -10,11 +10,11 @@ namespace DocumentDbTests.Metadata;
 public class fetching_entity_metadata: OneOffConfigurationsContext
 {
     [Fact]
-    public void total_miss_returns_null()
+    public async Task total_miss_returns_null()
     {
         var shop = new CoffeeShop();
 
-        theSession.MetadataFor(shop)
+        (await theSession.MetadataForAsync(shop))
             .ShouldBeNull();
 
     }
@@ -33,7 +33,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
 
         using (var session = theStore.QuerySession())
         {
-            var metadata = session.MetadataFor(shop);
+            var metadata = await session.MetadataForAsync(shop);
 
             metadata.ShouldNotBeNull();
             metadata.CurrentVersion.ShouldNotBe(Guid.Empty);
@@ -93,7 +93,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
 
         using (var session = theStore.QuerySession())
         {
-            var metadata = session.MetadataFor(shop);
+            var metadata = await session.MetadataForAsync(shop);
             metadata.ShouldNotBeNull();
 
             metadata.CreatedAt.ShouldBe(default);
@@ -135,7 +135,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
 
         using (var session = theStore.QuerySession())
         {
-            var metadata = session.MetadataFor(shop);
+            var metadata = await session.MetadataForAsync(shop);
             metadata.ShouldNotBeNull();
 
             metadata.CreatedAt.ShouldNotBe(default);
