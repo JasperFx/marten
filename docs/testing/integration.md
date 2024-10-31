@@ -367,11 +367,9 @@ Furthermore it could be beneficial to disable all external wolverine transports 
 services.DisableAllExternalWolverineTransports();
 ```
 
-## Testing Event Projections
+## Testing Projections
 
-// TODO
-
-There is still some discussion on how to leverage this: [Add testing helpers for async projections #2624](https://github.com/JasperFx/marten/issues/2624).
+Testing all types of projections (live, inline, async) is explained here: [Testing Projections](/events/projections/testing).
 
 ## Additional Tips
 
