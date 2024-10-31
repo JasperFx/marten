@@ -57,13 +57,13 @@ public class UpdateBatch: IUpdateBatch
             {
                 var operations = _operations
                     .Skip(count)
-                    .Take(session.Options.UpdateBatchSize)
+                    .Take(session.UpdateBatchSize())
                     .ToArray();
 
                 var page = new OperationPage(session, operations);
                 yield return page;
 
-                count += session.Options.UpdateBatchSize;
+                count += session.UpdateBatchSize();
             }
         }
     }
