@@ -1,6 +1,7 @@
 #nullable enable
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Linq.SqlGeneration;

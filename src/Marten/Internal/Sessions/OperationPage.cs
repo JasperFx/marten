@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Exceptions;
-using Marten.Events.Daemon.Progress;
 using Marten.Internal.Operations;
 using Marten.Services;
 using Npgsql;

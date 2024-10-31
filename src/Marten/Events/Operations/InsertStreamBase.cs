@@ -8,6 +8,7 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Services;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Operations;

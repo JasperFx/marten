@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using NpgsqlTypes;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Daemon.Progress;

@@ -9,6 +9,7 @@ using Marten.Internal.Operations;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 using Xunit;
 

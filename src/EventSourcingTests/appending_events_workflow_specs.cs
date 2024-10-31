@@ -24,6 +24,7 @@ using Marten.Testing;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;

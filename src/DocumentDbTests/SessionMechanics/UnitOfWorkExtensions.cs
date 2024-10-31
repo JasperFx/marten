@@ -4,6 +4,7 @@ using Marten.Internal.Operations;
 using Marten.Linq.SqlGeneration;
 using Marten.Testing.Documents;
 using Shouldly;
+using Weasel.Core.Operations;
 
 namespace DocumentDbTests.SessionMechanics;
 

@@ -2,6 +2,7 @@
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Schema;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Linq.SqlGeneration;

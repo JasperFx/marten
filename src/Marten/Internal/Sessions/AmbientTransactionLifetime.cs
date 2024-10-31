@@ -255,37 +255,6 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         }
     }
 
-        public void ExecuteBatchPages(IReadOnlyList<OperationPage> pages,
-            List<Exception> exceptions)
-    {
-        try
-        {
-            BeginTransaction();
-            foreach (var page in pages)
-            {
-                var batch = page.Compile();
-                using var reader = ExecuteReader(batch);
-                page.ApplyCallbacks(reader, exceptions);
-            }
-        }
-        catch (Exception e)
-        {
-            Logger.LogFailure(new NpgsqlCommand(), e);
-            pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
-        }
-
-        if (exceptions.Count == 1)
-        {
-            var ex = exceptions.Single();
-            ExceptionDispatchInfo.Throw(ex);
-        }
-
-        if (exceptions.Any())
-        {
-            throw new AggregateException(exceptions);
-        }
-    }
-
     public async Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages,
         List<Exception> exceptions, CancellationToken token)
     {

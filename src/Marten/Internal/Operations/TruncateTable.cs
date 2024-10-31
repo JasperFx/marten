@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Weasel.Core;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Internal.Operations;

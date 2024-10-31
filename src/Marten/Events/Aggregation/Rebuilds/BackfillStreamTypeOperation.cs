@@ -10,6 +10,7 @@ using Marten.Internal.Operations;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using NpgsqlTypes;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Aggregation.Rebuilds;

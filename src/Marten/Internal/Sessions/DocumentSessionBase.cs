@@ -14,6 +14,7 @@ using Marten.Internal.Storage;
 using Marten.Metadata;
 using Marten.Services;
 using Marten.Storage;
+using Weasel.Core.Operations;
 
 namespace Marten.Internal.Sessions;
 

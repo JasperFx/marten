@@ -7,6 +7,7 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Storage;
 using NpgsqlTypes;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Archiving;

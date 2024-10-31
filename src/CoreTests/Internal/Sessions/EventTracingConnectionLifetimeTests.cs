@@ -630,47 +630,6 @@ namespace CoreTests.Internal.Sessions
         }
 
         [Fact]
-        public void ExecuteBatchPages_Ensure_The_Correct_Event_And_Tags_Are_Emited_When_Execution_Succeeds()
-        {
-            _startCalled = false;
-            _endCalled = false;
-
-            using var listener = new ActivityListener
-            {
-                ShouldListenTo = _ => _.Name == "Marten",
-                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
-                ActivityStarted = activity =>
-                {
-                    _startCalled = true;
-                    activity.ShouldNotBeNull();
-                    activity.DisplayName.ShouldBe("marten.connection");
-                },
-                ActivityStopped = activity =>
-                {
-                    _endCalled = true;
-                    activity.ShouldNotBeNull();
-                    var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.Key.ShouldBe(MartenTracing.TenantId);
-                    var expectedEvent = activity.Events.SingleOrDefault();
-                    expectedEvent.Name.ShouldBe(MartenBatchPagesExecutionStarted);
-                    expectedEvent.Tags.ShouldBeEmpty();
-                }
-            };
-
-            ActivitySource.AddActivityListener(listener);
-            _innerConnectionLifetime.ExecuteBatchPages(Arg.Any<IReadOnlyList<OperationPage>>(), Arg.Any<List<Exception>>());
-            using (var eventTracingConnectionLifetime =
-                   new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new()))
-            {
-                eventTracingConnectionLifetime.ExecuteBatchPages(_batchPages, _exceptions);
-            }
-
-            _startCalled.ShouldBeTrue();
-            _endCalled.ShouldBeTrue();
-            _innerConnectionLifetime.Received(1).ExecuteBatchPages(Arg.Any<IReadOnlyList<OperationPage>>(), Arg.Any<List<Exception>>());
-        }
-
-        [Fact]
         public async Task ExecuteBatchPagesAsync_Ensure_The_Correct_Event_And_Tags_Are_Emited_When_Command_Execution_Succeeds()
         {
             _startCalled = false;

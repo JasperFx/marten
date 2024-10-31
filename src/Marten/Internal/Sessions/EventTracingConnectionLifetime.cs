@@ -12,6 +12,7 @@ using Marten.Internal.Operations;
 using Marten.Services;
 using Npgsql;
 using OpenTelemetry.Trace;
+using Weasel.Core.Operations;
 
 namespace Marten.Internal.Sessions;
 
@@ -149,29 +150,6 @@ internal class EventTracingConnectionLifetime:
         try
         {
             return await _innerConnectionLifetime.ExecuteReaderAsync(batch, token).ConfigureAwait(false);
-        }
-        catch (Exception e)
-        {
-            _databaseActivity?.RecordException(e);
-
-            throw;
-        }
-    }
-
-    public void ExecuteBatchPages(IReadOnlyList<OperationPage> pages, List<Exception> exceptions)
-    {
-        _databaseActivity?.AddEvent(new ActivityEvent(MartenBatchPagesExecutionStarted));
-
-        try
-        {
-            _innerConnectionLifetime.ExecuteBatchPages(pages, exceptions);
-            writeVerboseEvents(pages);
-        }
-        catch (AggregateException e)
-        {
-            _databaseActivity?.RecordException(e);
-
-            throw;
         }
         catch (Exception e)
         {

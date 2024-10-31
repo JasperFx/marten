@@ -10,15 +10,15 @@ using Marten.Internal.Storage;
 using Marten.Services;
 using Marten.Storage;
 using Npgsql;
+using Weasel.Core.Operations;
 using Weasel.Core.Serialization;
 
 namespace Marten.Internal;
 
-public interface IMartenSession: IDisposable, IAsyncDisposable
+public interface IMartenSession: IDisposable, IAsyncDisposable, IOperationSession
 {
-    ISerializer Serializer { get; }
     Dictionary<Type, object> ItemMap { get; }
-    public string TenantId { get; }
+
     IMartenDatabase Database { get; }
 
     VersionTracker Versions { get; }

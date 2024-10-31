@@ -3,6 +3,7 @@ using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Schema.Identity;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.PLv8.Transforms;

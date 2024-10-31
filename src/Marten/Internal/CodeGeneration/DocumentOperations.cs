@@ -1,6 +1,7 @@
 using JasperFx.CodeGeneration;
 using Marten.Internal.Operations;
 using Marten.Schema;
+using Weasel.Core.Operations;
 
 namespace Marten.Internal.CodeGeneration;
 

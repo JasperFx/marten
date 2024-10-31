@@ -62,7 +62,6 @@ public interface IConnectionLifetime: IAsyncDisposable, IDisposable
     Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch,
         CancellationToken token = default);
 
-    void ExecuteBatchPages(IReadOnlyList<OperationPage> pages, List<Exception> exceptions);
     Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages,
         List<Exception> exceptions, CancellationToken token);
 }

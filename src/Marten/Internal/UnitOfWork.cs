@@ -8,6 +8,7 @@ using Marten.Events;
 using Marten.Internal.Operations;
 using Marten.Services;
 using Marten.Storage;
+using Weasel.Core.Operations;
 
 namespace Marten.Internal;
 

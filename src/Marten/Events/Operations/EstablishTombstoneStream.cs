@@ -9,6 +9,7 @@ using Marten.Schema;
 using Marten.Storage;
 using Npgsql;
 using NpgsqlTypes;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Operations;

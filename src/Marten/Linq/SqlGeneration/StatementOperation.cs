@@ -10,6 +10,7 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 

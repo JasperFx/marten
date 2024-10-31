@@ -13,6 +13,7 @@ using Marten.Events.CodeGeneration;
 using Marten.Internal.Operations;
 using Marten.Schema;
 using Marten.Storage;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Internal.CodeGeneration;

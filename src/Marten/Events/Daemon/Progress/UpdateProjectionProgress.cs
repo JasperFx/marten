@@ -9,6 +9,7 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Services;
 using NpgsqlTypes;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Daemon.Progress;
