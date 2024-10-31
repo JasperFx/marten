@@ -7,6 +7,7 @@ using Marten.Services;
 using Marten.Storage;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
+using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Internal.Operations;
 

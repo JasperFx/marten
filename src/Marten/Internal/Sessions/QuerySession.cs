@@ -9,6 +9,7 @@ using Marten.Services;
 using Marten.Storage;
 using Npgsql;
 using Polly;
+using Weasel.Core.Operations;
 using Weasel.Core.Serialization;
 
 namespace Marten.Internal.Sessions;
@@ -42,6 +43,11 @@ public partial class QuerySession: IMartenSession, IQuerySession
     public IMartenDatabase Database { get; protected set; }
 
     public string TenantId { get; protected set; }
+    int IOperationSession.UpdateBatchSize()
+    {
+        return Options.UpdateBatchSize;
+    }
+
 #nullable enable
 
     internal QuerySession(

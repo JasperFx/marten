@@ -12,6 +12,7 @@ using Shouldly;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
 using Xunit;
+using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace CoreTests;
 

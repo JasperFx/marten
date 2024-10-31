@@ -6,16 +6,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq.QueryHandlers;
 using Weasel.Core.Operations;
+using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Internal.Operations;
 
-public interface IStorageOperation: IQueryHandler
+public interface IStorageOperation: IStorageOperation<ICommandBuilder, IMartenSession>
 {
-    Type DocumentType { get; }
 
-    void Postprocess(DbDataReader reader, IList<Exception> exceptions);
-
-    Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token);
-
-    OperationRole Role();
 }

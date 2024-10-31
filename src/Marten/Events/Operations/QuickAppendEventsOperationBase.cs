@@ -13,6 +13,7 @@ using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
+using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Operations;
 

@@ -4,6 +4,7 @@ using Marten.Internal.Storage;
 using Marten.Schema;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
+using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Linq.SqlGeneration;
 

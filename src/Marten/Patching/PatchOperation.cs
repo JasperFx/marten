@@ -13,6 +13,7 @@ using Weasel.Core.Operations;
 using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
+using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Patching;
 

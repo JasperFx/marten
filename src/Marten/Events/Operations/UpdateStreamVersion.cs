@@ -9,6 +9,7 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
+using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Operations;
 

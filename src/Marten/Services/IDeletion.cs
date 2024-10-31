@@ -1,5 +1,6 @@
 #nullable enable
 using Marten.Internal.Operations;
+using Weasel.Core.Operations;
 
 namespace Marten.Services;
 

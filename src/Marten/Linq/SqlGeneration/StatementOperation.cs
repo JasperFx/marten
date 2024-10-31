@@ -13,6 +13,7 @@ using Marten.Internal.Storage;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
+using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Linq.SqlGeneration;
 

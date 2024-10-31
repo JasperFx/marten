@@ -25,6 +25,7 @@ using Weasel.Core.Operations;
 using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
+using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace EventSourcingTests.QuickAppend;
 

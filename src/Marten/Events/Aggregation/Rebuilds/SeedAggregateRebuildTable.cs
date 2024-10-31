@@ -9,6 +9,7 @@ using Marten.Internal.Operations;
 using Marten.Storage.Metadata;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
+using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Aggregation.Rebuilds;
 
