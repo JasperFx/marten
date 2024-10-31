@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
 using JasperFx.Core;
@@ -32,7 +33,7 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
         }
     }
 
-    public void LogSuccess(NpgsqlCommand command)
+    public void LogSuccess(DbCommand command)
     {
         _stopwatch?.Stop();
 
@@ -46,7 +47,7 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
         }
     }
 
-    public void LogSuccess(NpgsqlBatch batch)
+    public void LogSuccess(DbBatch batch)
     {
         if (Inner.IsEnabled(LogLevel.Debug))
         {
@@ -61,7 +62,7 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
         }
     }
 
-    public void LogFailure(NpgsqlCommand command, Exception ex)
+    public void LogFailure(DbCommand command, Exception ex)
     {
         _stopwatch?.Stop();
 
@@ -72,7 +73,7 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
         Inner.LogError(ex, message, command.CommandText, parameters);
     }
 
-    public void LogFailure(NpgsqlBatch batch, Exception ex)
+    public void LogFailure(DbBatch batch, Exception ex)
     {
         _stopwatch?.Stop();
 
@@ -101,7 +102,7 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
         }
     }
 
-    public void OnBeforeExecute(NpgsqlCommand command)
+    public void OnBeforeExecute(DbCommand command)
     {
         if (Inner.IsEnabled(LogLevel.Debug))
         {
@@ -115,7 +116,7 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
         Inner.LogError(ex, message);
     }
 
-    public void OnBeforeExecute(NpgsqlBatch batch)
+    public void OnBeforeExecute(DbBatch batch)
     {
         if (Inner.IsEnabled(LogLevel.Debug))
         {

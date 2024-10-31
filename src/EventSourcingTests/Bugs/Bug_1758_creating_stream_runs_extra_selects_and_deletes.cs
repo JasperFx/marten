@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
@@ -48,14 +49,14 @@ public class Bug_1758_creating_stream_runs_extra_selects_and_deletes : BugIntegr
         {
         }
 
-        public void LogSuccess(NpgsqlCommand command) => CommandTexts.Add(command.CommandText);
-        public void LogFailure(NpgsqlCommand command, Exception ex) => CommandTexts.Add(command.CommandText);
-        public void LogSuccess(NpgsqlBatch batch)
+        public void LogSuccess(DbCommand command) => CommandTexts.Add(command.CommandText);
+        public void LogFailure(DbCommand command, Exception ex) => CommandTexts.Add(command.CommandText);
+        public void LogSuccess(DbBatch batch)
         {
 
         }
 
-        public void LogFailure(NpgsqlBatch batch, Exception ex)
+        public void LogFailure(DbBatch batch, Exception ex)
         {
 
         }
@@ -72,11 +73,11 @@ public class Bug_1758_creating_stream_runs_extra_selects_and_deletes : BugIntegr
 
         public IChangeSet LastCommit { get; set; }
 
-        public void OnBeforeExecute(NpgsqlCommand command)
+        public void OnBeforeExecute(DbCommand command)
         {
         }
 
-        public void OnBeforeExecute(NpgsqlBatch batch)
+        public void OnBeforeExecute(DbBatch batch)
         {
 
         }

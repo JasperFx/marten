@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
 using Marten.Services;
@@ -38,27 +39,27 @@ public interface IMartenSessionLogger
     ///     Log a command that executed successfully
     /// </summary>
     /// <param name="command"></param>
-    void LogSuccess(NpgsqlCommand command);
+    void LogSuccess(DbCommand command);
 
     /// <summary>
     ///     Log a command that failed
     /// </summary>
     /// <param name="command"></param>
     /// <param name="ex"></param>
-    void LogFailure(NpgsqlCommand command, Exception ex);
+    void LogFailure(DbCommand command, Exception ex);
 
     /// <summary>
     ///     Log a command that executed successfully
     /// </summary>
     /// <param name="batch"></param>
-    void LogSuccess(NpgsqlBatch batch);
+    void LogSuccess(DbBatch batch);
 
     /// <summary>
     ///     Log a batch that failed
     /// </summary>
     /// <param name="batch"></param>
     /// <param name="ex"></param>
-    void LogFailure(NpgsqlBatch batch, Exception ex);
+    void LogFailure(DbBatch batch, Exception ex);
 
     /// <summary>
     /// Log a message for generic errors
@@ -83,14 +84,15 @@ public interface IMartenSessionLogger
     ///     performance logging of Marten operations
     /// </summary>
     /// <param name="command"></param>
-    public void OnBeforeExecute(NpgsqlCommand command);
+    public void OnBeforeExecute(DbCommand command);
 
     /// <summary>
     ///     Called just before a command is to be executed. Use this to create
     ///     performance logging of Marten operations
     /// </summary>
+    /// <param name="batch"></param>
     /// <param name="command"></param>
-    public void OnBeforeExecute(NpgsqlBatch batch);
+    public void OnBeforeExecute(DbBatch batch);
 }
 
 #endregion
@@ -113,14 +115,14 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
         Console.WriteLine();
     }
 
-    public void LogSuccess(NpgsqlCommand command)
+    public void LogSuccess(DbCommand command)
     {
         Console.WriteLine(command.CommandText);
         foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
             Console.WriteLine($"  {p.ParameterName}: {GetParameterValue(p)}");
     }
 
-    public void LogSuccess(NpgsqlBatch batch)
+    public void LogSuccess(DbBatch batch)
     {
         foreach (var command in batch.BatchCommands)
         {
@@ -145,7 +147,7 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
         return p.Value;
     }
 
-    public void LogFailure(NpgsqlCommand command, Exception ex)
+    public void LogFailure(DbCommand command, Exception ex)
     {
         Console.WriteLine("Postgresql command failed!");
         Console.WriteLine(command.CommandText);
@@ -154,7 +156,7 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
         Console.WriteLine(ex);
     }
 
-    public void LogFailure(NpgsqlBatch batch, Exception ex)
+    public void LogFailure(DbBatch batch, Exception ex)
     {
         Console.WriteLine("Postgresql command failed!");
         foreach (var command in batch.BatchCommands)
@@ -182,13 +184,13 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
             $"Persisted {lastCommit.Updated.Count()} updates in {_stopwatch?.ElapsedMilliseconds ?? 0} ms, {lastCommit.Inserted.Count()} inserts, and {lastCommit.Deleted.Count()} deletions");
     }
 
-    public void OnBeforeExecute(NpgsqlCommand command)
+    public void OnBeforeExecute(DbCommand command)
     {
         _stopwatch = new Stopwatch();
         _stopwatch.Start();
     }
 
-    public void OnBeforeExecute(NpgsqlBatch batch)
+    public void OnBeforeExecute(DbBatch batch)
     {
         _stopwatch = new Stopwatch();
         _stopwatch.Start();

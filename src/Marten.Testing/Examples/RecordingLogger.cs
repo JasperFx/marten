@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using Marten.Services;
 using Npgsql;
 
@@ -7,19 +8,19 @@ namespace Marten.Testing.Examples;
 
 public class RecordingLogger: IMartenSessionLogger
 {
-    public readonly IList<NpgsqlCommand> Commands = new List<NpgsqlCommand>();
+    public readonly List<DbCommand> Commands = new();
 
-    public void LogSuccess(NpgsqlCommand command)
+    public void LogSuccess(DbCommand command)
     {
         Commands.Add(command);
     }
 
-    public void LogFailure(NpgsqlCommand command, Exception ex)
+    public void LogFailure(DbCommand command, Exception ex)
     {
         Commands.Add(command);
     }
 
-    public void LogSuccess(NpgsqlBatch batch)
+    public void LogSuccess(DbBatch batch)
     {
         foreach (var command in batch.BatchCommands)
         {
@@ -27,7 +28,7 @@ public class RecordingLogger: IMartenSessionLogger
         }
     }
 
-    public void LogFailure(NpgsqlBatch batch, Exception ex)
+    public void LogFailure(DbBatch batch, Exception ex)
     {
     }
 
@@ -41,12 +42,12 @@ public class RecordingLogger: IMartenSessionLogger
         // do nothing
     }
 
-    public void OnBeforeExecute(NpgsqlCommand command)
+    public void OnBeforeExecute(DbCommand command)
     {
 
     }
 
-    public void OnBeforeExecute(NpgsqlBatch batch)
+    public void OnBeforeExecute(DbBatch batch)
     {
 
     }

@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Data.Common;
 using Marten;
 using Marten.Services;
 using Microsoft.Extensions.Configuration;
@@ -31,22 +32,22 @@ public class CorrelatedMartenLogger: IMartenSessionLogger
         _session = session;
     }
 
-    public void LogSuccess(NpgsqlCommand command)
+    public void LogSuccess(DbCommand command)
     {
         // Do some kind of logging using the correlation id of the ISession
     }
 
-    public void LogFailure(NpgsqlCommand command, Exception ex)
+    public void LogFailure(DbCommand command, Exception ex)
     {
         // Do some kind of logging using the correlation id of the ISession
     }
 
-    public void LogSuccess(NpgsqlBatch batch)
+    public void LogSuccess(DbBatch batch)
     {
         // Do some kind of logging using the correlation id of the ISession
     }
 
-    public void LogFailure(NpgsqlBatch batch, Exception ex)
+    public void LogFailure(DbBatch batch, Exception ex)
     {
         // Do some kind of logging using the correlation id of the ISession
     }
@@ -56,7 +57,7 @@ public class CorrelatedMartenLogger: IMartenSessionLogger
         // Do some kind of logging using the correlation id of the ISession
     }
 
-    public void OnBeforeExecute(NpgsqlCommand command)
+    public void OnBeforeExecute(DbCommand command)
     {
 
     }
@@ -66,7 +67,7 @@ public class CorrelatedMartenLogger: IMartenSessionLogger
 
     }
 
-    public void OnBeforeExecute(NpgsqlBatch batch)
+    public void OnBeforeExecute(DbBatch batch)
     {
 
     }

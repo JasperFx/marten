@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 using System.Linq;
 using System.Text.Json;
 using JasperFx;
@@ -124,7 +125,7 @@ public class StoreOptionsTests
 
     public class RecordingLogger: IMartenSessionLogger
     {
-        public NpgsqlCommand LastCommand;
+        public DbCommand LastCommand;
         public Exception LastException;
 
         public int OnBeforeExecuted { get; set; }
@@ -138,33 +139,33 @@ public class StoreOptionsTests
         {
         }
 
-        public void OnBeforeExecute(NpgsqlCommand command)
+        public void OnBeforeExecute(DbCommand command)
         {
             OnBeforeExecuted++;
         }
 
-        public void OnBeforeExecute(NpgsqlBatch batch)
+        public void OnBeforeExecute(DbBatch batch)
         {
 
         }
 
-        public void LogSuccess(NpgsqlCommand command)
+        public void LogSuccess(DbCommand command)
         {
             LastCommand = command;
         }
 
-        public void LogFailure(NpgsqlCommand command, Exception ex)
+        public void LogFailure(DbCommand command, Exception ex)
         {
             LastCommand = command;
             LastException = ex;
         }
 
-        public void LogSuccess(NpgsqlBatch batch)
+        public void LogSuccess(DbBatch batch)
         {
 
         }
 
-        public void LogFailure(NpgsqlBatch batch, Exception ex)
+        public void LogFailure(DbBatch batch, Exception ex)
         {
 
         }

@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -15,20 +16,20 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
 {
     public class RecordingSessionLogger: IMartenSessionLogger
     {
-        public void LogSuccess(NpgsqlCommand command)
+        public void LogSuccess(DbCommand command)
         {
         }
 
-        public void LogFailure(NpgsqlCommand command, Exception ex)
+        public void LogFailure(DbCommand command, Exception ex)
         {
         }
 
-        public void LogSuccess(NpgsqlBatch batch)
+        public void LogSuccess(DbBatch batch)
         {
 
         }
 
-        public void LogFailure(NpgsqlBatch batch, Exception ex)
+        public void LogFailure(DbBatch batch, Exception ex)
         {
 
         }
@@ -43,12 +44,12 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
             LastCommit = commit.Clone();
         }
 
-        public void OnBeforeExecute(NpgsqlCommand command)
+        public void OnBeforeExecute(DbCommand command)
         {
 
         }
 
-        public void OnBeforeExecute(NpgsqlBatch batch)
+        public void OnBeforeExecute(DbBatch batch)
         {
 
         }

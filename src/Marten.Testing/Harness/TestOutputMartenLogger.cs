@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.Common;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -42,7 +43,7 @@ namespace Marten.Testing.Harness
             Debug.WriteLine(String.Empty);
         }
 
-        public void LogSuccess(NpgsqlCommand command)
+        public void LogSuccess(DbCommand command)
         {
             _output.WriteLine(command.CommandText);
             foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
@@ -59,7 +60,7 @@ namespace Marten.Testing.Harness
             _writer.WriteLine(command.CommandText);
         }
 
-        public void LogSuccess(NpgsqlBatch batch)
+        public void LogSuccess(DbBatch batch)
         {
             foreach (var command in batch.BatchCommands)
             {
@@ -83,7 +84,7 @@ namespace Marten.Testing.Harness
             }
         }
 
-        public void LogFailure(NpgsqlCommand command, Exception ex)
+        public void LogFailure(DbCommand command, Exception ex)
         {
             _output.WriteLine("Postgresql command failed!");
             _output.WriteLine(command.CommandText);
@@ -94,7 +95,7 @@ namespace Marten.Testing.Harness
             _output.WriteLine(ex.ToString());
         }
 
-        public void LogFailure(NpgsqlBatch batch, Exception ex)
+        public void LogFailure(DbBatch batch, Exception ex)
         {
             _output.WriteLine("Postgresql command failed!");
 
@@ -125,12 +126,12 @@ namespace Marten.Testing.Harness
                 $"Persisted {lastCommit.Updated.Count()} updates, {lastCommit.Inserted.Count()} inserts, and {lastCommit.Deleted.Count()} deletions");
         }
 
-        public void OnBeforeExecute(NpgsqlCommand command)
+        public void OnBeforeExecute(DbCommand command)
         {
 
         }
 
-        public void OnBeforeExecute(NpgsqlBatch batch)
+        public void OnBeforeExecute(DbBatch batch)
         {
 
         }
