@@ -4,7 +4,9 @@ using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using Marten.Internal.CodeGeneration;
 using Marten.Storage.Metadata;
+using Npgsql;
 using NpgsqlTypes;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Schema.Arguments;
@@ -38,7 +40,7 @@ public class TenantIdArgument: UpsertArgument
         Argument parameters,
         DocumentMapping mapping, StoreOptions options)
     {
-        method.Frames.Code($"var parameter{{0}} = parameterBuilder.{nameof(IGroupedParameterBuilder.AppendParameter)}(_tenantId);", i);
+        method.Frames.Code($"var parameter{{0}} = parameterBuilder.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}(_tenantId);", i);
         method.Frames.Code("parameter{0}.NpgsqlDbType = {1};", i, DbType);
     }
 

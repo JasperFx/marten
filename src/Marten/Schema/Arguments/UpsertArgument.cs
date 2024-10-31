@@ -13,6 +13,7 @@ using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Schema.Arguments;
@@ -121,17 +122,17 @@ public class UpsertArgument
             {
                 method.Frames.Code($@"
 BLOCK:if (document.{memberPath} != null)
-var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}(document.{ParameterValue});
+var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}(document.{ParameterValue});
 parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {dbTypeString};
 END
 BLOCK:else
-var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}<object>({typeof(DBNull).FullNameInCode()}.Value);
+var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}<object>({typeof(DBNull).FullNameInCode()}.Value);
 END
-", Use.Type<IGroupedParameterBuilder>());
+", Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>());
             }
             else
             {
-                method.Frames.Code($"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}(document.{ParameterValue});",  Use.Type<IGroupedParameterBuilder>());
+                method.Frames.Code($"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}(document.{ParameterValue});",  Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>());
             }
         }
     }
@@ -144,15 +145,15 @@ END
             if (DotNetType.IsNullable())
             {
                 method.Frames.Code(
-                    $"var parameter{i} = document.{memberPath} == null ? {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}<object>({typeof(DBNull).FullNameInCode()}.Value) : {{0}}.{nameof(CommandBuilder.AppendParameter)}((int)document.{memberPath});",
-                    Use.Type<IGroupedParameterBuilder>());
+                    $"var parameter{i} = document.{memberPath} == null ? {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}<object>({typeof(DBNull).FullNameInCode()}.Value) : {{0}}.{nameof(CommandBuilder.AppendParameter)}((int)document.{memberPath});",
+                    Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>());
 
                 method.Frames.Code($"parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};", NpgsqlDbType.Integer);
             }
             else
             {
                 method.Frames.Code(
-                    $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}((int)document.{memberPath});", Use.Type<IGroupedParameterBuilder>());
+                    $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}((int)document.{memberPath});", Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>());
                 method.Frames.Code($"parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};",
                     NpgsqlDbType.Integer);
             }
@@ -160,14 +161,14 @@ END
         else if (DotNetType.IsNullable())
         {
             method.Frames.Code(
-                $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}((document.{memberPath}).ToString());", Use.Type<IGroupedParameterBuilder>());
+                $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}((document.{memberPath}).ToString());", Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>());
             method.Frames.Code($"parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};",
                 NpgsqlDbType.Varchar);
         }
         else
         {
             method.Frames.Code(
-                $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}(document.{memberPath}.ToString());", Use.Type<IGroupedParameterBuilder>());
+                $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}(document.{memberPath}.ToString());", Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>());
             method.Frames.Code($"parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};",
                 NpgsqlDbType.Varchar);
         }

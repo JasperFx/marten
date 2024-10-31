@@ -11,6 +11,7 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Npgsql;
 using NpgsqlTypes;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Operations;
@@ -69,19 +70,19 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
         }
     }
 
-    protected void writeId(IGroupedParameterBuilder builder)
+    protected void writeId(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder)
     {
         var param = builder.AppendParameter(Stream.Id);
         param.NpgsqlDbType = NpgsqlDbType.Uuid;
     }
 
-    protected void writeKey(IGroupedParameterBuilder builder)
+    protected void writeKey(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder)
     {
         var param = builder.AppendParameter(Stream.Key);
         param.NpgsqlDbType = NpgsqlDbType.Varchar;
     }
 
-    protected void writeBasicParameters(IGroupedParameterBuilder builder, IMartenSession session)
+    protected void writeBasicParameters(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder, IMartenSession session)
     {
         var param1 = Stream.AggregateTypeName.IsEmpty() ? builder.AppendParameter<object>(DBNull.Value) :  builder.AppendParameter(Stream.AggregateTypeName);
         param1.NpgsqlDbType = NpgsqlDbType.Varchar;
@@ -102,19 +103,19 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
         param6.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
     }
 
-    protected void writeCausationIds(IGroupedParameterBuilder builder)
+    protected void writeCausationIds(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder)
     {
         var param = builder.AppendParameter(Stream.Events.Select(x => x.CausationId).ToArray());
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
     }
 
-    protected void writeCorrelationIds(IGroupedParameterBuilder builder)
+    protected void writeCorrelationIds(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder)
     {
         var param = builder.AppendParameter(Stream.Events.Select(x => x.CorrelationId).ToArray());
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
     }
 
-    protected void writeHeaders(IGroupedParameterBuilder builder, IMartenSession session)
+    protected void writeHeaders(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder, IMartenSession session)
     {
         var param = builder.AppendParameter(Stream.Events.Select(x => session.Serializer.ToJson(x.Headers)).ToArray());
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;

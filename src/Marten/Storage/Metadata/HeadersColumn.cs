@@ -13,7 +13,9 @@ using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Schema.Arguments;
+using Npgsql;
 using NpgsqlTypes;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Storage.Metadata;
@@ -46,7 +48,7 @@ internal class HeadersColumn: MetadataColumn<Dictionary<string, object>>, IEvent
 
     public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
-        method.Frames.Code($"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder.AppendParameter)}({{0}}.Serializer.ToJson({{1}}.{nameof(IEvent.Headers)}));", Use.Type<IMartenSession>(), Use.Type<IEvent>());
+        method.Frames.Code($"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}({{0}}.Serializer.ToJson({{1}}.{nameof(IEvent.Headers)}));", Use.Type<IMartenSession>(), Use.Type<IEvent>());
         method.Frames.Code($"parameter{index}.NpgsqlDbType = {{0}};", NpgsqlDbType.Jsonb);
     }
 

@@ -13,6 +13,7 @@ using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
 using Npgsql;
 using NpgsqlTypes;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Internal.CompiledQueries;
@@ -109,7 +110,7 @@ public class CompiledQueryPlan : ICommandBuilder
 
     private CommandPlan _current;
 
-    string ICommandBuilder.LastParameterName => _current.Parameters.LastOrDefault()?.Parameter.ParameterName;
+    public string LastParameterName => _current.Parameters.LastOrDefault()?.Parameter.ParameterName;
 
     private CommandPlan appendCommand()
     {
@@ -119,20 +120,20 @@ public class CompiledQueryPlan : ICommandBuilder
         return plan;
     }
 
-    void ICommandBuilder.Append(string sql)
+    public void Append(string sql)
     {
         _current ??= appendCommand();
 
         _current.CommandText += sql;
     }
 
-    void ICommandBuilder.Append(char character)
+    public void Append(char character)
     {
         _current ??= appendCommand();
         _current.CommandText += character;
     }
 
-    NpgsqlParameter ICommandBuilder.AppendParameter<T>(T value)
+    public NpgsqlParameter AppendParameter<T>(T value)
     {
         _current ??= appendCommand();
         var name = "p" + _parameterIndex;
@@ -145,7 +146,7 @@ public class CompiledQueryPlan : ICommandBuilder
         return usage.Parameter;
     }
 
-    NpgsqlParameter ICommandBuilder.AppendParameter<T>(T value, NpgsqlDbType dbType)
+    public NpgsqlParameter AppendParameter<T>(T value, NpgsqlDbType? dbType)
     {
         _current ??= appendCommand();
         var name = "p" + _parameterIndex;
@@ -161,7 +162,7 @@ public class CompiledQueryPlan : ICommandBuilder
 
     private int _parameterIndex = 0;
 
-    NpgsqlParameter ICommandBuilder.AppendParameter(object value)
+    public NpgsqlParameter AppendParameter(object value)
     {
         _current ??= appendCommand();
         var name = "p" + _parameterIndex;
@@ -174,7 +175,7 @@ public class CompiledQueryPlan : ICommandBuilder
         return usage.Parameter;
     }
 
-    NpgsqlParameter ICommandBuilder.AppendParameter(object value, NpgsqlDbType? dbType)
+    public NpgsqlParameter AppendParameter(object value, NpgsqlDbType? dbType)
     {
         return appendParameter(value, dbType);
     }
@@ -192,18 +193,18 @@ public class CompiledQueryPlan : ICommandBuilder
         return usage.Parameter;
     }
 
-    void ICommandBuilder.AppendParameters(params object[] parameters)
+    public void AppendParameters(params object[] parameters)
     {
         _current ??= appendCommand();
         throw new NotSupportedException();
     }
 
-    public IGroupedParameterBuilder CreateGroupedParameterBuilder(char? seperator = null)
+    public IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> CreateGroupedParameterBuilder(char? seperator = null)
     {
         throw new NotSupportedException();
     }
 
-    NpgsqlParameter[] ICommandBuilder.AppendWithParameters(string text)
+    public NpgsqlParameter[] AppendWithParameters(string text)
     {
         _current ??= appendCommand();
         var split = text.Split('?');
@@ -221,7 +222,7 @@ public class CompiledQueryPlan : ICommandBuilder
         return parameters;
     }
 
-    NpgsqlParameter[] ICommandBuilder.AppendWithParameters(string text, char placeholder)
+    public NpgsqlParameter[] AppendWithParameters(string text, char placeholder)
     {
         _current ??= appendCommand();
         var split = text.Split(placeholder);
@@ -239,12 +240,12 @@ public class CompiledQueryPlan : ICommandBuilder
         return parameters;
     }
 
-    void ICommandBuilder.StartNewCommand()
+    public void StartNewCommand()
     {
         _current = appendCommand();
     }
 
-    void ICommandBuilder.AddParameters(object parameters)
+    public void AddParameters(object parameters)
     {
         throw new NotSupportedException(
             "No, just no. Marten does not support parameters via anonymous objects in compiled queries");

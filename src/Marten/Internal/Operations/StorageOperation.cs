@@ -10,6 +10,7 @@ using Marten.Schema;
 using Marten.Schema.Identity;
 using Npgsql;
 using NpgsqlTypes;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Internal.Operations;
@@ -76,9 +77,9 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
 
     public abstract NpgsqlDbType DbType();
 
-    public abstract void ConfigureParameters(IGroupedParameterBuilder parameterBuilder, ICommandBuilder builder, T document, IMartenSession session);
+    public abstract void ConfigureParameters(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> parameterBuilder, ICommandBuilder builder, T document, IMartenSession session);
 
-    protected void setVersionParameter(IGroupedParameterBuilder builder)
+    protected void setVersionParameter(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder)
     {
         var parameter = builder.AppendParameter(_version);
         parameter.NpgsqlDbType = NpgsqlDbType.Uuid;
@@ -89,7 +90,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         _versions[_id] = _version;
     }
 
-    protected void setCurrentVersionParameter(IGroupedParameterBuilder builder)
+    protected void setCurrentVersionParameter(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder)
     {
         if (_versions.TryGetValue(_id, out var version))
         {
@@ -103,7 +104,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         }
     }
 
-    protected void setCurrentRevisionParameter(IGroupedParameterBuilder builder)
+    protected void setCurrentRevisionParameter(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder)
     {
         var parameter = builder.AppendParameter(Revision);
         parameter.NpgsqlDbType = NpgsqlDbType.Integer;
@@ -264,7 +265,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         return false;
     }
 
-    protected void setStringParameter(IGroupedParameterBuilder builder, string value)
+    protected void setStringParameter(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder, string value)
     {
         if (value == null)
         {
@@ -278,7 +279,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         }
     }
 
-    protected void setHeaderParameter(IGroupedParameterBuilder builder, IMartenSession session)
+    protected void setHeaderParameter(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder, IMartenSession session)
     {
         if (session.Headers == null)
         {

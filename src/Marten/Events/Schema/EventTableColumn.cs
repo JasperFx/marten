@@ -10,6 +10,7 @@ using JasperFx.Core.Reflection;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 
@@ -51,7 +52,7 @@ internal class EventTableColumn: TableColumn, IEventTableColumn
     public virtual void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
         method.Frames.Code(
-            $"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder.AppendParameter)}({{0}}.{Member.Name});", Use.Type<IEvent>());
+            $"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}({{0}}.{Member.Name});", Use.Type<IEvent>());
 
         method.Frames.Code($"parameter{index}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};", NpgsqlDbType);
 

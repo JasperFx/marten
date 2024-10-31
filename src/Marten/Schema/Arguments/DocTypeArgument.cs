@@ -8,6 +8,7 @@ using Marten.Events.CodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Npgsql;
 using NpgsqlTypes;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 
 namespace Marten.Schema.Arguments;
@@ -41,7 +42,7 @@ internal class DocTypeArgument: UpsertArgument
         Argument parameters,
         DocumentMapping mapping, StoreOptions options)
     {
-        method.Frames.Code($"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}(docType);", Use.Type<IGroupedParameterBuilder>());
+        method.Frames.Code($"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}(docType);", Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>());
         method.Frames.Code($"parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};", DbType);
     }
 
